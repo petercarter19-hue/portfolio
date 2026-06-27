@@ -1,48 +1,65 @@
 <!DOCTYPE html>
-<!--
-  base.html — The shared layout for every page on the site.
-  Every other page "extends" this file, which means they all
-  automatically get the same header, navigation, and footer.
--->
 <html lang="en">
+
 <head>
+    <!-- Basic browser and mobile-device setup -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- The page title — each page can set its own title -->
+    <!-- Helps search engines understand the purpose of the website -->
+    <meta
+        name="description"
+        content="The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems."
+    >
+
+    <!-- Jinja block: each page can provide its own browser-tab title -->
     <title>{% block title %}Pete Carter{% endblock %}</title>
 
-    <!-- Link to our CSS file for styling -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Flask generates the correct path to static/css/style.css -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 </head>
+
 <body>
 
-    <!-- NAVIGATION BAR — appears on every page -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">Pete Carter</a>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/about">About</a></li>
-                <li><a href="/work">Work Experience</a></li>
-                <li><a href="/skills">Skills</a></li>
-                <li><a href="/hobbies">Hobbies</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
-        </div>
-    </nav>
+    <!-- Accessibility feature for keyboard and screen-reader users -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    <!-- MAIN CONTENT AREA -->
-    <!-- Each page fills in this "block" with its own content -->
-    <main class="main-content">
+    <!-- Shared site header and navigation -->
+    <header class="site-header">
+        <nav class="navbar" aria-label="Primary navigation">
+            <div class="nav-container">
+
+                <a href="/" class="nav-logo">Pete Carter</a>
+
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/work">Work Experience</a></li>
+                    <li><a href="/skills">Skills</a></li>
+                    <li><a href="/hobbies">Hobbies</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+
+            </div>
+        </nav>
+    </header>
+
+    <!-- Each page inserts its unique content inside this Jinja block -->
+    <main id="main-content" class="main-content">
         {% block content %}
         {% endblock %}
     </main>
 
-    <!-- FOOTER — appears on every page -->
+    <!-- Shared footer displayed on every page -->
     <footer class="footer">
-        <p>&copy; 2026 Pete Carter | Athens, AL</p>
+        <div class="footer-container">
+            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
+        </div>
     </footer>
 
 </body>
+
 </html>

@@ -1,53 +1,303 @@
-<!--
-  index.html — Your homepage.
-  "extends" means this page uses base.html as its wrapper.
-  We only write the UNIQUE content for this page here.
--->
-{% extends "base.html" %}
+{% extends "base.html" %}  <!-- Uses the shared navigation, footer, and layout from base.html -->
 
-<!-- Set the browser tab title for this page -->
-{% block title %}Pete Carter | Portfolio{% endblock %}
 
-<!-- The content that goes inside the <main> section of base.html -->
-{% block content %}
+{% block title %}Pete Carter | Systems Engineering Portfolio{% endblock %}  <!-- Browser-tab title -->
 
-<section class="hero">
-    <div class="hero-content">
-        <h1>Hi, I'm Pete Carter</h1>
-        <p class="hero-subtitle">PMP | PhD | MBSE Certified</p>
-        <p class="hero-description">
-            A results-driven professional based in Athens, AL with a passion for
-            technology, systems engineering, and smart home innovation.
-        </p>
-        <div class="hero-buttons">
-            <a href="/work" class="btn btn-primary">View My Work</a>
-            <a href="/contact" class="btn btn-secondary">Get In Touch</a>
+
+{% block content %}  <!-- Begins the page content inserted into base.html -->
+
+
+<!-- ==================== HERO SECTION ==================== -->
+
+<section
+    class="hero"
+    aria-labelledby="hero-title"
+    style="--hero-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');"
+>
+    <!--
+        The style line above sends the Flask image path into the CSS.
+
+        The CSS uses --hero-circuit-image as the full hero background.
+        This avoids needing to guess the relative path from style.css.
+    -->
+
+
+    <!-- Large decorative glow behind the collage -->
+    <div
+        class="hero-background-glow hero-background-glow-one"
+        aria-hidden="true"
+    ></div>
+
+
+    <!-- Smaller decorative glow near the center of the hero -->
+    <div
+        class="hero-background-glow hero-background-glow-two"
+        aria-hidden="true"
+    ></div>
+
+
+    <!-- Holds the introduction and collage columns -->
+    <div class="hero-inner">
+
+
+        <!-- ==================== LEFT HERO COLUMN ==================== -->
+
+        <div class="hero-copy">
+
+
+            <!-- Main page heading -->
+            <h1 id="hero-title">
+                Hi, I'm <span>Pete Carter</span>
+            </h1>
+
+
+            <!-- Credentials displayed below the heading -->
+            <p class="hero-role">
+
+                M.S.E.M.
+
+                <span>|</span>
+
+                PMP
+
+                <span>|</span>
+
+                PhD Student
+
+            </p>
+
+
+            <!-- Professional introduction -->
+            <p class="hero-description">
+                I'm a results-driven engineering professional with expertise in systems engineering, technology, 
+                and leadership. I thrive on solving complex challenges, building innovative solutions, 
+                and helping organizations achieve measurable success. It's a great life!
+            </p>
+
+
+            <!-- Main navigation buttons -->
+            <div class="hero-buttons">
+
+                <a href="/work" class="btn btn-primary">
+                    Explore My Work
+                </a>
+
+                <a href="/contact" class="btn btn-secondary">
+                    Get In Touch
+                </a>
+
+            </div>
+
         </div>
+
+
+        <!-- ==================== RIGHT HERO COLUMN ==================== -->
+
+        <div class="hero-visual">
+
+            <!-- Controls the collage size and position -->
+            <div class="hero-image-frame">
+
+
+                <!-- Soft glow behind the collage -->
+                <div
+                    class="hero-image-halo"
+                    aria-hidden="true"
+                ></div>
+
+
+                <!-- Personal collage loaded from static/images -->
+                <img
+                    class="hero-collage"
+                    src="{{ url_for('static', filename='images/hero-collage3.png') }}"
+                    alt="A collage showing Pete Carter with his wife, celebrating personal, educational, and life milestones."
+                    width="1122"
+                    height="1402"
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
+                >
+
+            </div>
+
+        </div>
+
     </div>
+
+
+    <!-- Angled transition into the white section -->
+    <div
+        class="hero-divider"
+        aria-hidden="true"
+    ></div>
+
 </section>
 
-<section class="highlights">
+
+
+<!-- ==================== CORE STRENGTHS SECTION ==================== -->
+
+<section
+    class="highlights"
+    id="highlights"
+    aria-labelledby="highlights-title"
+>
+
+
+    <!-- Centers the section and controls its maximum width -->
     <div class="container">
-        <h2>What I Bring</h2>
+
+
+        <!-- Section heading and introduction -->
+        <div class="section-heading">
+
+            <p class="section-kicker">
+                Core Strengths
+            </p>
+
+            <h2 id="highlights-title">
+                What I Bring
+            </h2>
+
+            <p class="section-introduction">
+                A systems-engineering foundation combined with technical leadership,
+                advanced education, and hands-on growth in modern software tools.
+            </p>
+
+        </div>
+
+
+        <!-- Responsive grid containing the strength cards -->
         <div class="cards">
 
-            <div class="card">
-                <h3>Leadership & Management</h3>
-                <p>PMP certified project manager with a track record of delivering complex projects on time and on budget.</p>
-            </div>
 
-            <div class="card">
-                <h3>Advanced Education</h3>
-                <p>PhD-level expertise combined with MBSE certification — bringing rigorous analytical thinking to every challenge.</p>
-            </div>
+            <!-- ==================== CARD 1 ==================== -->
 
-            <div class="card">
-                <h3>Tech Enthusiast</h3>
-                <p>Builder of smart home systems and technology solutions, always exploring what's possible with modern tools.</p>
-            </div>
+            <article class="card">
+
+                <!-- Decorative leadership icon -->
+                <div
+                    class="card-icon"
+                    aria-hidden="true"
+                >
+
+                    <svg viewBox="0 0 24 24">
+
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+
+                        <circle cx="9" cy="7" r="4"></circle>
+
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+
+                    </svg>
+
+                </div>
+
+
+                <!-- Card heading and description -->
+                <div class="card-content">
+
+                    <h3>
+                        Systems Leadership
+                    </h3>
+
+                    <p>
+                        PMP-certified systems engineer with experience supporting
+                        requirements, architecture, integration, verification,
+                        sustainment, and cross-functional delivery.
+                    </p>
+
+                </div>
+
+            </article>
+
+
+            <!-- ==================== CARD 2 ==================== -->
+
+            <article class="card">
+
+                <!-- Decorative digital-engineering icon -->
+                <div
+                    class="card-icon"
+                    aria-hidden="true"
+                >
+
+                    <svg viewBox="0 0 24 24">
+
+                        <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
+
+                        <path d="M6 12v5c3 2 9 2 12 0v-5"></path>
+
+                    </svg>
+
+                </div>
+
+
+                <!-- Card heading and description -->
+                <div class="card-content">
+
+                    <h3>
+                        Digital Engineering Growth
+                    </h3>
+
+                    <p>
+                        Advancing my capabilities in MBSE, digital engineering,
+                        architecture, interfaces, traceability, and systems
+                        engineering through doctoral study and portfolio projects.
+                    </p>
+
+                </div>
+
+            </article>
+
+
+            <!-- ==================== CARD 3 ==================== -->
+
+            <article class="card">
+
+                <!-- Decorative programming icon -->
+                <div
+                    class="card-icon"
+                    aria-hidden="true"
+                >
+
+                    <svg viewBox="0 0 24 24">
+
+                        <polyline points="16 18 22 12 16 6"></polyline>
+
+                        <polyline points="8 6 2 12 8 18"></polyline>
+
+                        <line x1="14" y1="4" x2="10" y2="20"></line>
+
+                    </svg>
+
+                </div>
+
+
+                <!-- Card heading and description -->
+                <div class="card-content">
+
+                    <h3>
+                        Software &amp; AI Integration
+                    </h3>
+
+                    <p>
+                        Developing practical engineering automation and AI-enabled
+                        tools using Python, Flask, APIs, testing, documentation,
+                        secure deployment, and AI-assisted development practices.
+                    </p>
+
+                </div>
+
+            </article>
 
         </div>
+
     </div>
+
 </section>
 
-{% endblock %}
+
+{% endblock %}  <!-- Ends the content inserted into base.html -->

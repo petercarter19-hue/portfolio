@@ -1,181 +1,1065 @@
-/* style.css — Controls how everything looks on the site */
+/* =========================================================
+   COLOR AND DESIGN VARIABLES
 
-/* --- RESET & BASE STYLES --- */
-/* Remove default browser spacing so we start clean */
+   Variables let you change important colors and effects in
+   one location instead of finding every individual use.
+   ========================================================= */
+
+:root {
+    --navy-950: #101020;                                  /* Deepest navy used for strong contrast */
+    --navy-900: #1a1a2e;                                  /* Main dark navy used in the navigation and hero */
+    --navy-800: #16213e;                                  /* Middle navy used in gradients */
+    --navy-700: #0f3460;                                  /* Brighter blue used for accents */
+
+    --gold-500: #e2b96f;                                  /* Main gold accent */
+    --gold-400: #f0ca86;                                  /* Lighter gold used for hover states and labels */
+
+    --white: #ffffff;                                     /* Reusable pure white */
+    --surface: #f9f9f9;                                   /* Main light-section background */
+
+    --text-dark: #333333;                                 /* Main text color on light backgrounds */
+    --text-muted: #555555;                                /* Secondary paragraph color */
+
+    --border-light: rgba(26, 26, 46, 0.1);                /* Soft border used around cards */
+    --shadow-soft: 0 18px 45px rgba(8, 22, 47, 0.1);      /* Reusable card shadow */
+}
+
+
+/* =========================================================
+   RESET AND BASIC PAGE STYLES
+   ========================================================= */
+
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    margin: 0;                                            /* Removes default browser margins */
+    padding: 0;                                           /* Removes default browser padding */
+    box-sizing: border-box;                               /* Includes padding and borders inside element dimensions */
+}
+
+html {
+    scroll-behavior: smooth;                              /* Smoothly scrolls to sections */
 }
 
 body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    color: #333;
-    background-color: #f9f9f9;
-    line-height: 1.6;
+    min-height: 100vh;                                    /* Keeps the page at least as tall as the browser window */
+    overflow-x: hidden;                                   /* Prevents accidental horizontal scrolling */
+
+    font-family: "Segoe UI", Arial, sans-serif;            /* Sets the primary and backup fonts */
+    color: var(--text-dark);                              /* Sets the default text color */
+    background-color: var(--surface);                     /* Sets the default page background */
+
+    line-height: 1.6;                                     /* Adds comfortable spacing between lines */
 }
 
-/* --- NAVIGATION BAR --- */
+img {
+    display: block;                                       /* Removes the small browser gap below images */
+    max-width: 100%;                                      /* Prevents images from overflowing containers */
+}
+
+a {
+    color: inherit;                                       /* Makes links inherit their surrounding color */
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;              /* Removes mobile tap highlighting */
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.skip-link {
+    position: fixed;                                      /* Keeps the skip link attached to the browser window */
+    top: 12px;                                            /* Positions it near the top */
+    left: 12px;                                           /* Positions it near the left */
+    z-index: 1000;                                        /* Keeps it above the rest of the page */
+
+    padding: 10px 16px;                                   /* Creates clickable space */
+
+    color: var(--navy-950);                               /* Uses dark text */
+    background-color: var(--gold-400);                    /* Uses a visible gold background */
+
+    border-radius: 6px;                                   /* Slightly rounds the corners */
+
+    font-weight: 700;                                     /* Makes the link bold */
+    text-decoration: none;                                /* Removes the default underline */
+
+    transform: translateY(-160%);                         /* Hides the link above the screen */
+    transition: transform 0.2s ease;                      /* Animates the link when focused */
+}
+
+.skip-link:focus {
+    transform: translateY(0);                             /* Reveals the link for keyboard users */
+}
+
+a:focus-visible {
+    outline: 3px solid var(--gold-400);                   /* Adds a visible keyboard-focus outline */
+    outline-offset: 4px;                                  /* Moves the outline outside the element */
+}
+
+
+/* =========================================================
+   NAVIGATION BAR
+   ========================================================= */
+
+.site-header {
+    position: relative;                                   /* Creates a positioning reference */
+    z-index: 100;                                         /* Keeps the header above page content */
+}
+
 .navbar {
-    background-color: #1a1a2e;
-    padding: 15px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: sticky;                                     /* Keeps the navigation visible while scrolling */
+    top: 0;                                               /* Sticks the navigation to the top */
+    z-index: 100;                                         /* Keeps it above normal content */
+
+    padding: 17px 0;                                      /* Adds vertical spacing */
+
+    background-color: rgba(26, 26, 46, 0.97);             /* Creates the dark navigation background */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);   /* Adds a subtle divider */
+
+    backdrop-filter: blur(16px);                          /* Adds a frosted-glass effect */
+    -webkit-backdrop-filter: blur(16px);                  /* Safari version of the effect */
 }
 
 .nav-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    width: min(100% - 40px, 1240px);                      /* Adds side spacing and limits maximum width */
+    margin: 0 auto;                                       /* Centers the navigation */
+
+    display: flex;                                        /* Places the logo and links on one row */
+    align-items: center;                                  /* Vertically centers the content */
+    justify-content: space-between;                       /* Pushes the logo and links apart */
+
+    gap: 30px;                                            /* Adds space between the logo and links */
 }
 
 .nav-logo {
-    color: #e2b96f;
-    font-size: 1.4rem;
-    font-weight: bold;
-    text-decoration: none;
+    color: var(--white);                                  /* Makes the Pete Carter logo white */
+
+    font-size: 1.45rem;                                   /* Controls the logo size */
+    font-weight: 800;                                     /* Makes the logo bold */
+    letter-spacing: -0.02em;                              /* Pulls letters slightly closer together */
+
+    text-decoration: none;                                /* Removes the default underline */
+    white-space: nowrap;                                  /* Prevents the name from wrapping */
 }
 
 .nav-links {
-    list-style: none;
-    display: flex;
-    gap: 25px;
+    display: flex;                                        /* Places navigation links in a row */
+    align-items: center;                                  /* Vertically centers the links */
+    justify-content: flex-end;                            /* Aligns the links to the right */
+    flex-wrap: wrap;                                      /* Allows links to wrap on smaller screens */
+
+    gap: 26px;                                            /* Controls spacing between links */
+    list-style: none;                                     /* Removes list bullets */
 }
 
 .nav-links a {
-    color: #ccc;
-    text-decoration: none;
-    font-size: 0.95rem;
-    transition: color 0.2s;
+    position: relative;                                   /* Lets the underline be positioned inside the link */
+
+    padding: 8px 0;                                       /* Adds clickable vertical space */
+
+    color: rgba(255, 255, 255, 0.82);                     /* Uses softened white */
+
+    font-size: 0.96rem;                                   /* Controls the link size */
+    font-weight: 500;                                     /* Uses medium-weight text */
+    text-decoration: none;                                /* Removes the default underline */
+
+    transition: color 0.2s ease;                          /* Smoothly changes the link color */
 }
 
-.nav-links a:hover {
-    color: #e2b96f;
+.nav-links a::after {
+    content: "";                                          /* Creates the animated underline */
+
+    position: absolute;                                   /* Positions it inside the link */
+    right: 0;                                             /* Extends it to the right edge */
+    bottom: 2px;                                          /* Positions it near the bottom */
+    left: 0;                                              /* Extends it to the left edge */
+
+    height: 2px;                                          /* Controls underline thickness */
+
+    background-color: var(--gold-500);                    /* Makes the underline gold */
+
+    transform: scaleX(0);                                 /* Hides the underline */
+    transform-origin: center;                             /* Expands it from the center */
+
+    transition: transform 0.2s ease;                      /* Animates the underline */
 }
 
-/* --- MAIN CONTENT AREA --- */
+.nav-links a:hover,
+.nav-links a:focus-visible {
+    color: var(--white);                                  /* Makes active links fully white */
+}
+
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after {
+    transform: scaleX(1);                                 /* Displays the gold underline */
+}
+
+
+/* =========================================================
+   MAIN CONTENT AREA
+   ========================================================= */
+
 .main-content {
-    min-height: calc(100vh - 120px);
+    min-height: calc(100vh - 150px);                      /* Prevents the footer from appearing too high */
 }
 
-/* --- HERO SECTION (big intro on homepage) --- */
+
+/* =========================================================
+   HERO SECTION
+
+   The circuit image is now the hero background rather than
+   a separate image above the introduction.
+   ========================================================= */
+
 .hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    color: white;
-    padding: 100px 20px;
-    text-align: center;
+    position: relative;                                   /* Allows background layers to be positioned inside */
+    isolation: isolate;                                   /* Keeps all hero layering contained */
+
+    min-height: 760px;                                    /* Provides enough height for the hero content */
+    overflow: hidden;                                     /* Hides oversized background edges */
+
+    color: var(--white);                                  /* Makes normal hero text white */
+
+    background:
+        radial-gradient(
+            circle at 78% 43%,
+            rgba(31, 105, 166, 0.42),
+            transparent 40%
+        ),                                                /* Adds a blue glow behind the collage */
+
+        radial-gradient(
+            circle at 13% 24%,
+            rgba(226, 185, 111, 0.07),
+            transparent 27%
+        ),                                                /* Adds a subtle gold glow near the introduction */
+
+        linear-gradient(
+            135deg,
+            var(--navy-900) 0%,
+            var(--navy-800) 48%,
+            #092347 100%
+        );                                                /* Creates the base navy background */
+}
+
+
+/*
+   This layer displays the circuit image.
+
+   The scaleX(-1) flips the image horizontally so the main
+   microchip sits behind the collage on the right side.
+*/
+.hero::before {
+    content: "";                                          /* Creates the circuit-background layer */
+
+    position: absolute;                                   /* Lets this layer cover the full hero section */
+    inset: 0;                                             /* Stretches the layer to all four edges */
+    z-index: -2;                                          /* Places it behind the overlay and content */
+
+    background-image: var(--hero-circuit-image);          /* Uses the circuit image passed in from index.html */
+    background-repeat: no-repeat;                         /* Prevents tiling */
+    background-position: left center;                     /* Keeps the processor visible toward the left side */
+    background-size: cover;                               /* Makes the image fill the ENTIRE hero area */
+
+    opacity: 0.82;                                        /* Keeps the circuit visible */
+    filter: saturate(1.45) brightness(1.12) contrast(1.12); /* Makes the processor colors pop more */
+
+    transform: scaleX(1);                                 /* Keeps the circuit in its normal orientation */
+    transform-origin: center;                             /* Uses the center as the transform reference point */
+
+    pointer-events: none;                                 /* Prevents this layer from blocking clicks */
+}
+
+/*
+   This dark overlay keeps the text readable while allowing
+   the circuit to remain visible behind the collage.
+*/
+.hero::after {
+    content: "";                                          /* Creates the readability overlay */
+
+    position: absolute;                                   /* Covers the entire hero */
+    inset: 0;                                             /* Stretches to all four edges */
+    z-index: -1;                                          /* Places it above the circuit image but below the content */
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(16, 16, 32, 0.80) 0%,
+            rgba(16, 22, 44, 0.58) 30%,
+            rgba(11, 37, 73, 0.28) 60%,
+            rgba(7, 31, 65, 0.10) 100%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(9, 18, 40, 0.08) 0%,
+            rgba(9, 18, 40, 0.16) 100%
+        );                                                /* Keeps text readable while letting more circuit color show through */
+
+    pointer-events: none;                                 /* Prevents the overlay from blocking clicks */
+}
+
+/* Holds the left introduction and right collage columns */
+.hero-inner {
+    position: relative;                                   /* Allows z-index to work */
+    z-index: 2;                                           /* Places content above every background layer */
+
+    width: min(100% - 48px, 1240px);                      /* Adds side spacing and limits maximum width */
+    min-height: 760px;                                    /* Matches the hero height */
+
+    margin: 0 auto;                                       /* Centers the hero content */
+    padding: 72px 0 105px;                                /* Adds space above and below the content */
+
+    display: grid;                                        /* Creates the two-column layout */
+    grid-template-columns:
+        minmax(0, 0.88fr)
+        minmax(430px, 1.12fr);                            /* Gives slightly more width to the collage */
+
+    align-items: center;                                  /* Vertically centers both columns */
+
+    gap: clamp(42px, 6vw, 92px);                          /* Adjusts column spacing with the screen width */
+}
+
+
+/* =========================================================
+   HERO TEXT COLUMN
+   ========================================================= */
+
+.hero-copy {
+    position: relative;                                   /* Creates a local positioning reference */
+    z-index: 5;                                           /* Keeps the introduction above all decorations */
+
+    max-width: 650px;                                     /* Prevents text lines from becoming too long */
 }
 
 .hero h1 {
-    font-size: 3rem;
-    margin-bottom: 10px;
+    max-width: 700px;                                     /* Prevents the heading from becoming too wide */
+    margin-bottom: 18px;                                  /* Adds space below the heading */
+
+    color: var(--white);                                  /* Makes the entire heading white */
+
+    font-size: clamp(3rem, 5.5vw, 5.1rem);                /* Makes the heading responsive */
+    font-weight: 800;                                     /* Makes the heading bold */
+    letter-spacing: -0.055em;                             /* Pulls large letters closer together */
+    line-height: 0.98;                                    /* Keeps heading line spacing compact */
+
+    text-wrap: balance;                                   /* Balances multi-line heading text */
 }
 
-.hero-subtitle {
-    color: #e2b96f;
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    letter-spacing: 2px;
+.hero h1 span {
+    color: var(--white);                                  /* Makes Pete Carter white instead of gold */
+}
+
+.hero-role {
+    margin-bottom: 26px;                                  /* Adds space below the credential line */
+
+    color: var(--gold-400);                               /* Keeps the credential line gold */
+
+    font-size: clamp(1rem, 1.6vw, 1.2rem);                /* Makes the credential line responsive */
+    font-weight: 650;                                     /* Uses a strong medium-bold weight */
+    letter-spacing: 0.12em;                               /* Adds space between letters */
+    text-transform: uppercase;                            /* Displays credentials in uppercase */
+}
+
+.hero-role span {
+    margin: 0 7px;                                        /* Adds space around separators */
+    opacity: 0.55;                                        /* Makes separators slightly less prominent */
 }
 
 .hero-description {
-    max-width: 600px;
-    margin: 0 auto 35px;
-    font-size: 1.1rem;
-    color: #ccc;
+    max-width: 650px;                                     /* Keeps the paragraph readable */
+    margin-bottom: 36px;                                  /* Adds space before the buttons */
+
+    color: rgba(255, 255, 255, 0.84);                     /* Uses slightly softened white */
+
+    font-size: clamp(1rem, 1.4vw, 1.12rem);               /* Makes the paragraph responsive */
+    line-height: 1.85;                                    /* Adds comfortable spacing between lines */
+
+    text-shadow: 0 2px 12px rgba(5, 12, 28, 0.32);        /* Helps text remain readable over the circuit */
 }
+
+
+/* =========================================================
+   HERO BUTTONS
+   ========================================================= */
 
 .hero-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: flex;                                        /* Places buttons beside each other */
+    align-items: center;                                  /* Vertically aligns the buttons */
+    flex-wrap: wrap;                                      /* Allows buttons to wrap when needed */
+
+    gap: 15px;                                            /* Adds space between buttons */
 }
 
-/* --- BUTTONS --- */
 .btn {
-    padding: 12px 30px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: all 0.2s;
+    min-width: 165px;                                     /* Gives buttons a consistent minimum width */
+    padding: 14px 25px;                                   /* Creates clickable space inside the button */
+
+    display: inline-flex;                                 /* Allows easy text centering */
+    align-items: center;                                  /* Vertically centers the text */
+    justify-content: center;                              /* Horizontally centers the text */
+
+    border: 2px solid transparent;                        /* Reserves space for button borders */
+    border-radius: 9px;                                   /* Rounds the button corners */
+
+    font-size: 0.98rem;                                   /* Controls button text size */
+    font-weight: 750;                                     /* Makes button text bold */
+    text-decoration: none;                                /* Removes the default link underline */
+
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;                             /* Smoothly animates button interactions */
+}
+
+.btn:hover {
+    transform: translateY(-3px);                          /* Raises the button slightly */
 }
 
 .btn-primary {
-    background-color: #e2b96f;
-    color: #1a1a2e;
+    color: var(--navy-900);                               /* Uses dark text */
+    background-color: var(--gold-500);                    /* Creates the gold background */
+    border-color: var(--gold-500);                        /* Matches the button border */
+
+    box-shadow: 0 12px 28px rgba(226, 185, 111, 0.22);    /* Adds a soft gold shadow */
 }
 
-.btn-primary:hover {
-    background-color: #c9a050;
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background-color: var(--gold-400);                    /* Lightens the button */
+    border-color: var(--gold-400);                        /* Keeps the border matched */
+
+    box-shadow: 0 15px 34px rgba(226, 185, 111, 0.3);     /* Strengthens the shadow */
 }
 
 .btn-secondary {
-    border: 2px solid #e2b96f;
-    color: #e2b96f;
+    color: var(--gold-400);                               /* Uses gold text */
+    background-color: rgba(16, 26, 51, 0.48);             /* Adds a translucent dark background */
+    border-color: var(--gold-500);                        /* Creates the gold outline */
+
+    backdrop-filter: blur(4px);                           /* Softens the circuit behind the button */
+    -webkit-backdrop-filter: blur(4px);                   /* Safari version */
 }
 
-.btn-secondary:hover {
-    background-color: #e2b96f;
-    color: #1a1a2e;
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+    color: var(--navy-900);                               /* Changes text to navy */
+    background-color: var(--gold-500);                    /* Fills the button with gold */
 }
 
-/* --- HIGHLIGHTS SECTION --- */
+
+/* =========================================================
+   HERO COLLAGE
+   ========================================================= */
+
+.hero-visual {
+    position: relative;                                   /* Creates a positioning reference */
+    z-index: 2;                                           /* Keeps the collage above the circuit background */
+    min-width: 0;                                         /* Allows the grid column to shrink */
+
+    display: flex;                                        /* Makes alignment easier */
+    align-items: center;                                  /* Vertically centers the collage */
+    justify-content: flex-end;                            /* Moves the collage toward the right */
+}
+
+.hero-image-frame {
+    position: relative;                                   /* Lets the halo sit behind the collage */
+
+    width: min(100%, 660px);                              /* Makes the collage slightly larger */
+    margin-left: auto;                                    /* Pushes the collage toward the right */
+
+    background: transparent;                              /* Prevents a visible background rectangle */
+}
+
+.hero-image-halo {
+    position: absolute;                                   /* Positions the glow behind the collage */
+    top: 3%;                                              /* Leaves a small top inset */
+    right: 0;                                             /* Extends close to the right edge */
+    bottom: 3%;                                           /* Leaves a small bottom inset */
+    left: 0;                                              /* Extends close to the left edge */
+    z-index: -1;                                          /* Places the glow behind the collage */
+
+    background: rgba(22, 88, 147, 0.22);                  /* Creates a transparent blue glow */
+    border-radius: 34%;                                   /* Softly rounds the glow */
+
+    filter: blur(60px);                                   /* Spreads and softens the glow */
+}
+
+.hero-image-frame::before,
+.hero-image-frame::after {
+    display: none;                                        /* Disables old collage overlays */
+    content: none;                                        /* Prevents pseudo-elements from appearing */
+}
+
+.hero-collage {
+    position: relative;                                   /* Allows z-index and positioning */
+    z-index: 1;                                           /* Places the collage above its halo */
+
+    width: 100%;                                          /* Makes the collage fill its frame */
+    height: auto;                                         /* Preserves the original proportions */
+
+    object-fit: contain;                                  /* Displays the full collage */
+    object-position: center;                              /* Centers the collage */
+
+    background: transparent;                              /* Prevents a separate image background */
+
+    filter:
+        drop-shadow(0 22px 34px rgba(4, 14, 34, 0.26));   /* Adds depth without creating a visible border */
+
+    -webkit-mask-image:
+        linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        ),
+        linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 7%,
+            black 93%,
+            transparent 100%
+        );                                                /* Fades all collage edges in Safari and Chrome */
+
+    -webkit-mask-composite: source-in;                    /* Combines the Safari masks */
+
+    mask-image:
+        linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        ),
+        linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 7%,
+            black 93%,
+            transparent 100%
+        );                                                /* Standard version of the edge fades */
+
+    mask-composite: intersect;                            /* Combines the standard masks */
+
+    -webkit-mask-repeat: no-repeat;                       /* Prevents Safari masks from repeating */
+    mask-repeat: no-repeat;                               /* Prevents standard masks from repeating */
+
+    -webkit-mask-size: 100% 100%;                         /* Stretches Safari masks across the image */
+    mask-size: 100% 100%;                                 /* Stretches standard masks across the image */
+
+    -webkit-mask-position: center;                        /* Centers the Safari masks */
+    mask-position: center;                                /* Centers the standard masks */
+}
+
+
+/* =========================================================
+   DECORATIVE HERO ELEMENTS
+   ========================================================= */
+
+.hero-background-glow {
+    position: absolute;                                   /* Allows each glow to be freely positioned */
+    z-index: 0;                                           /* Places glows above the circuit but below content */
+
+    border-radius: 50%;                                   /* Creates circular shapes */
+
+    pointer-events: none;                                 /* Prevents glows from blocking clicks */
+}
+
+.hero-background-glow-one {
+    top: 12%;                                             /* Positions the large glow vertically */
+    right: -9%;                                           /* Pushes part of it outside the hero */
+
+    width: 480px;                                         /* Controls glow width */
+    height: 480px;                                        /* Controls glow height */
+
+    border: 1px solid rgba(226, 185, 111, 0.1);           /* Creates a faint gold ring */
+
+    box-shadow:
+        0 0 90px rgba(226, 185, 111, 0.035),
+        inset 0 0 70px rgba(15, 73, 129, 0.14);           /* Adds soft outer and inner glows */
+}
+
+.hero-background-glow-two {
+    right: 30%;                                           /* Positions the smaller glow horizontally */
+    bottom: 9%;                                           /* Positions it near the bottom */
+
+    width: 260px;                                         /* Controls glow width */
+    height: 260px;                                        /* Controls glow height */
+
+    border: 1px solid rgba(255, 255, 255, 0.035);         /* Creates a faint white ring */
+}
+
+.hero-divider {
+    position: absolute;                                   /* Attaches the divider to the hero bottom */
+    right: 0;                                             /* Extends it to the right edge */
+    bottom: -1px;                                         /* Removes tiny gaps below it */
+    left: 0;                                              /* Extends it to the left edge */
+    z-index: 3;                                           /* Places it above hero effects */
+
+    height: 72px;                                         /* Controls divider height */
+
+    background-color: var(--surface);                     /* Matches the section below */
+
+    clip-path: polygon(
+        0 72%,
+        100% 25%,
+        100% 100%,
+        0 100%
+    );                                                    /* Creates the angled top edge */
+}
+
+
+/* =========================================================
+   CORE STRENGTHS SECTION
+   ========================================================= */
+
 .highlights {
-    padding: 70px 20px;
-    background-color: white;
+    position: relative;                                   /* Allows future decorations inside the section */
+
+    padding: 90px 24px 105px;                            /* Adds space around the section */
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(226, 185, 111, 0.08),
+            transparent 30%
+        ),
+        linear-gradient(
+            180deg,
+            var(--surface) 0%,
+            var(--white) 100%
+        );                                                /* Creates a subtle gold glow and white background */
 }
 
 .container {
-    max-width: 1100px;
-    margin: 0 auto;
+    width: min(100%, 1180px);                             /* Limits the section width */
+    margin: 0 auto;                                       /* Centers the section */
+}
+
+.section-heading {
+    max-width: 730px;                                     /* Limits the heading width */
+    margin: 0 auto 52px;                                  /* Centers it and adds space below */
+
+    text-align: center;                                    /* Centers the heading text */
+}
+
+.section-kicker {
+    margin-bottom: 9px;                                   /* Adds space below the small label */
+
+    color: #a97832;                                       /* Uses darker gold for readability */
+
+    font-size: 0.78rem;                                   /* Keeps the label small */
+    font-weight: 800;                                     /* Makes the label bold */
+    letter-spacing: 0.2em;                                /* Adds spacing between letters */
+    text-transform: uppercase;                            /* Displays the label in uppercase */
 }
 
 .highlights h2 {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 40px;
-    color: #1a1a2e;
+    margin-bottom: 14px;                                  /* Adds space below the heading */
+
+    color: var(--navy-900);                               /* Uses dark navy */
+
+    font-size: clamp(2rem, 3.5vw, 2.8rem);                /* Makes the heading responsive */
+    letter-spacing: -0.035em;                             /* Pulls heading letters slightly closer */
+    line-height: 1.15;                                    /* Controls heading line spacing */
 }
 
+.highlights h2::after {
+    content: "";                                          /* Creates the gold line beneath the heading */
+
+    width: 48px;                                          /* Controls line width */
+    height: 3px;                                          /* Controls line thickness */
+    margin: 17px auto 0;                                  /* Centers it and adds space above */
+
+    display: block;                                       /* Allows width and margin to work */
+
+    background-color: var(--gold-500);                    /* Makes the line gold */
+    border-radius: 99px;                                  /* Rounds both ends */
+}
+
+.section-introduction {
+    color: var(--text-muted);                             /* Uses the secondary paragraph color */
+
+    font-size: 1.03rem;                                   /* Makes the introduction slightly larger */
+    line-height: 1.75;                                    /* Adds comfortable line spacing */
+}
+
+
+/* =========================================================
+   PROFESSIONAL STRENGTH CARDS
+   ========================================================= */
+
 .cards {
-    display: flex;
-    gap: 25px;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;                                        /* Creates the card layout */
+    grid-template-columns: repeat(3, minmax(0, 1fr));      /* Creates three equal columns */
+
+    gap: 24px;                                            /* Adds space between cards */
 }
 
 .card {
-    background: #f9f9f9;
-    border-left: 4px solid #e2b96f;
-    padding: 25px;
-    border-radius: 5px;
-    flex: 1;
-    min-width: 250px;
-    max-width: 320px;
+    position: relative;                                   /* Lets the accent bar be positioned inside */
+
+    min-height: 250px;                                    /* Keeps cards at similar heights */
+    overflow: hidden;                                     /* Keeps content inside rounded corners */
+
+    padding: 31px 28px 30px;                             /* Adds internal card spacing */
+
+    display: flex;                                        /* Places the icon beside the text */
+    align-items: flex-start;                              /* Aligns content at the top */
+
+    gap: 18px;                                            /* Adds space between icon and text */
+
+    background-color: rgba(255, 255, 255, 0.92);          /* Creates the card background */
+    border: 1px solid var(--border-light);                /* Adds a subtle border */
+    border-radius: 15px;                                  /* Rounds the corners */
+
+    box-shadow: var(--shadow-soft);                       /* Adds the reusable shadow */
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;                          /* Animates the hover effect */
+}
+
+.card::before {
+    content: "";                                          /* Creates the gold accent bar */
+
+    position: absolute;                                   /* Positions it inside the card */
+    top: 0;                                               /* Extends it to the top */
+    bottom: 0;                                            /* Extends it to the bottom */
+    left: 0;                                              /* Attaches it to the left edge */
+
+    width: 4px;                                           /* Controls bar thickness */
+
+    background: linear-gradient(
+        var(--gold-400),
+        #b98031
+    );                                                    /* Creates the gold gradient */
+}
+
+.card:hover {
+    transform: translateY(-7px);                          /* Raises the card */
+
+    border-color: rgba(226, 185, 111, 0.45);              /* Makes the border more gold */
+
+    box-shadow: 0 24px 55px rgba(8, 22, 47, 0.15);        /* Strengthens the shadow */
+}
+
+.card-icon {
+    width: 53px;                                          /* Sets the icon-circle width */
+    height: 53px;                                         /* Sets the icon-circle height */
+    flex: 0 0 53px;                                       /* Prevents the icon from shrinking */
+
+    display: grid;                                        /* Makes centering easy */
+    place-items: center;                                  /* Centers the SVG */
+
+    color: var(--gold-400);                               /* Sets the icon-line color */
+
+    background: linear-gradient(
+        145deg,
+        var(--navy-900),
+        var(--navy-700)
+    );                                                    /* Creates the navy-blue icon background */
+
+    border: 1px solid rgba(226, 185, 111, 0.55);          /* Adds a gold border */
+    border-radius: 50%;                                   /* Makes the background circular */
+
+    box-shadow: 0 10px 25px rgba(11, 23, 48, 0.2);        /* Adds depth */
+}
+
+.card-icon svg {
+    width: 25px;                                          /* Controls SVG width */
+    height: 25px;                                         /* Controls SVG height */
+
+    fill: none;                                           /* Prevents shapes from being filled */
+    stroke: currentColor;                                 /* Uses the parent gold color */
+    stroke-width: 1.7;                                    /* Controls line thickness */
+    stroke-linecap: round;                                /* Rounds line endings */
+    stroke-linejoin: round;                               /* Rounds connected corners */
+}
+
+.card-content {
+    min-width: 0;                                         /* Prevents text overflow in the flex layout */
 }
 
 .card h3 {
-    color: #1a1a2e;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
+    margin: 7px 0 11px;                                   /* Adds space around the heading */
+
+    color: var(--navy-900);                               /* Uses dark navy */
+
+    font-size: 1.12rem;                                   /* Controls heading size */
+    line-height: 1.35;                                    /* Controls heading line spacing */
 }
 
 .card p {
-    color: #555;
-    font-size: 0.95rem;
+    color: var(--text-muted);                             /* Uses the secondary paragraph color */
+
+    font-size: 0.95rem;                                   /* Controls paragraph size */
+    line-height: 1.75;                                    /* Adds comfortable line spacing */
 }
 
-/* --- FOOTER --- */
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
 .footer {
-    background-color: #1a1a2e;
-    color: #888;
-    text-align: center;
-    padding: 20px;
-    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.55);                     /* Uses softened white footer text */
+    background-color: var(--navy-900);                    /* Uses the main navy background */
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);      /* Adds a subtle top divider */
+}
+
+.footer-container {
+    width: min(100% - 40px, 1180px);                      /* Adds side spacing and limits width */
+    margin: 0 auto;                                       /* Centers the footer */
+    padding: 27px 0;                                      /* Adds vertical spacing */
+
+    text-align: center;                                    /* Centers footer text */
+    font-size: 0.88rem;                                   /* Makes footer text slightly smaller */
+}
+
+.footer span {
+    margin: 0 8px;                                        /* Adds space around separators */
+
+    color: rgba(226, 185, 111, 0.65);                     /* Makes separators muted gold */
+}
+
+
+/* =========================================================
+   TABLET LAYOUT
+   Applies at 1050 pixels wide or smaller.
+   ========================================================= */
+
+@media (max-width: 1050px) {
+
+    .hero-inner {
+        grid-template-columns:
+            minmax(0, 0.92fr)
+            minmax(390px, 1.08fr);                        /* Slightly adjusts the hero-column widths */
+
+        gap: 35px;                                        /* Reduces column spacing */
+    }
+
+    .hero h1 {
+        font-size: clamp(2.8rem, 5vw, 4.2rem);            /* Slightly reduces the heading size */
+    }
+
+    .hero-image-frame {
+        width: min(100%, 610px);                          /* Slightly reduces the collage */
+    }
+
+    .cards {
+        gap: 18px;                                        /* Reduces space between cards */
+    }
+
+    .card {
+        padding: 27px 22px;                               /* Reduces card padding */
+        gap: 14px;                                        /* Reduces icon-to-text spacing */
+    }
+
+}
+
+
+/* =========================================================
+   SMALL TABLETS AND LARGE PHONES
+   Applies at 880 pixels wide or smaller.
+   ========================================================= */
+
+@media (max-width: 880px) {
+
+    .navbar {
+        position: relative;                               /* Stops the navigation from remaining sticky */
+    }
+
+    .nav-container {
+        flex-direction: column;                           /* Stacks the logo above the links */
+        gap: 10px;                                        /* Adds space between them */
+    }
+
+    .nav-links {
+        justify-content: center;                          /* Centers navigation links */
+        gap: 10px 20px;                                   /* Controls row and column spacing */
+    }
+
+
+    /*
+       On narrower screens, the background is repositioned so
+       useful circuit details remain visible behind the content.
+    */
+    .hero::before {
+        inset: -2%;                                       /* Keeps the image slightly oversized */
+        background-position: 58% center;                  /* Moves the circuit toward the center-right */
+        background-size: auto 100%;                       /* Fits the circuit image to the hero height */
+
+        opacity: 0.5;                                     /* Makes it softer behind stacked content */
+    }
+
+    .hero::after {
+        background:
+            linear-gradient(
+                180deg,
+                rgba(16, 16, 32, 0.82) 0%,
+                rgba(14, 27, 52, 0.61) 52%,
+                rgba(8, 30, 63, 0.36) 100%
+            );                                            /* Uses vertical darkening for the stacked layout */
+    }
+
+    .hero-inner {
+        min-height: auto;                                 /* Lets the content control the hero height */
+        padding: 75px 0 125px;                            /* Adds responsive spacing */
+
+        grid-template-columns: 1fr;                       /* Stacks the text above the collage */
+
+        text-align: center;                                /* Centers the hero text */
+    }
+
+    .hero-copy {
+        max-width: 730px;                                 /* Allows a wider centered text area */
+        margin: 0 auto;                                   /* Centers the introduction */
+    }
+
+    .hero-description {
+        margin-right: auto;                               /* Centers the paragraph */
+        margin-left: auto;                                /* Centers the paragraph */
+    }
+
+    .hero-buttons {
+        justify-content: center;                          /* Centers the buttons */
+    }
+
+    .hero-visual {
+        justify-content: center;                          /* Centers the collage */
+    }
+
+    .hero-image-frame {
+        width: min(100%, 570px);                          /* Reduces the collage size */
+        margin: 0 auto;                                   /* Centers the collage */
+    }
+
+    .cards {
+        max-width: 700px;                                 /* Limits the single-column card width */
+        margin: 0 auto;                                   /* Centers the cards */
+
+        grid-template-columns: 1fr;                       /* Stacks cards vertically */
+    }
+
+    .card {
+        min-height: auto;                                 /* Lets cards use only the height they need */
+    }
+
+}
+
+
+/* =========================================================
+   PHONE LAYOUT
+   Applies at 600 pixels wide or smaller.
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .nav-container {
+        width: min(100% - 28px, 1240px);                  /* Reduces navigation side spacing */
+    }
+
+    .nav-logo {
+        font-size: 1.3rem;                                /* Slightly reduces the logo */
+    }
+
+    .nav-links {
+        gap: 5px 14px;                                    /* Reduces navigation-link spacing */
+    }
+
+    .nav-links a {
+        font-size: 0.84rem;                               /* Reduces navigation-link size */
+    }
+
+    .hero::before {
+        background-position: 60% center;                  /* Keeps the processor toward the right */
+        background-size: auto 100%;                       /* Fits the image to the hero height */
+
+        opacity: 0.42;                                    /* Makes it subtle behind phone content */
+    }
+
+    .hero-inner {
+        width: min(100% - 32px, 1240px);                  /* Adds appropriate phone side spacing */
+        padding-top: 58px;                                /* Reduces space above the hero content */
+    }
+
+    .hero h1 {
+        font-size: clamp(2.45rem, 12vw, 3.45rem);         /* Makes the heading fit smaller screens */
+    }
+
+    .hero-role {
+        font-size: 0.87rem;                               /* Reduces credential size */
+        letter-spacing: 0.08em;                           /* Reduces letter spacing */
+        line-height: 1.8;                                 /* Adds space if credentials wrap */
+    }
+
+    .hero-role span {
+        margin: 0 4px;                                    /* Reduces separator spacing */
+    }
+
+    .hero-description {
+        font-size: 0.98rem;                               /* Slightly reduces paragraph size */
+        line-height: 1.75;                                /* Maintains readable line spacing */
+    }
+
+    .hero-buttons {
+        align-items: stretch;                             /* Makes buttons fill the available width */
+        flex-direction: column;                           /* Stacks buttons vertically */
+    }
+
+    .btn {
+        width: 100%;                                      /* Makes each button full width */
+    }
+
+    .hero-image-frame {
+        width: min(100%, 470px);                          /* Reduces the collage on phones */
+    }
+
+    .highlights {
+        padding: 75px 18px 85px;                         /* Reduces section spacing */
+    }
+
+    .section-heading {
+        margin-bottom: 38px;                              /* Reduces space below the section heading */
+    }
+
+    .card {
+        padding: 25px 21px;                               /* Reduces card padding */
+        flex-direction: column;                           /* Places the icon above the text */
+    }
+
+    .card h3 {
+        margin-top: 3px;                                  /* Reduces space above card headings */
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+
+   Disables most movement for visitors who request reduced
+   motion through their device accessibility settings.
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;                            /* Disables smooth scrolling */
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;           /* Makes transitions effectively instant */
+        animation-duration: 0.01ms !important;            /* Makes animations effectively instant */
+        animation-iteration-count: 1 !important;          /* Stops repeating animations */
+    }
+
 }
