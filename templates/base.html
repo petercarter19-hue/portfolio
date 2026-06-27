@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  base.html — The shared layout for every page on the site.
+  Every other page "extends" this file, which means they all
+  automatically get the same header, navigation, and footer.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- The page title — each page can set its own title -->
+    <title>{% block title %}Pete Carter{% endblock %}</title>
+
+    <!-- Link to our CSS file for styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- NAVIGATION BAR — appears on every page -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Pete Carter</a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/work">Work Experience</a></li>
+                <li><a href="/skills">Skills</a></li>
+                <li><a href="/hobbies">Hobbies</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <!-- Each page fills in this "block" with its own content -->
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- FOOTER — appears on every page -->
+    <footer class="footer">
+        <p>&copy; 2026 Pete Carter | Athens, AL</p>
+    </footer>
+
+</body>
+</html>
