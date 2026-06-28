@@ -12,6 +12,7 @@
 - Career goals and target roles
 - Public hobbies (smart home, technology)
 - General location (Athens, Alabama)
+- The fact that Pete holds an active U.S. Secret security clearance
 
 ## Prohibited — The assistant must NEVER discuss these
 - Classified information of any kind
@@ -19,7 +20,7 @@
 - Specific program names, contract numbers, or customer names
 - Internal system names, network details, or security architecture
 - Export-controlled technical data (ITAR/EAR)
-- Security clearance details
+- Security clearance details beyond "holds an active U.S. Secret security clearance"
 - Colleagues' names or information
 - Home address, phone number, or date of birth
 - Financial information

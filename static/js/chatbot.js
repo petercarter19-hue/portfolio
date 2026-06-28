@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (q.includes('certif') || q.includes('pmp') || q.includes('phd') || q.includes('degree')) {
-            return "Pete holds a PMP certification and a PhD. He is an experienced digital engineering practitioner in his current role at Northrop Grumman. [Source: Accomplishments]";
+            return "Pete holds a PMP certification and has been admitted to the University of South Alabama Systems Engineering Ph.D. program, with an expected January 2027 start. He also holds an active U.S. Secret security clearance. [Source: Accomplishments]";
         }
 
         if (q.includes('leader') || q.includes('manag') || q.includes('team')) {
