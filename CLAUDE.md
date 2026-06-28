@@ -2,8 +2,9 @@
 
 ## Who I'm working with
 - **Pete Carter** — building his first website, beginner coder on Mac (MacBook Pro 14" M5)
-- Email: carterfamily1009@gmail.com
-- GitHub account: signed up (username unknown — ask Pete)
+- Email: petercarter19@gmail.com
+- GitHub username: petercarter19-hue
+- GitHub repo: https://github.com/petercarter19-hue/portfolio.git
 - Location: Athens, AL
 
 ## The Project
@@ -46,17 +47,20 @@ Two goals:
 
 ## Current State of Project
 - Portfolio folder: /Users/petercarter/portfolio
-- venv folder exists — Flask is installed inside it
-- NO Flask app files created yet (app.py, templates/, static/ — still to do)
-- Flask was previously running at http://127.0.0.1:5000 in an earlier session
+- Flask app fully built: app.py, templates/, static/ all exist
+- Site runs at http://127.0.0.1:8080 with 6 routes (home, about, work, skills, hobbies, contact)
+- Chatbot MVP 0 complete: floating widget, slide-in panel, mock responses, suggestion chips
+- Knowledge base complete: docs/knowledge/ folder with 6 files
+- chatbot.css and chatbot.js both built and committed
+- anthropic and python-dotenv installed in venv
+- .env file with ANTHROPIC_API_KEY exists on each machine (never committed to GitHub)
 
 ## Immediate Next Steps
-1. Create app.py (the main Flask application file)
-2. Create templates/ folder with base.html layout
-3. Create static/ folder for CSS and images
-4. Build out each page one at a time
-5. Connect to GitHub and push code
-6. Eventually: add Claude API chatbot widget
+1. Build MVP 1: Flask /api/chat route + real Claude API integration
+2. Update chatbot.js to call /api/chat instead of getMockResponse()
+3. Add server-side logging of conversations
+4. Build admin dashboard to view chat logs
+5. Eventually: RAG (smarter retrieval), security hardening, public deployment
 
 ## Notes
 - Pete is a complete beginner on Mac, limited PC experience too

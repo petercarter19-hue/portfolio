@@ -2,7 +2,7 @@
 
 ## Who I'm working with
 - **Pete Carter** — building his first website, beginner coder on Mac (MacBook Pro 14" M5)
-- Email: carterfamily1009@gmail.com
+- Email: petercarter19@gmail.com
 - GitHub username: petercarter19-hue
 - GitHub repo: https://github.com/petercarter19-hue/portfolio.git
 - Location: Athens, AL
@@ -65,5 +65,5 @@ Two goals:
 ## Notes
 - Pete is a complete beginner on Mac, limited PC experience too
 - Prefers step-by-step, detailed explanations — no assumptions
-- Using Cowork (Cowork (Claude desktop app)) to get help
+- Using Cowork (Claude desktop app) to get help
 - The venv folder must be activated before running Flask: `source venv/bin/activate`
