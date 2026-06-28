@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const q = text.toLowerCase();
 
         if (q.includes('experience') || q.includes('background') || q.includes('career')) {
-            return "Pete has 20+ years of experience in systems engineering across the Air Force, DoD, L3Harris, and Northrop Grumman. He specializes in requirements engineering, MBSE, and digital engineering. [Source: Professional Summary]";
+            return "Pete is a systems engineer with experience across the U.S. Air Force, DoD, L3Harris, and Northrop Grumman. He specializes in requirements engineering, MBSE, and digital engineering. [Source: Professional Summary]";
         }
 
         if (q.includes('mbse') || q.includes('systems engineering') || q.includes('model') || q.includes('sysml')) {
