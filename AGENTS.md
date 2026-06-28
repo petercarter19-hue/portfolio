@@ -3,11 +3,12 @@
 ## Who I'm working with
 - **Pete Carter** — building his first website, beginner coder on Mac (MacBook Pro 14" M5)
 - Email: carterfamily1009@gmail.com
-- GitHub account: signed up (username unknown — ask Pete)
+- GitHub username: petercarter19-hue
+- GitHub repo: https://github.com/petercarter19-hue/portfolio.git
 - Location: Athens, AL
 
 ## The Project
-**Personal Portfolio Website** — a Python Flask web app with AI features powered by the Codex API.
+**Personal Portfolio Website** — a Python Flask web app with AI features powered by the Claude API.
 
 Two goals:
 1. Demonstrate real, hireable tech skills
@@ -34,32 +35,35 @@ Two goals:
 
 ## Tech Stack
 - **Backend**: Python + Flask
-- **AI**: Anthropic Codex API
+- **AI**: Anthropic Claude API
 - **Frontend**: HTML/CSS/JavaScript (templates via Flask/Jinja2)
 - **Version Control**: GitHub
 
 ## VS Code Setup (completed 2026-06-25)
 - VS Code installed ✅
 - Portfolio folder opened and trusted ✅
-- Extensions installed: Live Server, Prettier, Auto Rename Tag, GitHub Pull Requests, PowerShell, Codex, and others ✅
+- Extensions installed: Live Server, Prettier, Auto Rename Tag, GitHub Pull Requests, PowerShell, Claude, and others ✅
 - venv (Python virtual environment) created inside /Users/petercarter/portfolio ✅
 
 ## Current State of Project
 - Portfolio folder: /Users/petercarter/portfolio
-- venv folder exists — Flask is installed inside it
-- NO Flask app files created yet (app.py, templates/, static/ — still to do)
-- Flask was previously running at http://127.0.0.1:5000 in an earlier session
+- Flask app fully built: app.py, templates/, static/ all exist
+- Site runs at http://127.0.0.1:5000 with 6 routes (home, about, work, skills, hobbies, contact)
+- Chatbot MVP 0 complete: floating widget, slide-in panel, mock responses, suggestion chips
+- Knowledge base complete: docs/knowledge/ folder with 6 files
+- chatbot.css and chatbot.js both built and committed
+- .env file needed on each machine for the Claude API key (never committed to GitHub)
 
 ## Immediate Next Steps
-1. Create app.py (the main Flask application file)
-2. Create templates/ folder with base.html layout
-3. Create static/ folder for CSS and images
-4. Build out each page one at a time
-5. Connect to GitHub and push code
-6. Eventually: add Codex API chatbot widget
+1. Add .env file with Claude API key on each machine
+2. Install anthropic and python-dotenv packages
+3. Build MVP 1: Flask /api/chat route + Claude API integration
+4. Add server-side logging of conversations
+5. Build admin dashboard to view chat logs
+6. Eventually: RAG (smarter retrieval), security hardening, public deployment
 
 ## Notes
 - Pete is a complete beginner on Mac, limited PC experience too
 - Prefers step-by-step, detailed explanations — no assumptions
-- Using Cowork (Codex desktop app) to get help
+- Using Cowork (Cowork (Claude desktop app)) to get help
 - The venv folder must be activated before running Flask: `source venv/bin/activate`
