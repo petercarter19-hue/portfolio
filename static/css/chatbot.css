@@ -1,0 +1,324 @@
+/* =========================================================
+   CHATBOT WIDGET — chatbot.css
+
+   This file styles the floating "Ask Pete AI" chat assistant.
+   It lives separately from style.css so chatbot styles are
+   easy to find, change, and update without touching the main
+   site styles.
+
+   It uses the same CSS color variables defined in style.css
+   (like --navy-900 and --gold-500) so everything stays
+   visually consistent.
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   FLOATING LAUNCHER BUTTON
+   The pill-shaped button fixed to the bottom-right corner.
+   It stays visible even when the user scrolls.
+   --------------------------------------------------------- */
+
+#chat-toggle {
+    position: fixed;                            /* Stays in place while scrolling */
+    bottom: 28px;
+    right: 28px;
+    z-index: 1000;                              /* Floats above all other page content */
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: var(--navy-900);
+    color: var(--gold-500);
+    border: 1px solid var(--gold-500);
+    border-radius: 50px;                        /* Pill shape */
+    padding: 12px 20px;
+    cursor: pointer;
+
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+    /* Subtle pulse plays twice when the page first loads,
+       drawing the visitor's attention to the button */
+    animation: chat-pulse 2.5s ease 2s 2;
+}
+
+#chat-toggle:hover {
+    background: var(--navy-700);
+    transform: translateY(-2px);               /* Slight lift on hover */
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Small keyboard shortcut label inside the button */
+#chat-shortcut {
+    font-size: 0.75rem;
+    opacity: 0.65;
+    font-weight: 400;
+}
+
+/* The pulse effect — a gold glow ring that expands and fades */
+@keyframes chat-pulse {
+    0%   { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 rgba(226, 185, 111, 0.5); }
+    70%  { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 14px rgba(226, 185, 111, 0); }
+    100% { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 rgba(226, 185, 111, 0); }
+}
+
+
+/* ---------------------------------------------------------
+   CHAT PANEL
+   The main container that slides into view from the right.
+   Hidden by default — JavaScript adds the "open" class to
+   make it visible.
+   --------------------------------------------------------- */
+
+#chat-panel {
+    position: fixed;
+    bottom: 90px;                               /* Sits just above the launcher button */
+    right: 28px;
+    z-index: 999;
+
+    width: 440px;
+    max-height: 680px;
+
+    /* Stack children vertically: header, messages, input */
+    display: flex;
+    flex-direction: column;
+
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 20px 60px rgba(8, 22, 47, 0.22);
+    overflow: hidden;                           /* Keeps rounded corners intact */
+
+    /* Hidden state — starts invisible and shifted slightly down */
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+    pointer-events: none;                       /* Prevents clicks when hidden */
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Visible state — JavaScript toggles this class on and off */
+#chat-panel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+
+/* ---------------------------------------------------------
+   CHAT HEADER
+   Dark navy bar at the top showing the assistant name
+   and a close button.
+   --------------------------------------------------------- */
+
+#chat-header {
+    background: var(--navy-900);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;                             /* Header never collapses */
+}
+
+#chat-header-text h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--gold-500);
+    margin-bottom: 3px;
+}
+
+#chat-header-text p {
+    font-size: 0.71rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.3;
+}
+
+/* The X close button in the top-right of the header */
+#chat-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    line-height: 1;
+}
+
+#chat-close:hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* ---------------------------------------------------------
+   MESSAGES AREA
+   Scrollable region where the conversation appears.
+   "flex: 1" means it expands to fill all available space
+   between the header above and the input area below.
+   --------------------------------------------------------- */
+
+#chat-messages {
+    flex: 1;
+    overflow-y: auto;                           /* Scroll when messages overflow */
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Individual message bubble — shared styles */
+.chat-message {
+    max-width: 86%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+/* Bot messages — left-aligned, dark navy */
+.bot-message {
+    align-self: flex-start;
+    background: var(--navy-900);
+    color: var(--white);
+    border-bottom-left-radius: 3px;            /* Slight speech-tail effect */
+}
+
+/* User messages — right-aligned, gold */
+.user-message {
+    align-self: flex-end;
+    background: var(--gold-500);
+    color: var(--navy-950);
+    border-bottom-right-radius: 3px;
+}
+
+
+/* ---------------------------------------------------------
+   SUGGESTED QUESTION BUTTONS
+   Four clickable chips under the welcome message.
+   They disappear after the visitor clicks one.
+   --------------------------------------------------------- */
+
+#chat-suggestions {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.suggestion-btn {
+    background: none;
+    border: 1px solid var(--navy-700);
+    color: var(--navy-700);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.4;
+}
+
+.suggestion-btn:hover {
+    background: var(--navy-900);
+    color: var(--gold-500);
+    border-color: var(--navy-900);
+}
+
+
+/* ---------------------------------------------------------
+   INPUT AREA
+   The text field and Send button pinned to the bottom.
+   --------------------------------------------------------- */
+
+#chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border-light);
+    background: var(--surface);
+    flex-shrink: 0;
+}
+
+#chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text-dark);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#chat-input:focus {
+    border-color: var(--navy-700);
+}
+
+#chat-send {
+    background: var(--navy-900);
+    color: var(--gold-500);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+#chat-send:hover {
+    background: var(--navy-700);
+}
+
+
+/* ---------------------------------------------------------
+   DISCLAIMER
+   Small trust-building note under the input.
+   --------------------------------------------------------- */
+
+#chat-disclaimer {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    padding: 0 16px 10px;
+    background: var(--surface);
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE RESPONSIVE
+   On small screens the panel fills most of the screen and
+   slides up from the bottom like a drawer.
+   --------------------------------------------------------- */
+
+@media (max-width: 520px) {
+
+    #chat-panel {
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 85vh;
+        border-radius: 16px 16px 0 0;          /* Flat bottom, rounded top */
+    }
+
+    #chat-toggle {
+        bottom: 20px;
+        right: 160x;
+    }
+
+    #chat-shortcut {
+        display: none;                          /* Hide keyboard shortcut on mobile */
+    }
+}

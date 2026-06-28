@@ -52,4 +52,5 @@ def contact():
 # This runs the website locally when you type: python app.py
 # debug=True means it auto-reloads when you save changes
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Port 5000 is reserved by Windows on some machines, so we use 8080
+    app.run(debug=True, port=8080)

@@ -20,6 +20,12 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
     >
+
+    <!-- Chatbot widget styles -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/chatbot.css') }}"
+    >
 </head>
 
 <body>
@@ -59,6 +65,68 @@
             <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
         </div>
     </footer>
+
+
+    <!-- ======================================================
+         CHATBOT WIDGET
+         This block adds the "Ask Pete AI" floating button and
+         the slide-in chat panel to every page automatically,
+         because it lives in the shared base template.
+         ====================================================== -->
+
+    <!-- Floating launcher button — fixed to the bottom-right corner -->
+    <button id="chat-toggle" aria-label="Open Pete's Engineering Assistant">
+        💬 Ask Pete AI <span id="chat-shortcut">⌘K</span>
+    </button>
+
+    <!-- Chat panel — hidden by default, opened by clicking the button above -->
+    <div id="chat-panel" role="dialog" aria-label="Pete's Engineering Assistant">
+
+        <!-- Header bar -->
+        <div id="chat-header">
+            <div id="chat-header-text">
+                <h3>Pete's Engineering Assistant</h3>
+                <p>Grounded in verified portfolio information</p>
+            </div>
+            <button id="chat-close" aria-label="Close chat">✕</button>
+        </div>
+
+        <!-- Message area — conversation appears here -->
+        <div id="chat-messages">
+            <div class="chat-message bot-message">
+                Hi! I'm Pete's AI assistant. Ask me anything about his
+                background, experience, skills, or projects.
+            </div>
+        </div>
+
+        <!-- Suggested question chips — appear under the welcome message -->
+        <div id="chat-suggestions">
+            <button class="suggestion-btn">What systems has Pete supported?</button>
+            <button class="suggestion-btn">Tell me about Pete's MBSE experience</button>
+            <button class="suggestion-btn">What certifications does Pete hold?</button>
+            <button class="suggestion-btn">Why is Pete moving toward AI-enabled systems?</button>
+        </div>
+
+        <!-- Text input and Send button -->
+        <div id="chat-input-area">
+            <input
+                type="text"
+                id="chat-input"
+                placeholder="Ask about Pete's background..."
+                autocomplete="off"
+            />
+            <button id="chat-send">Send</button>
+        </div>
+
+        <!-- Trust disclaimer -->
+        <p id="chat-disclaimer">
+            AI responses are grounded in approved portfolio sources.
+        </p>
+
+    </div>
+
+    <!-- Chatbot JavaScript — loaded last so the HTML above exists first -->
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 
 </body>
 
