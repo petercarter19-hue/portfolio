@@ -106,26 +106,63 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // -------------------------------------------------------
-    // THE MESSAGE FLOW
-    // Shows the user's message, then gets and shows a response
+    // THE MESSAGE FLOW — MVP 1
+    // Sends the user's message to Flask, which calls the
+    // real Claude API and returns an intelligent answer.
     // -------------------------------------------------------
 
     function sendMessage(text) {
         // 1. Display the user's message (right side, gold bubble)
         addMessage(text, 'user');
 
-        // 2. Show a "..." placeholder while we "wait" for a response.
-        //    In MVP 0 the response is instant, but this placeholder
-        //    sets up the same pattern we'll use in MVP 1 when real
-        //    API calls take a second or two to come back.
+        // 2. Show a "..." thinking bubble while we wait for Claude's response.
+        //    This gives the user visual feedback that something is happening.
         const thinkingBubble = addMessage('...', 'bot');
 
-        // 3. After a short delay, replace the placeholder with the response
-        setTimeout(function () {
-            const response = getMockResponse(text);
-            thinkingBubble.textContent = response;
+        // 3. Disable the input and button so the user can't send another
+        //    message while we're waiting for a response
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        // 4. Send the message to our Flask /api/chat route using fetch()
+        //    fetch() is a built-in browser tool for making HTTP requests.
+        //    We're sending a POST request with the message as JSON.
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+
+        // 5. The response comes back as JSON — parse it
+        .then(function(response) {
+            return response.json();
+        })
+
+        // 6. Use the parsed data to update the thinking bubble with Claude's answer
+        .then(function(data) {
+            if (data.response) {
+                thinkingBubble.textContent = data.response;
+            } else {
+                // If the server returned an error field, show a friendly message
+                thinkingBubble.textContent = "Sorry, I couldn't get a response. Please try again.";
+            }
             scrollToBottom();
-        }, 700);
+        })
+
+        // 7. If the network request itself failed (e.g. Flask isn't running),
+        //    show a fallback message instead of breaking silently
+        .catch(function() {
+            thinkingBubble.textContent = "Something went wrong connecting to the server. Please refresh and try again.";
+            scrollToBottom();
+        })
+
+        // 8. Whether it succeeded or failed, always re-enable the input
+        //    so the user can try again
+        .finally(function() {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        });
     }
 
 
@@ -158,54 +195,6 @@ document.addEventListener('DOMContentLoaded', function () {
         messages.scrollTop = messages.scrollHeight;
     }
 
-
-    // -------------------------------------------------------
-    // MOCK RESPONSES — MVP 0 placeholder
-    //
-    // This function returns a pre-written response based on
-    // keywords found in the user's question. It is a stand-in
-    // for real AI.
-    //
-    // In MVP 1, this entire function will be replaced with a
-    // fetch() call to the Flask /api/chat route, which will
-    // send the question to the Claude API and stream back a
-    // real answer grounded in Pete's knowledge base files.
-    // -------------------------------------------------------
-
-    function getMockResponse(text) {
-        const q = text.toLowerCase();
-
-        if (q.includes('experience') || q.includes('background') || q.includes('career')) {
-            return "Pete is a systems engineer with experience across the U.S. Air Force, DoD, L3Harris, and Northrop Grumman. He specializes in requirements engineering, MBSE, and digital engineering. [Source: Professional Summary]";
-        }
-
-        if (q.includes('mbse') || q.includes('systems engineering') || q.includes('model') || q.includes('sysml')) {
-            return "Pete is proficient in MBSE using Cameo/MagicDraw and SysML. He applies model-based approaches to architecture, requirements traceability, and interface management across defense programs. [Source: Technical Skills]";
-        }
-
-        if (q.includes('certif') || q.includes('pmp') || q.includes('phd') || q.includes('degree')) {
-            return "Pete holds a PMP certification and has been admitted to the University of South Alabama Systems Engineering Ph.D. program, with an expected January 2027 start. He also holds an active U.S. Secret security clearance. [Source: Accomplishments]";
-        }
-
-        if (q.includes('leader') || q.includes('manag') || q.includes('team')) {
-            return "Pete has led cross-functional engineering teams, managed requirements baselines for major defense programs, and mentored junior engineers throughout his career. [Source: Career History]";
-        }
-
-        if (q.includes('ai') || q.includes('automation') || q.includes('python') || q.includes('software')) {
-            return "Pete is actively learning Python and building AI-enabled tools. This portfolio site — built with Flask and the Claude API — is a live demonstration of those skills in action. [Source: Professional Summary]";
-        }
-
-        if (q.includes('northrop') || q.includes('l3') || q.includes('harris') || q.includes('dod') || q.includes('air force')) {
-            return "Pete has worked across several major defense organizations, including the U.S. Air Force, DoD, L3Harris, and his current role at Northrop Grumman in systems and requirements engineering. [Source: Career History]";
-        }
-
-        if (q.includes('contact') || q.includes('hire') || q.includes('reach') || q.includes('available')) {
-            return "You can reach Pete through the Contact page on this site. He is open to discussing engineering leadership and digital engineering opportunities.";
-        }
-
-        // Default — used when nothing matches
-        return "That's a great question! I'm grounded in Pete's approved portfolio information. Try asking about his experience, MBSE background, certifications, leadership, or AI interests — or use the Contact page to reach him directly.";
-    }
 
 
 });  // End of DOMContentLoaded
