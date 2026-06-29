@@ -130,6 +130,13 @@ a:focus-visible {
     gap: 30px;                                            /* Adds space between the logo and links */
 }
 
+.nav-brand {
+    display: flex;                                        /* Places Pete Carter and LinkedIn beside each other */
+    align-items: center;                                  /* Vertically centers the name and LinkedIn link */
+    gap: 28px;                                            /* Adds controlled spacing between the two links */
+    flex-shrink: 0;                                       /* Prevents the brand group from shrinking too aggressively */
+}
+
 .nav-logo {
     color: var(--white);                                  /* Makes the Pete Carter logo white */
 
@@ -139,6 +146,34 @@ a:focus-visible {
 
     text-decoration: none;                                /* Removes the default underline */
     white-space: nowrap;                                  /* Prevents the name from wrapping */
+}
+
+.nav-linkedin {
+    padding: 2px 8px;                                    /* Creates a small clickable pill shape */
+
+    color: var(--gold-400);                               /* Uses the site gold to show this is an important professional link */
+    background-color: rgba(226, 185, 111, 0.08);          /* Adds a subtle gold background without overpowering the logo */
+    border: 1px solid rgba(226, 185, 111, 0.35);          /* Adds a soft border so the link feels intentional */
+    border-radius: 999px;                                 /* Makes the LinkedIn link a small pill */
+
+    font-size: 0.96rem;                                   /* Keeps LinkedIn smaller than Pete's name */
+    font-weight: 500;                                     /* Makes the link readable at the smaller size */
+    letter-spacing: 0.04em;                               /* Adds light spacing for a polished nav-label look */
+    text-decoration: none;                                /* Removes the default link underline */
+    text-transform: none;                                 /* Matches the professional navigation style */
+    white-space: nowrap;                                  /* Keeps LinkedIn on one line */
+
+    transition:                                           /* Smoothly animates the hover and keyboard-focus states */
+        color 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.nav-linkedin:hover,
+.nav-linkedin:focus-visible {
+    color: var(--navy-950);                               /* Switches to dark text when the pill background becomes gold */
+    background-color: var(--gold-400);                    /* Fills the pill on hover or keyboard focus */
+    border-color: var(--gold-400);                        /* Makes the border match the filled background */
 }
 
 .nav-links {
