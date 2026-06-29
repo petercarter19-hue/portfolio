@@ -104,15 +104,12 @@ a:focus-visible {
    ========================================================= */
 
 .site-header {
-    position: relative;                                   /* Creates a positioning reference */
+    position: sticky;                                     /* Keeps the full header visible while scrolling */
+    top: 0;                                               /* Pins the header to the top of the browser window */
     z-index: 100;                                         /* Keeps the header above page content */
 }
 
 .navbar {
-    position: sticky;                                     /* Keeps the navigation visible while scrolling */
-    top: 0;                                               /* Sticks the navigation to the top */
-    z-index: 100;                                         /* Keeps it above normal content */
-
     padding: 8px 0;                                       /* Adds vertical spacing */
 
     background-color: rgba(26, 26, 46, 0.97);             /* Creates the dark navigation background */
@@ -871,13 +868,9 @@ a:focus-visible {
 
 @media (max-width: 880px) {
 
-    .navbar {
-        position: relative;                               /* Stops the navigation from remaining sticky */
-    }
-
     .nav-container {
         flex-direction: column;                           /* Stacks the logo above the links */
-        gap: 10px;                                        /* Adds space between them */
+        gap: 2px;                                         /* Keeps the logo close to the stacked links */
     }
 
     .nav-links {
@@ -961,6 +954,11 @@ a:focus-visible {
 
 @media (max-width: 600px) {
 
+    .site-header {
+        position: relative;                               /* Lets the navigation scroll away on phones */
+        top: auto;                                        /* Removes the desktop sticky position */
+    }
+
     .nav-container {
         width: min(100% - 28px, 1240px);                  /* Reduces navigation side spacing */
     }
@@ -975,6 +973,7 @@ a:focus-visible {
 
     .nav-links a {
         font-size: 0.84rem;                               /* Reduces navigation-link size */
+        padding: 4px 0;                                   /* Tightens vertical spacing around phone links */
     }
 
     .hero::before {
