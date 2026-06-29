@@ -113,7 +113,7 @@ a:focus-visible {
     top: 0;                                               /* Sticks the navigation to the top */
     z-index: 100;                                         /* Keeps it above normal content */
 
-    padding: 17px 0;                                      /* Adds vertical spacing */
+    padding: 8px 0;                                       /* Adds vertical spacing */
 
     background-color: rgba(26, 26, 46, 0.97);             /* Creates the dark navigation background */
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);   /* Adds a subtle divider */
@@ -136,7 +136,7 @@ a:focus-visible {
 .nav-logo {
     color: var(--white);                                  /* Makes the Pete Carter logo white */
 
-    font-size: 1.45rem;                                   /* Controls the logo size */
+    font-size: 1.2rem;                                   /* Controls the logo size */
     font-weight: 800;                                     /* Makes the logo bold */
     letter-spacing: -0.02em;                              /* Pulls letters slightly closer together */
 
@@ -338,7 +338,7 @@ a:focus-visible {
 
     color: var(--white);                                  /* Makes the entire heading white */
 
-    font-size: clamp(3rem, 5.5vw, 5.1rem);                /* Makes the heading responsive */
+    font-size: clamp(1.5rem, 2.5vw, 2.2rem);               /* Makes the heading responsive */
     font-weight: 800;                                     /* Makes the heading bold */
     letter-spacing: -0.055em;                             /* Pulls large letters closer together */
     line-height: 0.98;                                    /* Keeps heading line spacing compact */
