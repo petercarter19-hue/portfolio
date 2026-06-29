@@ -5,6 +5,7 @@
 
 import os                                       # Lets us read file paths and environment variables
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
+import re                                       # Lets us clean Markdown symbols out of chatbot replies
 from flask import Flask, render_template, request, jsonify  # Added: request (reads incoming data), jsonify (sends JSON back)
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
@@ -23,17 +24,18 @@ client = anthropic.Anthropic()
 
 # -------------------------------------------------------
 # LOAD KNOWLEDGE BASE
-# Read all the Markdown files in docs/knowledge/ and
-# combine them into one big string. This gives Claude
-# everything it needs to know about Pete.
+# Read all the Markdown files in docs/knowledge/ and keep
+# them separated by filename. This lets the chat route send
+# only the most relevant files instead of overwhelming Claude
+# with the entire knowledge base on every question.
 # We do this once at startup so it's fast on every request.
 # -------------------------------------------------------
 
-def load_knowledge_base():
+def load_knowledge_files():
     # Build the path to the knowledge folder, relative to this file
     knowledge_dir = os.path.join(os.path.dirname(__file__), 'docs', 'knowledge')
 
-    combined = ""
+    knowledge_files = {}
 
     # Find all .md files in that folder, sorted alphabetically
     for filepath in sorted(glob.glob(os.path.join(knowledge_dir, '*.md'))):
@@ -46,13 +48,50 @@ def load_knowledge_base():
         if not content:
             continue
 
-        # Add each file's content with a clear header so Claude knows where it came from
-        combined += f"\n\n---\n## Source: {filename}\n\n{content}"
+        # Store each file separately so we can choose the best sources for each question
+        knowledge_files[filename] = content
 
-    return combined.strip()
+    return knowledge_files
 
-# Load the knowledge base once when Flask starts up
-KNOWLEDGE_BASE = load_knowledge_base()
+# Load the knowledge files once when Flask starts up
+KNOWLEDGE_FILES = load_knowledge_files()
+
+
+# -------------------------------------------------------
+# CHOOSE RELEVANT KNOWLEDGE
+# The full knowledge base is large and resume-like. For
+# cleaner answers, this function picks the most useful files
+# for the visitor's actual question.
+# -------------------------------------------------------
+
+def build_knowledge_context(user_message):
+    question = user_message.lower()
+
+    selected_files = ['professional_summary.md']
+
+    # Route common topics to the files that contain the best supporting detail.
+    if any(word in question for word in ['job', 'role', 'career', 'work', 'experience', 'employer', 'northrop', 'l3', 'dod', 'air force']):
+        selected_files.append('career_history.md')
+
+    if any(word in question for word in ['skill', 'tool', 'technology', 'mbse', 'cameo', 'doors', 'sysml', 'jira', 'python', 'ai', 'automation']):
+        selected_files.append('technical_skills.md')
+
+    if any(word in question for word in ['certification', 'certifications', 'degree', 'education', 'school', 'pmp', 'phd', 'award', 'accomplishment']):
+        selected_files.append('accomplishments.md')
+
+    if any(word in question for word in ['recruiter', 'hire', 'candidate', 'fit', 'target', 'industry', 'clearance', 'available']):
+        selected_files.append('recruiter_faq.md')
+
+    # Keep source order stable and remove duplicates.
+    selected_files = list(dict.fromkeys(selected_files))
+
+    context_parts = []
+    for filename in selected_files:
+        content = KNOWLEDGE_FILES.get(filename)
+        if content:
+            context_parts.append(f"---\nSource: {filename}\n\n{content}")
+
+    return "\n\n".join(context_parts)
 
 
 # -------------------------------------------------------
@@ -60,16 +99,26 @@ KNOWLEDGE_BASE = load_knowledge_base()
 # This is the instruction we give Claude before every
 # conversation. It tells Claude who it is, what it can
 # discuss, what it must never discuss, and gives it
-# Pete's full knowledge base as context.
+# selected knowledge files as context.
 # -------------------------------------------------------
 
-SYSTEM_PROMPT = f"""You are Pete Carter's professional portfolio assistant. You answer questions from recruiters, hiring managers, and other visitors to Pete's portfolio website.
+SYSTEM_PROMPT_TEMPLATE = """You are Pete Carter's professional portfolio assistant. You answer questions from recruiters, hiring managers, and other visitors to Pete's portfolio website.
 
 IMPORTANT RULES:
 - Only answer based on the knowledge base provided below. Do not invent, guess, or embellish facts about Pete.
-- Keep answers concise and professional — 2 to 4 sentences is ideal.
+- Keep answers concise and professional — 1 to 3 short sentences is ideal.
 - Be warm and helpful in tone.
+- Use plain text only. Do not use Markdown, hashtags, headings, bold text, bullets, numbered lists, or asterisks.
 - If asked something outside your approved topics, politely say you can't help with that and suggest the visitor use the Contact page to reach Pete directly.
+
+RESPONSE STYLE:
+- Write in complete, polished sentences suitable for a professional portfolio website.
+- Answer the visitor's question directly in the first sentence.
+- Prioritize the most impressive or decision-useful information instead of listing every detail.
+- Use a second short paragraph when the answer needs more than one idea.
+- Do not copy raw resume bullets or fragments from the knowledge base.
+- Do not end with salesy follow-up questions like "Would you like to know more?"
+- If the question asks for a count, give the count first, then briefly explain it.
 
 APPROVED TOPICS:
 - Pete's job titles and general responsibilities
@@ -92,7 +141,27 @@ TOPICS TO NEVER DISCUSS:
 - Anything not explicitly in the knowledge base below
 
 PETE'S KNOWLEDGE BASE:
-{KNOWLEDGE_BASE}"""
+{knowledge_context}"""
+
+
+# -------------------------------------------------------
+# CLEAN CHATBOT REPLIES
+# Claude sometimes returns Markdown formatting like **bold**
+# or numbered lists. The chat bubble displays plain text, so
+# this removes those symbols before sending the answer back.
+# -------------------------------------------------------
+
+def clean_chatbot_reply(reply):
+    reply = re.sub(r'(?m)^\s{0,3}#{1,6}\s*', '', reply)   # Remove Markdown heading markers like ### Title
+    reply = re.sub(r'\*\*(.*?)\*\*', r'\1', reply)        # Remove Markdown bold markers like **text**
+    reply = re.sub(r'__(.*?)__', r'\1', reply)            # Remove alternate bold markers like __text__
+    reply = re.sub(r'`([^`]*)`', r'\1', reply)            # Remove inline code backticks
+    reply = re.sub(r'(?m)^\s*[-*]\s+', '', reply)         # Remove bullet markers without changing the words
+    reply = re.sub(r'(?m)^\s*\d+\.\s+', '', reply)        # Remove numbered-list markers without changing the words
+    reply = re.sub(r'[ \t]+', ' ', reply)                 # Collapse extra spaces without deleting paragraph breaks
+    reply = re.sub(r'\n{3,}', '\n\n', reply)              # Keep paragraph breaks, but prevent giant blank gaps
+
+    return reply.strip()
 
 
 # -------------------------------------------------------
@@ -149,22 +218,37 @@ def chat():
         return jsonify({'error': 'Message was empty'}), 400
 
     try:
+        # Build a focused prompt for this question instead of sending every knowledge file.
+        # This usually produces cleaner answers because Claude sees fewer competing details.
+        knowledge_context = build_knowledge_context(user_message)
+        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(knowledge_context=knowledge_context)
+
         # Call the Claude API
         # - model: claude-haiku is fast and affordable, perfect for a chatbot
-        # - max_tokens: limits how long the response can be (500 is plenty for 2-4 sentences)
-        # - system: our instructions + Pete's full knowledge base
-        # - messages: the visitor's actual question
+        # - max_tokens: keeps answers short so the chat feels quick and high-impact.
+        # - system: our instructions + the most relevant knowledge files for this question
+        # - messages: the visitor's actual question plus a style reminder.
+        #   This keeps answers polished even when the knowledge base contains resume-style bullets.
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
-            max_tokens=500,
-            system=SYSTEM_PROMPT,
+            max_tokens=220,
+            system=system_prompt,
             messages=[
-                {'role': 'user', 'content': user_message}
+                {
+                    'role': 'user',
+                    'content': (
+                        f"Visitor question: {user_message}\n\n"
+                        "Answer in polished plain English using only the most impactful details. "
+                        "Use 1 to 3 short complete sentences. If the answer has two ideas, split them into two short paragraphs. "
+                        "Use no Markdown, no bullets, "
+                        "no numbered lists, and no follow-up sales question."
+                    )
+                }
             ]
         )
 
-        # Extract the text from Claude's response
-        reply = response.content[0].text
+        # Extract the text from Claude's response and clean display-only Markdown symbols
+        reply = clean_chatbot_reply(response.content[0].text)
 
         # Send the answer back to the browser as JSON
         return jsonify({'response': reply})

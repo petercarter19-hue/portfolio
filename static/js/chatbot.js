@@ -70,12 +70,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             const question = btn.textContent.trim();
 
-            // Hide the suggestion chips — they've served their purpose
-            const suggestionsBox = document.getElementById('chat-suggestions');
-            if (suggestionsBox) {
-                suggestionsBox.style.display = 'none';
-            }
-
             sendMessage(question);
         });
     });
@@ -112,19 +106,25 @@ document.addEventListener('DOMContentLoaded', function () {
     // -------------------------------------------------------
 
     function sendMessage(text) {
-        // 1. Display the user's message (right side, gold bubble)
+        // 1. Hide the suggestion chips after the visitor sends any question.
+        const suggestionsBox = document.getElementById('chat-suggestions');
+        if (suggestionsBox) {
+            suggestionsBox.style.display = 'none';
+        }
+
+        // 2. Display the user's message (right side, gold bubble)
         addMessage(text, 'user');
 
-        // 2. Show a "..." thinking bubble while we wait for Claude's response.
+        // 3. Show a "..." thinking bubble while we wait for Claude's response.
         //    This gives the user visual feedback that something is happening.
         const thinkingBubble = addMessage('...', 'bot');
 
-        // 3. Disable the input and button so the user can't send another
+        // 4. Disable the input and button so the user can't send another
         //    message while we're waiting for a response
         input.disabled = true;
         sendBtn.disabled = true;
 
-        // 4. Send the message to our Flask /api/chat route using fetch()
+        // 5. Send the message to our Flask /api/chat route using fetch()
         //    fetch() is a built-in browser tool for making HTTP requests.
         //    We're sending a POST request with the message as JSON.
         fetch('/api/chat', {
