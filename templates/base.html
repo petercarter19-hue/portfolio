@@ -15,6 +15,14 @@
     <!-- Jinja block: each page can provide its own browser-tab title -->
     <title>{% block title %}Pete Carter{% endblock %}</title>
 
+    <!-- Google Fonts: Inter gives a clean, modern, technical look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
     <!-- Flask generates the correct path to static/css/style.css -->
     <link
         rel="stylesheet"
@@ -38,33 +46,51 @@
         <nav class="navbar" aria-label="Primary navigation">
             <div class="nav-container">
 
-                <!-- Groups Pete's name with the external LinkedIn profile link -->
+                <!-- Left: Pete's name and title -->
                 <div class="nav-brand">
-
-                    <!-- Site logo link: returns visitors to the homepage -->
-                    <a href="/" class="nav-logo">Pete Carter</a>
-
-                    <!-- External professional profile link: opens LinkedIn in a new tab -->
-                    <a
-                        href="https://www.linkedin.com/in/pete-carter19"
-                        class="nav-linkedin"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Open Pete Carter's LinkedIn profile"
-                    >
-                        LinkedIn Profile
+                    <a href="/" class="nav-logo" aria-label="Pete Carter — return to homepage">
+                        <span class="nav-name">Pete Carter</span>
+                        <span class="nav-tagline">SYSTEM ENGINEER</span>
                     </a>
-
                 </div>
 
-                <ul class="nav-links">
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/work">Work Experience</a></li>
-                    <li><a href="/skills">Skills</a></li>
-                    <li><a href="/hobbies">Hobbies</a></li>
-                    <li><a href="/contact">Contact</a></li>
-                </ul>
+                <!-- Right: navigation links + AI button -->
+                <div class="nav-right">
+
+                    <ul class="nav-links">
+                        <li><a href="/work">Work</a></li>
+                        <li><a href="/work">Experience</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="#">Résumé</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+
+                    <!--
+                        "Ask Pete AI" nav button — opens the same chat panel
+                        as the floating toggle. stopPropagation() prevents the
+                        document click-outside listener in chatbot.js from
+                        closing the panel immediately after opening it.
+                    -->
+                    <button
+                        class="nav-ai-btn"
+                        aria-label="Open Pete's AI assistant"
+                        onclick="
+                            document.getElementById('chat-panel').classList.add('open');
+                            document.getElementById('chat-input').focus();
+                            event.stopPropagation();
+                        "
+                    >
+                        <!-- Chat bubble icon -->
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Ask Pete AI
+                    </button>
+
+                </div>
 
             </div>
         </nav>
