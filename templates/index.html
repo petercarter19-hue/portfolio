@@ -8,761 +8,319 @@
 
 
 <!-- =====================================================
-     HERO SECTION
-     Two-column layout:
-       Left  — eyebrow, headline, description, buttons
-       Right — circular Systems Engineering Lifecycle SVG
+     HOMEPAGE REDESIGN
+     Built to match the approved dark systems-engineering
+     screenshot: hero, circular lifecycle chart, metrics,
+     and three project cards.
      ===================================================== -->
 
 <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-inner">
+    <div class="site-container hero-grid">
 
-
-        <!-- ===== LEFT: COPY ===== -->
-
+        <!-- Left column: professional positioning and actions -->
         <div class="hero-copy">
+            <p class="hero-eyebrow">SYSTEMS ENGINEERING · DIGITAL ENGINEERING · AI</p>
 
-            <!-- Small label above the headline — sets the professional context -->
-            <p class="hero-eyebrow" aria-label="Specializations">
-                SYSTEMS ENGINEERING · DIGITAL ENGINEERING · AI
-            </p>
-
-            <!-- Main headline — outcome-focused, not name-focused -->
             <h1 id="hero-title">
-                I turn complex engineering problems into
-                <span class="hero-accent">clear, verifiable systems.</span>
+                I turn complex engineering problems into clear,
+                <span>verifiable systems.</span>
             </h1>
 
-            <!-- Supporting description -->
             <p class="hero-description">
                 Systems engineer specializing in requirements, architecture, MBSE,
-                integration, automation, verification, and AI-enabled engineering tools.
+                integration, automation, verification, and AI-enabled tools.
             </p>
 
-            <!-- Three-button row matching the mockup -->
-            <div class="hero-buttons">
-
-                <!-- Primary CTA: view portfolio work -->
-                <a href="/work" class="btn btn-primary">
+            <div class="hero-actions" aria-label="Primary homepage actions">
+                <a class="btn btn-primary" href="/work">
                     View Case Studies
                     <span aria-hidden="true">→</span>
                 </a>
 
-                <!-- Secondary CTA: open the AI chatbot panel
-                     stopPropagation() stops the chatbot.js "click outside"
-                     handler from immediately closing the panel -->
-                <button
-                    class="btn btn-secondary"
-                    onclick="
-                        document.getElementById('chat-panel').classList.add('open');
-                        document.getElementById('chat-input').focus();
-                        event.stopPropagation();
-                    "
-                >
-                    <!-- Chat icon -->
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round"
-                         aria-hidden="true">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    Ask Pete AI
-                </button>
-
-                <!-- Text-style CTA: download résumé -->
-                <a href="#" class="btn btn-text">
-                    <!-- Download icon -->
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round"
-                         aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
+                <a class="btn btn-secondary" href="#">
                     Download Résumé
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <path d="M7 10l5 5 5-5"/>
+                        <path d="M12 15V3"/>
+                    </svg>
                 </a>
-
             </div>
-
         </div>
 
-
-        <!-- ===== RIGHT: SYSTEMS ENGINEERING LIFECYCLE SVG ===== -->
-        <!--
-            This diagram is an inline SVG — no external image file needed.
-            It shows the 6-step engineering lifecycle as a circular flow,
-            matching the visual style from the design mockup (image 1).
-
-            The 6 nodes are arranged like points on a clock face:
-              12 o'clock  — 1. DEFINE
-               2 o'clock  — 2. REQUIREMENTS
-               4 o'clock  — 3. ARCHITECTURE
-               6 o'clock  — 4. IMPLEMENT
-               8 o'clock  — 5. VERIFY
-              10 o'clock  — 6. DEPLOY & IMPROVE
-
-            Gold arrows connect them in clockwise order.
-        -->
-
-        <div class="hero-diagram" aria-hidden="true">
-
-            <svg
-                class="lifecycle-svg"
-                viewBox="0 0 580 510"
-                xmlns="http://www.w3.org/2000/svg"
-                role="img"
-                aria-label="Systems Engineering Lifecycle: a six-step circular process"
-            >
-                <title>Systems Engineering Lifecycle</title>
-
+        <!-- Right column: circular systems engineering lifecycle diagram -->
+        <div class="lifecycle-visual" aria-labelledby="lifecycle-title lifecycle-description">
+            <svg class="lifecycle-arrows" viewBox="0 0 760 440" aria-hidden="true">
                 <defs>
-
-                    <!-- Arrowhead marker used on all connecting arrows -->
-                    <marker
-                        id="lc-arrow"
-                        markerWidth="8"
-                        markerHeight="6"
-                        refX="7"
-                        refY="3"
-                        orient="auto"
-                    >
-                        <polygon points="0 0, 8 3, 0 6" fill="rgba(226,185,111,0.9)"/>
+                    <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+                        <path d="M0 0 L10 4 L0 8 Z" fill="#F3BE4F"/>
                     </marker>
-
-                    <!-- Dark gradient used as node box fill -->
-                    <linearGradient id="node-bg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#1e2d50"/>
-                        <stop offset="100%" stop-color="#131f38"/>
-                    </linearGradient>
-
-                    <!-- Radial glow behind the centre text -->
-                    <radialGradient id="center-glow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stop-color="#1a3060" stop-opacity="0.8"/>
-                        <stop offset="100%" stop-color="#0d1a30" stop-opacity="0.1"/>
-                    </radialGradient>
-
+                    <marker id="arrow-blue" markerWidth="9" markerHeight="7" refX="7" refY="3.5" orient="auto">
+                        <path d="M0 0 L9 3.5 L0 7 Z" fill="#4EA3FF"/>
+                    </marker>
                 </defs>
 
+                <!-- Gold outer arrows carry the lifecycle clockwise around the center. -->
+                <path class="cycle-arc cycle-arc--gold" d="M305 92 C250 92 216 113 194 153" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M454 92 C512 95 551 119 573 159" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M594 234 C591 283 563 319 520 342" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M428 360 C371 384 315 382 267 350" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M171 298 C147 250 151 211 174 177" marker-end="url(#arrow-gold)"/>
 
-                <!-- ── CENTRE: decorative circle + label ── -->
-
-                <circle cx="290" cy="255" r="100"
-                        fill="url(#center-glow)"
-                        stroke="rgba(226,185,111,0.15)"
-                        stroke-width="1"/>
-
-                <circle cx="290" cy="255" r="78"
-                        fill="none"
-                        stroke="rgba(226,185,111,0.07)"
-                        stroke-width="1"
-                        stroke-dasharray="4 6"/>
-
-                <!-- Centre label — three lines of small uppercase text -->
-                <text x="290" y="240" text-anchor="middle"
-                      fill="rgba(255,255,255,0.75)"
-                      font-size="10" font-weight="700" letter-spacing="2.5"
-                      font-family="Inter, sans-serif">SYSTEMS</text>
-
-                <text x="290" y="256" text-anchor="middle"
-                      fill="rgba(255,255,255,0.75)"
-                      font-size="10" font-weight="700" letter-spacing="2.5"
-                      font-family="Inter, sans-serif">ENGINEERING</text>
-
-                <text x="290" y="272" text-anchor="middle"
-                      fill="rgba(255,255,255,0.75)"
-                      font-size="10" font-weight="700" letter-spacing="2.5"
-                      font-family="Inter, sans-serif">LIFECYCLE</text>
-
-
-                <!-- ── ARROWS (clockwise: 1→2→3→4→5→6→1) ─────────────
-
-                     Each arrow is a quadratic bezier curve (Q = single
-                     control point).  The control points are pushed
-                     OUTWARD from the diagram centre so the arrows arc
-                     nicely around the outside of the hexagon rather
-                     than cutting straight across it.
-
-                     Node box positions:
-                       1. DEFINE       x=220 y=23  w=140 h=70
-                       2. REQUIREMENTS x=395 y=127 w=140 h=70
-                       3. ARCHITECTURE x=395 y=303 w=140 h=70
-                       4. IMPLEMENT    x=220 y=410 w=140 h=70
-                       5. VERIFY       x=45  y=303 w=140 h=70
-                       6. DEPLOY       x=45  y=127 w=140 h=70
-                ── -->
-
-                <!-- 1 DEFINE → 2 REQUIREMENTS (top → top-right) -->
-                <path d="M 358,42 Q 412,28 400,127"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-                <!-- 2 REQUIREMENTS → 3 ARCHITECTURE (top-right → bottom-right) -->
-                <path d="M 465,197 Q 515,250 465,303"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-                <!-- 3 ARCHITECTURE → 4 IMPLEMENT (bottom-right → bottom) -->
-                <path d="M 428,373 Q 418,440 358,425"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-                <!-- 4 IMPLEMENT → 5 VERIFY (bottom → bottom-left) -->
-                <path d="M 222,443 Q 155,460 172,373"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-                <!-- 5 VERIFY → 6 DEPLOY (bottom-left → top-left) -->
-                <path d="M 115,303 Q 65,250 115,197"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-                <!-- 6 DEPLOY → 1 DEFINE (top-left → top) -->
-                <path d="M 182,140 Q 168,45 222,40"
-                      fill="none"
-                      stroke="rgba(226,185,111,0.8)"
-                      stroke-width="1.5"
-                      marker-end="url(#lc-arrow)"/>
-
-
-                <!-- ── NODE 1: DEFINE (12 o'clock) ──
-                     Box: x=220 y=23 w=140 h=70  centre: (290,58) -->
-
-                <rect x="220" y="23" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Target / crosshair icon -->
-                <circle cx="240" cy="44" r="8"
-                        fill="none" stroke="#e2b96f" stroke-width="1.3"/>
-                <circle cx="240" cy="44" r="3.5"
-                        fill="none" stroke="#e2b96f" stroke-width="1"/>
-                <line x1="240" y1="36" x2="240" y2="40"
-                      stroke="#e2b96f" stroke-width="1"/>
-                <line x1="240" y1="48" x2="240" y2="52"
-                      stroke="#e2b96f" stroke-width="1"/>
-                <line x1="232" y1="44" x2="236" y2="44"
-                      stroke="#e2b96f" stroke-width="1"/>
-                <line x1="244" y1="44" x2="248" y2="44"
-                      stroke="#e2b96f" stroke-width="1"/>
-
-                <!-- Label -->
-                <text x="256" y="41" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">1. DEFINE</text>
-
-                <!-- Description -->
-                <text x="228" y="54" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Understand the problem</text>
-                <text x="228" y="65" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">&amp; stakeholders</text>
-                <text x="228" y="76" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
-
-                <!-- ── NODE 2: REQUIREMENTS (2 o'clock) ──
-                     Box: x=395 y=127 w=140 h=70  centre: (465,162) -->
-
-                <rect x="395" y="127" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Document / requirements icon -->
-                <rect x="412" y="137" width="14" height="18" rx="2"
-                      fill="none" stroke="#e2b96f" stroke-width="1.2"/>
-                <line x1="415" y1="144" x2="423" y2="144"
-                      stroke="#e2b96f" stroke-width="1"/>
-                <line x1="415" y1="149" x2="423" y2="149"
-                      stroke="#e2b96f" stroke-width="1"/>
-                <line x1="415" y1="154" x2="421" y2="154"
-                      stroke="#e2b96f" stroke-width="1"/>
-
-                <!-- Label -->
-                <text x="433" y="144" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">2. REQUIREMENTS</text>
-
-                <!-- Description -->
-                <text x="403" y="158" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Capture needs &amp;</text>
-                <text x="403" y="169" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">establish traceability</text>
-                <text x="403" y="180" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
-
-                <!-- ── NODE 3: ARCHITECTURE (4 o'clock) ──
-                     Box: x=395 y=303 w=140 h=70  centre: (465,338) -->
-
-                <rect x="395" y="303" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Cube / architecture icon (simplified isometric box) -->
-                <rect x="411" y="312" width="16" height="12" rx="2"
-                      fill="none" stroke="#e2b96f" stroke-width="1.2"/>
-                <polyline points="411,314 419,310 427,314 427,320 419,324 411,320"
-                          fill="none" stroke="#e2b96f" stroke-width="1" opacity="0.75"/>
-                <line x1="419" y1="310" x2="419" y2="317"
-                      stroke="#e2b96f" stroke-width="1" opacity="0.6"/>
-
-                <!-- Label -->
-                <text x="433" y="319" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">3. ARCHITECTURE</text>
-
-                <!-- Description -->
-                <text x="403" y="333" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Design the system</text>
-                <text x="403" y="344" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">solution</text>
-                <text x="403" y="355" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
-
-                <!-- ── NODE 4: IMPLEMENT (6 o'clock) ──
-                     Box: x=220 y=410 w=140 h=70  centre: (290,445) -->
-
-                <rect x="220" y="410" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Code brackets icon: < / > -->
-                <polyline points="236,423 231,430 236,437"
-                          fill="none" stroke="#e2b96f"
-                          stroke-width="1.5" stroke-linecap="round"/>
-                <line x1="241" y1="420" x2="238" y2="440"
-                      stroke="#e2b96f" stroke-width="1.3" stroke-linecap="round"/>
-                <polyline points="243,423 248,430 243,437"
-                          fill="none" stroke="#e2b96f"
-                          stroke-width="1.5" stroke-linecap="round"/>
-
-                <!-- Label -->
-                <text x="256" y="427" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">4. IMPLEMENT</text>
-
-                <!-- Description -->
-                <text x="228" y="442" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Build, integrate,</text>
-                <text x="228" y="453" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">and automate</text>
-                <text x="228" y="464" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
-
-                <!-- ── NODE 5: VERIFY (8 o'clock) ──
-                     Box: x=45 y=303 w=140 h=70  centre: (115,338) -->
-
-                <rect x="45" y="303" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Shield with checkmark icon -->
-                <path d="M 63 313 L 63 323 C 63 330 68 335 71 337
-                         C 74 335 79 330 79 323 L 79 313 L 71 310 Z"
-                      fill="none" stroke="#e2b96f" stroke-width="1.3"
-                      stroke-linejoin="round"/>
-                <polyline points="66,325 70,329 76,320"
-                          fill="none" stroke="#e2b96f"
-                          stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-
-                <!-- Label -->
-                <text x="86" y="319" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">5. VERIFY</text>
-
-                <!-- Description -->
-                <text x="53" y="334" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Test and verify</text>
-                <text x="53" y="345" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">against requirements</text>
-                <text x="53" y="356" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
-
-                <!-- ── NODE 6: DEPLOY & IMPROVE (10 o'clock) ──
-                     Box: x=45 y=127 w=140 h=70  centre: (115,162) -->
-
-                <rect x="45" y="127" width="140" height="70" rx="10"
-                      fill="url(#node-bg)"
-                      stroke="rgba(226,185,111,0.4)"
-                      stroke-width="1"/>
-
-                <!-- Bar chart with upward arrow icon -->
-                <rect x="61" y="149" width="5" height="8" rx="1" fill="#e2b96f" opacity="0.65"/>
-                <rect x="68" y="144" width="5" height="13" rx="1" fill="#e2b96f" opacity="0.75"/>
-                <rect x="75" y="139" width="5" height="18" rx="1" fill="#e2b96f" opacity="0.85"/>
-                <!-- Upward arrow above the tallest bar -->
-                <polyline points="75,135 78,131 81,135"
-                          fill="none" stroke="#e2b96f"
-                          stroke-width="1.2" stroke-linecap="round"/>
-                <line x1="78" y1="131" x2="78" y2="138"
-                      stroke="#e2b96f" stroke-width="1.2" stroke-linecap="round"/>
-
-                <!-- Label (two lines because "DEPLOY & IMPROVE" is long) -->
-                <text x="92" y="139" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">6. DEPLOY &amp;</text>
-                <text x="92" y="151" fill="#e2b96f"
-                      font-size="8.5" font-weight="700" letter-spacing="0.5"
-                      font-family="Inter, sans-serif">IMPROVE</text>
-
-                <!-- Description -->
-                <text x="53" y="163" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">Deliver, monitor,</text>
-                <text x="53" y="174" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif">and iterate</text>
-                <text x="53" y="185" fill="rgba(255,255,255,0.62)"
-                      font-size="7.5" font-family="Inter, sans-serif"> </text>
-
+                <!-- Blue inner arrows suggest traceability between the lifecycle and the system model. -->
+                <path class="cycle-arc cycle-arc--blue" d="M380 140 V184" marker-end="url(#arrow-blue)"/>
+                <path class="cycle-arc cycle-arc--blue" d="M464 220 H420" marker-end="url(#arrow-blue)"/>
+                <path class="cycle-arc cycle-arc--blue" d="M455 300 L420 275" marker-end="url(#arrow-blue)"/>
+                <path class="cycle-arc cycle-arc--blue" d="M380 320 V276" marker-end="url(#arrow-blue)"/>
+                <path class="cycle-arc cycle-arc--blue" d="M296 300 L340 275" marker-end="url(#arrow-blue)"/>
+                <path class="cycle-arc cycle-arc--blue" d="M296 220 H340" marker-end="url(#arrow-blue)"/>
             </svg>
 
-        </div><!-- end .hero-diagram -->
+            <div class="lifecycle-circuit" aria-hidden="true"></div>
 
-
-    </div><!-- end .hero-inner -->
-</section>
-
-
-<!-- =====================================================
-     CREDIBILITY STRIP
-     A dark band of five quick-read achievement stats
-     that appear immediately below the hero.
-     ===================================================== -->
-
-<section class="credibility-strip" aria-label="Key achievements and credentials">
-    <div class="credibility-inner">
-
-        <!-- Stat 1: Contract value -->
-        <div class="credibility-stat">
-            <span class="cred-icon" aria-hidden="true">
-                <!-- Dollar / contract icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v2m0 8v2M9.5 9.5A2.5 2.5 0 0 1 12 8a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 2.5-1.5"/>
-                </svg>
-            </span>
-            <div class="cred-info">
-                <span class="cred-value">$36M+</span>
-                <span class="cred-label">Contract Oversight</span>
+            <div class="lifecycle-center">
+                <h2 id="lifecycle-title">Systems Engineering Lifecycle</h2>
+                <p id="lifecycle-description">
+                    Six connected stages showing how disciplined engineering work moves from problem definition to deployment.
+                </p>
             </div>
+
+            <article class="lifecycle-node lifecycle-node--define">
+                <div class="node-icon node-icon--gold" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="8"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 2v4M22 12h-4M19 5l-3 3"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>1. Define</h3>
+                    <p>Understand the problem &amp; stakeholders</p>
+                </div>
+            </article>
+
+            <article class="lifecycle-node lifecycle-node--requirements">
+                <div class="node-icon node-icon--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M7 3h7l4 4v14H7z"/>
+                        <path d="M14 3v5h5M10 12h6M10 16h6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>2. Requirements</h3>
+                    <p>Capture needs and establish traceability</p>
+                </div>
+            </article>
+
+            <article class="lifecycle-node lifecycle-node--architecture">
+                <div class="node-icon node-icon--gold" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>
+                        <path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>3. Architecture</h3>
+                    <p>Design the system solution</p>
+                </div>
+            </article>
+
+            <article class="lifecycle-node lifecycle-node--implement">
+                <div class="node-icon node-icon--gold" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>4. Implement</h3>
+                    <p>Build, integrate, and automate</p>
+                </div>
+            </article>
+
+            <article class="lifecycle-node lifecycle-node--verify">
+                <div class="node-icon node-icon--gold" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
+                        <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>5. Verify</h3>
+                    <p>Test and verify against requirements</p>
+                </div>
+            </article>
+
+            <article class="lifecycle-node lifecycle-node--deploy">
+                <div class="node-icon node-icon--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19V5M4 19h16"/>
+                        <path d="M8 16v-4M12 16V9M16 16v-7M8 9l3-3 4 3 5-6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3>6. Deploy &amp; Improve</h3>
+                    <p>Deliver, monitor, and iterate</p>
+                </div>
+            </article>
         </div>
-
-        <div class="cred-divider" aria-hidden="true"></div>
-
-        <!-- Stat 2: Supply constraints reduced -->
-        <div class="credibility-stat">
-            <span class="cred-icon" aria-hidden="true">
-                <!-- Trending-down-to-zero icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-                    <polyline points="16 7 22 7 22 13"/>
-                </svg>
-            </span>
-            <div class="cred-info">
-                <span class="cred-value">16 → 0</span>
-                <span class="cred-label">Critical Supply Constraints</span>
-            </div>
-        </div>
-
-        <div class="cred-divider" aria-hidden="true"></div>
-
-        <!-- Stat 3: Repair and test improvement -->
-        <div class="credibility-stat">
-            <span class="cred-icon" aria-hidden="true">
-                <!-- Check / improvement icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-            </span>
-            <div class="cred-info">
-                <span class="cred-value">70%</span>
-                <span class="cred-label">Repair &amp; Test Improvement</span>
-            </div>
-        </div>
-
-        <div class="cred-divider" aria-hidden="true"></div>
-
-        <!-- Stat 4: Cross-functional leadership -->
-        <div class="credibility-stat">
-            <span class="cred-icon" aria-hidden="true">
-                <!-- People / team icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-            </span>
-            <div class="cred-info">
-                <span class="cred-value">Cross-Functional</span>
-                <span class="cred-label">Teams Led</span>
-            </div>
-        </div>
-
-        <div class="cred-divider" aria-hidden="true"></div>
-
-        <!-- Stat 5: Credentials -->
-        <div class="credibility-stat">
-            <span class="cred-icon" aria-hidden="true">
-                <!-- Graduation cap icon -->
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                    <path d="M6 12v5c3.5 2 8.5 2 12 0v-5"/>
-                </svg>
-            </span>
-            <div class="cred-info">
-                <span class="cred-value">PMP · M.S.E.M.</span>
-                <span class="cred-label">Ph.D. Student</span>
-            </div>
-        </div>
-
     </div>
 </section>
 
 
-<!-- =====================================================
-     FEATURED PROJECTS SECTION
-     Left column:  section heading + intro
-     Right grid:   three project cards
-     ===================================================== -->
+<!-- Metrics strip: public, verified indicators of engineering scope and outcomes. -->
+<section class="metrics-band" aria-label="Selected professional metrics">
+    <div class="site-container metrics-grid">
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </span>
+            <div>
+                <strong>$36M+</strong>
+                <span>Contract Oversight</span>
+            </div>
+        </div>
 
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
+            </span>
+            <div>
+                <strong>70%</strong>
+                <span>Repair &amp; Test Improvement</span>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
+            </span>
+            <div>
+                <strong>16 → 0</strong>
+                <span>Critical Supply Constraints</span>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M17 11a3 3 0 1 0 0-6M22 21v-2a4 4 0 0 0-4-4"/></svg>
+            </span>
+            <div>
+                <strong>Cross-Functional</strong>
+                <span>Leadership</span>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>
+            </span>
+            <div>
+                <strong>PMP · M.S.E.M.</strong>
+                <span>Ph.D. Student</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Featured work: three project cards matching the target screenshot layout. -->
 <section class="projects-section" aria-labelledby="projects-title">
-    <div class="projects-container">
-
-
-        <!-- ===== LEFT: SECTION HEADER ===== -->
-
-        <div class="projects-header">
-
-            <p class="section-eyebrow">FEATURED PROJECTS</p>
-
-            <h2 id="projects-title">Engineering Solutions That Deliver Results</h2>
-
-            <p class="projects-intro">
-                Projects that demonstrate systems thinking,
-                software skills, and a commitment to building
-                tools that solve real engineering challenges.
+    <div class="site-container projects-layout">
+        <div class="projects-copy">
+            <p class="section-eyebrow">Featured Projects</p>
+            <h2 id="projects-title">Engineering Solutions with Measurable Impact</h2>
+            <p>
+                Projects that demonstrate systems thinking, software skills, and a commitment to
+                building tools that solve real engineering challenges.
             </p>
-
-            <a href="/work" class="view-all-link">
+            <a class="view-all-link" href="/work">
                 View All Projects
                 <span aria-hidden="true">→</span>
             </a>
-
         </div>
 
-
-        <!-- ===== RIGHT: PROJECT CARDS GRID ===== -->
-
-        <div class="projects-grid">
-
-
-            <!-- ── CARD 1: Requirements Traceability Platform ── -->
-
+        <div class="project-grid">
             <article class="project-card">
-
-                <!-- Screenshot placeholder — suggests a requirements matrix interface -->
-                <div class="project-screenshot" aria-hidden="true">
-                    <div class="screenshot-mock screenshot-mock--table">
-                        <div class="mock-toolbar">
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-title-bar">Requirements</span>
+                <div class="project-media project-media--trace" role="img" aria-label="Concept interface for a requirements traceability platform">
+                    <div class="mock-window mock-window--light">
+                        <div class="mock-sidebar"></div>
+                        <div class="mock-canvas">
+                            <span></span><span></span><span></span><span></span><span></span>
                         </div>
-                        <div class="mock-row mock-row--header">
-                            <span>ID</span><span>Requirement</span><span>Status</span>
-                        </div>
-                        <div class="mock-row"><span>REQ-001</span><span class="mock-bar mock-bar--long"></span><span class="mock-badge mock-badge--green"></span></div>
-                        <div class="mock-row"><span>REQ-002</span><span class="mock-bar mock-bar--med"></span><span class="mock-badge mock-badge--yellow"></span></div>
-                        <div class="mock-row"><span>REQ-003</span><span class="mock-bar mock-bar--long"></span><span class="mock-badge mock-badge--green"></span></div>
-                        <div class="mock-row"><span>REQ-004</span><span class="mock-bar mock-bar--short"></span><span class="mock-badge mock-badge--blue"></span></div>
-                    </div>
-                </div>
-
-                <div class="project-body">
-
-                    <span class="project-status status--progress">
-                        <span class="status-dot" aria-hidden="true"></span>
-                        IN PROGRESS
-                    </span>
-
-                    <h3 class="project-title">Requirements Traceability Platform</h3>
-
-                    <p class="project-desc">
-                        Web application that links requirements, verification
-                        methods, test cases, and evidence with full
-                        bidirectional traceability.
-                    </p>
-
-                    <div class="project-tags">
-                        <span>Python</span>
-                        <span>Flask</span>
-                        <span>PostgreSQL</span>
-                        <span>Docker</span>
-                    </div>
-
-                    <a href="/work" class="project-link">
-                        View Case Study
-                        <span aria-hidden="true">→</span>
-                    </a>
-
-                </div>
-
-            </article>
-
-
-            <!-- ── CARD 2: AI-Assisted Requirements Reviewer ── -->
-
-            <article class="project-card">
-
-                <!-- Screenshot placeholder — suggests an AI review scoring panel -->
-                <div class="project-screenshot" aria-hidden="true">
-                    <div class="screenshot-mock screenshot-mock--review">
-                        <div class="mock-toolbar">
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-title-bar">Requirement Review</span>
-                        </div>
-                        <div class="mock-score-area">
-                            <div class="mock-score-ring">
-                                <span class="mock-score-num">92</span>
-                            </div>
-                            <div class="mock-score-labels">
-                                <div class="mock-label-line mock-label-line--gold">Strengths</div>
-                                <div class="mock-label-line"></div>
-                                <div class="mock-label-line mock-label-line--short"></div>
-                                <div class="mock-label-line mock-label-line--med"></div>
-                            </div>
+                        <div class="mock-panel">
+                            <i></i><i></i><i></i><i></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="project-body">
-
-                    <span class="project-status status--progress">
-                        <span class="status-dot" aria-hidden="true"></span>
-                        IN PROGRESS
-                    </span>
-
-                    <h3 class="project-title">AI-Assisted Requirements Reviewer</h3>
-
-                    <p class="project-desc">
-                        LLM-powered tool that analyzes requirements for
-                        clarity, completeness, consistency, and verifiability
-                        with source-cited feedback.
+                    <span class="project-status status-progress">In Progress</span>
+                    <h3>Requirements Traceability Platform</h3>
+                    <p>
+                        Web application that links requirements, verification methods,
+                        test cases, and evidence with full bidirectional traceability.
                     </p>
-
-                    <div class="project-tags">
-                        <span>Python</span>
-                        <span>LLM API</span>
-                        <span>RAG</span>
-                        <span>Vector DB</span>
+                    <div class="project-tags" aria-label="Technologies">
+                        <span>Python</span><span>Flask</span><span>PostgreSQL</span><span>D3.js</span>
                     </div>
-
-                    <a href="/work" class="project-link">
-                        View Case Study
-                        <span aria-hidden="true">→</span>
-                    </a>
-
+                    <a class="project-link" href="/work" aria-label="View case study for Requirements Traceability Platform">↗</a>
                 </div>
-
             </article>
 
-
-            <!-- ── CARD 3: Engineering Home Operations Dashboard ── -->
-
             <article class="project-card">
-
-                <!-- Screenshot placeholder — suggests a home dashboard interface -->
-                <div class="project-screenshot" aria-hidden="true">
-                    <div class="screenshot-mock screenshot-mock--dashboard">
-                        <div class="mock-toolbar">
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-dot"></span>
-                            <span class="mock-title-bar">Home Overview</span>
+                <div class="project-media project-media--review" role="img" aria-label="Concept interface for an AI-assisted requirements reviewer">
+                    <div class="mock-window mock-window--dark">
+                        <div class="mock-review-copy">
+                            <i></i><i></i><i></i><i></i><i></i>
                         </div>
-                        <div class="mock-dash-grid">
-                            <div class="mock-tile">
-                                <div class="mock-tile-label">Downstairs</div>
-                                <div class="mock-tile-value">72°</div>
-                            </div>
-                            <div class="mock-tile">
-                                <div class="mock-tile-label">Upstairs</div>
-                                <div class="mock-tile-value">70°</div>
-                            </div>
-                            <div class="mock-tile mock-tile--active">
-                                <div class="mock-tile-label">Living Room</div>
-                                <div class="mock-tile-value mock-tile-value--green">On</div>
-                            </div>
-                            <div class="mock-tile">
-                                <div class="mock-tile-label">Security</div>
-                                <div class="mock-tile-value mock-tile-value--green">Armed</div>
-                            </div>
+                        <div class="mock-score">92</div>
+                        <div class="mock-review-lines">
+                            <i></i><i></i><i></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="project-body">
-
-                    <span class="project-status status--planned">
-                        <span class="status-dot" aria-hidden="true"></span>
-                        PLANNED
-                    </span>
-
-                    <h3 class="project-title">Engineering Home Operations Dashboard</h3>
-
-                    <p class="project-desc">
-                        Secure dashboard integrating Home Assistant via
-                        REST API &amp; WebSockets for real-time monitoring
-                        and automation.
+                    <span class="project-status status-progress">In Progress</span>
+                    <h3>AI-Assisted Requirements Reviewer</h3>
+                    <p>
+                        LLM-powered tool that analyzes requirements for clarity,
+                        completeness, consistency, and verifiability with source-cited feedback.
                     </p>
-
-                    <div class="project-tags">
-                        <span>Home Assistant</span>
-                        <span>WebSocket</span>
-                        <span>API</span>
-                        <span>Docker</span>
+                    <div class="project-tags" aria-label="Technologies">
+                        <span>Python</span><span>OpenAI API</span><span>LangChain</span><span>FAISS</span>
                     </div>
-
-                    <a href="/work" class="project-link">
-                        View Case Study
-                        <span aria-hidden="true">→</span>
-                    </a>
-
+                    <a class="project-link" href="/work" aria-label="View case study for AI-Assisted Requirements Reviewer">↗</a>
                 </div>
-
             </article>
 
+            <article class="project-card">
+                <div class="project-media project-media--home" role="img" aria-label="Sanitized concept interface for a home operations dashboard">
+                    <div class="mock-window mock-window--dashboard">
+                        <div class="dashboard-tile"><small>Downstairs</small><strong>72°</strong></div>
+                        <div class="dashboard-tile"><small>Upstairs</small><strong>70°</strong></div>
+                        <div class="dashboard-tile"><small>Living Room</small><strong>On</strong></div>
+                        <div class="dashboard-tile"><small>Front Door</small><strong>Locked</strong></div>
+                        <div class="dashboard-tile"><small>Garage</small><strong>Closed</strong></div>
+                        <div class="dashboard-tile"><small>Security System</small><strong>Disarmed</strong></div>
+                    </div>
+                </div>
 
-        </div><!-- end .projects-grid -->
-
-    </div><!-- end .projects-container -->
+                <div class="project-body">
+                    <span class="project-status status-planned">Planned</span>
+                    <h3>Engineering Home Operations Dashboard</h3>
+                    <p>
+                        Secure dashboard integrating Home Assistant via REST API
+                        and WebSockets for real-time monitoring and automation.
+                    </p>
+                    <div class="project-tags" aria-label="Technologies">
+                        <span>Home Assistant</span><span>WebSocket</span><span>API</span><span>Docker</span>
+                    </div>
+                    <a class="project-link" href="/work" aria-label="View case study for Engineering Home Operations Dashboard">↗</a>
+                </div>
+            </article>
+        </div>
+    </div>
 </section>
 
 
