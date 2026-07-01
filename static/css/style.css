@@ -48,12 +48,12 @@
     --border-light: rgb(26 26 46 / 10%);
 
     /* Type and layout */
-    --font-display: clamp(2.85rem, 4vw, 4.55rem);
-    --font-h2: clamp(2rem, 2.5vw, 2.55rem);
-    --font-body: 1rem;
-    --font-small: 0.875rem;
-    --font-label: 0.75rem;
-    --site-width: 1360px;
+    --font-display: clamp(1.8rem, 2.6vw, 2.6rem);     /* Main homepage headline size; clamp(min, preferred, max) keeps it responsive */
+    --font-h2: clamp(2rem, 2.5vw, 2.55rem);          /* Section heading size used below the hero */
+    --font-body: 1rem;                               /* Normal paragraph text size; 1rem usually equals 16px */
+    --font-small: 0.875rem;                          /* Smaller supporting text size */
+    --font-label: 0.75rem;                           /* Tiny label/eyebrow text size */
+    --site-width: 1360px;                            /* Maximum width for aligned page content */
 }
 
 
@@ -404,13 +404,13 @@ button:focus-visible {
 }
 
 .hero-copy h1 {
-    max-width: 650px;
-    margin-bottom: 22px;
-    color: var(--color-text-primary);
-    font-size: var(--font-display);
-    font-weight: 820;
-    letter-spacing: -0.052em;
-    line-height: 1.07;
+    max-width: 650px;                                /* Keeps the headline from stretching too wide */
+    margin-bottom: 22px;                             /* Space between the headline and the intro paragraph */
+    color: var(--color-text-primary);                /* Uses the main white text color from :root */
+    font-size: var(--font-display);                  /* Pulls from --font-display so one variable controls hero size */
+    font-weight: 820;                                /* Very bold headline weight for strong first impression */
+    letter-spacing: -0.052em;                        /* Tightens large letters so the headline feels polished */
+    line-height: 1.07;                               /* Keeps multi-line headline rows close together */
 }
 
 .hero-copy h1 span {
@@ -418,11 +418,11 @@ button:focus-visible {
 }
 
 .hero-description {
-    max-width: 560px;
-    margin-bottom: 27px;
-    color: var(--color-text-secondary);
-    font-size: 1.08rem;
-    line-height: 1.75;
+    max-width: 560px;                                /* Keeps the paragraph readable instead of full-width */
+    margin-bottom: 27px;                             /* Space between paragraph and buttons */
+    color: var(--color-text-secondary);              /* Softer color than the headline so hierarchy is clear */
+    font-size: 1.02rem;                              /* Slightly smaller than before so the hero feels less oversized */
+    line-height: 1.7;                                /* Taller line spacing makes paragraph text easier to read */
 }
 
 .hero-actions {
@@ -474,18 +474,18 @@ button:focus-visible {
 }
 
 .cycle-arc {
-    fill: none;
-    stroke-linecap: round;
-    stroke-width: 2;
+    fill: none;                                      /* SVG paths are strokes only; no filled shape inside */
+    stroke-linecap: round;                           /* Rounds the ends of arrow lines for a cleaner look */
+    stroke-width: 2;                                 /* Thickness of the lifecycle connector arrows */
 }
 
 .cycle-arc--gold {
-    stroke: rgb(243 190 79 / 88%);
-    filter: drop-shadow(0 0 8px rgb(243 190 79 / 22%));
+    stroke: rgb(243 190 79 / 88%);                  /* Gold arrows show the main lifecycle direction */
+    filter: drop-shadow(0 0 8px rgb(243 190 79 / 22%)); /* Soft glow helps arrows stand out on the dark background */
 }
 
 .cycle-arc--blue {
-    stroke: rgb(78 163 255 / 58%);
+    stroke: rgb(78 163 255 / 58%);                  /* Blue arrows show internal traceability back to the center */
 }
 
 .lifecycle-circuit {
@@ -628,20 +628,20 @@ button:focus-visible {
    ========================================================= */
 
 .metrics-band {
-    background: linear-gradient(180deg, #0c1827, #08131f);
-    border-top: 1px solid rgb(243 190 79 / 24%);
-    border-bottom: 1px solid rgb(255 255 255 / 8%);
+    background: linear-gradient(180deg, #0c1827, #08131f); /* Dark strip behind the scrolling metric cards */
+    border-top: 1px solid rgb(243 190 79 / 24%);           /* Thin gold line separates hero from metrics */
+    border-bottom: 1px solid rgb(255 255 255 / 8%);        /* Subtle bottom divider before the next section */
 }
 
 .metrics-track-wrap {
-    overflow: hidden;
-    mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
-    -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
+    overflow: hidden;                                      /* Hides cards outside the visible scrolling area */
+    mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Fades edges of the scrolling track */
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Safari/Chrome version of the same fade */
 }
 
 .metrics-track {
-    display: flex;
-    width: max-content;
+    display: flex;                                         /* Places metric items in one horizontal row */
+    width: max-content;                                    /* Track becomes as wide as all metric cards combined */
     animation: metrics-scroll 54s linear infinite;   /* Matches original px/sec speed now that each set holds 8 cards, not 5 */
 }
 
@@ -651,29 +651,29 @@ button:focus-visible {
 }
 
 .metrics-set {
-    display: flex;
-    flex: 0 0 auto;
+    display: flex;                                         /* Keeps one repeated group of metrics in a row */
+    flex: 0 0 auto;                                        /* Prevents the repeated group from shrinking */
 }
 
 .metric-item {
-    position: relative;
-    flex: 0 0 auto;
+    position: relative;                                    /* Allows the divider line to be positioned inside each item */
+    flex: 0 0 auto;                                        /* Keeps each metric card at its fixed width */
     width: 264px;                                    /* Fixed card width so items never stretch as the viewport shrinks */
-    min-height: 96px;
-    display: flex;
-    align-items: center;
-    gap: 17px;
-    padding: 18px 23px;
+    min-height: 78px;                                      /* Thinner strip height; lower number makes the metrics bar slimmer */
+    display: flex;                                         /* Puts the icon and text side by side */
+    align-items: center;                                   /* Vertically centers icon and text */
+    gap: 14px;                                             /* Space between the icon and the metric text */
+    padding: 12px 20px;                                    /* Internal spacing; smaller vertical padding makes the bar thinner */
 }
 
 .metric-item::after {
-    content: "";
-    position: absolute;
-    top: 22px;
-    right: 0;
-    bottom: 22px;
-    width: 1px;
-    background: rgb(154 113 43 / 62%);
+    content: "";                                          /* Required so the divider pseudo-element appears */
+    position: absolute;                                    /* Positions the divider relative to the metric item */
+    top: 18px;                                             /* Starts divider below the top edge */
+    right: 0;                                              /* Places divider at the right edge of each item */
+    bottom: 18px;                                          /* Ends divider above the bottom edge */
+    width: 1px;                                            /* Thin vertical divider line */
+    background: rgb(154 113 43 / 62%);                     /* Muted gold divider color */
 }
 
 @keyframes metrics-scroll {
@@ -686,43 +686,43 @@ button:focus-visible {
 }
 
 .metric-icon {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    display: grid;
-    place-items: center;
-    color: var(--color-gold);
-    border: 2px solid var(--color-gold);
-    border-radius: 50%;
+    width: 38px;                                          /* Smaller circle keeps the thinner metrics strip balanced */
+    height: 38px;                                         /* Matches width so the icon container stays circular */
+    flex: 0 0 38px;                                       /* Prevents the circle from shrinking in the scrolling row */
+    display: grid;                                        /* Grid makes centering the SVG icon easy */
+    place-items: center;                                  /* Centers the SVG icon both vertically and horizontally */
+    color: var(--color-gold);                             /* Icon uses the same gold as the border */
+    border: 2px solid var(--color-gold);                  /* Gold outline circle around each metric icon */
+    border-radius: 50%;                                   /* Turns the square box into a perfect circle */
 }
 
 .metric-icon svg {
-    width: 25px;
-    height: 25px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    width: 22px;                                          /* Smaller SVG fits the reduced icon circle */
+    height: 22px;                                         /* Matches width so icons keep their proportions */
+    fill: none;                                           /* Icons are line drawings, not filled shapes */
+    stroke: currentColor;                                 /* Uses the parent .metric-icon color */
+    stroke-width: 1.7;                                    /* Thickness of the icon line art */
+    stroke-linecap: round;                                /* Rounds line ends for a smoother icon */
+    stroke-linejoin: round;                               /* Rounds corners where icon lines meet */
 }
 
 .metric-item strong,
 .metric-item span {
-    display: block;
+    display: block;                                       /* Puts the big metric and label on separate lines */
 }
 
 .metric-item strong {
-    color: var(--color-gold);
-    font-size: 1.33rem;
-    font-weight: 850;
-    line-height: 1.1;
-    white-space: nowrap;
+    color: var(--color-gold);                             /* Main metric number/value uses brand gold */
+    font-size: 1.16rem;                                   /* Slightly smaller so the thinner strip does not feel crowded */
+    font-weight: 850;                                     /* Heavy weight makes the metric easy to scan */
+    line-height: 1.1;                                     /* Tight line height keeps the metric compact */
+    white-space: nowrap;                                  /* Prevents values like "$36M+" from wrapping */
 }
 
 .metric-item span {
-    color: var(--color-text-secondary);
-    font-size: 0.88rem;
-    line-height: 1.35;
+    color: var(--color-text-secondary);                   /* Supporting label is softer than the main metric */
+    font-size: 0.8rem;                                    /* Smaller label helps reduce overall bar height */
+    line-height: 1.3;                                     /* Compact but still readable label spacing */
 }
 
 
