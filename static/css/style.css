@@ -252,23 +252,21 @@ button:focus-visible {
     gap: 12px;
 }
 
-/* Compact square LinkedIn icon button matching the gold-outline theme. */
+/* Real LinkedIn logo in the header: the SVG itself is the rounded
+   square, so the anchor needs no border — just size and color. */
 .nav-linkedin {
     width: 38px;
     height: 38px;
     display: grid;
     place-items: center;
-    color: var(--color-gold);
-    border: 1px solid var(--color-border-gold);
+    color: #dfe4ea;                                 /* Light silver logo like the mockup */
     border-radius: 8px;
-    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: color 160ms ease;
 }
 
 .nav-linkedin:hover,
 .nav-linkedin:focus-visible {
-    color: var(--color-text-dark);
-    background: var(--color-gold);
-    border-color: var(--color-gold);
+    color: var(--color-gold);
 }
 
 .nav-ai-btn {
@@ -1326,13 +1324,13 @@ button:focus-visible {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);   /* ~54% copy / ~46% portrait like the mockup */
     align-items: center;
-    gap: 48px;
-    padding-top: 64px;
-    padding-bottom: 64px;
+    gap: 40px;
+    padding-top: 44px;                               /* Tighter vertical rhythm to match the mockup */
+    padding-bottom: 40px;
 }
 
 .story-hero__content h1 {
-    margin: 14px 0 18px;
+    margin: 10px 0 14px;
     color: var(--color-text-primary);
     font-size: clamp(2.3rem, 4.2vw, 3.4rem);
     font-weight: 820;
@@ -1353,7 +1351,7 @@ button:focus-visible {
 
 .story-hero__intro {
     max-width: 480px;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
     color: var(--color-text-secondary);
     line-height: 1.7;
 }
@@ -1423,7 +1421,7 @@ button:focus-visible {
     position: absolute;
     inset: 0;
     margin: auto;
-    width: min(100%, 440px);
+    width: min(100%, 420px);
     aspect-ratio: 1;
     border: 1px solid rgb(243 190 79 / 22%);
     border-radius: 50%;
@@ -1439,7 +1437,7 @@ button:focus-visible {
 }
 
 .portrait-frame {
-    width: min(100%, 360px);
+    width: min(100%, 340px);
     aspect-ratio: 1;
     overflow: hidden;
     border: 3px solid var(--color-gold);
@@ -1460,14 +1458,14 @@ button:focus-visible {
 /* ---------- Positioning banner ---------- */
 
 .story-banner-section {
-    padding: 40px 0;
+    padding: 30px 0;
 }
 
 .story-banner {
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: 28px;
-    padding: 26px 30px;
+    gap: 26px;
+    padding: 22px 26px;
     background: linear-gradient(180deg, #0b1827, #081420);
     border: 1px solid rgb(243 190 79 / 38%);
     border-radius: 10px;
@@ -1514,18 +1512,21 @@ button:focus-visible {
 
 /* ---------- Journey section ---------- */
 
+/* Noticeably lighter band with gold edges so the journey section
+   pops against the near-black page background. */
 .story-journey {
-    padding: 64px 0 70px;
+    padding: 46px 0 52px;
     background:
-        radial-gradient(circle at 18% 24%, rgb(17 66 112 / 12%), transparent 30%),
-        var(--color-section);
-    border-top: 1px solid var(--color-border-soft);
-    border-bottom: 1px solid var(--color-border-soft);
+        radial-gradient(circle at 18% 24%, rgb(30 84 134 / 16%), transparent 34%),
+        linear-gradient(180deg, #0d2036, #0a1a2c);
+    border-top: 1px solid rgb(243 190 79 / 26%);
+    border-bottom: 1px solid rgb(243 190 79 / 26%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
 }
 
 .story-journey h2,
 .story-drives h2 {
-    margin: 12px 0 34px;
+    margin: 10px 0 22px;
     color: var(--color-text-primary);
     font-size: var(--font-h2);
     font-weight: 820;
@@ -1535,14 +1536,15 @@ button:focus-visible {
 
 .story-journey__layout {
     display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
-    gap: 46px;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.75fr);
+    gap: 40px;
     align-items: start;
 }
 
 .story-journey__narrative p {
-    margin-bottom: 26px;
+    margin-bottom: 22px;
     color: var(--color-text-secondary);
+    font-size: 0.93rem;
     line-height: 1.75;
 }
 
@@ -1551,36 +1553,41 @@ button:focus-visible {
 .story-timeline {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 22px;
+    gap: 18px;
+    padding-top: 6px;
     list-style: none;
-    counter-reset: none;
 }
 
 .timeline-item {
     position: relative;
-    padding-top: 6px;
 }
 
+/* Larger dark circles with soft borders, like the mockup */
 .timeline-item__icon {
     position: relative;
     z-index: 1;
-    width: 54px;
-    height: 54px;
+    width: 62px;
+    height: 62px;
     display: grid;
     place-items: center;
     margin-bottom: 16px;
     color: var(--color-gold);
-    background: var(--color-card-elevated);
-    border: 1.5px solid rgb(243 190 79 / 50%);
+    background: #0e1f33;
+    border: 1px solid rgb(146 167 190 / 38%);
     border-radius: 50%;
 }
 
+/* Light (silver-white) icon variant used by most milestones in the mockup */
+.timeline-item__icon--light {
+    color: #d9e2ec;
+}
+
 .timeline-item__icon svg {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.6;
+    stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
@@ -1590,18 +1597,18 @@ button:focus-visible {
 .timeline-item + .timeline-item::before {
     content: "";
     position: absolute;
-    top: 33px;                                       /* Vertically centered on the 54px icon circle */
-    right: calc(100% - 27px);
-    width: calc(100% - 32px);
+    top: 31px;                                       /* Vertically centered on the 62px icon circle */
+    right: calc(100% - 31px);
+    width: calc(100% - 36px);
     height: 1px;
-    background: rgb(243 190 79 / 35%);
+    background: rgb(243 190 79 / 40%);
 }
 
 .timeline-item + .timeline-item::after {
     content: "";
     position: absolute;
-    top: 30px;
-    left: -14px;
+    top: 28px;
+    left: -11px;
     width: 7px;
     height: 7px;
     border-radius: 50%;
@@ -1611,47 +1618,51 @@ button:focus-visible {
 .timeline-item__date {
     margin-bottom: 6px;
     color: var(--color-gold);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
 }
 
 .timeline-item h3 {
-    margin-bottom: 4px;
+    margin-bottom: 7px;
     color: var(--color-text-primary);
-    font-size: 0.98rem;
+    font-size: 0.97rem;
     font-weight: 780;
     line-height: 1.3;
-}
-
-.timeline-item__role {
-    margin-bottom: 8px;
-    color: var(--color-cyan);
-    font-size: 0.8rem;
-    font-weight: 650;
-    line-height: 1.4;
 }
 
 .timeline-item__text {
     color: var(--color-text-secondary);
     font-size: 0.85rem;
-    line-height: 1.6;
+    line-height: 1.62;
 }
 
 /* ---------- Values (What Drives Me) ---------- */
 
 .story-drives {
-    padding: 64px 0 70px;
+    padding: 48px 0 30px;
+}
+
+/* Heading column beside the four cards, matching the mockup layout */
+.story-drives__layout {
+    display: grid;
+    grid-template-columns: minmax(200px, 0.85fr) minmax(0, 3.15fr);
+    gap: 34px;
+    align-items: start;
+}
+
+.story-drives__heading h2 {
+    margin-bottom: 0;
 }
 
 .story-drives__grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
 }
 
 .drive-card {
-    padding: 28px 24px;
+    padding: 24px 20px;
     background: linear-gradient(180deg, #0b1827, #081420);
     border: 1px solid var(--color-border-soft);
     border-radius: 10px;
@@ -1660,15 +1671,15 @@ button:focus-visible {
 .drive-card__icon {
     display: grid;
     place-items: center;
-    width: 58px;
-    height: 58px;
-    margin-bottom: 18px;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 16px;
     color: var(--color-gold);
 }
 
 .drive-card__icon svg {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.4;
@@ -1677,74 +1688,83 @@ button:focus-visible {
 }
 
 .drive-card h3 {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: var(--color-text-primary);
-    font-size: 1.02rem;
+    font-size: 1rem;
     font-weight: 800;
 }
 
 .drive-card p {
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.65;
+    font-size: 0.86rem;
+    line-height: 1.6;
 }
 
 /* ---------- Lower information cards ---------- */
 
 .story-cards {
-    padding: 0 0 70px;
+    padding: 0 0 54px;
 }
 
+/* Middle "Outside of Engineering" card is wider, like the mockup */
 .story-cards__grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 16px;
     align-items: stretch;
 }
 
 .story-card {
     display: flex;
     flex-direction: column;
-    padding: 28px 26px;
+    padding: 24px 22px;
     background: linear-gradient(180deg, #0b1827, #081420);
     border: 1px solid var(--color-border-soft);
     border-radius: 10px;
 }
 
 .story-card h2 {
-    margin: 10px 0 18px;
+    margin: 8px 0 16px;
     color: var(--color-text-primary);
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 820;
     letter-spacing: -0.02em;
     line-height: 1.25;
 }
 
 .story-card__list {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     padding-left: 0;
     list-style: none;
 }
 
+/* Each learning item: small gold icon + text, like the mockup */
 .story-card__list li {
-    position: relative;
-    margin-bottom: 12px;
-    padding-left: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 11px;
     color: var(--color-text-secondary);
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     line-height: 1.55;
 }
 
-/* Small gold node in front of each learning item */
-.story-card__list li::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 4px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-gold);
+.story-card__list-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    margin-top: 2px;
+    color: var(--color-gold);
+}
+
+.story-card__list-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .story-card__link {
@@ -1763,25 +1783,26 @@ button:focus-visible {
     color: var(--color-gold-bright);
 }
 
-/* Interests grid inside the "Outside of Engineering" card */
+/* Interests grid inside the "Outside of Engineering" card:
+   three columns × two rows, like the mockup. */
 .interest-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 14px;
-    margin-bottom: 22px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px 12px;
+    margin-bottom: 20px;
     list-style: none;
 }
 
 .interest-item {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
 }
 
 .interest-item__icon {
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
     display: grid;
     place-items: center;
     color: var(--color-cyan);
@@ -1790,8 +1811,8 @@ button:focus-visible {
 }
 
 .interest-item__icon svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.6;
@@ -1802,13 +1823,13 @@ button:focus-visible {
 .interest-item h3 {
     margin-bottom: 2px;
     color: var(--color-text-primary);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 750;
 }
 
 .interest-item p {
     color: var(--color-text-muted);
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     line-height: 1.45;
 }
 
@@ -1830,6 +1851,22 @@ button:focus-visible {
     width: 100%;
 }
 
+/* Leading icons inside the connect buttons (envelope + LinkedIn logo) */
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.btn-icon--fill {
+    fill: currentColor;
+    stroke: none;
+}
+
 /* ---------- My Story responsive behavior ---------- */
 
 @media (max-width: 1180px) {
@@ -1843,6 +1880,12 @@ button:focus-visible {
     .timeline-item + .timeline-item::before,
     .timeline-item + .timeline-item::after {
         display: none;
+    }
+
+    /* Values heading stacks above the cards when width runs out */
+    .story-drives__layout {
+        grid-template-columns: 1fr;
+        gap: 26px;
     }
 
     .story-cards__grid {
