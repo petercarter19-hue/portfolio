@@ -176,6 +176,13 @@ def home():
 def about():
     return render_template('about.html')
 
+@app.route('/my-story')
+def my_story():
+    # The My Story page replaced "About" in the navigation.
+    # The URL uses a hyphen (/my-story) because URLs can't have spaces,
+    # while the Python function name uses an underscore (my_story).
+    return render_template('my_story.html')
+
 @app.route('/work')
 def work():
     return render_template('work.html')

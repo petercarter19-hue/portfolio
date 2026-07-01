@@ -10,8 +10,9 @@
     {
       "name": "flask-preview",
       "runtimeExecutable": "C:\\Users\\peter\\Documents\\portfolio\\venv\\Scripts\\python.exe",
-      "runtimeArgs": ["C:\\Users\\peter\\AppData\\Local\\Temp\\claude\\C--Users-peter-Documents-portfolio\\da3e060c-6ed6-49b3-b43b-020ad2dd4466\\scratchpad\\preview_runner.py"],
-      "port": 5050
+      "runtimeArgs": ["C:\\Users\\peter\\AppData\\Local\\Temp\\claude\\C--Users-peter-Documents-portfolio\\912f16dc-ddd2-4e93-8b82-88ef817fa573\\scratchpad\\preview_runner.py"],
+      "port": 5050,
+      "autoPort": true
     }
   ]
 }

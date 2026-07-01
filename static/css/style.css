@@ -233,8 +233,45 @@ button:focus-visible {
     transform: scaleX(1);
 }
 
-.nav-ai-btn {
+/* Active-page feedback: the link for the page you are on keeps the
+   same gold underline the hover effect uses, so it stays lit. */
+.nav-links a[aria-current="page"] {
+    color: var(--color-text-primary);
+}
+
+.nav-links a[aria-current="page"]::after {
+    transform: scaleX(1);
+}
+
+/* Groups the LinkedIn icon and Ask Pete AI button in the header's
+   right grid column so they sit together on the far right. */
+.nav-actions {
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Compact square LinkedIn icon button matching the gold-outline theme. */
+.nav-linkedin {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    color: var(--color-gold);
+    border: 1px solid var(--color-border-gold);
+    border-radius: 8px;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.nav-linkedin:hover,
+.nav-linkedin:focus-visible {
+    color: var(--color-text-dark);
+    background: var(--color-gold);
+    border-color: var(--color-gold);
+}
+
+.nav-ai-btn {
     display: inline-flex;
     align-items: center;
     gap: 9px;
@@ -484,10 +521,6 @@ button:focus-visible {
     filter: drop-shadow(0 0 8px rgb(243 190 79 / 22%)); /* Soft glow helps arrows stand out on the dark background */
 }
 
-.cycle-arc--blue {
-    stroke: rgb(78 163 255 / 58%);                  /* Blue arrows show internal traceability back to the center */
-}
-
 .lifecycle-circuit {
     inset: 16px 0 12px;
     z-index: -1;
@@ -659,11 +692,11 @@ button:focus-visible {
     position: relative;                                    /* Allows the divider line to be positioned inside each item */
     flex: 0 0 auto;                                        /* Keeps each metric card at its fixed width */
     width: 264px;                                    /* Fixed card width so items never stretch as the viewport shrinks */
-    min-height: 78px;                                      /* Thinner strip height; lower number makes the metrics bar slimmer */
+    min-height: 66px;                                      /* 15% thinner than the previous 78px strip height */
     display: flex;                                         /* Puts the icon and text side by side */
     align-items: center;                                   /* Vertically centers icon and text */
     gap: 14px;                                             /* Space between the icon and the metric text */
-    padding: 12px 20px;                                    /* Internal spacing; smaller vertical padding makes the bar thinner */
+    padding: 10px 20px;                                    /* Internal spacing; smaller vertical padding makes the bar thinner */
 }
 
 .metric-item::after {
@@ -1129,6 +1162,10 @@ button:focus-visible {
         gap: 13px;
     }
 
+    .nav-actions {
+        justify-self: center;                       /* Centered like the rest of the stacked mobile header */
+    }
+
     .nav-links {
         flex-wrap: wrap;
         gap: 8px 20px;
@@ -1207,8 +1244,11 @@ button:focus-visible {
         width: min(100% - 32px, var(--site-width));
     }
 
+    /* Phone nav links restored now that the site has real pages to visit.
+       They wrap into centered rows below Pete's name. */
     .nav-links {
-        display: none;                              /* Broken links are intentionally de-emphasized on phone during index-first work */
+        justify-content: center;
+        gap: 6px 18px;
     }
 
     .hero-grid {
@@ -1251,6 +1291,633 @@ button:focus-visible {
         font-size: clamp(1.85rem, 8vw, 2.4rem);
     }
 }
+
+/* =========================================================
+   MY STORY PAGE
+   Styles for templates/my_story.html. Reuses the shared
+   variables, eyebrows, buttons, and card language above.
+   ========================================================= */
+
+/* ---------- Hero ---------- */
+
+.story-hero {
+    position: relative;
+    isolation: isolate;                              /* Keeps the decorative layers behind this section only */
+    overflow: hidden;
+    border-bottom: 1px solid rgb(243 190 79 / 20%);
+}
+
+/* Subtle circuit-line decoration on the portrait side of the hero.
+   pointer-events: none so it never blocks clicks. */
+.story-hero-circuit {
+    position: absolute;
+    inset: 0 0 0 55%;
+    z-index: -1;
+    opacity: 0.2;
+    background:
+        linear-gradient(90deg, transparent 0 34px, rgb(78 163 255 / 30%) 34px 35px, transparent 35px 100%),
+        linear-gradient(0deg, transparent 0 34px, rgb(243 190 79 / 22%) 34px 35px, transparent 35px 100%);
+    background-size: 70px 70px;
+    mask-image: radial-gradient(circle at 60% 45%, black 0 45%, transparent 75%);
+    pointer-events: none;
+}
+
+.story-hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);   /* ~54% copy / ~46% portrait like the mockup */
+    align-items: center;
+    gap: 48px;
+    padding-top: 64px;
+    padding-bottom: 64px;
+}
+
+.story-hero__content h1 {
+    margin: 14px 0 18px;
+    color: var(--color-text-primary);
+    font-size: clamp(2.3rem, 4.2vw, 3.4rem);
+    font-weight: 820;
+    letter-spacing: -0.045em;
+    line-height: 1.08;
+}
+
+.story-hero__content h1 span {
+    color: var(--color-gold);
+}
+
+.story-hero__tagline {
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    font-size: 1.02rem;
+}
+
+.story-hero__intro {
+    max-width: 480px;
+    margin-bottom: 30px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+/* Row of four compact value chips under the intro paragraph */
+.story-values-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 26px;
+    list-style: none;
+}
+
+.value-chip {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.value-chip__icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px solid;
+}
+
+.value-chip__icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.value-chip__icon--gold {
+    color: var(--color-gold);
+    border-color: rgb(243 190 79 / 55%);
+}
+
+.value-chip__icon--cyan {
+    color: var(--color-cyan);
+    border-color: rgb(80 214 232 / 45%);
+}
+
+.value-chip__label {
+    color: var(--color-text-primary);
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* ---------- Hero portrait ---------- */
+
+.story-hero__portrait {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 26px;
+}
+
+/* Two thin decorative rings around the portrait circle */
+.portrait-rings {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: min(100%, 440px);
+    aspect-ratio: 1;
+    border: 1px solid rgb(243 190 79 / 22%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.portrait-rings::before {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border: 1px solid rgb(80 214 232 / 16%);
+    border-radius: 50%;
+}
+
+.portrait-frame {
+    width: min(100%, 360px);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 3px solid var(--color-gold);
+    border-radius: 50%;
+    box-shadow: 0 0 42px rgb(243 190 79 / 16%);
+    background: var(--color-card-elevated);
+}
+
+/* Works for the placeholder now and a real <img> later:
+   cover keeps the photo filling the circle without distortion. */
+.portrait-frame img,
+.portrait-frame svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ---------- Positioning banner ---------- */
+
+.story-banner-section {
+    padding: 40px 0;
+}
+
+.story-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 28px;
+    padding: 26px 30px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid rgb(243 190 79 / 38%);
+    border-radius: 10px;
+}
+
+.story-banner__statement {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-right: 28px;
+    border-right: 1px solid var(--color-border-soft);   /* Subtle divider between the two halves */
+}
+
+.story-banner__icon {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    display: grid;
+    place-items: center;
+    color: var(--color-gold);
+}
+
+.story-banner__icon svg {
+    width: 38px;
+    height: 38px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.story-banner__statement p {
+    color: var(--color-text-primary);
+    font-size: 1.02rem;
+    line-height: 1.65;
+}
+
+.story-banner__focus p:last-child {
+    margin-top: 8px;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+}
+
+/* ---------- Journey section ---------- */
+
+.story-journey {
+    padding: 64px 0 70px;
+    background:
+        radial-gradient(circle at 18% 24%, rgb(17 66 112 / 12%), transparent 30%),
+        var(--color-section);
+    border-top: 1px solid var(--color-border-soft);
+    border-bottom: 1px solid var(--color-border-soft);
+}
+
+.story-journey h2,
+.story-drives h2 {
+    margin: 12px 0 34px;
+    color: var(--color-text-primary);
+    font-size: var(--font-h2);
+    font-weight: 820;
+    letter-spacing: -0.04em;
+    line-height: 1.16;
+}
+
+.story-journey__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+    gap: 46px;
+    align-items: start;
+}
+
+.story-journey__narrative p {
+    margin-bottom: 26px;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+}
+
+/* Horizontal four-milestone timeline. The connecting line is drawn by
+   ::before on each item except the first, so it links the gold nodes. */
+.story-timeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+    list-style: none;
+    counter-reset: none;
+}
+
+.timeline-item {
+    position: relative;
+    padding-top: 6px;
+}
+
+.timeline-item__icon {
+    position: relative;
+    z-index: 1;
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 16px;
+    color: var(--color-gold);
+    background: var(--color-card-elevated);
+    border: 1.5px solid rgb(243 190 79 / 50%);
+    border-radius: 50%;
+}
+
+.timeline-item__icon svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Thin connecting line between milestone icons, with a small gold node
+   where it meets each circle. Skipped on the first item. */
+.timeline-item + .timeline-item::before {
+    content: "";
+    position: absolute;
+    top: 33px;                                       /* Vertically centered on the 54px icon circle */
+    right: calc(100% - 27px);
+    width: calc(100% - 32px);
+    height: 1px;
+    background: rgb(243 190 79 / 35%);
+}
+
+.timeline-item + .timeline-item::after {
+    content: "";
+    position: absolute;
+    top: 30px;
+    left: -14px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-gold);
+}
+
+.timeline-item__date {
+    margin-bottom: 6px;
+    color: var(--color-gold);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.timeline-item h3 {
+    margin-bottom: 4px;
+    color: var(--color-text-primary);
+    font-size: 0.98rem;
+    font-weight: 780;
+    line-height: 1.3;
+}
+
+.timeline-item__role {
+    margin-bottom: 8px;
+    color: var(--color-cyan);
+    font-size: 0.8rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.timeline-item__text {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+/* ---------- Values (What Drives Me) ---------- */
+
+.story-drives {
+    padding: 64px 0 70px;
+}
+
+.story-drives__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.drive-card {
+    padding: 28px 24px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.drive-card__icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    margin-bottom: 18px;
+    color: var(--color-gold);
+}
+
+.drive-card__icon svg {
+    width: 44px;
+    height: 44px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.drive-card h3 {
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+    font-size: 1.02rem;
+    font-weight: 800;
+}
+
+.drive-card p {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.65;
+}
+
+/* ---------- Lower information cards ---------- */
+
+.story-cards {
+    padding: 0 0 70px;
+}
+
+.story-cards__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    align-items: stretch;
+}
+
+.story-card {
+    display: flex;
+    flex-direction: column;
+    padding: 28px 26px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.story-card h2 {
+    margin: 10px 0 18px;
+    color: var(--color-text-primary);
+    font-size: 1.35rem;
+    font-weight: 820;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.story-card__list {
+    margin-bottom: 22px;
+    padding-left: 0;
+    list-style: none;
+}
+
+.story-card__list li {
+    position: relative;
+    margin-bottom: 12px;
+    padding-left: 24px;
+    color: var(--color-text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+/* Small gold node in front of each learning item */
+.story-card__list li::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-gold);
+}
+
+.story-card__link {
+    margin-top: auto;                                /* Pushes the link to the card bottom for equal-height cards */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-gold);
+    font-size: 0.92rem;
+    font-weight: 750;
+    transition: color 160ms ease;
+}
+
+.story-card__link:hover,
+.story-card__link:focus-visible {
+    color: var(--color-gold-bright);
+}
+
+/* Interests grid inside the "Outside of Engineering" card */
+.interest-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+    margin-bottom: 22px;
+    list-style: none;
+}
+
+.interest-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.interest-item__icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    color: var(--color-cyan);
+    border: 1px solid rgb(80 214 232 / 35%);
+    border-radius: 8px;
+}
+
+.interest-item__icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.interest-item h3 {
+    margin-bottom: 2px;
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    font-weight: 750;
+}
+
+.interest-item p {
+    color: var(--color-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
+/* Connect card actions */
+.story-connect-card__body {
+    margin-bottom: 24px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+.story-connect-card__actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.story-connect-card__actions .btn {
+    width: 100%;
+}
+
+/* ---------- My Story responsive behavior ---------- */
+
+@media (max-width: 1180px) {
+    .story-timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 30px 22px;
+    }
+
+    /* Hide the horizontal connector when the timeline wraps to two rows,
+       because it would point at the wrong neighbor. */
+    .timeline-item + .timeline-item::before,
+    .timeline-item + .timeline-item::after {
+        display: none;
+    }
+
+    .story-cards__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .story-connect-card {
+        grid-column: 1 / -1;                        /* Connect card spans full width on tablet */
+    }
+}
+
+@media (max-width: 960px) {
+    .story-hero__grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding-top: 52px;
+        padding-bottom: 52px;
+    }
+
+    .story-hero__portrait {
+        order: 2;                                   /* Text first, portrait below, per the responsive spec */
+        max-width: 420px;
+        margin-inline: auto;
+    }
+
+    .story-hero-circuit {
+        display: none;                              /* Reduce decoration on smaller screens */
+    }
+
+    .story-banner {
+        grid-template-columns: 1fr;
+    }
+
+    .story-banner__statement {
+        padding-right: 0;
+        border-right: none;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--color-border-soft);
+    }
+
+    .story-journey__layout {
+        grid-template-columns: 1fr;
+        gap: 38px;
+    }
+
+    .story-drives__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .story-timeline {
+        grid-template-columns: 1fr;                 /* Vertical timeline on phones */
+        gap: 26px;
+    }
+
+    .story-drives__grid,
+    .story-cards__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .interest-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portrait-frame {
+        width: min(100%, 280px);
+    }
+
+    .story-hero__grid {
+        padding-top: 44px;
+        padding-bottom: 44px;
+    }
+}
+
 
 @media (prefers-reduced-motion: reduce) {
     *,

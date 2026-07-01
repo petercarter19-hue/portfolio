@@ -50,46 +50,75 @@
                 <div class="nav-brand">
                     <a href="/" class="nav-logo" aria-label="Pete Carter — return to homepage">
                         <span class="nav-name">Pete Carter</span>
-                        <span class="nav-tagline">SYSTEM ENGINEER</span>
+                        <span class="nav-tagline">SYSTEMS ENGINEER</span>
                     </a>
                 </div>
 
-                <!-- Right: navigation links + AI button -->
+                <!-- Right: navigation links + LinkedIn + AI button -->
                 <div class="nav-right">
 
+                    <!--
+                        aria-current="page" marks the link for the page the visitor
+                        is on. CSS uses it to keep the gold underline switched on,
+                        and screen readers announce "current page" for that link.
+                    -->
                     <ul class="nav-links">
-                        <li><a href="/work">Work</a></li>
-                        <li><a href="/skills">Skills</a></li>
-                        <li><a href="/hobbies">Hobbies</a></li>
-                        <li><a href="/about">About</a></li>
+                        <li><a href="/work" {% if request.path == '/work' %}aria-current="page"{% endif %}>Case Studies</a></li>
+                        <li><a href="/skills" {% if request.path == '/skills' %}aria-current="page"{% endif %}>Expertise</a></li>
+                        <li><a href="/my-story" {% if request.path == '/my-story' %}aria-current="page"{% endif %}>My Story</a></li>
                         <li><a href="#">Résumé</a></li>
-                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/contact" {% if request.path == '/contact' %}aria-current="page"{% endif %}>Contact</a></li>
                     </ul>
 
-                    <!--
-                        "Ask Pete AI" nav button — opens the same chat panel
-                        as the floating toggle. stopPropagation() prevents the
-                        document click-outside listener in chatbot.js from
-                        closing the panel immediately after opening it.
-                    -->
-                    <button
-                        class="nav-ai-btn"
-                        aria-label="Open Pete's AI assistant"
-                        onclick="
-                            document.getElementById('chat-panel').classList.add('open');
-                            document.getElementById('chat-input').focus();
-                            event.stopPropagation();
-                        "
-                    >
-                        <!-- Chat bubble icon -->
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round"
-                             aria-hidden="true">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        Ask Pete AI
-                    </button>
+                    <!-- Far right: LinkedIn icon + Ask Pete AI, grouped so they
+                         share the third header grid column together. -->
+                    <div class="nav-actions">
+
+                        <!--
+                            target="_blank" opens LinkedIn in a new tab so visitors
+                            don't lose the portfolio. rel="noopener noreferrer" is a
+                            security best practice for links that open new tabs.
+                        -->
+                        <a
+                            class="nav-linkedin"
+                            href="https://www.linkedin.com/in/pete-carter19"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="View Pete Carter on LinkedIn"
+                        >
+                            <!-- LinkedIn "in" logo as a lightweight inline SVG -->
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                 fill="currentColor" aria-hidden="true">
+                                <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.11 20.45H3.56V9h3.55v11.45z"/>
+                            </svg>
+                        </a>
+
+                        <!--
+                            "Ask Pete AI" nav button — opens the same chat panel
+                            as the floating toggle. stopPropagation() prevents the
+                            document click-outside listener in chatbot.js from
+                            closing the panel immediately after opening it.
+                        -->
+                        <button
+                            class="nav-ai-btn"
+                            aria-label="Open Pete's AI assistant"
+                            onclick="
+                                document.getElementById('chat-panel').classList.add('open');
+                                document.getElementById('chat-input').focus();
+                                event.stopPropagation();
+                            "
+                        >
+                            <!-- Chat bubble icon -->
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Ask Pete AI
+                        </button>
+
+                    </div>
 
                 </div>
 
