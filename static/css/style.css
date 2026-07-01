@@ -335,15 +335,31 @@ button:focus-visible {
     border-bottom: 1px solid rgb(243 190 79 / 20%);
 }
 
+/* Restored circuit/chip artwork sitting behind the gradient tint and grid
+   overlay below. Sits at z-index -3 so ::before/::after (both negative but
+   less so) still paint on top of it for text readability. */
+.hero-circuit {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    background-image: var(--hero-circuit-image);
+    background-repeat: no-repeat;
+    background-position: left center;                   /* Source chip sits left-of-frame; keeps it on the left, behind the headline */
+    background-size: cover;
+    opacity: 1;
+    filter: saturate(1.7) brightness(1.4) contrast(1.25);
+    pointer-events: none;
+}
+
 .hero::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -2;
     background:
-        linear-gradient(90deg, rgb(3 11 22 / 98%) 0%, rgb(3 11 22 / 88%) 38%, rgb(8 24 42 / 70%) 100%),
+        linear-gradient(90deg, rgb(3 11 22 / 78%) 0%, rgb(3 11 22 / 60%) 38%, rgb(8 24 42 / 40%) 100%),
         radial-gradient(circle at 76% 46%, rgb(78 163 255 / 18%), transparent 34%),
-        linear-gradient(180deg, #06111f 0%, #06101d 100%);
+        linear-gradient(180deg, rgb(6 17 31 / 38%) 0%, rgb(6 16 29 / 38%) 100%);   /* Was fully opaque (#06111f/#06101d) — blocked .hero-circuit entirely */
 }
 
 .hero::after {
@@ -421,12 +437,26 @@ button:focus-visible {
    CIRCULAR LIFECYCLE VISUAL
    ========================================================= */
 
+.lifecycle-scroll {
+    width: 100%;
+}
+
 .lifecycle-visual {
     position: relative;
     width: 100%;                                      /* Absolute-positioned diagram cards need an explicit parent width */
-    min-height: 430px;
     max-width: 720px;                                /* Keeps the wide diagram inside the hero column */
+    aspect-ratio: 760 / 440;                         /* Matches the stage's reference canvas so height scales with width */
     margin-inline: auto 0;
+    container-type: inline-size;                     /* Lets the stage read this box's width via cqw units */
+}
+
+.lifecycle-stage {
+    position: absolute;
+    inset: 0;
+    width: 760px;
+    height: 440px;
+    transform-origin: top left;
+    transform: scale(calc(100cqw / 760px));          /* Scales the whole fixed-layout diagram to fit the current width */
 }
 
 .lifecycle-arrows,
@@ -603,22 +633,40 @@ button:focus-visible {
     border-bottom: 1px solid rgb(255 255 255 / 8%);
 }
 
-.metrics-grid {
-    min-height: 96px;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: stretch;
+.metrics-track-wrap {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
+}
+
+.metrics-track {
+    display: flex;
+    width: max-content;
+    animation: metrics-scroll 54s linear infinite;   /* Matches original px/sec speed now that each set holds 8 cards, not 5 */
+}
+
+.metrics-track:hover,
+.metrics-track:focus-within {
+    animation-play-state: paused;                   /* Lets a visitor pause the loop to read a card */
+}
+
+.metrics-set {
+    display: flex;
+    flex: 0 0 auto;
 }
 
 .metric-item {
     position: relative;
+    flex: 0 0 auto;
+    width: 264px;                                    /* Fixed card width so items never stretch as the viewport shrinks */
+    min-height: 96px;
     display: flex;
     align-items: center;
     gap: 17px;
     padding: 18px 23px;
 }
 
-.metric-item:not(:last-child)::after {
+.metric-item::after {
     content: "";
     position: absolute;
     top: 22px;
@@ -626,6 +674,15 @@ button:focus-visible {
     bottom: 22px;
     width: 1px;
     background: rgb(154 113 43 / 62%);
+}
+
+@keyframes metrics-scroll {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);                /* Exactly one set-width, so the duplicate set lines up seamlessly */
+    }
 }
 
 .metric-icon {
@@ -1011,20 +1068,24 @@ button:focus-visible {
 
     .hero-copy {
         max-width: 760px;
+        margin-inline: auto;
+        text-align: center;
+    }
+
+    .hero-copy h1,
+    .hero-description {
+        max-width: none;
+        margin-inline: auto;
+    }
+
+    .hero-actions {
+        justify-content: center;
     }
 
     .lifecycle-visual {
         max-width: 780px;
         width: 100%;
         margin-inline: auto;
-    }
-
-    .metrics-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .metric-item:nth-child(3)::after {
-        display: none;
     }
 
     .projects-layout {
@@ -1085,10 +1146,26 @@ button:focus-visible {
         font-size: clamp(2.45rem, 8.6vw, 4rem);
     }
 
+    .project-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    /* Below this width the scaled diagram would need to shrink past a
+       readable size, so drop the transform and lay the stages out as a
+       static stacked list instead (no min-width floor, no scrollbar). */
     .lifecycle-visual {
-        min-height: auto;
+        aspect-ratio: auto;
+    }
+
+    .lifecycle-stage {
+        position: static;
         display: grid;
         gap: 12px;
+        width: auto;
+        height: auto;
+        transform: none;
     }
 
     .lifecycle-arrows,
@@ -1120,18 +1197,6 @@ button:focus-visible {
     .lifecycle-node {
         width: 100%;
         min-height: auto;
-    }
-
-    .metrics-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .metric-item::after {
-        display: none;
-    }
-
-    .project-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -1174,13 +1239,8 @@ button:focus-visible {
         width: 100%;
     }
 
-    .metrics-grid,
     .project-grid {
         grid-template-columns: 1fr;
-    }
-
-    .metric-item {
-        padding-inline: 0;
     }
 
     .projects-section {

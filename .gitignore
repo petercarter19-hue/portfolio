@@ -16,3 +16,6 @@ __pycache__/
 
 # VS Code settings - optional, personal to your machine
 .vscode/
+
+# Claude Code local permission settings - personal to your machine
+.claude/settings.local.json

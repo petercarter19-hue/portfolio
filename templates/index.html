@@ -14,7 +14,13 @@
      and three project cards.
      ===================================================== -->
 
-<section class="hero" aria-labelledby="hero-title">
+<section
+    class="hero"
+    aria-labelledby="hero-title"
+    style="--hero-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');"
+>
+    <div class="hero-circuit" aria-hidden="true"></div>
+
     <div class="site-container hero-grid">
 
         <!-- Left column: professional positioning and actions -->
@@ -49,7 +55,11 @@
         </div>
 
         <!-- Right column: circular systems engineering lifecycle diagram -->
+        <div class="lifecycle-scroll">
         <div class="lifecycle-visual" aria-labelledby="lifecycle-title lifecycle-description">
+            <!-- Fixed 760x440 reference canvas; scaled as one unit via CSS so the
+                 circular layout holds its proportions at every viewport width. -->
+            <div class="lifecycle-stage">
             <svg class="lifecycle-arrows" viewBox="0 0 760 440" aria-hidden="true">
                 <defs>
                     <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
@@ -162,61 +172,182 @@
                     <p>Deliver, monitor, and iterate</p>
                 </div>
             </article>
+            </div>
+        </div>
         </div>
     </div>
 </section>
 
 
-<!-- Metrics strip: public, verified indicators of engineering scope and outcomes. -->
+<!-- Metrics strip: public, verified indicators of engineering scope and outcomes.
+     Renders as a continuously auto-scrolling loop at every screen width, so
+     card size stays constant instead of stretching as columns drop. -->
 <section class="metrics-band" aria-label="Selected professional metrics">
-    <div class="site-container metrics-grid">
-        <div class="metric-item">
-            <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </span>
-            <div>
-                <strong>$36M+</strong>
-                <span>Contract Oversight</span>
-            </div>
-        </div>
+    <div class="site-container metrics-track-wrap">
+        <div class="metrics-track">
+            <div class="metrics-set">
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </span>
+                    <div>
+                        <strong>$36M+</strong>
+                        <span>Contract Oversight</span>
+                    </div>
+                </div>
 
-        <div class="metric-item">
-            <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
-            </span>
-            <div>
-                <strong>70%</strong>
-                <span>Repair &amp; Test Improvement</span>
-            </div>
-        </div>
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
+                    </span>
+                    <div>
+                        <strong>70%</strong>
+                        <span>Repair &amp; Test Improvement</span>
+                    </div>
+                </div>
 
-        <div class="metric-item">
-            <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
-            </span>
-            <div>
-                <strong>16 → 0</strong>
-                <span>Critical Supply Constraints</span>
-            </div>
-        </div>
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
+                    </span>
+                    <div>
+                        <strong>16 → 0</strong>
+                        <span>Critical Supply Constraints</span>
+                    </div>
+                </div>
 
-        <div class="metric-item">
-            <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2M17 11a3 3 0 1 0 0-6M22 21v-2a4 4 0 0 0-4-4"/></svg>
-            </span>
-            <div>
-                <strong>Cross-Functional</strong>
-                <span>Leadership</span>
-            </div>
-        </div>
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
+                    </span>
+                    <div>
+                        <strong>$900M</strong>
+                        <span>Navy NGJ Program Support</span>
+                    </div>
+                </div>
 
-        <div class="metric-item">
-            <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>
-            </span>
-            <div>
-                <strong>PMP · M.S.E.M.</strong>
-                <span>Ph.D. Student</span>
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+                    </span>
+                    <div>
+                        <strong>$19.2M</strong>
+                        <span>Redesign Projects Led</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>
+                    </span>
+                    <div>
+                        <strong>35%</strong>
+                        <span>Faster Issue Resolution</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                    </span>
+                    <div>
+                        <strong>52%</strong>
+                        <span>Fewer Missing Parts</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 13l-2 8 5.5-3 5.5 3-2-8"/></svg>
+                    </span>
+                    <div>
+                        <strong>1 of 128</strong>
+                        <span>DoD Emerging Leader</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Duplicate set, hidden from assistive tech, so the loop has no visible seam. -->
+            <div class="metrics-set" aria-hidden="true">
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </span>
+                    <div>
+                        <strong>$36M+</strong>
+                        <span>Contract Oversight</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
+                    </span>
+                    <div>
+                        <strong>70%</strong>
+                        <span>Repair &amp; Test Improvement</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
+                    </span>
+                    <div>
+                        <strong>16 → 0</strong>
+                        <span>Critical Supply Constraints</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
+                    </span>
+                    <div>
+                        <strong>$900M</strong>
+                        <span>Navy NGJ Program Support</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+                    </span>
+                    <div>
+                        <strong>$19.2M</strong>
+                        <span>Redesign Projects Led</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>
+                    </span>
+                    <div>
+                        <strong>35%</strong>
+                        <span>Faster Issue Resolution</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                    </span>
+                    <div>
+                        <strong>52%</strong>
+                        <span>Fewer Missing Parts</span>
+                    </div>
+                </div>
+
+                <div class="metric-item">
+                    <span class="metric-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 13l-2 8 5.5-3 5.5 3-2-8"/></svg>
+                    </span>
+                    <div>
+                        <strong>1 of 128</strong>
+                        <span>DoD Emerging Leader</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
