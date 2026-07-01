@@ -1,13 +1,12 @@
 // =========================================================
-// CHATBOT WIDGET — chatbot.js
+// CHATBOT WIDGET - chatbot.js
 //
-// This file controls everything the chat widget DOES:
-// opening, closing, sending messages, and responding.
+// This file controls everything the chat widget does:
+// opening, closing, sending messages, and displaying replies.
 //
-// MVP 0: This is the visual prototype. Responses are
-// hardcoded mock text — no real AI is connected yet.
-// In MVP 1 we will replace getMockResponse() with a
-// real call to the Flask API, which will call Claude.
+// MVP 1: The widget sends visitor questions to Flask's
+// /api/chat route. Flask keeps the API key private, calls
+// Claude on the server, and returns the answer to the browser.
 // =========================================================
 
 
@@ -23,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // the page for them every single time we use them.
     // -------------------------------------------------------
 
-    const toggle      = document.getElementById('chat-toggle');      // Floating "Ask Pete AI" button
+    const toggle      = document.getElementById('chat-toggle');      // Optional floating launcher; currently removed from base.html
     const panel       = document.getElementById('chat-panel');       // The slide-in chat panel
     const closeBtn    = document.getElementById('chat-close');       // The X button inside the header
     const messages    = document.getElementById('chat-messages');    // Scrollable message area
@@ -36,16 +35,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // OPEN AND CLOSE THE PANEL
     // -------------------------------------------------------
 
-    // Clicking the floating button toggles the panel open or closed
-    toggle.addEventListener('click', function () {
-        panel.classList.toggle('open');
+    // If a floating launcher is added back later, this keeps it working.
+    // The current site opens the chat from the top navigation button instead.
+    if (toggle) {
+        // Clicking the floating button toggles the panel open or closed
+        toggle.addEventListener('click', function () {
+            panel.classList.toggle('open');
 
-        // When the panel opens, move focus to the input field
-        // so the user can start typing right away
-        if (panel.classList.contains('open')) {
-            input.focus();
-        }
-    });
+            // When the panel opens, move focus to the input field
+            // so the user can start typing right away
+            if (panel.classList.contains('open')) {
+                input.focus();
+            }
+        });
+    }
 
     // Clicking the X button closes the panel
     closeBtn.addEventListener('click', function () {
@@ -54,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Clicking anywhere outside the panel and button closes the panel
     document.addEventListener('click', function (e) {
-        if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+        if (!panel.contains(e.target) && (!toggle || !toggle.contains(e.target))) {
             panel.classList.remove('open');
         }
     });
@@ -83,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
     sendBtn.addEventListener('click', handleSend);
 
     input.addEventListener('keydown', function (e) {
-        // Send on Enter key — but allow Shift+Enter to add a new line
+        // Send on Enter key, but allow Shift+Enter to add a new line
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();     // Stops the browser from adding a blank line
             handleSend();
@@ -100,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // -------------------------------------------------------
-    // THE MESSAGE FLOW — MVP 1
+    // THE MESSAGE FLOW - MVP 1
     // Sends the user's message to Flask, which calls the
     // real Claude API and returns an intelligent answer.
     // -------------------------------------------------------
@@ -124,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         input.disabled = true;
         sendBtn.disabled = true;
 
-        // 5. Send the message to our Flask /api/chat route using fetch()
+        // 5. Send the message to our Flask /api/chat route using fetch().
         //    fetch() is a built-in browser tool for making HTTP requests.
         //    We're sending a POST request with the message as JSON.
         fetch('/api/chat', {
@@ -133,31 +136,31 @@ document.addEventListener('DOMContentLoaded', function () {
             body: JSON.stringify({ message: text })
         })
 
-        // 5. The response comes back as JSON — parse it
+        // 6. The response comes back as JSON, so parse it.
         .then(function(response) {
             return response.json();
         })
 
-        // 6. Use the parsed data to update the thinking bubble with Claude's answer
+        // 7. Use the parsed data to update the thinking bubble with Claude's answer.
         .then(function(data) {
             if (data.response) {
                 thinkingBubble.textContent = data.response;
             } else {
-                // If the server returned an error field, show a friendly message
+                // If the server returned an error field, show a friendly message.
                 thinkingBubble.textContent = "Sorry, I couldn't get a response. Please try again.";
             }
             scrollToBottom();
         })
 
-        // 7. If the network request itself failed (e.g. Flask isn't running),
-        //    show a fallback message instead of breaking silently
+        // 8. If the network request itself failed (e.g. Flask isn't running),
+        //    show a fallback message instead of breaking silently.
         .catch(function() {
             thinkingBubble.textContent = "Something went wrong connecting to the server. Please refresh and try again.";
             scrollToBottom();
         })
 
-        // 8. Whether it succeeded or failed, always re-enable the input
-        //    so the user can try again
+        // 9. Whether it succeeded or failed, always re-enable the input
+        //    so the user can try again.
         .finally(function() {
             input.disabled = false;
             sendBtn.disabled = false;

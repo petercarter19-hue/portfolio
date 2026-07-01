@@ -1,7 +1,7 @@
 /* =========================================================
    CHATBOT WIDGET — chatbot.css
 
-   This file styles the floating "Ask Pete AI" chat assistant.
+   This file styles the "Ask Pete AI" chat assistant panel.
    It lives separately from style.css so chatbot styles are
    easy to find, change, and update without touching the main
    site styles.
@@ -13,60 +13,12 @@
 
 
 /* ---------------------------------------------------------
-   FLOATING LAUNCHER BUTTON
-   The pill-shaped button fixed to the bottom-right corner.
-   It stays visible even when the user scrolls.
+   NOTE ABOUT THE REMOVED FLOATING LAUNCHER
+   The site now opens chat from the top navigation button only.
+   That avoids showing two separate "Ask Pete AI" buttons.
    --------------------------------------------------------- */
 
-#chat-toggle {
-    position: fixed;                            /* Stays in place while scrolling */
-    bottom: 28px;
-    right: 28px;
-    z-index: 1000;                              /* Floats above all other page content */
-
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    background: var(--navy-900);
-    color: var(--gold-500);
-    border: 1px solid var(--gold-500);
-    border-radius: 50px;                        /* Pill shape */
-    padding: 12px 20px;
-    cursor: pointer;
-
-    font-family: "Segoe UI", Arial, sans-serif;
-    font-size: 1.2rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-
-    /* Subtle pulse plays twice when the page first loads,
-       drawing the visitor's attention to the button */
-    animation: chat-pulse 2.5s ease 2s 2;
-}
-
-#chat-toggle:hover {
-    background: var(--navy-700);
-    transform: translateY(-2px);               /* Slight lift on hover */
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
-}
-
-/* Small keyboard shortcut label inside the button */
-#chat-shortcut {
-    font-size: 0.75rem;
-    opacity: 0.65;
-    font-weight: 400;
-}
-
-/* The pulse effect — a gold glow ring that expands and fades */
-@keyframes chat-pulse {
-    0%   { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 rgba(226, 185, 111, 0.5); }
-    70%  { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 14px rgba(226, 185, 111, 0); }
-    100% { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 rgba(226, 185, 111, 0); }
-}
+/* No #chat-toggle styles are needed right now because the launcher was removed from base.html. */
 
 
 /* ---------------------------------------------------------
@@ -78,7 +30,7 @@
 
 #chat-panel {
     position: fixed;
-    bottom: 90px;                               /* Sits just above the launcher button */
+    bottom: 28px;                               /* Sits near the lower-right corner without needing a launcher button */
     right: 28px;
     z-index: 999;
 
@@ -314,12 +266,4 @@
         border-radius: 16px 16px 0 0;          /* Flat bottom, rounded top */
     }
 
-    #chat-toggle {
-        bottom: 20px;
-        right: 160px;
-    }
-
-    #chat-shortcut {
-        display: none;                          /* Hide keyboard shortcut on mobile */
-    }
 }

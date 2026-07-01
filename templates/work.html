@@ -1,0 +1,21 @@
+{# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
+{% extends "base.html" %}
+
+{# This block controls the text shown in the browser tab for this page. #}
+{% block title %}Work | Pete Carter{% endblock %}
+
+{# Everything inside this content block gets inserted into base.html's <main> area. #}
+{% block content %}
+
+<!-- Placeholder section: this prevents /work from crashing until we build the full page. -->
+<section class="projects-section" aria-labelledby="work-title">
+    <div class="site-container projects-copy">
+        <p class="section-eyebrow">Work</p>
+        <h2 id="work-title">Work page coming soon</h2>
+        <p>
+            This page is ready for case studies, project details, and career experience.
+        </p>
+    </div>
+</section>
+
+{% endblock %}

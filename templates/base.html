@@ -59,7 +59,8 @@
 
                     <ul class="nav-links">
                         <li><a href="/work">Work</a></li>
-                        <li><a href="/work">Experience</a></li>
+                        <li><a href="/skills">Skills</a></li>
+                        <li><a href="/hobbies">Hobbies</a></li>
                         <li><a href="/about">About</a></li>
                         <li><a href="#">Résumé</a></li>
                         <li><a href="/contact">Contact</a></li>
@@ -112,14 +113,15 @@
 
     <!-- ======================================================
          CHATBOT WIDGET
-         Adds the "Ask Pete AI" floating button and slide-in
-         chat panel to every page via the shared base template.
+         Adds the shared chat panel to every page.
+         The top navigation button opens this panel.
          ====================================================== -->
 
-    <button id="chat-toggle" aria-label="Open Pete's Engineering Assistant">
-        💬 Ask Pete AI <span id="chat-shortcut">⌘K</span>
-    </button>
-
+    <!--
+        The old bottom-right floating launcher was removed because
+        the top navigation already has an "Ask Pete AI" button.
+        One entry point feels cleaner and less repetitive.
+    -->
     <div id="chat-panel" role="dialog" aria-label="Pete's Engineering Assistant">
 
         <div id="chat-header">
