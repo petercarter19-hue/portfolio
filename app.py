@@ -269,4 +269,10 @@ def chat():
 
 # --- START THE SERVER ---
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Use the PORT environment variable when a tool (like the Claude
+    # preview) or a hosting platform assigns one, and fall back to the
+    # usual 5000 for normal local development. Hosting services like
+    # Render/Railway set PORT the same way, so this also prepares the
+    # app for public deployment later.
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, port=port)

@@ -154,9 +154,69 @@ button:focus-visible {
     min-height: 68px;
     margin-inline: auto;
     display: grid;
-    grid-template-columns: minmax(230px, 1fr) auto minmax(150px, 1fr);
+    /* Four columns: site menu | brand | page links | LinkedIn + AI button.
+       The new first "auto" column holds the dropdown menu button, which
+       naturally shifts the brand and links to the right. */
+    grid-template-columns: auto minmax(230px, 1fr) auto minmax(150px, 1fr);
     align-items: center;
     gap: 24px;
+}
+
+/* ---------- Site menu (top-left dropdown) ----------
+   Future home of the multi-tenant business menu. position: relative
+   lets the dropdown anchor directly beneath the button. */
+.nav-menu {
+    position: relative;
+}
+
+.nav-menu-btn {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    color: #dfe4ea;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.nav-menu-btn:hover,
+.nav-menu-btn:focus-visible,
+.nav-menu-btn[aria-expanded="true"] {
+    color: var(--color-gold);
+    border-color: var(--color-border-gold);
+    background: rgb(243 190 79 / 8%);
+}
+
+.nav-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 1100;
+    min-width: 190px;
+    padding: 6px;
+    background: linear-gradient(180deg, #0d1a2a, #0a1624);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 18px 45px rgb(0 0 0 / 45%);
+}
+
+.nav-menu-dropdown a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--color-text-secondary);
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: color 160ms ease, background-color 160ms ease;
+}
+
+.nav-menu-dropdown a:hover,
+.nav-menu-dropdown a:focus-visible {
+    color: var(--color-gold-bright);
+    background: rgb(243 190 79 / 8%);
 }
 
 .nav-brand {
@@ -252,45 +312,57 @@ button:focus-visible {
     gap: 12px;
 }
 
-/* Real LinkedIn logo in the header: the SVG itself is the rounded
-   square, so the anchor needs no border — just size and color. */
+/* LinkedIn logo in the header: the SVG carries LinkedIn's official
+   brand colors itself (#0A66C2 + white), so the anchor only handles
+   sizing and a subtle hover lift — no color overrides. */
 .nav-linkedin {
     width: 38px;
     height: 38px;
     display: grid;
     place-items: center;
-    color: #dfe4ea;                                 /* Light silver logo like the mockup */
     border-radius: 8px;
-    transition: color 160ms ease;
+    transition: transform 160ms ease, filter 160ms ease;
 }
 
 .nav-linkedin:hover,
 .nav-linkedin:focus-visible {
-    color: var(--color-gold);
+    transform: translateY(-1px);
+    filter: brightness(1.15);
 }
 
+/* "Ask Pete AI" header button: squared-off, gold-tinted, and
+   double-outlined (border + inset ring) so it reads as the site's
+   signature AI feature instead of a generic pill button. */
 .nav-ai-btn {
     display: inline-flex;
     align-items: center;
     gap: 9px;
     min-height: 38px;
     padding: 0 17px;
-    color: var(--color-gold);
-    background: transparent;
-    border: 1px solid var(--color-border-gold);
-    border-radius: 8px;
+    color: var(--color-gold-bright);
+    background: linear-gradient(180deg, rgb(243 190 79 / 18%), rgb(243 190 79 / 6%));
+    border: 1px solid var(--color-gold);
+    border-radius: 4px;
+    box-shadow:
+        inset 0 0 0 1px rgb(243 190 79 / 22%),      /* Inner gold ring = the "double outline" look */
+        0 0 14px rgb(243 190 79 / 12%);             /* Soft glow lifts it off the dark header */
     cursor: pointer;
-    font-size: 0.86rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     white-space: nowrap;
-    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .nav-ai-btn:hover,
 .nav-ai-btn:focus-visible {
     color: var(--color-text-dark);
-    background: var(--color-gold);
-    border-color: var(--color-gold);
+    background: linear-gradient(180deg, var(--color-gold-bright), var(--color-gold));
+    border-color: var(--color-gold-bright);
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 30%),
+        0 0 18px rgb(243 190 79 / 26%);
 }
 
 
@@ -674,16 +746,18 @@ button:focus-visible {
    METRICS BAND
    ========================================================= */
 
+/* The band itself is now transparent: the visible strip is the framed
+   track-wrap below, which stops at the page's content rail instead of
+   running edge-to-edge on big screens. */
 .metrics-band {
-    background: linear-gradient(180deg, #0c1827, #08131f); /* Dark strip behind the scrolling metric cards */
-    border-top: 1px solid rgb(243 190 79 / 24%);           /* Thin gold line separates hero from metrics */
-    border-bottom: 1px solid rgb(255 255 255 / 8%);        /* Subtle bottom divider before the next section */
+    padding: 18px 0;
 }
 
 .metrics-track-wrap {
-    overflow: hidden;                                      /* Hides cards outside the visible scrolling area */
-    mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Fades edges of the scrolling track */
-    -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Safari/Chrome version of the same fade */
+    overflow: hidden;                                      /* Cards are cut off cleanly at each end of the frame */
+    background: linear-gradient(180deg, #0c1827, #08131f); /* Dark strip behind the scrolling metric cards */
+    border: 1px solid rgb(243 190 79 / 30%);               /* Thin gold frame ends the strip at the content edges */
+    border-radius: 8px;
 }
 
 .metrics-track {
@@ -1100,7 +1174,7 @@ button:focus-visible {
     }
 
     .nav-container {
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto auto 1fr auto;   /* menu | brand | links | actions */
     }
 
     .nav-links {
@@ -1195,8 +1269,13 @@ button:focus-visible {
 @media (max-width: 860px) {
     .nav-container {
         width: min(100% - 32px, var(--site-width));
-        grid-template-columns: minmax(160px, 0.8fr) auto minmax(126px, 0.6fr);
+        grid-template-columns: auto minmax(160px, 0.8fr) auto minmax(126px, 0.6fr);
         gap: 10px;
+    }
+
+    .nav-menu-btn {
+        width: 32px;
+        height: 32px;
     }
 
     .nav-logo {
@@ -1243,6 +1322,16 @@ button:focus-visible {
         grid-template-columns: 1fr;
         justify-items: center;
         gap: 14px;
+    }
+
+    /* On the stacked phone header, the site menu pins to the top-left
+       corner instead of joining the centered column. The header is
+       position: relative here, so absolute coordinates are relative
+       to the header itself. */
+    .nav-menu {
+        position: absolute;
+        top: 14px;
+        left: 16px;
     }
 
     .nav-logo {
@@ -1488,12 +1577,23 @@ button:focus-visible {
     line-height: 1.7;
 }
 
-/* Row of four compact value chips under the intro paragraph */
+/* Row of four compact value chips under the intro paragraph.
+   Grid instead of flex-wrap: a wrapping flex row can strand one chip
+   alone on a second line (3+1). The grid always shows exactly four
+   across, or a clean 2x2 on narrower screens (media rule below). */
 .story-values-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, auto));
+    justify-content: start;
     gap: 12px 18px;
     list-style: none;
+}
+
+/* Switch to 2x2 before the four chips would ever need to wrap */
+@media (max-width: 1240px) {
+    .story-values-row {
+        grid-template-columns: repeat(2, minmax(0, auto));
+    }
 }
 
 .value-chip {
@@ -1579,7 +1679,7 @@ button:focus-visible {
    edges survive — they dissolve into the dark background. */
 .portrait-frame {
     position: relative;
-    width: clamp(280px, 30vw, 350px);
+    width: clamp(320px, 38vw, 470px);               /* Noticeably larger collage per Pete's request */
     aspect-ratio: 4 / 5;
     overflow: hidden;
     mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
@@ -1639,6 +1739,31 @@ button:focus-visible {
     color: var(--color-text-primary);
     font-size: 0.8rem;
     line-height: 1.38;
+}
+
+/* On two-column hero layouts the collage column is taller than the
+   text column, which used to leave a dead gap below the banner card.
+   Stretching the text column and splitting the leftover space with
+   two auto margins keeps the headline block visually centered while
+   the banner rides down to align with the bottom of the collage. */
+@media (min-width: 781px) {
+    .story-hero__grid {
+        align-items: stretch;
+    }
+
+    .story-hero__content {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .story-hero__headline {
+        margin-top: auto;                            /* Absorbs half the free space above */
+    }
+
+    .story-banner {
+        margin-top: auto;                            /* Absorbs the other half — no dead gap below */
+    }
 }
 
 /* ---------- Journey section ---------- */
@@ -1850,10 +1975,11 @@ button:focus-visible {
     padding: 0 0 10px;
 }
 
-/* Middle "Outside of Engineering" card is wider, like the mockup */
+/* Two cards now: "Outside of Engineering" earned the connect card's
+   old space, so it gets the wider column for its 4x2 interest grid. */
 .story-cards__grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
     gap: 16px;
     align-items: stretch;
 }
@@ -1928,11 +2054,12 @@ button:focus-visible {
 }
 
 /* Interests grid inside the "Outside of Engineering" card:
-   three columns × two rows, like the mockup. */
+   eight items in four columns × two rows. Responsive rules below
+   drop it straight to two columns — never a 3+1 orphan row. */
 .interest-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 12px;
     margin-bottom: 12px;
     list-style: none;
 }
@@ -1977,41 +2104,127 @@ button:focus-visible {
     line-height: 1.28;
 }
 
-/* Connect card actions */
-.story-connect-card__body {
-    margin-bottom: 16px;
-    color: var(--color-text-secondary);
-    font-size: 0.76rem;
-    line-height: 1.48;
+/* ---------- Shared card hover ----------
+   The same "pop out" the homepage project cards use, applied to every
+   card-style surface on the site so hover feedback feels consistent. */
+.drive-card,
+.story-card,
+.fun-fact-card {
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.story-connect-card__actions {
-    margin-top: auto;
+.drive-card:hover,
+.story-card:hover,
+.fun-fact-card:hover {
+    transform: translateY(-4px);
+    border-color: #53687e;
+    box-shadow: var(--shadow-card);
+}
+
+/* ---------- Fun facts ---------- */
+
+.fun-facts {
+    padding: 26px 0 10px;
+}
+
+.fun-facts__header {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
 }
 
-.story-connect-card__actions .btn {
-    width: 100%;
+.fun-facts__header h2 {
+    margin-top: 8px;
+    color: var(--color-text-primary);
+    font-size: clamp(1.35rem, 1.8vw, 1.7rem);
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+.fun-facts__shuffle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     min-height: 38px;
-    font-size: 0.72rem;
+    padding: 0 18px;
+    color: var(--color-gold);
+    background: transparent;
+    border: 1px solid var(--color-border-gold);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 750;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.fun-facts__shuffle:hover,
+.fun-facts__shuffle:focus-visible {
+    color: var(--color-gold-bright);
+    border-color: var(--color-gold);
+    background: rgb(243 190 79 / 8%);
+}
+
+.fun-facts__shuffle svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fun-facts__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.fun-fact-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.fun-fact-card__icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: grid;
+    place-items: center;
+    color: var(--color-gold);
+    border: 1px solid rgb(243 190 79 / 45%);
+    border-radius: 50%;
+}
+
+.fun-fact-card__icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fun-fact-card p {
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.5;
 }
 
 /* On My Story, the shared metrics partial becomes a framed bottom strip
    like the reference image, while the homepage keeps its scrolling band. */
 .my-story-page .metrics-band {
-    padding: 0 0 12px;
-    background: transparent;
-    border-top: 0;
-}
-
-.my-story-page .metrics-track-wrap {
-    background: linear-gradient(180deg, #0b1827, #081420);
-    border: 1px solid var(--color-border-soft);
-    border-radius: 8px;
-    mask-image: none;
-    -webkit-mask-image: none;
+    padding: 6px 0 18px;
 }
 
 .my-story-page .metrics-track {
@@ -2087,11 +2300,11 @@ button:focus-visible {
 
 @media (max-width: 900px) {
     .story-hero__portrait::before {
-        width: clamp(280px, 40vw, 360px);
+        width: clamp(300px, 44vw, 420px);
     }
 
     .portrait-frame {
-        width: clamp(240px, 34vw, 320px);
+        width: clamp(270px, 40vw, 380px);
     }
 
     .story-timeline {
@@ -2112,12 +2325,9 @@ button:focus-visible {
         gap: 26px;
     }
 
+    /* Cards stack one per row so the 4x2 interest grid keeps room */
     .story-cards__grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .story-connect-card {
-        grid-column: 1 / -1;                        /* Connect card spans full width on tablet */
+        grid-template-columns: 1fr;
     }
 }
 
@@ -2233,7 +2443,12 @@ button:focus-visible {
         grid-template-columns: 1fr;
     }
 
+    /* 2x2x2 on phones — eight items never strand a 3+1 row */
     .interest-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fun-facts__grid {
         grid-template-columns: 1fr;
     }
 
