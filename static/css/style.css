@@ -1453,8 +1453,8 @@ button:focus-visible {
     grid-template-columns: minmax(430px, 0.9fr) minmax(300px, 1.1fr);
     align-items: center;
     gap: clamp(22px, 4vw, 64px);
-    padding-top: clamp(44px, 5vw, 76px);
-    padding-bottom: clamp(46px, 5vw, 70px);
+    padding-top: clamp(36px, 4vw, 54px);
+    padding-bottom: clamp(20px, 2.4vw, 32px);
 }
 
 .story-hero__content {
@@ -1547,7 +1547,13 @@ button:focus-visible {
     place-items: center;
     justify-self: center;
     width: 100%;
-    padding: clamp(10px, 1.5vw, 20px);
+    /* Only a little vertical padding: the extra top/bottom whitespace
+       was making this column taller than the text column, which (with
+       align-items: center on the grid) pushed dead space below the
+       "Combining technical depth..." banner. Keeping the horizontal
+       padding preserves side breathing room without shrinking the
+       visible collage. */
+    padding: 6px clamp(10px, 1.5vw, 20px);
 }
 
 /* Soft ambient glow behind the collage so it reads as part of the
@@ -1567,15 +1573,17 @@ button:focus-visible {
 
 /* No hard frame or circular crop: a soft radial mask fades the
    collage's own dark edges into the page background so the photo
-   blends in instead of reading as a cropped rectangle. Matches the
-   collage's real 1122x1402 (4:5) proportions. */
+   blends in instead of reading as a cropped rectangle. The fade now
+   starts earlier (42%) and reaches fully transparent before the
+   image edge (88%), so none of the photo's straight rectangular
+   edges survive — they dissolve into the dark background. */
 .portrait-frame {
     position: relative;
     width: clamp(280px, 30vw, 350px);
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    mask-image: radial-gradient(ellipse 72% 66% at 50% 42%, black 58%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse 72% 66% at 50% 42%, black 58%, transparent 100%);
+    mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
+    -webkit-mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
 }
 
 .portrait-frame img {
@@ -2114,19 +2122,64 @@ button:focus-visible {
 }
 
 @media (max-width: 780px) {
+    /* The hero keeps its desktop shape on phones: headline and value
+       chips on the left, collage on the right, and the banner card
+       spanning the full width underneath both columns.
+       "display: contents" below dissolves the .story-hero__content
+       wrapper box so its children (headline block, values row,
+       banner) can be placed directly onto this grid as if they were
+       its own children — that's what lets the banner escape the left
+       column and stretch across the whole row. */
     .story-hero__grid {
-        grid-template-columns: 1fr;
-        gap: 30px;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        grid-template-areas:
+            "headline portrait"
+            "values   portrait"
+            "banner   banner";
+        align-items: center;
+        gap: 0 16px;
         padding-top: 42px;
         padding-bottom: 34px;
     }
 
-    /* Collage now flows normally below the text instead of floating
-       small in the corner, and is sized generously. */
+    .story-hero__content {
+        display: contents;
+    }
+
+    .story-hero__headline {
+        grid-area: headline;
+        align-self: end;
+    }
+
+    .story-values-row {
+        grid-area: values;
+        align-self: start;
+    }
+
+    /* Headline shrinks on phones so "Engineer" fits the narrower
+       left column without overflowing into the collage. */
+    .story-hero__content h1 {
+        font-size: clamp(1.5rem, 5vw, 2.3rem);
+    }
+
+    .story-hero__intro {
+        margin-bottom: 18px;
+    }
+
     .story-hero__portrait {
-        width: min(100%, 440px);
-        margin-inline: auto;
-        padding: 6px;
+        grid-area: portrait;
+        width: 100%;
+        padding: 0;
+    }
+
+    /* Collage scales with the viewport (40vw) so bigger phones get a
+       proportionally bigger photo instead of one fixed size. */
+    .story-hero__portrait::before {
+        width: clamp(130px, 44vw, 330px);
+    }
+
+    .portrait-frame {
+        width: clamp(120px, 40vw, 310px);
     }
 
     .story-hero-circuit {
@@ -2140,7 +2193,9 @@ button:focus-visible {
     }
 
     .story-banner {
+        grid-area: banner;
         width: 100%;
+        margin-top: 22px;
     }
 
     .story-banner__statement {
@@ -2185,11 +2240,6 @@ button:focus-visible {
     .story-hero__grid {
         padding-top: 36px;
         padding-bottom: 32px;
-    }
-
-    .story-hero__portrait {
-        width: min(100%, 320px);
-        padding: 4px;
     }
 
     .story-banner {

@@ -20,7 +20,13 @@
 
 #chat-toggle {
     position: fixed;
-    right: 28px;
+    /* On very wide screens the page content stops at a centered 1360px
+       rail (var(--site-width)), leaving big empty side margins. A plain
+       "right: 28px" would strand this button way out in that right
+       margin, far from the content. This math parks the button's right
+       edge at the content rail's edge once the window is wider than the
+       rail, and falls back to a simple 28px inset on narrower screens. */
+    right: max(28px, calc((100% - var(--site-width)) / 2));
     bottom: 28px;
     z-index: 998;
     min-height: 50px;
@@ -56,7 +62,9 @@
 #chat-panel {
     position: fixed;
     bottom: 92px;                               /* Leaves room for the floating launcher below the open panel */
-    right: 28px;
+    /* Match the launcher: align the panel's right edge to the content
+       rail on wide screens instead of the far viewport edge. */
+    right: max(28px, calc((100% - var(--site-width)) / 2));
     z-index: 999;
 
     width: 440px;
