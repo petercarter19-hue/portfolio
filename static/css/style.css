@@ -1571,7 +1571,7 @@ button:focus-visible {
    collage's real 1122x1402 (4:5) proportions. */
 .portrait-frame {
     position: relative;
-    width: clamp(360px, 40vw, 560px);
+    width: clamp(280px, 30vw, 350px);
     aspect-ratio: 4 / 5;
     overflow: hidden;
     mask-image: radial-gradient(ellipse 72% 66% at 50% 42%, black 58%, transparent 100%);
