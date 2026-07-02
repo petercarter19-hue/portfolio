@@ -13,12 +13,37 @@
 
 
 /* ---------------------------------------------------------
-   NOTE ABOUT THE REMOVED FLOATING LAUNCHER
-   The site now opens chat from the top navigation button only.
-   That avoids showing two separate "Ask Pete AI" buttons.
+   FLOATING LAUNCHER
+   A bottom-right preview button that opens the same chat panel
+   as the top navigation "Ask Pete AI" button.
    --------------------------------------------------------- */
 
-/* No #chat-toggle styles are needed right now because the launcher was removed from base.html. */
+#chat-toggle {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 998;
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    color: var(--color-text-dark);
+    background: linear-gradient(180deg, var(--color-gold-bright), var(--color-gold));
+    border: 1px solid var(--color-gold);
+    border-radius: 999px;
+    box-shadow: 0 16px 36px rgb(0 0 0 / 32%), 0 0 24px rgb(243 190 79 / 20%);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 850;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+#chat-toggle:hover,
+#chat-toggle:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 42px rgb(0 0 0 / 36%), 0 0 28px rgb(243 190 79 / 28%);
+}
 
 
 /* ---------------------------------------------------------
@@ -30,7 +55,7 @@
 
 #chat-panel {
     position: fixed;
-    bottom: 28px;                               /* Sits near the lower-right corner without needing a launcher button */
+    bottom: 92px;                               /* Leaves room for the floating launcher below the open panel */
     right: 28px;
     z-index: 999;
 
@@ -257,6 +282,13 @@
    --------------------------------------------------------- */
 
 @media (max-width: 520px) {
+
+    #chat-toggle {
+        right: 18px;
+        bottom: 18px;
+        min-height: 48px;
+        padding: 0 16px;
+    }
 
     #chat-panel {
         right: 0;
