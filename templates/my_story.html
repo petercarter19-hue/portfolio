@@ -10,7 +10,7 @@
      MY STORY PAGE
      Personal-professional narrative page built from the
      approved mockup: hero with portrait, positioning
-     banner, journey timeline, values, info cards, and
+     statement, journey timeline, values, info cards, and
      the shared metrics strip.
      ===================================================== -->
 <div class="my-story-page">
@@ -25,21 +25,23 @@
         <div class="site-container story-hero__grid">
 
             <div class="story-hero__content">
-                <p class="section-eyebrow">MY STORY</p>
+                <div class="story-hero__headline">
+                    <p class="section-eyebrow">MY STORY</p>
 
-                <h1 id="story-title">
-                    The Engineer<br>
-                    <span>Behind the Work</span>
-                </h1>
+                    <h1 id="story-title">
+                        The Engineer<br>
+                        <span>Behind the Work</span>
+                    </h1>
 
-                <p class="story-hero__tagline">
-                    Engineer. Leader. Problem Solver. Lifelong Learner.
-                </p>
+                    <p class="story-hero__tagline">
+                        Engineer. Leader. Problem Solver. Lifelong Learner.
+                    </p>
 
-                <p class="story-hero__intro">
-                    Driven by curiosity and purpose, I thrive on turning complex
-                    challenges into practical, mission-impacting solutions.
-                </p>
+                    <p class="story-hero__intro">
+                        Driven by curiosity and purpose, I thrive on turning complex
+                        challenges into practical, mission-impacting solutions.
+                    </p>
+                </div>
 
                 <!-- Four compact value chips with circular icons -->
                 <ul class="story-values-row" aria-label="Personal values">
@@ -54,7 +56,7 @@
                         <span class="value-chip__label">Mission<br>Focused</span>
                     </li>
                     <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--cyan" aria-hidden="true">
+                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
                             <svg viewBox="0 0 24 24">
                                 <circle cx="9" cy="8" r="3.2"/>
                                 <circle cx="16.5" cy="9.5" r="2.4"/>
@@ -74,7 +76,7 @@
                         <span class="value-chip__label">Solutions<br>Driven</span>
                     </li>
                     <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--cyan" aria-hidden="true">
+                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
                             <svg viewBox="0 0 24 24">
                                 <rect x="3" y="4" width="18" height="14" rx="2"/>
                                 <path d="M7 14v-3M11 14V8M15 14v-4"/>
@@ -84,53 +86,35 @@
                         <span class="value-chip__label">Impact<br>Oriented</span>
                     </li>
                 </ul>
+
+                <div class="story-banner" aria-label="Professional positioning">
+                    <div class="story-banner__statement">
+                        <span class="story-banner__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/>
+                                <path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/>
+                            </svg>
+                        </span>
+                        <p>
+                            Combining technical depth with systems thinking.
+                            Leadership turns that into reliable systems with real-world impact.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Circular portrait area. A real headshot has not been added to
-                 static/images yet, so a neutral silhouette placeholder renders
-                 inside the gold ring until one is provided. -->
+            <!-- Photo collage blends into the dark page background instead
+                 of sitting inside a circular frame — see .portrait-frame's
+                 mask-image in style.css. -->
             <div class="story-hero__portrait" aria-hidden="false">
-                <div class="portrait-rings" aria-hidden="true"></div>
                 <div class="portrait-frame">
-                    <svg class="portrait-placeholder" viewBox="0 0 200 200"
-                         role="img" aria-label="Portrait placeholder — Pete Carter's headshot coming soon">
-                        <rect width="200" height="200" fill="#0d1a2a"/>
-                        <circle cx="100" cy="78" r="34" fill="#26374a"/>
-                        <path d="M40 176c6-38 30-56 60-56s54 18 60 56z" fill="#26374a"/>
-                    </svg>
+                    <img
+                        src="{{ url_for('static', filename='images/hero-collage.png') }}"
+                        alt="Photo collage of Pete Carter's life, family, education, and milestones"
+                    >
                 </div>
             </div>
 
-        </div>
-    </section>
-
-
-    <!-- ============================================
-         POSITIONING BANNER: statement + current focus.
-         ============================================ -->
-    <section class="story-banner-section" aria-label="Professional positioning">
-        <div class="site-container">
-            <div class="story-banner">
-
-                <div class="story-banner__statement">
-                    <span class="story-banner__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/>
-                            <path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/>
-                        </svg>
-                    </span>
-                    <p>
-                        Combining technical depth, systems thinking, and leadership to deliver
-                        reliable solutions that make a real-world difference.
-                    </p>
-                </div>
-
-                <div class="story-banner__focus">
-                    <p class="section-eyebrow">CURRENT FOCUS</p>
-                    <p>Systems Engineering, MBSE, AI-enabled tools, and technical leadership.</p>
-                </div>
-
-            </div>
         </div>
     </section>
 
@@ -149,16 +133,11 @@
                 <h2 id="journey-title">A Path Built on<br>Curiosity and Grit</h2>
 
                 <p>
-                    My path into engineering was anything but traditional. I earned my
-                    electrical engineering degree as a non-traditional student, then began
-                    my career as a Department of Defense systems engineer sustaining Air
-                    Force avionics across seven aircraft platforms. I completed a master's
-                    in engineering management while working full time, deepened my
-                    reliability and MBSE experience at L3Harris, and today I define and
-                    trace system requirements for Northrop Grumman's Sentinel program.
-                    Every step has shaped how I approach problems — bringing structure to
-                    chaos, aligning people toward a common goal, and delivering results
-                    that matter.
+                    From earning my engineering degree as a non-traditional student to
+                    leading high-impact programs in the Air Force and industry, my path
+                    has been anything but conventional. Every step has shaped how I
+                    approach problems - bringing structure to chaos, aligning people
+                    toward a common goal, and delivering results that matter.
                 </p>
 
                 <a class="view-all-link" href="/work">
@@ -169,14 +148,14 @@
 
             <ol class="story-timeline">
                 <li class="timeline-item">
-                    <span class="timeline-item__icon" aria-hidden="true">
+                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <path d="M2 9l10-5 10 5-10 5z"/>
                             <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/>
                             <path d="M22 9v5"/>
                         </svg>
                     </span>
-                    <p class="timeline-item__date">2020</p>
+                    <p class="timeline-item__date">2016 - 2020</p>
                     <h3>Earned EE Degree</h3>
                     <p class="timeline-item__text">
                         Pursued a B.S. in Electrical Engineering at Kennesaw State
@@ -192,8 +171,8 @@
                             <path d="M12 16v3.5"/>
                         </svg>
                     </span>
-                    <p class="timeline-item__date">2021 – 2024</p>
-                    <h3>DoD — U.S. Air Force</h3>
+                    <p class="timeline-item__date">2021 - 2024</p>
+                    <h3>U.S. Air Force</h3>
                     <p class="timeline-item__text">
                         Systems Engineer leading navigation-system sustainment and
                         mission-critical special projects at Robins AFB.
@@ -201,7 +180,7 @@
                 </li>
 
                 <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--light" aria-hidden="true">
+                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
                         <!-- Office building -->
                         <svg viewBox="0 0 24 24">
                             <path d="M4 20h16"/>
@@ -210,7 +189,7 @@
                             <path d="M11 20v-2.5h2V20"/>
                         </svg>
                     </span>
-                    <p class="timeline-item__date">2024 – 2025</p>
+                    <p class="timeline-item__date">2024 - 2025</p>
                     <h3>L3Harris</h3>
                     <p class="timeline-item__text">
                         Systems Effectiveness Engineer driving RAM, reliability, MBSE,
@@ -219,7 +198,7 @@
                 </li>
 
                 <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--light" aria-hidden="true">
+                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
                         <!-- Rocket -->
                         <svg viewBox="0 0 24 24">
                             <path d="M12 3c2.6 2 4 5 4 8.2 0 1.9-.5 3.7-1.4 5.3H9.4A10.6 10.6 0 0 1 8 11.2C8 8 9.4 5 12 3z"/>
@@ -228,7 +207,7 @@
                             <path d="M12 17v2.5"/>
                         </svg>
                     </span>
-                    <p class="timeline-item__date">2025 – Present</p>
+                    <p class="timeline-item__date">2025 - Present</p>
                     <h3>Northrop Grumman</h3>
                     <p class="timeline-item__text">
                         Systems Engineer supporting advanced defense programs in a
@@ -258,9 +237,10 @@
                 <article class="drive-card">
                     <span class="drive-card__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="9"/>
-                            <circle cx="12" cy="12" r="5"/>
-                            <circle cx="12" cy="12" r="1.5"/>
+                            <circle cx="11" cy="13" r="7"/>
+                            <circle cx="11" cy="13" r="3"/>
+                            <path d="M16 8l3-5 1.5 3.5L24 8l-5 2"/>
+                            <path d="M11 13l7-7"/>
                         </svg>
                     </span>
                     <h3>Purpose</h3>
@@ -270,8 +250,10 @@
                 <article class="drive-card">
                     <span class="drive-card__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
-                            <path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>
-                            <path d="M13 7l3-3 3 3"/>
+                            <circle cx="8" cy="8" r="3.2"/>
+                            <circle cx="16" cy="8" r="3.2"/>
+                            <path d="M2.5 19c.6-3.3 2.7-5.1 5.5-5.1s4.9 1.8 5.5 5.1"/>
+                            <path d="M10.5 19c.6-3.3 2.7-5.1 5.5-5.1s4.9 1.8 5.5 5.1"/>
                         </svg>
                     </span>
                     <h3>Growth</h3>
@@ -325,19 +307,13 @@
                         <span class="story-card__list-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg>
                         </span>
-                        <span>Admitted to the Systems Engineering Ph.D. program at the University of South Alabama (starts January 2027)</span>
+                        <span>Systems Engineering Ph.D. program admission (starts January 2027)</span>
                     </li>
                     <li>
                         <span class="story-card__list-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.5 4.5 2.5L15 13.5"/></svg>
                         </span>
                         <span>PMP Certified</span>
-                    </li>
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M4 19.5V6a2 2 0 0 1 2-2h13v13.5H6.5a2.5 2.5 0 0 0 0 5H19"/><path d="M9 8h6"/></svg>
-                        </span>
-                        <span>M.S. Engineering Management — 4.0 GPA</span>
                     </li>
                     <li>
                         <span class="story-card__list-icon" aria-hidden="true">
@@ -428,7 +404,7 @@
                             </svg>
                         </span>
                         <div>
-                            <h3>Family</h3>
+                            <h3>Time with Family</h3>
                             <p>Making time for what matters most</p>
                         </div>
                     </li>
@@ -443,7 +419,7 @@
                         </span>
                         <div>
                             <h3>Cats</h3>
-                            <p>Proud cat dad</p>
+                            <p>Proud cat dad to Nala and Mochi</p>
                         </div>
                     </li>
                 </ul>
