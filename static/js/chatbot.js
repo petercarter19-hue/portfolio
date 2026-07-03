@@ -21,7 +21,8 @@ function initializeChatbot() {
     // the page for them every single time we use them.
     // -------------------------------------------------------
 
-    const toggle      = document.getElementById('chat-toggle');      // Optional floating launcher; currently removed from base.html
+    const openButtons = document.querySelectorAll('[data-chat-open]'); // Header launchers
+    const toggle      = document.getElementById('chat-toggle');      // Floating launcher
     const panel       = document.getElementById('chat-panel');       // The slide-in chat panel
     const closeBtn    = document.getElementById('chat-close');       // The X button inside the header
     const messages    = document.getElementById('chat-messages');    // Scrollable message area
@@ -29,35 +30,77 @@ function initializeChatbot() {
     const sendBtn     = document.getElementById('chat-send');        // The Send button
     const suggestions = document.querySelectorAll('.suggestion-btn'); // All 4 suggestion chips
 
+    if (!panel || !closeBtn || !messages || !input || !sendBtn) return;
+
+    let lastChatOpener = null;
+
+    function friendlyError(message) {
+        const error = new Error(message);
+        error.isFriendlyChatError = true;
+        return error;
+    }
 
     // -------------------------------------------------------
     // OPEN AND CLOSE THE PANEL
     // -------------------------------------------------------
 
-    // If a floating launcher is added back later, this keeps it working.
-    // The current site opens the chat from the top navigation button instead.
-    if (toggle) {
-        // Clicking the floating button toggles the panel open or closed
-        toggle.addEventListener('click', function () {
-            panel.classList.toggle('open');
+    function openChat(opener, shouldFocus) {
+        if (opener) {
+            lastChatOpener = opener;
+        }
 
-            // When the panel opens, move focus to the input field
-            // so the user can start typing right away
-            if (panel.classList.contains('open')) {
-                input.focus();
-            }
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+
+        if (shouldFocus !== false) {
+            input.focus();
+        }
+    }
+
+    function closeChat(shouldReturnFocus) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+
+        // Returning focus helps keyboard users land back where they started.
+        if (shouldReturnFocus !== false && lastChatOpener && document.contains(lastChatOpener)) {
+            lastChatOpener.focus();
+        }
+    }
+
+    openButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openChat(button);
+        });
+    });
+
+    if (toggle) {
+        toggle.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openChat(toggle);
         });
     }
 
-    // Clicking the X button closes the panel
     closeBtn.addEventListener('click', function () {
-        panel.classList.remove('open');
+        closeChat(true);
     });
 
-    // Clicking anywhere outside the panel and button closes the panel
-    document.addEventListener('click', function (e) {
-        if (!panel.contains(e.target) && (!toggle || !toggle.contains(e.target))) {
-            panel.classList.remove('open');
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && panel.classList.contains('open')) {
+            closeChat(true);
+        }
+    });
+
+    // Clicking outside the open panel dismisses it without exposing state drift to screen readers.
+    document.addEventListener('click', function (event) {
+        const clickedLauncher = event.target.closest('[data-chat-open], #chat-toggle');
+
+        if (
+            panel.classList.contains('open') &&
+            !panel.contains(event.target) &&
+            !clickedLauncher
+        ) {
+            closeChat(false);
         }
     });
 
@@ -135,9 +178,27 @@ function initializeChatbot() {
             body: JSON.stringify({ message: text })
         })
 
-        // 6. The response comes back as JSON, so parse it.
+        // 6. Parse successful and error responses without exposing server details.
         .then(function(response) {
-            return response.json();
+            return response.json()
+                .catch(function () {
+                    return {};
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        if (response.status === 400 && data.error) {
+                            throw friendlyError(data.error);
+                        }
+
+                        if (response.status === 429) {
+                            throw friendlyError('Too many questions in a short time. Please wait a moment and try again.');
+                        }
+
+                        throw friendlyError('Something went wrong. Please try again.');
+                    }
+
+                    return data;
+                });
         })
 
         // 7. Use the parsed data to update the thinking bubble with Claude's answer.
@@ -146,15 +207,19 @@ function initializeChatbot() {
                 thinkingBubble.textContent = data.response;
             } else {
                 // If the server returned an error field, show a friendly message.
-                thinkingBubble.textContent = "Sorry, I couldn't get a response. Please try again.";
+                thinkingBubble.textContent = data.error || "Something went wrong. Please try again.";
             }
             scrollToBottom();
         })
 
         // 8. If the network request itself failed (e.g. Flask isn't running),
         //    show a fallback message instead of breaking silently.
-        .catch(function() {
-            thinkingBubble.textContent = "Something went wrong connecting to the server. Please refresh and try again.";
+        .catch(function(error) {
+            if (error && error.isFriendlyChatError && error.message) {
+                thinkingBubble.textContent = error.message;
+            } else {
+                thinkingBubble.textContent = "I could not reach the assistant. Please check the connection and try again.";
+            }
             scrollToBottom();
         })
 
@@ -171,7 +236,7 @@ function initializeChatbot() {
     // interactive resume prompts, to open the same chat assistant and send
     // a question without duplicating the chatbot logic in another file.
     window.askPeteAI = function (question) {
-        panel.classList.add('open');
+        openChat(document.activeElement);
         input.value = '';
         sendMessage(question);
     };

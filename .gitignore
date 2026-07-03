@@ -1,21 +1,40 @@
-# .gitignore - Tells Git which files and folders to NEVER upload to GitHub
+# .gitignore - Tells Git which files and folders to never upload to GitHub.
 
-# Virtual environment - this is machine-specific, never share it
-venv/
-
-# Python compiled files - auto-generated, not needed on GitHub
-__pycache__/
-*.pyc
-*.pyo
-
-# Mac system files - hidden files macOS creates automatically, not part of your project
-.DS_Store
-
-# Environment variables file - will hold secret API keys later, never share this
+# Environment files
 .env
+.env.*
+!.env.example
 
-# VS Code settings - optional, personal to your machine
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
 .vscode/
+.idea/
 
-# Claude Code local permission settings - personal to your machine
+# Local AI/tool settings
 .claude/settings.local.json

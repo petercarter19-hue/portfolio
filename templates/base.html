@@ -128,20 +128,12 @@
                             </svg>
                         </a>
 
-                        <!--
-                            "Ask Pete AI" nav button — opens the same chat panel
-                            as the floating toggle. stopPropagation() prevents the
-                            document click-outside listener in chatbot.js from
-                            closing the panel immediately after opening it.
-                        -->
+                        <!-- "Ask Pete AI" nav button — opens the shared chat panel. -->
                         <button
                             class="nav-ai-btn"
+                            type="button"
                             aria-label="Open Pete's AI assistant"
-                            onclick="
-                                document.getElementById('chat-panel').classList.add('open');
-                                document.getElementById('chat-input').focus();
-                                event.stopPropagation();
-                            "
+                            data-chat-open
                         >
                             <!-- Chat bubble icon -->
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -191,7 +183,12 @@
         <span>Ask Pete AI</span>
     </button>
 
-    <div id="chat-panel" role="dialog" aria-label="Pete's Engineering Assistant">
+    <div
+        id="chat-panel"
+        role="dialog"
+        aria-label="Pete's Engineering Assistant"
+        aria-hidden="true"
+    >
 
         <div id="chat-header">
             <div id="chat-header-text">

@@ -8,6 +8,8 @@ import glob                                     # Lets us find all files matchin
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 from flask import Flask, render_template, request, jsonify  # Added: request (reads incoming data), jsonify (sends JSON back)
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 
@@ -15,12 +17,29 @@ from dotenv import load_dotenv                  # Reads our secret API key from 
 # This must happen before we create the Anthropic client below.
 load_dotenv()
 
+# Keep oversized prompts from consuming API budget or making the chat feel broken.
+MAX_CHAT_MESSAGE_LENGTH = 1000
+
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+if not ANTHROPIC_API_KEY:
+    raise RuntimeError(
+        'ANTHROPIC_API_KEY is not set. Add it to your .env file locally or your hosting environment variables in deployment.'
+    )
+
 # Create the Flask app
 app = Flask(__name__)
 
+# MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
+# For production with multiple workers/instances, configure Redis-backed storage.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[]
+)
+
 # Create the Anthropic client.
-# It automatically reads ANTHROPIC_API_KEY from the environment (loaded above).
-client = anthropic.Anthropic()
+# The API key stays on the server and is never exposed to browser JavaScript.
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
 # -------------------------------------------------------
@@ -224,6 +243,7 @@ def resume():
 # -------------------------------------------------------
 
 @app.route('/api/chat', methods=['POST'])
+@limiter.limit('10 per minute')
 def chat():
     # Read the JSON body sent by the browser
     data = request.get_json()
@@ -237,6 +257,11 @@ def chat():
     # Reject empty messages
     if not user_message:
         return jsonify({'error': 'Message was empty'}), 400
+
+    if len(user_message) > MAX_CHAT_MESSAGE_LENGTH:
+        return jsonify({
+            'error': 'Message is too long. Please keep questions under 1000 characters.'
+        }), 400
 
     try:
         # Build a focused prompt for this question instead of sending every knowledge file.
@@ -291,4 +316,5 @@ if __name__ == '__main__':
     # Render/Railway set PORT the same way, so this also prepares the
     # app for public deployment later.
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, port=port)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(debug=debug_mode, port=port)
