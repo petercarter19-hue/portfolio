@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
+
+{% block content %}
+<div class="peerslate-page">
+    <section class="peerslate-hero" aria-labelledby="peerslate-title">
+        <div class="site-container peerslate-hero__grid">
+            <div class="peerslate-hero__copy">
+                <p class="section-eyebrow">PeerSlate</p>
+                <h1 id="peerslate-title">
+                    Your work, your story, your future.
+                </h1>
+                <p class="peerslate-hero__lead">
+                    PeerSlate helps professionals turn career history, project evidence,
+                    skills, and goals into interactive portfolio profiles that recruiters
+                    can explore through structured pages and AI-assisted questions.
+                </p>
+                <div class="peerslate-hero__actions">
+                    <a class="btn btn-primary" href="{{ url_for('resume') }}">
+                        View Pete's Interactive Example
+                    </a>
+                    <a class="btn btn-secondary" href="{{ url_for('contact') }}">
+                        Contact About PeerSlate
+                    </a>
+                </div>
+            </div>
+
+            <aside class="peerslate-demo-card" aria-label="PeerSlate profile preview">
+                <p class="peerslate-demo-card__label">Interactive Profile Preview</p>
+                <div class="peerslate-profile-preview">
+                    <div>
+                        <span>Professional Story</span>
+                        <strong>Evidence-backed career narrative</strong>
+                    </div>
+                    <div>
+                        <span>Skills</span>
+                        <strong>Linked to real accomplishments</strong>
+                    </div>
+                    <div>
+                        <span>AI Assistant</span>
+                        <strong>Answers from approved profile sources</strong>
+                    </div>
+                    <div>
+                        <span>Recruiter View</span>
+                        <strong>Role-specific evidence and fit</strong>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="peerslate-section" aria-labelledby="peerslate-problem-title">
+        <div class="site-container peerslate-two-column">
+            <div>
+                <p class="section-eyebrow">The Problem</p>
+                <h2 id="peerslate-problem-title">
+                    Resumes flatten people into keywords.
+                </h2>
+            </div>
+            <div class="peerslate-copy-stack">
+                <p>
+                    Traditional resumes are static, compressed, and difficult to explore.
+                    They rarely show how a person thinks, how their work connects, or what
+                    evidence supports each skill.
+                </p>
+                <p>
+                    PeerSlate is designed to make career information structured,
+                    searchable, interactive, and evidence-driven.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section peerslate-section--cards" aria-labelledby="peerslate-how-title">
+        <div class="site-container">
+            <div class="peerslate-section-heading">
+                <p class="section-eyebrow">How It Works</p>
+                <h2 id="peerslate-how-title">
+                    From career history to interactive profile.
+                </h2>
+            </div>
+            <div class="peerslate-card-grid">
+                <article class="peerslate-card">
+                    <span>01</span>
+                    <h3>Capture the story</h3>
+                    <p>
+                        Professionals add career history, projects, skills, education,
+                        accomplishments, and goals through guided profile sections.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>02</span>
+                    <h3>Structure the evidence</h3>
+                    <p>
+                        Skills, metrics, roles, and projects are connected so visitors can
+                        see what supports each claim.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>03</span>
+                    <h3>Make it searchable</h3>
+                    <p>
+                        A profile-specific AI assistant answers questions using only
+                        approved public information and states limits when needed.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>04</span>
+                    <h3>Help recruiters explore fit</h3>
+                    <p>
+                        Recruiters can view role-specific summaries, evidence, projects,
+                        and career direction instead of hunting through a static PDF.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section" aria-labelledby="peerslate-features-title">
+        <div class="site-container peerslate-feature-layout">
+            <div class="peerslate-section-heading">
+                <p class="section-eyebrow">Platform Direction</p>
+                <h2 id="peerslate-features-title">
+                    Built for professional evidence, not generic profiles.
+                </h2>
+            </div>
+            <div class="peerslate-feature-list">
+                <div>
+                    <h3>Interactive portfolios</h3>
+                    <p>Personal branded pages with projects, timelines, evidence, and career context.</p>
+                </div>
+                <div>
+                    <h3>AI profile assistants</h3>
+                    <p>Chat assistants grounded in approved profile documents and structured public content.</p>
+                </div>
+                <div>
+                    <h3>Recruiter-focused views</h3>
+                    <p>Role-based filters that connect skills, results, experience, and project evidence.</p>
+                </div>
+                <div>
+                    <h3>Evidence-backed skills</h3>
+                    <p>Skills are connected to accomplishments, project artifacts, metrics, and outcomes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section peerslate-section--final" aria-labelledby="peerslate-final-title">
+        <div class="site-container peerslate-final-card">
+            <p class="section-eyebrow">Starting Point</p>
+            <h2 id="peerslate-final-title">
+                Pete Carter's portfolio is the first working PeerSlate example.
+            </h2>
+            <p>
+                The current portfolio demonstrates the early platform concept:
+                structured resume data, interactive evidence, project storytelling,
+                and an AI assistant grounded in approved career information.
+            </p>
+            <div class="peerslate-hero__actions">
+                <a class="btn btn-primary" href="{{ url_for('resume') }}">
+                    Explore the Example
+                </a>
+                <a class="btn btn-secondary" href="{{ url_for('work') }}">
+                    View Projects
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

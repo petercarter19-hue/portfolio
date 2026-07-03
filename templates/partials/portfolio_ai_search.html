@@ -1,0 +1,27 @@
+<form class="hero-ai-search" data-hero-ai-search aria-label="Ask Pete AI">
+    <label class="hero-ai-search__label" for="hero-ai-input">
+        Ask Pete AI
+    </label>
+    <div class="hero-ai-search__box">
+        <input
+            id="hero-ai-input"
+            class="hero-ai-search__input"
+            type="text"
+            placeholder="Ask about Pete's experience, skills, projects, or results..."
+            autocomplete="off"
+            maxlength="240"
+        >
+        <button class="hero-ai-search__button" type="submit">
+            Ask
+        </button>
+    </div>
+    <p class="hero-ai-search__status" data-hero-ai-status aria-live="polite">
+        Answers use approved public portfolio evidence.
+    </p>
+    <div
+        class="hero-ai-answer"
+        data-hero-ai-answer
+        aria-live="polite"
+        hidden
+    ></div>
+</form>

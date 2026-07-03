@@ -194,6 +194,10 @@ def clean_chatbot_reply(reply):
 def home():
     return render_template('index.html')
 
+@app.route('/peerslate')
+def peerslate_home():
+    return render_template('peerslate.html')
+
 @app.route('/about')
 def about():
     return render_template('about.html')

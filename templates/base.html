@@ -38,7 +38,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+<body data-theme="command-gold" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     <!-- Accessibility feature for keyboard and screen-reader users -->
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -74,7 +74,23 @@
                     </button>
 
                     <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
-                        <a href="/">Homepage</a>
+                        <a href="{{ url_for('peerslate_home') }}">PeerSlate Home</a>
+                        <a href="{{ url_for('home') }}">Pete Carter Portfolio</a>
+                        <div class="theme-preview" aria-label="Theme preview options">
+                            <p>Theme Preview</p>
+                            <button type="button" data-theme-option="command-gold">
+                                Command Gold
+                            </button>
+                            <button type="button" data-theme-option="modern-blue">
+                                Modern Blue
+                            </button>
+                            <button type="button" data-theme-option="slate-light">
+                                Slate Light
+                            </button>
+                            <button type="button" data-theme-option="secure-green">
+                                Secure Green
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -86,7 +102,7 @@
                     </a>
                 </div>
 
-                <!-- Right: navigation links + LinkedIn + AI button -->
+                <!-- Right: navigation links + LinkedIn -->
                 <div class="nav-right">
 
                     <!--
@@ -102,8 +118,7 @@
                         <li><a href="/contact" {% if request.path == '/contact' %}aria-current="page"{% endif %}>Contact</a></li>
                     </ul>
 
-                    <!-- Far right: LinkedIn icon + Ask Pete AI, grouped so they
-                         share the third header grid column together. -->
+                    <!-- Far right: LinkedIn profile link. -->
                     <div class="nav-actions">
 
                         <!--
@@ -128,23 +143,6 @@
                             </svg>
                         </a>
 
-                        <!-- "Ask Pete AI" nav button — opens the shared chat panel. -->
-                        <button
-                            class="nav-ai-btn"
-                            type="button"
-                            aria-label="Open Pete's AI assistant"
-                            data-chat-open
-                        >
-                            <!-- Chat bubble icon -->
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round"
-                                 aria-hidden="true">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
-                            Ask Pete AI
-                        </button>
-
                     </div>
 
                 </div>
@@ -155,6 +153,14 @@
 
     <!-- Each page inserts its unique content inside this Jinja block -->
     <main id="main-content" class="main-content">
+        {% if request.path not in ['/', '/peerslate'] %}
+        <section class="portfolio-ai-strip" aria-label="Ask Pete AI">
+            <div class="site-container">
+                {% include "partials/portfolio_ai_search.html" %}
+            </div>
+        </section>
+        {% endif %}
+
         {% block content %}
         {% endblock %}
     </main>
@@ -256,7 +262,7 @@
 
             // Click anywhere outside the dropdown closes it.
             document.addEventListener('click', function (event) {
-                if (!menuDropdown.hidden && !menuDropdown.contains(event.target)) {
+                if (!menuDropdown.hidden && !menuDropdown.contains(event.target) && event.target !== menuBtn) {
                     closeMenu();
                 }
             });
@@ -271,6 +277,7 @@
         })();
     </script>
 
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=theme-preview-1"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-bridge-2"></script>
     {% block extra_scripts %}{% endblock %}
 

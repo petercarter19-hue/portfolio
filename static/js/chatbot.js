@@ -40,6 +40,35 @@ function initializeChatbot() {
         return error;
     }
 
+    function requestChatReply(text) {
+        return fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+        .then(function(response) {
+            return response.json()
+                .catch(function () {
+                    return {};
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        if (response.status === 400 && data.error) {
+                            throw friendlyError(data.error);
+                        }
+
+                        if (response.status === 429) {
+                            throw friendlyError('Too many questions in a short time. Please wait a moment and try again.');
+                        }
+
+                        throw friendlyError('Something went wrong. Please try again.');
+                    }
+
+                    return data;
+                });
+        });
+    }
+
     // -------------------------------------------------------
     // OPEN AND CLOSE THE PANEL
     // -------------------------------------------------------
@@ -169,39 +198,8 @@ function initializeChatbot() {
         input.disabled = true;
         sendBtn.disabled = true;
 
-        // 5. Send the message to our Flask /api/chat route using fetch().
-        //    fetch() is a built-in browser tool for making HTTP requests.
-        //    We're sending a POST request with the message as JSON.
-        fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
-        })
-
-        // 6. Parse successful and error responses without exposing server details.
-        .then(function(response) {
-            return response.json()
-                .catch(function () {
-                    return {};
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        if (response.status === 400 && data.error) {
-                            throw friendlyError(data.error);
-                        }
-
-                        if (response.status === 429) {
-                            throw friendlyError('Too many questions in a short time. Please wait a moment and try again.');
-                        }
-
-                        throw friendlyError('Something went wrong. Please try again.');
-                    }
-
-                    return data;
-                });
-        })
-
-        // 7. Use the parsed data to update the thinking bubble with Claude's answer.
+        // 5. Ask Flask for the answer and update the thinking bubble.
+        requestChatReply(text)
         .then(function(data) {
             if (data.response) {
                 thinkingBubble.textContent = data.response;
@@ -232,14 +230,124 @@ function initializeChatbot() {
         });
     }
 
+    // Named helpers make the shared chat behavior reusable from page-specific UI.
+    // They also keep browser JavaScript from knowing anything about API keys.
+    window.openChatPanel = function () {
+        openChat(document.activeElement);
+    };
+
+    window.closeChatPanel = function () {
+        closeChat(true);
+    };
+
+    window.sendChatMessage = function (question) {
+        const text = String(question || '').trim();
+        if (!text) return;
+        input.value = '';
+        sendMessage(text);
+    };
+
     // Exposes one safe doorway for page-specific buttons, such as the
     // interactive resume prompts, to open the same chat assistant and send
     // a question without duplicating the chatbot logic in another file.
     window.askPeteAI = function (question) {
         openChat(document.activeElement);
-        input.value = '';
-        sendMessage(question);
+        window.sendChatMessage(question);
     };
+
+    // Lowercase alias matching the homepage search specification.
+    window.askPeteAi = function (question) {
+        window.askPeteAI(question);
+    };
+
+    const heroSearches = document.querySelectorAll('[data-hero-ai-search]');
+    heroSearches.forEach(function (heroSearch) {
+        const heroInput = heroSearch.querySelector('.hero-ai-search__input');
+        const heroStatus = heroSearch.querySelector('[data-hero-ai-status]');
+        const heroAnswer = heroSearch.querySelector('[data-hero-ai-answer]');
+        const heroButton = heroSearch.querySelector('.hero-ai-search__button');
+        const defaultStatus = 'Answers use approved public portfolio evidence.';
+
+        function renderHeroAnswer(question, responseText, isLoading) {
+            if (!heroAnswer) return;
+
+            heroAnswer.hidden = false;
+            heroAnswer.innerHTML = [
+                '<button class="hero-ai-answer__close" type="button" data-hero-ai-answer-close aria-label="Close AI answer">×</button>',
+                '<div class="hero-ai-answer__question"></div>',
+                '<div class="hero-ai-answer__response"></div>'
+            ].join('');
+
+            heroAnswer.querySelector('.hero-ai-answer__question').textContent = question;
+            heroAnswer.querySelector('.hero-ai-answer__response').textContent = responseText;
+            heroAnswer.classList.toggle('is-loading', Boolean(isLoading));
+        }
+
+        function closeHeroAnswer() {
+            if (!heroAnswer) return;
+
+            heroAnswer.hidden = true;
+            heroAnswer.classList.remove('is-loading');
+            heroAnswer.textContent = '';
+        }
+
+        function submitHeroQuestion(question) {
+            const promptText = String(question || '').trim();
+            if (!promptText) return;
+
+            heroSearch.classList.add('is-searching');
+            if (heroStatus) {
+                heroStatus.textContent = 'Searching approved portfolio evidence...';
+            }
+            if (heroButton) {
+                heroButton.disabled = true;
+            }
+            renderHeroAnswer(promptText, 'Searching approved portfolio evidence...', true);
+
+            requestChatReply(promptText)
+                .then(function (data) {
+                    const response = data.response || data.error || 'Something went wrong. Please try again.';
+                    renderHeroAnswer(promptText, response, false);
+                })
+                .catch(function (error) {
+                    const response =
+                        error && error.isFriendlyChatError && error.message
+                            ? error.message
+                            : 'I could not reach the assistant. Please check the connection and try again.';
+                    renderHeroAnswer(promptText, response, false);
+                })
+                .finally(function () {
+                    heroSearch.classList.remove('is-searching');
+                    if (heroStatus) {
+                        heroStatus.textContent = defaultStatus;
+                    }
+                    if (heroButton) {
+                        heroButton.disabled = false;
+                    }
+                    if (heroInput) {
+                        heroInput.focus();
+                    }
+                });
+
+        }
+
+        heroSearch.addEventListener('click', function (event) {
+            if (event.target.closest('[data-hero-ai-answer-close]')) {
+                closeHeroAnswer();
+                if (heroInput) {
+                    heroInput.focus();
+                }
+            }
+        });
+
+        heroSearch.addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitHeroQuestion(heroInput ? heroInput.value : '');
+            if (heroInput) {
+                heroInput.value = '';
+            }
+        });
+    });
 
 
     // -------------------------------------------------------
