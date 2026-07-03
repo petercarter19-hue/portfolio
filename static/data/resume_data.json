@@ -1,0 +1,1422 @@
+{
+  "profile": {
+    "name": "Pete Carter",
+    "page_title": "Career Command Center",
+    "positioning": "Systems Engineer | Technical Leader | MBSE, Sustainment, and Requirements",
+    "location": "Athens, Alabama | Huntsville Area",
+    "summary": "Systems engineer with public resume evidence across requirements, MBSE, sustainment, contracting, project execution, and policy-compliant AI process improvement.",
+    "pdf_path": "files/pete-carter-resume.pdf",
+    "contact_url": "/contact",
+    "linkedin_url": "https://www.linkedin.com/in/pete-carter19",
+    "credentials": [
+      {
+        "label": "Active U.S. Secret security clearance",
+        "status": "Public status"
+      },
+      {
+        "label": "B.S. Electrical Engineering, Kennesaw State University",
+        "status": "Completed"
+      },
+      {
+        "label": "M.S. Engineering Management, University of Arkansas",
+        "status": "Completed"
+      },
+      {
+        "label": "Systems Engineering Ph.D., University of South Alabama",
+        "status": "Admitted, expected January 2027 start"
+      }
+    ]
+  },
+  "skill_categories": [
+    {
+      "id": "featured",
+      "label": "Featured"
+    },
+    {
+      "id": "systems-digital",
+      "label": "Systems & Digital Engineering"
+    },
+    {
+      "id": "program-contract",
+      "label": "Program & Contract Execution"
+    },
+    {
+      "id": "sustainment-logistics",
+      "label": "Sustainment & Logistics"
+    },
+    {
+      "id": "tools-data",
+      "label": "Tools, Data & Collaboration"
+    },
+    {
+      "id": "ai-process",
+      "label": "AI & Process Improvement"
+    },
+    {
+      "id": "web-development",
+      "label": "Web Development"
+    },
+    {
+      "id": "all",
+      "label": "All Skills"
+    }
+  ],
+  "recruiter_tracks": [
+    {
+      "id": "systems-engineering",
+      "label": "Systems Engineering",
+      "fit_summary": "Systems Engineering selected",
+      "matching_skill_ids": ["systems-engineering", "requirements-management", "doors", "life-cycle-management", "project-management", "data-analytics"],
+      "featured_metric_ids": ["platforms", "modernization", "repair-test", "missing-parts"],
+      "featured_role_ids": ["dod", "northrop"],
+      "featured_case_study_ids": ["repair-test", "missing-parts"],
+      "suggested_ai_questions": [
+        "What systems-engineering work has Pete performed?",
+        "How has Pete managed requirements and traceability?",
+        "What evidence supports Pete's systems-engineering experience?"
+      ]
+    },
+    {
+      "id": "digital-mbse",
+      "label": "Digital Engineering / MBSE",
+      "fit_summary": "Digital Engineering / MBSE selected",
+      "matching_skill_ids": ["sysml-modeling", "cameo", "mbse", "requirements-management", "doors"],
+      "featured_metric_ids": ["platforms", "modernization"],
+      "featured_role_ids": ["l3harris", "northrop", "dod"],
+      "featured_case_study_ids": ["sustainment-process"],
+      "suggested_ai_questions": [
+        "What experience does Pete have with Cameo and SysML?",
+        "How has Pete used MBSE with requirements and architecture?",
+        "Which modeling work is supported by resume evidence?"
+      ]
+    },
+    {
+      "id": "sustainment-ram",
+      "label": "Sustainment / RAM",
+      "fit_summary": "Sustainment / RAM selected",
+      "matching_skill_ids": ["sustainment", "integrated-logistics-support", "provisioning", "life-cycle-management", "data-analytics", "ms-excel"],
+      "featured_metric_ids": ["micap", "repair-test", "missing-parts", "cam"],
+      "featured_role_ids": ["dod", "l3harris"],
+      "featured_case_study_ids": ["sustainment-process", "repair-test", "missing-parts"],
+      "suggested_ai_questions": [
+        "What measurable sustainment improvements has Pete delivered?",
+        "What experience does Pete have with provisioning and integrated logistics support?",
+        "How has Pete improved repair, readiness, and supportability?"
+      ]
+    },
+    {
+      "id": "program-leadership",
+      "label": "Program Leadership",
+      "fit_summary": "Program Leadership selected",
+      "matching_skill_ids": ["project-management", "contracting", "control-account-management", "evms", "ms-office", "data-analytics"],
+      "featured_metric_ids": ["contract", "cam", "modernization", "gpa"],
+      "featured_role_ids": ["dod", "l3harris"],
+      "featured_case_study_ids": ["contract-oversight", "sustainment-process"],
+      "suggested_ai_questions": [
+        "What project-management experience does Pete have?",
+        "What contract-oversight experience does Pete have?",
+        "How has Pete led engineers and cross-functional stakeholders?"
+      ]
+    },
+    {
+      "id": "ai-automation",
+      "label": "AI & Engineering Automation",
+      "fit_summary": "AI & Engineering Automation selected",
+      "matching_skill_ids": ["ai", "process-improvement", "webpage-development", "ms-excel", "data-analytics", "jira"],
+      "featured_metric_ids": ["gpa"],
+      "featured_role_ids": ["l3harris", "northrop", "dod"],
+      "featured_case_study_ids": ["sustainment-process"],
+      "suggested_ai_questions": [
+        "How has Pete used policy-compliant AI?",
+        "How has Pete used web development to present engineering evidence?",
+        "How is Pete applying AI to engineering analysis and portfolio development?",
+        "What controls keep Pete's assistant limited to approved information?"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "id": "contract",
+      "value": "$36M+",
+      "label": "Engineering-services contract oversight",
+      "context": "Served as COR on an engineering-services contract with public resume evidence for oversight, performance tracking, funding authorization, and compliance.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["contracting", "project-management"],
+      "related_case_study_id": "contract-oversight",
+      "highlight_evidence_id": "dod-contract-cor",
+      "recruiter_track_ids": ["program-leadership"]
+    },
+    {
+      "id": "micap",
+      "value": "16 to 0",
+      "label": "Critical MICAP reduction",
+      "context": "Reduced critical readiness constraints through coordinated sustainment and stakeholder action.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["sustainment", "systems-engineering"],
+      "related_case_study_id": "sustainment-process",
+      "highlight_evidence_id": "dod-micap",
+      "recruiter_track_ids": ["sustainment-ram"]
+    },
+    {
+      "id": "repair-test",
+      "value": "70%",
+      "label": "Repair and test improvement",
+      "context": "Improved repair and testing rates through depot, supply-chain, and engineering coordination.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["sustainment", "data-analytics"],
+      "related_case_study_id": "repair-test",
+      "highlight_evidence_id": "dod-repair-test",
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"]
+    },
+    {
+      "id": "missing-parts",
+      "value": "52%",
+      "label": "Missing-part reduction",
+      "context": "Reduced missing-part conditions through centralized visibility and stakeholder coordination.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["sustainment", "ms-excel", "data-analytics"],
+      "related_case_study_id": "missing-parts",
+      "highlight_evidence_id": "dod-missing-parts",
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"]
+    },
+    {
+      "id": "cam",
+      "value": "$9.1M",
+      "label": "Sustainment effort managed as CAM",
+      "context": "Managed cost, schedule, requirements, forecasts, variances, and deliverables as CAM on a sustainment effort.",
+      "related_role_ids": ["l3harris"],
+      "related_skill_ids": ["control-account-management", "evms", "project-management"],
+      "related_case_study_id": "sustainment-process",
+      "highlight_evidence_id": "l3-cam",
+      "recruiter_track_ids": ["sustainment-ram", "program-leadership"]
+    },
+    {
+      "id": "modernization",
+      "value": "$4.6M",
+      "label": "Navigation modernization project",
+      "context": "Served as government POC and lead engineer for a public navigation modernization effort.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["project-management", "systems-engineering"],
+      "related_case_study_id": "repair-test",
+      "highlight_evidence_id": "dod-modernization",
+      "recruiter_track_ids": ["systems-engineering", "program-leadership"]
+    },
+    {
+      "id": "platforms",
+      "value": "7",
+      "label": "Aircraft platforms supported",
+      "context": "Supported public sustainment and systems-engineering work across seven major aircraft platforms.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["systems-engineering", "sustainment", "life-cycle-management"],
+      "related_case_study_id": "sustainment-process",
+      "highlight_evidence_id": "dod-platforms",
+      "recruiter_track_ids": ["systems-engineering", "digital-mbse"]
+    },
+    {
+      "id": "gpa",
+      "value": "4.0",
+      "label": "Graduate GPA",
+      "context": "Completed M.S. Engineering Management graduate work with a 4.0 GPA.",
+      "related_role_ids": [],
+      "related_skill_ids": ["project-management"],
+      "related_case_study_id": null,
+      "highlight_evidence_id": "education-ms",
+      "recruiter_track_ids": ["program-leadership", "ai-automation"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "systems-engineering",
+      "display_name": "Systems Engineering",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Applied systems-engineering methods across requirements, architecture, sustainment, modernization, and cross-functional technical execution.",
+      "recruiter_track_ids": ["systems-engineering", "digital-mbse"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["northrop", "dod"],
+      "related_metric_ids": ["platforms", "modernization", "repair-test"],
+      "related_case_study_ids": ["repair-test", "missing-parts"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-se-ng-req",
+          "text": "Collaborates with SMEs and Product Owners to define, decompose, allocate, and validate system requirements using systems architecture and DOORS.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-se-dod-authority",
+          "text": "Exercised Level II engineering authority to evaluate, author, and approve depot-driven avionics requirement changes across multiple airframes.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["platforms"]
+        },
+        {
+          "id": "skill-se-dod-reviews",
+          "text": "Supported customer product reviews including PDR, CDR, PMR, and SRR.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "sysml-modeling",
+      "display_name": "SysML Modeling",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Built SysML models to represent requirements, system structure, interfaces, and behavior.",
+      "recruiter_track_ids": ["digital-mbse"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris", "dod"],
+      "related_metric_ids": ["platforms"],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-sysml-l3",
+          "text": "Built a Cameo MBSE model using logical and physical architecture, imported requirements, profiles, value types, tables, and BDD, IBD, and Activity diagrams.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-sysml-dod",
+          "text": "Developed an extensive SysML model incorporating packages, requirements, and diagrams representing system design, interface, and structure.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "cameo",
+      "display_name": "Cameo",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Used Cameo to build and organize model-based system architecture content.",
+      "recruiter_track_ids": ["digital-mbse"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris", "dod"],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-cameo-l3",
+          "text": "Built a Cameo MBSE model using logical and physical architecture, requirements, profiles, value types, tables, and multiple diagram types.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-cameo-dod",
+          "text": "Used Cameo and MBSE experience to develop an extensive SysML model for a public navigation avionics system.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "mbse",
+      "display_name": "MBSE",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Applied model-based systems engineering to connect requirements, architecture, structure, and system behavior.",
+      "recruiter_track_ids": ["digital-mbse", "systems-engineering"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris", "dod", "northrop"],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-mbse-l3",
+          "text": "Built a Cameo MBSE model using logical and physical architecture, imported system requirements, profiles, tables, BDDs, IBDs, and activity diagrams.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-mbse-dod",
+          "text": "Developed a SysML model incorporating packages, requirements, interfaces, and structural diagrams.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-mbse-ng",
+          "text": "Synchronizes requirements decomposition and bidirectional traceability with MBSE architectural models.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "requirements-management",
+      "display_name": "Requirements Management",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Defined, decomposed, traced, validated, and maintained system and supportability requirements.",
+      "recruiter_track_ids": ["systems-engineering", "digital-mbse"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["northrop", "l3harris", "dod"],
+      "related_metric_ids": ["platforms"],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-req-ng-define",
+          "text": "Helps define, decompose, allocate, and validate system requirements with SMEs and Product Owners.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-req-ng-trace",
+          "text": "Manages decomposition, derivation, and bidirectional traceability in IBM DOORS.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-req-l3",
+          "text": "Defined logistics provisioning data and requirements for part-level supportability and materials management.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "doors",
+      "display_name": "DOORS",
+      "category_id": "systems-digital",
+      "featured": true,
+      "front_summary": "Used IBM DOORS to manage decomposition, derivation, traceability, and architectural alignment.",
+      "recruiter_track_ids": ["systems-engineering", "digital-mbse"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["northrop"],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-doors-ng-architecture",
+          "text": "Collaborates on defining, decomposing, allocating, and validating system requirements using systems architecture with DOORS.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-doors-ng-links",
+          "text": "Maintains parent-child linkages and bidirectional traceability in IBM DOORS to synchronize requirements with MBSE models.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "life-cycle-management",
+      "display_name": "Life Cycle Management",
+      "category_id": "systems-digital",
+      "featured": false,
+      "front_summary": "Supported systems and support strategies from early development through sustainment and end-of-life.",
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris", "dod"],
+      "related_metric_ids": ["platforms"],
+      "related_case_study_ids": ["sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-life-l3",
+          "text": "Worked with program management and design engineering teams to integrate sustainment and maintainability from design through end-of-life.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-life-dod",
+          "text": "Owned sustainment-to-end-of-life for navigation avionics across multiple airframes.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["platforms"]
+        }
+      ]
+    },
+    {
+      "id": "control-account-management",
+      "display_name": "Control Account Management",
+      "category_id": "program-contract",
+      "featured": true,
+      "front_summary": "Managed cost, schedule, forecasts, variances, and deliverables on a multimillion-dollar sustainment effort.",
+      "recruiter_track_ids": ["program-leadership", "sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris"],
+      "related_metric_ids": ["cam"],
+      "related_case_study_ids": ["sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-cam-l3",
+          "text": "Managed cost, schedule, requirements, forecasts, variances, and deliverables as CAM on a $9.1M sustainment effort.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["cam"]
+        }
+      ]
+    },
+    {
+      "id": "evms",
+      "display_name": "EVMS",
+      "category_id": "program-contract",
+      "featured": false,
+      "front_summary": "Applied earned-value concepts to forecast cost, track variance, and maintain delivery performance.",
+      "recruiter_track_ids": ["program-leadership"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris"],
+      "related_metric_ids": ["cam"],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-evms-l3",
+          "text": "Forecasted ETC and EAC, tracked variances, and managed cost, schedule, requirements, and deliverables as CAM on a $9.1M sustainment effort.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["cam"]
+        }
+      ]
+    },
+    {
+      "id": "contracting",
+      "display_name": "Contracting",
+      "category_id": "program-contract",
+      "featured": true,
+      "front_summary": "Led and supported technical contracting activities, oversight, documentation, funding, and compliance.",
+      "recruiter_track_ids": ["program-leadership"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["contract"],
+      "related_case_study_ids": ["contract-oversight"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-contract-dod-cor",
+          "text": "Served as COR on a $36M IDIQ engineering-services contract, providing contractor oversight, tracking performance metrics, authorizing funding, and ensuring compliance.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["contract"]
+        },
+        {
+          "id": "skill-contract-dod-docs",
+          "text": "Created and delivered SOWs, PWSs, and Market Research Reports.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-contract-dod-50m",
+          "text": "Served as lead POC for development of a five-year, $50M engineering-services contract.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "project-management",
+      "display_name": "Project Management",
+      "category_id": "program-contract",
+      "featured": true,
+      "front_summary": "Managed technical projects, schedules, stakeholders, deliverables, risks, and cross-functional execution.",
+      "recruiter_track_ids": ["program-leadership", "systems-engineering"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["modernization", "cam"],
+      "related_case_study_ids": ["contract-oversight"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-pm-dod-redesign",
+          "text": "Led more than 30 engineers and oversaw nine redesign efforts valued at $19.2M.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-pm-dod-modernization",
+          "text": "Served as government POC and lead engineer on a $4.6M navigation modernization project, coordinating contractors, program office, and depot.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["modernization"]
+        },
+        {
+          "id": "skill-pm-l3-cam",
+          "text": "Managed cost, schedule, requirements, variances, and deliverables as CAM on a $9.1M sustainment effort.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["cam"]
+        }
+      ]
+    },
+    {
+      "id": "sustainment",
+      "display_name": "Sustainment",
+      "category_id": "sustainment-logistics",
+      "featured": true,
+      "front_summary": "Led and supported sustainment decisions, readiness recovery, repair improvement, and long-term support strategies.",
+      "recruiter_track_ids": ["sustainment-ram", "systems-engineering"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["micap", "repair-test", "missing-parts"],
+      "related_case_study_ids": ["sustainment-process", "repair-test", "missing-parts"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-sustain-dod-life",
+          "text": "Owned sustainment-to-end-of-life for navigation avionics across multiple airframes.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["platforms"]
+        },
+        {
+          "id": "skill-sustain-dod-results",
+          "text": "Coordinated depot and supply-chain stakeholders, reducing missing parts by 52% and increasing testing and repair rates by 70%.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": ["missing-parts", "repair-test"]
+        },
+        {
+          "id": "skill-sustain-l3",
+          "text": "Integrated sustainment and maintainability from design through end-of-life.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "integrated-logistics-support",
+      "display_name": "Integrated Logistics Support",
+      "category_id": "sustainment-logistics",
+      "featured": true,
+      "front_summary": "Coordinated integrated product-support activities to improve system supportability, readiness, and lifecycle outcomes.",
+      "recruiter_track_ids": ["sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris"],
+      "related_metric_ids": ["cam"],
+      "related_case_study_ids": ["sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-ils-l3-manager",
+          "text": "Served as ILS Manager, coordinating all 12 IPS elements to support availability, readiness, and lifecycle cost objectives.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-ils-l3-cdrl",
+          "text": "Developed and owned CDEs and CDRLs including LORA, Product Support Plans, Product Support Analysis, and Depot Maintenance Studies.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "provisioning",
+      "display_name": "Provisioning",
+      "category_id": "sustainment-logistics",
+      "featured": false,
+      "front_summary": "Developed provisioning and spares information to support material planning, supportability, and readiness.",
+      "recruiter_track_ids": ["sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris"],
+      "related_metric_ids": ["cam"],
+      "related_case_study_ids": ["sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-provision-l3-data",
+          "text": "Defined logistics provisioning data for a major Navy program, establishing part-level supportability and material-management requirements.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-provision-l3-spares",
+          "text": "Coordinated procurement, reliability, and systems teams to produce a spares CDRL using availability, cost, reliability, repair-cycle, turnaround-time, and lead-time inputs.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "display_name": "AI",
+      "category_id": "ai-process",
+      "featured": true,
+      "front_summary": "Used policy-compliant AI to improve analysis quality, consistency, speed, and repeatability.",
+      "recruiter_track_ids": ["ai-automation"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["l3harris"],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-ai-l3",
+          "text": "Used policy-compliant AI to decompose requirements, analyze documentation, and improve Excel macro and script development.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "process-improvement",
+      "display_name": "Process Improvement",
+      "category_id": "ai-process",
+      "featured": true,
+      "front_summary": "Created new trackers, training standards, and repeatable processes that improved execution and organizational consistency.",
+      "recruiter_track_ids": ["ai-automation", "sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod"],
+      "related_metric_ids": ["missing-parts"],
+      "related_case_study_ids": ["sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-process-dod-tracker",
+          "text": "Developed a sustainment tracker that cut issue-to-action time by 35% across 54 avionics systems and became the squadron tracking requirement.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-process-dod-sop",
+          "text": "Defined training requirements for an engineering-flight SOP adopted by all five squadrons.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-process-dod-excel",
+          "text": "Designed a centralized Excel parts tracker that unified sustainment data and improved engineering efficiency by 45%.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "ms-office",
+      "display_name": "MS Office",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "Produced technical documents, contract packages, leadership briefings, and structured engineering information.",
+      "recruiter_track_ids": ["program-leadership"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["contract"],
+      "related_case_study_ids": ["contract-oversight"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-office-dod-docs",
+          "text": "Created and delivered SOWs, PWSs, and Market Research Reports.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-office-dod-briefs",
+          "text": "Directed, reviewed, and approved monthly and quarterly engineering project briefs to senior leadership.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "ms-excel",
+      "display_name": "MS Excel",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "Built spreadsheet-based tracking and analysis tools to improve sustainment visibility and engineering efficiency.",
+      "recruiter_track_ids": ["ai-automation", "sustainment-ram"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["missing-parts"],
+      "related_case_study_ids": ["sustainment-process", "missing-parts"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-excel-dod-parts",
+          "text": "Designed a centralized Excel parts tracker that unified sustainment data and improved engineering efficiency by 45%.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-excel-l3-ai",
+          "text": "Used policy-compliant AI to support Excel macro design and analysis.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "data-analytics",
+      "display_name": "Data Analytics",
+      "category_id": "tools-data",
+      "featured": true,
+      "front_summary": "Used data analysis and forecasting to guide sustainment, readiness, manpower, and support-strategy decisions.",
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram", "program-leadership", "ai-automation"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["dod", "l3harris"],
+      "related_metric_ids": ["missing-parts", "repair-test"],
+      "related_case_study_ids": ["missing-parts", "sustainment-process"],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-data-dod-forecast",
+          "text": "Leveraged data analytics and manpower forecasting to establish support strategies and align stakeholders for fleet readiness.",
+          "employer": "Department of Defense / U.S. Air Force",
+          "role_id": "dod",
+          "date_range": "2021-2024",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-data-l3-spares",
+          "text": "Optimized spares quantities using availability, cost, reliability, repair-cycle, turnaround-time, and lead-time inputs.",
+          "employer": "L3Harris",
+          "role_id": "l3harris",
+          "date_range": "2024-2025",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "jira",
+      "display_name": "Jira",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "Used Jira Kanban workflows to manage task visibility, story progression, and team execution.",
+      "recruiter_track_ids": ["ai-automation", "systems-engineering"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": ["northrop"],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": [
+        {
+          "id": "skill-jira-ng",
+          "text": "Operates in an Agile environment, participates in daily stand-ups, and oversees the Jira Kanban board to manage workflow, story progression, team-task visibility, and completion coordination.",
+          "employer": "Northrop Grumman",
+          "role_id": "northrop",
+          "date_range": "2025-Present",
+          "source_resume_name": "Approved resume source set",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "webpage-development",
+      "display_name": "Webpage Development",
+      "category_id": "web-development",
+      "featured": true,
+      "front_summary": "Built a Flask portfolio website with interactive resume features, structured content, and an AI assistant experience.",
+      "recruiter_track_ids": ["ai-automation"],
+      "public_display": true,
+      "needs_evidence": false,
+      "related_role_ids": [],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Portfolio project"],
+      "evidence_items": [
+        {
+          "id": "skill-web-portfolio",
+          "text": "Built this portfolio with Flask, Jinja templates, responsive HTML/CSS, JavaScript interactivity, and structured JSON content.",
+          "employer": "Portfolio Project",
+          "role_id": "portfolio",
+          "date_range": "2026",
+          "source_resume_name": "Portfolio project",
+          "related_metric_ids": []
+        },
+        {
+          "id": "skill-web-ai",
+          "text": "Connected an AI assistant experience to approved portfolio information so visitors can ask about background, skills, and projects.",
+          "employer": "Portfolio Project",
+          "role_id": "portfolio",
+          "date_range": "2026",
+          "source_resume_name": "Portfolio project",
+          "related_metric_ids": []
+        }
+      ]
+    },
+    {
+      "id": "teamcenter",
+      "display_name": "Teamcenter",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "",
+      "recruiter_track_ids": [],
+      "public_display": false,
+      "needs_evidence": true,
+      "related_role_ids": [],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": []
+    },
+    {
+      "id": "slicwave",
+      "display_name": "SLICwave",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "",
+      "recruiter_track_ids": [],
+      "public_display": false,
+      "needs_evidence": true,
+      "related_role_ids": [],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": []
+    },
+    {
+      "id": "sap",
+      "display_name": "SAP",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "",
+      "recruiter_track_ids": [],
+      "public_display": false,
+      "needs_evidence": true,
+      "related_role_ids": [],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": []
+    },
+    {
+      "id": "confluence",
+      "display_name": "Confluence",
+      "category_id": "tools-data",
+      "featured": false,
+      "front_summary": "",
+      "recruiter_track_ids": [],
+      "public_display": false,
+      "needs_evidence": true,
+      "related_role_ids": [],
+      "related_metric_ids": [],
+      "related_case_study_ids": [],
+      "source_resume_names": ["Approved resume source set"],
+      "evidence_items": []
+    }
+  ],
+  "education": [
+    {
+      "id": "education-bs",
+      "credential": "B.S. Electrical Engineering",
+      "institution": "Kennesaw State University",
+      "status": "Completed",
+      "detail": "Completed the engineering degree as a non-traditional student while building a new technical career path."
+    },
+    {
+      "id": "education-ms",
+      "credential": "M.S. Engineering Management",
+      "institution": "University of Arkansas",
+      "status": "Completed",
+      "detail": "Completed graduate work with a 4.0 GPA."
+    },
+    {
+      "id": "education-as",
+      "credential": "A.S. Science",
+      "institution": "Dalton State College",
+      "status": "Completed",
+      "detail": "Early academic foundation that supported Pete's later engineering path."
+    },
+    {
+      "id": "education-pmp",
+      "credential": "Project Management Professional",
+      "institution": "Project Management Institute",
+      "status": "Certified",
+      "detail": "Public credential supporting project leadership, schedule, stakeholder, and execution discipline."
+    },
+    {
+      "id": "education-phd",
+      "credential": "Systems Engineering Ph.D.",
+      "institution": "University of South Alabama",
+      "status": "Admitted",
+      "detail": "Admitted with expected January 2027 start; this is upcoming, not completed."
+    },
+    {
+      "id": "education-incose",
+      "credential": "INCOSE / MBSE / OCSMP Development",
+      "institution": "Planned professional development",
+      "status": "Planned",
+      "detail": "Planned growth path aligned with systems engineering, MBSE, and AI-enabled engineering."
+    }
+  ],
+  "career_roles": [
+    {
+      "id": "dod",
+      "employer": "Department of Defense / U.S. Air Force",
+      "title": "Lead Systems Engineer / Systems Engineer",
+      "dates": "2021-2024",
+      "location": "Robins AFB",
+      "progression_theme": "Operational Readiness & Technical Leadership",
+      "focus_tags": ["Sustainment", "Contracting", "Modernization"],
+      "headline_contribution": "Led public sustainment, contract, and redesign work with measurable readiness and process outcomes.",
+      "summary": "Supported aircraft navigation, sustainment, modernization, readiness, and special-project activities across multiple military platforms. Coordinated engineering, supply, depot, contractor, program, and leadership organizations to resolve technical issues and improve operational supportability.",
+      "current_role_public_note": "",
+      "accomplishments": [
+        {
+          "id": "dod-redesigns",
+          "text": "Led an engineering flight and projects function supporting more than 30 engineers and nine redesign efforts valued at $19.2M.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["project-management"]
+        },
+        {
+          "id": "dod-modernization",
+          "text": "Served as government POC and lead engineer on a $4.6M navigation modernization project, coordinating contractors, program office, depot, schedule, cost, and prototype scope.",
+          "related_metric_ids": ["modernization"],
+          "related_skill_ids": ["project-management", "systems-engineering"]
+        },
+        {
+          "id": "dod-sysml",
+          "text": "Developed a Cameo/SysML model for a public navigation avionics system using packages, requirements, and diagrams to represent design, interfaces, and structure.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["sysml-modeling", "cameo", "mbse"]
+        },
+        {
+          "id": "dod-sop",
+          "text": "Defined training requirements for an engineering-flight SOP adopted by all five squadrons.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["process-improvement"]
+        },
+        {
+          "id": "dod-contract-cor",
+          "text": "Served as COR on a $36M IDIQ engineering-services contract, providing contractor oversight, tracking performance metrics, authorizing funding, and ensuring compliance.",
+          "related_metric_ids": ["contract"],
+          "related_skill_ids": ["contracting", "project-management"]
+        },
+        {
+          "id": "dod-issue-time",
+          "text": "Developed a sustainment tracker that reduced issue-to-action time by 35% across 54 avionics systems.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["process-improvement", "data-analytics"]
+        },
+        {
+          "id": "dod-briefs",
+          "text": "Directed, reviewed, and approved monthly and quarterly engineering-project briefs for senior leadership.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["ms-office", "project-management"]
+        },
+        {
+          "id": "dod-authority",
+          "text": "Exercised Level II engineering authority to evaluate, author, and approve depot-driven avionics requirement changes.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["systems-engineering", "requirements-management"]
+        },
+        {
+          "id": "dod-platforms",
+          "text": "Owned sustainment-to-end-of-life for navigation avionics across C-130, C-5, C-17, F-15, F-16, B-52, and U-2 airframes.",
+          "related_metric_ids": ["platforms"],
+          "related_skill_ids": ["sustainment", "life-cycle-management"]
+        },
+        {
+          "id": "dod-repair-test",
+          "text": "Coordinated depot and supply-chain stakeholders, reducing missing parts by 52% and increasing testing and repair rates by 70%.",
+          "related_metric_ids": ["missing-parts", "repair-test"],
+          "related_skill_ids": ["sustainment", "data-analytics"]
+        },
+        {
+          "id": "dod-missing-parts",
+          "text": "Used centralized sustainment visibility and stakeholder coordination to reduce missing-part conditions by 52%.",
+          "related_metric_ids": ["missing-parts"],
+          "related_skill_ids": ["sustainment", "ms-excel"]
+        },
+        {
+          "id": "dod-micap",
+          "text": "Reduced critical MICAP conditions from 16 to zero through coordinated engineering, supply, depot, and program action.",
+          "related_metric_ids": ["micap"],
+          "related_skill_ids": ["sustainment", "systems-engineering"]
+        },
+        {
+          "id": "dod-contract-docs",
+          "text": "Created and delivered SOWs, PWSs, and Market Research Reports.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["contracting", "ms-office"]
+        },
+        {
+          "id": "dod-contract-50m",
+          "text": "Served as lead POC for development of a five-year, $50M engineering-services contract.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["contracting", "project-management"]
+        }
+      ],
+      "responsibilities": [
+        "Supported PDR, CDR, PMR, and SRR reviews.",
+        "Resolved DMSMS and obsolescence issues using engineering and logistics solutions.",
+        "Aligned engineering, supply-chain, depot, contractor, program-office, and leadership stakeholders."
+      ],
+      "leadership_scope": ["Engineering flight", "Program offices", "Contractors", "Depot organizations", "Supply chain", "Maintenance stakeholders", "Senior leadership", "Cross-functional IPTs"],
+      "systems_or_platforms": ["C-130", "C-5", "C-17", "F-15", "F-16", "B-52", "U-2"],
+      "methods": ["Requirements changes", "Sustainment tracking", "Product reviews", "Contract oversight", "MBSE modeling"],
+      "tools": ["Cameo", "SysML", "Excel", "SOW", "PWS", "Market Research Reports"],
+      "standards": ["Depot-driven avionics requirement authority", "Engineering-flight SOP"],
+      "related_skill_ids": ["systems-engineering", "sysml-modeling", "cameo", "mbse", "requirements-management", "life-cycle-management", "contracting", "project-management", "sustainment", "process-improvement", "ms-office", "ms-excel", "data-analytics"],
+      "related_metric_ids": ["contract", "micap", "repair-test", "missing-parts", "modernization", "platforms"],
+      "related_case_study_ids": ["sustainment-process", "repair-test", "missing-parts", "contract-oversight"]
+    },
+    {
+      "id": "l3harris",
+      "employer": "L3Harris",
+      "title": "Systems Effectiveness Engineer",
+      "dates": "2024-2025",
+      "location": "Huntsville area",
+      "progression_theme": "Reliability, Supportability & Digital Engineering",
+      "focus_tags": ["ILS", "MBSE", "CAM"],
+      "headline_contribution": "Connected sustainment, provisioning, MBSE, and control-account execution for complex defense and communications systems.",
+      "summary": "Supported reliability, maintainability, sustainment, provisioning, depot analysis, integrated logistics support, control account management, and model-based systems-engineering activities for complex defense and communications systems.",
+      "current_role_public_note": "",
+      "accomplishments": [
+        {
+          "id": "l3-ils",
+          "text": "Served as ILS Manager coordinating the 12 IPS elements to support availability, readiness, supportability, and lifecycle cost objectives.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["integrated-logistics-support", "sustainment"]
+        },
+        {
+          "id": "l3-provisioning",
+          "text": "Defined logistics provisioning data for a major Navy program, establishing part-level supportability and material-management requirements.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["provisioning", "requirements-management"]
+        },
+        {
+          "id": "l3-mbse",
+          "text": "Built a Cameo MBSE model using logical and physical architecture, imported requirements, profiles, value types, tables, and BDD, IBD, and Activity diagrams.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["cameo", "mbse", "sysml-modeling"]
+        },
+        {
+          "id": "l3-cam",
+          "text": "Managed cost, schedule, requirements, forecasts, variances, and deliverables as CAM on a $9.1M sustainment effort.",
+          "related_metric_ids": ["cam"],
+          "related_skill_ids": ["control-account-management", "evms", "project-management"]
+        },
+        {
+          "id": "l3-spares",
+          "text": "Coordinated procurement, reliability, and systems teams to produce a spares CDRL using availability, cost, reliability, repair-cycle, turnaround-time, and lead-time inputs.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["provisioning", "data-analytics", "integrated-logistics-support"]
+        },
+        {
+          "id": "l3-program-docs",
+          "text": "Reviewed and interpreted SOWs, DIDs, ICDs, and program documentation.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["contracting", "ms-office"]
+        },
+        {
+          "id": "l3-cdrl",
+          "text": "Developed and owned CDEs and CDRLs including LORA, Product Support Plans, Product Support Analysis, and Depot Maintenance Studies.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["integrated-logistics-support", "sustainment"]
+        },
+        {
+          "id": "l3-ai",
+          "text": "Used policy-compliant AI to decompose requirements, analyze documents, and improve Excel macro and script development.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["ai", "ms-excel"]
+        },
+        {
+          "id": "l3-life-cycle",
+          "text": "Worked with program management and design engineering teams to integrate sustainment and maintainability from design through end-of-life.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["life-cycle-management", "sustainment"]
+        }
+      ],
+      "responsibilities": [
+        "Supported lifecycle and product-support decisions across engineering and program teams.",
+        "Connected provisioning, reliability, maintainability, and systems inputs to supportability decisions."
+      ],
+      "leadership_scope": ["Integrated product support teams", "Program management", "Design engineering", "Procurement", "Reliability", "Systems teams"],
+      "systems_or_platforms": ["Defense communications systems", "Sustainment and supportability products"],
+      "methods": ["Integrated Logistics Support", "Control Account Management", "Provisioning", "Product Support Analysis", "Depot Maintenance Studies", "AI-assisted analysis"],
+      "tools": ["Cameo", "SysML", "MBSE", "CAM", "EVMS", "Excel"],
+      "standards": ["CDEs", "CDRLs", "SOWs", "DIDs", "ICDs"],
+      "related_skill_ids": ["sysml-modeling", "cameo", "mbse", "requirements-management", "life-cycle-management", "control-account-management", "evms", "contracting", "project-management", "sustainment", "integrated-logistics-support", "provisioning", "ai", "ms-excel", "data-analytics"],
+      "related_metric_ids": ["cam"],
+      "related_case_study_ids": ["sustainment-process"]
+    },
+    {
+      "id": "northrop",
+      "employer": "Northrop Grumman",
+      "title": "Systems Engineer - Systems Engineering, Integration, and Test",
+      "dates": "2025-Present",
+      "location": "Huntsville area",
+      "progression_theme": "Complex Systems Engineering & Continued Technical Growth",
+      "focus_tags": ["Requirements", "Traceability", "Agile"],
+      "headline_contribution": "Supports public systems-engineering work involving requirements, architecture alignment, traceability, and Agile workflow coordination.",
+      "summary": "Supports complex aerospace and defense systems-engineering activities involving requirements, architecture alignment, traceability, Agile workflow coordination, and cross-functional technical execution.",
+      "current_role_public_note": "Current-role details are limited to approved, publicly shareable information.",
+      "accomplishments": [
+        {
+          "id": "ng-req-define",
+          "text": "Collaborates with SMEs and Product Owners to define, decompose, allocate, and validate system requirements using systems architecture and DOORS.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["systems-engineering", "requirements-management", "doors"]
+        },
+        {
+          "id": "ng-doors",
+          "text": "Manages requirements decomposition, derivation, and bidirectional traceability in IBM DOORS.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["requirements-management", "doors"]
+        },
+        {
+          "id": "ng-mbse-links",
+          "text": "Maintains parent-child linkages to synchronize requirements with MBSE architectural models.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["mbse", "doors"]
+        },
+        {
+          "id": "ng-agile",
+          "text": "Participates in an Agile environment with daily stand-ups.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["jira"]
+        },
+        {
+          "id": "ng-jira",
+          "text": "Oversees Jira Kanban workflow, story progression, team-task visibility, and completion coordination.",
+          "related_metric_ids": [],
+          "related_skill_ids": ["jira", "project-management"]
+        }
+      ],
+      "responsibilities": [
+        "Supports public requirements, architecture-alignment, traceability, and Agile coordination activities.",
+        "Keeps current-role content conservative and limited to approved resume wording."
+      ],
+      "leadership_scope": ["SMEs", "Product Owners", "Agile team members", "Interns when included in approved public resume content"],
+      "systems_or_platforms": ["Publicly shareable current-role details only"],
+      "methods": ["Requirements decomposition", "Bidirectional traceability", "Agile coordination", "Kanban workflow"],
+      "tools": ["IBM DOORS", "Jira", "MBSE architectural models"],
+      "standards": ["Approved public current-role boundaries"],
+      "related_skill_ids": ["systems-engineering", "mbse", "requirements-management", "doors", "jira", "project-management"],
+      "related_metric_ids": [],
+      "related_case_study_ids": []
+    }
+  ],
+  "case_studies": [
+    {
+      "id": "sustainment-process",
+      "title": "Sustainment Process Improvement",
+      "operational_need": "Engineering and sustainment teams needed faster visibility from issue identification to coordinated action.",
+      "engineering_response": "Created repeatable tracking, stakeholder alignment, and sustainment decision support using approved public process-improvement evidence.",
+      "verified_outcome": "Reduced issue-to-action time by 35% across 54 avionics systems and supported readiness-focused sustainment decisions.",
+      "detail": "The public evidence shows Pete building structure around recurring sustainment problems: centralizing visibility, aligning engineering and supply-chain stakeholders, and translating status into action. The result was a faster issue-to-action path and a process adopted as a squadron tracking requirement.",
+      "related_role_id": "dod",
+      "related_skill_ids": ["process-improvement", "sustainment", "data-analytics", "ms-excel"],
+      "related_metric_ids": ["micap"],
+      "recruiter_track_ids": ["sustainment-ram", "ai-automation"]
+    },
+    {
+      "id": "repair-test",
+      "title": "Repair and Test Improvement",
+      "operational_need": "Repair and testing performance needed improvement to reduce sustainment risk and restore supportability.",
+      "engineering_response": "Coordinated depot, supply-chain, engineering, contractor, and program stakeholders to work through constraints and restore execution flow.",
+      "verified_outcome": "Improved repair and testing rates by 70%.",
+      "detail": "The public resume evidence supports a coordination-heavy engineering response rather than a single-person claim. Pete helped connect technical constraints, stakeholder action, and sustainment priorities so repair and test performance could improve.",
+      "related_role_id": "dod",
+      "related_skill_ids": ["sustainment", "systems-engineering", "data-analytics"],
+      "related_metric_ids": ["repair-test", "modernization"],
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"]
+    },
+    {
+      "id": "missing-parts",
+      "title": "Missing-Part Reduction",
+      "operational_need": "Missing-part conditions were creating friction in sustainment execution and supportability.",
+      "engineering_response": "Used centralized tracking, engineering coordination, and supply-chain engagement to improve visibility and drive action.",
+      "verified_outcome": "Reduced missing-part conditions by 52%.",
+      "detail": "The public evidence connects this result to sustainment visibility, data tracking, and cross-functional coordination. The story demonstrates how Pete uses process and systems thinking to turn recurring support issues into measurable improvement.",
+      "related_role_id": "dod",
+      "related_skill_ids": ["sustainment", "ms-excel", "data-analytics", "process-improvement"],
+      "related_metric_ids": ["missing-parts"],
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"]
+    },
+    {
+      "id": "contract-oversight",
+      "title": "Engineering-Services Contract Oversight",
+      "operational_need": "Engineering-services work required disciplined oversight, funding authorization, performance tracking, and compliance.",
+      "engineering_response": "Served as COR, tracked performance metrics, authorized funding, supported contract documentation, and coordinated contractor execution.",
+      "verified_outcome": "Supported oversight of more than $36M in engineering-services contract scope.",
+      "detail": "The public evidence shows contracting work that combined technical understanding with program execution discipline. Pete also created SOWs, PWSs, Market Research Reports, and supported development of a five-year engineering-services contract.",
+      "related_role_id": "dod",
+      "related_skill_ids": ["contracting", "project-management", "ms-office"],
+      "related_metric_ids": ["contract"],
+      "recruiter_track_ids": ["program-leadership"]
+    }
+  ],
+  "applied_projects": [
+    {
+      "id": "interactive-resume",
+      "title": "Interactive Resume and Verified Career Assistant",
+      "status": "In Progress",
+      "summary": "A Flask and Jinja portfolio feature that turns approved public resume data into a recruiter-focused, evidence-linked career dashboard.",
+      "features": [
+        {
+          "label": "Completed",
+          "items": ["Flask route", "Jinja template", "Structured JSON resume data", "Responsive sections", "PDF and print actions"]
+        },
+        {
+          "label": "In Progress",
+          "items": ["Recruiter-track prioritization", "Skill-to-evidence refinement", "Assistant prompt tuning"]
+        },
+        {
+          "label": "Planned",
+          "items": ["Deeper project pages", "More validated source citations", "Target-role tailored print views"]
+        }
+      ],
+      "public_note": "This project can mention Python, Flask, Jinja, JavaScript, HTML, CSS, and JSON as implementation details, but those technologies are not shown as public resume skill cards unless Pete adds them to an approved resume skills section."
+    }
+  ],
+  "suggested_ai_questions": {
+    "default": [
+      "Give me a 60-second overview of Pete Carter.",
+      "What evidence supports Pete's systems-engineering experience?",
+      "Which roles appear to fit Pete's background?",
+      "What measurable results has Pete produced?"
+    ]
+  },
+  "withheld_skills": [
+    {
+      "name": "Teamcenter",
+      "reason": "Listed in resume skills, but no direct approved professional-experience evidence bullet was available in the provided implementation spec."
+    },
+    {
+      "name": "SLICwave",
+      "reason": "Listed in resume skills, but no direct approved professional-experience evidence bullet was available in the provided implementation spec."
+    },
+    {
+      "name": "SAP",
+      "reason": "Listed in resume skills, but no direct approved professional-experience evidence bullet was available in the provided implementation spec."
+    },
+    {
+      "name": "Confluence",
+      "reason": "Listed in resume skills, but no direct approved professional-experience evidence bullet was available in the provided implementation spec."
+    }
+  ]
+}

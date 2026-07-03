@@ -34,9 +34,11 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/chatbot.css') }}"
     >
+
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     <!-- Accessibility feature for keyboard and screen-reader users -->
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -46,50 +48,112 @@
         <nav class="navbar" aria-label="Primary navigation">
             <div class="nav-container">
 
-                <!-- Left: Pete's name and title -->
+                <!--
+                    SITE MENU (far left)
+                    Placeholder for the future multi-tenant business menu.
+                    For now it only holds "Homepage"; more destinations will
+                    be added as the platform grows. The button toggles the
+                    dropdown below it — see the small script near the end
+                    of this file.
+                -->
+                <div class="nav-menu">
+                    <button
+                        class="nav-menu-btn"
+                        id="site-menu-btn"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        aria-controls="site-menu-dropdown"
+                        aria-label="Open site menu"
+                    >
+                        <!-- Hamburger icon -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" aria-hidden="true">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+
+                    <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
+                        <a href="/">Homepage</a>
+                    </div>
+                </div>
+
+                <!-- Pete's name and title (shifted right of the site menu) -->
                 <div class="nav-brand">
                     <a href="/" class="nav-logo" aria-label="Pete Carter — return to homepage">
                         <span class="nav-name">Pete Carter</span>
-                        <span class="nav-tagline">SYSTEM ENGINEER</span>
+                        <span class="nav-tagline">SYSTEMS ENGINEER</span>
                     </a>
                 </div>
 
-                <!-- Right: navigation links + AI button -->
+                <!-- Right: navigation links + LinkedIn + AI button -->
                 <div class="nav-right">
 
+                    <!--
+                        aria-current="page" marks the link for the page the visitor
+                        is on. CSS uses it to keep the gold underline switched on,
+                        and screen readers announce "current page" for that link.
+                    -->
                     <ul class="nav-links">
-                        <li><a href="/work">Work</a></li>
-                        <li><a href="/skills">Skills</a></li>
-                        <li><a href="/hobbies">Hobbies</a></li>
-                        <li><a href="/about">About</a></li>
-                        <li><a href="#">Résumé</a></li>
-                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/work" {% if request.path == '/work' %}aria-current="page"{% endif %}>Projects</a></li>
+                        <li><a href="/skills" {% if request.path == '/skills' %}aria-current="page"{% endif %}>Expertise</a></li>
+                        <li><a href="/my-story" {% if request.path == '/my-story' %}aria-current="page"{% endif %}>My Story</a></li>
+                        <li><a href="/resume" {% if request.path == '/resume' %}aria-current="page"{% endif %}>Resume</a></li>
+                        <li><a href="/contact" {% if request.path == '/contact' %}aria-current="page"{% endif %}>Contact</a></li>
                     </ul>
 
-                    <!--
-                        "Ask Pete AI" nav button — opens the same chat panel
-                        as the floating toggle. stopPropagation() prevents the
-                        document click-outside listener in chatbot.js from
-                        closing the panel immediately after opening it.
-                    -->
-                    <button
-                        class="nav-ai-btn"
-                        aria-label="Open Pete's AI assistant"
-                        onclick="
-                            document.getElementById('chat-panel').classList.add('open');
-                            document.getElementById('chat-input').focus();
-                            event.stopPropagation();
-                        "
-                    >
-                        <!-- Chat bubble icon -->
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round"
-                             aria-hidden="true">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        Ask Pete AI
-                    </button>
+                    <!-- Far right: LinkedIn icon + Ask Pete AI, grouped so they
+                         share the third header grid column together. -->
+                    <div class="nav-actions">
+
+                        <!--
+                            target="_blank" opens LinkedIn in a new tab so visitors
+                            don't lose the portfolio. rel="noopener noreferrer" is a
+                            security best practice for links that open new tabs.
+                        -->
+                        <a
+                            class="nav-linkedin"
+                            href="https://www.linkedin.com/in/pete-carter19"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="View Pete Carter on LinkedIn"
+                        >
+                            <!-- Official LinkedIn brand colors: #0A66C2 blue
+                                 rounded square with the "in" glyph in white.
+                                 Colors are hard-coded (not currentColor) so the
+                                 logo always matches LinkedIn's brand guidelines. -->
+                            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2"/>
+                                <path fill="#ffffff" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/>
+                            </svg>
+                        </a>
+
+                        <!--
+                            "Ask Pete AI" nav button — opens the same chat panel
+                            as the floating toggle. stopPropagation() prevents the
+                            document click-outside listener in chatbot.js from
+                            closing the panel immediately after opening it.
+                        -->
+                        <button
+                            class="nav-ai-btn"
+                            aria-label="Open Pete's AI assistant"
+                            onclick="
+                                document.getElementById('chat-panel').classList.add('open');
+                                document.getElementById('chat-input').focus();
+                                event.stopPropagation();
+                            "
+                        >
+                            <!-- Chat bubble icon -->
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Ask Pete AI
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -117,11 +181,16 @@
          The top navigation button opens this panel.
          ====================================================== -->
 
-    <!--
-        The old bottom-right floating launcher was removed because
-        the top navigation already has an "Ask Pete AI" button.
-        One entry point feels cleaner and less repetitive.
-    -->
+    <button id="chat-toggle" aria-label="Open Pete's AI assistant">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Ask Pete AI</span>
+    </button>
+
     <div id="chat-panel" role="dialog" aria-label="Pete's Engineering Assistant">
 
         <div id="chat-header">
@@ -162,7 +231,51 @@
 
     </div>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+    <!-- ======================================================
+         SITE MENU BEHAVIOR
+         Opens/closes the top-left dropdown, and closes it when
+         the visitor clicks anywhere else or presses Escape.
+         aria-expanded is kept in sync so screen readers always
+         know whether the menu is open.
+         ====================================================== -->
+    <script>
+        (function () {
+            const menuBtn = document.getElementById('site-menu-btn');
+            const menuDropdown = document.getElementById('site-menu-dropdown');
+
+            function closeMenu() {
+                menuDropdown.hidden = true;
+                menuBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            menuBtn.addEventListener('click', function (event) {
+                // stopPropagation keeps the document click listener below
+                // from instantly closing the menu we just opened.
+                event.stopPropagation();
+                const willOpen = menuDropdown.hidden;
+                menuDropdown.hidden = !willOpen;
+                menuBtn.setAttribute('aria-expanded', String(willOpen));
+            });
+
+            // Click anywhere outside the dropdown closes it.
+            document.addEventListener('click', function (event) {
+                if (!menuDropdown.hidden && !menuDropdown.contains(event.target)) {
+                    closeMenu();
+                }
+            });
+
+            // Escape closes it and returns focus to the button.
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !menuDropdown.hidden) {
+                    closeMenu();
+                    menuBtn.focus();
+                }
+            });
+        })();
+    </script>
+
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-bridge-2"></script>
+    {% block extra_scripts %}{% endblock %}
 
 </body>
 

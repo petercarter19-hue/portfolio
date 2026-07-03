@@ -10,10 +10,9 @@
 // =========================================================
 
 
-// Wait until the full page has finished loading before
-// running any code. This prevents errors from trying to
-// find HTML elements that don't exist yet.
-document.addEventListener('DOMContentLoaded', function () {
+// Wait until the page is ready before running any code. If this file is
+// loaded after the page is already ready, run the setup immediately.
+function initializeChatbot() {
 
 
     // -------------------------------------------------------
@@ -168,6 +167,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Exposes one safe doorway for page-specific buttons, such as the
+    // interactive resume prompts, to open the same chat assistant and send
+    // a question without duplicating the chatbot logic in another file.
+    window.askPeteAI = function (question) {
+        panel.classList.add('open');
+        input.value = '';
+        sendMessage(question);
+    };
+
 
     // -------------------------------------------------------
     // ADD A MESSAGE BUBBLE TO THE CONVERSATION
@@ -200,4 +208,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-});  // End of DOMContentLoaded
+}  // End of initializeChatbot
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeChatbot);
+} else {
+    initializeChatbot();
+}

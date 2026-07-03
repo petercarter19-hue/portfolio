@@ -154,9 +154,69 @@ button:focus-visible {
     min-height: 68px;
     margin-inline: auto;
     display: grid;
-    grid-template-columns: minmax(230px, 1fr) auto minmax(150px, 1fr);
+    /* Four columns: site menu | brand | page links | LinkedIn + AI button.
+       The new first "auto" column holds the dropdown menu button, which
+       naturally shifts the brand and links to the right. */
+    grid-template-columns: auto minmax(230px, 1fr) auto minmax(150px, 1fr);
     align-items: center;
     gap: 24px;
+}
+
+/* ---------- Site menu (top-left dropdown) ----------
+   Future home of the multi-tenant business menu. position: relative
+   lets the dropdown anchor directly beneath the button. */
+.nav-menu {
+    position: relative;
+}
+
+.nav-menu-btn {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    color: #dfe4ea;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.nav-menu-btn:hover,
+.nav-menu-btn:focus-visible,
+.nav-menu-btn[aria-expanded="true"] {
+    color: var(--color-gold);
+    border-color: var(--color-border-gold);
+    background: rgb(243 190 79 / 8%);
+}
+
+.nav-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 1100;
+    min-width: 190px;
+    padding: 6px;
+    background: linear-gradient(180deg, #0d1a2a, #0a1624);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 18px 45px rgb(0 0 0 / 45%);
+}
+
+.nav-menu-dropdown a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--color-text-secondary);
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: color 160ms ease, background-color 160ms ease;
+}
+
+.nav-menu-dropdown a:hover,
+.nav-menu-dropdown a:focus-visible {
+    color: var(--color-gold-bright);
+    background: rgb(243 190 79 / 8%);
 }
 
 .nav-brand {
@@ -233,29 +293,76 @@ button:focus-visible {
     transform: scaleX(1);
 }
 
-.nav-ai-btn {
+/* Active-page feedback: the link for the page you are on keeps the
+   same gold underline the hover effect uses, so it stays lit. */
+.nav-links a[aria-current="page"] {
+    color: var(--color-text-primary);
+}
+
+.nav-links a[aria-current="page"]::after {
+    transform: scaleX(1);
+}
+
+/* Groups the LinkedIn icon and Ask Pete AI button in the header's
+   right grid column so they sit together on the far right. */
+.nav-actions {
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* LinkedIn logo in the header: the SVG carries LinkedIn's official
+   brand colors itself (#0A66C2 + white), so the anchor only handles
+   sizing and a subtle hover lift — no color overrides. */
+.nav-linkedin {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    transition: transform 160ms ease, filter 160ms ease;
+}
+
+.nav-linkedin:hover,
+.nav-linkedin:focus-visible {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+}
+
+/* "Ask Pete AI" header button: squared-off, gold-tinted, and
+   double-outlined (border + inset ring) so it reads as the site's
+   signature AI feature instead of a generic pill button. */
+.nav-ai-btn {
     display: inline-flex;
     align-items: center;
     gap: 9px;
     min-height: 38px;
     padding: 0 17px;
-    color: var(--color-gold);
-    background: transparent;
-    border: 1px solid var(--color-border-gold);
-    border-radius: 8px;
+    color: var(--color-gold-bright);
+    background: linear-gradient(180deg, rgb(243 190 79 / 18%), rgb(243 190 79 / 6%));
+    border: 1px solid var(--color-gold);
+    border-radius: 4px;
+    box-shadow:
+        inset 0 0 0 1px rgb(243 190 79 / 22%),      /* Inner gold ring = the "double outline" look */
+        0 0 14px rgb(243 190 79 / 12%);             /* Soft glow lifts it off the dark header */
     cursor: pointer;
-    font-size: 0.86rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     white-space: nowrap;
-    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .nav-ai-btn:hover,
 .nav-ai-btn:focus-visible {
     color: var(--color-text-dark);
-    background: var(--color-gold);
-    border-color: var(--color-gold);
+    background: linear-gradient(180deg, var(--color-gold-bright), var(--color-gold));
+    border-color: var(--color-gold-bright);
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 30%),
+        0 0 18px rgb(243 190 79 / 26%);
 }
 
 
@@ -325,6 +432,22 @@ button:focus-visible {
 
 .main-content {
     min-height: calc(100vh - 68px);
+    position: relative;
+    isolation: isolate;
+}
+
+.main-content::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-circuit-image);
+    background-repeat: repeat-y;
+    background-position: top left;
+    background-size: 100% auto;
+    opacity: 0.24;
+    filter: saturate(1.65) brightness(1.34) contrast(1.18);
+    pointer-events: none;
 }
 
 .hero {
@@ -342,7 +465,7 @@ button:focus-visible {
     position: absolute;
     inset: 0;
     z-index: -3;
-    background-image: var(--hero-circuit-image);
+    background-image: var(--site-circuit-image);
     background-repeat: no-repeat;
     background-position: left center;                   /* Source chip sits left-of-frame; keeps it on the left, behind the headline */
     background-size: cover;
@@ -484,10 +607,6 @@ button:focus-visible {
     filter: drop-shadow(0 0 8px rgb(243 190 79 / 22%)); /* Soft glow helps arrows stand out on the dark background */
 }
 
-.cycle-arc--blue {
-    stroke: rgb(78 163 255 / 58%);                  /* Blue arrows show internal traceability back to the center */
-}
-
 .lifecycle-circuit {
     inset: 16px 0 12px;
     z-index: -1;
@@ -627,16 +746,27 @@ button:focus-visible {
    METRICS BAND
    ========================================================= */
 
+/* The band itself is now transparent: the visible strip is the framed
+   track-wrap below, which stops at the page's content rail instead of
+   running edge-to-edge on big screens. */
 .metrics-band {
-    background: linear-gradient(180deg, #0c1827, #08131f); /* Dark strip behind the scrolling metric cards */
-    border-top: 1px solid rgb(243 190 79 / 24%);           /* Thin gold line separates hero from metrics */
-    border-bottom: 1px solid rgb(255 255 255 / 8%);        /* Subtle bottom divider before the next section */
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 18px 0;
+    background:
+        linear-gradient(180deg, rgb(3 11 22 / 16%), rgb(3 11 22 / 28%)),
+        var(--site-circuit-image);
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: cover;
 }
 
 .metrics-track-wrap {
-    overflow: hidden;                                      /* Hides cards outside the visible scrolling area */
-    mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Fades edges of the scrolling track */
-    -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent); /* Safari/Chrome version of the same fade */
+    overflow: hidden;                                      /* Cards are cut off cleanly at each end of the frame */
+    background: linear-gradient(180deg, #0c1827, #08131f); /* Dark strip behind the scrolling metric cards */
+    border: 1px solid rgb(243 190 79 / 30%);               /* Thin gold frame ends the strip at the content edges */
+    border-radius: 8px;
 }
 
 .metrics-track {
@@ -659,11 +789,11 @@ button:focus-visible {
     position: relative;                                    /* Allows the divider line to be positioned inside each item */
     flex: 0 0 auto;                                        /* Keeps each metric card at its fixed width */
     width: 264px;                                    /* Fixed card width so items never stretch as the viewport shrinks */
-    min-height: 78px;                                      /* Thinner strip height; lower number makes the metrics bar slimmer */
+    min-height: 66px;                                      /* 15% thinner than the previous 78px strip height */
     display: flex;                                         /* Puts the icon and text side by side */
     align-items: center;                                   /* Vertically centers icon and text */
     gap: 14px;                                             /* Space between the icon and the metric text */
-    padding: 12px 20px;                                    /* Internal spacing; smaller vertical padding makes the bar thinner */
+    padding: 10px 20px;                                    /* Internal spacing; smaller vertical padding makes the bar thinner */
 }
 
 .metric-item::after {
@@ -1018,6 +1148,204 @@ button:focus-visible {
 
 
 /* =========================================================
+   PROJECTS PAGE
+   ========================================================= */
+
+.work-page {
+    position: relative;
+    isolation: isolate;
+    padding: 46px 0 70px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgb(3 11 22 / 12%), rgb(3 11 22 / 72%)),
+        var(--site-circuit-image);
+    background-repeat: repeat-y;
+    background-position: top left;
+    background-size: 100% auto;
+}
+
+.work-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(90deg, rgb(3 11 22 / 82%) 0%, rgb(3 11 22 / 64%) 48%, rgb(3 11 22 / 82%) 100%),
+        radial-gradient(circle at 78% 14%, rgb(78 163 255 / 18%), transparent 28%);
+}
+
+.work-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    gap: 24px;
+    align-items: end;
+    margin-bottom: 24px;
+}
+
+.work-hero h1 {
+    max-width: 780px;
+    margin-bottom: 12px;
+    color: var(--color-text-primary);
+    font-size: clamp(2.2rem, 4vw, 4rem);
+    font-weight: 850;
+    letter-spacing: -0.045em;
+    line-height: 1;
+}
+
+.work-hero p:not(.section-eyebrow) {
+    max-width: 690px;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.work-hero-panel {
+    padding: 18px;
+    background: linear-gradient(180deg, rgb(11 24 39 / 94%), rgb(8 20 32 / 94%));
+    border: 1px solid rgb(243 190 79 / 28%);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+}
+
+.work-hero-panel strong,
+.work-hero-panel span {
+    display: block;
+}
+
+.work-hero-panel strong {
+    margin-bottom: 8px;
+    color: var(--color-gold);
+    font-size: 0.78rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.work-hero-panel span {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.work-project-selector {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.work-project-tab {
+    min-height: 86px;
+    padding: 14px;
+    color: var(--color-text-primary);
+    text-align: left;
+    background: linear-gradient(180deg, rgb(11 24 39 / 92%), rgb(8 20 32 / 92%));
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.96rem;
+    font-weight: 820;
+    line-height: 1.25;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.work-project-tab span {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-gold);
+    font-size: 0.66rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.work-project-tab:hover,
+.work-project-tab:focus-visible,
+.work-project-tab.is-active {
+    transform: translateY(-3px);
+    border-color: var(--color-gold);
+    box-shadow: 0 0 22px rgb(243 190 79 / 16%);
+}
+
+.work-project-panel {
+    display: none;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 350px);
+    gap: 18px;
+    padding: 22px;
+    background: linear-gradient(180deg, rgb(11 24 39 / 96%), rgb(8 20 32 / 96%));
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+}
+
+.work-project-panel.is-active {
+    display: grid;
+}
+
+.work-project-main h2 {
+    max-width: 760px;
+    margin: 8px 0 10px;
+    color: var(--color-text-primary);
+    font-size: clamp(1.7rem, 2.8vw, 2.8rem);
+    font-weight: 850;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+}
+
+.work-project-main > p {
+    max-width: 760px;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.58;
+}
+
+.work-proof-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr);
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.work-proof-grid section,
+.work-project-side {
+    padding: 16px;
+    background: rgb(255 255 255 / 3%);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 8px;
+}
+
+.work-proof-grid h3,
+.work-project-side h3 {
+    margin-bottom: 9px;
+    color: var(--color-gold);
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.work-proof-grid ul,
+.work-project-side ul {
+    padding-left: 18px;
+}
+
+.work-proof-grid li,
+.work-project-side li {
+    margin-bottom: 7px;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.42;
+}
+
+.work-ask-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 18px;
+    background: transparent;
+}
+
+
+/* =========================================================
    FOOTER
    ========================================================= */
 
@@ -1053,7 +1381,7 @@ button:focus-visible {
     }
 
     .nav-container {
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto auto 1fr auto;   /* menu | brand | links | actions */
     }
 
     .nav-links {
@@ -1101,9 +1429,109 @@ button:focus-visible {
     .projects-copy p {
         max-width: 680px;
     }
+
+    .work-project-selector {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .work-project-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1040px) {
+    .nav-container {
+        gap: 14px;
+    }
+
+    .nav-logo {
+        gap: 12px;
+    }
+
+    .nav-name {
+        font-size: 1.08rem;
+    }
+
+    .nav-tagline {
+        font-size: 0.58rem;
+        letter-spacing: 0.16em;
+    }
+
+    .nav-links {
+        gap: 16px;
+    }
+
+    .nav-links a {
+        font-size: 0.82rem;
+    }
+
+    .nav-actions {
+        gap: 8px;
+    }
+
+    .nav-linkedin {
+        width: 34px;
+        height: 34px;
+    }
+
+    .nav-ai-btn {
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 0.78rem;
+    }
 }
 
 @media (max-width: 860px) {
+    .nav-container {
+        width: min(100% - 32px, var(--site-width));
+        grid-template-columns: auto minmax(160px, 0.8fr) auto minmax(126px, 0.6fr);
+        gap: 10px;
+    }
+
+    .nav-menu-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .nav-logo {
+        gap: 8px;
+    }
+
+    .nav-name {
+        font-size: 0.95rem;
+    }
+
+    .nav-tagline {
+        font-size: 0.48rem;
+        letter-spacing: 0.12em;
+    }
+
+    .nav-links {
+        gap: 10px;
+    }
+
+    .nav-links a {
+        font-size: 0.74rem;
+    }
+
+    .nav-linkedin {
+        width: 30px;
+        height: 30px;
+    }
+
+    .nav-ai-btn {
+        min-height: 32px;
+        padding: 0 9px;
+        font-size: 0.72rem;
+    }
+
+    .work-hero,
+    .work-proof-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 780px) {
     .site-header {
         position: relative;
     }
@@ -1114,6 +1542,16 @@ button:focus-visible {
         grid-template-columns: 1fr;
         justify-items: center;
         gap: 14px;
+    }
+
+    /* On the stacked phone header, the site menu pins to the top-left
+       corner instead of joining the centered column. The header is
+       position: relative here, so absolute coordinates are relative
+       to the header itself. */
+    .nav-menu {
+        position: absolute;
+        top: 14px;
+        left: 16px;
     }
 
     .nav-logo {
@@ -1129,7 +1567,14 @@ button:focus-visible {
         gap: 13px;
     }
 
+    .nav-actions {
+        justify-self: center;                       /* Centered like the rest of the stacked mobile header */
+    }
+
     .nav-links {
+        width: 100%;
+        max-width: 440px;
+        justify-content: center;
         flex-wrap: wrap;
         gap: 8px 20px;
     }
@@ -1143,7 +1588,8 @@ button:focus-visible {
     }
 
     .hero-copy h1 {
-        font-size: clamp(2.45rem, 8.6vw, 4rem);
+        max-width: 680px;
+        font-size: clamp(2.1rem, 7vw, 3.25rem);
     }
 
     .project-grid {
@@ -1151,10 +1597,9 @@ button:focus-visible {
     }
 }
 
-@media (max-width: 700px) {
-    /* Below this width the scaled diagram would need to shrink past a
-       readable size, so drop the transform and lay the stages out as a
-       static stacked list instead (no min-width floor, no scrollbar). */
+@media (max-width: 980px) {
+    /* At tablet widths the circular lifecycle takes over the page.
+       Use the same readable stacked bars as the phone layout sooner. */
     .lifecycle-visual {
         aspect-ratio: auto;
     }
@@ -1162,6 +1607,7 @@ button:focus-visible {
     .lifecycle-stage {
         position: static;
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
         width: auto;
         height: auto;
@@ -1182,9 +1628,10 @@ button:focus-visible {
     }
 
     .lifecycle-center {
+        grid-column: 1 / -1;
         width: auto;
         height: auto;
-        padding: 22px;
+        padding: 16px;
         border: 1px solid var(--color-border-soft);
         border-radius: 10px;
         background: linear-gradient(180deg, #0b1827, #081420);
@@ -1196,6 +1643,17 @@ button:focus-visible {
 
     .lifecycle-node {
         width: 100%;
+        min-height: 76px;
+        padding: 13px 15px;
+    }
+}
+
+@media (max-width: 700px) {
+    .lifecycle-stage {
+        grid-template-columns: 1fr;
+    }
+
+    .lifecycle-node {
         min-height: auto;
     }
 }
@@ -1207,8 +1665,17 @@ button:focus-visible {
         width: min(100% - 32px, var(--site-width));
     }
 
+    /* Phone nav links restored now that the site has real pages to visit.
+       They wrap into centered rows below Pete's name. */
     .nav-links {
-        display: none;                              /* Broken links are intentionally de-emphasized on phone during index-first work */
+        width: 100%;
+        max-width: 330px;
+        justify-content: center;
+        gap: 6px 14px;
+    }
+
+    .nav-links a {
+        font-size: 0.86rem;
     }
 
     .hero-grid {
@@ -1231,7 +1698,7 @@ button:focus-visible {
     }
 
     .hero-actions {
-        align-items: stretch;
+        align-items: center;
         flex-direction: column;
     }
 
@@ -1243,6 +1710,20 @@ button:focus-visible {
         grid-template-columns: 1fr;
     }
 
+    .work-page {
+        padding: 34px 0 48px;
+    }
+
+    .work-project-selector,
+    .work-project-panel,
+    .work-proof-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .work-project-panel {
+        padding: 16px;
+    }
+
     .projects-section {
         padding-top: 44px;
     }
@@ -1251,6 +1732,986 @@ button:focus-visible {
         font-size: clamp(1.85rem, 8vw, 2.4rem);
     }
 }
+
+/* =========================================================
+   MY STORY PAGE
+   Styles for templates/my_story.html. Reuses the shared
+   variables, eyebrows, buttons, and card language above.
+   ========================================================= */
+
+/* ---------- Hero ---------- */
+
+.story-hero {
+    position: relative;
+    isolation: isolate;                              /* Keeps the decorative layers behind this section only */
+    overflow: hidden;
+    border-bottom: 1px solid rgb(243 190 79 / 20%);
+}
+
+/* Same real circuit artwork used by the homepage hero, tuned a little darker
+   here so the My Story copy and circular collage stay readable. */
+.story-hero-circuit {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    background-image: var(--site-circuit-image);
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: cover;
+    opacity: 1;
+    filter: saturate(1.7) brightness(1.4) contrast(1.25);
+    pointer-events: none;
+}
+
+.story-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+        linear-gradient(90deg, rgb(3 11 22 / 78%) 0%, rgb(3 11 22 / 60%) 38%, rgb(8 24 42 / 40%) 100%),
+        radial-gradient(circle at 76% 46%, rgb(78 163 255 / 18%), transparent 34%),
+        linear-gradient(180deg, rgb(6 17 31 / 38%) 0%, rgb(6 16 29 / 38%) 100%);
+}
+
+.story-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 44%;
+    z-index: -1;
+    opacity: 0.24;
+    background:
+        linear-gradient(90deg, transparent 0 12px, rgb(78 163 255 / 28%) 12px 13px, transparent 13px 100%),
+        linear-gradient(0deg, transparent 0 24px, rgb(243 190 79 / 20%) 24px 25px, transparent 25px 100%);
+    background-size: 96px 96px;
+    mask-image: linear-gradient(90deg, transparent, black 22%, black 86%, transparent);
+}
+
+.story-hero__grid {
+    display: grid;
+    grid-template-columns: minmax(430px, 0.9fr) minmax(300px, 1.1fr);
+    align-items: center;
+    gap: clamp(22px, 4vw, 64px);
+    padding-top: clamp(30px, 3vw, 46px);
+    padding-bottom: clamp(18px, 2vw, 28px);
+}
+
+.story-hero__content {
+    max-width: 590px;
+}
+
+.story-hero__content h1 {
+    margin: 10px 0 14px;
+    color: var(--color-text-primary);
+    font-size: clamp(2.3rem, 4.2vw, 3.4rem);
+    font-weight: 820;
+    letter-spacing: -0.045em;
+    line-height: 1.08;
+}
+
+.story-hero__content h1 span {
+    color: var(--color-gold);
+}
+
+.story-hero__tagline {
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    font-size: 1.02rem;
+}
+
+.story-hero__intro {
+    max-width: 480px;
+    margin-bottom: 24px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+/* Row of four compact value chips under the intro paragraph.
+   Grid instead of flex-wrap: a wrapping flex row can strand one chip
+   alone on a second line (3+1). The grid always shows exactly four
+   across, or a clean 2x2 on narrower screens (media rule below). */
+.story-values-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, auto));
+    justify-content: start;
+    gap: 12px 18px;
+    list-style: none;
+}
+
+/* Switch to 2x2 before the four chips would ever need to wrap */
+@media (max-width: 1240px) {
+    .story-values-row {
+        grid-template-columns: repeat(2, minmax(0, auto));
+    }
+}
+
+.value-chip {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.value-chip__icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px solid;
+}
+
+.value-chip__icon svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.value-chip__icon--gold {
+    color: var(--color-gold);
+    border-color: rgb(243 190 79 / 55%);
+}
+
+.value-chip__icon--cyan {
+    color: var(--color-cyan);
+    border-color: rgb(80 214 232 / 45%);
+}
+
+.value-chip__label {
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* ---------- Hero portrait ---------- */
+
+.story-hero__portrait {
+    position: relative;
+    display: grid;
+    place-items: center;
+    justify-self: center;
+    width: 100%;
+    /* Only a little vertical padding: the extra top/bottom whitespace
+       was making this column taller than the text column, which (with
+       align-items: center on the grid) pushed dead space below the
+       "Combining technical depth..." banner. Keeping the horizontal
+       padding preserves side breathing room without shrinking the
+       visible collage. */
+    padding: 6px clamp(10px, 1.5vw, 20px);
+}
+
+/* Soft ambient glow behind the collage so it reads as part of the
+   scene rather than a flat rectangle pasted on top. */
+.story-hero__portrait::before {
+    content: "";
+    position: absolute;
+    width: clamp(360px, 40vw, 560px);
+    aspect-ratio: 4 / 5;
+    border-radius: 40px;
+    background:
+        radial-gradient(circle, rgb(78 163 255 / 16%) 0 42%, transparent 72%),
+        radial-gradient(circle, rgb(243 190 79 / 10%) 0 36%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+}
+
+/* No hard frame or circular crop: a soft radial mask fades the
+   collage's own dark edges into the page background so the photo
+   blends in instead of reading as a cropped rectangle. The fade now
+   starts earlier (42%) and reaches fully transparent before the
+   image edge (88%), so none of the photo's straight rectangular
+   edges survive — they dissolve into the dark background. */
+.portrait-frame {
+    position: relative;
+    width: clamp(300px, 34vw, 410px);
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
+    -webkit-mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
+}
+
+.portrait-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    filter: saturate(1.08) contrast(1.05);
+}
+
+/* ---------- Hero positioning statement ---------- */
+
+.story-banner {
+    width: fit-content;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 18px;
+    padding: 9px 14px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid rgb(243 190 79 / 38%);
+    border-radius: 10px;
+}
+
+.story-banner__statement {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding-right: 0;
+}
+
+.story-banner__icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: grid;
+    place-items: center;
+    color: var(--color-gold);
+}
+
+.story-banner__icon svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.story-banner__statement p {
+    max-width: 520px;
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    line-height: 1.38;
+}
+
+/* Keep the desktop My Story hero compact: the collage should support
+   the story, not push the journey section far down the screen. */
+@media (min-width: 781px) {
+    .story-hero__grid {
+        align-items: center;
+    }
+
+    .story-hero__content {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+}
+
+/* ---------- Journey section ---------- */
+
+/* Noticeably lighter band with gold edges so the journey section
+   pops against the near-black page background. */
+.story-journey {
+    padding: 22px 0 24px;
+    background:
+        radial-gradient(circle at 18% 24%, rgb(30 84 134 / 16%), transparent 34%),
+        linear-gradient(180deg, #0d2036, #0a1a2c);
+    border-top: 1px solid rgb(243 190 79 / 26%);
+    border-bottom: 1px solid rgb(243 190 79 / 26%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+.story-journey h2,
+.story-drives h2 {
+    margin: 8px 0 14px;
+    color: var(--color-text-primary);
+    font-size: clamp(1.55rem, 1.9vw, 1.9rem);
+    font-weight: 820;
+    letter-spacing: -0.04em;
+    line-height: 1.16;
+}
+
+.story-journey__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.85fr);
+    gap: 46px;
+    align-items: start;
+}
+
+.story-journey__narrative p {
+    margin-bottom: 10px;
+    color: var(--color-text-secondary);
+    font-size: 0.74rem;
+    line-height: 1.38;
+}
+
+.story-journey .view-all-link {
+    min-height: 36px;
+    padding: 0 20px;
+    font-size: 0.78rem;
+}
+
+/* Horizontal four-milestone timeline. The connecting line is drawn by
+   ::before on each item except the first, so it links the gold nodes. */
+.story-timeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    padding-top: 6px;
+    list-style: none;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+/* Larger dark circles with soft borders, like the mockup */
+.timeline-item__icon {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 12px;
+    color: var(--color-gold);
+    background: #0e1f33;
+    border: 1px solid rgb(146 167 190 / 38%);
+    border-radius: 50%;
+}
+
+/* Light (silver-white) icon variant used by most milestones in the mockup */
+.timeline-item__icon--light {
+    color: #d9e2ec;
+}
+
+.timeline-item__icon--cyan {
+    color: var(--color-cyan);
+}
+
+.timeline-item__icon svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Thin connecting line between milestone icons, with a small gold node
+   where it meets each circle. Skipped on the first item. */
+.timeline-item + .timeline-item::before {
+    content: "";
+    position: absolute;
+    top: 28px;                                       /* Vertically centered on the 56px icon circle */
+    right: calc(100% - 28px);
+    width: calc(100% - 36px);
+    height: 1px;
+    background: rgb(243 190 79 / 40%);
+}
+
+.timeline-item + .timeline-item::after {
+    content: "";
+    position: absolute;
+    top: 25px;
+    left: -11px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-gold);
+}
+
+.timeline-item__date {
+    margin-bottom: 4px;
+    color: var(--color-gold);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.timeline-item h3 {
+    margin-bottom: 5px;
+    color: var(--color-text-primary);
+    font-size: 0.78rem;
+    font-weight: 780;
+    line-height: 1.3;
+}
+
+.timeline-item__text {
+    color: var(--color-text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.38;
+}
+
+/* ---------- Values (What Drives Me) ---------- */
+
+.story-drives {
+    padding: 34px 0 16px;
+}
+
+/* Heading column beside the four cards, matching the mockup layout */
+.story-drives__layout {
+    display: grid;
+    grid-template-columns: minmax(210px, 0.84fr) minmax(0, 3.16fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.story-drives__heading h2 {
+    margin-bottom: 0;
+}
+
+.story-drives__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.drive-card {
+    min-height: 168px;
+    padding: 18px 16px;
+    text-align: center;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.drive-card__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin-inline: auto;
+    margin-bottom: 10px;
+    color: var(--color-gold);
+}
+
+.drive-card__icon svg {
+    width: 37px;
+    height: 37px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.drive-card h3 {
+    margin-bottom: 6px;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.drive-card p {
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+    line-height: 1.46;
+}
+
+/* ---------- Lower information cards ---------- */
+
+.story-cards {
+    padding: 0 0 10px;
+}
+
+/* Two cards now: "Outside of Engineering" earned the connect card's
+   old space, so it gets the wider column for its 4x2 interest grid. */
+.story-cards__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
+.story-card {
+    display: flex;
+    flex-direction: column;
+    padding: 18px 22px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.story-card h2 {
+    margin: 5px 0 12px;
+    color: var(--color-text-primary);
+    font-size: 1.05rem;
+    font-weight: 820;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.story-card__list {
+    margin-bottom: 16px;
+    padding-left: 0;
+    list-style: none;
+}
+
+/* Each learning item: small gold icon + text, like the mockup */
+.story-card__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 7px;
+    color: var(--color-text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.32;
+}
+
+.story-card__list-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    margin-top: 2px;
+    color: var(--color-gold);
+}
+
+.story-card__list-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.story-card__link {
+    margin-top: auto;                                /* Pushes the link to the card bottom for equal-height cards */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-gold);
+    font-size: 0.78rem;
+    font-weight: 750;
+    transition: color 160ms ease;
+}
+
+.story-card__link:hover,
+.story-card__link:focus-visible {
+    color: var(--color-gold-bright);
+}
+
+/* Interests grid inside the "Outside of Engineering" card:
+   eight items in four columns × two rows. Responsive rules below
+   drop it straight to two columns — never a 3+1 orphan row. */
+.interest-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 12px;
+    margin-bottom: 12px;
+    list-style: none;
+}
+
+.interest-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.interest-item__icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: grid;
+    place-items: center;
+    color: var(--color-cyan);
+    border: 1px solid rgb(80 214 232 / 35%);
+    border-radius: 8px;
+}
+
+.interest-item__icon svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.interest-item h3 {
+    margin-bottom: 2px;
+    color: var(--color-text-primary);
+    font-size: 0.66rem;
+    font-weight: 750;
+}
+
+.interest-item p {
+    color: var(--color-text-muted);
+    font-size: 0.58rem;
+    line-height: 1.28;
+}
+
+/* ---------- Shared card hover ----------
+   The same "pop out" the homepage project cards use, applied to every
+   card-style surface on the site so hover feedback feels consistent. */
+.drive-card,
+.story-card,
+.fun-fact-card {
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.drive-card:hover,
+.story-card:hover,
+.fun-fact-card:hover {
+    transform: translateY(-4px);
+    border-color: #53687e;
+    box-shadow: var(--shadow-card);
+}
+
+/* ---------- Fun facts ---------- */
+
+.fun-facts {
+    padding: 26px 0 10px;
+}
+
+.fun-facts__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.fun-facts__header h2 {
+    margin-top: 8px;
+    color: var(--color-text-primary);
+    font-size: clamp(1.35rem, 1.8vw, 1.7rem);
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+.fun-facts__shuffle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 38px;
+    padding: 0 18px;
+    color: var(--color-gold);
+    background: transparent;
+    border: 1px solid var(--color-border-gold);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 750;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.fun-facts__shuffle:hover,
+.fun-facts__shuffle:focus-visible {
+    color: var(--color-gold-bright);
+    border-color: var(--color-gold);
+    background: rgb(243 190 79 / 8%);
+}
+
+.fun-facts__shuffle svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fun-facts__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.fun-fact-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, #0b1827, #081420);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 10px;
+}
+
+.fun-fact-card__icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: grid;
+    place-items: center;
+    color: var(--color-gold);
+    border: 1px solid rgb(243 190 79 / 45%);
+    border-radius: 50%;
+}
+
+.fun-fact-card__icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fun-fact-card p {
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* On My Story, the shared metrics partial becomes a framed bottom strip
+   like the reference image, while the homepage keeps its scrolling band. */
+.my-story-page .metrics-band {
+    padding: 6px 0 18px;
+}
+
+.my-story-page .metrics-track {
+    width: 100%;
+    animation: none;
+}
+
+.my-story-page .metrics-set:first-child {
+    width: 100%;
+    justify-content: space-between;
+}
+
+.my-story-page .metrics-set:first-child .metric-item:nth-child(8) {
+    order: -1;
+}
+
+.my-story-page .metrics-set:first-child .metric-item:nth-child(n+4):nth-child(-n+7) {
+    display: none;
+}
+
+.my-story-page .metrics-set[aria-hidden="true"] {
+    display: none;
+}
+
+.my-story-page .metric-item {
+    width: 25%;
+    min-height: 88px;
+    padding: 14px 22px;
+}
+
+/* Leading icons inside the connect buttons (envelope + LinkedIn logo) */
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.btn-icon--fill {
+    fill: currentColor;
+    stroke: none;
+}
+
+/* ---------- My Story responsive behavior ---------- */
+
+@media (max-width: 980px) {
+    .story-values-row {
+        gap: 10px 12px;
+    }
+
+    .value-chip {
+        gap: 8px;
+    }
+
+    .value-chip__icon {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+    }
+
+    .value-chip__icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .value-chip__label {
+        font-size: 0.72rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .story-hero__portrait::before {
+        width: clamp(300px, 44vw, 420px);
+    }
+
+    .portrait-frame {
+        width: clamp(270px, 40vw, 380px);
+    }
+
+    .story-timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 30px 22px;
+    }
+
+    /* Hide the horizontal connector when the timeline wraps to two rows,
+       because it would point at the wrong neighbor. */
+    .timeline-item + .timeline-item::before,
+    .timeline-item + .timeline-item::after {
+        display: none;
+    }
+
+    /* Values heading stacks above the cards when width runs out */
+    .story-drives__layout {
+        grid-template-columns: 1fr;
+        gap: 26px;
+    }
+
+    /* Cards stack one per row so the 4x2 interest grid keeps room */
+    .story-cards__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 780px) {
+    /* The hero keeps its desktop shape on phones: headline and value
+       chips on the left, collage on the right, and the banner card
+       spanning the full width underneath both columns.
+       "display: contents" below dissolves the .story-hero__content
+       wrapper box so its children (headline block, values row,
+       banner) can be placed directly onto this grid as if they were
+       its own children — that's what lets the banner escape the left
+       column and stretch across the whole row. */
+    .story-hero__grid {
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        grid-template-areas:
+            "headline portrait"
+            "values   portrait"
+            "banner   banner";
+        align-items: center;
+        gap: 0 16px;
+        padding-top: 42px;
+        padding-bottom: 34px;
+    }
+
+    .story-hero__content {
+        display: contents;
+    }
+
+    .story-hero__headline {
+        grid-area: headline;
+        align-self: end;
+    }
+
+    .story-values-row {
+        grid-area: values;
+        align-self: start;
+    }
+
+    /* Headline shrinks on phones so "Engineer" fits the narrower
+       left column without overflowing into the collage. */
+    .story-hero__content h1 {
+        font-size: clamp(1.5rem, 5vw, 2.3rem);
+    }
+
+    .story-hero__intro {
+        margin-bottom: 18px;
+    }
+
+    .story-hero__portrait {
+        grid-area: portrait;
+        width: 100%;
+        padding: 0;
+    }
+
+    /* Collage scales with the viewport (40vw) so bigger phones get a
+       proportionally bigger photo instead of one fixed size. */
+    .story-hero__portrait::before {
+        width: clamp(130px, 44vw, 330px);
+    }
+
+    .portrait-frame {
+        width: clamp(120px, 40vw, 310px);
+    }
+
+    .story-hero-circuit {
+        background-position: center top;
+        opacity: 0.74;
+    }
+
+    .story-hero::after {
+        inset: 0 0 0 24%;
+        opacity: 0.18;
+    }
+
+    .story-banner {
+        grid-area: banner;
+        width: 100%;
+        margin-top: 22px;
+    }
+
+    .story-banner__statement {
+        min-width: 0;
+        border-right: none;
+    }
+
+    .story-banner__statement p {
+        min-width: 0;
+    }
+
+    .story-journey__layout {
+        grid-template-columns: 1fr;
+        gap: 38px;
+    }
+
+    .story-drives__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    /* 2x2 grid instead of 4 full-width stacked rows */
+    .story-timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px 14px;
+    }
+
+    /* 2x2 grid instead of 4 full-width stacked rows */
+    .story-drives__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .story-cards__grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* 2x2x2 on phones — eight items never strand a 3+1 row */
+    .interest-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fun-facts__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .story-hero__grid {
+        padding-top: 36px;
+        padding-bottom: 32px;
+    }
+
+    .story-banner {
+        padding: 12px 14px;
+    }
+
+    .story-banner__statement {
+        align-items: flex-start;
+    }
+
+    .story-banner__statement p {
+        max-width: none;
+        font-size: 0.86rem;
+        overflow-wrap: anywhere;
+    }
+}
+
 
 @media (prefers-reduced-motion: reduce) {
     *,

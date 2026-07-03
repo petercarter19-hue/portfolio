@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% set public_skills = resume.skills|selectattr("public_display")|list %}
+
+{% block title %}Pete Carter | Interactive Systems Engineering Resume{% endblock %}
+
+{% block extra_head %}
+<meta
+    name="description"
+    content="Explore Pete Carter's systems engineering experience, measurable career impact, MBSE background, leadership experience, education, and technical portfolio."
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-2"
+>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "name": "Pete Carter Interactive Systems Engineering Resume",
+    "about": {
+        "@type": "Person",
+        "name": "Pete Carter",
+        "jobTitle": "Systems Engineer",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Athens",
+            "addressRegion": "AL",
+            "addressCountry": "US"
+        },
+        "sameAs": [
+            {{ resume.profile.linkedin_url|tojson }}
+        ]
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="resume-page" id="resume-page">
+
+    <script type="application/json" id="resume-track-data">{{ resume.recruiter_tracks|tojson }}</script>
+    <script type="application/json" id="resume-default-questions">{{ resume.suggested_ai_questions.default|tojson }}</script>
+
+    <section class="resume-hero" aria-labelledby="resume-title">
+        <div class="site-container resume-hero__grid">
+            <div class="resume-hero__copy">
+                <p class="section-eyebrow">Interactive Resume</p>
+                <h1 id="resume-title">{{ resume.profile.page_title }}</h1>
+                <p class="resume-hero__name">{{ resume.profile.name }}</p>
+                <p class="resume-hero__positioning">{{ resume.profile.positioning }}</p>
+                <p class="resume-hero__summary">{{ resume.profile.summary }}</p>
+
+                <ul class="resume-credential-list" aria-label="Public credentials and status">
+                    {% for item in resume.profile.credentials %}
+                    <li>
+                        <span>{{ item.status }}</span>
+                        {{ item.label }}
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="resume-actions" aria-label="Primary resume actions">
+                    <a
+                        class="resume-btn resume-btn--primary"
+                        href="{{ url_for('static', filename=resume.profile.pdf_path) }}"
+                        download
+                    >
+                        Download Resume
+                    </a>
+                    <a class="resume-btn" href="{{ resume.profile.contact_url }}">Contact Pete</a>
+                    <button
+                        class="resume-btn resume-btn--cyan"
+                        type="button"
+                        data-ask-resume
+                        data-ask="Give me a 60-second recruiter overview of Pete Carter using only approved portfolio information. Include the strongest evidence, source context, and any knowledge limitations."
+                    >
+                        Ask My Resume
+                    </button>
+                </div>
+            </div>
+
+            <aside class="resume-recruiter-panel" aria-labelledby="recruiter-panel-title">
+                <p class="resume-panel-label">Recruiter Quick View</p>
+                <h2 id="recruiter-panel-title">What Are You Hiring For?</h2>
+                <p>
+                    Select a focus area to prioritize the skills, results, experience, and
+                    impact stories most relevant to your opening.
+                </p>
+
+                <div class="resume-track-row" role="group" aria-label="Recruiter focus areas">
+                    {% for track in resume.recruiter_tracks %}
+                    <button
+                        class="resume-track-chip"
+                        type="button"
+                        data-track-filter="{{ track.id }}"
+                        aria-pressed="false"
+                    >
+                        {{ track.label }}
+                    </button>
+                    {% endfor %}
+                    <button class="resume-track-chip is-active" type="button" data-track-filter="all" aria-pressed="true">
+                        Show All
+                    </button>
+                    <button class="resume-track-chip" type="button" data-track-filter="clear" aria-pressed="false">
+                        Clear Selection
+                    </button>
+                </div>
+
+                <p class="resume-match-summary" id="resume-match-summary" aria-live="polite">
+                    Showing all approved public resume evidence.
+                </p>
+
+                <div class="resume-panel-actions">
+                    <button class="resume-inline-button" type="button" data-scroll-target="resume-skills-section">
+                        Show Matching Evidence
+                    </button>
+                    <button class="resume-inline-button resume-inline-button--cyan" type="button" data-ask-fit>
+                        Ask About This Fit
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="resume-section resume-metrics" aria-labelledby="resume-metrics-title">
+        <div class="site-container">
+            <div class="resume-section-heading resume-section-heading--compact">
+                <p class="section-eyebrow">Impact Dashboard</p>
+                <h2 id="resume-metrics-title">Measurable Career Results</h2>
+            </div>
+
+            <div class="resume-metric-grid">
+                {% for metric in resume.metrics %}
+                <button
+                    class="resume-metric-card"
+                    type="button"
+                    data-metric-id="{{ metric.id }}"
+                    data-track-ids="{{ metric.recruiter_track_ids|join(' ') }}"
+                    data-role-target="{{ metric.related_role_ids[0] if metric.related_role_ids else '' }}"
+                    data-evidence-target="{{ metric.highlight_evidence_id }}"
+                    data-case-target="{{ metric.related_case_study_id or '' }}"
+                    {% if metric.id == 'gpa' %}data-education-target="education-ms"{% endif %}
+                >
+                    <strong>{{ metric.value }}</strong>
+                    <span>{{ metric.label }}</span>
+                    <small>{{ metric.context }}</small>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="resume-section resume-skills" id="resume-skills-section" aria-labelledby="resume-skills-title">
+        <div class="site-container">
+            <div class="resume-section-heading resume-section-heading--with-copy">
+                <p class="section-eyebrow">Skills to Evidence</p>
+                <h2 id="resume-skills-title">Skills Backed by Experience</h2>
+                <p>
+                    Click or tap any skill card to flip it over and view the resume evidence supporting that skill.
+                </p>
+                <div class="resume-flip-legend" aria-label="Skill card interaction legend">
+                    Click to flip - View evidence
+                </div>
+            </div>
+
+            <div class="resume-skill-category-row" role="group" aria-label="Skill categories">
+                {% for category in resume.skill_categories %}
+                <button
+                    class="resume-skill-category{% if category.id == 'all' %} is-active{% endif %}"
+                    type="button"
+                    data-skill-category="{{ category.id }}"
+                    aria-pressed="{{ 'true' if category.id == 'all' else 'false' }}"
+                >
+                    {{ category.label }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <div class="resume-skill-grid" id="resume-skill-grid">
+                {% for skill in public_skills %}
+                {% set displayed_evidence = skill.evidence_items[:2] %}
+                {% set count = displayed_evidence|length %}
+                <article
+                    class="resume-skill-card{% if skill.featured %} is-featured{% endif %}"
+                    data-skill-card
+                    data-skill-id="{{ skill.id }}"
+                    data-category-id="{{ skill.category_id }}"
+                    data-featured="{{ 'true' if skill.featured else 'false' }}"
+                    data-track-ids="{{ skill.recruiter_track_ids|join(' ') }}"
+                    data-role-ids="{{ skill.related_role_ids|join(' ') }}"
+                >
+                    <button
+                        class="resume-skill-flip"
+                        type="button"
+                        aria-pressed="false"
+                        aria-label="{{ skill.display_name }}. {{ count }} supporting {{ 'example' if count == 1 else 'examples' }}. Activate to view evidence."
+                    >
+                        <span class="resume-skill-inner" aria-hidden="true">
+                            <span class="resume-skill-face resume-skill-face--front">
+                                <span class="resume-relevant-badge">Relevant</span>
+                                <span class="resume-skill-kicker">{{ count }} supporting {{ 'example' if count == 1 else 'examples' }}</span>
+                                <strong>{{ skill.display_name }}</strong>
+                                <span>{{ skill.front_summary }}</span>
+                                <em>View evidence</em>
+                            </span>
+
+                            <span class="resume-skill-face resume-skill-face--back">
+                                <span class="resume-skill-kicker">Evidence</span>
+                                <strong>{{ skill.display_name }}</strong>
+                                <ul>
+                                    {% for evidence in displayed_evidence %}
+                                    <li>
+                                        {{ evidence.text }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                <em>Return to summary</em>
+                            </span>
+                        </span>
+                    </button>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="resume-section resume-career" id="resume-career-section" aria-labelledby="resume-career-title">
+        <div class="site-container">
+            <div class="resume-section-heading resume-section-heading--with-copy">
+                <p class="section-eyebrow">Career Experience</p>
+                <h2 id="resume-career-title">Experience Connected to Evidence</h2>
+                <p>Select a role to view detailed accomplishments, responsibilities, systems, tools, and connected evidence.</p>
+            </div>
+
+            <div class="resume-progression-strip" aria-label="Career progression">
+                {% for role in resume.career_roles %}
+                <div>
+                    <strong>{{ role.progression_theme }}</strong>
+                    <span>{{ role.employer }}</span>
+                </div>
+                {% if not loop.last %}
+                <span class="resume-progression-arrow" aria-hidden="true">-&gt;</span>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="resume-role-card-row" role="group" aria-label="Career roles">
+                {% for role in resume.career_roles %}
+                <button
+                    class="resume-role-card{% if loop.first %} is-selected{% endif %}"
+                    type="button"
+                    data-role-select="{{ role.id }}"
+                    data-track-ids="{{ role.related_skill_ids|join(' ') }}"
+                    aria-pressed="{{ 'true' if loop.first else 'false' }}"
+                >
+                    <span class="resume-role-date">{{ role.dates }}</span>
+                    <strong>{{ role.employer }}</strong>
+                    <em>{{ role.title }}</em>
+                    <span class="resume-role-tags">
+                        {% for tag in role.focus_tags %}
+                        <span>{{ tag }}</span>
+                        {% endfor %}
+                    </span>
+                    <span class="resume-role-contribution">{{ role.headline_contribution }}</span>
+                    <span class="resume-role-action">View full experience</span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <div class="resume-role-panels">
+                {% for role in resume.career_roles %}
+                <article
+                    class="resume-role-panel{% if loop.first %} is-active{% endif %}"
+                    id="role-panel-{{ role.id }}"
+                    data-role-panel="{{ role.id }}"
+                    tabindex="-1"
+                >
+                    <div class="resume-role-panel__header">
+                        <div>
+                            <p class="section-eyebrow">{{ role.dates }}</p>
+                            <h3>{{ role.employer }}</h3>
+                            <p>{{ role.title }}</p>
+                        </div>
+                        {% if role.current_role_public_note %}
+                        <span class="resume-public-note">{{ role.current_role_public_note }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="resume-role-detail-grid">
+                        <section>
+                            <h4>Role Overview</h4>
+                            <p>{{ role.summary }}</p>
+                        </section>
+
+                        <section>
+                            <h4>Selected Accomplishments</h4>
+                            <ul>
+                                {% for item in role.accomplishments %}
+                                <li
+                                    id="{{ item.id }}"
+                                    data-evidence-id="{{ item.id }}"
+                                    data-metric-ids="{{ item.related_metric_ids|join(' ') }}"
+                                    data-skill-ids="{{ item.related_skill_ids|join(' ') }}"
+                                >
+                                    {{ item.text }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h4>Engineering Responsibilities</h4>
+                            <ul>
+                                {% for item in role.responsibilities %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h4>Leadership and Stakeholder Scope</h4>
+                            <div class="resume-chip-row">
+                                {% for item in role.leadership_scope %}
+                                <span>{{ item }}</span>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4>Systems, Programs, or Platforms</h4>
+                            <div class="resume-chip-row">
+                                {% for item in role.systems_or_platforms %}
+                                <span>{{ item }}</span>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4>Methods, Standards, and Tools</h4>
+                            <div class="resume-chip-row">
+                                {% for item in role.methods + role.tools + role.standards %}
+                                <span>{{ item }}</span>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4>Connected Skills</h4>
+                            <div class="resume-chip-row">
+                                {% for skill_id in role.related_skill_ids %}
+                                {% for skill in public_skills %}
+                                {% if skill.id == skill_id %}
+                                <span>{{ skill.display_name }}</span>
+                                {% endif %}
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <section>
+                            <h4>Connected Metrics and Impact Stories</h4>
+                            <div class="resume-chip-row">
+                                {% for metric_id in role.related_metric_ids %}
+                                {% for metric in resume.metrics %}
+                                {% if metric.id == metric_id %}
+                                <span>{{ metric.value }} {{ metric.label }}</span>
+                                {% endif %}
+                                {% endfor %}
+                                {% endfor %}
+                                {% for case_id in role.related_case_study_ids %}
+                                {% for case in resume.case_studies %}
+                                {% if case.id == case_id %}
+                                <span>{{ case.title }}</span>
+                                {% endif %}
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </section>
+                    </div>
+
+                    <button
+                        class="resume-inline-button resume-inline-button--cyan"
+                        type="button"
+                        data-ask-resume
+                        data-ask="You are asking about: {{ role.employer }} - {{ role.title }}. Summarize Pete's approved public evidence for this role, cite the relevant career source, and explain any public-information limits."
+                    >
+                        Ask the AI About This Role
+                    </button>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="resume-section resume-education" id="resume-education-section" aria-labelledby="resume-education-title">
+        <div class="site-container">
+            <div class="resume-section-heading">
+                <p class="section-eyebrow">Education &amp; Development</p>
+                <h2 id="resume-education-title">Learning Path</h2>
+            </div>
+
+            <ol class="resume-education-grid">
+                {% for item in resume.education %}
+                <li class="resume-education-card" id="{{ item.id }}">
+                    <span class="resume-status-badge">{{ item.status }}</span>
+                    <strong>{{ item.credential }}</strong>
+                    <span>{{ item.institution }}</span>
+                    <p>{{ item.detail }}</p>
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </section>
+
+    <section class="resume-section resume-impact" id="resume-impact-section" aria-labelledby="resume-impact-title">
+        <div class="site-container">
+            <div class="resume-section-heading">
+                <p class="section-eyebrow">Accomplishment Evidence</p>
+                <h2 id="resume-impact-title">Selected Engineering Impact</h2>
+            </div>
+
+            <div class="resume-impact-grid">
+                {% for case in resume.case_studies %}
+                <button
+                    class="resume-impact-card"
+                    type="button"
+                    data-case-card="{{ case.id }}"
+                    data-track-ids="{{ case.recruiter_track_ids|join(' ') }}"
+                    aria-expanded="false"
+                >
+                    <strong>{{ case.title }}</strong>
+                    <span>Operational Need</span>
+                    <p>{{ case.operational_need }}</p>
+                    <span>Engineering Response</span>
+                    <p>{{ case.engineering_response }}</p>
+                    <span>Verified Outcome</span>
+                    <p>{{ case.verified_outcome }}</p>
+                    <em>View impact details</em>
+                </button>
+                {% endfor %}
+            </div>
+
+            <div class="resume-impact-panels">
+                {% for case in resume.case_studies %}
+                <article class="resume-impact-panel" id="case-panel-{{ case.id }}" data-case-panel="{{ case.id }}" tabindex="-1">
+                    <div>
+                        <p class="section-eyebrow">Impact Details</p>
+                        <h3>{{ case.title }}</h3>
+                        <p>{{ case.detail }}</p>
+                    </div>
+                    <div class="resume-chip-row">
+                        {% for skill_id in case.related_skill_ids %}
+                        {% for skill in public_skills %}
+                        {% if skill.id == skill_id %}
+                        <span>{{ skill.display_name }}</span>
+                        {% endif %}
+                        {% endfor %}
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="resume-section resume-questions" aria-labelledby="resume-questions-title">
+        <div class="site-container resume-questions__grid">
+            <div class="resume-section-heading">
+                <p class="section-eyebrow">Verified Profile Questions</p>
+                <h2 id="resume-questions-title">Ask Pete's Career Assistant</h2>
+                <p>
+                    Suggested questions update when a recruiter focus area is selected.
+                    The assistant should answer from approved public profile evidence and state limits when needed.
+                </p>
+            </div>
+
+            <div class="resume-prompt-grid" id="resume-prompt-grid">
+                {% for prompt in resume.suggested_ai_questions.default %}
+                <button
+                    class="resume-prompt-btn"
+                    type="button"
+                    data-ask-resume
+                    data-ask="{{ prompt }}"
+                >
+                    {{ prompt }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="resume-download-panel" aria-label="Download and print resume">
+        <div class="site-container resume-download-row">
+            <a
+                class="resume-btn resume-btn--primary"
+                href="{{ url_for('static', filename=resume.profile.pdf_path) }}"
+                download
+            >
+                Download Resume PDF
+            </a>
+            <button class="resume-btn" type="button" data-print-resume>Print Resume</button>
+            <button
+                class="resume-btn"
+                type="button"
+                data-copy-linkedin
+                data-linkedin="{{ resume.profile.linkedin_url }}"
+            >
+                Copy LinkedIn URL
+            </button>
+            <a class="resume-btn" href="{{ resume.profile.contact_url }}">Contact Pete</a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-1"></script>
+{% endblock %}

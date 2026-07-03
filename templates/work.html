@@ -1,21 +1,191 @@
 {# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
 {% extends "base.html" %}
 
-{# This block controls the text shown in the browser tab for this page. #}
-{% block title %}Work | Pete Carter{% endblock %}
+{% block title %}Projects | Pete Carter{% endblock %}
 
-{# Everything inside this content block gets inserted into base.html's <main> area. #}
 {% block content %}
 
-<!-- Placeholder section: this prevents /work from crashing until we build the full page. -->
-<section class="projects-section" aria-labelledby="work-title">
-    <div class="site-container projects-copy">
-        <p class="section-eyebrow">Work</p>
-        <h2 id="work-title">Work page coming soon</h2>
-        <p>
-            This page is ready for case studies, project details, and career experience.
-        </p>
+<section class="work-page" aria-labelledby="work-title">
+    <div class="site-container">
+        <div class="work-hero">
+            <div>
+                <p class="section-eyebrow">Projects</p>
+                <h1 id="work-title">Practical Builds With Engineering Purpose</h1>
+                <p>
+                    A concise look at portfolio projects that connect systems thinking,
+                    software development, automation, and AI-enabled engineering.
+                </p>
+            </div>
+
+            <div class="work-hero-panel" aria-label="Project focus">
+                <strong>Current Focus</strong>
+                <span>Interactive resume, verified AI assistant, requirements tools, and smart engineering dashboards.</span>
+            </div>
+        </div>
+
+        <div class="work-project-selector" role="group" aria-label="Select project">
+            <button class="work-project-tab is-active" type="button" data-work-project="interactive-resume" aria-pressed="true">
+                <span>In Progress</span>
+                Interactive Resume
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="traceability" aria-pressed="false">
+                <span>In Progress</span>
+                Traceability Platform
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="requirements-ai" aria-pressed="false">
+                <span>In Progress</span>
+                AI Requirements Reviewer
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="home-dashboard" aria-pressed="false">
+                <span>Planned</span>
+                Home Operations Dashboard
+            </button>
+        </div>
+
+        <div class="work-project-panels">
+            <article class="work-project-panel is-active" data-work-panel="interactive-resume" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Featured Build</p>
+                    <h2>Interactive Resume and Verified Career Assistant</h2>
+                    <p>
+                        A Flask portfolio feature that turns approved public resume data into a
+                        recruiter-focused, evidence-linked career dashboard with AI-assisted questions.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Structured resume data connected to recruiter filters, skills, roles, and metrics.</li>
+                                <li>Interactive evidence cards that keep claims tied to visible supporting details.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>What It Uses</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>Flask</span>
+                                <span>Jinja</span>
+                                <span>JavaScript</span>
+                                <span>JSON</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <aside class="work-project-side">
+                    <h3>Next Refinements</h3>
+                    <ul>
+                        <li>Replace the draft PDF with the final employer-facing resume.</li>
+                        <li>Add deeper project case studies as each build matures.</li>
+                    </ul>
+                    <button
+                        class="view-all-link work-ask-btn"
+                        type="button"
+                        data-ask-resume
+                        data-ask="Summarize Pete's interactive resume project using approved portfolio information. Focus on what it demonstrates to recruiters."
+                    >
+                        Ask Pete AI
+                        <span aria-hidden="true">-></span>
+                    </button>
+                </aside>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="traceability" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Engineering Tool Concept</p>
+                    <h2>Requirements Traceability Platform</h2>
+                    <p>
+                        A planned web application for linking requirements, verification methods,
+                        test cases, and evidence with clear bidirectional traceability.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Requirements discipline, verification thinking, and traceability structure.</li>
+                                <li>Ability to turn systems-engineering workflow into usable software.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>Flask</span>
+                                <span>PostgreSQL</span>
+                                <span>D3.js</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="requirements-ai" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">AI Engineering Tool Concept</p>
+                    <h2>AI-Assisted Requirements Reviewer</h2>
+                    <p>
+                        An LLM-powered tool concept for reviewing requirements for clarity,
+                        completeness, consistency, and verifiability with source-cited feedback.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Policy-aware AI thinking applied to engineering quality problems.</li>
+                                <li>Practical focus on traceable feedback instead of generic chatbot output.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>OpenAI API</span>
+                                <span>LangChain</span>
+                                <span>FAISS</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="home-dashboard" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Personal Automation Concept</p>
+                    <h2>Engineering Home Operations Dashboard</h2>
+                    <p>
+                        A planned secure dashboard for bringing Home Assistant data into a
+                        clean operational view with status, automation, and alerting patterns.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Interest in automation, reliable status visibility, and practical system integration.</li>
+                                <li>Ability to think about user workflows, security boundaries, and maintainable interfaces.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Home Assistant</span>
+                                <span>REST API</span>
+                                <span>WebSocket</span>
+                                <span>Docker</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+        </div>
     </div>
 </section>
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/work.js') }}?v=work-projects-1"></script>
 {% endblock %}
