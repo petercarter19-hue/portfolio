@@ -7,7 +7,7 @@ import os                                       # Lets us read file paths and en
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
-from flask import Flask, render_template, request, jsonify  # Added: request (reads incoming data), jsonify (sends JSON back)
+from flask import Flask, render_template, request, jsonify, url_for, redirect  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import anthropic                                # The Claude AI client library
@@ -40,6 +40,65 @@ limiter = Limiter(
 # Create the Anthropic client.
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+
+@app.context_processor
+def shared_navigation_urls():
+    clean_host = request.host.split(':', 1)[0].lower()
+    is_local = clean_host in {'127.0.0.1', 'localhost'}
+    is_platform = is_platform_hostname(request.host)
+
+    portfolio_base_url = '/petec'
+    if clean_host == 'pete.peerslate.com':
+        portfolio_base_url = 'https://peerslate.com/petec'
+
+    def portfolio_url(path=''):
+        if not path:
+            return portfolio_base_url
+
+        return f'{portfolio_base_url}/{path.lstrip("/")}'
+
+    return {
+        'is_platform_site': is_platform,
+        'portfolio_url': portfolio_url,
+        'peerslate_home_url': url_for('home') if is_local or is_platform else 'https://peerslate.com/',
+        'portfolio_home_url': portfolio_url(),
+        'portfolio_work_url': portfolio_url('work'),
+        'portfolio_skills_url': portfolio_url('skills'),
+        'portfolio_story_url': portfolio_url('my-story'),
+        'portfolio_resume_url': portfolio_url('resume'),
+        'portfolio_contact_url': portfolio_url('contact'),
+        'portfolio_hobbies_url': portfolio_url('hobbies'),
+        'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
+    }
+
+
+@app.before_request
+def keep_portfolio_on_canonical_path():
+    clean_host = request.host.split(':', 1)[0].lower()
+
+    if clean_host == 'pete.peerslate.com':
+        target_path = request.path
+        if target_path == '/':
+            target_path = '/petec'
+        elif not target_path.startswith('/petec'):
+            target_path = f'/petec{target_path}'
+
+        return redirect(f'https://peerslate.com{target_path}', code=302)
+
+    if not is_platform_hostname(request.host):
+        return None
+
+    old_portfolio_paths = {'/pete', '/portfolio'}
+    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/work'}
+
+    if request.path in old_portfolio_paths:
+        return redirect('/petec', code=302)
+
+    if request.path in section_paths:
+        return redirect(f'/petec{request.path}', code=302)
+
+    return None
 
 
 # -------------------------------------------------------
@@ -190,8 +249,21 @@ def clean_chatbot_reply(reply):
 # EXISTING PAGE ROUTES (unchanged)
 # -------------------------------------------------------
 
+def is_platform_hostname(hostname):
+    clean_host = hostname.split(':', 1)[0].lower()
+    return clean_host in {'peerslate.com', 'www.peerslate.com'}
+
 @app.route('/')
 def home():
+    if is_platform_hostname(request.host):
+        return render_template('peerslate.html')
+
+    return render_template('index.html')
+
+@app.route('/petec')
+@app.route('/portfolio')
+@app.route('/pete')
+def portfolio_home():
     return render_template('index.html')
 
 @app.route('/peerslate')
@@ -199,10 +271,12 @@ def peerslate_home():
     return render_template('peerslate.html')
 
 @app.route('/about')
+@app.route('/petec/about')
 def about():
     return render_template('about.html')
 
 @app.route('/my-story')
+@app.route('/petec/my-story')
 def my_story():
     # The My Story page replaced "About" in the navigation.
     # The URL uses a hyphen (/my-story) because URLs can't have spaces,
@@ -210,22 +284,27 @@ def my_story():
     return render_template('my_story.html')
 
 @app.route('/work')
+@app.route('/petec/work')
 def work():
     return render_template('work.html')
 
 @app.route('/skills')
+@app.route('/petec/skills')
 def skills():
     return render_template('skills.html')
 
 @app.route('/hobbies')
+@app.route('/petec/hobbies')
 def hobbies():
     return render_template('hobbies.html')
 
 @app.route('/contact')
+@app.route('/petec/contact')
 def contact():
     return render_template('contact.html')
 
 @app.route('/resume')
+@app.route('/petec/resume')
 def resume():
     # Resume content lives in JSON so Pete can update words and metrics
     # later without digging through a large HTML template.

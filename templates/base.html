@@ -74,8 +74,8 @@
                     </button>
 
                     <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
-                        <a href="{{ url_for('peerslate_home') }}">PeerSlate Home</a>
-                        <a href="{{ url_for('home') }}">Pete Carter Portfolio</a>
+                        <a href="{{ peerslate_home_url }}">PeerSlate Home</a>
+                        <a href="{{ portfolio_home_url }}">Pete Carter Portfolio</a>
                         <div class="theme-preview" aria-label="Theme preview options">
                             <p>Theme Preview</p>
                             <button type="button" data-theme-option="command-gold">
@@ -96,9 +96,9 @@
 
                 <!-- Pete's name and title (shifted right of the site menu) -->
                 <div class="nav-brand">
-                    <a href="/" class="nav-logo" aria-label="Pete Carter — return to homepage">
-                        <span class="nav-name">Pete Carter</span>
-                        <span class="nav-tagline">SYSTEMS ENGINEER</span>
+                    <a href="{{ portfolio_home_url if is_portfolio_path else peerslate_home_url }}" class="nav-logo" aria-label="Return to homepage">
+                        <span class="nav-name">{% if is_portfolio_path %}Pete Carter{% else %}PeerSlate{% endif %}</span>
+                        <span class="nav-tagline">{% if is_portfolio_path %}SYSTEMS ENGINEER{% else %}PROFESSIONAL PROFILES{% endif %}</span>
                     </a>
                 </div>
 
@@ -111,11 +111,11 @@
                         and screen readers announce "current page" for that link.
                     -->
                     <ul class="nav-links">
-                        <li><a href="/work" {% if request.path == '/work' %}aria-current="page"{% endif %}>Projects</a></li>
-                        <li><a href="/skills" {% if request.path == '/skills' %}aria-current="page"{% endif %}>Expertise</a></li>
-                        <li><a href="/my-story" {% if request.path == '/my-story' %}aria-current="page"{% endif %}>My Story</a></li>
-                        <li><a href="/resume" {% if request.path == '/resume' %}aria-current="page"{% endif %}>Resume</a></li>
-                        <li><a href="/contact" {% if request.path == '/contact' %}aria-current="page"{% endif %}>Contact</a></li>
+                        <li><a href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>Projects</a></li>
+                        <li><a href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>Expertise</a></li>
+                        <li><a href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>My Story</a></li>
+                        <li><a href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>Resume</a></li>
+                        <li><a href="{{ portfolio_contact_url }}" {% if request.path in ['/contact', '/petec/contact'] %}aria-current="page"{% endif %}>Contact</a></li>
                     </ul>
 
                     <!-- Far right: LinkedIn profile link. -->
@@ -153,7 +153,7 @@
 
     <!-- Each page inserts its unique content inside this Jinja block -->
     <main id="main-content" class="main-content">
-        {% if request.path not in ['/', '/peerslate'] %}
+        {% if (is_portfolio_path and request.path != '/petec') or (not is_platform_site and request.path not in ['/', '/peerslate', '/petec']) %}
         <section class="portfolio-ai-strip" aria-label="Ask Pete AI">
             <div class="site-container">
                 {% include "partials/portfolio_ai_search.html" %}
