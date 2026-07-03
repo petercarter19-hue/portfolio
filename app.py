@@ -5,6 +5,7 @@
 
 import os                                       # Lets us read file paths and environment variables
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
+import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 from flask import Flask, render_template, request, jsonify  # Added: request (reads incoming data), jsonify (sends JSON back)
 import anthropic                                # The Claude AI client library
@@ -110,6 +111,7 @@ IMPORTANT RULES:
 - Be warm and helpful in tone.
 - Use plain text only. Do not use Markdown, hashtags, headings, bold text, bullets, numbered lists, or asterisks.
 - If asked something outside your approved topics, politely say you can't help with that and suggest the visitor use the Contact page to reach Pete directly.
+- For recruiter or resume questions, make the answer evidence-grounded. Give the answer first, then include a short source sentence such as "This is based on Pete's approved resume and career-history sources." Add a short limitation when the approved sources do not fully answer the question.
 
 RESPONSE STYLE:
 - Write in complete, polished sentences suitable for a professional portfolio website.
@@ -119,6 +121,7 @@ RESPONSE STYLE:
 - Do not copy raw resume bullets or fragments from the knowledge base.
 - Do not end with salesy follow-up questions like "Would you like to know more?"
 - If the question asks for a count, give the count first, then briefly explain it.
+- Do not mention specific program names, customer names, contract numbers, internal system names, or employer-sensitive details, even if they appear in the knowledge base. Generalize them as "a major defense program," "a navigation-system redesign," or "approved career-history sources."
 
 APPROVED TOPICS:
 - Pete's job titles and general responsibilities
@@ -199,6 +202,17 @@ def hobbies():
 def contact():
     return render_template('contact.html')
 
+@app.route('/resume')
+def resume():
+    # Resume content lives in JSON so Pete can update words and metrics
+    # later without digging through a large HTML template.
+    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
+
+    with open(resume_path, 'r', encoding='utf-8') as f:
+        resume_data = json.load(f)
+
+    return render_template('resume.html', resume=resume_data)
+
 
 # -------------------------------------------------------
 # MVP 1 — AI CHAT ROUTE
@@ -238,7 +252,7 @@ def chat():
         #   This keeps answers polished even when the knowledge base contains resume-style bullets.
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
-            max_tokens=220,
+            max_tokens=320,
             system=system_prompt,
             messages=[
                 {
@@ -247,6 +261,8 @@ def chat():
                         f"Visitor question: {user_message}\n\n"
                         "Answer in polished plain English using only the most impactful details. "
                         "Use 1 to 3 short complete sentences. If the answer has two ideas, split them into two short paragraphs. "
+                        "For recruiter or resume questions, end with one brief source and limitation sentence. "
+                        "Do not name specific programs, customers, contract numbers, or internal systems; generalize those details. "
                         "Use no Markdown, no bullets, "
                         "no numbered lists, and no follow-up sales question."
                     )
