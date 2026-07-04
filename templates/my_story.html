@@ -43,7 +43,10 @@
                     </p>
                 </div>
 
-                <!-- Four compact value chips with circular icons -->
+                <!-- Four compact value chips with circular icons. Each <svg>
+                     is a hand-drawn line icon (no image files), paired with
+                     a short two-word label. Kept to exactly four so the
+                     layout rule (4-across or 2x2, never 3+1) always holds. -->
                 <ul class="story-values-row" aria-label="Personal values">
                     <li class="value-chip">
                         <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
@@ -537,10 +540,14 @@
         let nextSlot = 0;
         let rotationTimer;
 
+        // Randomizes the order of a list without repeating any item.
+        // Math.random() - 0.5 gives each comparison a 50/50 result, which
+        // is a quick (if not perfectly even) way to shuffle a short array.
         function shuffleFacts(facts) {
             return [...facts].sort(() => Math.random() - 0.5);
         }
 
+        // Builds one fact card's HTML from scratch (icon + text).
         function buildFactCard(fact) {
             const card = document.createElement('article');
             card.className = 'fun-fact-card';
@@ -566,11 +573,17 @@
             grid.replaceChildren(...visibleFacts.map(buildFactCard));
         }
 
+        // Picks a fact that isn't already showing in one of the 3 cards,
+        // so the same line never appears twice on screen at once. Falls
+        // back to the full pool only if every other fact is already shown.
         function pickReplacement() {
             const availableFacts = FUN_FACTS.filter(fact => !visibleFacts.includes(fact));
             return shuffleFacts(availableFacts.length ? availableFacts : FUN_FACTS)[0];
         }
 
+        // Swaps just one of the three visible cards for a new fact.
+        // nextSlot cycles 0 -> 1 -> 2 -> 0 so the cards update one at a
+        // time (every ROTATE_MS), instead of all changing at once.
         function rotateOneFact() {
             const cards = [...grid.querySelectorAll('.fun-fact-card')];
             const slot = nextSlot % 3;
@@ -584,6 +597,8 @@
             visibleFacts[slot] = replacement;
             card.classList.add('is-updating');
 
+            // Short delay lets the CSS fade-out finish before the old card
+            // is swapped for the new one, so the change doesn't look abrupt.
             window.setTimeout(() => {
                 const updatedCard = buildFactCard(replacement);
                 updatedCard.classList.add('is-updating');
@@ -597,6 +612,9 @@
             nextSlot = (nextSlot + 1) % 3;
         }
 
+        // Restarts the 5-second timer. Called after "Show Me More" resets
+        // all three cards, so the rotation always waits a full interval
+        // before the next automatic swap.
         function startRotation() {
             window.clearInterval(rotationTimer);
             rotationTimer = window.setInterval(rotateOneFact, ROTATE_MS);

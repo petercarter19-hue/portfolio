@@ -1065,10 +1065,10 @@
     },
     {
       "id": "education-incose",
-      "credential": "INCOSE / MBSE / OCSMP Development",
+      "credential": "AZ-900 / AI-901 / AWS Practitioner Path",
       "institution": "Planned professional development",
-      "status": "Planned",
-      "detail": "Planned growth path aligned with systems engineering, MBSE, and AI-enabled engineering."
+      "status": "In Progress",
+      "detail": "Planned professional development aligned with cloud fundamentals, AI fundamentals, secure technical systems, and AI-enabled engineering execution."
     }
   ],
   "career_roles": [

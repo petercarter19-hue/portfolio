@@ -1,7 +1,15 @@
+// Projects page behavior (templates/work.html).
+// Handles the four project tabs (only one panel shows at a time) and the
+// "Ask Pete AI" buttons that hand a question off to the shared chatbot.
+
 document.addEventListener('DOMContentLoaded', function () {
     const tabs = Array.from(document.querySelectorAll('[data-work-project]'));
     const panels = Array.from(document.querySelectorAll('[data-work-panel]'));
 
+    // Shows the panel whose data-work-panel matches projectId and marks its
+    // tab active; every other tab/panel is switched off. shouldFocus moves
+    // the screen (and screen-reader focus) to the panel when it's opened
+    // by a click, but not on the very first page load.
     function selectProject(projectId, shouldFocus) {
         tabs.forEach(function (tab) {
             const isActive = tab.dataset.workProject === projectId;
@@ -26,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // "Ask Pete AI" buttons on this page carry a data-ask attribute with a
+    // ready-made question. window.askPeteAI (defined in chatbot.js) opens
+    // the floating chat panel and sends that question immediately.
     document.addEventListener('click', function (event) {
         const askButton = event.target.closest('[data-ask-resume]');
         if (!askButton) return;

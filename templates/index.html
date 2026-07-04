@@ -24,6 +24,7 @@
 
         <!-- Left column: professional positioning and actions -->
         <div class="hero-copy">
+            <!-- Small caps line above the big headline. -->
             <p class="hero-eyebrow">SYSTEMS ENGINEERING · PMP · AI · PhD Student</p>
 
             <h1 id="hero-title">
@@ -56,8 +57,14 @@
             <!-- Fixed 760x440 reference canvas; scaled as one unit via CSS so the
                  circular layout holds its proportions at every viewport width. -->
             <div class="lifecycle-stage">
+            <!-- These curved arrow paths are hand-drawn to connect the six
+                 lifecycle-node articles below, which CSS positions in a
+                 circle around lifecycle-center. If a node's position in
+                 style.css ever moves, these path coordinates need to move
+                 with it or the arrows will point to the wrong spot. -->
             <svg class="lifecycle-arrows" viewBox="0 0 760 440" aria-hidden="true">
                 <defs>
+                    <!-- Reusable gold arrowhead every path below points to. -->
                     <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
                         <path d="M0 0 L10 4 L0 8 Z" fill="#F3BE4F"/>
                     </marker>
@@ -82,6 +89,9 @@
                 </p>
             </div>
 
+            <!-- The six stage cards below. Each one's lifecycle-node--*
+                 class tells style.css where to place it around the circle;
+                 the small inline SVG in each is a simple icon, not a photo. -->
             <article class="lifecycle-node lifecycle-node--define">
                 <div class="node-icon node-icon--gold" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
@@ -187,6 +197,10 @@
             </a>
         </div>
 
+        <!-- Three project cards. The "mock-window" divs inside each one are
+             pure CSS/HTML illustrations that fake a small app screenshot
+             (sidebar, panel, tiles) — there are no real images here, so
+             each card renders instantly with no image files to load. -->
         <div class="project-grid">
             <article class="project-card">
                 <div class="project-media project-media--trace" role="img" aria-label="Concept interface for a requirements traceability platform">

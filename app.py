@@ -42,8 +42,25 @@ limiter = Limiter(
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
+# -------------------------------------------------------
+# SHARED NAVIGATION LINKS
+# @app.context_processor means Flask runs this function before
+# rendering ANY template, and every key in the dict it returns
+# (like portfolio_work_url) becomes a variable every template can
+# use directly - that's how base.html can write things like
+# {{ portfolio_work_url }} without each route passing it in by hand.
+#
+# This exists because the same portfolio lives at more than one
+# address: locally at /petec/..., and in production Pete's site
+# is reachable both as its own path (peerslate.com/petec/...) and
+# through the pete.peerslate.com subdomain. This function figures
+# out, for the current request, what the correct link should be.
+# -------------------------------------------------------
+
 @app.context_processor
 def shared_navigation_urls():
+    # Flask's request.host can include a port (like "localhost:5000"),
+    # so split it off and lowercase the rest for a clean comparison.
     clean_host = request.host.split(':', 1)[0].lower()
     is_local = clean_host in {'127.0.0.1', 'localhost'}
     is_platform = is_platform_hostname(request.host)
@@ -52,6 +69,8 @@ def shared_navigation_urls():
     if clean_host == 'pete.peerslate.com':
         portfolio_base_url = 'https://peerslate.com/petec'
 
+    # Builds a full portfolio link by joining the base URL above with a
+    # page name, e.g. portfolio_url('work') -> "/petec/work".
     def portfolio_url(path=''):
         if not path:
             return portfolio_base_url
@@ -72,10 +91,22 @@ def shared_navigation_urls():
     }
 
 
+# -------------------------------------------------------
+# KEEP VISITORS ON THE CANONICAL URL
+# @app.before_request runs this check before every single page
+# load, on every route, before Flask decides which view function
+# to call. It exists so that no matter how a visitor typed the
+# address, they always end up on the one "correct" URL for that
+# page - which keeps bookmarks, search engines, and old links
+# consistent instead of showing the same page at multiple addresses.
+# -------------------------------------------------------
+
 @app.before_request
 def keep_portfolio_on_canonical_path():
     clean_host = request.host.split(':', 1)[0].lower()
 
+    # Case 1: someone visits the old pete.peerslate.com subdomain.
+    # Permanently point them at the peerslate.com/petec/... version instead.
     if clean_host == 'pete.peerslate.com':
         target_path = request.path
         if target_path == '/':
@@ -85,9 +116,15 @@ def keep_portfolio_on_canonical_path():
 
         return redirect(f'https://peerslate.com{target_path}', code=302)
 
+    # Case 2: only the main peerslate.com domain needs the next checks
+    # below (renamed/removed paths). Any other host (like localhost
+    # during local testing) skips straight through unchanged.
     if not is_platform_hostname(request.host):
         return None
 
+    # Case 3: old URLs from before the site was renamed/reorganized.
+    # Anyone who still has one of these bookmarked gets sent to today's
+    # equivalent page instead of hitting a dead link.
     old_portfolio_paths = {'/pete', '/portfolio'}
     section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/work'}
 
@@ -100,6 +137,7 @@ def keep_portfolio_on_canonical_path():
     if request.path in section_paths:
         return redirect(f'/petec{request.path}', code=302)
 
+    # No redirect needed - let Flask handle the request normally.
     return None
 
 
@@ -251,14 +289,21 @@ def clean_chatbot_reply(reply):
 # EXISTING PAGE ROUTES (unchanged)
 # -------------------------------------------------------
 
+# True only when this request's domain is the real production site
+# (peerslate.com), so the redirect rules above don't accidentally run
+# during local testing on 127.0.0.1/localhost.
 def is_platform_hostname(hostname):
     clean_host = hostname.split(':', 1)[0].lower()
     return clean_host in {'peerslate.com', 'www.peerslate.com'}
 
+# The root URL ("/") is the separate PeerSlate marketing homepage,
+# not Pete's personal portfolio - see templates/peerslate.html.
 @app.route('/')
 def home():
     return render_template('peerslate.html')
 
+# Three URLs, one page: /petec is the current address, while /portfolio
+# and /pete are kept working as older addresses so no existing link breaks.
 @app.route('/petec')
 @app.route('/portfolio')
 @app.route('/pete')

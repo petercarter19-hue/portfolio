@@ -27,6 +27,10 @@
             {% include "partials/portfolio_ai_search.html" %}
         </div>
 
+        <!-- Four project tabs. work.js listens for clicks here and shows the
+             matching .work-project-panel below by comparing each button's
+             data-work-project to a panel's data-work-panel — same id links
+             a tab to its content, so the ids on both sides must match. -->
         <div class="work-project-selector" role="group" aria-label="Select project">
             <button class="work-project-tab is-active" type="button" data-work-project="interactive-resume" aria-pressed="true">
                 <span>MVP Live / In Development</span>
@@ -46,6 +50,10 @@
             </button>
         </div>
 
+        <!-- Only one panel shows at a time (whichever tab above is active).
+             The first one, Interactive Resume, is the only real/finished
+             project — the other three are concept write-ups for planned
+             builds, not live features yet. -->
         <div class="work-project-panels">
             <article class="work-project-panel is-active" data-work-panel="interactive-resume" tabindex="-1">
                 <div class="work-project-main">
@@ -83,6 +91,10 @@
                         <li>Replace the draft PDF with the final employer-facing resume.</li>
                         <li>Add deeper project case studies as each build matures.</li>
                     </ul>
+                    <!-- data-ask-resume + data-ask is the same pattern used on
+                         the resume page: chatbot.js reads data-ask as the
+                         question text and opens the floating chat panel
+                         with it already sent, instead of the visitor typing. -->
                     <button
                         class="view-all-link work-ask-btn"
                         type="button"

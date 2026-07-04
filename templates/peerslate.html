@@ -1,8 +1,20 @@
+{# =====================================================
+   PEERSLATE MARKETING HOMEPAGE
+   This is the separate root site at peerslate.com — the
+   business/product page for PeerSlate itself, not Pete's
+   personal portfolio (that lives under /petec, see index.html).
+   Pete's portfolio is used throughout this page as PeerSlate's
+   first working example (the "Explore the Example" links). #}
 {% extends "base.html" %}
 
 {% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
 {% block meta_description %}PeerSlate turns professional work history, project evidence, skills, and goals into interactive portfolio profiles with AI-assisted exploration.{% endblock %}
 
+{# Open Graph (Facebook/LinkedIn/iMessage) and Twitter/X preview cards.
+   These control the title, description, and image shown when someone
+   pastes this page's link into another site — not visible on the page
+   itself. _external=True makes the image URL absolute (https://...)
+   since social platforms can't resolve a relative path. #}
 {% block extra_head %}
 <meta property="og:type" content="website">
 <meta property="og:title" content="PeerSlate | Your Work, Your Story, Your Future">
@@ -23,6 +35,9 @@
 
 {% block content %}
 <div class="peerslate-page">
+    <!-- HERO: logo, headline, and pitch on the left; a static (non-live)
+         mock preview card on the right just illustrating what a PeerSlate
+         profile contains — it isn't wired to any real data. -->
     <section class="peerslate-hero" aria-labelledby="peerslate-title">
         <div class="site-container peerslate-hero__grid">
             <div class="peerslate-hero__copy">
@@ -85,6 +100,8 @@
         </div>
     </section>
 
+    <!-- THE PROBLEM: two-column pitch explaining why a static resume
+         falls short, setting up the "How It Works" section below. -->
     <section class="peerslate-section" aria-labelledby="peerslate-problem-title">
         <div class="site-container peerslate-two-column">
             <div>
@@ -107,6 +124,7 @@
         </div>
     </section>
 
+    <!-- HOW IT WORKS: four numbered step cards (01-04), left to right. -->
     <section class="peerslate-section peerslate-section--cards" aria-labelledby="peerslate-how-title">
         <div class="site-container">
             <div class="peerslate-section-heading">
@@ -152,6 +170,8 @@
         </div>
     </section>
 
+    <!-- PLATFORM DIRECTION: four short feature blurbs (no icons), a
+         plainer sibling to the numbered "How It Works" cards above. -->
     <section class="peerslate-section" aria-labelledby="peerslate-features-title">
         <div class="site-container peerslate-feature-layout">
             <div class="peerslate-section-heading">
@@ -181,6 +201,8 @@
         </div>
     </section>
 
+    <!-- CLOSING CTA: points visitors at Pete's portfolio as the live,
+         working proof that the PeerSlate concept above is real. -->
     <section class="peerslate-section peerslate-section--final" aria-labelledby="peerslate-final-title">
         <div class="site-container peerslate-final-card">
             <p class="section-eyebrow">Starting Point</p>

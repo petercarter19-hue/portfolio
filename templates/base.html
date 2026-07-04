@@ -15,6 +15,8 @@
     <!-- Jinja block: each page can provide its own browser-tab title -->
     <title>{% block title %}Pete Carter{% endblock %}</title>
 
+    <!-- Browser tab icon, iPhone/iPad home-screen icon, and the color the
+         mobile browser chrome (address bar) uses to match the dark theme. -->
     <link
         rel="icon"
         type="image/png"
@@ -224,6 +226,7 @@
         aria-hidden="true"
     >
 
+        <!-- Panel title bar with the close (X) button. -->
         <div id="chat-header">
             <div id="chat-header-text">
                 <h3>Pete's Engineering Assistant</h3>
@@ -232,6 +235,8 @@
             <button id="chat-close" aria-label="Close chat">✕</button>
         </div>
 
+        <!-- chatbot.js appends a new message bubble here every time the
+             visitor sends a question or the AI replies. -->
         <div id="chat-messages">
             <div class="chat-message bot-message">
                 Hi! I'm Pete's AI assistant. Ask me anything about his
@@ -239,6 +244,9 @@
             </div>
         </div>
 
+        <!-- Starter questions a visitor can click instead of typing.
+             chatbot.js hides this whole row after the first question is
+             asked (typed or clicked), so it never clutters an ongoing chat. -->
         <div id="chat-suggestions">
             <button class="suggestion-btn">What systems has Pete supported?</button>
             <button class="suggestion-btn">Tell me about Pete's MBSE experience</button>
@@ -246,6 +254,7 @@
             <button class="suggestion-btn">Why is Pete moving toward AI-enabled systems?</button>
         </div>
 
+        <!-- Text box + send button that posts to the /api/chat route in app.py. -->
         <div id="chat-input-area">
             <input
                 type="text"
@@ -305,6 +314,10 @@
         })();
     </script>
 
+    <!-- The "?v=..." on each script/style link is a cache-buster: browsers
+         normally cache a file by its name, so bumping this version text
+         forces visitors to download the newest version instead of an old
+         cached copy after a change is deployed. -->
     <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=theme-preview-1"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-bridge-2"></script>
     {% block extra_scripts %}{% endblock %}

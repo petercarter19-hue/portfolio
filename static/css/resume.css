@@ -5,6 +5,9 @@
 
 .resume-page {
     position: relative;
+    /* isolation: isolate keeps the ::before background layer below (with its
+       negative z-index) trapped behind this page's own content instead of
+       leaking behind the header/footer from base.html. */
     isolation: isolate;
     overflow: hidden;
     color: var(--color-text-primary);
@@ -27,6 +30,10 @@
     pointer-events: none;
 }
 
+/* scroll-margin-top stops the sticky header from covering the top of
+   whatever element resume.js scrolls to (e.g. clicking a metric card
+   jumps to an accomplishment) — without it, the highlighted item would
+   land partly hidden behind the header. */
 .resume-page :is(section, article, button, li) {
     scroll-margin-top: 96px;
 }
@@ -413,6 +420,11 @@
     display: none;
 }
 
+/* The little pointer "tail" above the popover, made from a plain square
+   div rotated 45 degrees so it looks like a diamond poking out from the
+   box's top edge — a common trick since CSS has no built-in speech-bubble
+   shape. Only its top-left border is drawn, so once rotated only that
+   corner is visible as a triangle. */
 .resume-skill-popover::before {
     content: "";
     position: absolute;
@@ -714,6 +726,10 @@
     gap: 14px 22px;
 }
 
+/* Pins the 2nd section ("Selected Accomplishments") to the right column
+   and stretches it down across 4 grid rows, so that one longer list runs
+   alongside the shorter Overview/Responsibilities sections in column 1
+   instead of everything just flowing top-to-bottom in reading order. */
 .resume-role-detail-grid section:nth-child(2) {
     grid-column: 2;
     grid-row: 1 / span 4;
@@ -872,7 +888,11 @@
     }
 }
 
-/* ---------- Print ---------- */
+/* ---------- Print ----------
+   Triggered automatically when a visitor prints the page or saves it as
+   a PDF (Cmd+P). Since this is a dark-themed page, everything here forces
+   plain black text on a white background and hides anything interactive
+   (header, chat widget, buttons) that wouldn't make sense on paper. */
 
 @media print {
     body {

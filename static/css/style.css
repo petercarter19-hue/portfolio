@@ -2,6 +2,27 @@
    PETE CARTER PORTFOLIO REDESIGN
    Homepage-focused CSS matching the approved dark systems
    engineering mockup while preserving shared chatbot tokens.
+
+   This is the site's main stylesheet, shared by every page.
+   Two other CSS files add page-specific styles on top of this
+   one: chatbot.css (the floating AI chat widget) and resume.css
+   (the /resume page only) — both are only loaded on the pages
+   that need them, see templates/base.html and resume.html.
+
+   TABLE OF CONTENTS (search for these ALL-CAPS headings below):
+     - RESET AND PAGE BASE       shared defaults for every element
+     - HEADER AND NAVIGATION     top nav bar, site menu, LinkedIn icon
+     - BUTTONS                   .btn styles used all over the site
+     - HERO                      homepage hero + the Ask Pete AI search box
+     - CIRCULAR LIFECYCLE VISUAL homepage's 6-stage engineering diagram
+     - METRICS BAND              scrolling strip of career numbers
+     - FEATURED PROJECTS         homepage's 3 project cards
+     - PROJECTS PAGE             /work page (full project write-ups)
+     - PEERSLATE PLATFORM HOMEPAGE  the separate peerslate.com root page
+     - LIGHT THEME COMPATIBILITY overrides so light themes still read well
+     - FOOTER                    shared footer on every page
+     - RESPONSIVE BEHAVIOR       @media rules for tablet/phone widths
+     - MY STORY PAGE             /my-story page, largest single section
    ========================================================= */
 
 :root {
@@ -56,6 +77,11 @@
     --site-width: 1360px;                            /* Maximum width for aligned page content */
 }
 
+/* Theme presets: each block below redefines the same variable names from
+   :root above with different colors. theme-preview.js sets data-theme on
+   <body> when a visitor clicks a theme button in the site menu, which
+   instantly swaps every color on the page to whichever block matches
+   below (CSS variables cascade, so nothing else needs to change). */
 body[data-theme="command-gold"] {
     --color-page: #030b16;
     --color-page-deep: #020812;
@@ -179,6 +205,12 @@ body[data-theme="secure-green"] {
    RESET AND PAGE BASE
    ========================================================= */
 
+/* box-sizing: border-box makes an element's declared width/height include
+   its padding and border, instead of adding them on top — this is what
+   keeps padded boxes from silently growing wider than expected. Every
+   browser also ships its own default margin/padding on things like <p>
+   and <h1>, so zeroing both here means every page starts from the same
+   blank slate instead of fighting inconsistent browser defaults. */
 *,
 *::before,
 *::after {
@@ -187,6 +219,8 @@ body[data-theme="secure-green"] {
     padding: 0;
 }
 
+/* Makes in-page jumps (like clicking a nav link with a #section-id) glide
+   instead of snapping instantly. */
 html {
     scroll-behavior: smooth;
 }
@@ -204,6 +238,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Links and buttons: browsers default links to blue/underlined and give
+   buttons their own font — these two rules make both inherit the
+   surrounding text's color and font instead, so a link or button only
+   looks different where a class further down the file says it should. */
 a {
     color: inherit;
     text-decoration: none;
@@ -2163,8 +2201,17 @@ body[data-theme="slate-light"] .footer {
 
 /* =========================================================
    RESPONSIVE BEHAVIOR
+   This section holds @media breakpoints for every page except
+   My Story, which keeps its own responsive block further down
+   (see "My Story responsive behavior" near the end of this file).
+   Each @media (max-width: ...) block below only applies once the
+   browser window gets narrower than that width — so the 1180px
+   block is the first to kick in as the window shrinks, then 1040px,
+   and so on down to the narrowest phone sizes.
    ========================================================= */
 
+/* Large tablets / small laptops: nav spacing tightens, hero and
+   lifecycle diagram stack to one column, work page panels stack. */
 @media (max-width: 1180px) {
     .site-container,
     .nav-container,
@@ -2231,6 +2278,8 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* Tablets: the header's brand text and LinkedIn icon shrink a step
+   so everything keeps fitting on one row. */
 @media (max-width: 1040px) {
     .nav-container {
         gap: 14px;
@@ -2272,6 +2321,8 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* Small tablets: header shrinks again, and the /work page's hero and
+   proof-grid columns collapse to one column. */
 @media (max-width: 860px) {
     .nav-container {
         width: min(100% - 32px, var(--site-width));
@@ -2325,6 +2376,8 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* Phones: the header fully stacks (menu, brand, links, LinkedIn each
+   get their own row) and the homepage's 3 project cards become 2-wide. */
 @media (max-width: 780px) {
     .site-header {
         position: relative;
@@ -2422,9 +2475,9 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* At tablet widths the circular lifecycle takes over the page.
+   Use the same readable stacked bars as the phone layout sooner. */
 @media (max-width: 980px) {
-    /* At tablet widths the circular lifecycle takes over the page.
-       Use the same readable stacked bars as the phone layout sooner. */
     .lifecycle-visual {
         aspect-ratio: auto;
     }
@@ -2473,6 +2526,8 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* Narrow phones: the lifecycle's 2-column grid (set at 980px above)
+   drops to a single column of stacked stage cards. */
 @media (max-width: 700px) {
     .lifecycle-stage {
         grid-template-columns: 1fr;
@@ -2483,6 +2538,8 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* Smallest phones: page edge padding tightens further, and the hero
+   headline/description shrink one more step. */
 @media (max-width: 620px) {
     .site-container,
     .nav-container,
@@ -3322,6 +3379,7 @@ body[data-theme="slate-light"] .footer {
 
 /* ---------- My Story responsive behavior ---------- */
 
+/* Tablets: the four value chips in the hero shrink their icons and text. */
 @media (max-width: 980px) {
     .story-values-row {
         gap: 10px 12px;
@@ -3522,6 +3580,8 @@ body[data-theme="slate-light"] .footer {
 }
 
 
+/* Tablets and below: the PeerSlate marketing homepage's two-column
+   sections (hero, problem statement, features) stack to one column. */
 @media (max-width: 1020px) {
     .peerslate-hero__grid,
     .peerslate-two-column,
@@ -3548,6 +3608,9 @@ body[data-theme="slate-light"] .footer {
     }
 }
 
+/* A second, separate 620px phone breakpoint: this one shrinks the
+   shared "Ask Pete AI" search box (used on the homepage and other
+   pages via portfolio_ai_search.html) and the lifecycle center card. */
 @media (max-width: 620px) {
     .hero-ai-search {
         width: 100%;

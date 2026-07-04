@@ -34,12 +34,19 @@ function initializeChatbot() {
 
     let lastChatOpener = null;
 
+    // Wraps a plain-English message in a real JavaScript Error, tagged with
+    // isFriendlyChatError so the .catch() blocks below can tell "this is a
+    // message safe to show the visitor" apart from an unexpected crash.
     function friendlyError(message) {
         const error = new Error(message);
         error.isFriendlyChatError = true;
         return error;
     }
 
+    // Sends the visitor's question to Flask's /api/chat route (see app.py)
+    // and hands back a promise that resolves with { response: "..." } on
+    // success. Turns HTTP error statuses into friendlyError messages so
+    // callers always get a sentence they can display, not a raw status code.
     function requestChatReply(text) {
         return fetch('/api/chat', {
             method: 'POST',

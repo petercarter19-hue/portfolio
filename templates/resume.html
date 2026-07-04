@@ -13,6 +13,9 @@
     rel="stylesheet"
     href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-5"
 >
+{# Structured data (JSON-LD) is invisible to visitors — it's metadata that
+   search engines read to understand this page is a person's profile, which
+   can help Pete's name and title show up better in search results. #}
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
@@ -158,6 +161,9 @@
                 <p>Select a role to view detailed accomplishments, responsibilities, systems, tools, and connected evidence.</p>
             </div>
 
+            {# Thin strip showing each role's "theme" in order, connected by
+               arrows, so a visitor can see the career progression at a
+               glance before picking a role card to read in full below. #}
             <div class="resume-progression-strip" aria-label="Career progression">
                 {% for role in resume.career_roles %}
                 <div>
@@ -170,6 +176,11 @@
                 {% endfor %}
             </div>
 
+            {# Clicking one of these role cards is what shows the matching
+               .resume-role-panel below (same role.id links a card to its
+               panel) — resume.js handles the click and swaps which panel
+               has the is-active class. Whichever role is first in
+               resume_data.json's career_roles list starts selected. #}
             <div class="resume-role-card-row" role="group" aria-label="Career roles">
                 {% for role in resume.career_roles %}
                 <button
@@ -270,6 +281,11 @@
                             </div>
                         </section>
 
+                        {# resume_data.json only stores skill IDs on each role (e.g.
+                           "mbse"), not the full skill details, so this nested loop
+                           looks up the matching skill from public_skills by id to
+                           print its display_name. The same lookup pattern repeats
+                           for metrics and case studies just below. #}
                         <section>
                             <h4>Connected Skills</h4>
                             <div class="resume-chip-row">
@@ -293,6 +309,9 @@
                                 {% endif %}
                                 {% endfor %}
                                 {% endfor %}
+                                {# case_studies isn't shown as its own section anymore
+                                   (removed in the redesign), but a role can still list
+                                   its title here as a connected impact story. #}
                                 {% for case_id in role.related_case_study_ids %}
                                 {% for case in resume.case_studies %}
                                 {% if case.id == case_id %}
@@ -318,6 +337,8 @@
         </div>
     </section>
 
+    {# Static list, not interactive — just renders every entry in
+       resume_data.json's "education" array in order. #}
     <section class="resume-section resume-education" id="resume-education-section" aria-labelledby="resume-education-title">
         <div class="site-container">
             <div class="resume-section-heading">
