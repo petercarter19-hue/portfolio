@@ -11,7 +11,7 @@
      Personal-professional narrative page built from the
      approved mockup: hero with portrait, positioning
      statement, journey timeline, values, info cards, and
-     the shared metrics strip.
+     rotating fun facts.
      ===================================================== -->
 <div class="my-story-page">
 
@@ -118,6 +118,11 @@
         </div>
     </section>
 
+    <div class="site-container">
+        <div class="page-ai-after-hero" aria-label="Ask Pete AI">
+            {% include "partials/portfolio_ai_search.html" %}
+        </div>
+    </div>
 
     <!-- ============================================
          MY JOURNEY: narrative + four-milestone timeline.
@@ -335,8 +340,8 @@
                     </li>
                 </ul>
 
-                <a class="story-card__link" href="{{ portfolio_skills_url }}">
-                    View My Certifications
+                <a class="story-card__link" href="{{ portfolio_resume_url }}#resume-skills-section">
+                    View Resume Evidence
                     <span aria-hidden="true">→</span>
                 </a>
             </article>
@@ -475,10 +480,9 @@
 
 
     <!-- ============================================
-         FUN FACTS: three random facts from the pool
-         below, re-drawn every page load (and on the
-         shuffle button) by the script at the bottom
-         of this page.
+         FUN FACTS: three facts from the pool below. One
+         card refreshes every five seconds, so all three
+         cards change over a fifteen-second cycle.
          ============================================ -->
     <section class="fun-facts" aria-labelledby="fun-facts-title">
         <div class="site-container">
@@ -497,28 +501,23 @@
                 </button>
             </div>
 
-            <!-- The script fills this grid with three random facts. -->
+            <!-- The script fills this grid with three rotating facts. -->
             <div class="fun-facts__grid" id="fun-facts-grid" aria-live="polite"></div>
         </div>
     </section>
-
-
-    <!-- Shared metrics strip — same partial the homepage uses. -->
-    {% include "partials/metrics_strip.html" %}
 
 </div>
 
 
 <!-- ======================================================
      FUN FACTS ROTATION
-     Picks three random facts from the pool on every page
-     load, so repeat visitors see something new each time.
-     The "Show Me More" button re-draws without reloading.
+     Picks three random facts on load, then refreshes one
+     card every five seconds. The "Show Me More" button
+     redraws all three without reloading.
      ====================================================== -->
 <script>
     (function () {
-        // The full pool of facts. Add new ones here any time —
-        // the display logic below never needs to change.
+        // The full pool of facts. Add new ones here any time.
         const FUN_FACTS = [
             "I went back to school at 36 to earn my engineering degree.",
             "I managed Domino's Pizza stores for years in my twenties.",
@@ -533,27 +532,84 @@
 
         const grid = document.getElementById('fun-facts-grid');
         const shuffleBtn = document.getElementById('fun-facts-shuffle');
+        const ROTATE_MS = 5000;
+        let visibleFacts = [];
+        let nextSlot = 0;
+        let rotationTimer;
+
+        function shuffleFacts(facts) {
+            return [...facts].sort(() => Math.random() - 0.5);
+        }
+
+        function buildFactCard(fact) {
+            const card = document.createElement('article');
+            card.className = 'fun-fact-card';
+
+            const icon = document.createElement('span');
+            icon.className = 'fun-fact-card__icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 3l2.1 5.6L20 11l-5.9 2.4L12 19l-2.1-5.6L4 11l5.9-2.4z"/>
+                </svg>
+            `;
+
+            const text = document.createElement('p');
+            text.textContent = fact;
+
+            card.append(icon, text);
+            return card;
+        }
+
+        function renderFacts(facts) {
+            visibleFacts = facts;
+            grid.replaceChildren(...visibleFacts.map(buildFactCard));
+        }
+
+        function pickReplacement() {
+            const availableFacts = FUN_FACTS.filter(fact => !visibleFacts.includes(fact));
+            return shuffleFacts(availableFacts.length ? availableFacts : FUN_FACTS)[0];
+        }
+
+        function rotateOneFact() {
+            const cards = [...grid.querySelectorAll('.fun-fact-card')];
+            const slot = nextSlot % 3;
+            const card = cards[slot];
+            const replacement = pickReplacement();
+
+            if (!card || !replacement) {
+                return;
+            }
+
+            visibleFacts[slot] = replacement;
+            card.classList.add('is-updating');
+
+            window.setTimeout(() => {
+                const updatedCard = buildFactCard(replacement);
+                updatedCard.classList.add('is-updating');
+                card.replaceWith(updatedCard);
+
+                window.requestAnimationFrame(() => {
+                    updatedCard.classList.remove('is-updating');
+                });
+            }, 180);
+
+            nextSlot = (nextSlot + 1) % 3;
+        }
+
+        function startRotation() {
+            window.clearInterval(rotationTimer);
+            rotationTimer = window.setInterval(rotateOneFact, ROTATE_MS);
+        }
 
         function showRandomFacts() {
-            // Copy the pool, shuffle the copy, and take the first three.
-            // sort() with a random comparator is fine for a fun display
-            // like this (it doesn't need statistically perfect shuffling).
-            const picks = [...FUN_FACTS].sort(() => Math.random() - 0.5).slice(0, 3);
-
-            grid.innerHTML = picks.map(fact => `
-                <article class="fun-fact-card">
-                    <span class="fun-fact-card__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 3l2.1 5.6L20 11l-5.9 2.4L12 19l-2.1-5.6L4 11l5.9-2.4z"/>
-                        </svg>
-                    </span>
-                    <p>${fact}</p>
-                </article>
-            `).join('');
+            nextSlot = 0;
+            renderFacts(shuffleFacts(FUN_FACTS).slice(0, 3));
+            startRotation();
         }
 
         shuffleBtn.addEventListener('click', showRandomFacts);
-        showRandomFacts();   // First draw happens on page load
+        showRandomFacts();
     })();
 </script>
 

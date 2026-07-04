@@ -60,24 +60,6 @@
                     {% endfor %}
                 </ul>
 
-                <div class="resume-actions" aria-label="Primary resume actions">
-                    <a
-                        class="resume-btn resume-btn--primary"
-                        href="{{ url_for('static', filename=resume.profile.pdf_path) }}"
-                        download
-                    >
-                        Download Resume
-                    </a>
-                    <a class="resume-btn" href="{{ resume.profile.contact_url }}">Contact Pete</a>
-                    <button
-                        class="resume-btn resume-btn--cyan"
-                        type="button"
-                        data-ask-resume
-                        data-ask="Give me a 60-second recruiter overview of Pete Carter using only approved portfolio information. Include the strongest evidence, source context, and any knowledge limitations."
-                    >
-                        Ask My Resume
-                    </button>
-                </div>
             </div>
 
             <aside class="resume-recruiter-panel" aria-labelledby="recruiter-panel-title">
@@ -123,6 +105,12 @@
         </div>
     </section>
 
+    <div class="site-container">
+        <div class="page-ai-after-hero" aria-label="Ask Pete AI">
+            {% include "partials/portfolio_ai_search.html" %}
+        </div>
+    </div>
+
     <section class="resume-section resume-metrics" aria-labelledby="resume-metrics-title">
         <div class="site-container">
             <div class="resume-section-heading resume-section-heading--compact">
@@ -166,6 +154,7 @@
 
             <div class="resume-skill-category-row" role="group" aria-label="Skill categories">
                 {% for category in resume.skill_categories %}
+                {% if category.id != 'featured' %}
                 <button
                     class="resume-skill-category{% if category.id == 'all' %} is-active{% endif %}"
                     type="button"
@@ -174,6 +163,7 @@
                 >
                     {{ category.label }}
                 </button>
+                {% endif %}
                 {% endfor %}
             </div>
 
@@ -508,7 +498,6 @@
             >
                 Copy LinkedIn URL
             </button>
-            <a class="resume-btn" href="{{ resume.profile.contact_url }}">Contact Pete</a>
         </div>
     </section>
 </div>

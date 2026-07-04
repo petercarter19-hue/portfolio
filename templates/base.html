@@ -112,7 +112,6 @@
                     -->
                     <ul class="nav-links">
                         <li><a href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>Projects</a></li>
-                        <li><a href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>Expertise</a></li>
                         <li><a href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>My Story</a></li>
                         <li><a href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>Resume</a></li>
                         <li><a href="{{ portfolio_contact_url }}" {% if request.path in ['/contact', '/petec/contact'] %}aria-current="page"{% endif %}>Contact</a></li>
@@ -153,14 +152,6 @@
 
     <!-- Each page inserts its unique content inside this Jinja block -->
     <main id="main-content" class="main-content">
-        {% if (is_portfolio_path and request.path != '/petec') or (not is_platform_site and request.path not in ['/', '/peerslate', '/petec']) %}
-        <section class="portfolio-ai-strip" aria-label="Ask Pete AI">
-            <div class="site-container">
-                {% include "partials/portfolio_ai_search.html" %}
-            </div>
-        </section>
-        {% endif %}
-
         {% block content %}
         {% endblock %}
     </main>

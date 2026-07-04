@@ -64,7 +64,6 @@ def shared_navigation_urls():
         'peerslate_home_url': url_for('home') if is_local or is_platform else 'https://peerslate.com/',
         'portfolio_home_url': portfolio_url(),
         'portfolio_work_url': portfolio_url('work'),
-        'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
         'portfolio_resume_url': portfolio_url('resume'),
         'portfolio_contact_url': portfolio_url('contact'),
@@ -90,10 +89,13 @@ def keep_portfolio_on_canonical_path():
         return None
 
     old_portfolio_paths = {'/pete', '/portfolio'}
-    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/work'}
+    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/work'}
 
     if request.path in old_portfolio_paths:
         return redirect('/petec', code=302)
+
+    if request.path == '/skills':
+        return redirect('/petec/resume', code=302)
 
     if request.path in section_paths:
         return redirect(f'/petec{request.path}', code=302)
@@ -255,10 +257,7 @@ def is_platform_hostname(hostname):
 
 @app.route('/')
 def home():
-    if is_platform_hostname(request.host):
-        return render_template('peerslate.html')
-
-    return render_template('index.html')
+    return render_template('peerslate.html')
 
 @app.route('/petec')
 @app.route('/portfolio')
@@ -291,7 +290,7 @@ def work():
 @app.route('/skills')
 @app.route('/petec/skills')
 def skills():
-    return render_template('skills.html')
+    return redirect('/petec/resume', code=302)
 
 @app.route('/hobbies')
 @app.route('/petec/hobbies')
