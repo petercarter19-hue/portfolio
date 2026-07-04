@@ -1,13 +1,38 @@
 {% extends "base.html" %}
 
 {% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
+{% block meta_description %}PeerSlate turns professional work history, project evidence, skills, and goals into interactive portfolio profiles with AI-assisted exploration.{% endblock %}
+
+{% block extra_head %}
+<meta property="og:type" content="website">
+<meta property="og:title" content="PeerSlate | Your Work, Your Story, Your Future">
+<meta
+    property="og:description"
+    content="Interactive professional profiles built from career evidence, projects, skills, and AI-assisted profile exploration."
+>
+<meta property="og:image" content="{{ url_for('static', filename='images/peerslate-logo.png', _external=True) }}">
+<meta property="og:url" content="{{ request.url }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PeerSlate | Your Work, Your Story, Your Future">
+<meta
+    name="twitter:description"
+    content="Interactive professional profiles built from career evidence, projects, skills, and AI-assisted profile exploration."
+>
+<meta name="twitter:image" content="{{ url_for('static', filename='images/peerslate-logo.png', _external=True) }}">
+{% endblock %}
 
 {% block content %}
 <div class="peerslate-page">
     <section class="peerslate-hero" aria-labelledby="peerslate-title">
         <div class="site-container peerslate-hero__grid">
             <div class="peerslate-hero__copy">
-                <p class="section-eyebrow">PeerSlate</p>
+                <div class="peerslate-brand-lockup">
+                    <img
+                        src="{{ url_for('static', filename='images/peerslate-logo.png') }}"
+                        alt="PeerSlate. Your Work. Your Story. Your Future."
+                    >
+                </div>
+                <p class="section-eyebrow">Professional Profile Platform</p>
                 <h1 id="peerslate-title">
                     Your work, your story, your future.
                 </h1>
@@ -27,7 +52,17 @@
             </div>
 
             <aside class="peerslate-demo-card" aria-label="PeerSlate profile preview">
-                <p class="peerslate-demo-card__label">Interactive Profile Preview</p>
+                <div class="peerslate-demo-card__brand">
+                    <img
+                        src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
+                        alt=""
+                        aria-hidden="true"
+                    >
+                    <div>
+                        <p class="peerslate-demo-card__label">Interactive Profile Preview</p>
+                        <strong>PeerSlate profile system</strong>
+                    </div>
+                </div>
                 <div class="peerslate-profile-preview">
                     <div>
                         <span>Professional Story</span>

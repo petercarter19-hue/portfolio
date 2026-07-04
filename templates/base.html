@@ -9,11 +9,22 @@
     <!-- Helps search engines understand the purpose of the website -->
     <meta
         name="description"
-        content="The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems."
+        content="{% block meta_description %}The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems.{% endblock %}"
     >
 
     <!-- Jinja block: each page can provide its own browser-tab title -->
     <title>{% block title %}Pete Carter{% endblock %}</title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="{{ url_for('static', filename='images/peerslate-favicon.png') }}"
+    >
+    <link
+        rel="apple-touch-icon"
+        href="{{ url_for('static', filename='images/peerslate-apple-touch.png') }}"
+    >
+    <meta name="theme-color" content="#071426">
 
     <!-- Google Fonts: Inter gives a clean, modern, technical look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,9 +107,23 @@
 
                 <!-- Pete's name and title (shifted right of the site menu) -->
                 <div class="nav-brand">
-                    <a href="{{ portfolio_home_url if is_portfolio_path else peerslate_home_url }}" class="nav-logo" aria-label="Return to homepage">
-                        <span class="nav-name">{% if is_portfolio_path %}Pete Carter{% else %}PeerSlate{% endif %}</span>
-                        <span class="nav-tagline">{% if is_portfolio_path %}SYSTEMS ENGINEER{% else %}PROFESSIONAL PROFILES{% endif %}</span>
+                    <a
+                        href="{{ portfolio_home_url if is_portfolio_path else peerslate_home_url }}"
+                        class="nav-logo{% if not is_portfolio_path %} nav-logo--brand{% endif %}"
+                        aria-label="Return to homepage"
+                    >
+                        {% if not is_portfolio_path %}
+                        <img
+                            class="nav-brand-mark"
+                            src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        {% endif %}
+                        <span class="nav-wordmark">
+                            <span class="nav-name">{% if is_portfolio_path %}Pete Carter{% else %}PeerSlate{% endif %}</span>
+                            <span class="nav-tagline">{% if is_portfolio_path %}SYSTEMS ENGINEER{% else %}PROFESSIONAL PROFILES{% endif %}</span>
+                        </span>
                     </a>
                 </div>
 
@@ -158,8 +183,20 @@
 
     <!-- Shared footer displayed on every page -->
     <footer class="footer">
-        <div class="footer-container">
+        <div class="footer-container{% if not is_portfolio_path %} footer-container--brand{% endif %}">
+            {% if not is_portfolio_path %}
+            <a class="footer-brand" href="{{ peerslate_home_url }}" aria-label="PeerSlate home">
+                <img
+                    src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
+                    alt=""
+                    aria-hidden="true"
+                >
+                <span>PeerSlate</span>
+            </a>
+            <p>&copy; 2026 PeerSlate <span>|</span> Your Work. Your Story. Your Future.</p>
+            {% else %}
             <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
+            {% endif %}
         </div>
     </footer>
 

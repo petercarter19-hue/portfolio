@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const rolePanels = Array.from(document.querySelectorAll('[data-role-panel]'));
     const caseCards = Array.from(document.querySelectorAll('[data-case-card]'));
     const casePanels = Array.from(document.querySelectorAll('[data-case-panel]'));
-    const promptGrid = document.getElementById('resume-prompt-grid');
     const matchSummary = document.getElementById('resume-match-summary');
     const printButton = document.querySelector('[data-print-resume]');
     const copyLinkedInButton = document.querySelector('[data-copy-linkedin]');
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
         map[track.id] = track;
         return map;
     }, {});
-    const defaultQuestions = readJson('resume-default-questions', []);
 
     const originalSkillOrder = new Map();
     const originalRoleOrder = new Map();
@@ -100,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 shouldShow = card.dataset.categoryId === activeSkillCategory;
             }
 
+            if (!shouldShow) closeSkillPopover(card);
             card.classList.toggle('is-hidden-by-category', !shouldShow);
         });
     }
@@ -130,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         applySkillCategory(skillCategory || 'all');
-        updatePromptGrid(defaultQuestions);
         updateSummary();
     }
 
@@ -196,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (track.featured_role_ids && track.featured_role_ids.length) {
             selectRole(track.featured_role_ids[0], false);
         }
-        updatePromptGrid(track.suggested_ai_questions || defaultQuestions);
         updateSummary(track);
     }
 
@@ -224,43 +221,46 @@ document.addEventListener('DOMContentLoaded', function () {
             relevantRoles + ' strongly aligned roles are prioritized below.';
     }
 
-    function updatePromptGrid(questions) {
-        if (!promptGrid) return;
-
-        const prompts = Array.isArray(questions) && questions.length ? questions : defaultQuestions;
-        promptGrid.innerHTML = '';
-
-        prompts.forEach(function (prompt) {
-            const button = document.createElement('button');
-            button.className = 'resume-prompt-btn';
-            button.type = 'button';
-            button.dataset.askResume = '';
-            button.dataset.ask = prompt;
-            button.textContent = prompt;
-            promptGrid.appendChild(button);
-        });
-    }
-
-    function closeOtherSkillCards(currentCard) {
+    function closeOtherSkillPopovers(currentCard) {
         skillCards.forEach(function (card) {
-            if (card !== currentCard) setSkillFlipped(card, false);
+            if (card !== currentCard) closeSkillPopover(card);
         });
     }
 
-    function setSkillFlipped(card, isFlipped) {
-        const button = card.querySelector('.resume-skill-flip');
-        const nameElement = card.querySelector('.resume-skill-face--front strong');
-        const skillName = nameElement ? nameElement.textContent.trim() : 'Skill card';
+    function closeSkillPopover(card) {
+        const button = card.querySelector('[data-skill-popover-trigger]');
+        const popover = card.querySelector('[data-skill-popover]');
 
-        card.classList.toggle('is-flipped', isFlipped);
+        card.classList.remove('is-popover-open', 'is-popover-right');
+
         if (button) {
-            button.setAttribute('aria-pressed', String(isFlipped));
-            button.setAttribute(
-                'aria-label',
-                isFlipped ?
-                    skillName + ' evidence shown. Activate to return to the summary.' :
-                    skillName + '. Activate to view supporting evidence.'
-            );
+            button.setAttribute('aria-expanded', 'false');
+        }
+
+        if (popover) {
+            popover.hidden = true;
+        }
+    }
+
+    function openSkillPopover(card) {
+        const button = card.querySelector('[data-skill-popover-trigger]');
+        const popover = card.querySelector('[data-skill-popover]');
+        if (!button || !popover) return;
+
+        closeOtherSkillPopovers(card);
+
+        popover.hidden = false;
+        card.classList.add('is-popover-open');
+        button.setAttribute('aria-expanded', 'true');
+
+        const popoverRect = popover.getBoundingClientRect();
+        card.classList.toggle('is-popover-right', popoverRect.right > window.innerWidth - 16);
+
+        if (card.classList.contains('is-popover-right')) {
+            const adjustedRect = popover.getBoundingClientRect();
+            if (adjustedRect.left < 16) {
+                card.classList.remove('is-popover-right');
+            }
         }
     }
 
@@ -361,13 +361,29 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     skillCards.forEach(function (card) {
-        const button = card.querySelector('.resume-skill-flip');
+        const button = card.querySelector('[data-skill-popover-trigger]');
         if (!button) return;
 
-        button.addEventListener('click', function () {
-            const shouldFlip = !card.classList.contains('is-flipped');
-            closeOtherSkillCards(card);
-            setSkillFlipped(card, shouldFlip);
+        button.addEventListener('click', function (event) {
+            event.stopPropagation();
+            if (card.classList.contains('is-popover-open')) {
+                closeSkillPopover(card);
+                return;
+            }
+
+            openSkillPopover(card);
+        });
+
+        button.addEventListener('mouseleave', function () {
+            closeSkillPopover(card);
+        });
+
+        button.addEventListener('blur', function () {
+            window.setTimeout(function () {
+                if (!card.matches(':hover') && !card.contains(document.activeElement)) {
+                    closeSkillPopover(card);
+                }
+            }, 80);
         });
     });
 
@@ -411,6 +427,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.addEventListener('click', function (event) {
+        if (!event.target.closest('[data-skill-card]')) {
+            skillCards.forEach(closeSkillPopover);
+        }
+
         const askButton = event.target.closest('[data-ask-resume]');
         if (askButton) {
             event.stopPropagation();
@@ -432,6 +452,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const scrollButton = event.target.closest('[data-scroll-target]');
         if (scrollButton) {
             scrollAndHighlight(document.getElementById(scrollButton.dataset.scrollTarget), true);
+        }
+    });
+
+    document.addEventListener('pointermove', function (event) {
+        skillCards.forEach(function (card) {
+            if (!card.classList.contains('is-popover-open')) return;
+
+            const button = card.querySelector('[data-skill-popover-trigger]');
+            if (button && !button.contains(event.target)) {
+                closeSkillPopover(card);
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            skillCards.forEach(closeSkillPopover);
         }
     });
 
@@ -458,5 +495,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     applySkillCategory(activeSkillCategory);
-    updatePromptGrid(defaultQuestions);
 });

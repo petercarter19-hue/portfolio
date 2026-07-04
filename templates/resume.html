@@ -11,7 +11,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-2"
+    href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-4"
 >
 <script type="application/ld+json">
 {
@@ -40,7 +40,6 @@
 <div class="resume-page" id="resume-page">
 
     <script type="application/json" id="resume-track-data">{{ resume.recruiter_tracks|tojson }}</script>
-    <script type="application/json" id="resume-default-questions">{{ resume.suggested_ai_questions.default|tojson }}</script>
 
     <section class="resume-hero" aria-labelledby="resume-title">
         <div class="site-container resume-hero__grid">
@@ -145,11 +144,8 @@
                 <p class="section-eyebrow">Skills to Evidence</p>
                 <h2 id="resume-skills-title">Skills Backed by Experience</h2>
                 <p>
-                    Click or tap any skill card to flip it over and view the resume evidence supporting that skill.
+                    Compact skills connected to the clearest public resume evidence.
                 </p>
-                <div class="resume-flip-legend" aria-label="Skill card interaction legend">
-                    Click to flip - View evidence
-                </div>
             </div>
 
             <div class="resume-skill-category-row" role="group" aria-label="Skill categories">
@@ -181,34 +177,32 @@
                     data-role-ids="{{ skill.related_role_ids|join(' ') }}"
                 >
                     <button
-                        class="resume-skill-flip"
+                        class="resume-skill-button"
                         type="button"
-                        aria-pressed="false"
-                        aria-label="{{ skill.display_name }}. {{ count }} supporting {{ 'example' if count == 1 else 'examples' }}. Activate to view evidence."
+                        data-skill-popover-trigger
+                        aria-expanded="false"
+                        aria-controls="skill-popover-{{ skill.id }}"
+                        aria-label="{{ skill.display_name }}. View supporting resume evidence."
                     >
-                        <span class="resume-skill-inner" aria-hidden="true">
-                            <span class="resume-skill-face resume-skill-face--front">
-                                <span class="resume-relevant-badge">Relevant</span>
-                                <span class="resume-skill-kicker">{{ count }} supporting {{ 'example' if count == 1 else 'examples' }}</span>
-                                <strong>{{ skill.display_name }}</strong>
-                                <span>{{ skill.front_summary }}</span>
-                                <em>View evidence</em>
-                            </span>
-
-                            <span class="resume-skill-face resume-skill-face--back">
-                                <span class="resume-skill-kicker">Evidence</span>
-                                <strong>{{ skill.display_name }}</strong>
-                                <ul>
-                                    {% for evidence in displayed_evidence %}
-                                    <li>
-                                        {{ evidence.text }}
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                                <em>Return to summary</em>
-                            </span>
-                        </span>
+                        <span class="resume-relevant-badge">Relevant</span>
+                        <strong>{{ skill.display_name }}</strong>
+                        <span>{{ skill.front_summary }}</span>
                     </button>
+                    <div
+                        class="resume-skill-popover"
+                        id="skill-popover-{{ skill.id }}"
+                        data-skill-popover
+                        role="tooltip"
+                        hidden
+                    >
+                        <span class="resume-skill-kicker">Resume evidence</span>
+                        <strong>{{ skill.display_name }}</strong>
+                        <ul>
+                            {% for evidence in displayed_evidence %}
+                            <li>{{ evidence.text }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </article>
                 {% endfor %}
             </div>
@@ -454,32 +448,6 @@
         </div>
     </section>
 
-    <section class="resume-section resume-questions" aria-labelledby="resume-questions-title">
-        <div class="site-container resume-questions__grid">
-            <div class="resume-section-heading">
-                <p class="section-eyebrow">Verified Profile Questions</p>
-                <h2 id="resume-questions-title">Ask Pete's Career Assistant</h2>
-                <p>
-                    Suggested questions update when a recruiter focus area is selected.
-                    The assistant should answer from approved public profile evidence and state limits when needed.
-                </p>
-            </div>
-
-            <div class="resume-prompt-grid" id="resume-prompt-grid">
-                {% for prompt in resume.suggested_ai_questions.default %}
-                <button
-                    class="resume-prompt-btn"
-                    type="button"
-                    data-ask-resume
-                    data-ask="{{ prompt }}"
-                >
-                    {{ prompt }}
-                </button>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
     <section class="resume-download-panel" aria-label="Download and print resume">
         <div class="site-container resume-download-row">
             <a
@@ -504,5 +472,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-1"></script>
+<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-4"></script>
 {% endblock %}

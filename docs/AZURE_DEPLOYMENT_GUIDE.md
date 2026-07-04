@@ -191,6 +191,35 @@ Check any deploy's status in the repo's **Actions** tab on GitHub.
 
 ---
 
+## Part 8 — Point the root domain (peerslate.com apex + www) at Azure
+
+*Added 2026-07-03. Why this became necessary: the `94389b5` "site address" commit changed `app.py` so `pete.peerslate.com` now redirects to `https://peerslate.com/petec` (the plan being: peerslate.com becomes the shared "PeerSlate" platform home, with Pete's own portfolio living under the `/petec` path). But peerslate.com's DNS was never pointed at Azure — it was still sitting on Porkbun's default "Easy Links" URL-forwarding product, which showed a generic "A Brand New Domain!" placeholder instead of the real site. Net effect: the redirect the app added sent every visitor into a dead end. This part finishes the setup so the code's assumption matches reality.*
+
+This is the same idea as Part 5, done twice more — once for the bare/apex domain (`peerslate.com`), once for `www.peerslate.com`. The apex domain needs an **A** or **ALIAS** record instead of a CNAME, because the DNS spec doesn't allow a CNAME at the root of a domain.
+
+1. **Azure — add both custom domains.** In the Web App's **Custom domains** page, click **+ Add custom domain** twice:
+   - `peerslate.com` — Domain source **All other domain services**, TLS/SSL **App Service Managed Certificate** (SNI SSL). Azure will show an **A record IP** (or sometimes an ALIAS target) plus a **TXT verification ID** (host `asuid`).
+   - `www.peerslate.com` — same settings. Azure shows a **CNAME value** (the same default domain as always) plus a **TXT verification ID** (host `asuid.www`).
+   Keep both dialogs open — you need the values from each.
+
+2. **Porkbun — turn off the parking/forwarding feature first.** Domain Management → peerslate.com → find **URL Forwarding** / **Easy Links** (a separate feature from DNS Records) → turn it off or delete the rule. This is the actual cause of the placeholder page — DNS records alone won't fix it while this is still on.
+
+3. **Porkbun — clean up old records.** In DNS Records, delete any leftover default entries pointing at Porkbun's parking IPs (`52.33.207.7`, `44.230.85.241`) or with Host `*`.
+
+4. **Porkbun — add the new records:**
+   - Apex: **ALIAS** record, Host blank/`@`, Answer = the azurewebsites.net default domain (e.g. `peerslate-pete-d9hhdeerd7frg2gc.centralus-01.azurewebsites.net`) — unless Azure's dialog gave a plain IP instead, in which case use an **A** record with that IP.
+   - Apex verification: **TXT**, Host `asuid`, Answer = the verification ID from Azure's peerslate.com dialog.
+   - www: **CNAME**, Host `www`, Answer = the same azurewebsites.net default domain.
+   - www verification: **TXT**, Host `asuid.www`, Answer = the verification ID from Azure's www.peerslate.com dialog.
+
+5. **Validate in Azure.** Click **Validate** → **Add** on each dialog. Wait for "Secured/Healthy" (SSL can take up to 15 min) and allow 5–30 min for DNS propagation.
+
+6. **Test:** `https://peerslate.com` should render the platform home (`peerslate.html`), `https://peerslate.com/petec` should render Pete's portfolio, and `https://pete.peerslate.com` should now redirect correctly into the real site instead of Porkbun's parking page.
+
+No extra Azure cost — the existing Basic B1 plan already covers unlimited custom domain bindings and free managed certificates.
+
+---
+
 ## Troubleshooting quick reference
 
 | Symptom | Likely cause | Fix |
@@ -211,6 +240,5 @@ Check any deploy's status in the repo's **Actions** tab on GitHub.
 
 ## Notes for the future ("subsite" roadmap)
 
-- The **root** peerslate.com is still unused. When the main PeerSlate site exists, it becomes its own app; the root domain gets an ALIAS/A record then.
+- The **root** peerslate.com and www.peerslate.com are wired up as of Part 8 (2026-07-03) — both point at the same `peerslate-pete` Azure app, with `app.py`'s `is_platform_hostname()` check deciding whether to render the platform home (`peerslate.html`) or Pete's portfolio (`index.html`, under `/petec`).
 - More tenants = more subdomains: each new customer is one CNAME + TXT pair at Porkbun pointing to their app (or eventually a wildcard `*.peerslate.com` to a single multi-tenant app — a later architecture conversation).
-- `www.peerslate.com` is also unconfigured — worth deciding where it should go when the main site launches.
