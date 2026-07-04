@@ -11,7 +11,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-4"
+    href="{{ url_for('static', filename='css/resume.css') }}?v=resume-redesign-5"
 >
 <script type="application/ld+json">
 {
@@ -39,15 +39,16 @@
 {% block content %}
 <div class="resume-page" id="resume-page">
 
-    <script type="application/json" id="resume-track-data">{{ resume.recruiter_tracks|tojson }}</script>
-
     <section class="resume-hero" aria-labelledby="resume-title">
         <div class="site-container resume-hero__grid">
             <div class="resume-hero__copy">
                 <p class="section-eyebrow">Interactive Resume</p>
-                <h1 id="resume-title">{{ resume.profile.page_title }}</h1>
-                <p class="resume-hero__name">{{ resume.profile.name }}</p>
-                <p class="resume-hero__positioning">{{ resume.profile.positioning }}</p>
+                {# The name is now the big headline (mockup style) instead of "Career Command Center". #}
+                <h1 id="resume-title">{{ resume.profile.name }}</h1>
+                {# First segment of the positioning line ("Systems Engineer") becomes the gold subtitle. #}
+                <p class="resume-hero__name">{{ resume.profile.positioning.split('|')[0]|trim }}</p>
+                {# The remaining segments become the dot-separated credential line under the subtitle. #}
+                <p class="resume-hero__positioning">{{ resume.profile.positioning.split('|')[1:]|map('trim')|join(' · ') }}</p>
                 <p class="resume-hero__summary">{{ resume.profile.summary }}</p>
 
                 <ul class="resume-credential-list" aria-label="Public credentials and status">
@@ -61,73 +62,36 @@
 
             </div>
 
-            <aside class="resume-recruiter-panel" aria-labelledby="recruiter-panel-title">
-                <p class="resume-panel-label">Recruiter Quick View</p>
-                <h2 id="recruiter-panel-title">What Are You Hiring For?</h2>
-                <p>
-                    Select a focus area to prioritize the skills, results, experience, and
-                    impact stories most relevant to your opening.
-                </p>
+            <aside class="resume-ai-panel" aria-labelledby="resume-ai-title">
+                <h2 id="resume-ai-title" class="resume-ai-panel__title">Ask Pete's AI Assistant</h2>
 
-                <div class="resume-track-row" role="group" aria-label="Recruiter focus areas">
-                    {% for track in resume.recruiter_tracks %}
-                    <button
-                        class="resume-track-chip"
-                        type="button"
-                        data-track-filter="{{ track.id }}"
-                        aria-pressed="false"
-                    >
-                        {{ track.label }}
+                {# Same shared search partial used elsewhere on the site, so the
+                   existing chatbot JavaScript keeps powering it with no changes. #}
+                {% include "partials/portfolio_ai_search.html" %}
+
+                <div class="resume-ai-suggestions" role="group" aria-label="Suggested questions">
+                    {% for question in resume.suggested_ai_questions.default %}
+                    <button class="resume-ai-suggestion" type="button" data-ai-suggestion>
+                        {{ question }}
                     </button>
                     {% endfor %}
-                    <button class="resume-track-chip is-active" type="button" data-track-filter="all" aria-pressed="true">
-                        Show All
-                    </button>
-                    <button class="resume-track-chip" type="button" data-track-filter="clear" aria-pressed="false">
-                        Clear Selection
-                    </button>
-                </div>
-
-                <p class="resume-match-summary" id="resume-match-summary" aria-live="polite">
-                    Showing all approved public resume evidence.
-                </p>
-
-                <div class="resume-panel-actions">
-                    <button class="resume-inline-button" type="button" data-scroll-target="resume-skills-section">
-                        Show Matching Evidence
-                    </button>
-                    <button class="resume-inline-button resume-inline-button--cyan" type="button" data-ask-fit>
-                        Ask About This Fit
-                    </button>
                 </div>
             </aside>
         </div>
     </section>
 
-    <div class="site-container">
-        <div class="page-ai-after-hero" aria-label="Ask Pete AI">
-            {% include "partials/portfolio_ai_search.html" %}
-        </div>
-    </div>
-
-    <section class="resume-section resume-metrics" aria-labelledby="resume-metrics-title">
+    {# Impact strip: only the first four verified metrics from resume_data.json.
+       Clicking a card still jumps to the connected role evidence below. #}
+    <section class="resume-section resume-metrics" aria-label="Impact dashboard">
         <div class="site-container">
-            <div class="resume-section-heading resume-section-heading--compact">
-                <p class="section-eyebrow">Impact Dashboard</p>
-                <h2 id="resume-metrics-title">Measurable Career Results</h2>
-            </div>
-
             <div class="resume-metric-grid">
-                {% for metric in resume.metrics %}
+                {% for metric in resume.metrics[:4] %}
                 <button
                     class="resume-metric-card"
                     type="button"
                     data-metric-id="{{ metric.id }}"
-                    data-track-ids="{{ metric.recruiter_track_ids|join(' ') }}"
                     data-role-target="{{ metric.related_role_ids[0] if metric.related_role_ids else '' }}"
                     data-evidence-target="{{ metric.highlight_evidence_id }}"
-                    data-case-target="{{ metric.related_case_study_id or '' }}"
-                    {% if metric.id == 'gpa' %}data-education-target="education-ms"{% endif %}
                 >
                     <strong>{{ metric.value }}</strong>
                     <span>{{ metric.label }}</span>
@@ -140,42 +104,21 @@
 
     <section class="resume-section resume-skills" id="resume-skills-section" aria-labelledby="resume-skills-title">
         <div class="site-container">
-            <div class="resume-section-heading resume-section-heading--with-copy">
-                <p class="section-eyebrow">Skills to Evidence</p>
-                <h2 id="resume-skills-title">Skills Backed by Experience</h2>
-                <p>
-                    Compact skills connected to the clearest public resume evidence.
-                </p>
-            </div>
-
-            <div class="resume-skill-category-row" role="group" aria-label="Skill categories">
-                {% for category in resume.skill_categories %}
-                {% if category.id != 'featured' %}
-                <button
-                    class="resume-skill-category{% if category.id == 'all' %} is-active{% endif %}"
-                    type="button"
-                    data-skill-category="{{ category.id }}"
-                    aria-pressed="{{ 'true' if category.id == 'all' else 'false' }}"
-                >
-                    {{ category.label }}
-                </button>
-                {% endif %}
-                {% endfor %}
+            <div class="resume-section-heading resume-section-heading--compact">
+                {# Compact strip-style header matching the mockup's "CORE SKILLS & EXPERTISE" label. #}
+                <h2 id="resume-skills-title" class="resume-strip-title">Core Skills &amp; Expertise</h2>
             </div>
 
             <div class="resume-skill-grid" id="resume-skill-grid">
                 {% for skill in public_skills %}
-                {% set displayed_evidence = skill.evidence_items[:2] %}
-                {% set count = displayed_evidence|length %}
                 <article
-                    class="resume-skill-card{% if skill.featured %} is-featured{% endif %}"
+                    class="resume-skill-card"
                     data-skill-card
                     data-skill-id="{{ skill.id }}"
                     data-category-id="{{ skill.category_id }}"
-                    data-featured="{{ 'true' if skill.featured else 'false' }}"
-                    data-track-ids="{{ skill.recruiter_track_ids|join(' ') }}"
-                    data-role-ids="{{ skill.related_role_ids|join(' ') }}"
                 >
+                    {# Card front shows the skill name only; the evidence popover
+                       below still opens on click, exactly like before. #}
                     <button
                         class="resume-skill-button"
                         type="button"
@@ -184,9 +127,7 @@
                         aria-controls="skill-popover-{{ skill.id }}"
                         aria-label="{{ skill.display_name }}. View supporting resume evidence."
                     >
-                        <span class="resume-relevant-badge">Relevant</span>
                         <strong>{{ skill.display_name }}</strong>
-                        <span>{{ skill.front_summary }}</span>
                     </button>
                     <div
                         class="resume-skill-popover"
@@ -198,7 +139,7 @@
                         <span class="resume-skill-kicker">Resume evidence</span>
                         <strong>{{ skill.display_name }}</strong>
                         <ul>
-                            {% for evidence in displayed_evidence %}
+                            {% for evidence in skill.evidence_items[:2] %}
                             <li>{{ evidence.text }}</li>
                             {% endfor %}
                         </ul>
@@ -397,80 +338,9 @@
         </div>
     </section>
 
-    <section class="resume-section resume-impact" id="resume-impact-section" aria-labelledby="resume-impact-title">
-        <div class="site-container">
-            <div class="resume-section-heading">
-                <p class="section-eyebrow">Accomplishment Evidence</p>
-                <h2 id="resume-impact-title">Selected Engineering Impact</h2>
-            </div>
-
-            <div class="resume-impact-grid">
-                {% for case in resume.case_studies %}
-                <button
-                    class="resume-impact-card"
-                    type="button"
-                    data-case-card="{{ case.id }}"
-                    data-track-ids="{{ case.recruiter_track_ids|join(' ') }}"
-                    aria-expanded="false"
-                >
-                    <strong>{{ case.title }}</strong>
-                    <span>Operational Need</span>
-                    <p>{{ case.operational_need }}</p>
-                    <span>Engineering Response</span>
-                    <p>{{ case.engineering_response }}</p>
-                    <span>Verified Outcome</span>
-                    <p>{{ case.verified_outcome }}</p>
-                    <em>View impact details</em>
-                </button>
-                {% endfor %}
-            </div>
-
-            <div class="resume-impact-panels">
-                {% for case in resume.case_studies %}
-                <article class="resume-impact-panel" id="case-panel-{{ case.id }}" data-case-panel="{{ case.id }}" tabindex="-1">
-                    <div>
-                        <p class="section-eyebrow">Impact Details</p>
-                        <h3>{{ case.title }}</h3>
-                        <p>{{ case.detail }}</p>
-                    </div>
-                    <div class="resume-chip-row">
-                        {% for skill_id in case.related_skill_ids %}
-                        {% for skill in public_skills %}
-                        {% if skill.id == skill_id %}
-                        <span>{{ skill.display_name }}</span>
-                        {% endif %}
-                        {% endfor %}
-                        {% endfor %}
-                    </div>
-                </article>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <section class="resume-download-panel" aria-label="Download and print resume">
-        <div class="site-container resume-download-row">
-            <a
-                class="resume-btn resume-btn--primary"
-                href="{{ url_for('static', filename=resume.profile.pdf_path) }}"
-                download
-            >
-                Download Resume PDF
-            </a>
-            <button class="resume-btn" type="button" data-print-resume>Print Resume</button>
-            <button
-                class="resume-btn"
-                type="button"
-                data-copy-linkedin
-                data-linkedin="{{ resume.profile.linkedin_url }}"
-            >
-                Copy LinkedIn URL
-            </button>
-        </div>
-    </section>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-4"></script>
+<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-5"></script>
 {% endblock %}

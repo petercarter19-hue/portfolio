@@ -31,18 +31,9 @@
     scroll-margin-top: 96px;
 }
 
-.resume-page .page-ai-after-hero {
-    max-width: 780px;
-    margin: 24px auto 28px;
-}
-
-.resume-page .page-ai-after-hero .hero-ai-search {
-    max-width: 780px;
-}
-
 .resume-section {
     position: relative;
-    padding: clamp(34px, 4vw, 48px) 0;
+    padding: clamp(20px, 2.5vw, 30px) 0;
 }
 
 .resume-section-heading {
@@ -63,9 +54,7 @@
 }
 
 .resume-section-heading h2,
-.resume-recruiter-panel h2,
-.resume-role-panel h3,
-.resume-impact-panel h3 {
+.resume-role-panel h3 {
     margin-top: 8px;
     color: var(--color-text-primary);
     font-size: clamp(1.45rem, 2.2vw, 2.25rem);
@@ -74,9 +63,16 @@
     line-height: 1.1;
 }
 
+/* Compact strip-style section title (mockup's "CORE SKILLS & EXPERTISE"). */
+.resume-strip-title {
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .resume-btn,
-.resume-track-chip,
-.resume-skill-category,
 .resume-inline-button {
     min-height: 38px;
     display: inline-flex;
@@ -97,10 +93,6 @@
 
 .resume-btn:hover,
 .resume-btn:focus-visible,
-.resume-track-chip:hover,
-.resume-track-chip:focus-visible,
-.resume-skill-category:hover,
-.resume-skill-category:focus-visible,
 .resume-inline-button:hover,
 .resume-inline-button:focus-visible {
     color: var(--color-gold-bright);
@@ -137,7 +129,7 @@
 .resume-hero {
     position: relative;
     overflow: hidden;
-    padding: clamp(30px, 4vw, 42px) 0 clamp(32px, 4vw, 46px);
+    padding: clamp(24px, 3vw, 34px) 0 clamp(18px, 2.5vw, 26px);
 }
 
 .resume-hero__grid {
@@ -159,7 +151,6 @@
     font-weight: 880;
     letter-spacing: -0.045em;
     line-height: 0.98;
-    text-transform: uppercase;
 }
 
 .resume-hero__name {
@@ -224,74 +215,76 @@
     margin-top: 16px;
 }
 
-.resume-recruiter-panel {
+/* ---------- Hero AI assistant panel ---------- */
+
+.resume-ai-panel {
     padding: 18px;
     background: linear-gradient(180deg, rgb(11 24 39 / 94%), rgb(8 20 32 / 94%));
-    border: 1px solid rgb(80 214 232 / 28%);
+    border: 1px solid var(--color-border-soft);
     border-radius: 8px;
     box-shadow: var(--shadow-card);
 }
 
-.resume-panel-label {
-    margin-bottom: 10px;
-    color: var(--color-gold);
-    font-size: 0.8rem;
+.resume-ai-panel__title {
+    margin-bottom: 12px;
+    color: var(--color-text-primary);
+    font-size: 1.12rem;
     font-weight: 850;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    letter-spacing: -0.01em;
 }
 
-.resume-recruiter-panel h2 {
-    font-size: clamp(1.45rem, 2vw, 2rem);
+/* The shared search partial has its own small "Ask Pete AI" label.
+   The panel title above already says that, so hide the label visually
+   while keeping it available to screen readers. */
+.resume-ai-panel .hero-ai-search__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }
 
-.resume-recruiter-panel p:not(.resume-panel-label) {
-    margin-top: 8px;
-    color: var(--color-text-secondary);
-    font-size: 0.94rem;
-    line-height: 1.48;
+.resume-ai-panel .hero-ai-search {
+    max-width: none;
+    margin: 0;
 }
 
-.resume-track-row,
-.resume-skill-category-row {
-    display: flex;
-    flex-wrap: wrap;
+/* Four suggested questions, always 2x2 (never 3+1) per the site layout rule. */
+.resume-ai-suggestions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    margin-top: 14px;
+    margin-top: 12px;
 }
 
-.resume-skill-category-row {
-    gap: 5px;
-    margin-top: 8px;
+.resume-ai-suggestion {
+    min-height: 40px;
+    padding: 8px 10px;
+    color: var(--color-text-secondary);
+    text-align: left;
+    background: rgb(255 255 255 / 2%);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.3;
+    transition: transform 180ms ease, color 180ms ease, border-color 180ms ease, background-color 180ms ease;
 }
 
-.resume-skill-category {
-    min-height: 28px;
-    padding: 0 8px;
-    border-radius: 5px;
-    font-size: 0.7rem;
-}
-
-.resume-track-chip.is-active,
-.resume-skill-category.is-active {
-    color: var(--color-text-dark);
-    background: linear-gradient(180deg, var(--color-gold-bright), var(--color-gold));
+.resume-ai-suggestion:hover,
+.resume-ai-suggestion:focus-visible {
+    color: var(--color-gold-bright);
     border-color: var(--color-gold);
-}
-
-.resume-match-summary {
-    padding: 10px 12px;
-    color: var(--color-text-primary) !important;
-    background: rgb(243 190 79 / 7%);
-    border: 1px solid rgb(243 190 79 / 28%);
-    border-radius: 7px;
-    font-weight: 760;
+    background: rgb(243 190 79 / 8%);
+    transform: translateY(-2px);
 }
 
 /* ---------- Metrics ---------- */
 
 .resume-metrics {
-    padding-top: clamp(28px, 4vw, 40px);
+    padding-top: clamp(14px, 2vw, 20px);
 }
 
 .resume-metric-grid {
@@ -314,9 +307,8 @@
 
 .resume-metric-card:hover,
 .resume-metric-card:focus-visible,
-.resume-metric-card.is-relevant,
 .resume-metric-card.is-selected {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     border-color: var(--color-gold);
     box-shadow: 0 0 22px rgb(243 190 79 / 15%);
 }
@@ -339,11 +331,15 @@
 }
 
 .resume-metric-card small {
-    display: block;
+    display: -webkit-box;
+    overflow: hidden;
     margin-top: 6px;
     color: var(--color-text-muted);
     font-size: 0.8rem;
     line-height: 1.3;
+    /* Keep the context sentence to two lines so all four cards stay the same height. */
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 /* ---------- Compact skill evidence buttons ---------- */
@@ -351,31 +347,26 @@
 .resume-skill-grid {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    /* 21 public skills = 3 tidy rows of 7 on desktop. */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 8px;
     margin-top: 10px;
 }
 
 .resume-skill-card {
     position: relative;
-    transition: opacity 180ms ease, transform 180ms ease, order 180ms ease;
-}
-
-.resume-skill-card.is-hidden-by-category {
-    display: none;
+    transition: opacity 180ms ease, transform 180ms ease;
 }
 
 .resume-skill-button {
     width: 100%;
-    min-height: 84px;
+    min-height: 44px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 10px;
+    padding: 6px 8px;
     color: inherit;
-    text-align: left;
+    text-align: center;
     background: linear-gradient(180deg, rgb(11 24 39 / 96%), rgb(8 20 32 / 96%));
     border: 1px solid var(--color-border-soft);
     border-radius: 8px;
@@ -389,7 +380,8 @@
 .resume-skill-card.is-popover-open .resume-skill-button {
     border-color: var(--color-gold);
     background: linear-gradient(180deg, rgb(14 31 48 / 98%), rgb(9 22 35 / 98%));
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    box-shadow: 0 0 22px rgb(243 190 79 / 15%);
 }
 
 .resume-skill-button:focus-visible {
@@ -397,25 +389,11 @@
     outline-offset: 5px;
 }
 
-.resume-skill-card.is-relevant .resume-skill-button {
-    border-color: var(--color-gold);
-}
-
 .resume-skill-button strong {
     color: var(--color-text-primary);
-    font-size: 0.79rem;
+    font-size: 0.86rem;
     font-weight: 850;
     line-height: 1.16;
-}
-
-.resume-skill-button > span:not(.resume-relevant-badge) {
-    display: -webkit-box;
-    overflow: hidden;
-    color: var(--color-text-secondary);
-    font-size: 0.66rem;
-    line-height: 1.24;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
 }
 
 .resume-skill-popover {
@@ -467,24 +445,6 @@
     line-height: 1.2;
 }
 
-.resume-relevant-badge {
-    display: none;
-    align-self: flex-start;
-    margin-bottom: 4px;
-    padding: 2px 6px;
-    color: var(--color-text-dark);
-    background: var(--color-gold);
-    border-radius: 999px;
-    font-size: 0.62rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.resume-skill-card.is-relevant .resume-relevant-badge {
-    display: inline-flex;
-}
-
 .resume-skill-kicker {
     color: var(--color-cyan);
     font-size: 0.6rem;
@@ -519,8 +479,6 @@
 }
 
 .resume-education-card,
-.resume-project-card,
-.resume-impact-panel,
 .resume-role-panel {
     background: linear-gradient(180deg, rgb(11 24 39 / 94%), rgb(8 20 32 / 94%));
     border: 1px solid var(--color-border-soft);
@@ -560,9 +518,7 @@
     font-weight: 800;
 }
 
-.resume-education-card p,
-.resume-project-card p,
-.resume-impact-panel p {
+.resume-education-card p {
     margin-top: 8px;
     color: var(--color-text-secondary);
     font-size: 0.92rem;
@@ -615,8 +571,7 @@
     gap: 12px;
 }
 
-.resume-role-card,
-.resume-impact-card {
+.resume-role-card {
     color: inherit;
     text-align: left;
     background: linear-gradient(180deg, rgb(11 24 39 / 94%), rgb(8 20 32 / 94%));
@@ -633,13 +588,8 @@
 
 .resume-role-card:hover,
 .resume-role-card:focus-visible,
-.resume-role-card.is-selected,
-.resume-role-card.is-relevant,
-.resume-impact-card:hover,
-.resume-impact-card:focus-visible,
-.resume-impact-card.is-selected,
-.resume-impact-card.is-relevant {
-    transform: translateY(-3px);
+.resume-role-card.is-selected {
+    transform: translateY(-4px);
     border-color: var(--color-gold);
     box-shadow: 0 0 22px rgb(243 190 79 / 14%);
 }
@@ -652,9 +602,7 @@
     text-transform: uppercase;
 }
 
-.resume-role-card strong,
-.resume-impact-card strong,
-.resume-project-card h3 {
+.resume-role-card strong {
     display: block;
     margin-top: 7px;
     color: var(--color-text-primary);
@@ -810,121 +758,10 @@
     }
 }
 
-/* ---------- Impact and projects ---------- */
-
-.resume-impact-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.resume-impact-card {
-    padding: 16px;
-}
-
-.resume-impact-card span {
-    display: block;
-    margin-top: 10px;
-    color: var(--color-gold);
-    font-size: 0.78rem;
-    font-weight: 850;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.resume-impact-card p {
-    margin-top: 5px;
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.38;
-}
-
-.resume-impact-card em {
-    display: block;
-    margin-top: 10px;
-    color: var(--color-cyan);
-    font-style: normal;
-    font-weight: 850;
-}
-
-.resume-impact-panels {
-    margin-top: 12px;
-}
-
-.resume-impact-panel {
-    display: none;
-    padding: 16px;
-}
-
-.resume-impact-panel.is-active {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
-    gap: 16px;
-}
-
-.resume-project-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.resume-project-card {
-    padding: 26px;
-}
-
-.resume-project-feature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    margin-top: 18px;
-}
-
-.resume-project-feature-grid h4 {
-    margin-bottom: 8px;
-    color: var(--color-gold);
-    font-size: 0.86rem;
-    font-weight: 850;
-}
-
-.resume-project-feature-grid ul {
-    padding-left: 18px;
-}
-
-.resume-project-feature-grid li {
-    margin-bottom: 7px;
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.45;
-}
-
-/* ---------- Final actions ---------- */
-
-.resume-download-panel {
-    position: relative;
-    padding: 12px 0 34px;
-}
-
-.resume-download-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    padding: 12px;
-    background: linear-gradient(180deg, rgb(11 24 39 / 94%), rgb(8 20 32 / 94%));
-    border: 1px solid rgb(243 190 79 / 26%);
-    border-radius: 8px;
-}
-
-.resume-page .is-muted {
-    opacity: 0.46;
-}
-
-.resume-page .is-relevant {
-    border-color: var(--color-gold);
-}
-
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1180px) {
+    /* Four metric cards: 2x2 on mid-size screens (never 3+1). */
     .resume-metric-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -933,15 +770,13 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
-    .resume-education-grid,
-    .resume-project-feature-grid {
+    .resume-education-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 940px) {
-    .resume-hero__grid,
-    .resume-impact-panel.is-active {
+    .resume-hero__grid {
         grid-template-columns: 1fr;
     }
 
@@ -975,21 +810,24 @@
 
 @media (max-width: 700px) {
     .resume-section {
-        padding: 30px 0;
+        padding: 20px 0;
     }
 
     .resume-hero {
-        padding: 30px 0 34px;
+        padding: 22px 0 18px;
     }
 
     .resume-hero h1 {
         font-size: clamp(2.35rem, 12vw, 3.4rem);
     }
 
-    .resume-metric-grid,
-    .resume-education-grid,
-    .resume-impact-grid,
-    .resume-project-feature-grid {
+    /* Metric cards stay 2x2 even on phones (site rule: groups of 4
+       display as 4-across or 2x2, never a lone card at the bottom). */
+    .resume-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .resume-education-grid {
         grid-template-columns: 1fr;
     }
 
@@ -998,26 +836,18 @@
     }
 
     .resume-actions,
-    .resume-panel-actions,
-    .resume-download-row {
+    .resume-panel-actions {
         flex-direction: column;
         align-items: stretch;
     }
 
     .resume-btn,
-    .resume-inline-button,
-    .resume-track-chip,
-    .resume-skill-category {
+    .resume-inline-button {
         width: 100%;
     }
 
-    .resume-skill-category {
-        width: auto;
-        flex: 1 1 calc(50% - 6px);
-    }
-
     .resume-skill-button {
-        min-height: 78px;
+        min-height: 44px;
     }
 
     .resume-skill-popover {
@@ -1054,14 +884,10 @@
     .footer,
     #chat-toggle,
     #chat-panel,
-    .page-ai-after-hero,
-    .resume-recruiter-panel,
-    .resume-track-row,
-    .resume-skill-category-row,
+    .resume-ai-panel,
     .resume-actions,
     .resume-panel-actions,
     .resume-inline-button,
-    .resume-download-panel,
     .resume-page::before,
     .resume-page::after,
     .main-content::before {
@@ -1072,8 +898,6 @@
     .resume-hero,
     .resume-section,
     .resume-role-panel,
-    .resume-impact-panel,
-    .resume-project-card,
     .resume-education-card {
         color: #111827 !important;
         background: #ffffff !important;
@@ -1091,31 +915,26 @@
     .resume-metric-grid,
     .resume-skill-grid,
     .resume-education-grid,
-    .resume-role-detail-grid,
-    .resume-impact-grid,
-    .resume-project-feature-grid {
+    .resume-role-detail-grid {
         display: block !important;
     }
 
     .resume-hero h1,
     .resume-section-heading h2,
+    .resume-strip-title,
     .resume-role-panel h3,
     .resume-skill-button strong,
     .resume-skill-popover strong,
-    .resume-impact-card strong,
-    .resume-project-card h3,
     .resume-education-card strong {
         color: #111827 !important;
     }
 
     .section-eyebrow,
     .resume-hero__name,
-    .resume-panel-label,
     .resume-role-date,
     .resume-status-badge,
     .resume-skill-kicker,
-    .resume-role-detail-grid h4,
-    .resume-impact-card span {
+    .resume-role-detail-grid h4 {
         color: #374151 !important;
         background: transparent !important;
     }
@@ -1126,11 +945,7 @@
     .resume-metric-card small,
     .resume-role-detail-grid p,
     .resume-role-detail-grid li,
-    .resume-skill-button > span:not(.resume-relevant-badge),
     .resume-skill-popover li,
-    .resume-impact-card p,
-    .resume-project-card p,
-    .resume-project-feature-grid li,
     .resume-education-card p {
         color: #1f2937 !important;
     }
@@ -1139,9 +954,7 @@
     .resume-skill-card,
     .resume-education-card,
     .resume-role-card,
-    .resume-role-panel,
-    .resume-impact-card,
-    .resume-project-card {
+    .resume-role-panel {
         break-inside: avoid;
         margin: 0 0 12px !important;
         border: 1px solid #d1d5db !important;
@@ -1164,16 +977,11 @@
         padding: 12px !important;
     }
 
-    .resume-skill-popover::before,
-    .resume-relevant-badge {
+    .resume-skill-popover::before {
         display: none !important;
     }
 
     .resume-role-panel {
-        display: block !important;
-    }
-
-    .resume-impact-panel {
         display: block !important;
     }
 }

@@ -68,6 +68,15 @@ Two goals:
 4. Build admin dashboard to view chat logs
 5. Eventually: smarter retrieval, security hardening, and public deployment
 
+## Recent Session Updates (2026-07-04 — interactive resume redesign, Mac, branch main)
+- /petec/resume page rebuilt to match Pete's mockup: hero is now name headline (left) + "Ask Pete's AI Assistant" panel (right) with the shared search partial and 4 suggested-question chips (2x2) from resume_data.json suggested_ai_questions.
+- Removed from the resume page: Recruiter Quick View track filtering (and all its JS), the full-width AI bar below the hero, the Skills to Evidence category filter buttons and skill front summaries, the Selected Engineering Impact case-study section, and the Download/Print/LinkedIn bar. resume_data.json itself was NOT changed — unused data (recruiter_tracks, case_studies, metrics 5-8) is still there if needed later.
+- Impact strip now shows only the first 4 metrics from resume_data.json ($36M+, 16 to 0, 70%, 52%); cards still click through to the connected role evidence. Metric grid is 4-across / 2x2 at every width per the groups-of-4 rule.
+- Skills: all 21 public skills as compact name-only cards, 7 across on desktop (3 rows), evidence popovers unchanged. Pete wants to fine-tune this grid later.
+- resume.js rewritten slim (popovers, role selection, metric jumps, ask-AI buttons, suggestion chips). Cache-buster bumped to ?v=resume-redesign-5 on resume.css/resume.js.
+- Career Experience and Education sections untouched.
+- OBSERVED during testing: the chatbot answered a resume question with "two decades of experience," which does not match the career history (EE degree 2020). Knowledge-base/prompt quality issue to review.
+
 ## Recent Session Updates (2026-07-02 — header menu, Fun Facts, card polish; branch feature/my-story-page)
 - Pete is now working on a Windows 11 machine (repo at C:\Users\peter\Documents\portfolio). venv activation is `venv\Scripts\activate`; .claude/launch.json points at venv/Scripts/python.exe. app.py reads the PORT env var (falls back to 5000).
 - Site is planned to become a multi-tenant business (other people get their own portfolio sites). First step: top-left dropdown menu in the header (currently just "Homepage"); brand + nav links shifted right to make room.
