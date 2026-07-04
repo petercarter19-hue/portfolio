@@ -116,24 +116,14 @@
     <!-- ============================================
          FUN FACTS: three facts from the pool below. One
          card refreshes every five seconds, so all three
-         cards change over a fifteen-second cycle. Placed
-         right under the hero, above My Journey.
+         cards change over a fifteen-second cycle on their
+         own (no button). Placed right under the hero,
+         above My Journey.
          ============================================ -->
     <section class="fun-facts" aria-labelledby="fun-facts-title">
         <div class="site-container">
             <div class="fun-facts__header">
-                <div>
-                    <p class="section-eyebrow">FUN FACTS</p>
-                    <h2 id="fun-facts-title">Things You Won't Find on My Résumé</h2>
-                </div>
-
-                <button class="fun-facts__shuffle" id="fun-facts-shuffle" type="button">
-                    <!-- Shuffle arrows icon -->
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 7h4l10 10h4M17 3l4 4-4 4M3 17h4l2.5-2.5M13.5 9.5L17 7h4M17 13l4 4-4 4"/>
-                    </svg>
-                    Show Me More
-                </button>
+                <h2 id="fun-facts-title">Things You Won't Find on My Résumé</h2>
             </div>
 
             <!-- The script fills this grid with three rotating facts. -->
@@ -501,8 +491,8 @@
 <!-- ======================================================
      FUN FACTS ROTATION
      Picks three random facts on load, then refreshes one
-     card every five seconds. The "Show Me More" button
-     redraws all three without reloading.
+     card every five seconds, cycling through the pool on
+     its own.
      ====================================================== -->
 <script>
     (function () {
@@ -520,7 +510,6 @@
         ];
 
         const grid = document.getElementById('fun-facts-grid');
-        const shuffleBtn = document.getElementById('fun-facts-shuffle');
         const ROTATE_MS = 5000;
         let visibleFacts = [];
         let nextSlot = 0;
@@ -598,9 +587,7 @@
             nextSlot = (nextSlot + 1) % 3;
         }
 
-        // Restarts the 5-second timer. Called after "Show Me More" resets
-        // all three cards, so the rotation always waits a full interval
-        // before the next automatic swap.
+        // Starts the 5-second timer that swaps one card at a time.
         function startRotation() {
             window.clearInterval(rotationTimer);
             rotationTimer = window.setInterval(rotateOneFact, ROTATE_MS);
@@ -612,7 +599,6 @@
             startRotation();
         }
 
-        shuffleBtn.addEventListener('click', showRandomFacts);
         showRandomFacts();
     })();
 </script>

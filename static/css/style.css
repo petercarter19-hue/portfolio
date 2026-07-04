@@ -2644,7 +2644,7 @@ body[data-theme="slate-light"] .footer {
 .my-story-page {
     position: relative;
     isolation: isolate;
-    padding-bottom: 70px;
+    padding-bottom: 36px;
     overflow: hidden;
     background:
         linear-gradient(180deg, rgb(3 11 22 / 12%), rgb(3 11 22 / 72%)),
@@ -2690,8 +2690,9 @@ body[data-theme="slate-light"] .footer {
     grid-template-columns: minmax(430px, 0.9fr) minmax(300px, 1.1fr);
     align-items: center;
     gap: clamp(22px, 4vw, 64px);
-    padding-top: clamp(30px, 3vw, 46px);
-    padding-bottom: clamp(18px, 2vw, 28px);
+    padding-top: clamp(24px, 2.5vw, 34px);
+    /* Kept small so Fun Facts sits close under the hero's AI search box. */
+    padding-bottom: clamp(6px, 1vw, 10px);
 }
 
 .story-hero__content {
@@ -2802,6 +2803,11 @@ body[data-theme="slate-light"] .footer {
        padding preserves side breathing room without shrinking the
        visible collage. */
     padding: 6px clamp(10px, 1.5vw, 20px);
+    /* The mask on .portrait-frame fades the collage's bottom ~15% to fully
+       transparent, so this negative margin pulls that invisible strip back
+       out of the layout. It lets the collage render larger without making
+       the hero row taller (which would re-open the gap above Fun Facts). */
+    margin-bottom: -72px;
 }
 
 /* Soft ambient glow behind the collage so it reads as part of the
@@ -2809,29 +2815,32 @@ body[data-theme="slate-light"] .footer {
 .story-hero__portrait::before {
     content: "";
     position: absolute;
-    width: clamp(360px, 40vw, 560px);
+    width: clamp(380px, 44vw, 620px);
     aspect-ratio: 4 / 5;
     border-radius: 40px;
+    /* Toned down so the halo reads as ambient light, not a visible shape
+       behind the collage. */
     background:
-        radial-gradient(circle, rgb(78 163 255 / 16%) 0 42%, transparent 72%),
-        radial-gradient(circle, rgb(243 190 79 / 10%) 0 36%, transparent 70%);
-    filter: blur(20px);
+        radial-gradient(circle, rgb(78 163 255 / 10%) 0 42%, transparent 72%),
+        radial-gradient(circle, rgb(243 190 79 / 6%) 0 36%, transparent 70%);
+    filter: blur(26px);
     pointer-events: none;
 }
 
 /* No hard frame or circular crop: a soft radial mask fades the
-   collage's own dark edges into the page background so the photo
-   blends in instead of reading as a cropped rectangle. The fade now
-   starts earlier (42%) and reaches fully transparent before the
-   image edge (88%), so none of the photo's straight rectangular
-   edges survive — they dissolve into the dark background. */
+   collage's own edges into the page background so the photo blends
+   in instead of reading as a cropped rectangle (fade values are on
+   the mask-image lines below). */
 .portrait-frame {
     position: relative;
-    width: clamp(300px, 34vw, 410px);
+    width: clamp(320px, 38vw, 480px);
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
-    -webkit-mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 42%, transparent 88%);
+    /* Fade starts earlier (30% vs 42%) and finishes sooner (78% vs 88%),
+       so the collage's edges dissolve into the dark page background
+       instead of reading as a photo with a visible boundary. */
+    mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 30%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 30%, transparent 78%);
 }
 
 .portrait-frame img {
@@ -2839,7 +2848,9 @@ body[data-theme="slate-light"] .footer {
     height: 100%;
     object-fit: cover;
     object-position: center top;
-    filter: saturate(1.08) contrast(1.05);
+    /* Slightly muted so the photos sit in the page's dark palette instead
+       of popping brighter than everything around them. */
+    filter: saturate(0.96) brightness(0.94);
 }
 
 /* ---------- Hero AI search ----------
@@ -2877,7 +2888,7 @@ body[data-theme="slate-light"] .footer {
 /* Noticeably lighter band with gold edges so the journey section
    pops against the near-black page background. */
 .story-journey {
-    padding: 18px 0 24px;
+    padding: 6px 0 12px;
 }
 
 .story-journey h2,
@@ -3013,7 +3024,7 @@ body[data-theme="slate-light"] .footer {
 /* ---------- Values (What Drives Me) ---------- */
 
 .story-drives {
-    padding: 34px 0 16px;
+    padding: 10px 0 12px;
 }
 
 /* Heading column beside the four cards, matching the mockup layout */
@@ -3235,59 +3246,25 @@ body[data-theme="slate-light"] .footer {
 
 /* ---------- Fun facts ---------- */
 
+/* Kept tight top and bottom: Fun Facts now sits between the hero's Ask
+   Pete AI box and the My Journey band, so both gaps should stay small. */
+/* No top padding: this section should hug the hero's AI search box.
+   (The old FUN FACTS eyebrow and Show Me More button were removed —
+   the cards rotate on their own.) */
 .fun-facts {
-    padding: 26px 0 10px;
+    padding: 0 0 8px;
 }
 
 .fun-facts__header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 .fun-facts__header h2 {
-    margin-top: 8px;
     color: var(--color-text-primary);
     font-size: clamp(1.35rem, 1.8vw, 1.7rem);
     font-weight: 820;
     letter-spacing: -0.03em;
     line-height: 1.2;
-}
-
-.fun-facts__shuffle {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 38px;
-    padding: 0 18px;
-    color: var(--color-gold);
-    background: transparent;
-    border: 1px solid var(--color-border-gold);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 750;
-    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
-}
-
-.fun-facts__shuffle:hover,
-.fun-facts__shuffle:focus-visible {
-    color: var(--color-gold-bright);
-    border-color: var(--color-gold);
-    background: rgb(243 190 79 / 8%);
-}
-
-.fun-facts__shuffle svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .fun-facts__grid {
@@ -3380,11 +3357,11 @@ body[data-theme="slate-light"] .footer {
 
 @media (max-width: 900px) {
     .story-hero__portrait::before {
-        width: clamp(300px, 44vw, 420px);
+        width: clamp(310px, 46vw, 460px);
     }
 
     .portrait-frame {
-        width: clamp(270px, 40vw, 380px);
+        width: clamp(280px, 42vw, 420px);
     }
 
     .story-timeline {
@@ -3429,7 +3406,7 @@ body[data-theme="slate-light"] .footer {
         align-items: center;
         gap: 0 16px;
         padding-top: 42px;
-        padding-bottom: 34px;
+        padding-bottom: 16px;
     }
 
     .story-hero__content {
@@ -3460,6 +3437,10 @@ body[data-theme="slate-light"] .footer {
         grid-area: portrait;
         width: 100%;
         padding: 0;
+        /* Cancel the desktop negative margin: in this stacked phone grid the
+           collage shares a row with the headline/values, so pulling its
+           bottom up would make it overlap the AI search box below. */
+        margin-bottom: 0;
     }
 
     /* Collage scales with the viewport (40vw) so bigger phones get a
@@ -3526,7 +3507,7 @@ body[data-theme="slate-light"] .footer {
 
     .story-hero__grid {
         padding-top: 36px;
-        padding-bottom: 32px;
+        padding-bottom: 14px;
     }
 }
 
