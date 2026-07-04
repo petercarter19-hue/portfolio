@@ -2037,7 +2037,6 @@ body[data-theme="slate-light"] .hero-ai-answer,
 body[data-theme="slate-light"] .lifecycle-center,
 body[data-theme="slate-light"] .lifecycle-node,
 body[data-theme="slate-light"] .metric-card,
-body[data-theme="slate-light"] .story-banner,
 body[data-theme="slate-light"] .story-card,
 body[data-theme="slate-light"] .story-timeline__item,
 body[data-theme="slate-light"] .story-drive-card,
@@ -2429,8 +2428,14 @@ body[data-theme="slate-light"] .footer {
         gap: 13px;
     }
 
+    /* Pins the LinkedIn icon to the top-right corner, mirroring how
+       .nav-menu (the hamburger button) pins to the top-left above.
+       Taking it out of .nav-right's centered column like this is what
+       keeps it from stacking underneath the nav links. */
     .nav-actions {
-        justify-self: center;
+        position: absolute;
+        top: 14px;
+        right: 16px;
     }
 
     .nav-links {
@@ -2837,51 +2842,19 @@ body[data-theme="slate-light"] .footer {
     filter: saturate(1.08) contrast(1.05);
 }
 
-/* ---------- Hero positioning statement ---------- */
+/* ---------- Hero AI search ----------
+   Ask Pete AI, embedded directly inside the hero copy column
+   (replacing the old "Combining technical depth..." banner text)
+   so it sits right under the hero like it does on the homepage. */
 
-.story-banner {
-    width: fit-content;
-    max-width: 100%;
-    display: inline-flex;
-    align-items: center;
-    margin-top: 18px;
-    padding: 9px 14px;
-    background: linear-gradient(180deg, #0b1827, #081420);
-    border: 1px solid rgb(243 190 79 / 38%);
-    border-radius: 10px;
+.story-hero__ai {
+    max-width: 590px;
+    margin-top: 16px;
 }
 
-.story-banner__statement {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding-right: 0;
-}
-
-.story-banner__icon {
-    width: 30px;
-    height: 30px;
-    flex: 0 0 30px;
-    display: grid;
-    place-items: center;
-    color: var(--color-gold);
-}
-
-.story-banner__icon svg {
-    width: 25px;
-    height: 25px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.story-banner__statement p {
-    max-width: 520px;
-    color: var(--color-text-primary);
-    font-size: 0.8rem;
-    line-height: 1.38;
+.story-hero__ai .hero-ai-search {
+    max-width: none;
+    margin: 0;
 }
 
 /* Keep the desktop My Story hero compact: the collage should support
@@ -3440,19 +3413,19 @@ body[data-theme="slate-light"] .footer {
 
 @media (max-width: 780px) {
     /* The hero keeps its desktop shape on phones: headline and value
-       chips on the left, collage on the right, and the banner card
+       chips on the left, collage on the right, and the AI search box
        spanning the full width underneath both columns.
        "display: contents" below dissolves the .story-hero__content
        wrapper box so its children (headline block, values row,
-       banner) can be placed directly onto this grid as if they were
-       its own children — that's what lets the banner escape the left
-       column and stretch across the whole row. */
+       AI search) can be placed directly onto this grid as if they
+       were its own children — that's what lets the AI search box
+       escape the left column and stretch across the whole row. */
     .story-hero__grid {
         grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
         grid-template-areas:
             "headline portrait"
             "values   portrait"
-            "banner   banner";
+            "ai       ai";
         align-items: center;
         gap: 0 16px;
         padding-top: 42px;
@@ -3509,19 +3482,11 @@ body[data-theme="slate-light"] .footer {
         opacity: 0.18;
     }
 
-    .story-banner {
-        grid-area: banner;
+    .story-hero__ai {
+        grid-area: ai;
+        max-width: none;
         width: 100%;
         margin-top: 22px;
-    }
-
-    .story-banner__statement {
-        min-width: 0;
-        border-right: none;
-    }
-
-    .story-banner__statement p {
-        min-width: 0;
     }
 
     .story-journey__layout {
@@ -3562,20 +3527,6 @@ body[data-theme="slate-light"] .footer {
     .story-hero__grid {
         padding-top: 36px;
         padding-bottom: 32px;
-    }
-
-    .story-banner {
-        padding: 12px 14px;
-    }
-
-    .story-banner__statement {
-        align-items: flex-start;
-    }
-
-    .story-banner__statement p {
-        max-width: none;
-        font-size: 0.86rem;
-        overflow-wrap: anywhere;
     }
 }
 
