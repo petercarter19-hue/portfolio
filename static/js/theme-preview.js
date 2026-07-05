@@ -3,7 +3,7 @@
 // different color scheme and has the site remember their choice.
 
 (function () {
-    const defaultTheme = 'command-gold';
+    const defaultTheme = 'blueprint-light';
     // The key used to save the choice in the browser's localStorage, so the
     // theme is still applied the next time this visitor comes back.
     const storageKey = 'peerslateTheme';
@@ -25,9 +25,17 @@
     }
 
     // Restore the visitor's last choice on page load (falls back to the
-    // site's default gold theme for a first-time visitor).
-    const savedTheme = localStorage.getItem(storageKey) || defaultTheme;
-    applyTheme(savedTheme);
+    // site's default theme for a first-time visitor).
+    // Guard: only trust the saved name if a matching theme button still
+    // exists — a visitor might have a removed theme (e.g. the old
+    // "slate-light") saved in localStorage, which would otherwise leave
+    // the site with no matching CSS variable block.
+    const savedTheme = localStorage.getItem(storageKey);
+    const savedThemeExists = Array.prototype.some.call(
+        themeButtons,
+        function (button) { return button.dataset.themeOption === savedTheme; }
+    );
+    applyTheme(savedThemeExists ? savedTheme : defaultTheme);
 
     themeButtons.forEach(function (button) {
         button.addEventListener('click', function (event) {

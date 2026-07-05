@@ -140,35 +140,47 @@ body[data-theme="modern-blue"] {
     --border-light: rgb(15 23 42 / 12%);
 }
 
-body[data-theme="slate-light"] {
-    --color-page: #eef3f8;
-    --color-page-deep: #dfe7f0;
-    --color-section: #f7fafc;
-    --color-card: #f9fbfd;
-    --color-card-elevated: #eef4f9;
-    --color-card-hover: #e6eef7;
-    --color-gold: #3b82f6;
-    --color-gold-bright: #2563eb;
-    --color-gold-muted: #5b78a6;
-    --color-gold-dark: #1e3a8a;
-    --color-blue: #2f7ed8;
-    --color-cyan: #1476a8;
-    --color-text-primary: #1f2937;
-    --color-text-secondary: #475569;
-    --color-text-muted: #6b7788;
+/* Blueprint Light: a clean, professional light mode styled like an
+   engineering blueprint — pale blue page, navy text, teal/cyan primary
+   accents, and a single amber highlight reserved for the money metrics.
+   The blueprint palette is mapped onto the SAME variable names every other
+   theme uses (e.g. --color-gold becomes teal here), so the whole site
+   recolors instantly with no other changes. The structural fixes that a
+   light background needs (readable header, cards, chatbot, hero grid) live
+   in the LIGHT THEME COMPATIBILITY section lower down this file. */
+body[data-theme="blueprint-light"] {
+    --color-page: #f4f9fc;
+    --color-page-deep: #edf6fb;
+    --color-section: #f8fcff;
+    --color-card: #ffffff;
+    --color-card-elevated: #f8fcff;
+    --color-card-hover: #eef6fb;
+    /* --color-gold is the site's "primary accent" slot (buttons, links,
+       highlights). In Blueprint Light that primary becomes teal/cyan. */
+    --color-gold: #0796b8;
+    --color-gold-bright: #0ea5c6;
+    --color-gold-muted: #047fa0;
+    --color-gold-dark: #047fa0;
+    --color-blue: #1f6feb;
+    --color-cyan: #0ea5c6;
+    --color-text-primary: #08204a;
+    --color-text-secondary: #405875;
+    --color-text-muted: #6d7f96;
     --color-text-dark: #ffffff;
-    --color-border: #c6d2df;
-    --color-border-soft: #d9e2ec;
-    --color-border-gold: #7da5dc;
-    --shadow-card: 0 18px 45px rgb(31 41 55 / 8%);
-    --shadow-gold: 0 0 18px rgb(59 130 246 / 12%);
-    --navy-900: #233247;
-    --navy-800: #33445c;
-    --navy-700: #3b82f6;
-    --surface: #f4f7fb;
-    --text-dark: #1f2937;
-    --text-muted: #6b7788;
-    --border-light: rgb(15 23 42 / 12%);
+    --color-border: #cfe0eb;
+    --color-border-soft: #cfe0eb;
+    --color-border-gold: #7fb8cf;
+    --shadow-card: 0 18px 45px rgb(8 32 74 / 14%);
+    --shadow-gold: 0 0 18px rgb(7 150 184 / 16%);
+    --navy-900: #08204a;
+    --navy-800: #12305c;
+    --navy-700: #0796b8;
+    --surface: #f8fcff;
+    --text-dark: #08204a;
+    --text-muted: #6d7f96;
+    --border-light: rgb(8 32 74 / 12%);
+    /* Reserved highlight used ONLY for money/impact stats (e.g. $36M+). */
+    --accent-amber: #f59e0b;
 }
 
 body[data-theme="secure-green"] {
@@ -1969,183 +1981,311 @@ button:focus-visible {
    LIGHT THEME COMPATIBILITY
    ========================================================= */
 
-body[data-theme="slate-light"] {
+
+/* ---------------------------------------------------------
+   BLUEPRINT LIGHT theme structural overrides.
+   Blueprint palette: navy text, teal/cyan accents, soft
+   blue-gray borders, and navy-tinted shadows. These handle the
+   parts of the page that use hard-coded dark colors instead of
+   theme variables, so a light background stays readable and
+   dimensional.
+   --------------------------------------------------------- */
+
+/* Airy blueprint page background: faint 48px grid + a soft teal
+   radial glow over a very light blue gradient (not flat white). */
+body[data-theme="blueprint-light"] {
     background:
-        radial-gradient(circle at 65% 18%, rgb(59 130 246 / 5%), transparent 32%),
-        radial-gradient(circle at 12% 42%, rgb(20 118 168 / 5%), transparent 30%),
-        linear-gradient(180deg, #eef3f8 0%, #f8fafc 48%, #eef3f8 100%);
+        radial-gradient(circle at 70% 20%, rgb(7 150 184 / 10%), transparent 34%),
+        linear-gradient(rgb(31 111 235 / 4.5%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(31 111 235 / 4.5%) 1px, transparent 1px),
+        linear-gradient(180deg, #f4f9fc 0%, #f8fcff 48%, #edf6fb 100%);
+    background-size: auto, 48px 48px, 48px 48px, auto;
 }
 
-body[data-theme="slate-light"] .site-header {
-    background: rgb(248 250 252 / 92%);
-    border-bottom: 1px solid rgb(31 41 55 / 10%);
+body[data-theme="blueprint-light"] .site-header {
+    background: rgb(255 255 255 / 82%);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-border);
 }
 
-body[data-theme="slate-light"] .nav-menu-btn,
-body[data-theme="slate-light"] .nav-linkedin {
+body[data-theme="blueprint-light"] .nav-menu-btn,
+body[data-theme="blueprint-light"] .nav-linkedin {
     color: var(--color-text-secondary);
     background: rgb(255 255 255 / 72%);
-    border-color: var(--color-border-soft);
+    border-color: var(--color-border);
 }
 
-body[data-theme="slate-light"] .nav-menu-btn:hover,
-body[data-theme="slate-light"] .nav-menu-btn:focus-visible,
-body[data-theme="slate-light"] .nav-menu-btn[aria-expanded="true"],
-body[data-theme="slate-light"] .nav-linkedin:hover,
-body[data-theme="slate-light"] .nav-linkedin:focus-visible {
-    color: var(--color-gold-bright);
-    background: rgb(59 130 246 / 8%);
+body[data-theme="blueprint-light"] .nav-menu-btn:hover,
+body[data-theme="blueprint-light"] .nav-menu-btn:focus-visible,
+body[data-theme="blueprint-light"] .nav-menu-btn[aria-expanded="true"],
+body[data-theme="blueprint-light"] .nav-linkedin:hover,
+body[data-theme="blueprint-light"] .nav-linkedin:focus-visible {
+    color: var(--color-gold-muted);
+    background: rgb(7 150 184 / 8%);
     border-color: var(--color-border-gold);
 }
 
-body[data-theme="slate-light"] .nav-menu-dropdown {
-    background: linear-gradient(180deg, #ffffff, #f6f9fc);
-    box-shadow: 0 18px 45px rgb(15 23 42 / 12%);
+body[data-theme="blueprint-light"] .nav-menu-dropdown {
+    background: linear-gradient(180deg, #ffffff, #f4f9fc);
+    box-shadow: 0 18px 45px rgb(8 32 74 / 12%);
 }
 
-body[data-theme="slate-light"] .nav-name,
-body[data-theme="slate-light"] .nav-links a,
-body[data-theme="slate-light"] .nav-tagline {
+body[data-theme="blueprint-light"] .nav-name,
+body[data-theme="blueprint-light"] .nav-links a {
     color: var(--color-text-secondary);
 }
 
-body[data-theme="slate-light"] .nav-name {
+body[data-theme="blueprint-light"] .nav-name {
     color: var(--color-text-primary);
 }
 
-body[data-theme="slate-light"] .main-content::before,
-body[data-theme="slate-light"] .hero-circuit,
-body[data-theme="slate-light"] .story-hero-circuit {
-    opacity: 0.055;
-    filter: saturate(1.05) brightness(0.94) contrast(0.98);
+/* Blueprint spec: the "SYSTEMS ENGINEER" label reads in the teal primary. */
+body[data-theme="blueprint-light"] .nav-tagline {
+    color: var(--color-gold-muted);
 }
 
-body[data-theme="slate-light"] .hero::before,
-body[data-theme="slate-light"] .story-hero::before {
+body[data-theme="blueprint-light"] .main-content::before,
+body[data-theme="blueprint-light"] .hero-circuit,
+body[data-theme="blueprint-light"] .story-hero-circuit {
+    opacity: 0.06;
+    filter: saturate(1.05) brightness(0.96) contrast(0.98);
+}
+
+/* Light blueprint hero: pale 48px grid + a soft teal glow over a light-blue
+   gradient, and NO dark scrim — so the navy headline reads clearly, matching
+   the reference mockup. This replaces the dark circuit-banner background the
+   other (dark) themes use. */
+body[data-theme="blueprint-light"] .hero,
+body[data-theme="blueprint-light"] .my-story-page,
+body[data-theme="blueprint-light"] .work-page,
+body[data-theme="blueprint-light"] .resume-page {
     background:
-        linear-gradient(90deg, rgb(3 11 22 / 82%) 0%, rgb(3 11 22 / 64%) 48%, rgb(3 11 22 / 82%) 100%),
-        radial-gradient(circle at 78% 14%, rgb(78 163 255 / 18%), transparent 28%);
+        radial-gradient(circle at 72% 18%, rgb(7 150 184 / 10%), transparent 34%),
+        linear-gradient(rgb(31 111 235 / 4.5%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(31 111 235 / 4.5%) 1px, transparent 1px),
+        linear-gradient(180deg, #f4f9fc 0%, #eef6fb 100%);
+    background-size: auto, 48px 48px, 48px 48px, auto;
 }
 
-body[data-theme="slate-light"] .hero::after,
-body[data-theme="slate-light"] .story-hero::after {
+/* The My Story page wraps EVERY section in the dark banner above; once
+   .my-story-page is light, the hero just sits transparently on top of it so
+   the grid runs unbroken down the whole page (Fun Facts, Journey, etc.). */
+body[data-theme="blueprint-light"] .story-hero {
+    background: transparent;
+}
+
+/* Remove the dark tint overlays the dark themes paint over the hero/pages. */
+body[data-theme="blueprint-light"] .hero::before,
+body[data-theme="blueprint-light"] .story-hero::before,
+body[data-theme="blueprint-light"] .my-story-page::before,
+body[data-theme="blueprint-light"] .work-page::before,
+body[data-theme="blueprint-light"] .resume-page::before,
+body[data-theme="blueprint-light"] .hero::after,
+body[data-theme="blueprint-light"] .story-hero::after {
     content: none;
 }
 
-body[data-theme="slate-light"] .hero-ai-search__box,
-body[data-theme="slate-light"] .hero-ai-answer,
-body[data-theme="slate-light"] .lifecycle-center,
-body[data-theme="slate-light"] .lifecycle-node,
-body[data-theme="slate-light"] .metric-card,
-body[data-theme="slate-light"] .story-card,
-body[data-theme="slate-light"] .story-timeline__item,
-body[data-theme="slate-light"] .story-drive-card,
-body[data-theme="slate-light"] .fun-fact,
-body[data-theme="slate-light"] .work-proof-card,
-body[data-theme="slate-light"] .work-project-panel,
-body[data-theme="slate-light"] .work-project-tab,
-body[data-theme="slate-light"] .project-card,
-body[data-theme="slate-light"] .resume-recruiter-panel,
-body[data-theme="slate-light"] .resume-metric-card,
-body[data-theme="slate-light"] .resume-skill-face,
-body[data-theme="slate-light"] .resume-role-card,
-body[data-theme="slate-light"] .resume-role-panel,
-body[data-theme="slate-light"] .resume-impact-card,
-body[data-theme="slate-light"] .resume-impact-panel,
-body[data-theme="slate-light"] .resume-project-card,
-body[data-theme="slate-light"] .resume-education-card,
-body[data-theme="slate-light"] .peerslate-demo-card,
-body[data-theme="slate-light"] .peerslate-card,
-body[data-theme="slate-light"] .peerslate-final-card,
-body[data-theme="slate-light"] .peerslate-feature-list div,
-body[data-theme="slate-light"] .peerslate-profile-preview div {
-    background: linear-gradient(180deg, #ffffff, #f6f9fc);
-    border-color: var(--color-border-soft);
-    box-shadow: 0 14px 34px rgb(31 41 55 / 7%);
+/* Fun Facts cards use a hard-coded dark gradient in the base CSS; lighten
+   them (the class is .fun-fact-card, distinct from the .fun-fact list above). */
+body[data-theme="blueprint-light"] .fun-fact-card {
+    background: linear-gradient(180deg, #ffffff, #f6fbfe);
+    border-color: var(--color-border);
 }
 
-body[data-theme="slate-light"] .hero-ai-search__box {
+body[data-theme="blueprint-light"] .fun-fact-card__icon {
+    border-color: rgb(7 150 184 / 45%);
+}
+
+body[data-theme="blueprint-light"] .drive-card:hover,
+body[data-theme="blueprint-light"] .story-card:hover,
+body[data-theme="blueprint-light"] .fun-fact-card:hover {
+    border-color: var(--color-border-gold);
+}
+
+/* Remaining surfaces with hard-coded dark backgrounds in the base CSS. */
+body[data-theme="blueprint-light"] .work-hero-panel,
+body[data-theme="blueprint-light"] .drive-card {
+    background: linear-gradient(180deg, #ffffff, #f6fbfe);
+    border-color: var(--color-border);
+}
+
+/* Lifecycle diagram arrows: teal instead of gold in light mode (per the
+   blueprint spec). The stroke handles the curved lines; the #arrow-gold
+   rule recolors the SVG arrowhead marker, whose fill="#F3BE4F" attribute
+   is overridden by CSS (CSS beats SVG presentation attributes). */
+body[data-theme="blueprint-light"] .cycle-arc--gold {
+    stroke: rgb(7 150 184 / 88%);
+    filter: drop-shadow(0 0 8px rgb(7 150 184 / 20%));
+}
+
+body[data-theme="blueprint-light"] #arrow-gold path {
+    fill: #0796b8;
+}
+
+/* My Journey band: swap the hard-coded dark navy gradient for a white
+   framed panel so the heading and timeline read on the light page. */
+body[data-theme="blueprint-light"] .story-journey__layout {
+    background:
+        radial-gradient(circle at 18% 24%, rgb(7 150 184 / 7%), transparent 34%),
+        linear-gradient(180deg, #ffffff, #f6fbfe);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-card);
+}
+
+/* Journey timeline milestone circles: white with a teal ring. The --light
+   icon variant is near-white for dark themes, so recolor it navy here. */
+body[data-theme="blueprint-light"] .timeline-item__icon {
     background: #ffffff;
-    border-color: rgb(59 130 246 / 24%);
+    border-color: rgb(7 150 184 / 40%);
+}
+
+body[data-theme="blueprint-light"] .timeline-item__icon--light {
+    color: #405875;
+}
+
+body[data-theme="blueprint-light"] .hero-ai-search__box,
+body[data-theme="blueprint-light"] .hero-ai-answer,
+body[data-theme="blueprint-light"] .lifecycle-center,
+body[data-theme="blueprint-light"] .lifecycle-node,
+body[data-theme="blueprint-light"] .metric-card,
+body[data-theme="blueprint-light"] .story-card,
+body[data-theme="blueprint-light"] .story-timeline__item,
+body[data-theme="blueprint-light"] .story-drive-card,
+body[data-theme="blueprint-light"] .fun-fact,
+body[data-theme="blueprint-light"] .work-proof-card,
+body[data-theme="blueprint-light"] .work-project-panel,
+body[data-theme="blueprint-light"] .work-project-tab,
+body[data-theme="blueprint-light"] .project-card,
+body[data-theme="blueprint-light"] .resume-recruiter-panel,
+body[data-theme="blueprint-light"] .resume-metric-card,
+body[data-theme="blueprint-light"] .resume-skill-face,
+body[data-theme="blueprint-light"] .resume-role-card,
+body[data-theme="blueprint-light"] .resume-role-panel,
+body[data-theme="blueprint-light"] .resume-impact-card,
+body[data-theme="blueprint-light"] .resume-impact-panel,
+body[data-theme="blueprint-light"] .resume-project-card,
+body[data-theme="blueprint-light"] .resume-education-card,
+body[data-theme="blueprint-light"] .peerslate-demo-card,
+body[data-theme="blueprint-light"] .peerslate-card,
+body[data-theme="blueprint-light"] .peerslate-final-card,
+body[data-theme="blueprint-light"] .peerslate-feature-list div,
+body[data-theme="blueprint-light"] .peerslate-profile-preview div {
+    background: linear-gradient(180deg, #ffffff, #f6fbfe);
+    border-color: var(--color-border);
+    box-shadow: 0 14px 34px rgb(8 32 74 / 8%);
+}
+
+/* Featured product look for the Ask Pete AI box: white, teal left rule. */
+body[data-theme="blueprint-light"] .hero-ai-search__box {
+    background: #ffffff;
+    border-color: rgb(7 150 184 / 28%);
+    border-left: 3px solid var(--color-gold);
     box-shadow:
-        0 12px 28px rgb(31 41 55 / 8%),
+        0 12px 28px rgb(8 32 74 / 8%),
         0 0 0 1px rgb(255 255 255 / 70%);
 }
 
-body[data-theme="slate-light"] .hero-ai-answer {
+body[data-theme="blueprint-light"] .hero-ai-answer {
     color: var(--color-text-secondary);
-    background: linear-gradient(180deg, #ffffff, #f6f9fc);
-    border-color: rgb(59 130 246 / 22%);
+    background: linear-gradient(180deg, #ffffff, #f6fbfe);
+    border-color: rgb(7 150 184 / 24%);
     border-left-color: var(--color-cyan);
-    box-shadow: 0 12px 28px rgb(31 41 55 / 8%);
+    box-shadow: 0 12px 28px rgb(8 32 74 / 8%);
 }
 
-body[data-theme="slate-light"] .hero-ai-answer::before {
-    border-color: rgb(59 130 246 / 22%);
+body[data-theme="blueprint-light"] .hero-ai-answer::before {
+    border-color: rgb(7 150 184 / 24%);
 }
 
-body[data-theme="slate-light"] .hero-ai-answer__close {
+body[data-theme="blueprint-light"] .hero-ai-answer__close {
     color: var(--color-text-muted);
-    background: #eef4fa;
-    border-color: var(--color-border-soft);
+    background: #eef6fb;
+    border-color: var(--color-border);
 }
 
-body[data-theme="slate-light"] .hero-ai-answer__close:hover,
-body[data-theme="slate-light"] .hero-ai-answer__close:focus-visible {
-    color: var(--color-gold-bright);
-    background: rgb(59 130 246 / 8%);
-    border-color: rgb(59 130 246 / 26%);
+body[data-theme="blueprint-light"] .hero-ai-answer__close:hover,
+body[data-theme="blueprint-light"] .hero-ai-answer__close:focus-visible {
+    color: var(--color-gold-muted);
+    background: rgb(7 150 184 / 8%);
+    border-color: rgb(7 150 184 / 28%);
 }
 
-body[data-theme="slate-light"] .hero-ai-search__input,
-body[data-theme="slate-light"] #chat-input {
+body[data-theme="blueprint-light"] .hero-ai-search__input,
+body[data-theme="blueprint-light"] #chat-input {
     color: var(--color-text-primary);
 }
 
-body[data-theme="slate-light"] .btn-secondary,
-body[data-theme="slate-light"] .project-tags span,
-body[data-theme="slate-light"] .resume-filter-btn,
-body[data-theme="slate-light"] .theme-preview button {
+body[data-theme="blueprint-light"] .btn-secondary,
+body[data-theme="blueprint-light"] .project-tags span,
+body[data-theme="blueprint-light"] .resume-filter-btn,
+body[data-theme="blueprint-light"] .theme-preview button {
     color: var(--color-text-secondary);
     background: rgb(255 255 255 / 62%);
-    border-color: var(--color-border-soft);
+    border-color: var(--color-border);
 }
 
-body[data-theme="slate-light"] .project-media,
-body[data-theme="slate-light"] .mock-window,
-body[data-theme="slate-light"] .mock-window--dashboard {
-    background: linear-gradient(180deg, #eef4fa, #dde8f3);
+body[data-theme="blueprint-light"] .project-media,
+body[data-theme="blueprint-light"] .mock-window,
+body[data-theme="blueprint-light"] .mock-window--dashboard {
+    background: linear-gradient(180deg, #eef6fb, #dcebf5);
 }
 
-body[data-theme="slate-light"] #chat-toggle {
-    color: var(--color-gold-bright);
+body[data-theme="blueprint-light"] #chat-toggle {
+    color: var(--color-gold-muted);
     background: #ffffff;
-    border-color: rgb(59 130 246 / 36%);
-    box-shadow: 0 12px 28px rgb(31 41 55 / 12%);
+    border-color: rgb(7 150 184 / 36%);
+    box-shadow: 0 12px 28px rgb(8 32 74 / 12%);
 }
 
-body[data-theme="slate-light"] #chat-panel {
+body[data-theme="blueprint-light"] #chat-panel {
     background: #ffffff;
-    border-color: var(--color-border-soft);
-    box-shadow: 0 22px 70px rgb(31 41 55 / 18%);
+    border-color: var(--color-border);
+    box-shadow: 0 22px 70px rgb(8 32 74 / 18%);
 }
 
-body[data-theme="slate-light"] #chat-header {
-    background: linear-gradient(180deg, #f8fafc, #eef4fa);
-    border-bottom: 1px solid var(--color-border-soft);
+body[data-theme="blueprint-light"] #chat-header {
+    background: linear-gradient(180deg, #f8fcff, #eef6fb);
+    border-bottom: 1px solid var(--color-border);
 }
 
-body[data-theme="slate-light"] .bot-message,
-body[data-theme="slate-light"] .suggestion-btn,
-body[data-theme="slate-light"] #chat-input-area,
-body[data-theme="slate-light"] #chat-disclaimer {
-    background: #f6f9fc;
-    border-color: var(--color-border-soft);
+body[data-theme="blueprint-light"] .bot-message,
+body[data-theme="blueprint-light"] .suggestion-btn,
+body[data-theme="blueprint-light"] #chat-input-area,
+body[data-theme="blueprint-light"] #chat-disclaimer {
+    background: #f4fafe;
+    border-color: var(--color-border);
 }
 
-body[data-theme="slate-light"] .footer {
-    background: #e8edf5;
-    color: rgb(15 23 42 / 62%);
+/* Chat input hardcodes a dark navy background in chatbot.css. */
+body[data-theme="blueprint-light"] #chat-input {
+    background: #ffffff;
+    border-color: var(--color-border);
+}
+
+/* Send button: solid teal gradient with white text (the dark theme's faint
+   gold-tint version washes out on a light panel). */
+body[data-theme="blueprint-light"] #chat-send {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0ea5c6, #047fa0);
+    border-color: rgb(7 150 184 / 35%);
+}
+
+body[data-theme="blueprint-light"] #chat-send:hover {
+    color: #ffffff;
+    background: linear-gradient(135deg, #22b8d8, #058bb0);
+}
+
+body[data-theme="blueprint-light"] .footer {
+    background: #e6eff7;
+    color: rgb(8 32 74 / 62%);
+}
+
+/* Signature blueprint accent: money/impact numbers ($36M+, $900M, $19.2M)
+   glow amber. The .metric-money class is added in metrics_strip.html and
+   is inert on every other theme. */
+body[data-theme="blueprint-light"] .metric-money {
+    color: var(--accent-amber);
 }
 
 

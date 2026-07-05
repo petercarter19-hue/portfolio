@@ -26,7 +26,7 @@
         rel="apple-touch-icon"
         href="{{ url_for('static', filename='images/peerslate-apple-touch.png') }}"
     >
-    <meta name="theme-color" content="#071426">
+    <meta name="theme-color" content="#f4f9fc">
 
     <!-- Google Fonts: Inter gives a clean, modern, technical look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,7 +51,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body data-theme="command-gold" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+<body data-theme="blueprint-light" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     <!-- Accessibility feature for keyboard and screen-reader users -->
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -97,8 +97,8 @@
                             <button type="button" data-theme-option="modern-blue">
                                 Modern Blue
                             </button>
-                            <button type="button" data-theme-option="slate-light">
-                                Slate Light
+                            <button type="button" data-theme-option="blueprint-light">
+                                Blueprint Light
                             </button>
                             <button type="button" data-theme-option="secure-green">
                                 Secure Green
@@ -318,7 +318,7 @@
          normally cache a file by its name, so bumping this version text
          forces visitors to download the newest version instead of an old
          cached copy after a change is deployed. -->
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=theme-preview-1"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=theme-preview-3"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-bridge-2"></script>
     {% block extra_scripts %}{% endblock %}
 
