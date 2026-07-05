@@ -5010,15 +5010,21 @@ body[data-slate-photo="on"] .global-header {
    page photo behind them (plus a grain layer on top) — at "cover" scale
    the bar was indistinguishable from the page and read as glass. A
    distinct crack scale + grain is what makes each bar its own slab. */
+/* Both bars sample the SAME fixed slice of the stone photo (matching
+   the body's own cover/center-top recipe, with fixed attachment on just
+   that layer) instead of each cutting its own differently-scaled crop.
+   That's what makes the header and tab strip read as one continuous
+   slab of stone with the profile band carved above the tabs, rather
+   than two panels with unrelated crack patterns stitched together. */
 body[data-slate-photo="on"] .profile-header {
     background:
-        var(--slate-noise),
         linear-gradient(180deg, rgb(255 255 255 / 6%), transparent 42%, rgb(0 0 0 / 18%)),
         linear-gradient(var(--slate-tint-band), var(--slate-tint-band)),
         var(--slate-photo);
-    background-size: auto, auto, auto, 1100px auto;
-    background-position: 0 0, 0 0, 0 0, center 34%;
-    background-repeat: repeat;
+    background-size: auto, auto, cover;
+    background-position: 0 0, 0 0, center top;
+    background-attachment: scroll, scroll, fixed;
+    background-repeat: no-repeat;
     border-bottom: 1px solid var(--border);
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 9%),
@@ -5027,13 +5033,13 @@ body[data-slate-photo="on"] .profile-header {
 
 body[data-slate-photo="on"] .profile-tabs {
     background:
-        var(--slate-noise),
         linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 40%, rgb(0 0 0 / 22%)),
         linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
         var(--slate-photo);
-    background-size: auto, auto, auto, 760px auto;
-    background-position: 0 0, 0 0, 0 0, center 58%;
-    background-repeat: repeat;
+    background-size: auto, auto, cover;
+    background-position: 0 0, 0 0, center top;
+    background-attachment: scroll, scroll, fixed;
+    background-repeat: no-repeat;
     border-top: 1px solid var(--slate-edge-lit);
     border-bottom: 1px solid var(--border);
     box-shadow:
