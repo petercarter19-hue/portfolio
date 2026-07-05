@@ -2,21 +2,16 @@
 <html lang="en">
 
 <head>
-    <!-- Basic browser and mobile-device setup -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Helps search engines understand the purpose of the website -->
     <meta
         name="description"
         content="{% block meta_description %}The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems.{% endblock %}"
     >
 
-    <!-- Jinja block: each page can provide its own browser-tab title -->
     <title>{% block title %}Pete Carter{% endblock %}</title>
 
-    <!-- Browser tab icon, iPhone/iPad home-screen icon, and the color the
-         mobile browser chrome (address bar) uses to match the dark theme. -->
     <link
         rel="icon"
         type="image/png"
@@ -26,9 +21,8 @@
         rel="apple-touch-icon"
         href="{{ url_for('static', filename='images/peerslate-apple-touch.png') }}"
     >
-    <meta name="theme-color" content="#f4f9fc">
+    <meta name="theme-color" content="#111719">
 
-    <!-- Google Fonts: Inter gives a clean, modern, technical look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -36,154 +30,102 @@
         rel="stylesheet"
     >
 
-    <!-- Flask generates the correct path to static/css/style.css -->
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
     >
-
-    <!-- Chatbot widget styles -->
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/chatbot.css') }}"
+        href="{{ url_for('static', filename='css/chatbot.css') }}?v=scroll-toggle-1"
     >
 
     {% block extra_head %}{% endblock %}
 </head>
 
-<body data-theme="blueprint-light" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %}" data-theme="gray-slate" data-slate="on" data-slate-photo="on" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}'); --site-slate-bg-gray: url('{{ url_for('static', filename='images/slate-backgrounds/gray-slate-bg.jpg') }}'); --site-slate-bg-sage: url('{{ url_for('static', filename='images/slate-backgrounds/sage-slate-bg.jpg') }}'); --site-slate-bg-light: url('{{ url_for('static', filename='images/slate-backgrounds/light-slate-bg.jpg') }}'); --site-slate-bg-lightblue: url('{{ url_for('static', filename='images/slate-backgrounds/light-blue-slate-bg.jpg') }}');">
 
-    <!-- Accessibility feature for keyboard and screen-reader users -->
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    <!-- Shared site header and navigation -->
-    <header class="site-header">
-        <nav class="navbar" aria-label="Primary navigation">
-            <div class="nav-container">
-
-                <!--
-                    SITE MENU (far left)
-                    Placeholder for the future multi-tenant business menu.
-                    For now it only holds "Homepage"; more destinations will
-                    be added as the platform grows. The button toggles the
-                    dropdown below it — see the small script near the end
-                    of this file.
-                -->
-                <div class="nav-menu">
-                    <button
-                        class="nav-menu-btn"
-                        id="site-menu-btn"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        aria-controls="site-menu-dropdown"
-                        aria-label="Open site menu"
-                    >
-                        <!-- Hamburger icon -->
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" aria-hidden="true">
-                            <path d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                    </button>
-
-                    <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
-                        <a href="{{ peerslate_home_url }}">PeerSlate Home</a>
-                        <a href="{{ portfolio_home_url }}">Pete Carter Portfolio</a>
-                        <div class="theme-preview" aria-label="Theme preview options">
-                            <p>Theme Preview</p>
-                            <button type="button" data-theme-option="command-gold">
-                                Command Gold
-                            </button>
-                            <button type="button" data-theme-option="modern-blue">
-                                Modern Blue
-                            </button>
-                            <button type="button" data-theme-option="blueprint-light">
-                                Blueprint Light
-                            </button>
-                            <button type="button" data-theme-option="secure-green">
-                                Secure Green
-                            </button>
-                        </div>
-                    </div>
+    <!-- Global platform navigation for the broader PeerSlate concept. -->
+    <header class="global-header">
+        <nav class="platform-nav" aria-label="PeerSlate platform navigation">
+            <div class="site-container platform-nav__inner">
+                <div class="platform-brand">
+                    {# Two separate links: the PeerSlate logo goes to the main
+                       platform site, while "Pete's Slate" goes to Pete's own
+                       portfolio home. #}
+                    <a class="platform-brand__logo" href="{{ peerslate_home_url }}" aria-label="{{ platform_brand_name }} home">
+                        <img
+                            src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
+                            alt="{{ platform_brand_name }}"
+                        >
+                    </a>
+                    <a class="platform-brand__profile" href="{{ portfolio_home_url }}">Pete's Slate</a>
                 </div>
 
-                <!-- Pete's name and title (shifted right of the site menu) -->
-                <div class="nav-brand">
-                    <a
-                        href="{{ portfolio_home_url if is_portfolio_path else peerslate_home_url }}"
-                        class="nav-logo{% if not is_portfolio_path %} nav-logo--brand{% endif %}"
-                        aria-label="Return to homepage"
-                    >
-                        {% if not is_portfolio_path %}
-                        <img
-                            class="nav-brand-mark"
-                            src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
-                            alt=""
-                            aria-hidden="true"
-                        >
-                        {% endif %}
-                        <span class="nav-wordmark">
-                            <span class="nav-name">{% if is_portfolio_path %}Pete Carter{% else %}PeerSlate{% endif %}</span>
-                            <span class="nav-tagline">{% if is_portfolio_path %}SYSTEMS ENGINEER{% else %}PROFESSIONAL PROFILES{% endif %}</span>
-                        </span>
+                <ul class="platform-nav__links">
+                    <li><a href="{{ peerslate_home_url }}">Home</a></li>
+                    <!-- Platform preview pages: real routes now, full features later. -->
+                    <li><a href="{{ url_for('career_search') }}">Career Search</a></li>
+                    <li><a href="{{ url_for('my_network') }}">My Network</a></li>
+                    <li><a href="{{ url_for('explore_profiles') }}">Explore Profiles</a></li>
+                    <li><a href="{{ url_for('for_recruiters') }}">For Recruiters</a></li>
+                </ul>
+
+                <div class="platform-actions">
+                    {# One dot per theme: the four slate themes first, then the
+                       four original site themes — 8 total. theme-preview.js
+                       reads data-theme-option from whichever dot is clicked. #}
+                    <div class="theme-selector" aria-label="Site theme selector">
+                        <button class="theme-option theme-option--light" type="button" data-theme-option="light-slate" aria-label="Use Light Slate theme" aria-pressed="false">
+                            <span class="theme-tooltip">Light Slate</span>
+                        </button>
+                        <button class="theme-option theme-option--blue" type="button" data-theme-option="light-blue-slate" aria-label="Use Light Blue Slate theme" aria-pressed="false">
+                            <span class="theme-tooltip">Light Blue Slate</span>
+                        </button>
+                        <button class="theme-option theme-option--gray" type="button" data-theme-option="gray-slate" aria-label="Use Gray Slate theme" aria-pressed="false">
+                            <span class="theme-tooltip">Gray Slate</span>
+                        </button>
+                        <button class="theme-option theme-option--sage" type="button" data-theme-option="sage-slate" aria-label="Use Sage Slate theme" aria-pressed="false">
+                            <span class="theme-tooltip">Sage Slate</span>
+                        </button>
+                        <button class="theme-option theme-option--gold" type="button" data-theme-option="command-gold" aria-label="Use Command Gold theme" aria-pressed="false">
+                            <span class="theme-tooltip">Command Gold</span>
+                        </button>
+                        <button class="theme-option theme-option--modern" type="button" data-theme-option="modern-blue" aria-label="Use Modern Blue theme" aria-pressed="false">
+                            <span class="theme-tooltip">Modern Blue</span>
+                        </button>
+                        <button class="theme-option theme-option--blueprint" type="button" data-theme-option="blueprint-light" aria-label="Use Blueprint Light theme" aria-pressed="false">
+                            <span class="theme-tooltip">Blueprint Light</span>
+                        </button>
+                        <button class="theme-option theme-option--green" type="button" data-theme-option="secure-green" aria-label="Use Secure Green theme" aria-pressed="false">
+                            <span class="theme-tooltip">Secure Green</span>
+                        </button>
+                    </div>
+
+                    <a class="sign-in-btn" href="#" aria-disabled="true">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="9" cy="8" r="3"/>
+                            <path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/>
+                            <path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/>
+                            <path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/>
+                        </svg>
+                        Sign In
                     </a>
                 </div>
-
-                <!-- Right: navigation links + LinkedIn -->
-                <div class="nav-right">
-
-                    <!--
-                        aria-current="page" marks the link for the page the visitor
-                        is on. CSS uses it to keep the gold underline switched on,
-                        and screen readers announce "current page" for that link.
-                    -->
-                    <ul class="nav-links">
-                        <li><a href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>Projects</a></li>
-                        <li><a href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>My Story</a></li>
-                        <li><a href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>Resume</a></li>
-                        <li><a href="{{ portfolio_contact_url }}" {% if request.path in ['/contact', '/petec/contact'] %}aria-current="page"{% endif %}>Contact</a></li>
-                    </ul>
-
-                    <!-- Far right: LinkedIn profile link. -->
-                    <div class="nav-actions">
-
-                        <!--
-                            target="_blank" opens LinkedIn in a new tab so visitors
-                            don't lose the portfolio. rel="noopener noreferrer" is a
-                            security best practice for links that open new tabs.
-                        -->
-                        <a
-                            class="nav-linkedin"
-                            href="https://www.linkedin.com/in/pete-carter19"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="View Pete Carter on LinkedIn"
-                        >
-                            <!-- Official LinkedIn brand colors: #0A66C2 blue
-                                 rounded square with the "in" glyph in white.
-                                 Colors are hard-coded (not currentColor) so the
-                                 logo always matches LinkedIn's brand guidelines. -->
-                            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
-                                <rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2"/>
-                                <path fill="#ffffff" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/>
-                            </svg>
-                        </a>
-
-                    </div>
-
-                </div>
-
             </div>
         </nav>
     </header>
 
-    <!-- Each page inserts its unique content inside this Jinja block -->
+    {% if is_portfolio_path %}
+        {% include "partials/profile_shell.html" %}
+    {% endif %}
+
     <main id="main-content" class="main-content">
         {% block content %}
         {% endblock %}
     </main>
 
-    <!-- Shared footer displayed on every page -->
     <footer class="footer">
         <div class="footer-container{% if not is_portfolio_path %} footer-container--brand{% endif %}">
             {% if not is_portfolio_path %}
@@ -193,22 +135,19 @@
                     alt=""
                     aria-hidden="true"
                 >
-                <span>PeerSlate</span>
+                <span>{{ platform_brand_name }}</span>
             </a>
-            <p>&copy; 2026 PeerSlate <span>|</span> Your Work. Your Story. Your Future.</p>
+            <p>&copy; 2026 {{ platform_brand_name }} <span>|</span> Your Work. Your Story. Your Future.</p>
             {% else %}
             <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
             {% endif %}
         </div>
     </footer>
 
-
-    <!-- ======================================================
-         CHATBOT WIDGET
-         Adds the shared chat panel to every page.
-         The top navigation button opens this panel.
-         ====================================================== -->
-
+    {# Floating "Ask Pete AI" launcher: hidden while the profile header's
+       Ask Pete AI button is on screen, then fades in once the visitor
+       scrolls past it (chatbot.js watches that button and toggles the
+       is-visible class), so long pages always keep the AI one click away. #}
     <button id="chat-toggle" aria-label="Open Pete's AI assistant">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2"
@@ -225,18 +164,14 @@
         aria-label="Pete's Engineering Assistant"
         aria-hidden="true"
     >
-
-        <!-- Panel title bar with the close (X) button. -->
         <div id="chat-header">
             <div id="chat-header-text">
                 <h3>Pete's Engineering Assistant</h3>
                 <p>Grounded in verified portfolio information</p>
             </div>
-            <button id="chat-close" aria-label="Close chat">✕</button>
+            <button id="chat-close" aria-label="Close chat">x</button>
         </div>
 
-        <!-- chatbot.js appends a new message bubble here every time the
-             visitor sends a question or the AI replies. -->
         <div id="chat-messages">
             <div class="chat-message bot-message">
                 Hi! I'm Pete's AI assistant. Ask me anything about his
@@ -244,9 +179,6 @@
             </div>
         </div>
 
-        <!-- Starter questions a visitor can click instead of typing.
-             chatbot.js hides this whole row after the first question is
-             asked (typed or clicked), so it never clutters an ongoing chat. -->
         <div id="chat-suggestions">
             <button class="suggestion-btn">What systems has Pete supported?</button>
             <button class="suggestion-btn">Tell me about Pete's MBSE experience</button>
@@ -254,7 +186,6 @@
             <button class="suggestion-btn">Why is Pete moving toward AI-enabled systems?</button>
         </div>
 
-        <!-- Text box + send button that posts to the /api/chat route in app.py. -->
         <div id="chat-input-area">
             <input
                 type="text"
@@ -268,58 +199,10 @@
         <p id="chat-disclaimer">
             AI responses are grounded in approved portfolio sources.
         </p>
-
     </div>
 
-    <!-- ======================================================
-         SITE MENU BEHAVIOR
-         Opens/closes the top-left dropdown, and closes it when
-         the visitor clicks anywhere else or presses Escape.
-         aria-expanded is kept in sync so screen readers always
-         know whether the menu is open.
-         ====================================================== -->
-    <script>
-        (function () {
-            const menuBtn = document.getElementById('site-menu-btn');
-            const menuDropdown = document.getElementById('site-menu-dropdown');
-
-            function closeMenu() {
-                menuDropdown.hidden = true;
-                menuBtn.setAttribute('aria-expanded', 'false');
-            }
-
-            menuBtn.addEventListener('click', function (event) {
-                // stopPropagation keeps the document click listener below
-                // from instantly closing the menu we just opened.
-                event.stopPropagation();
-                const willOpen = menuDropdown.hidden;
-                menuDropdown.hidden = !willOpen;
-                menuBtn.setAttribute('aria-expanded', String(willOpen));
-            });
-
-            // Click anywhere outside the dropdown closes it.
-            document.addEventListener('click', function (event) {
-                if (!menuDropdown.hidden && !menuDropdown.contains(event.target) && event.target !== menuBtn) {
-                    closeMenu();
-                }
-            });
-
-            // Escape closes it and returns focus to the button.
-            document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && !menuDropdown.hidden) {
-                    closeMenu();
-                    menuBtn.focus();
-                }
-            });
-        })();
-    </script>
-
-    <!-- The "?v=..." on each script/style link is a cache-buster: browsers
-         normally cache a file by its name, so bumping this version text
-         forces visitors to download the newest version instead of an old
-         cached copy after a change is deployed. -->
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=theme-preview-3"></script>
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-bridge-2"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-5"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=scroll-toggle-1"></script>
     {% block extra_scripts %}{% endblock %}
 
 </body>

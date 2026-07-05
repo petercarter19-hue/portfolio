@@ -78,11 +78,15 @@ def shared_navigation_urls():
         return f'{portfolio_base_url}/{path.lstrip("/")}'
 
     return {
+        # One central brand value keeps the public platform name easy to
+        # change later if Pete decides between PeerSlate and PureSlate.
+        'platform_brand_name': 'PeerSlate',
         'is_platform_site': is_platform,
         'portfolio_url': portfolio_url,
         'peerslate_home_url': url_for('home') if is_local or is_platform else 'https://peerslate.com/',
         'portfolio_home_url': portfolio_url(),
         'portfolio_work_url': portfolio_url('work'),
+        'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
         'portfolio_resume_url': portfolio_url('resume'),
         'portfolio_contact_url': portfolio_url('contact'),
@@ -126,13 +130,12 @@ def keep_portfolio_on_canonical_path():
     # Anyone who still has one of these bookmarked gets sent to today's
     # equivalent page instead of hitting a dead link.
     old_portfolio_paths = {'/pete', '/portfolio'}
-    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/work'}
+    # /skills is a real page again (the Skills profile tab), so it now
+    # canonicalizes to /petec/skills like every other portfolio section.
+    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/work'}
 
     if request.path in old_portfolio_paths:
         return redirect('/petec', code=302)
-
-    if request.path == '/skills':
-        return redirect('/petec/resume', code=302)
 
     if request.path in section_paths:
         return redirect(f'/petec{request.path}', code=302)
@@ -335,7 +338,84 @@ def work():
 @app.route('/skills')
 @app.route('/petec/skills')
 def skills():
-    return redirect('/petec/resume', code=302)
+    # The Skills profile tab now has its own page. It reuses the same
+    # resume_data.json the resume page reads, so the skill cards and their
+    # evidence popovers only ever need updating in one place.
+    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
+
+    with open(resume_path, 'r', encoding='utf-8') as f:
+        resume_data = json.load(f)
+
+    return render_template('skills.html', resume=resume_data)
+
+
+# -------------------------------------------------------
+# PLATFORM PLACEHOLDER PAGES
+# These four pages back the global PeerSlate header links.
+# They are intentionally simple "coming soon" pages: the goal
+# is showing where the platform is headed (career search,
+# networking, profile discovery, recruiter tools) before those
+# features actually exist. All four share one template.
+# -------------------------------------------------------
+
+@app.route('/career-search')
+def career_search():
+    return render_template(
+        'platform_page.html',
+        page_title='Career Search',
+        page_kicker='Platform Preview',
+        page_lead='Search openings matched to verified skill evidence instead of keyword-stuffed resumes.',
+        page_points=[
+            'Roles matched against evidence-backed skills, not just titles',
+            'Filters for clearance, certifications, and engineering domain',
+            'Save searches and get notified when matching roles appear',
+        ],
+    )
+
+
+@app.route('/my-network')
+def my_network():
+    return render_template(
+        'platform_page.html',
+        page_title='My Network',
+        page_kicker='Platform Preview',
+        page_lead='Build a professional network around demonstrated work, endorsements, and shared projects.',
+        page_points=[
+            'Connect with engineers, mentors, and hiring teams',
+            'Endorsements tied to specific evidence, not one-click badges',
+            'Follow profiles to see new projects and milestones',
+        ],
+    )
+
+
+@app.route('/explore-profiles')
+def explore_profiles():
+    return render_template(
+        'platform_page.html',
+        page_title='Explore Profiles',
+        page_kicker='Platform Preview',
+        page_lead='Browse evidence-driven professional profiles like Pete’s, each with its own AI assistant.',
+        page_points=[
+            'Every profile pairs claims with verifiable career evidence',
+            'Ask each profile’s AI assistant recruiter-style questions',
+            'Compare candidates on outcomes instead of buzzwords',
+        ],
+    )
+
+
+@app.route('/for-recruiters')
+def for_recruiters():
+    return render_template(
+        'platform_page.html',
+        page_title='For Recruiters',
+        page_kicker='Platform Preview',
+        page_lead='Screen faster with AI answers grounded in approved, verifiable candidate evidence.',
+        page_points=[
+            'Ask candidate AI assistants the questions you would ask in a phone screen',
+            'Every answer cites the approved source it came from',
+            'Shortlist, compare, and reach out from one place',
+        ],
+    )
 
 @app.route('/hobbies')
 @app.route('/petec/hobbies')

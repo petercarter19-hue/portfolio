@@ -117,6 +117,26 @@ function initializeChatbot() {
         });
     }
 
+    // -------------------------------------------------------
+    // FLOATING LAUNCHER VISIBILITY
+    // The floating bottom-right button stays hidden while the profile
+    // header's "Ask Pete AI" button is on screen. Once the visitor
+    // scrolls far enough that the header button leaves the viewport
+    // (long pages like Resume and My Story), the floating button fades
+    // in so the assistant is always one click away.
+    // -------------------------------------------------------
+
+    const headerAskButton = document.querySelector('.profile-actions [data-chat-open]');
+
+    if (toggle && headerAskButton && 'IntersectionObserver' in window) {
+        const askButtonWatcher = new IntersectionObserver(function (entries) {
+            // isIntersecting is true while the header button is visible.
+            toggle.classList.toggle('is-visible', !entries[0].isIntersecting);
+        });
+
+        askButtonWatcher.observe(headerAskButton);
+    }
+
     closeBtn.addEventListener('click', function () {
         closeChat(true);
     });

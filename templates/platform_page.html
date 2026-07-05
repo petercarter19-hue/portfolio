@@ -1,0 +1,45 @@
+{# Shared template for the four PeerSlate platform preview pages:
+   Career Search, My Network, Explore Profiles, and For Recruiters.
+   Each route in app.py passes its own title, kicker line, lead
+   sentence, and bullet points — so all four pages stay consistent
+   and only ever need editing in one place. #}
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | {{ platform_brand_name }}{% endblock %}
+
+{% block meta_description %}{{ page_lead }}{% endblock %}
+
+{% block content %}
+
+<section class="platform-page" aria-labelledby="platform-page-title">
+    <div class="site-container platform-page__inner">
+        <div class="platform-page__card">
+            <p class="section-eyebrow">{{ page_kicker }}</p>
+            <h1 id="platform-page-title">{{ page_title }}</h1>
+            <p class="platform-page__lead">{{ page_lead }}</p>
+
+            <ul class="platform-page__points">
+                {% for point in page_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+
+            <p class="platform-page__note">
+                This part of {{ platform_brand_name }} is under construction.
+                In the meantime, explore the first live profile on the platform.
+            </p>
+
+            <div class="platform-page__actions">
+                <a class="btn btn-primary" href="{{ portfolio_home_url }}">
+                    Visit Pete Carter's Profile
+                    <span aria-hidden="true">→</span>
+                </a>
+                <a class="btn btn-secondary" href="{{ peerslate_home_url }}">
+                    Back to {{ platform_brand_name }} Home
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

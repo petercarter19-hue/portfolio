@@ -11,7 +11,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/resume.css') }}?v=mobile-scale-1"
+    href="{{ url_for('static', filename='css/resume.css') }}?v=skills-page-2"
 >
 {# Structured data (JSON-LD) is invisible to visitors — it's metadata that
    search engines read to understand this page is a person's profile, which
@@ -41,6 +41,7 @@
 
 {% block content %}
 <div class="resume-page" id="resume-page">
+    <span id="resume" class="section-anchor" aria-hidden="true"></span>
 
     <section class="resume-hero" aria-labelledby="resume-title">
         <div class="site-container resume-hero__grid">
@@ -105,11 +106,12 @@
         </div>
     </section>
 
-    <section class="resume-section resume-skills" id="resume-skills-section" aria-labelledby="resume-skills-title">
+    <section class="resume-section resume-skills" id="skills" aria-labelledby="resume-skills-title">
         <div class="site-container">
             <div class="resume-section-heading resume-section-heading--compact">
                 {# Compact strip-style header matching the mockup's "CORE SKILLS & EXPERTISE" label. #}
                 <h2 id="resume-skills-title" class="resume-strip-title">Core Skills &amp; Expertise</h2>
+                <p class="resume-skill-hint">Click any skill to see the resume evidence behind it.</p>
             </div>
 
             <div class="resume-skill-grid" id="resume-skill-grid">

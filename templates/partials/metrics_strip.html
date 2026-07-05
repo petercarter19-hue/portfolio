@@ -1,180 +1,58 @@
 {#
-    METRICS STRIP PARTIAL
-    One shared copy of the scrolling metrics band, included by both the
-    homepage and the My Story page with:
-        {% include "partials/metrics_strip.html" %}
-    Keeping it in one file means the numbers only ever need updating here.
+    Shared impact metrics strip.
+    Kept to five recruiter-friendly numbers so the strip reads cleanly
+    across the homepage and My Story page.
 #}
 
-<!-- Metrics strip: public, verified indicators of engineering scope and outcomes.
-     Renders as a continuously auto-scrolling loop at every screen width, so
-     card size stays constant instead of stretching as columns drop. -->
 <section class="metrics-band" aria-label="Selected professional metrics">
-    <div class="site-container metrics-track-wrap">
-        <div class="metrics-track">
-            <div class="metrics-set">
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$36M+</strong>
-                        <span>Contract Oversight</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
-                    </span>
-                    <div>
-                        <strong>70%</strong>
-                        <span>Repair &amp; Test Improvement</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
-                    </span>
-                    <div>
-                        <strong>16 → 0</strong>
-                        <span>Critical Supply Constraints</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$900M</strong>
-                        <span>Navy NGJ Program Support</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$19.2M</strong>
-                        <span>Redesign Projects Led</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>
-                    </span>
-                    <div>
-                        <strong>35%</strong>
-                        <span>Faster Issue Resolution</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-                    </span>
-                    <div>
-                        <strong>52%</strong>
-                        <span>Fewer Missing Parts</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M4.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M12.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M10.2 15.8c.5-1.8 1.1-2.8 1.8-2.8s1.3 1 1.8 2.8"/></svg>
-                    </span>
-                    <div>
-                        <strong>128</strong>
-                        <span>Emerging Leader Nominations</span>
-                    </div>
-                </div>
+    <div class="site-container metrics-strip">
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
+            </span>
+            <div>
+                <strong class="metric-money">$900M</strong>
+                <span>Navy NGJ Program Support</span>
             </div>
+        </div>
 
-            <!-- Duplicate set, hidden from assistive tech, so the loop has no visible seam. -->
-            <div class="metrics-set" aria-hidden="true">
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$36M+</strong>
-                        <span>Contract Oversight</span>
-                    </div>
-                </div>
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+            </span>
+            <div>
+                <strong class="metric-money">$19.2M</strong>
+                <span>Redesign Projects Led</span>
+            </div>
+        </div>
 
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 19h16M6 16v-4M11 16V8M16 16V5M5 10l5-4 4 3 5-6"/></svg>
-                    </span>
-                    <div>
-                        <strong>70%</strong>
-                        <span>Repair &amp; Test Improvement</span>
-                    </div>
-                </div>
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>
+            </span>
+            <div>
+                <strong>35%</strong>
+                <span>Faster Issue Resolution</span>
+            </div>
+        </div>
 
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M10 12l2 2 4-5"/></svg>
-                    </span>
-                    <div>
-                        <strong>16 → 0</strong>
-                        <span>Critical Supply Constraints</span>
-                    </div>
-                </div>
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+            </span>
+            <div>
+                <strong>52%</strong>
+                <span>Fewer Missing Parts</span>
+            </div>
+        </div>
 
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$900M</strong>
-                        <span>Navy NGJ Program Support</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
-                    </span>
-                    <div>
-                        <strong class="metric-money">$19.2M</strong>
-                        <span>Redesign Projects Led</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>
-                    </span>
-                    <div>
-                        <strong>35%</strong>
-                        <span>Faster Issue Resolution</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-                    </span>
-                    <div>
-                        <strong>52%</strong>
-                        <span>Fewer Missing Parts</span>
-                    </div>
-                </div>
-
-                <div class="metric-item">
-                    <span class="metric-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M4.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M12.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M10.2 15.8c.5-1.8 1.1-2.8 1.8-2.8s1.3 1 1.8 2.8"/></svg>
-                    </span>
-                    <div>
-                        <strong>128</strong>
-                        <span>Emerging Leader Nominations</span>
-                    </div>
-                </div>
+        <div class="metric-item">
+            <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M4.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M12.5 20c.6-3.2 1.9-5 3.5-5s2.9 1.8 3.5 5"/><path d="M10.2 15.8c.5-1.8 1.1-2.8 1.8-2.8s1.3 1 1.8 2.8"/></svg>
+            </span>
+            <div>
+                <strong>128</strong>
+                <span>Emerging Leaders Nominated</span>
             </div>
         </div>
     </div>

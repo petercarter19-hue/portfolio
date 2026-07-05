@@ -47,7 +47,36 @@
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    transition: transform 180ms ease, color 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+
+    /* Hidden by default: chatbot.js adds .is-visible once the visitor
+       scrolls past the profile header's Ask Pete AI button. */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease,
+        visibility 0s linear 220ms,
+        color 180ms ease,
+        background 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+#chat-toggle.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition:
+        opacity 220ms ease,
+        transform 220ms ease,
+        visibility 0s,
+        color 180ms ease,
+        background 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
 }
 
 #chat-toggle:hover,

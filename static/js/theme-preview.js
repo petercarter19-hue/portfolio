@@ -1,22 +1,33 @@
-// Powers the "Theme Preview" buttons inside the site menu dropdown
-// (see the .theme-preview block in base.html). Lets a visitor try a
-// different color scheme and has the site remember their choice.
+// Slate theme selector and profile-tab helpers.
+// This stays browser-only: it never reads environment variables or secrets.
 
 (function () {
-    const defaultTheme = 'blueprint-light';
-    // The key used to save the choice in the browser's localStorage, so the
-    // theme is still applied the next time this visitor comes back.
+    const defaultTheme = 'gray-slate';
     const storageKey = 'peerslateTheme';
     const themeButtons = document.querySelectorAll('[data-theme-option]');
+    const profileTabLinks = document.querySelectorAll('.profile-tab[href*="#"]');
+    const allProfileTabs = document.querySelectorAll('.profile-tab');
 
-    // Switches the color scheme by changing a data-theme attribute on
-    // <body> — style.css has CSS variable overrides for each theme name
-    // (e.g. data-theme="modern-blue") that this attribute switches between.
+    // The four NEW slate themes get the platform slate treatment (stone
+    // texture, restyled hero/cards/buttons). The four ORIGINAL themes
+    // (command-gold, modern-blue, blueprint-light, secure-green) must look
+    // exactly as they did before, so all that new styling is gated in
+    // style.css behind body[data-slate="on"] — which we only set here for
+    // the slate themes.
+    const slateThemes = ['light-slate', 'light-blue-slate', 'gray-slate', 'sage-slate'];
+
+    // The two DARK slate themes go further: they use a real slate
+    // photograph for the page and give every card/button/strip its own
+    // raised stone-slab surface. style.css keys that treatment off
+    // body[data-slate-photo="on"].
+    const photoSlateThemes = ['gray-slate', 'sage-slate', 'light-slate', 'light-blue-slate'];
+
     function applyTheme(themeName) {
         document.body.dataset.theme = themeName;
+        document.body.dataset.slate = slateThemes.indexOf(themeName) !== -1 ? 'on' : 'off';
+        document.body.dataset.slatePhoto = photoSlateThemes.indexOf(themeName) !== -1 ? 'on' : 'off';
         localStorage.setItem(storageKey, themeName);
 
-        // Highlight whichever theme button matches the current choice.
         themeButtons.forEach(function (button) {
             const isActive = button.dataset.themeOption === themeName;
             button.classList.toggle('is-active', isActive);
@@ -24,26 +35,54 @@
         });
     }
 
-    // Restore the visitor's last choice on page load (falls back to the
-    // site's default theme for a first-time visitor).
-    // Guard: only trust the saved name if a matching theme button still
-    // exists — a visitor might have a removed theme (e.g. the old
-    // "slate-light") saved in localStorage, which would otherwise leave
-    // the site with no matching CSS variable block.
     const savedTheme = localStorage.getItem(storageKey);
     const savedThemeExists = Array.prototype.some.call(
         themeButtons,
         function (button) { return button.dataset.themeOption === savedTheme; }
     );
+
     applyTheme(savedThemeExists ? savedTheme : defaultTheme);
 
     themeButtons.forEach(function (button) {
-        button.addEventListener('click', function (event) {
-            // Stops the click from bubbling up and immediately closing the
-            // site-menu dropdown (see the click-outside-closes-it listener
-            // for #site-menu-dropdown in base.html).
-            event.stopPropagation();
+        button.addEventListener('click', function () {
             applyTheme(button.dataset.themeOption);
         });
     });
+
+    profileTabLinks.forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            const targetId = link.hash ? link.hash.slice(1) : '';
+            const target = targetId ? document.getElementById(targetId) : null;
+
+            if (!target) {
+                return;
+            }
+
+            event.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    function updateProfileTabFromHash() {
+        if (!window.location.hash) {
+            return;
+        }
+
+        const matchingTab = Array.prototype.find.call(
+            allProfileTabs,
+            function (tab) { return tab.hash === window.location.hash; }
+        );
+
+        if (!matchingTab) {
+            return;
+        }
+
+        allProfileTabs.forEach(function (tab) {
+            tab.removeAttribute('aria-current');
+        });
+        matchingTab.setAttribute('aria-current', 'page');
+    }
+
+    updateProfileTabFromHash();
+    window.addEventListener('hashchange', updateProfileTabFromHash);
 })();

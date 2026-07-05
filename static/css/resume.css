@@ -1076,3 +1076,72 @@ body[data-theme="blueprint-light"] .resume-progression-strip {
     background: rgb(255 255 255 / 72%);
     border-color: var(--color-border);
 }
+
+
+/* =========================================================
+   SKILL EVIDENCE AFFORDANCE + SKILLS PAGE
+   Added with the Skills profile tab. The hint line and the
+   small "+" badge exist to make it obvious that skill cards
+   are clickable and reveal resume evidence.
+   ========================================================= */
+
+/* One-line "click for evidence" hint. Sits on the same line as the
+   section title: the compact heading is a flex row, so the hint lands
+   to the right of "Core Skills & Expertise" (and of the first category
+   title on the Skills page). */
+.resume-section-heading--compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 16px;
+}
+
+.resume-skill-hint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.84rem;
+}
+
+/* ---------- Skills page (templates/skills.html) ---------- */
+
+/* Smaller, denser skill buttons on the dedicated Skills page: the
+   categories break the 21 skills into short rows, so compact pill-like
+   cards read more professional than the resume page's larger tiles. */
+.skills-page .resume-skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.skills-page .resume-skill-button {
+    min-height: 34px;
+    padding: 5px 12px;
+    border-radius: 6px;
+}
+
+.skills-page .resume-skill-button strong {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.skills-hero {
+    padding-bottom: clamp(8px, 1.6vw, 14px);
+}
+
+.skills-hero__lead {
+    max-width: 680px;
+    margin-top: 12px;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Category sections sit closer together than full resume sections. */
+.skills-page .resume-section {
+    padding-top: clamp(14px, 2vw, 22px);
+    padding-bottom: clamp(14px, 2vw, 22px);
+}
+
+.skills-cta {
+    padding-bottom: clamp(40px, 5vw, 64px);
+}

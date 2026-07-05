@@ -1,21 +1,113 @@
-{# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
 {% extends "base.html" %}
 
-{# This block controls the text shown in the browser tab for this page. #}
-{% block title %}Skills | Pete Carter{% endblock %}
+{# Only skills approved for public display appear on this page. #}
+{% set public_skills = resume.skills|selectattr("public_display")|list %}
 
-{# Everything inside this content block gets inserted into base.html's <main> area. #}
+{% block title %}Pete Carter | Skills &amp; Expertise{% endblock %}
+
+{% block extra_head %}
+<meta
+    name="description"
+    content="Pete Carter's systems engineering skills — MBSE, requirements, digital engineering, automation, and AI-enabled tools — each backed by resume evidence."
+>
+{# Reuses the resume stylesheet so skill cards and popovers look identical
+   here and on the resume page. #}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/resume.css') }}?v=skills-page-2"
+>
+{% endblock %}
+
 {% block content %}
+{# id="resume-page" lets the existing resume.js power the evidence popovers
+   on this page too — that script only runs when it finds this id. #}
+<div class="resume-page skills-page" id="resume-page">
 
-<!-- Placeholder section: this prevents /skills from crashing until we build the full page. -->
-<section class="projects-section" aria-labelledby="skills-title">
-    <div class="site-container projects-copy">
-        <p class="section-eyebrow">Skills</p>
-        <h2 id="skills-title">Skills page coming soon</h2>
-        <p>
-            This page is ready for systems engineering, MBSE, project management, and AI skills.
-        </p>
-    </div>
-</section>
+    <section class="resume-hero skills-hero" aria-labelledby="skills-title">
+        <div class="site-container">
+            <p class="section-eyebrow">Skills &amp; Expertise</p>
+            <h1 id="skills-title">Skills Backed by Evidence</h1>
+            <p class="skills-hero__lead">
+                Every skill below is tied to specific accomplishments from Pete's
+                approved career history — nothing is listed without proof behind it.
+            </p>
+        </div>
+    </section>
 
+    {# One section per category, in the order the categories appear in
+       resume_data.json. "Featured" and "All Skills" are meta-categories
+       used elsewhere, so they are skipped here. The namespace flag makes
+       sure the "click for evidence" hint appears exactly once, under the
+       first category that actually renders. #}
+    {% set ns = namespace(hint_shown=false) %}
+    {% for category in resume.skill_categories %}
+    {% if category.id not in ['featured', 'all'] %}
+    {% set category_skills = public_skills|selectattr("category_id", "equalto", category.id)|list %}
+    {% if category_skills %}
+    <section class="resume-section resume-skills" aria-label="{{ category.label }}">
+        <div class="site-container">
+            <div class="resume-section-heading resume-section-heading--compact">
+                <h2 class="resume-strip-title">{{ category.label }}</h2>
+                {% if not ns.hint_shown %}
+                <p class="resume-skill-hint">Click any skill to see the resume evidence behind it.</p>
+                {% set ns.hint_shown = true %}
+                {% endif %}
+            </div>
+
+            <div class="resume-skill-grid">
+                {% for skill in category_skills %}
+                <article
+                    class="resume-skill-card"
+                    data-skill-card
+                    data-skill-id="{{ skill.id }}"
+                    data-category-id="{{ skill.category_id }}"
+                >
+                    <button
+                        class="resume-skill-button"
+                        type="button"
+                        data-skill-popover-trigger
+                        aria-expanded="false"
+                        aria-controls="skill-popover-{{ skill.id }}"
+                        aria-label="{{ skill.display_name }}. View supporting resume evidence."
+                    >
+                        <strong>{{ skill.display_name }}</strong>
+                    </button>
+                    <div
+                        class="resume-skill-popover"
+                        id="skill-popover-{{ skill.id }}"
+                        data-skill-popover
+                        role="tooltip"
+                        hidden
+                    >
+                        <span class="resume-skill-kicker">Resume evidence</span>
+                        <strong>{{ skill.display_name }}</strong>
+                        <ul>
+                            {% for evidence in skill.evidence_items[:2] %}
+                            <li>{{ evidence.text }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+
+    <section class="resume-section skills-cta" aria-label="See the full resume">
+        <div class="site-container">
+            <a class="btn btn-primary" href="{{ portfolio_resume_url }}">
+                View the Full Interactive Resume
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-5"></script>
 {% endblock %}
