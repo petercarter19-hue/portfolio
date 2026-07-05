@@ -2594,9 +2594,11 @@ body[data-theme="blueprint-light"] .metric-money {
         bottom: -2px;
     }
 
+    /* Same scale the My Story hero uses at this width, so the homepage
+       keeps the compact desktop feel instead of blowing up on tablets. */
     .hero-copy h1 {
         max-width: 680px;
-        font-size: clamp(2.1rem, 7vw, 3.25rem);
+        font-size: clamp(1.6rem, 5vw, 2.3rem);
     }
 
     .hero-copy {
@@ -2723,11 +2725,13 @@ body[data-theme="blueprint-light"] .metric-money {
         line-height: 1.7;
     }
 
+    /* 6.4vw lands at 24px on a 375px phone — the exact size the My Story
+       hero headline renders at, so both pages feel like the same site. */
     .hero-copy h1 {
-        max-width: 12.5em;
+        max-width: 20em;
         margin-bottom: 18px;
-        font-size: clamp(2.05rem, 10vw, 2.85rem);
-        line-height: 1.05;
+        font-size: clamp(1.5rem, 6.4vw, 2.05rem);
+        line-height: 1.1;
     }
 
     .hero-description {
@@ -2744,6 +2748,13 @@ body[data-theme="blueprint-light"] .metric-money {
 
     .btn {
         width: 100%;
+    }
+
+    /* Keep the hero's Interactive Resume button compact like desktop
+       instead of a full-width bar (part of keeping the desktop essence
+       on phones — matches how My Story handles its hero). */
+    .hero-actions .btn {
+        width: auto;
     }
 
     .project-grid {
@@ -2768,8 +2779,10 @@ body[data-theme="blueprint-light"] .metric-money {
         padding-top: 44px;
     }
 
+    /* Section heading below the hero: same clamp scale as the My Story
+       section headings so it doesn't tower over the rest of the site. */
     .projects-copy h2 {
-        font-size: clamp(1.85rem, 8vw, 2.4rem);
+        font-size: clamp(1.55rem, 6vw, 1.9rem);
     }
 }
 

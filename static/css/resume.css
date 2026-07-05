@@ -833,8 +833,17 @@
         padding: 22px 0 18px;
     }
 
+    /* Phone scale matched to the My Story hero (24px at 375px wide) so
+       the resume keeps its compact desktop feel instead of blowing up.
+       The old 12vw rule rendered the name at 45px on a phone. */
     .resume-hero h1 {
-        font-size: clamp(2.35rem, 12vw, 3.4rem);
+        font-size: clamp(1.6rem, 6.4vw, 2.2rem);
+    }
+
+    /* "SYSTEMS ENGINEER" line under the name: shrink with the headline
+       (1.28rem looked oversized once the name dropped to phone scale). */
+    .resume-hero__name {
+        font-size: 1.02rem;
     }
 
     /* Metric cards stay 2x2 even on phones (site rule: groups of 4
