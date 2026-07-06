@@ -3959,10 +3959,10 @@ body[data-theme="light-slate"] {
        textured/shadowed system as Gray & Sage, just light colors. */
     --slate-photo: var(--site-slate-bg-light);
     --slate-header-flat: rgb(238 236 231);
-    --slate-tint-band: rgb(238 236 230 / 72%);
-    --slate-tint-tabs: rgb(243 241 236 / 76%);
-    --slate-tint-card: rgb(252 251 248 / 58%);
-    --slate-tint-chip: rgb(247 245 240 / 64%);
+    --slate-tint-band: rgb(238 236 230 / 64%);
+    --slate-tint-tabs: rgb(243 241 236 / 60%);
+    --slate-tint-card: rgb(252 251 248 / 50%);
+    --slate-tint-chip: rgb(247 245 240 / 54%);
     --slate-tint-input: rgb(250 249 246 / 88%);
     --slate-screen: rgb(232 231 227);
     --slate-edge-lit: rgb(255 255 255 / 80%);
@@ -3974,12 +3974,12 @@ body[data-theme="light-slate"] {
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(70 62 52 / 12%),
-        0 10px 20px rgb(70 62 52 / 13%),
-        0 22px 42px rgb(70 62 52 / 14%);
+        0 12px 24px rgb(70 62 52 / 16%),
+        0 28px 54px rgb(70 62 52 / 17%);
     --slab-chip-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(70 62 52 / 12%),
-        0 8px 16px rgb(70 62 52 / 13%);
+        0 10px 20px rgb(70 62 52 / 16%);
 }
 
 body[data-theme="light-blue-slate"] {
@@ -4025,10 +4025,10 @@ body[data-theme="light-blue-slate"] {
     /* Real-photo slab treatment — pale blue stone. */
     --slate-photo: var(--site-slate-bg-lightblue);
     --slate-header-flat: rgb(232 240 248);
-    --slate-tint-band: rgb(231 239 248 / 72%);
-    --slate-tint-tabs: rgb(238 245 251 / 76%);
-    --slate-tint-card: rgb(250 252 254 / 58%);
-    --slate-tint-chip: rgb(243 248 253 / 64%);
+    --slate-tint-band: rgb(231 239 248 / 64%);
+    --slate-tint-tabs: rgb(238 245 251 / 60%);
+    --slate-tint-card: rgb(250 252 254 / 50%);
+    --slate-tint-chip: rgb(243 248 253 / 54%);
     --slate-tint-input: rgb(248 251 254 / 88%);
     --slate-screen: rgb(226 234 242);
     --slate-edge-lit: rgb(255 255 255 / 82%);
@@ -4039,12 +4039,12 @@ body[data-theme="light-blue-slate"] {
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(24 52 88 / 12%),
-        0 10px 20px rgb(24 52 88 / 14%),
-        0 22px 42px rgb(24 52 88 / 15%);
+        0 12px 24px rgb(24 52 88 / 17%),
+        0 28px 54px rgb(24 52 88 / 18%);
     --slab-chip-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(24 52 88 / 12%),
-        0 8px 16px rgb(24 52 88 / 14%);
+        0 10px 20px rgb(24 52 88 / 17%);
 }
 
 body[data-theme="gray-slate"] {
@@ -4096,10 +4096,10 @@ body[data-theme="gray-slate"] {
        (--slate-header-flat), and the Ask Pete AI box stays heavier
        (--slate-tint-input) so it reads calmer than everything else. */
     --slate-header-flat: rgb(19 21 23);
-    --slate-tint-band: rgb(20 23 26 / 74%);
-    --slate-tint-tabs: rgb(16 18 21 / 76%);
-    --slate-tint-card: rgb(15 17 20 / 62%);
-    --slate-tint-chip: rgb(18 21 24 / 64%);
+    --slate-tint-band: rgb(20 23 26 / 66%);
+    --slate-tint-tabs: rgb(16 18 21 / 58%);
+    --slate-tint-card: rgb(15 17 20 / 54%);
+    --slate-tint-chip: rgb(18 21 24 / 52%);
     --slate-tint-input: rgb(15 17 20 / 86%);
     --slate-screen: rgb(20 21 22);
     --slate-edge-lit: rgb(255 255 255 / 22%);
@@ -4150,10 +4150,10 @@ body[data-theme="sage-slate"] {
     /* Real-photo slab treatment: sage stone photo + green-tinted washes. */
     --slate-photo: var(--site-slate-bg-sage);
     --slate-header-flat: rgb(13 21 17);
-    --slate-tint-band: rgb(16 26 21 / 74%);
-    --slate-tint-tabs: rgb(11 19 15 / 76%);
-    --slate-tint-card: rgb(13 22 18 / 62%);
-    --slate-tint-chip: rgb(15 25 20 / 64%);
+    --slate-tint-band: rgb(16 26 21 / 66%);
+    --slate-tint-tabs: rgb(11 19 15 / 58%);
+    --slate-tint-card: rgb(13 22 18 / 54%);
+    --slate-tint-chip: rgb(15 25 20 / 52%);
     --slate-tint-input: rgb(13 22 18 / 86%);
     --slate-screen: rgb(16 23 19);
     --slate-edge-lit: rgb(232 240 228 / 20%);
@@ -4596,7 +4596,7 @@ body[data-slate="on"] .profile-header {
     height: 46px;
     flex-shrink: 0;
     border-radius: 9px;
-    transition: transform 160ms ease, filter 160ms ease;
+    transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .profile-tabs__linkedin svg {
@@ -4901,11 +4901,50 @@ body[data-slate-photo="on"] {
         linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
         var(--slate-photo);
     --slab-card-size: auto, auto, 820px auto;
+    --slab-bar:
+        linear-gradient(180deg, rgb(255 255 255 / 10%), transparent 44%, rgb(0 0 0 / 32%)),
+        linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
+        linear-gradient(var(--slate-header-flat), var(--slate-header-flat));
+    --slab-bar-size: auto, auto, auto;
+    --slab-bar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 16%),
+        inset 0 -1px 1px rgb(0 0 0 / 56%),
+        0 2px 4px rgb(0 0 0 / 44%),
+        0 14px 24px rgb(0 0 0 / 58%),
+        0 28px 48px rgb(0 0 0 / 50%);
     --slab-chip:
         linear-gradient(168deg, var(--slab-hi-chip), transparent 44%, var(--slab-lo-chip)),
         linear-gradient(var(--slate-tint-chip), var(--slate-tint-chip)),
         var(--slate-photo);
     --slab-chip-size: auto, auto, 460px auto;
+
+    /* Smaller controls need a stronger close shadow and visible grain,
+       otherwise they flatten into the tab bar instead of reading as their
+       own raised slate pieces. */
+    --slab-control:
+        var(--slate-noise),
+        radial-gradient(circle at 28% 15%, rgb(255 255 255 / 16%), transparent 42%),
+        linear-gradient(168deg, var(--slab-hi-chip), transparent 42%, var(--slab-lo-chip)),
+        linear-gradient(var(--slate-tint-chip), var(--slate-tint-chip)),
+        var(--slate-photo);
+    --slab-control-size: 170px 170px, auto, auto, auto, 430px auto;
+    --slab-control-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 18%),
+        inset 0 -1px 1px rgb(0 0 0 / 50%),
+        0 2px 3px rgb(0 0 0 / 42%),
+        0 10px 18px rgb(0 0 0 / 50%),
+        0 18px 30px rgb(0 0 0 / 42%);
+    --slab-primary:
+        var(--slate-noise),
+        radial-gradient(circle at 32% 12%, rgb(255 255 255 / 28%), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent-hover) 82%, #ffffff 18%), var(--button-primary-bg));
+    --slab-primary-size: 180px 180px, auto, auto;
+    --slab-primary-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 52%),
+        inset 0 -1px 1px rgb(0 0 0 / 30%),
+        0 2px 4px rgb(0 0 0 / 34%),
+        0 11px 20px rgb(0 0 0 / 38%),
+        0 0 20px color-mix(in srgb, var(--button-primary-bg) 24%, transparent);
 
     /* Raised-off-the-page shadow stacks: a lit top edge and dark seat
        line inside, then a tight contact shadow plus a wide ambient one,
@@ -5032,21 +5071,40 @@ body[data-slate-photo="on"] .profile-header {
 }
 
 body[data-slate-photo="on"] .profile-tabs {
-    background:
-        linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 40%, rgb(0 0 0 / 22%)),
-        linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
-        var(--slate-photo);
-    background-size: auto, auto, cover;
-    background-position: 0 0, 0 0, center top;
-    background-attachment: scroll, scroll, fixed;
+    isolation: isolate;
+    overflow: visible;
+    background: var(--slab-bar);
+    background-size: var(--slab-bar-size);
+    background-position: 0 0, 0 0, 0 0;
+    background-attachment: scroll, scroll, scroll;
     background-repeat: no-repeat;
     border-top: 1px solid var(--slate-edge-lit);
-    border-bottom: 1px solid var(--border);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 9%),
-        0 18px 36px rgb(0 0 0 / 55%);
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    box-shadow: var(--slab-bar-shadow);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+}
+
+body[data-slate-photo="on"] .profile-tabs::before,
+body[data-slate-photo="on"] .profile-tabs::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    left: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+body[data-slate-photo="on"] .profile-tabs::before {
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--slate-edge-lit), transparent);
+}
+
+body[data-slate-photo="on"] .profile-tabs::after {
+    bottom: -20px;
+    height: 20px;
+    background: linear-gradient(180deg, rgb(0 0 0 / 42%), transparent);
 }
 
 /* Ask Pete AI box: the one surface the user wants LESS textured — heavier
@@ -5113,17 +5171,18 @@ body[data-slate-photo="on"] .resume-inline-button,
 body[data-slate-photo="on"] .work-ask-btn,
 body[data-slate-photo="on"] .btn-secondary,
 body[data-slate-photo="on"] .sign-in-btn,
+body[data-slate-photo="on"] .nav-linkedin,
 body[data-slate-photo="on"] .platform-page__points li,
 body[data-slate-photo="on"] .project-tags span,
 body[data-slate-photo="on"] .resume-role-tags span,
 body[data-slate-photo="on"] .resume-chip-row span,
 body[data-slate-photo="on"] .dashboard-tile,
 body[data-slate-photo="on"] .timeline-item__icon {
-    background: var(--slab-chip);
-    background-size: var(--slab-chip-size);
+    background: var(--slab-control);
+    background-size: var(--slab-control-size);
     border: 1px solid var(--border);
     border-top-color: var(--slate-edge-lit);
-    box-shadow: var(--slab-chip-shadow);
+    box-shadow: var(--slab-control-shadow);
 }
 
 /* The "current role" note badge carried a hard cyan/blue tint — recolor
@@ -5146,11 +5205,18 @@ body[data-slate-photo="on"] .work-project-tab.is-active,
 body[data-slate-photo="on"] .resume-ai-suggestion:hover,
 body[data-slate-photo="on"] .resume-ai-suggestion:focus-visible,
 body[data-slate-photo="on"] .btn-secondary:hover,
-body[data-slate-photo="on"] .btn-secondary:focus-visible {
-    background: var(--slab-chip);
-    background-size: var(--slab-chip-size);
+body[data-slate-photo="on"] .btn-secondary:focus-visible,
+body[data-slate-photo="on"] .work-ask-btn:hover,
+body[data-slate-photo="on"] .work-ask-btn:focus-visible,
+body[data-slate-photo="on"] .nav-linkedin:hover,
+body[data-slate-photo="on"] .nav-linkedin:focus-visible {
+    background: var(--slab-control);
+    background-size: var(--slab-control-size);
     border-color: var(--accent);
-    filter: brightness(1.14);
+    filter: brightness(1.13);
+    box-shadow:
+        var(--slab-control-shadow),
+        0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 body[data-slate-photo="on"] .resume-metric-card:hover,
@@ -5177,16 +5243,10 @@ body[data-slate-photo="on"] .fun-fact-card:hover {
 body[data-slate-photo="on"] .btn-primary,
 body[data-slate-photo="on"] .hero-ai-search__button {
     color: var(--button-primary-text);
-    background:
-        var(--slate-noise),
-        linear-gradient(180deg, var(--accent-hover), var(--button-primary-bg));
-    background-size: 220px 220px, auto;
+    background: var(--slab-primary);
+    background-size: var(--slab-primary-size);
     border: 1px solid rgb(255 255 255 / 32%);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 45%),
-        inset 0 -1px 1px rgb(0 0 0 / 25%),
-        0 2px 4px rgb(0 0 0 / 28%),
-        0 9px 18px rgb(0 0 0 / 32%);
+    box-shadow: var(--slab-primary-shadow);
 }
 
 /* Their hover states elsewhere swap in a flat bright gold — keep the
@@ -5195,11 +5255,12 @@ body[data-slate-photo="on"] .btn-primary:hover,
 body[data-slate-photo="on"] .btn-primary:focus-visible,
 body[data-slate-photo="on"] .hero-ai-search__button:hover,
 body[data-slate-photo="on"] .hero-ai-search__button:focus-visible {
-    background:
-        var(--slate-noise),
-        linear-gradient(180deg, var(--accent-hover), var(--button-primary-bg));
-    background-size: 220px 220px, auto;
-    filter: brightness(1.08);
+    background: var(--slab-primary);
+    background-size: var(--slab-primary-size);
+    filter: brightness(1.09) saturate(1.03);
+    box-shadow:
+        var(--slab-primary-shadow),
+        0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 /* ---------- AI response bubble: flat, untextured ----------
@@ -5366,6 +5427,33 @@ body[data-theme="light-blue-slate"]::before {
         linear-gradient(180deg, transparent, rgb(90 96 110 / 6%));
 }
 
+body[data-theme="light-slate"],
+body[data-theme="light-blue-slate"] {
+    --slab-bar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(50 58 72 / 12%),
+        0 2px 4px rgb(40 45 60 / 12%),
+        0 14px 26px rgb(40 45 60 / 17%),
+        0 28px 50px rgb(40 45 60 / 12%);
+    --slab-card-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(50 58 72 / 10%),
+        0 2px 4px rgb(40 45 60 / 10%),
+        0 14px 26px rgb(40 45 60 / 15%),
+        0 28px 52px rgb(40 45 60 / 12%);
+    --slab-control-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(50 58 72 / 10%),
+        0 2px 4px rgb(40 45 60 / 12%),
+        0 10px 20px rgb(40 45 60 / 15%);
+    --slab-primary-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 62%),
+        inset 0 -1px 1px rgb(70 56 26 / 18%),
+        0 2px 4px rgb(70 56 26 / 18%),
+        0 12px 22px rgb(70 56 26 / 22%),
+        0 0 20px color-mix(in srgb, var(--button-primary-bg) 22%, transparent);
+}
+
 /* Bars: soft light shadows in place of heavy black. */
 body[data-theme="light-slate"] .global-header,
 body[data-theme="light-blue-slate"] .global-header {
@@ -5382,9 +5470,7 @@ body[data-theme="light-blue-slate"] .profile-header {
 
 body[data-theme="light-slate"] .profile-tabs,
 body[data-theme="light-blue-slate"] .profile-tabs {
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 70%),
-        0 14px 28px rgb(40 45 60 / 13%);
+    box-shadow: var(--slab-bar-shadow);
 }
 
 /* Metric-icon badge: an accent-colored ring with a light fill instead of
