@@ -2428,20 +2428,15 @@ body[data-theme="blueprint-light"] .metric-money {
    This section holds @media breakpoints for every page except
    My Story, which keeps its own responsive block further down
    (see "My Story responsive behavior" near the end of this file).
-
-   SIZING RULE (set 2026-07-05): screens from iPad Mini (744px)
-   on up show the EXACT desktop layout — a script in base.html
-   renders the page at desktop width (1280px) and scales it down
-   to fit, so nothing reflows or "blows up" on tablets. That is
-   why every old tablet breakpoint (780/860/900/980/1040/1180/
-   1240px) now says 743px: those blocks are phone-only and all
-   apply together below iPad Mini width. The 700px and 620px
-   blocks are further phone refinements for narrower screens.
+   Each @media (max-width: ...) block below only applies once the
+   browser window gets narrower than that width — so the 1180px
+   block is the first to kick in as the window shrinks, then 1040px,
+   and so on down to the narrowest phone sizes.
    ========================================================= */
 
-/* Phones (below iPad Mini): nav spacing tightens, hero and
+/* Large tablets / small laptops: nav spacing tightens, hero and
    lifecycle diagram stack to one column, work page panels stack. */
-@media (max-width: 743px) {
+@media (max-width: 1180px) {
     .site-container,
     .nav-container,
     .footer-container {
@@ -2509,7 +2504,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* Tablets: the header's brand text and LinkedIn icon shrink a step
    so everything keeps fitting on one row. */
-@media (max-width: 743px) {
+@media (max-width: 1040px) {
     .nav-container {
         gap: 14px;
     }
@@ -2552,7 +2547,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* Small tablets: header shrinks again, and the /work page's hero and
    proof-grid columns collapse to one column. */
-@media (max-width: 743px) {
+@media (max-width: 860px) {
     .nav-container {
         width: min(100% - 32px, var(--site-width));
         grid-template-columns: auto minmax(150px, 0.8fr) minmax(0, auto) minmax(34px, 0.4fr);
@@ -2607,7 +2602,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* Phones: the header fully stacks (menu, brand, links, LinkedIn each
    get their own row) and the homepage's 3 project cards become 2-wide. */
-@media (max-width: 743px) {
+@media (max-width: 780px) {
     .site-header {
         position: relative;
     }
@@ -2714,7 +2709,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* At tablet widths the circular lifecycle takes over the page.
    Use the same readable stacked bars as the phone layout sooner. */
-@media (max-width: 743px) {
+@media (max-width: 980px) {
     .lifecycle-visual {
         aspect-ratio: auto;
     }
@@ -2982,7 +2977,7 @@ body[data-theme="blueprint-light"] .metric-money {
 }
 
 /* Switch to 2x2 before the four chips would ever need to wrap */
-@media (max-width: 743px) {
+@media (max-width: 1240px) {
     .story-values-row {
         grid-template-columns: repeat(2, minmax(0, auto));
     }
@@ -3113,7 +3108,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* Keep the desktop My Story hero compact: the collage should support
    the story, not push the journey section far down the screen. */
-@media (min-width: 744px) {
+@media (min-width: 781px) {
     .story-hero__grid {
         align-items: center;
     }
@@ -3573,7 +3568,7 @@ body[data-theme="blueprint-light"] .metric-money {
 /* ---------- My Story responsive behavior ---------- */
 
 /* Tablets: the four value chips in the hero shrink their icons and text. */
-@media (max-width: 743px) {
+@media (max-width: 980px) {
     .story-values-row {
         gap: 10px 12px;
     }
@@ -3598,7 +3593,7 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 }
 
-@media (max-width: 743px) {
+@media (max-width: 900px) {
     .story-hero__portrait::before {
         width: clamp(310px, 46vw, 460px);
     }
@@ -3631,7 +3626,7 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 }
 
-@media (max-width: 743px) {
+@media (max-width: 780px) {
     /* The hero keeps its desktop shape on phones: headline and value
        chips on the left, collage on the right, and the AI search box
        spanning the full width underneath both columns.
@@ -3757,7 +3752,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
 /* Tablets and below: the PeerSlate marketing homepage's two-column
    sections (hero, problem statement, features) stack to one column. */
-@media (max-width: 743px) {
+@media (max-width: 1020px) {
     .peerslate-hero__grid,
     .peerslate-two-column,
     .peerslate-feature-layout {
@@ -5693,7 +5688,7 @@ body[data-theme="light-blue-slate"] #chat-panel {
     box-shadow: var(--slab-card-shadow), 0 0 30px rgb(40 45 60 / 14%);
 }
 
-@media (max-width: 743px) {
+@media (max-width: 1180px) {
     .platform-nav__inner {
         grid-template-columns: 1fr auto;
         gap: 16px;
@@ -5721,7 +5716,7 @@ body[data-theme="light-blue-slate"] #chat-panel {
     }
 }
 
-@media (max-width: 743px) {
+@media (max-width: 780px) {
     .global-header {
         position: relative;
     }

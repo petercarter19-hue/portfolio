@@ -5,12 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- DESKTOP-EVERYWHERE SIZING (added 2026-07-05)
-         Rule: every screen from an iPad Mini (744px wide) on up shows the
-         EXACT desktop layout, just scaled down to fit — no tablet reflow,
-         no growing buttons. Screens narrower than 744px keep the phone
-         layout (to be polished later). This runs before the CSS loads so
-         there is no flash of the wrong size. -->
+    <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
+         2026-07-06)
+         On a genuine touch tablet (iPad Mini and up), this forces the
+         browser to render the page as if the screen were 1280px wide and
+         shrink it to fit — real desktop layout, pixel-perfect, handled
+         natively by the browser (like <meta name="viewport" width=1024">
+         tricks other sites use). This runs before the CSS loads so
+         there's no flash of the wrong size.
+
+         This does NOT apply to a desktop browser window that's simply
+         been resized narrower — those keep using style.css's normal
+         tablet breakpoints (1180/1040/860/780px etc.) instead.
+         An earlier version of this script ALSO scaled narrow desktop
+         browser windows down with CSS `zoom`, to pixel-match the real
+         desktop the same way. That broke the profile header bar's
+         background: it uses background-attachment: fixed so its
+         stone-photo texture lines up with the page behind it, and fixed
+         backgrounds stay pinned to the true browser viewport instead of
+         moving with `zoom` — so once zoomed, the header's texture no
+         longer lined up with the page around it (worse in Safari, which
+         Macs default to). Real tablets don't hit this bug because forcing
+         the viewport width is native browser behavior, not a CSS scaling
+         trick — that's why this script only touches touch devices now. -->
     <script>
         (function () {
             var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
@@ -24,22 +41,7 @@
                     document.querySelector('meta[name="viewport"]')
                         .setAttribute('content', 'width=' + DESKTOP_WIDTH);
                 }
-                return;  /* phones fall through untouched */
             }
-
-            /* Desktop browsers ignore the viewport tag, so when the window
-               is narrower than the full desktop layout we scale the whole
-               page down with CSS zoom instead of letting it reflow. */
-            function fitDesktopScale() {
-                var w = window.innerWidth;
-                if (w >= TABLET_MIN && w < DESKTOP_WIDTH) {
-                    document.documentElement.style.zoom = w / DESKTOP_WIDTH;
-                } else {
-                    document.documentElement.style.zoom = '';
-                }
-            }
-            fitDesktopScale();
-            window.addEventListener('resize', fitDesktopScale);
         })();
     </script>
 
