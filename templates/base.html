@@ -69,10 +69,16 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet"
     >
+    <!-- Playfair Display: the serif display face used by the Slate Paper
+         theme's headings and the Interview Me studio. -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap"
+        rel="stylesheet"
+    >
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=whiteboard-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=interview-paper-1"
     >
     <link
         rel="stylesheet"
@@ -128,6 +134,9 @@
                         </button>
                         <button class="theme-option theme-option--sage" type="button" data-theme-option="sage-slate" aria-label="Use Sage Slate theme" aria-pressed="false">
                             <span class="theme-tooltip">Sage Slate</span>
+                        </button>
+                        <button class="theme-option theme-option--paper" type="button" data-theme-option="paper-slate" aria-label="Use Slate Paper theme" aria-pressed="false">
+                            <span class="theme-tooltip">Slate Paper</span>
                         </button>
                         <button class="theme-option theme-option--gold" type="button" data-theme-option="command-gold" aria-label="Use Command Gold theme" aria-pressed="false">
                             <span class="theme-tooltip">Command Gold</span>
@@ -241,7 +250,7 @@
         </p>
     </div>
 
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-5"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-6"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=scroll-toggle-1"></script>
     {% block extra_scripts %}{% endblock %}
 

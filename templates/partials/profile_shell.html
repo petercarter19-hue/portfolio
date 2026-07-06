@@ -43,14 +43,15 @@
 
 <nav class="profile-tabs" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
-        {# Tab order per Pete (2026-07-06): Overview, My Story, Resume,
-           Projects. The Skills page still exists at /petec/skills — it
-           just isn't linked from the tab strip anymore. #}
+        {# Tab order per Pete (2026-07-06): Overview, My Slate, Resume,
+           Projects, Slate Board, Interview Me. "My Slate" is the renamed
+           My Story page (URL stays /my-story so old links keep working);
+           the Skills page still exists at /petec/skills, just unlinked. #}
         <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
             Overview
         </a>
         <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
-            My Story
+            My Slate
         </a>
         <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
             Resume
@@ -60,6 +61,9 @@
         </a>
         <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
             Slate Board
+        </a>
+        <a class="profile-tab" href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>
+            Interview Me
         </a>
 
         {# LinkedIn sits alone on the far right of the tab row. #}

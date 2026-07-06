@@ -4220,6 +4220,62 @@ body[data-theme="sage-slate"] {
     --slate-edge-lit: rgb(232 240 228 / 20%);
 }
 
+/* SLATE PAPER (added 2026-07-06 from Pete's second mockup set): warm
+   near-white paper, navy primary, royal-blue links, and SERIF display
+   type — clean editorial, no stone photo (data-slate on, photo off, so
+   it uses the procedural paper grain instead of rock slabs). */
+body[data-theme="paper-slate"] {
+    --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+    --bg: #f7f5f0;
+    --bg-elevated: #efece5;
+    --surface: #ffffff;
+    --surface-soft: #f6f4ee;
+    --text: #1c2942;
+    --text-muted: #5b6474;
+    --accent: #1e4fa3;
+    --accent-hover: #2a63c4;
+    --accent-soft: rgb(30 79 163 / 10%);
+    --border: #e2ded4;
+    --shadow: 0 16px 38px rgb(40 45 60 / 10%);
+    --nav-bg: rgb(252 251 248 / 95%);
+    --tab-active: #1e4fa3;
+    --button-primary-bg: #16305e;
+    --button-primary-text: #f6f8fc;
+    --button-secondary-bg: #ffffff;
+    --button-secondary-text: #1c2942;
+    --color-page: #f7f5f0;
+    --color-page-deep: #ece9e1;
+    --color-section: #faf9f5;
+    --color-card: #ffffff;
+    --color-card-elevated: #f6f4ee;
+    --color-card-hover: #f0f3f8;
+    --color-gold: #1e4fa3;
+    --color-gold-bright: #2a63c4;
+    --color-gold-muted: #1a4488;
+    --color-gold-dark: #12315f;
+    --color-blue: #2563eb;
+    --color-cyan: #0e7490;
+    --color-text-primary: #1c2942;
+    --color-text-secondary: #43506a;
+    --color-text-muted: #6b7486;
+    --color-text-dark: #101c33;
+    --color-border: #e2ded4;
+    --color-border-soft: #ebe8e0;
+    --color-border-gold: #9db4d9;
+    --shadow-card: var(--shadow);
+    --shadow-gold: 0 8px 24px rgb(30 79 163 / 15%);
+}
+
+/* Serif display type is the Slate Paper signature: headings across the
+   site switch to Playfair while UI text/labels/buttons stay Inter. */
+body[data-theme="paper-slate"] h1,
+body[data-theme="paper-slate"] h2,
+body[data-theme="paper-slate"] h3 {
+    font-family: var(--font-serif);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
 /* ---------- Slate stone texture ----------
    The "slate" look comes from three stacked effects, all pure CSS (no
    image downloads): a grainy stone noise (an inline SVG turbulence
@@ -4363,7 +4419,12 @@ body[data-slate="on"]::before {
 }
 
 .theme-option--light {
-    background: linear-gradient(135deg, #fbfaf7, #b77b22);
+    /* Matches the 2026-07-06 green refresh of Light Slate. */
+    background: linear-gradient(135deg, #fbfaf7, #2e7d52);
+}
+
+.theme-option--paper {
+    background: linear-gradient(135deg, #faf8f3, #16305e);
 }
 
 .theme-option--blue {
@@ -5398,7 +5459,10 @@ body[data-slate-photo="on"] .goal-card,
 body[data-slate-photo="on"] .board-momentum,
 body[data-slate-photo="on"] .badge-card,
 body[data-slate-photo="on"] .board-entry,
-body[data-slate-photo="on"] .feed-card {
+body[data-slate-photo="on"] .feed-card,
+body[data-slate-photo="on"] .iv-card,
+body[data-slate-photo="on"] .iv-benefit,
+body[data-slate-photo="on"] .iv-confidence {
     background: var(--slab-card);
     background-size: var(--slab-card-size);
     border: 1px solid var(--border);
@@ -5674,7 +5738,8 @@ body[data-slate-photo="on"] .view-all-link:focus-visible {
    approach as the metrics strip). */
 body[data-slate-photo="on"] .board-compose,
 body[data-slate-photo="on"] .board-momentum,
-body[data-slate-photo="on"] .board-entry {
+body[data-slate-photo="on"] .board-entry,
+body[data-slate-photo="on"] .iv-modebar {
     background:
         linear-gradient(158deg, var(--slab-hi) 0%, transparent 38%, var(--slab-lo) 100%),
         linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
@@ -5823,11 +5888,18 @@ body[data-theme="light-slate"] {
     --gilt-shadow:
         drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
         drop-shadow(0 2px 3px rgb(48 62 53 / 32%));
-    /* Texture pop for the whiter page: stronger grain + bolder veins
-       (green-tinted via the accent) than the other light theme. */
-    --slate-grain: 0.34;
+    /* Texture pop for the whiter page: bolder veins (green-tinted via
+       the accent) than the other light theme. (--slate-grain is NOT set
+       here: photo-slate themes override the ::before grain layer, so a
+       grain value would be a silent no-op — the extra texture comes
+       from the thinner tints/wash in the theme block instead.) */
     --slate-vein-strong: color-mix(in srgb, var(--text) 13%, transparent);
     --slate-vein-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+    /* Slab edge tints must also live in this late block (cascade). */
+    --slab-hi: rgb(255 255 255 / 65%);
+    --slab-lo: rgb(48 62 53 / 12%);
+    --slab-hi-chip: rgb(255 255 255 / 70%);
+    --slab-lo-chip: rgb(48 62 53 / 10%);
 }
 
 body[data-theme="light-blue-slate"] {
@@ -5837,6 +5909,11 @@ body[data-theme="light-blue-slate"] {
     --gilt-shadow:
         drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
         drop-shadow(0 2px 3px rgb(24 52 88 / 32%));
+    /* Slab edge tints must live in this late block (cascade). */
+    --slab-hi: rgb(255 255 255 / 68%);
+    --slab-lo: rgb(24 52 88 / 12%);
+    --slab-hi-chip: rgb(255 255 255 / 72%);
+    --slab-lo-chip: rgb(24 52 88 / 10%);
 }
 
 /* Bars: soft light shadows in place of heavy black. */
@@ -6206,7 +6283,10 @@ body[data-theme="light-blue-slate"] #chat-panel {
 }
 
 .goal-chip--personal {
-    color: var(--color-cyan);
+    /* Mixed toward the text ink so this tiny uppercase label passes AA
+       contrast on the light themes (raw --color-cyan measured ~2.7-4.4:1
+       there); on dark themes the mix stays light and readable. */
+    color: color-mix(in srgb, var(--color-cyan) 55%, var(--text) 45%);
     border-color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
 }
 
@@ -6221,6 +6301,26 @@ body[data-theme="light-blue-slate"] #chat-panel {
     color: var(--text-muted);
     font-size: 0.86rem;
     line-height: 1.5;
+}
+
+/* Status + target line (mockup 3): a colored dot matching the ring. */
+.goal-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.goal-status i {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--ring, var(--accent));
+    box-shadow: 0 0 6px color-mix(in srgb, var(--ring, var(--accent)) 55%, transparent);
 }
 
 /* ---------- Momentum chart ---------- */
@@ -6411,7 +6511,8 @@ body[data-theme="light-blue-slate"] #chat-panel {
 }
 
 .entry-flag--private {
-    color: var(--color-cyan);
+    /* Same AA-contrast mix as .goal-chip--personal above. */
+    color: color-mix(in srgb, var(--color-cyan) 55%, var(--text) 45%);
     background: color-mix(in srgb, var(--color-cyan) 12%, transparent);
     border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
 }
@@ -6544,8 +6645,10 @@ body[data-theme="light-blue-slate"] #chat-panel {
     transition: background-size 240ms ease;
 }
 
+/* Little unchecked circles, like goals waiting to be crossed off. */
 .wb-ink::before {
-    content: "\2013\00a0";
+    content: "\25CB\00a0\00a0";
+    font-size: 0.85em;
 }
 
 .wb-ink:hover,
@@ -6557,6 +6660,26 @@ body[data-theme="light-blue-slate"] #chat-panel {
 .wb-ink--blue { color: #2b5fa5; }
 .wb-ink--violet { color: #6d3fa9; }
 .wb-ink--red { color: #b83a33; }
+
+/* Sticky notes: one per section, pinned at the bottom (mockup 3). */
+.wb-note {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 10px 13px;
+    border-radius: 3px;
+    font-family: "Kalam", "Segoe Print", "Comic Sans MS", cursive;
+    font-size: 0.94rem;
+    line-height: 1.3;
+    transform: rotate(-1.2deg);
+    box-shadow:
+        0 2px 4px rgb(0 0 0 / 16%),
+        0 9px 14px rgb(0 0 0 / 12%);
+}
+
+.wb-note--blue { color: #1d4e89; background: #dcebfa; }
+.wb-note--green { color: #1c6b42; background: #d9f0e0; transform: rotate(1.1deg); }
+.wb-note--violet { color: #5b3591; background: #e7ddf7; }
+.wb-note--orange { color: #a34c08; background: #fde8d3; transform: rotate(1.4deg); }
 
 /* Marker tray on the frame's bottom rail. */
 .whiteboard__tray {
@@ -6770,6 +6893,788 @@ body[data-theme="light-blue-slate"] #chat-panel {
 
     .board-entry__top {
         flex-wrap: wrap;
+    }
+}
+
+/* =========================================================
+   INTERVIEW ME (/petec/interview-me) — Interview Practice Studio.
+   Layout from Pete's mockup: hero + confidence card, four benefit
+   cards, a mode bar, the two-column studio (question / response /
+   coach feedback with score ring / suggested questions on the left;
+   evidence suggestions + STAR helper on the right), and the two
+   60-question banks below. static/js/interview.js runs the logic.
+   ========================================================= */
+
+.iv-page {
+    padding: clamp(34px, 5vw, 58px) 0 72px;
+}
+
+.iv-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 26px;
+}
+
+.iv-hero__copy h1 {
+    margin: 10px 0 14px;
+    color: var(--text);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+}
+
+.iv-hero__lead {
+    max-width: 580px;
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+.iv-hero__prep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.iv-hero__prep img {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border: 2px solid rgb(255 255 255 / 40%);
+    border-radius: 50%;
+}
+
+.iv-hero__prep strong {
+    color: var(--text);
+}
+
+.iv-confidence {
+    padding: 20px 22px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.iv-confidence h2 {
+    color: var(--text);
+    font-size: 1.12rem;
+    font-weight: 800;
+}
+
+.iv-confidence p {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.iv-confidence__check {
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    color: var(--accent);
+    font-weight: 650;
+}
+
+.iv-confidence__check::before {
+    content: "\2713\00a0\00a0";
+    font-weight: 900;
+}
+
+/* Four benefit cards — 4-across / 2x2 (site rule). */
+.iv-benefits {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.iv-benefit {
+    padding: 16px 15px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.iv-benefit h3 {
+    color: var(--text);
+    font-size: 0.94rem;
+    font-weight: 800;
+}
+
+.iv-benefit p {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* ---------- Mode bar ---------- */
+.iv-modebar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    padding: 10px 14px;
+    margin-bottom: 22px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.iv-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.iv-mode {
+    min-height: 36px;
+    padding: 0 16px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 700;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.iv-mode:hover {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+.iv-mode.is-active {
+    color: var(--button-primary-text);
+    background: var(--button-primary-bg);
+    border-color: var(--button-primary-bg);
+}
+
+.iv-slate-chip {
+    padding: 6px 12px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.iv-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-left: auto;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.iv-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.iv-toggle__track {
+    position: relative;
+    width: 38px;
+    height: 21px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 22%, transparent);
+    transition: background-color 160ms ease;
+}
+
+.iv-toggle__track::after {
+    content: "";
+    position: absolute;
+    top: 2.5px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+    transition: transform 160ms ease;
+}
+
+.iv-toggle input:checked + .iv-toggle__track {
+    background: var(--accent);
+}
+
+.iv-toggle input:checked + .iv-toggle__track::after {
+    transform: translateX(16px);
+}
+
+.iv-toggle input:focus-visible + .iv-toggle__track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Studio layout ---------- */
+.iv-studio {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.iv-studio__main,
+.iv-studio__rail {
+    display: grid;
+    gap: 18px;
+}
+
+.iv-card {
+    padding: 18px 20px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.iv-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-bottom: 12px;
+}
+
+.iv-label {
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.iv-label--right {
+    margin-left: auto;
+    color: var(--text-muted);
+}
+
+.iv-counter {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.iv-nav {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.iv-nav button {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.iv-nav button:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+/* The question itself reads like it's being ASKED — serif, larger. */
+.iv-question {
+    color: var(--text);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.iv-question__meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.iv-chip {
+    padding: 3px 10px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.iv-chip--mode {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.iv-chip--soon {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.iv-question__links {
+    display: flex;
+    gap: 18px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.iv-question__links button,
+.iv-linklike {
+    padding: 0;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.iv-question__links button:hover,
+.iv-linklike:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Response card ---------- */
+.iv-count {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+}
+
+.iv-clear {
+    padding: 0;
+    color: var(--text-muted);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.iv-response-card textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 13px 15px;
+    resize: vertical;
+    color: var(--text);
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font: inherit;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+.iv-response-card textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+.iv-response__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-top: 12px;
+}
+
+.iv-response__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.iv-btn {
+    min-height: 38px;
+    padding: 0 15px;
+    font-size: 0.82rem;
+}
+
+.iv-rec-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #d64545;
+    box-shadow: 0 0 6px rgb(214 69 69 / 60%);
+}
+
+#iv-record.is-recording {
+    border-color: #d64545;
+}
+
+#iv-record.is-recording .iv-rec-dot {
+    animation: iv-rec-pulse 1s ease infinite;
+}
+
+@keyframes iv-rec-pulse {
+    50% {
+        opacity: 0.35;
+    }
+}
+
+#iv-record:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ---------- Coach feedback + score ring ---------- */
+.iv-feedback__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+}
+
+.iv-feedback__text p {
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.iv-feedback__text .iv-feedback__empty {
+    color: var(--text-muted);
+}
+
+.iv-score {
+    --p: 0;
+    width: 108px;
+    height: 108px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    border-radius: 50%;
+    background:
+        radial-gradient(closest-side, var(--surface) 77%, transparent 78% 100%),
+        conic-gradient(#2a9d6f calc(var(--p) * 1%), color-mix(in srgb, var(--text) 12%, transparent) 0);
+    box-shadow: 0 6px 14px rgb(0 0 0 / 16%);
+}
+
+.iv-score strong {
+    color: var(--text);
+    font-size: 1.6rem;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.iv-score span {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.iv-session {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 650;
+}
+
+/* ---------- Suggested questions + mock interview ---------- */
+.iv-suggested {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.iv-suggested__item {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding: 12px 13px;
+    text-align: left;
+    color: var(--text);
+    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.iv-suggested__item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.iv-suggested__item span {
+    font-size: 0.84rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.iv-suggested__item em {
+    color: var(--accent);
+    font-size: 0.64rem;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.iv-mock {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.iv-mock p {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ---------- Right rail ---------- */
+.iv-evidence__sub {
+    margin: -4px 0 12px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.iv-evidence__list {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+}
+
+.iv-evidence__list li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.iv-evidence__list strong {
+    color: var(--accent);
+    font-size: 0.92rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.iv-evidence__list span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.iv-tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.58rem;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Tag inks mix toward the theme text so they stay readable on both
+   light and dark surfaces (same trick as the entry flags). */
+.iv-tag--lead {
+    color: color-mix(in srgb, #2a7d4f 55%, var(--text) 45%);
+    background: color-mix(in srgb, #2a7d4f 13%, transparent);
+}
+
+.iv-tag--impact {
+    color: color-mix(in srgb, #2b5fa5 55%, var(--text) 45%);
+    background: color-mix(in srgb, #2b5fa5 13%, transparent);
+}
+
+.iv-tag--tech {
+    color: color-mix(in srgb, #6d3fa9 55%, var(--text) 45%);
+    background: color-mix(in srgb, #6d3fa9 13%, transparent);
+}
+
+.iv-evidence__link {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.iv-evidence__link:hover {
+    text-decoration: underline;
+}
+
+.iv-star__list {
+    display: grid;
+    gap: 12px;
+    list-style: none;
+}
+
+.iv-star__list li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.iv-star__letter {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-style: normal;
+    font-weight: 850;
+}
+
+.iv-star__list strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.88rem;
+}
+
+.iv-star__list span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.iv-match h3 {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.iv-match p {
+    margin: 8px 0 10px;
+    color: var(--text-muted);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+/* ---------- Question banks ---------- */
+.iv-bank {
+    margin-top: 46px;
+}
+
+.iv-bank__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    list-style: none;
+    counter-reset: ivq;
+}
+
+.iv-bank__list li {
+    counter-increment: ivq;
+}
+
+.iq-item {
+    position: relative;
+    width: 100%;
+    padding: 11px 13px 11px 44px;
+    text-align: left;
+    color: var(--text);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.iq-item::before {
+    content: counter(ivq, decimal-leading-zero);
+    position: absolute;
+    left: 13px;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 850;
+}
+
+.iq-item:hover,
+.iq-item:focus-visible {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+/* ---------- Interview responsive ---------- */
+@media (max-width: 1180px) {
+    .iv-hero {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .iv-benefits {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iv-studio {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 780px) {
+    .iv-bank__list {
+        grid-template-columns: 1fr;
+    }
+
+    .iv-suggested {
+        grid-template-columns: 1fr;
+    }
+
+    .iv-feedback__body {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .iv-response__buttons {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .iv-response__buttons .btn {
+        flex: 1 1 auto;
+    }
+
+    .iv-toggle {
+        margin-left: 0;
     }
 }
 

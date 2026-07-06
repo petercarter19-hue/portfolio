@@ -132,7 +132,7 @@ def keep_portfolio_on_canonical_path():
     old_portfolio_paths = {'/pete', '/portfolio'}
     # /skills is a real page again (the Skills profile tab), so it now
     # canonicalizes to /petec/skills like every other portfolio section.
-    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
+    section_paths = {'/about', '/contact', '/hobbies', '/interview-me', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
 
     if request.path in old_portfolio_paths:
         return redirect('/petec', code=302)
@@ -343,6 +343,17 @@ def slate_board():
     # goal percentages, and badges live in the template as sample content.
     # A future pass adds real storage plus the draft/private/public flow.
     return render_template('slate_board.html')
+
+
+@app.route('/interview-me')
+@app.route('/petec/interview-me')
+def interview_me():
+    # "Interview Me" - interview prep powered by the candidate's slate.
+    # The mock-interview coach calls the SAME /api/chat endpoint as every
+    # other Ask Pete AI feature for now, so answers are grounded in Pete's
+    # knowledge files. The 30 STAR + 30 behavioral questions live in the
+    # template; static/js/interview.js runs the console.
+    return render_template('interview_me.html')
 
 
 @app.route('/skills')

@@ -14,7 +14,9 @@
     // exactly as they did before, so all that new styling is gated in
     // style.css behind body[data-slate="on"] — which we only set here for
     // the slate themes.
-    const slateThemes = ['light-slate', 'light-blue-slate', 'gray-slate', 'sage-slate'];
+    // paper-slate is a slate-family theme WITHOUT the stone photo — it
+    // gets the platform layout + paper grain, never the rock slabs.
+    const slateThemes = ['light-slate', 'light-blue-slate', 'gray-slate', 'sage-slate', 'paper-slate'];
 
     // The two DARK slate themes go further: they use a real slate
     // photograph for the page and give every card/button/strip its own
