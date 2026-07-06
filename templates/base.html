@@ -75,10 +75,14 @@
         href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap"
         rel="stylesheet"
     >
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=mockup-system-2"
+        href="{{ url_for('static', filename='css/style.css') }}?v=homepage-mockup-1"
     >
     <link
         rel="stylesheet"
@@ -88,7 +92,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %}" data-theme="gray-slate" data-slate="on" data-slate-photo="on" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}'); --site-slate-bg-gray: url('{{ url_for('static', filename='images/slate-backgrounds/gray-slate-bg.jpg') }}'); --site-slate-bg-sage: url('{{ url_for('static', filename='images/slate-backgrounds/sage-slate-bg.jpg') }}'); --site-slate-bg-light: url('{{ url_for('static', filename='images/slate-backgrounds/light-slate-bg.jpg') }}'); --site-slate-bg-lightblue: url('{{ url_for('static', filename='images/slate-backgrounds/light-blue-slate-bg.jpg') }}');">
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% block body_class %}{% endblock %}" data-theme="modern-blue" data-slate="on" data-slate-photo="on" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}'); --site-slate-bg-gray: url('{{ url_for('static', filename='images/slate-backgrounds/gray-slate-bg.jpg') }}'); --site-slate-bg-sage: url('{{ url_for('static', filename='images/slate-backgrounds/sage-slate-bg.jpg') }}'); --site-slate-bg-light: url('{{ url_for('static', filename='images/slate-backgrounds/light-slate-bg.jpg') }}'); --site-slate-bg-lightblue: url('{{ url_for('static', filename='images/slate-backgrounds/light-blue-slate-bg.jpg') }}');">
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -265,7 +269,7 @@
         </p>
     </div>
 
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-7"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=homepage-mockup-1"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=scroll-toggle-1"></script>
     {% block extra_scripts %}{% endblock %}
 

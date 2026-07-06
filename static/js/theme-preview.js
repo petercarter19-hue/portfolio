@@ -2,7 +2,7 @@
 // This stays browser-only: it never reads environment variables or secrets.
 
 (function () {
-    const defaultTheme = 'gray-slate';
+    const defaultTheme = 'modern-blue';
     const storageKey = 'peerslateTheme';
     const themeButtons = document.querySelectorAll('[data-theme-option]');
     const profileTabLinks = document.querySelectorAll('.profile-tab[href*="#"]');

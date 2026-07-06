@@ -8,6 +8,7 @@
 {% extends "base.html" %}
 
 {% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
+{% block body_class %}peerslate-home-page{% endblock %}
 {% block meta_description %}PeerSlate turns professional work history, project evidence, skills, and goals into interactive portfolio profiles with AI-assisted exploration.{% endblock %}
 
 {# Open Graph / Twitter preview cards for pasted links. #}
@@ -56,54 +57,78 @@
                 </div>
             </div>
 
-            <div class="ps-hero__preview">
-                {# Live-profile preview card, filled with Pete's real data. #}
-                <article class="ps-preview-card">
-                    <div class="ps-preview-card__head">
-                        <img
-                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                            alt=""
-                            aria-hidden="true"
-                        >
-                        <div>
-                            <h2>Pete Carter</h2>
-                            <p class="ps-preview-card__title">Systems Engineer</p>
-                            <p class="ps-preview-card__meta">
-                                <span>&#9906; Athens, AL</span>
-                                <span>&#128737; Active Secret clearance</span>
-                            </p>
+            <div class="ps-hero__preview hero-preview">
+                <div class="preview-stack">
+                    {# Live-profile preview card, filled with Pete's real data. #}
+                    <article class="preview-card preview-main">
+                        <div class="preview-main__head">
+                            <img
+                                src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                                alt=""
+                                aria-hidden="true"
+                            >
+                            <div>
+                                <h2>Pete Carter</h2>
+                                <p class="preview-main__title">Systems Engineer</p>
+                                <p class="preview-main__meta">
+                                    <span>&#9906; Athens, AL</span>
+                                    <span>&#128737; Active Secret clearance</span>
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                    <p class="ps-preview-card__bio">
-                        I connect mission needs with model-based systems engineering,
-                        automation, and data-driven decisions that deliver measurable impact.
-                    </p>
-                    <div class="ps-preview-card__chips">
-                        <span>Systems Engineering</span>
-                        <span>MBSE</span>
-                        <span>Automation</span>
-                        <span>AI</span>
-                        <span>+4</span>
-                    </div>
-                    <div class="ps-preview-card__stats">
-                        <div><strong>12</strong><span>Milestones</span></div>
-                        <div><strong>36</strong><span>Pieces of Evidence</span></div>
-                        <div><strong>21</strong><span>Skills</span></div>
-                        <div><strong>6</strong><span>Badges</span></div>
-                    </div>
-                </article>
+                        <p class="preview-main__bio">
+                            I connect mission needs with model-based systems engineering,
+                            automation, and data-driven decisions that deliver measurable impact.
+                        </p>
+                        <div class="preview-main__chips">
+                            <span>Systems Engineering</span>
+                            <span>MBSE</span>
+                            <span>Automation</span>
+                            <span>AI</span>
+                            <span>+4</span>
+                        </div>
+                        <div class="preview-main__metrics">
+                            <div><strong>12</strong><span>Milestones</span></div>
+                            <div><strong>36</strong><span>Pieces of Evidence</span></div>
+                            <div><strong>21</strong><span>Skills</span></div>
+                            <div><strong>6</strong><span>Badges</span></div>
+                        </div>
+                    </article>
 
-                {# Dark "Ask this Slate" pill + quick-action chips (mockup). #}
-                <a class="ps-askpill" href="{{ portfolio_home_url }}#ask-pete">
-                    <span class="ps-askpill__spark" aria-hidden="true">&#10022;</span>
-                    <span class="ps-askpill__ghost">Ask this Slate anything...</span>
-                    <span class="ps-askpill__go" aria-hidden="true">&rarr;</span>
-                </a>
-                <div class="ps-askpill__chips">
-                    <a href="{{ portfolio_home_url }}#ask-pete">&#9776; Summarize</a>
-                    <a href="{{ portfolio_url('skills') }}">&#128737; Show Evidence</a>
-                    <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Me</a>
-                    <a href="{{ portfolio_resume_url }}">&#9737; Match to Role</a>
+                    <article class="preview-card preview-impact" aria-hidden="true">
+                        <p>Impact Snapshot</p>
+                        <strong>$36M</strong>
+                        <span>Contract oversight</span>
+                        <svg viewBox="0 0 120 52" aria-hidden="true">
+                            <path class="preview-impact__fill" d="M4 42 C17 38 24 40 36 33 S55 24 68 27 82 29 94 17 107 12 118 7 L118 52 L4 52 Z"/>
+                            <path class="preview-impact__line" d="M4 42 C17 38 24 40 36 33 S55 24 68 27 82 29 94 17 107 12 118 7"/>
+                        </svg>
+                    </article>
+
+                    <article class="preview-card preview-milestone" aria-hidden="true">
+                        <p>Recent Milestone</p>
+                        <span>Q1 2026</span>
+                        <strong>Reduced MICAP items from 16 to 0</strong>
+                        <b>&rarr;</b>
+                    </article>
+
+                    <div class="preview-card preview-ghost preview-ghost-one" aria-hidden="true"></div>
+                    <div class="preview-card preview-ghost preview-ghost-two" aria-hidden="true"></div>
+                </div>
+
+                {# The AI bar and chips stay as real links so the mockup remains interactive. #}
+                <div class="hero-ai-panel">
+                    <a class="ai-bar" href="{{ portfolio_home_url }}#ask-pete">
+                        <span class="ai-bar-icon" aria-hidden="true">&#10022;</span>
+                        <span class="ai-bar-text">Ask this Slate anything...</span>
+                        <span class="ai-bar-action" aria-hidden="true">&rarr;</span>
+                    </a>
+                    <div class="ai-chip-row">
+                        <a class="ai-chip" href="{{ portfolio_home_url }}#ask-pete"><span class="ai-chip__icon" aria-hidden="true">&#9776;</span> Summarize</a>
+                        <a class="ai-chip" href="{{ portfolio_url('skills') }}"><span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Evidence</a>
+                        <a class="ai-chip" href="{{ portfolio_url('interview-me') }}"><span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Me</a>
+                        <a class="ai-chip" href="{{ portfolio_resume_url }}"><span class="ai-chip__icon" aria-hidden="true">&#9737;</span> Match to Role</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -207,13 +232,14 @@
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>
                             Milestone
                         </span>
-                        <time>July 2026</time>
+                        <time>Q1 2024</time>
                     </div>
-                    <h3>300 Miles Down, 200 to Go</h3>
-                    <p>Crossed the 300-mile mark six months into the 500-mile year &mdash; ahead of pace.</p>
+                    <h3>Launched Pricing Optimization Initiative</h3>
+                    <p>Led cross-functional effort to redesign pricing strategy and packaging.</p>
                     <div class="ps-feed-card__foot">
-                        <span class="ps-mini-chip">311 mi</span>
-                        <span class="ps-feed-card__note">Logged &amp; verified on the board</span>
+                        <span class="ps-mini-chip">$1.8M</span>
+                        <span class="ps-feed-card__note">Incremental revenue</span>
+                        <span class="ps-feed-card__note ps-feed-card__note--team">Team of 6</span>
                     </div>
                 </article>
                 <article class="ps-feed-card">
@@ -222,12 +248,13 @@
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
                             Badge
                         </span>
-                        <time>Issued Jun 2026</time>
+                        <time>Issued Jan 2024</time>
                     </div>
-                    <h3>Automation Ace</h3>
-                    <p>Every recurring report at home and on the bench now runs itself.</p>
+                    <h3>Customer Obsession</h3>
+                    <p>Recognized by leadership and peers for consistently driving customer value.</p>
                     <div class="ps-feed-card__foot">
-                        <span class="ps-feed-card__note ps-feed-card__note--green">Earned on the Slate Board</span>
+                        <span class="ps-avatar-stack" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <span class="ps-feed-card__note ps-feed-card__note--green">Endorsed by 7 peers</span>
                     </div>
                 </article>
                 <article class="ps-feed-card">
@@ -236,12 +263,12 @@
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/></svg>
                             Thought
                         </span>
-                        <time>May 2026</time>
+                        <time>Apr 12, 2024</time>
                     </div>
-                    <h3>On Modeling the Boring Parts</h3>
-                    <p>Best engineering advice this year: model the boring parts first &mdash; that's where the surprises live.</p>
+                    <h3>On Balancing Speed and Clarity</h3>
+                    <p>Why great product outcomes come from clear decisions, not just fast ones.</p>
                     <div class="ps-feed-card__foot">
-                        <span class="ps-mini-chip ps-mini-chip--violet">Systems Thinking</span>
+                        <span class="ps-mini-chip ps-mini-chip--violet">Product Leadership</span>
                         <span class="ps-feed-card__bookmark" aria-hidden="true">&#9733;</span>
                     </div>
                 </article>
