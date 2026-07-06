@@ -101,9 +101,14 @@
                             <button type="button" id="iv-next" aria-label="Next question">&rarr;</button>
                         </div>
                     </div>
-                    <p class="iv-question" id="iv-question">
-                        Tell me about a time you led a project from start to finish.
-                    </p>
+                    <div class="iv-question__row">
+                        <span class="iv-question-mark ps-tint--blue" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2A2.6 2.6 0 0 1 12 7.4c1.4 0 2.5 1 2.5 2.3 0 1.6-1.6 2-2.5 3v1"/><circle cx="12" cy="16.6" r="0.4"/></svg>
+                        </span>
+                        <p class="iv-question" id="iv-question">
+                            Tell me about a time you led a project from start to finish.
+                        </p>
+                    </div>
                     <div class="iv-question__meta">
                         <span class="iv-chip" id="iv-topic-chip">Leadership</span>
                         <span class="iv-chip iv-chip--mode" id="iv-mode-chip">STAR</span>
@@ -133,7 +138,7 @@
                         </button>
                         <div class="iv-response__buttons">
                             <button type="button" class="btn btn-secondary iv-btn" id="iv-save">Save Draft</button>
-                            <button type="button" class="btn btn-secondary iv-btn" id="iv-record">
+                            <button type="button" class="btn btn-primary iv-btn" id="iv-record">
                                 <span class="iv-rec-dot" aria-hidden="true"></span>
                                 Record Answer
                             </button>

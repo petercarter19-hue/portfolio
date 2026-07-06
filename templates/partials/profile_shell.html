@@ -1,8 +1,11 @@
 {#
-    Pete's slate/profile chrome.
-    This partial appears below the global PeerSlate header on portfolio
-    pages only. It keeps profile-specific navigation separate from the
-    future platform navigation above it.
+    Pete's profile chrome, rebuilt 2026-07-06 to match the mockup:
+    a white band with the avatar, "Open to conversations" chip, serif
+    name, blue title, specialty row, and a location/message/URL meta
+    row — plus the "About Pete" card on the right. Below it, the tab
+    strip: Overview / Evidence / Projects / Slate Board / Resume
+    (+ My Slate, which the mockup folds into the story tab).
+    Renders on every /petec page under the global platform header.
 #}
 
 <section class="profile-header" aria-label="Pete Carter profile summary">
@@ -15,46 +18,49 @@
         </a>
 
         <div class="profile-identity">
-            <p class="profile-status">Open to conversations</p>
+            <p class="profile-openchip"><i aria-hidden="true"></i>Open to conversations</p>
             <h1>Pete Carter</h1>
             <p class="profile-title">Systems Engineer</p>
-            <p class="profile-subtitle">Digital Engineering <span>•</span> MBSE <span>•</span> Automation <span>•</span> AI-Enabled Systems</p>
+            <p class="profile-subtitle">Digital Engineering <span>&bull;</span> MBSE <span>&bull;</span> Automation <span>&bull;</span> AI-Enabled Systems</p>
+            <p class="profile-meta">
+                <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg>
+                    Athens, AL
+                </span>
+                <a href="{{ portfolio_contact_url }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                    Message
+                </a>
+                <span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l2.5-2.5a5 5 0 0 0-7-7L11 6"/><path d="M14 10a5 5 0 0 0-7 0L4.5 12.5a5 5 0 0 0 7 7L13 18"/></svg>
+                    peerslate.com/petec
+                </span>
+            </p>
         </div>
 
-        <div class="profile-actions" aria-label="Profile actions">
-            <a class="btn btn-secondary profile-action-btn" href="{{ url_for('static', filename='files/pete-carter-resume.pdf') }}" download>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
-                    <path d="M14 2v5h5M12 11v6M9 14l3 3 3-3"/>
-                </svg>
-                Download Resume
-            </a>
-            {# The single Ask Pete AI launcher for the whole profile — the old
-               floating bubble and the Ask Pete tab were removed as redundant. #}
-            <button class="btn btn-primary profile-action-btn" type="button" data-chat-open>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                Ask Pete AI
-            </button>
-        </div>
+        <aside class="profile-about" aria-label="About Pete">
+            <h2>About Pete</h2>
+            <p>
+                Systems engineer with a proven record leading complex
+                hardware/software programs from concept through sustainment.
+                I connect mission needs with model-based systems engineering,
+                automation, and data-driven decisions to deliver measurable impact.
+            </p>
+            <a class="ps-link" href="{{ portfolio_story_url }}">View Full Bio <span aria-hidden="true">&rarr;</span></a>
+        </aside>
     </div>
 </section>
 
 <nav class="profile-tabs" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
-        {# Tab order per Pete (2026-07-06): Overview, My Slate, Resume,
-           Projects, Slate Board, Interview Me. "My Slate" is the renamed
-           My Story page (URL stays /my-story so old links keep working);
-           the Skills page still exists at /petec/skills, just unlinked. #}
+        {# Mockup tab order: Overview / Evidence / Projects / Slate Board /
+           Resume — plus My Slate (the story page) kept reachable at the
+           end. "Evidence" is the skills-backed-by-evidence page. #}
         <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
             Overview
         </a>
-        <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
-            My Slate
-        </a>
-        <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
-            Resume
+        <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
+            Evidence
         </a>
         <a class="profile-tab" href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>
             Projects
@@ -62,11 +68,14 @@
         <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
             Slate Board
         </a>
-        <a class="profile-tab" href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>
-            Interview Me
+        <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
+            Resume
+        </a>
+        <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
+            My Slate
         </a>
 
-        {# LinkedIn sits alone on the far right of the tab row. #}
+        {# LinkedIn stays pinned to the far right of the tab row. #}
         <a
             class="profile-tabs__linkedin"
             href="https://www.linkedin.com/in/pete-carter19"

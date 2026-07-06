@@ -1,20 +1,16 @@
 {# =====================================================
-   PEERSLATE MARKETING HOMEPAGE
-   This is the separate root site at peerslate.com — the
-   business/product page for PeerSlate itself, not Pete's
-   personal portfolio (that lives under /petec, see index.html).
-   Pete's portfolio is used throughout this page as PeerSlate's
-   first working example (the "Explore the Example" links). #}
+   PEERSLATE MARKETING HOMEPAGE — rebuilt 2026-07-06 to match
+   static/Mockup exactly: serif hero with underlined keywords,
+   live-profile preview card + dark "Ask this Slate" pill, four
+   feature cards, How It Works steps, the Slate Boards feed, and
+   the "See a real example" band. Pete's portfolio (under /petec)
+   is the platform's first working example throughout. #}
 {% extends "base.html" %}
 
 {% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
 {% block meta_description %}PeerSlate turns professional work history, project evidence, skills, and goals into interactive portfolio profiles with AI-assisted exploration.{% endblock %}
 
-{# Open Graph (Facebook/LinkedIn/iMessage) and Twitter/X preview cards.
-   These control the title, description, and image shown when someone
-   pastes this page's link into another site — not visible on the page
-   itself. _external=True makes the image URL absolute (https://...)
-   since social platforms can't resolve a relative path. #}
+{# Open Graph / Twitter preview cards for pasted links. #}
 {% block extra_head %}
 <meta property="og:type" content="website">
 <meta property="og:title" content="PeerSlate | Your Work, Your Story, Your Future">
@@ -34,278 +30,248 @@
 {% endblock %}
 
 {% block content %}
-<div class="peerslate-page">
-    <!-- HERO: logo, headline, and pitch on the left; a static (non-live)
-         mock preview card on the right just illustrating what a PeerSlate
-         profile contains — it isn't wired to any real data. -->
-    <section class="peerslate-hero" aria-labelledby="peerslate-title">
-        <div class="site-container peerslate-hero__grid">
-            <div class="peerslate-hero__copy">
-                {# Transparent lockup (no boxed backdrop) so the brand sits
-                   directly on the page's slate instead of floating on a
-                   pasted navy rectangle. #}
-                <div class="peerslate-brand-lockup">
-                    <img
-                        src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
-                        alt="PeerSlate. Your Work. Your Story. Your Future."
-                    >
-                </div>
-                <p class="section-eyebrow">Professional Profile Platform</p>
-                <h1 id="peerslate-title">
-                    Your Work. Your Story. Your Future.
+<div class="ps-home">
+
+    <!-- ============ HERO ============ -->
+    <section class="ps-hero" aria-labelledby="ps-hero-title">
+        <div class="site-container ps-hero__grid">
+            <div class="ps-hero__copy">
+                <p class="ps-eyebrow">Professional Profile Platform</p>
+                <h1 id="ps-hero-title">
+                    Your <span class="ps-underline">Work</span>.<br>
+                    Your <span class="ps-underline">Story</span>.<br>
+                    Your Future.
                 </h1>
-                <p class="peerslate-hero__lead">
-                    PeerSlate helps professionals turn career history, project evidence,
-                    skills, and goals into interactive portfolio profiles that recruiters
-                    can explore through structured pages and AI-assisted questions.
+                <p class="ps-hero__lead">
+                    Build an evidence-backed career slate that recruiters can
+                    explore, understand, and trust&mdash;with the power of AI.
                 </p>
-                <div class="peerslate-hero__actions">
-                    <a class="btn btn-primary" href="{{ portfolio_resume_url }}">
-                        View Pete's Interactive Example
+                <div class="ps-hero__actions">
+                    <a class="ps-btn ps-btn--primary" href="{{ portfolio_home_url }}">
+                        View Pete's Slate <span aria-hidden="true">&rarr;</span>
                     </a>
-                    <a class="btn btn-secondary" href="{{ portfolio_contact_url }}">
-                        Contact About PeerSlate
+                    <a class="ps-btn ps-btn--ghost" href="#how-it-works">
+                        See How It Works <span aria-hidden="true">&#9655;</span>
                     </a>
                 </div>
             </div>
 
-            <aside class="peerslate-demo-card" aria-label="PeerSlate profile preview">
-                <div class="peerslate-demo-card__brand">
-                    <img
-                        src="{{ url_for('static', filename='images/peerslate-mark.png') }}"
-                        alt=""
-                        aria-hidden="true"
-                    >
-                    <div>
-                        <p class="peerslate-demo-card__label">Interactive Profile Preview</p>
-                        <strong>PeerSlate profile system</strong>
+            <div class="ps-hero__preview">
+                {# Live-profile preview card, filled with Pete's real data. #}
+                <article class="ps-preview-card">
+                    <div class="ps-preview-card__head">
+                        <img
+                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        <div>
+                            <h2>Pete Carter</h2>
+                            <p class="ps-preview-card__title">Systems Engineer</p>
+                            <p class="ps-preview-card__meta">
+                                <span>&#9906; Athens, AL</span>
+                                <span>&#128737; Active Secret clearance</span>
+                            </p>
+                        </div>
                     </div>
-                </div>
-                <div class="peerslate-profile-preview">
-                    <div>
-                        <span>Professional Story</span>
-                        <strong>Evidence-backed career narrative</strong>
+                    <p class="ps-preview-card__bio">
+                        I connect mission needs with model-based systems engineering,
+                        automation, and data-driven decisions that deliver measurable impact.
+                    </p>
+                    <div class="ps-preview-card__chips">
+                        <span>Systems Engineering</span>
+                        <span>MBSE</span>
+                        <span>Automation</span>
+                        <span>AI</span>
+                        <span>+4</span>
                     </div>
-                    <div>
-                        <span>Skills</span>
-                        <strong>Linked to real accomplishments</strong>
+                    <div class="ps-preview-card__stats">
+                        <div><strong>12</strong><span>Milestones</span></div>
+                        <div><strong>36</strong><span>Pieces of Evidence</span></div>
+                        <div><strong>21</strong><span>Skills</span></div>
+                        <div><strong>6</strong><span>Badges</span></div>
                     </div>
-                    <div>
-                        <span>AI Assistant</span>
-                        <strong>Answers from approved profile sources</strong>
-                    </div>
-                    <div>
-                        <span>Recruiter View</span>
-                        <strong>Role-specific evidence and fit</strong>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </section>
+                </article>
 
-    <!-- THE PROBLEM: two-column pitch explaining why a static resume
-         falls short, setting up the "How It Works" section below. -->
-    <section class="peerslate-section" aria-labelledby="peerslate-problem-title">
-        <div class="site-container peerslate-two-column">
-            <div>
-                <p class="section-eyebrow">The Problem</p>
-                <h2 id="peerslate-problem-title">
-                    Resumes flatten people into keywords.
-                </h2>
-            </div>
-            <div class="peerslate-copy-stack">
-                <p>
-                    Traditional resumes are static, compressed, and difficult to explore.
-                    They rarely show how a person thinks, how their work connects, or what
-                    evidence supports each skill.
-                </p>
-                <p>
-                    PeerSlate is designed to make career information structured,
-                    searchable, interactive, and evidence-driven.
-                </p>
+                {# Dark "Ask this Slate" pill + quick-action chips (mockup). #}
+                <a class="ps-askpill" href="{{ portfolio_home_url }}#ask-pete">
+                    <span class="ps-askpill__spark" aria-hidden="true">&#10022;</span>
+                    <span class="ps-askpill__ghost">Ask this Slate anything...</span>
+                    <span class="ps-askpill__go" aria-hidden="true">&rarr;</span>
+                </a>
+                <div class="ps-askpill__chips">
+                    <a href="{{ portfolio_home_url }}#ask-pete">&#9776; Summarize</a>
+                    <a href="{{ portfolio_url('skills') }}">&#128737; Show Evidence</a>
+                    <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Me</a>
+                    <a href="{{ portfolio_resume_url }}">&#9737; Match to Role</a>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- HOW IT WORKS: four numbered step cards (01-04), left to right. -->
-    <section class="peerslate-section peerslate-section--cards" aria-labelledby="peerslate-how-title">
+    <!-- ============ FEATURE CARDS ============ -->
+    <section class="ps-section" aria-label="What PeerSlate does">
+        <div class="site-container ps-features">
+            <a class="ps-feature" href="{{ portfolio_story_url }}">
+                <span class="ps-feature__icon ps-tint--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 5.5C10.5 4 8.5 3.5 6 3.5v14c2.5 0 4.5.5 6 2 1.5-1.5 3.5-2 6-2v-14c-2.5 0-4.5.5-6 2z"/><path d="M12 5.5v14"/></svg>
+                </span>
+                <h3>Professional Story</h3>
+                <p>Tell the complete story of your career&mdash;your way. Context, intent, decisions, and impact.</p>
+                <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
+            </a>
+            <a class="ps-feature" href="{{ portfolio_url('skills') }}">
+                <span class="ps-feature__icon ps-tint--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                </span>
+                <h3>Evidence-Backed Skills</h3>
+                <p>Every claim is supported by real evidence&mdash;projects, results, and proof points.</p>
+                <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
+            </a>
+            <a class="ps-feature" href="{{ portfolio_home_url }}#ask-pete">
+                <span class="ps-feature__icon ps-tint--violet" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>
+                </span>
+                <h3>AI Profile Assistant</h3>
+                <p>AI helps you reflect, refine, and strengthen your slate at every step.</p>
+                <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
+            </a>
+            <a class="ps-feature" href="{{ url_for('for_recruiters') }}">
+                <span class="ps-feature__icon ps-tint--sky" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                </span>
+                <h3>Recruiter View</h3>
+                <p>Recruiters can explore your slate, ask questions, and see how you fit their needs.</p>
+                <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="ps-section" id="how-it-works" aria-labelledby="ps-how-title">
         <div class="site-container">
-            <div class="peerslate-section-heading">
-                <p class="section-eyebrow">How It Works</p>
-                <h2 id="peerslate-how-title">
-                    From career history to interactive profile.
-                </h2>
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">How It Works</p>
+                <h2 id="ps-how-title">From experience to opportunity in four steps.</h2>
             </div>
-            <div class="peerslate-card-grid">
-                <article class="peerslate-card">
-                    <span>01</span>
-                    <h3>Capture the story</h3>
-                    <p>
-                        Professionals add career history, projects, skills, education,
-                        accomplishments, and goals through guided profile sections.
-                    </p>
-                </article>
-                <article class="peerslate-card">
-                    <span>02</span>
-                    <h3>Structure the evidence</h3>
-                    <p>
-                        Skills, metrics, roles, and projects are connected so visitors can
-                        see what supports each claim.
-                    </p>
-                </article>
-                <article class="peerslate-card">
-                    <span>03</span>
-                    <h3>Make it searchable</h3>
-                    <p>
-                        A profile-specific AI assistant answers questions using only
-                        approved public information and states limits when needed.
-                    </p>
-                </article>
-                <article class="peerslate-card">
-                    <span>04</span>
-                    <h3>Help recruiters explore fit</h3>
-                    <p>
-                        Recruiters can view role-specific summaries, evidence, projects,
-                        and career direction instead of hunting through a static PDF.
-                    </p>
-                </article>
-            </div>
+            <ol class="ps-steps">
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">1</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
+                    </span>
+                    <h3>Capture the Story</h3>
+                    <p>Add milestones, projects, roles, and insights that shaped your work.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">2</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h6M10 16h6"/></svg>
+                    </span>
+                    <h3>Structure the Evidence</h3>
+                    <p>Attach outcomes, metrics, documents, and proof that back it up.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">3</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+                    </span>
+                    <h3>Make it Searchable</h3>
+                    <p>AI organizes your slate so skills, impact, and themes are easy to find.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">4</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                    </span>
+                    <h3>Help Recruiters Explore Fit</h3>
+                    <p>Recruiters can ask questions and evaluate your fit with confidence.</p>
+                </li>
+            </ol>
         </div>
     </section>
 
-    <!-- FROM THE SLATE BOARDS: a small, curated feed of member wins that
-         were PUBLISHED publicly from their Slate Boards. Deliberately a
-         fixed three cards + one link — a tasteful window, not an
-         infinite scroll. Static sample content for the MVP. -->
-    <section class="peerslate-section peerslate-feed" aria-labelledby="peerslate-feed-title">
+    <!-- ============ FROM THE SLATE BOARDS ============ -->
+    <section class="ps-section" aria-labelledby="ps-feed-title">
         <div class="site-container">
-            <div class="peerslate-section-heading peerslate-feed__heading">
-                <div>
-                    <p class="section-eyebrow">From the Slate Boards</p>
-                    <h2 id="peerslate-feed-title">
-                        Wins members chose to share.
-                    </h2>
-                </div>
-                <a class="view-all-link" href="{{ portfolio_url('slate-board') }}">
-                    Visit Pete's Slate Board
-                    <span aria-hidden="true">&rarr;</span>
+            <div class="ps-section-head ps-section-head--split">
+                <p class="ps-eyebrow" id="ps-feed-title">From the Slate Boards</p>
+                <a class="ps-link" href="{{ portfolio_url('slate-board') }}">
+                    View Example Slate <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
-
-            <div class="peerslate-feed__grid">
-                <article class="feed-card">
-                    <div class="feed-card__head">
-                        <img
-                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                            alt=""
-                            aria-hidden="true"
-                        >
-                        <div>
-                            <strong>Pete Carter</strong>
-                            <span>Systems Engineer &middot; July 2</span>
-                        </div>
-                        <span class="feed-card__type">Milestone</span>
+            <div class="ps-feed">
+                <article class="ps-feed-card">
+                    <div class="ps-feed-card__top">
+                        <span class="ps-flag ps-flag--blue">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>
+                            Milestone
+                        </span>
+                        <time>July 2026</time>
                     </div>
-                    <p>
-                        Crossed 300 miles for the year this morning — six months in
-                        and ahead of pace on the 500-mile goal.
-                    </p>
+                    <h3>300 Miles Down, 200 to Go</h3>
+                    <p>Crossed the 300-mile mark six months into the 500-mile year &mdash; ahead of pace.</p>
+                    <div class="ps-feed-card__foot">
+                        <span class="ps-mini-chip">311 mi</span>
+                        <span class="ps-feed-card__note">Logged &amp; verified on the board</span>
+                    </div>
                 </article>
-
-                <article class="feed-card">
-                    <div class="feed-card__head">
-                        <img
-                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                            alt=""
-                            aria-hidden="true"
-                        >
-                        <div>
-                            <strong>Pete Carter</strong>
-                            <span>Systems Engineer &middot; June 15</span>
-                        </div>
-                        <span class="feed-card__type">Badge</span>
+                <article class="ps-feed-card">
+                    <div class="ps-feed-card__top">
+                        <span class="ps-flag ps-flag--green">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                            Badge
+                        </span>
+                        <time>Issued Jun 2026</time>
                     </div>
-                    <p>
-                        Earned the Automation Ace badge — every recurring report at
-                        home and on the bench now runs itself.
-                    </p>
+                    <h3>Automation Ace</h3>
+                    <p>Every recurring report at home and on the bench now runs itself.</p>
+                    <div class="ps-feed-card__foot">
+                        <span class="ps-feed-card__note ps-feed-card__note--green">Earned on the Slate Board</span>
+                    </div>
                 </article>
-
-                <article class="feed-card">
-                    <div class="feed-card__head">
-                        <img
-                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                            alt=""
-                            aria-hidden="true"
-                        >
-                        <div>
-                            <strong>Pete Carter</strong>
-                            <span>Systems Engineer &middot; May 30</span>
-                        </div>
-                        <span class="feed-card__type">Thought</span>
+                <article class="ps-feed-card">
+                    <div class="ps-feed-card__top">
+                        <span class="ps-flag ps-flag--violet">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/></svg>
+                            Thought
+                        </span>
+                        <time>May 2026</time>
                     </div>
-                    <p>
-                        Best engineering advice I've gotten this year: model the
-                        boring parts first — that's where the surprises live.
-                    </p>
+                    <h3>On Modeling the Boring Parts</h3>
+                    <p>Best engineering advice this year: model the boring parts first &mdash; that's where the surprises live.</p>
+                    <div class="ps-feed-card__foot">
+                        <span class="ps-mini-chip ps-mini-chip--violet">Systems Thinking</span>
+                        <span class="ps-feed-card__bookmark" aria-hidden="true">&#9733;</span>
+                    </div>
                 </article>
             </div>
         </div>
     </section>
 
-    <!-- PLATFORM DIRECTION: four short feature blurbs (no icons), a
-         plainer sibling to the numbered "How It Works" cards above. -->
-    <section class="peerslate-section" aria-labelledby="peerslate-features-title">
-        <div class="site-container peerslate-feature-layout">
-            <div class="peerslate-section-heading">
-                <p class="section-eyebrow">Platform Direction</p>
-                <h2 id="peerslate-features-title">
-                    Built for professional evidence, not generic profiles.
-                </h2>
-            </div>
-            <div class="peerslate-feature-list">
-                <div>
-                    <h3>Interactive portfolios</h3>
-                    <p>Personal branded pages with projects, timelines, evidence, and career context.</p>
+    <!-- ============ SEE A REAL EXAMPLE ============ -->
+    <section class="ps-section ps-section--last" aria-labelledby="ps-example-title">
+        <div class="site-container">
+            <div class="ps-example">
+                <img
+                    src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                    alt=""
+                    aria-hidden="true"
+                >
+                <div class="ps-example__copy">
+                    <p class="ps-eyebrow">See a Real Example</p>
+                    <h2 id="ps-example-title">Explore Pete Carter's Slate</h2>
+                    <p>
+                        Pete's slate is the first working example on PeerSlate.
+                        See how a complete, evidence-backed profile comes to life.
+                    </p>
                 </div>
-                <div>
-                    <h3>AI profile assistants</h3>
-                    <p>Chat assistants grounded in approved profile documents and structured public content.</p>
-                </div>
-                <div>
-                    <h3>Recruiter-focused views</h3>
-                    <p>Role-based filters that connect skills, results, experience, and project evidence.</p>
-                </div>
-                <div>
-                    <h3>Evidence-backed skills</h3>
-                    <p>Skills are connected to accomplishments, project artifacts, metrics, and outcomes.</p>
-                </div>
+                <a class="ps-btn ps-btn--primary" href="{{ portfolio_home_url }}">
+                    View Pete's Slate <span aria-hidden="true">&rarr;</span>
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- CLOSING CTA: points visitors at Pete's portfolio as the live,
-         working proof that the PeerSlate concept above is real. -->
-    <section class="peerslate-section peerslate-section--final" aria-labelledby="peerslate-final-title">
-        <div class="site-container peerslate-final-card">
-            <p class="section-eyebrow">Starting Point</p>
-            <h2 id="peerslate-final-title">
-                Pete Carter's portfolio is the first working PeerSlate example.
-            </h2>
-            <p>
-                The current portfolio demonstrates the early platform concept:
-                structured resume data, interactive evidence, project storytelling,
-                and an AI assistant grounded in approved career information.
-            </p>
-            <div class="peerslate-hero__actions">
-                <a class="btn btn-primary" href="{{ portfolio_resume_url }}">
-                    Explore the Example
-                </a>
-                <a class="btn btn-secondary" href="{{ portfolio_work_url }}">
-                    View Projects
-                </a>
-            </div>
-        </div>
-    </section>
 </div>
 {% endblock %}
