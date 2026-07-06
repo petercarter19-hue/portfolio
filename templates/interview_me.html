@@ -1,0 +1,367 @@
+{# ============================================================
+   INTERVIEW ME — the Interview Practice Studio.
+   Concept: the more a candidate adds to their slate, the better
+   this page coaches them. The studio asks questions (STAR +
+   behavioral banks below), the candidate answers by typing or
+   speaking, and the AI coach (the SAME /api/chat endpoint as
+   every Ask Pete AI feature) suggests slate-grounded sample
+   answers, gives feedback, and scores the answer out of 100.
+
+   Layout follows Pete's Interview Me mockup: mode bar, current
+   question card, response draft card, coach feedback with a
+   score ring, suggested questions, and a right rail with
+   Evidence Suggestions pulled from the slate plus a STAR
+   framework helper. static/js/interview.js runs everything.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Interview Me | Pete Carter{% endblock %}
+
+{% block meta_description %}Interview Practice Studio: practice STAR and behavioral interview questions with AI coaching grounded in Pete Carter's real slate evidence.{% endblock %}
+
+{% block content %}
+
+<section class="iv-page" aria-labelledby="iv-title">
+    <div class="site-container">
+
+        <!-- ============ HERO ============ -->
+        <div class="iv-hero">
+            <div class="iv-hero__copy">
+                <p class="section-eyebrow">Interview Practice Studio</p>
+                <h1 id="iv-title">Interview Me</h1>
+                <p class="iv-hero__lead">
+                    Practice your story using evidence from your actual slate. The
+                    more career history, projects, and results you add, the more
+                    specific — and convincing — your coached answers become.
+                </p>
+                <p class="iv-hero__prep">
+                    <img
+                        src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                        alt=""
+                        aria-hidden="true"
+                    >
+                    <span>Preparing as <strong>Pete Carter</strong> &middot; Systems Engineer</span>
+                </p>
+            </div>
+
+            <aside class="iv-confidence" aria-label="Why this works">
+                <h2>Interview with confidence.</h2>
+                <p>Answers are grounded in your real experience and evidence from your slate.</p>
+                <p class="iv-confidence__check">Using your slate to personalize every answer</p>
+            </aside>
+        </div>
+
+        <!-- ============ BENEFITS: why this page exists ============ -->
+        <div class="iv-benefits" aria-label="What Interview Me does">
+            <article class="iv-benefit">
+                <h3>Practice Real Questions</h3>
+                <p>60 STAR and behavioral questions asked across most industries.</p>
+            </article>
+            <article class="iv-benefit">
+                <h3>Answers From Your Evidence</h3>
+                <p>The coach builds sample answers from your slate, not generic filler.</p>
+            </article>
+            <article class="iv-benefit">
+                <h3>Sharpen Your STAR</h3>
+                <p>Feedback tightens Situation, Task, Action, Result — with metrics.</p>
+            </article>
+            <article class="iv-benefit">
+                <h3>Scored Mock Interviews</h3>
+                <p>Answer one question at a time and watch your score climb.</p>
+            </article>
+        </div>
+
+        <!-- ============ MODE BAR ============ -->
+        <div class="iv-modebar" role="toolbar" aria-label="Interview mode">
+            <div class="iv-modes">
+                <button class="iv-mode is-active" type="button" data-mode="star">STAR Stories</button>
+                <button class="iv-mode" type="button" data-mode="behavioral">Behavioral</button>
+                <button class="iv-mode" type="button" data-mode="leadership">Leadership</button>
+                <button class="iv-mode" type="button" data-mode="mixed">Mixed</button>
+            </div>
+            <span class="iv-slate-chip" title="Coaching uses Pete's slate evidence">Use My Slate &#10003;</span>
+            <label class="iv-toggle">
+                <input type="checkbox" id="iv-evidence-toggle" checked>
+                <span class="iv-toggle__track" aria-hidden="true"></span>
+                Show Supporting Evidence
+            </label>
+        </div>
+
+        <!-- ============ STUDIO ============ -->
+        <div class="iv-studio">
+            <div class="iv-studio__main">
+
+                <!-- Current question -->
+                <div class="iv-card iv-question-card">
+                    <div class="iv-card__top">
+                        <span class="iv-label">Current Question</span>
+                        <span class="iv-counter" id="iv-counter">Question 1</span>
+                        <div class="iv-nav">
+                            <button type="button" id="iv-prev" aria-label="Previous question">&larr;</button>
+                            <button type="button" id="iv-next" aria-label="Next question">&rarr;</button>
+                        </div>
+                    </div>
+                    <div class="iv-question__row">
+                        <span class="iv-question-mark ps-tint--blue" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2A2.6 2.6 0 0 1 12 7.4c1.4 0 2.5 1 2.5 2.3 0 1.6-1.6 2-2.5 3v1"/><circle cx="12" cy="16.6" r="0.4"/></svg>
+                        </span>
+                        <p class="iv-question" id="iv-question">
+                            Tell me about a time you led a project from start to finish.
+                        </p>
+                    </div>
+                    <div class="iv-question__meta">
+                        <span class="iv-chip" id="iv-topic-chip">Leadership</span>
+                        <span class="iv-chip iv-chip--mode" id="iv-mode-chip">STAR</span>
+                    </div>
+                    <div class="iv-question__links">
+                        <button type="button" id="iv-rephrase">Rephrase Question</button>
+                        <button type="button" id="iv-new">New Question</button>
+                    </div>
+                </div>
+
+                <!-- Response draft -->
+                <div class="iv-card iv-response-card">
+                    <div class="iv-card__top">
+                        <label class="iv-label" for="iv-answer">Your Response (Draft)</label>
+                        <span class="iv-count" id="iv-count">0 / 1,200 characters</span>
+                        <button type="button" class="iv-clear" id="iv-clear">Clear</button>
+                    </div>
+                    <textarea
+                        id="iv-answer"
+                        maxlength="1200"
+                        rows="7"
+                        placeholder="Answer out loud in your head first — then capture it here, or press Record and just talk..."
+                    ></textarea>
+                    <div class="iv-response__actions">
+                        <button type="button" class="iv-linklike" id="iv-sample">
+                            Coach me with a sample answer
+                        </button>
+                        <div class="iv-response__buttons">
+                            <button type="button" class="btn btn-secondary iv-btn" id="iv-save">Save Draft</button>
+                            <button type="button" class="btn btn-primary iv-btn" id="iv-record">
+                                <span class="iv-rec-dot" aria-hidden="true"></span>
+                                Record Answer
+                            </button>
+                            <button type="button" class="btn btn-primary iv-btn" id="iv-feedback-btn">Get Feedback</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coach feedback -->
+                <div class="iv-card iv-feedback-card" id="iv-feedback-card">
+                    <div class="iv-card__top">
+                        <span class="iv-label">Interview Coach Feedback</span>
+                        <span class="iv-label iv-label--right">Overall Answer Quality</span>
+                    </div>
+                    <div class="iv-feedback__body">
+                        <div class="iv-feedback__text" id="iv-feedback" aria-live="polite">
+                            <p class="iv-feedback__empty">
+                                Answer the question above and press <strong>Get Feedback</strong> —
+                                the coach reviews your draft against Pete's slate and scores it.
+                            </p>
+                        </div>
+                        <div class="iv-score" id="iv-score" style="--p: 0;" role="img" aria-label="No score yet">
+                            <strong id="iv-score-num">&ndash;</strong>
+                            <span id="iv-score-tier">Not rated</span>
+                        </div>
+                    </div>
+                    <p class="iv-session" id="iv-session">This session: 0 answered</p>
+                </div>
+
+                <!-- Suggested + mock interview -->
+                <div class="iv-card iv-suggested-card">
+                    <div class="iv-card__top">
+                        <span class="iv-label">Suggested Questions</span>
+                        <button type="button" class="iv-clear" id="iv-shuffle">Shuffle</button>
+                    </div>
+                    <div class="iv-suggested" id="iv-suggested">
+                        {# Filled by interview.js with three picks from the banks. #}
+                    </div>
+                    <div class="iv-mock">
+                        <button type="button" class="btn btn-primary" id="iv-mock-btn">Start Mock Interview</button>
+                        <p>Simulates a full interview — one question at a time, scored answers, running average.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right rail -->
+            <aside class="iv-studio__rail">
+                <div class="iv-card iv-evidence" id="iv-evidence">
+                    <div class="iv-card__top">
+                        <span class="iv-label">Evidence Suggestions</span>
+                    </div>
+                    <p class="iv-evidence__sub">Pulled from your slate — work these into answers.</p>
+                    <ul class="iv-evidence__list">
+                        <li>
+                            <strong>$36M+</strong>
+                            <span>Contract oversight as COR across engineering services</span>
+                            <em class="iv-tag iv-tag--lead">Leadership</em>
+                        </li>
+                        <li>
+                            <strong>16 to 0</strong>
+                            <span>Critical MICAP reduction through coordinated sustainment</span>
+                            <em class="iv-tag iv-tag--impact">Impact</em>
+                        </li>
+                        <li>
+                            <strong>70%</strong>
+                            <span>Repair and test improvement across depot and supply chains</span>
+                            <em class="iv-tag iv-tag--impact">Impact</em>
+                        </li>
+                        <li>
+                            <strong>Cameo</strong>
+                            <span>SysML/MBSE modeling for navigation and avionics programs</span>
+                            <em class="iv-tag iv-tag--tech">Technical</em>
+                        </li>
+                        <li>
+                            <strong>52%</strong>
+                            <span>Missing-part reduction via systemic process redesign</span>
+                            <em class="iv-tag iv-tag--impact">Impact</em>
+                        </li>
+                        <li>
+                            <strong>$19.2M</strong>
+                            <span>Redesign projects led with a 30+ engineer flight</span>
+                            <em class="iv-tag iv-tag--lead">Leadership</em>
+                        </li>
+                    </ul>
+                    <a class="iv-evidence__link" href="{{ portfolio_resume_url }}">
+                        View all evidence on the slate <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </div>
+
+                <div class="iv-card iv-star">
+                    <div class="iv-card__top">
+                        <span class="iv-label">STAR Framework Helper</span>
+                    </div>
+                    <ul class="iv-star__list">
+                        <li>
+                            <i class="iv-star__letter">S</i>
+                            <div>
+                                <strong>Situation</strong>
+                                <span>Set the context. What was the challenge you faced?</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="iv-star__letter">T</i>
+                            <div>
+                                <strong>Task</strong>
+                                <span>What was your responsibility or goal?</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="iv-star__letter">A</i>
+                            <div>
+                                <strong>Action</strong>
+                                <span>What did you actually do? Be specific.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="iv-star__letter">R</i>
+                            <div>
+                                <strong>Result</strong>
+                                <span>What changed? Lead with metrics and impact.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="iv-card iv-match">
+                    <div class="iv-card__top">
+                        <span class="iv-label">Coming Next</span>
+                    </div>
+                    <h3>Qualification Match</h3>
+                    <p>
+                        Paste a job posting and see how closely your slate matches —
+                        100%, 90%, 75% — with a strictness dial you control.
+                    </p>
+                    <span class="iv-chip iv-chip--soon">In design</span>
+                </div>
+            </aside>
+        </div>
+
+        <!-- ============ QUESTION BANKS ============ -->
+        <section class="iv-bank" aria-labelledby="iv-star-bank-title">
+            <div class="board-section__head">
+                <h2 id="iv-star-bank-title">STAR Method Practice</h2>
+                <p>Thirty stories every interviewer asks for. Click any question to practice it in the studio.</p>
+            </div>
+            <ol class="iv-bank__list" id="iv-bank-star">
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Leadership">Tell me about a time you led a project from start to finish.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you had to meet a very tight deadline.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Conflict">Tell me about a time you disagreed with a supervisor.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Failure">Tell me about a time you failed at something important.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you persuaded someone to see things your way.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Teamwork">Tell me about a time you worked with a difficult team member.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you went above and beyond your role.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you made a decision with incomplete information.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you juggled several competing priorities.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you improved a process that wasn't working.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you dealt with an unhappy customer or stakeholder.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Learning">Tell me about a time you had to learn something new quickly.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Accountability">Tell me about a time you caught a mistake before it became a problem.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Learning">Tell me about a time you received tough feedback.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you had to deliver bad news.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Conflict">Tell me about a time you resolved a conflict between two other people.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Accountability">Tell me about a time you took ownership of a problem you didn't create.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Adaptability">Tell me about a time you had to adapt to a major change.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you set a challenging goal and achieved it.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you worked under significant pressure.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Leadership">Tell me about a time you mentored or coached someone.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you had to say no to a request.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Teamwork">Tell me about a time you built consensus across different teams.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you used data to make or defend a decision.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you handled an emergency or crisis.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you explained something complex to a non-expert.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you took a calculated risk.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Failure">Tell me about a time you missed a deadline — and what you did next.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Adaptability">Tell me about a time you delivered with limited resources or budget.</button></li>
+                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you turned around a failing project or task.</button></li>
+            </ol>
+        </section>
+
+        <section class="iv-bank" aria-labelledby="iv-beh-bank-title">
+            <div class="board-section__head">
+                <h2 id="iv-beh-bank-title">Behavioral Interview Practice</h2>
+                <p>Thirty questions about how you work — leadership, conflict, communication, accountability, and pressure.</p>
+            </div>
+            <ol class="iv-bank__list" id="iv-bank-behavioral">
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">How do you prioritize when everything feels urgent?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Conflict">How do you handle disagreeing with a team decision?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How would you describe your leadership style?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">How do you keep stakeholders informed on long efforts?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">How do you work with someone whose style clashes with yours?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">What do you do when you don't know the answer?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you handle constant interruptions to planned work?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">How do you stay organized across multiple projects?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Initiative">What motivates you to do your best work?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you respond when priorities change at the last minute?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">How do you build trust when joining a new team?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">What's your approach to giving constructive feedback?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">How do you take criticism of your work?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you handle an underperforming teammate?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">What do you do first when a project starts slipping?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you decide when to escalate a problem?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you balance quality against speed?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">What's your process for making high-stakes decisions?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you handle ambiguity in requirements or direction?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">How do you keep learning and growing professionally?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">What role do you naturally take in a team?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">How do you manage stress during crunch periods?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Conflict">How would you handle two managers giving conflicting direction?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">What would you do if you saw a colleague cutting corners?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you bring a hesitant group to a decision?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you rebuild team morale after a setback?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">How do you tailor communication to different audiences?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">What does accountability look like in your day-to-day work?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you evaluate whether a project truly succeeded?</button></li>
+                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">Where do you want to grow in the next few years?</button></li>
+            </ol>
+        </section>
+
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/interview.js') }}?v=interview-1"></script>
+{% endblock %}

@@ -5,6 +5,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
+         2026-07-06)
+         On a genuine touch tablet (iPad Mini and up), this forces the
+         browser to render the page as if the screen were 1280px wide and
+         shrink it to fit — real desktop layout, pixel-perfect, handled
+         natively by the browser (like <meta name="viewport" width=1024">
+         tricks other sites use). This runs before the CSS loads so
+         there's no flash of the wrong size.
+
+         This does NOT apply to a desktop browser window that's simply
+         been resized narrower — those keep using style.css's normal
+         tablet breakpoints (1180/1040/860/780px etc.) instead.
+         An earlier version of this script ALSO scaled narrow desktop
+         browser windows down with CSS `zoom`, to pixel-match the real
+         desktop the same way. That broke the profile header bar's
+         background: it uses background-attachment: fixed so its
+         stone-photo texture lines up with the page behind it, and fixed
+         backgrounds stay pinned to the true browser viewport instead of
+         moving with `zoom` — so once zoomed, the header's texture no
+         longer lined up with the page around it (worse in Safari, which
+         Macs default to). Real tablets don't hit this bug because forcing
+         the viewport width is native browser behavior, not a CSS scaling
+         trick — that's why this script only touches touch devices now. -->
+    <script>
+        (function () {
+            var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
+            var TABLET_MIN = 744;      /* iPad Mini portrait width */
+
+            /* Touch devices (iPads, tablets): swap the viewport tag so the
+               browser itself renders the page 1280px wide and shrinks it to
+               the screen — pixel-perfect desktop, handled natively. */
+            if (navigator.maxTouchPoints > 1) {
+                if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
+                    document.querySelector('meta[name="viewport"]')
+                        .setAttribute('content', 'width=' + DESKTOP_WIDTH);
+                }
+            }
+        })();
+    </script>
+
     <meta
         name="description"
         content="{% block meta_description %}The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems.{% endblock %}"
@@ -29,10 +69,16 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet"
     >
+    <!-- Source Serif 4: the serif display face from Pete's mockups — page
+         titles, section headings, names, and metric values site-wide. -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap"
+        rel="stylesheet"
+    >
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=slate-controls-10"
+        href="{{ url_for('static', filename='css/style.css') }}?v=mockup-system-2"
     >
     <link
         rel="stylesheet"
@@ -46,78 +92,88 @@
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    <!-- Global platform navigation for the broader PeerSlate concept. -->
+    <!-- Global platform navigation, rebuilt 2026-07-06 to match Pete's
+         mockups: serif PeerSlate wordmark, five links (Home / Example
+         Slate / Slate Board / Interview Me / About), a Theme dropdown,
+         and a navy Sign In button. -->
     <header class="global-header">
         <nav class="platform-nav" aria-label="PeerSlate platform navigation">
             <div class="site-container platform-nav__inner">
                 <div class="platform-brand">
-                    {# Two separate links: the PeerSlate logo goes to the main
-                       platform site, while "Pete's Slate" goes to Pete's own
-                       portfolio home. #}
                     <a class="platform-brand__logo" href="{{ peerslate_home_url }}" aria-label="{{ platform_brand_name }} home">
-                        <img
-                            src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
-                            alt="{{ platform_brand_name }}"
-                        >
+                        {# Stacked-diamond mark drawn inline so it recolors
+                           with every theme, + serif wordmark per mockup. #}
+                        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 2.5L21 7.5L12 12.5L3 7.5Z"/>
+                            <path d="M5.4 11.2L3 12.5L12 17.5L21 12.5L18.6 11.2L12 14.9Z"/>
+                            <path d="M5.4 16.2L3 17.5L12 22.5L21 17.5L18.6 16.2L12 19.9Z"/>
+                        </svg>
+                        <span class="brand-word">Peer<em>Slate</em></span>
                     </a>
-                    <a class="platform-brand__profile" href="{{ portfolio_home_url }}">Pete's Slate</a>
                 </div>
 
                 <ul class="platform-nav__links">
-                    <li><a href="{{ peerslate_home_url }}">Home</a></li>
-                    <!-- Platform preview pages: real routes now, full features later. -->
-                    <li><a href="{{ url_for('career_search') }}">Career Search</a></li>
-                    <li><a href="{{ url_for('my_network') }}">My Network</a></li>
-                    <li><a href="{{ url_for('explore_profiles') }}">Explore Profiles</a></li>
-                    <li><a href="{{ url_for('for_recruiters') }}">For Recruiters</a></li>
+                    <li><a href="{{ peerslate_home_url }}" {% if request.path in ['/', '/peerslate'] %}aria-current="page"{% endif %}>Home</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>Slate Board</a></li>
+                    <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
+                    <li><a href="{{ url_for('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
                 </ul>
 
                 <div class="platform-actions">
-                    {# One dot per theme: the four slate themes first, then the
-                       four original site themes — 8 total. theme-preview.js
-                       reads data-theme-option from whichever dot is clicked. #}
-                    <div class="theme-selector" aria-label="Site theme selector">
-                        <button class="theme-option theme-option--light" type="button" data-theme-option="light-slate" aria-label="Use Light Slate theme" aria-pressed="false">
-                            <span class="theme-tooltip">Light Slate</span>
+                    {# Theme picker is now a dropdown button (mockup) — the
+                       nine swatches live inside the panel with their names.
+                       theme-preview.js opens/closes it and still reads
+                       data-theme-option from the swatch rows. #}
+                    <div class="theme-menu">
+                        <button class="theme-menu__btn" type="button" id="theme-menu-btn" aria-haspopup="true" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="4"/>
+                                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>
+                            </svg>
+                            Theme
                         </button>
-                        <button class="theme-option theme-option--blue" type="button" data-theme-option="light-blue-slate" aria-label="Use Light Blue Slate theme" aria-pressed="false">
-                            <span class="theme-tooltip">Light Blue Slate</span>
-                        </button>
-                        <button class="theme-option theme-option--gray" type="button" data-theme-option="gray-slate" aria-label="Use Gray Slate theme" aria-pressed="false">
-                            <span class="theme-tooltip">Gray Slate</span>
-                        </button>
-                        <button class="theme-option theme-option--sage" type="button" data-theme-option="sage-slate" aria-label="Use Sage Slate theme" aria-pressed="false">
-                            <span class="theme-tooltip">Sage Slate</span>
-                        </button>
-                        <button class="theme-option theme-option--gold" type="button" data-theme-option="command-gold" aria-label="Use Command Gold theme" aria-pressed="false">
-                            <span class="theme-tooltip">Command Gold</span>
-                        </button>
-                        <button class="theme-option theme-option--modern" type="button" data-theme-option="modern-blue" aria-label="Use Modern Blue theme" aria-pressed="false">
-                            <span class="theme-tooltip">Modern Blue</span>
-                        </button>
-                        <button class="theme-option theme-option--blueprint" type="button" data-theme-option="blueprint-light" aria-label="Use Blueprint Light theme" aria-pressed="false">
-                            <span class="theme-tooltip">Blueprint Light</span>
-                        </button>
-                        <button class="theme-option theme-option--green" type="button" data-theme-option="secure-green" aria-label="Use Secure Green theme" aria-pressed="false">
-                            <span class="theme-tooltip">Secure Green</span>
-                        </button>
+                        <div class="theme-menu__panel" id="theme-menu-panel" hidden>
+                            <button class="theme-option theme-option--modern" type="button" data-theme-option="modern-blue" aria-pressed="false">
+                                <span class="theme-tooltip">Modern Blue</span>
+                            </button>
+                            <button class="theme-option theme-option--paper" type="button" data-theme-option="paper-slate" aria-pressed="false">
+                                <span class="theme-tooltip">White Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--light" type="button" data-theme-option="light-slate" aria-pressed="false">
+                                <span class="theme-tooltip">Light Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--blue" type="button" data-theme-option="light-blue-slate" aria-pressed="false">
+                                <span class="theme-tooltip">Light Blue Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--gray" type="button" data-theme-option="gray-slate" aria-pressed="false">
+                                <span class="theme-tooltip">Gray Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--sage" type="button" data-theme-option="sage-slate" aria-pressed="false">
+                                <span class="theme-tooltip">Sage Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--gold" type="button" data-theme-option="command-gold" aria-pressed="false">
+                                <span class="theme-tooltip">Command Gold</span>
+                            </button>
+                            <button class="theme-option theme-option--blueprint" type="button" data-theme-option="blueprint-light" aria-pressed="false">
+                                <span class="theme-tooltip">Blueprint Light</span>
+                            </button>
+                            <button class="theme-option theme-option--green" type="button" data-theme-option="secure-green" aria-pressed="false">
+                                <span class="theme-tooltip">Secure Green</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <a class="sign-in-btn" href="#" aria-disabled="true">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="9" cy="8" r="3"/>
-                            <path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/>
-                            <path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/>
-                            <path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/>
-                        </svg>
-                        Sign In
-                    </a>
+                    <a class="sign-in-btn" href="#" aria-disabled="true">Sign In</a>
                 </div>
             </div>
         </nav>
     </header>
 
-    {% if is_portfolio_path %}
+    {# The profile band + tab strip frame the portfolio pages — EXCEPT
+       Slate Board and Interview Me, which the mockups treat as
+       standalone top-level pages with their own heroes. #}
+    {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me', '/slate-board', '/interview-me'] %}
         {% include "partials/profile_shell.html" %}
     {% endif %}
 
@@ -127,6 +183,14 @@
     </main>
 
     <footer class="footer">
+        {# Mockup privacy line — every page. #}
+        <p class="footer-privacy">
+            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
+                <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
+                <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
+            </svg>
+            Your data is private. You control what you share.
+        </p>
         <div class="footer-container{% if not is_portfolio_path %} footer-container--brand{% endif %}">
             {% if not is_portfolio_path %}
             <a class="footer-brand" href="{{ peerslate_home_url }}" aria-label="PeerSlate home">
@@ -201,7 +265,7 @@
         </p>
     </div>
 
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-5"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=slate-themes-7"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=scroll-toggle-1"></script>
     {% block extra_scripts %}{% endblock %}
 

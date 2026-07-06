@@ -1,290 +1,386 @@
+{# =====================================================
+   OVERVIEW — Pete's slate home (/petec), rebuilt 2026-07-06 to
+   match the mockup profile page: metric cards, the dark "Ask
+   Pete's Slate" bar (wired to the real AI search), Core Skills &
+   Expertise, Experience Connected to Evidence, the Projects &
+   Evidence Snapshot, the retained Systems Engineering Lifecycle
+   figure, and the "Let's build what's next" band. The profile
+   band + tab strip come from partials/profile_shell.html. #}
 {% extends "base.html" %}
 
-
-{% block title %}Pete Carter | Systems Engineering Portfolio{% endblock %}
-
+{% block title %}Pete Carter | Systems Engineer{% endblock %}
 
 {% block content %}
 
+<div class="ps-ov">
+    <div class="site-container">
 
-<!-- =====================================================
-     HOMEPAGE REDESIGN
-     Built to match the approved dark systems-engineering
-     screenshot: hero, circular lifecycle chart, metrics,
-     and three project cards.
-     ===================================================== -->
+        <!-- ============ METRIC CARDS ============ -->
+        <section class="ps-ov-metrics" aria-label="Selected professional metrics">
+            <article class="ps-metric">
+                <span class="ps-metric__icon ps-tint--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 1.6 2.7 5 3.4 5 1.6 5 3.6-2.2 3-5 3-5-1.1-5-3"/></svg>
+                </span>
+                <strong>$36M+</strong>
+                <h3>Contract Oversight</h3>
+                <p>Across AF, L3Harris, and NG programs</p>
+            </article>
+            <article class="ps-metric">
+                <span class="ps-metric__icon ps-tint--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                </span>
+                <strong>16 to 0</strong>
+                <h3>MICAP Reduction</h3>
+                <p>Eliminated repeat findings</p>
+            </article>
+            <article class="ps-metric">
+                <span class="ps-metric__icon ps-tint--sky" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 17l6-6 4 4 6-7"/><path d="M14 8h6v6"/></svg>
+                </span>
+                <strong>70%</strong>
+                <h3>Repair &amp; Test Improvement</h3>
+                <p>Faster troubleshooting &amp; resolution</p>
+            </article>
+            <article class="ps-metric">
+                <span class="ps-metric__icon ps-tint--violet" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                </span>
+                <strong>52%</strong>
+                <h3>Missing-Part Reduction</h3>
+                <p>Through systemic process redesign</p>
+            </article>
+        </section>
 
-<section
-    id="overview"
-    class="hero"
-    aria-labelledby="hero-title"
->
-    <div class="hero-circuit" aria-hidden="true"></div>
+        <!-- ============ DARK ASK BAR (real AI search) ============ -->
+        <section class="ps-askbar" id="ask-pete" aria-label="Ask Pete's Slate">
+            <div class="ps-askbar__lead">
+                <span class="ps-askbar__spark" aria-hidden="true">&#10022;</span>
+                <strong>Ask Pete's Slate</strong>
+            </div>
+            <div class="ps-askbar__form">
+                {% include "partials/portfolio_ai_search.html" %}
+            </div>
+            <div class="ps-askbar__chips">
+                <button type="button" data-ask-prefill="Give me a 60-second overview of Pete Carter.">
+                    &#9776; Summarize Pete
+                </button>
+                <button type="button" data-ask-prefill="What evidence supports Pete's systems-engineering experience?">
+                    &#128737; Show Systems Evidence
+                </button>
+                <button type="button" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
+                    &#9737; Match to Role
+                </button>
+                <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Pete</a>
+            </div>
+        </section>
 
-    <div class="site-container hero-grid">
+        <!-- ============ CORE SKILLS ============ -->
+        <section class="ps-card ps-ov-block" aria-labelledby="ov-skills-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="ov-skills-title">Core Skills &amp; Expertise</h2>
+                    <p>Click through to explore the evidence behind every skill.</p>
+                </div>
+                <a class="ps-link" href="{{ portfolio_skills_url }}">View all skills &amp; evidence <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="ps-skills">
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M5 19l2.5-2.5M16.5 7.5L19 5"/></svg>Systems Engineering</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="6" rx="1"/><rect x="14" y="4" width="7" height="6" rx="1"/><rect x="8.5" y="14" width="7" height="6" rx="1"/><path d="M6.5 10v2h11v-2M12 12v2"/></svg>SysML Modeling</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>Cameo</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>MBSE</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h6M10 16h6"/></svg>Requirements Management</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>DOORS</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 2h4"/></svg>Sustainment</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h9"/><circle cx="19" cy="16" r="2.4"/></svg>Integrated Logistics Support</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>AI &amp; Machine Learning</a>
+                <a href="{{ portfolio_skills_url }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>Web Development</a>
+            </div>
+        </section>
 
-        <!-- Left column: professional positioning and actions -->
-        <div class="hero-copy">
-            <!-- Small caps line above the big headline. -->
-            <p class="hero-eyebrow">SYSTEMS ENGINEERING · PMP · AI · PhD Student</p>
+        <!-- ============ EXPERIENCE ============ -->
+        <section class="ps-card ps-ov-block" aria-labelledby="ov-exp-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="ov-exp-title">Experience Connected to Evidence</h2>
+                    <p>Three roles. One throughline&mdash;delivering mission-ready systems with measurable outcomes.</p>
+                </div>
+                <a class="ps-link" href="{{ portfolio_story_url }}">View full timeline <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="ps-roles">
+                <article class="ps-role">
+                    <div class="ps-role__head">
+                        <strong>Department of Defense<br>U.S. Air Force</strong>
+                        <time>2021 &mdash; 2024</time>
+                    </div>
+                    <h3>Systems Engineer</h3>
+                    <ul>
+                        <li>Led model-based systems engineering for autonomy and command &amp; control programs.</li>
+                        <li>Reduced MICAPs from 16 to 0 across back-to-back audit cycles.</li>
+                        <li>Improved repair &amp; test turnaround by 70% through process and data-driven insights.</li>
+                    </ul>
+                    <div class="ps-role__tags">
+                        <span>MBSE</span><span>SysML</span><span>DOORS</span><span>Sustainment</span>
+                    </div>
+                </article>
+                <article class="ps-role">
+                    <div class="ps-role__head">
+                        <strong>L3Harris</strong>
+                        <time>2024 &mdash; 2025</time>
+                    </div>
+                    <h3>Systems Effectiveness Engineer</h3>
+                    <ul>
+                        <li>Supported C2 mission systems across requirements, integration, and test.</li>
+                        <li>Drove risk reduction through modeling, reviews, and automated checks.</li>
+                        <li>Enabled cross-functional alignment and faster decision cycles.</li>
+                    </ul>
+                    <div class="ps-role__tags">
+                        <span>Cameo</span><span>DOORS</span><span>JIRA</span><span>Python</span>
+                    </div>
+                </article>
+                <article class="ps-role">
+                    <div class="ps-role__head">
+                        <strong>Northrop Grumman</strong>
+                        <time>2025 &mdash; Present</time>
+                    </div>
+                    <h3>Systems Engineer</h3>
+                    <ul>
+                        <li>Leading engineering for next-gen systems across development and sustainment.</li>
+                        <li>Reduced missing parts by 52% via systemic changes and data visibility.</li>
+                        <li>Championing AI-enabled automation to accelerate verification and traceability.</li>
+                    </ul>
+                    <div class="ps-role__tags">
+                        <span>MBSE</span><span>AI/ML</span><span>Git</span><span>Confluence</span>
+                    </div>
+                </article>
+            </div>
+        </section>
 
-            <h1 id="hero-title">
-                Engineering <span>better outcomes</span> through technology,
-                leadership, and systems thinking.
-            </h1>
-
-            <p class="hero-description">
-                Systems engineer specializing in requirements, architecture, MBSE,
-                integration, automation, verification, and AI-enabled tools.
-            </p>
-
-            {% include "partials/portfolio_ai_search.html" %}
-
-            <div class="hero-actions" aria-label="Primary homepage actions">
-                <a class="btn btn-primary" href="{{ portfolio_work_url }}">
-                    View Case Studies
-                    <span aria-hidden="true">-&gt;</span>
+        <!-- ============ PROJECTS SNAPSHOT ============ -->
+        <section class="ps-card ps-ov-block" aria-labelledby="ov-proj-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="ov-proj-title">Projects &amp; Evidence Snapshot</h2>
+                    <p>A few highlighted examples. Explore the Projects tab for more.</p>
+                </div>
+                <a class="ps-link" href="{{ portfolio_work_url }}">View all projects <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="ps-projects">
+                <a class="ps-project" href="{{ portfolio_work_url }}">
+                    <p class="ps-project__kicker ps-kicker--blue">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+                        MBSE / Digital Engineering
+                    </p>
+                    <h3>Integrated C2 Architecture Model</h3>
+                    <p>Built and maintained a SysML model for a distributed C2 system enabling trade studies, interface control, and impact analysis.</p>
+                    <span class="ps-project__foot">15 pieces of evidence</span>
                 </a>
-                <a class="btn btn-secondary" href="{{ portfolio_resume_url }}">
-                    Interactive Resume
-                    <span aria-hidden="true">→</span>
+                <a class="ps-project" href="{{ portfolio_work_url }}">
+                    <p class="ps-project__kicker ps-kicker--green">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+                        Logistics / ILS
+                    </p>
+                    <h3>Sustainment Optimization Initiative</h3>
+                    <p>Analyzed supply chain and maintenance data to reduce missing parts and improve readiness across the enterprise.</p>
+                    <span class="ps-project__foot">12 pieces of evidence</span>
+                </a>
+                <a class="ps-project" href="{{ portfolio_work_url }}">
+                    <p class="ps-project__kicker ps-kicker--violet">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h.01M15 9h.01M9 13c.7 1.3 1.8 2 3 2s2.3-.7 3-2"/></svg>
+                        Automation / AI
+                    </p>
+                    <h3>AI-Assisted Requirements Automation</h3>
+                    <p>Developed tooling to generate, validate, and trace requirements using NLP and model context.</p>
+                    <span class="ps-project__foot">9 pieces of evidence</span>
+                </a>
+                <a class="ps-project" href="{{ portfolio_work_url }}">
+                    <p class="ps-project__kicker ps-kicker--orange">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/><path d="M17.5 16l1.5 1.5 3-3"/></svg>
+                        Test / Verification
+                    </p>
+                    <h3>Digital Test &amp; Verification Framework</h3>
+                    <p>Established model-based test procedures and automated checks, cutting test time and rework.</p>
+                    <span class="ps-project__foot">11 pieces of evidence</span>
                 </a>
             </div>
-        </div>
+        </section>
 
-        <!-- Right column: circular systems engineering lifecycle diagram -->
-        <div class="lifecycle-scroll">
-        <div class="lifecycle-visual" aria-labelledby="lifecycle-title lifecycle-description">
-            <!-- Fixed 760x440 reference canvas; scaled as one unit via CSS so the
-                 circular layout holds its proportions at every viewport width. -->
-            <div class="lifecycle-stage">
-            <!-- These curved arrow paths are hand-drawn to connect the six
-                 lifecycle-node articles below, which CSS positions in a
-                 circle around lifecycle-center. If a node's position in
-                 style.css ever moves, these path coordinates need to move
-                 with it or the arrows will point to the wrong spot. -->
-            <svg class="lifecycle-arrows" viewBox="0 0 760 440" aria-hidden="true">
-                <defs>
-                    <!-- Reusable gold arrowhead every path below points to. -->
-                    <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
-                        <path d="M0 0 L10 4 L0 8 Z" fill="#F3BE4F"/>
-                    </marker>
-                </defs>
+        <!-- ============ SYSTEMS ENGINEERING LIFECYCLE ============ -->
+        <section class="ps-card ps-ov-block" aria-labelledby="lifecycle-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2>How I Work</h2>
+                    <p>Six connected stages, from problem definition to deployment.</p>
+                </div>
+            </div>
+            <div class="lifecycle-scroll">
+            <div class="lifecycle-visual" aria-labelledby="lifecycle-title lifecycle-description">
+                <!-- Fixed 760x440 reference canvas; scaled as one unit via CSS so the
+                     circular layout holds its proportions at every viewport width. -->
+                <div class="lifecycle-stage">
+                <!-- These curved arrow paths are hand-drawn to connect the six
+                     lifecycle-node articles below, which CSS positions in a
+                     circle around lifecycle-center. If a node's position in
+                     style.css ever moves, these path coordinates need to move
+                     with it or the arrows will point to the wrong spot. -->
+                <svg class="lifecycle-arrows" viewBox="0 0 760 440" aria-hidden="true">
+                    <defs>
+                        <!-- Reusable arrowhead every path below points to. -->
+                        <marker id="arrow-gold" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+                            <path d="M0 0 L10 4 L0 8 Z" fill="#F3BE4F"/>
+                        </marker>
+                    </defs>
 
-                <!-- Gold outer arrows carry the lifecycle clockwise around the center. -->
-                <!-- Each short path uses matched spacing so the connector arrows feel balanced around the lifecycle. -->
-                <path class="cycle-arc cycle-arc--gold" d="M502 74 C512 78 522 84 532 92" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M636 218 C648 238 648 256 636 270" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M536 374 C524 382 512 388 500 392" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M270 392 C258 388 246 382 234 374" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M124 270 C112 250 112 232 124 218" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M228 92 C238 84 248 78 258 74" marker-end="url(#arrow-gold)"/>
-            </svg>
+                    <!-- Outer arrows carry the lifecycle clockwise around the center. -->
+                    <!-- Paths are tuned to the cards' RENDERED boxes (measured
+                         2026-07-06): left cards sit at y 92-214 and y 270-392,
+                         right cards at y 117-224 and y 278-366, so every arc
+                         starts/ends a few px clear of a card edge instead of
+                         disappearing underneath one. -->
+                    <path class="cycle-arc cycle-arc--gold" d="M502 74 C512 78 522 84 532 92" marker-end="url(#arrow-gold)"/>
+                    <path class="cycle-arc cycle-arc--gold" d="M636 230 C648 244 648 258 636 272" marker-end="url(#arrow-gold)"/>
+                    <path class="cycle-arc cycle-arc--gold" d="M536 374 C524 382 512 388 500 392" marker-end="url(#arrow-gold)"/>
+                    <path class="cycle-arc cycle-arc--gold" d="M270 392 C260 389 252 384 246 379" marker-end="url(#arrow-gold)"/>
+                    <path class="cycle-arc cycle-arc--gold" d="M124 264 C110 248 110 234 124 220" marker-end="url(#arrow-gold)"/>
+                    <path class="cycle-arc cycle-arc--gold" d="M236 84 C246 78 252 75 260 72" marker-end="url(#arrow-gold)"/>
+                </svg>
 
-            <div class="lifecycle-circuit" aria-hidden="true"></div>
+                <div class="lifecycle-circuit" aria-hidden="true"></div>
 
-            <div class="lifecycle-center">
-                <h2 id="lifecycle-title">Systems Engineering Lifecycle</h2>
-                <p id="lifecycle-description">
-                    Six connected stages showing how disciplined engineering work moves from problem definition to deployment.
+                <div class="lifecycle-center">
+                    <h2 id="lifecycle-title">Systems Engineering Lifecycle</h2>
+                    <p id="lifecycle-description">
+                        Six connected stages showing how disciplined engineering work moves from problem definition to deployment.
+                    </p>
+                </div>
+
+                <!-- The six stage cards below. Each one's lifecycle-node--*
+                     class tells style.css where to place it around the circle;
+                     the small inline SVG in each is a simple icon, not a photo. -->
+                <article class="lifecycle-node lifecycle-node--define">
+                    <div class="node-icon node-icon--gold" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="8"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2v4M22 12h-4M19 5l-3 3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>1. Define</h3>
+                        <p>Frame the mission, problem, and stakeholders</p>
+                    </div>
+                </article>
+
+                <article class="lifecycle-node lifecycle-node--requirements">
+                    <div class="node-icon node-icon--blue" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 3h7l4 4v14H7z"/>
+                            <path d="M14 3v5h5M10 12h6M10 16h6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>2. Requirements</h3>
+                        <p>Capture, decompose, and trace needs</p>
+                    </div>
+                </article>
+
+                <article class="lifecycle-node lifecycle-node--architecture">
+                    <div class="node-icon node-icon--gold" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>
+                            <path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>3. Architecture</h3>
+                        <p>Evaluate trades and design the solution</p>
+                    </div>
+                </article>
+
+                <article class="lifecycle-node lifecycle-node--implement">
+                    <div class="node-icon node-icon--gold" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>4. Implement &amp; Integrate</h3>
+                        <p>Build, configure, and integrate the system</p>
+                    </div>
+                </article>
+
+                <article class="lifecycle-node lifecycle-node--verify">
+                    <div class="node-icon node-icon--gold" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
+                            <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>5. Verify &amp; Validate</h3>
+                        <p>Confirm requirements and mission needs</p>
+                    </div>
+                </article>
+
+                <article class="lifecycle-node lifecycle-node--deploy">
+                    <div class="node-icon node-icon--blue" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 19V5M4 19h16"/>
+                            <path d="M8 16v-4M12 16V9M16 16v-7M8 9l3-3 4 3 5-6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>6. Deploy &amp; Sustain</h3>
+                        <p>Operate, monitor, and continuously improve</p>
+                    </div>
+                </article>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- ============ CTA BAND ============ -->
+        <section class="ps-example ps-ov-cta" aria-labelledby="ov-cta-title">
+            <img
+                src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                alt=""
+                aria-hidden="true"
+            >
+            <div class="ps-example__copy">
+                <h2 id="ov-cta-title">Let's build what's next.</h2>
+                <p>
+                    I partner with teams to solve complex problems and ship
+                    mission-ready systems. Open to conversations and new opportunities.
                 </p>
             </div>
-
-            <!-- The six stage cards below. Each one's lifecycle-node--*
-                 class tells style.css where to place it around the circle;
-                 the small inline SVG in each is a simple icon, not a photo. -->
-            <article class="lifecycle-node lifecycle-node--define">
-                <div class="node-icon node-icon--gold" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="8"/>
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 2v4M22 12h-4M19 5l-3 3"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>1. Define</h3>
-                    <p>Frame the mission, problem, and stakeholders</p>
-                </div>
-            </article>
-
-            <article class="lifecycle-node lifecycle-node--requirements">
-                <div class="node-icon node-icon--blue" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M7 3h7l4 4v14H7z"/>
-                        <path d="M14 3v5h5M10 12h6M10 16h6"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>2. Requirements</h3>
-                    <p>Capture, decompose, and trace needs</p>
-                </div>
-            </article>
-
-            <article class="lifecycle-node lifecycle-node--architecture">
-                <div class="node-icon node-icon--gold" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>
-                        <path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>3. Architecture</h3>
-                    <p>Evaluate trades and design the solution</p>
-                </div>
-            </article>
-
-            <article class="lifecycle-node lifecycle-node--implement">
-                <div class="node-icon node-icon--gold" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>4. Implement &amp; Integrate</h3>
-                    <p>Build, configure, and integrate the system</p>
-                </div>
-            </article>
-
-            <article class="lifecycle-node lifecycle-node--verify">
-                <div class="node-icon node-icon--gold" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
-                        <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>5. Verify &amp; Validate</h3>
-                    <p>Confirm requirements and mission needs</p>
-                </div>
-            </article>
-
-            <article class="lifecycle-node lifecycle-node--deploy">
-                <div class="node-icon node-icon--blue" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M4 19V5M4 19h16"/>
-                        <path d="M8 16v-4M12 16V9M16 16v-7M8 9l3-3 4 3 5-6"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3>6. Deploy &amp; Sustain</h3>
-                    <p>Operate, monitor, and continuously improve</p>
-                </div>
-            </article>
+            <div class="ps-ov-cta__actions">
+                <a class="ps-btn ps-btn--primary" href="{{ portfolio_contact_url }}">Message Pete</a>
+                <a class="ps-btn ps-btn--ghost" href="{{ url_for('static', filename='files/pete-carter-resume.pdf') }}" download>
+                    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 4v12M7 12l5 5 5-5"/><path d="M5 20h14"/></svg>
+                    Download Slate PDF
+                </a>
             </div>
-        </div>
-        </div>
+        </section>
+
     </div>
-</section>
+</div>
 
+{% endblock %}
 
-<!-- Shared metrics strip lives in templates/partials/metrics_strip.html
-     so the homepage and the My Story page always show identical numbers. -->
-{% include "partials/metrics_strip.html" %}
-
-
-<!-- Featured work: three project cards matching the target screenshot layout. -->
-<section class="projects-section" id="projects" aria-labelledby="projects-title">
-    <div class="site-container projects-layout">
-        <div class="projects-copy">
-            <p class="section-eyebrow">Featured Projects</p>
-            <h2 id="projects-title">Engineering Solutions with Measurable Impact</h2>
-            <p>
-                Projects that demonstrate systems thinking, software skills, and a commitment to
-                building tools that solve real engineering challenges.
-            </p>
-            <a class="view-all-link" href="{{ portfolio_work_url }}">
-                View All Projects
-                <span aria-hidden="true">→</span>
-            </a>
-        </div>
-
-        <!-- Three project cards. The "mock-window" divs inside each one are
-             pure CSS/HTML illustrations that fake a small app screenshot
-             (sidebar, panel, tiles) — there are no real images here, so
-             each card renders instantly with no image files to load. -->
-        <div class="project-grid">
-            <article class="project-card">
-                <div class="project-media project-media--trace" role="img" aria-label="Concept interface for a requirements traceability platform">
-                    <div class="mock-window mock-window--light">
-                        <div class="mock-sidebar"></div>
-                        <div class="mock-canvas">
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                        <div class="mock-panel">
-                            <i></i><i></i><i></i><i></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="project-body">
-                    <span class="project-status status-planned">Planned Engineering Application</span>
-                    <h3>Requirements Traceability Platform</h3>
-                    <p>
-                        Planned web application that links requirements, verification methods,
-                        test cases, and evidence with full bidirectional traceability.
-                    </p>
-                    <div class="project-tags" aria-label="Technologies">
-                        <span>Python</span><span>Flask</span><span>PostgreSQL</span><span>D3.js</span>
-                    </div>
-                    <a class="project-link" href="{{ portfolio_work_url }}" aria-label="View case study for Requirements Traceability Platform">↗</a>
-                </div>
-            </article>
-
-            <article class="project-card">
-                <div class="project-media project-media--review" role="img" aria-label="Concept interface for an AI-assisted requirements reviewer">
-                    <div class="mock-window mock-window--dark">
-                        <div class="mock-review-copy">
-                            <i></i><i></i><i></i><i></i><i></i>
-                        </div>
-                        <div class="mock-score">92</div>
-                        <div class="mock-review-lines">
-                            <i></i><i></i><i></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="project-body">
-                    <span class="project-status status-progress">Prototype Concept</span>
-                    <h3>AI-Assisted Requirements Reviewer</h3>
-                    <p>
-                        Prototype concept for analyzing requirements for clarity,
-                        completeness, consistency, and verifiability with source-cited feedback.
-                    </p>
-                    <div class="project-tags" aria-label="Technologies">
-                        <span>Python</span><span>OpenAI API</span><span>LangChain</span><span>FAISS</span>
-                    </div>
-                    <a class="project-link" href="{{ portfolio_work_url }}" aria-label="View case study for AI-Assisted Requirements Reviewer">↗</a>
-                </div>
-            </article>
-
-            <article class="project-card">
-                <div class="project-media project-media--home" role="img" aria-label="Sanitized concept interface for a home operations dashboard">
-                    <div class="mock-window mock-window--dashboard">
-                        <div class="dashboard-tile"><small>Downstairs</small><strong>72°</strong></div>
-                        <div class="dashboard-tile"><small>Upstairs</small><strong>70°</strong></div>
-                        <div class="dashboard-tile"><small>Living Room</small><strong>On</strong></div>
-                        <div class="dashboard-tile"><small>Front Door</small><strong>Locked</strong></div>
-                        <div class="dashboard-tile"><small>Garage</small><strong>Closed</strong></div>
-                        <div class="dashboard-tile"><small>Security System</small><strong>Disarmed</strong></div>
-                    </div>
-                </div>
-
-                <div class="project-body">
-                    <span class="project-status status-planned">Planned Private Integration</span>
-                    <h3>Engineering Home Operations Dashboard</h3>
-                    <p>
-                        Planned private dashboard integrating Home Assistant via REST API
-                        and WebSockets for real-time monitoring and automation.
-                    </p>
-                    <div class="project-tags" aria-label="Technologies">
-                        <span>Home Assistant</span><span>WebSocket</span><span>API</span><span>Docker</span>
-                    </div>
-                    <a class="project-link" href="{{ portfolio_work_url }}" aria-label="View case study for Engineering Home Operations Dashboard">↗</a>
-                </div>
-            </article>
-        </div>
-    </div>
-</section>
-
-
+{% block extra_scripts %}
+<script>
+    // Quick-ask chips on the dark bar: prefill the real AI search box and
+    // submit it, so the chips produce live slate-grounded answers.
+    (function () {
+        var input = document.getElementById('hero-ai-input');
+        var form = document.querySelector('[data-hero-ai-search]');
+        if (!input || !form) { return; }
+        document.querySelectorAll('[data-ask-prefill]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                input.value = chip.dataset.askPrefill;
+                input.focus();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            });
+        });
+    })();
+</script>
 {% endblock %}

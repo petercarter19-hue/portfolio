@@ -1,0 +1,390 @@
+{# ============================================================
+   MY SLATE BOARD — rebuilt 2026-07-06 to match static/Mockup:
+   hero row (avatar + serif title + Share/Add buttons), four stat
+   cards with links, the white-card My Whiteboard (four named
+   columns of handwritten ink, every line linking to its card,
+   sticky notes at the column feet), What We're Tracking (progress
+   BARS per the mockup), Latest From the Board (three cards), and
+   the bottom row: Momentum line chart, shield Trophy Shelf, and
+   the Slate Assistant (wired to the real AI search).
+
+   MVP NOTE: fully designed static preview — entries, percentages,
+   and badges are sample content; Share/Add/Edit buttons are
+   visual. The assistant input IS live (same /api/chat as Ask
+   Pete AI).
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}My Slate Board | Pete Carter{% endblock %}
+
+{% block meta_description %}Pete Carter's Slate Board: live goals, progress, badges, and the wins he chooses to share publicly.{% endblock %}
+
+{% block extra_head %}
+<!-- Caveat: the mockup whiteboard handwriting (light marker print). -->
+<link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap"
+    rel="stylesheet"
+>
+{% endblock %}
+
+{% block content %}
+
+<section class="board-page" aria-labelledby="board-title">
+    <div class="site-container">
+
+        <!-- ============ HERO ============ -->
+        <div class="bd-hero">
+            <img
+                class="bd-hero__avatar"
+                src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                alt=""
+                aria-hidden="true"
+            >
+            <div class="bd-hero__copy">
+                <h1 id="board-title">My Slate Board</h1>
+                <p class="bd-hero__sub">Goals, wins, and the work in progress.</p>
+                <p class="bd-hero__name">Pete Carter</p>
+                <p class="bd-hero__meta">Systems Engineer &bull; Athens, AL &bull; Active Secret clearance</p>
+            </div>
+            <div class="bd-hero__actions">
+                <button class="ps-btn ps-btn--ghost" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.3 10.8l6.4-3.6M8.3 13.2l6.4 3.6"/></svg>
+                    Share Board
+                </button>
+                <button class="ps-btn ps-btn--ink" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                    + Add to Board
+                </button>
+            </div>
+        </div>
+
+        <!-- ============ STAT CARDS ============ -->
+        <div class="bd-stats" aria-label="Board at a glance">
+            <article class="bd-stat">
+                <span class="bd-stat__icon ps-tint--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4V2M20 12h2"/></svg>
+                </span>
+                <div>
+                    <strong>4</strong>
+                    <span>Active Goals</span>
+                    <a class="ps-link" href="#bd-tracking">View all goals <i aria-hidden="true">&rarr;</i></a>
+                </div>
+            </article>
+            <article class="bd-stat">
+                <span class="bd-stat__icon ps-tint--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                </span>
+                <div>
+                    <strong>6</strong>
+                    <span>Badges Earned</span>
+                    <a class="ps-link" href="#bd-trophies">View trophy shelf <i aria-hidden="true">&rarr;</i></a>
+                </div>
+            </article>
+            <article class="bd-stat">
+                <span class="bd-stat__icon ps-tint--sky" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
+                </span>
+                <div>
+                    <strong>3</strong>
+                    <span>Public Wins</span>
+                    <a class="ps-link" href="#bd-latest">View milestones <i aria-hidden="true">&rarr;</i></a>
+                </div>
+            </article>
+            <article class="bd-stat">
+                <span class="bd-stat__icon ps-tint--orange" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.6 7-7 0-3-1.6-5.4-3.2-7.2C14 6 13 4 13 2c-3 2-4.4 4.6-4.4 6.6-1-.8-1.7-2-2-3.1C5 7.5 5 10.5 5 15c0 4.4 3 7 7 7z"/></svg>
+                </span>
+                <div>
+                    <strong>21</strong>
+                    <span>Day Streak</span>
+                    <em class="bd-stat__note">Keep it going! &#128293;</em>
+                </div>
+            </article>
+        </div>
+
+        <!-- ============ MY WHITEBOARD ============ -->
+        <section class="whiteboard ps-card" id="bd-whiteboard" aria-labelledby="board-wall-title">
+            <div class="whiteboard__head">
+                <div>
+                    <h2 id="board-wall-title">My Whiteboard</h2>
+                    <p>Big picture thinking. Organized chaos.</p>
+                </div>
+                <button class="ps-btn ps-btn--ghost" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M14 4l6 6-10 10H4v-6z"/></svg>
+                    Edit Whiteboard
+                </button>
+            </div>
+
+            <div class="whiteboard__surface">
+                <section class="wb-section" aria-label="Short Term">
+                    <h3 class="wb-heading wb-heading--blue">Short Term</h3>
+                    <ul class="wb-list">
+                        <li style="--i: 0;"><a class="wb-ink wb-ink--blue" href="#goal-pmp">Renew PMP &mdash; 39 of 60 PDUs</a></li>
+                        <li style="--i: 1;"><a class="wb-ink wb-ink--blue" href="#goal-run">Hit 400 miles by October</a></li>
+                        <li style="--i: 2;"><a class="wb-ink wb-ink--blue" href="#entry-draft">Publish the home-lab write-up</a></li>
+                        <li style="--i: 3;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_work_url }}">Automate the Cameo reporting pipeline</a></li>
+                    </ul>
+                    <p class="wb-note wb-note--blue"><span aria-hidden="true">&#9733;</span> Focus fuels momentum.</p>
+                </section>
+
+                <section class="wb-section" aria-label="Long Term">
+                    <h3 class="wb-heading wb-heading--violet">Long Term</h3>
+                    <ul class="wb-list">
+                        <li style="--i: 1;"><a class="wb-ink wb-ink--violet" href="#goal-phd">Ph.D. &mdash; January 2027</a></li>
+                        <li style="--i: 2;"><a class="wb-ink wb-ink--violet" href="{{ peerslate_home_url }}">Grow PeerSlate</a></li>
+                        <li style="--i: 3;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">Requirements Traceability Platform</a></li>
+                        <li style="--i: 4;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">AI Requirements Reviewer</a></li>
+                    </ul>
+                    <p class="wb-note wb-note--green"><span aria-hidden="true">&#9813;</span> Build once. Improve forever.</p>
+                </section>
+
+                <section class="wb-section" aria-label="Projects">
+                    <h3 class="wb-heading wb-heading--purple">Projects</h3>
+                    <ul class="wb-list">
+                        <li style="--i: 2;"><a class="wb-ink wb-ink--purple" href="#goal-homeops">Home Ops Dashboard v2</a></li>
+                        <li style="--i: 3;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_work_url }}">Data Model Refactor</a></li>
+                        <li style="--i: 4;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_work_url }}">Customer Case Study Library</a></li>
+                        <li style="--i: 5;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_url('interview-me') }}">Launch Interview Me Public Beta</a></li>
+                    </ul>
+                    <p class="wb-note wb-note--violet"><span aria-hidden="true">&#128640;</span> Ship small, learn fast.</p>
+                </section>
+
+                <section class="wb-section" aria-label="Work">
+                    <h3 class="wb-heading wb-heading--orange">Work</h3>
+                    <ul class="wb-list">
+                        <li style="--i: 3;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_story_url }}">Mentor two new engineers</a></li>
+                        <li style="--i: 4;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_resume_url }}">Quarterly roadmap alignment</a></li>
+                        <li style="--i: 5;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_resume_url }}">Peer review requirements</a></li>
+                        <li style="--i: 6;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_contact_url }}">Stakeholder syncs</a></li>
+                    </ul>
+                    <p class="wb-note wb-note--orange"><span aria-hidden="true">&#10084;</span> Make impact. Help people.</p>
+                </section>
+            </div>
+        </section>
+
+        <!-- ============ WHAT WE'RE TRACKING ============ -->
+        <section class="ps-card ps-ov-block" id="bd-tracking" aria-labelledby="bd-tracking-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="bd-tracking-title">What We're Tracking</h2>
+                    <p>Key progress across goals and projects.</p>
+                </div>
+                <a class="ps-link" href="#bd-whiteboard">View all tracking <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="bd-goals">
+                <article class="goal-card" id="goal-phd" style="--ring: #2f6fe0;">
+                    <span class="goal-card__icon ps-tint--blue" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                    </span>
+                    <h3>Ph.D. Systems Engineering</h3>
+                    <strong class="goal-card__pct">35%</strong>
+                    <span class="goal-bar" role="img" aria-label="35 percent complete"><i style="width: 35%;"></i></span>
+                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Jan 2027</time></p>
+                </article>
+                <article class="goal-card" id="goal-pmp" style="--ring: #1d9a5f;">
+                    <span class="goal-card__icon ps-tint--green" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                    </span>
+                    <h3>PMP Renewal PDUs</h3>
+                    <strong class="goal-card__pct">65%</strong>
+                    <span class="goal-bar" role="img" aria-label="65 percent complete"><i style="width: 65%;"></i></span>
+                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Sep 2026</time></p>
+                </article>
+                <article class="goal-card" id="goal-homeops" style="--ring: #7c4fd8;">
+                    <span class="goal-card__icon ps-tint--violet" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M7 10l2 2 4-4"/></svg>
+                    </span>
+                    <h3>Home Operations Dashboard</h3>
+                    <strong class="goal-card__pct">45%</strong>
+                    <span class="goal-bar" role="img" aria-label="45 percent complete"><i style="width: 45%;"></i></span>
+                    <p class="goal-status goal-status--progress"><i aria-hidden="true"></i>In progress <time>Target: Aug 2026</time></p>
+                </article>
+                <article class="goal-card" id="goal-run" style="--ring: #e0762f;">
+                    <span class="goal-card__icon ps-tint--orange" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M13 4a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M6 21l3-5 3 2 2-6-4-2 3-4 3 3h4"/></svg>
+                    </span>
+                    <h3>Run 500 Miles in 2026</h3>
+                    <strong class="goal-card__pct">62%</strong>
+                    <span class="goal-bar" role="img" aria-label="62 percent complete"><i style="width: 62%;"></i></span>
+                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Dec 2026</time></p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============ LATEST FROM THE BOARD ============ -->
+        <section class="ps-card ps-ov-block" id="bd-latest" aria-labelledby="bd-latest-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="bd-latest-title">Latest From the Board</h2>
+                    <p>Public wins, private thoughts, and work in progress.</p>
+                </div>
+                <a class="ps-link" href="#bd-whiteboard">View all activity <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="bd-entries">
+                <article class="bd-entry" id="entry-public">
+                    <div class="bd-entry__top">
+                        <span class="ps-flag ps-flag--blue">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.4 3.8 5.1 3.8 8S14.5 21.6 12 20M12 4c-2.5 2.4-3.8 5.1-3.8 8S9.5 21.6 12 20"/></svg>
+                            Public Milestone
+                        </span>
+                        <time>Jul 2, 2026</time>
+                    </div>
+                    <h3>Crossed 300 Miles for the Year</h3>
+                    <p>Six months in and ahead of pace. The 5 a.m. starts are finally paying rent.</p>
+                    <div class="bd-entry__foot">
+                        <span>&#127760; Public</span>
+                        <a class="ps-link" href="#goal-run">View milestone <i aria-hidden="true">&rarr;</i></a>
+                    </div>
+                </article>
+                <article class="bd-entry" id="entry-private">
+                    <div class="bd-entry__top">
+                        <span class="ps-flag ps-flag--violet">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                            Private Thought
+                        </span>
+                        <time>Jun 28, 2026</time>
+                    </div>
+                    <h3>On Research Directions</h3>
+                    <p>Digital-twin verification vs. MBSE-driven test generation &mdash; both pull toward the same question: how do you trust a model enough to ship against it?</p>
+                    <div class="bd-entry__foot">
+                        <span>&#128274; Private</span>
+                        <a class="ps-link" href="#goal-phd">View thought <i aria-hidden="true">&rarr;</i></a>
+                    </div>
+                </article>
+                <article class="bd-entry" id="entry-draft">
+                    <div class="bd-entry__top">
+                        <span class="ps-flag ps-flag--gray">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
+                            Draft Build Note
+                        </span>
+                        <time>Jun 21, 2026</time>
+                    </div>
+                    <h3>Home Dashboard v2</h3>
+                    <p>Moving automations off cloud triggers onto local WebSocket events. Latency dropped from seconds to milliseconds &mdash; write it up before publishing.</p>
+                    <div class="bd-entry__foot">
+                        <span>&#9998; Draft</span>
+                        <a class="ps-link" href="#goal-homeops">Open draft <i aria-hidden="true">&rarr;</i></a>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============ BOTTOM ROW ============ -->
+        <div class="bd-bottom">
+            <section class="ps-card bd-momentum" aria-labelledby="bd-momentum-title">
+                <div class="bd-card-head">
+                    <h2 id="bd-momentum-title">Momentum</h2>
+                    <span>90 days</span>
+                </div>
+                {# Static line chart of board activity (mockup). #}
+                <svg class="bd-chart" viewBox="0 0 300 120" role="img" aria-label="Board activity trending upward over the last 90 days">
+                    <g class="bd-chart__grid">
+                        <line x1="26" y1="12" x2="26" y2="96"/>
+                        <line x1="26" y1="96" x2="294" y2="96"/>
+                        <line x1="26" y1="68" x2="294" y2="68" stroke-dasharray="3 4"/>
+                        <line x1="26" y1="40" x2="294" y2="40" stroke-dasharray="3 4"/>
+                        <line x1="26" y1="12" x2="294" y2="12" stroke-dasharray="3 4"/>
+                    </g>
+                    <g class="bd-chart__labels">
+                        <text x="20" y="99">0</text>
+                        <text x="12" y="71">25</text>
+                        <text x="12" y="43">50</text>
+                        <text x="12" y="15">75</text>
+                        <text x="30" y="112">Apr 7</text>
+                        <text x="118" y="112">May 12</text>
+                        <text x="216" y="112">Jun 16</text>
+                        <text x="266" y="112">Jul 6</text>
+                    </g>
+                    <polyline class="bd-chart__line" points="30,78 58,70 86,74 114,58 142,62 170,44 198,50 226,36 254,40 282,24"/>
+                    <g class="bd-chart__dots">
+                        <circle cx="30" cy="78" r="2.6"/><circle cx="58" cy="70" r="2.6"/><circle cx="86" cy="74" r="2.6"/><circle cx="114" cy="58" r="2.6"/><circle cx="142" cy="62" r="2.6"/><circle cx="170" cy="44" r="2.6"/><circle cx="198" cy="50" r="2.6"/><circle cx="226" cy="36" r="2.6"/><circle cx="254" cy="40" r="2.6"/><circle cx="282" cy="24" r="2.6"/>
+                    </g>
+                </svg>
+                <p class="bd-foot">Consistency is compound interest. <span aria-hidden="true">&#9432;</span></p>
+            </section>
+
+            <section class="ps-card bd-trophies" id="bd-trophies" aria-labelledby="bd-trophies-title">
+                <div class="bd-card-head">
+                    <h2 id="bd-trophies-title">Trophy Shelf</h2>
+                    <span>Badges earned</span>
+                </div>
+                <div class="bd-shields">
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #1d3a8f;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L8 21l4-2 4 2-1-7.5"/></svg>
+                        </i>
+                        <strong>PMP<br>Certified</strong>
+                    </div>
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #0f8a80;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>
+                        </i>
+                        <strong>MBSE<br>Practitioner</strong>
+                    </div>
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #7a3ff2;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-11h-5z"/></svg>
+                        </i>
+                        <strong>Automation<br>Ace</strong>
+                    </div>
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #e05d33;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M13 4a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M6 21l3-5 3 2 2-6-4-2 3-4 3 3h4"/></svg>
+                        </i>
+                        <strong>300-Mile<br>Club</strong>
+                    </div>
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #1d9a5f;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                        </i>
+                        <strong>Mentor's<br>Mark</strong>
+                    </div>
+                    <div class="bd-shield">
+                        <i class="bd-shield__medal" style="--shield: #101f42;" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+                        </i>
+                        <strong>Ph.D.<br>Bound</strong>
+                    </div>
+                </div>
+                <a class="ps-link" href="{{ portfolio_skills_url }}">View all badges <span aria-hidden="true">&rarr;</span></a>
+            </section>
+
+            <section class="ps-card bd-assistant" aria-labelledby="bd-assistant-title">
+                <div class="bd-assistant__head">
+                    <span class="bd-assistant__spark" aria-hidden="true">&#10022;</span>
+                    <h2 id="bd-assistant-title">Slate Assistant</h2>
+                    <span class="bd-beta">Beta</span>
+                </div>
+                <p class="bd-assistant__sub">Ask me anything about the board, goals, or progress.</p>
+                <div class="bd-assistant__chips">
+                    <button type="button" data-ask-prefill="What is Pete focused on right now, based on his goals?">What's the current focus?</button>
+                    <button type="button" data-ask-prefill="Summarize Pete's progress on his 2026 goals.">Summarize my progress</button>
+                    <button type="button" data-ask-prefill="What should Pete tackle next across his projects?">Suggest next best step</button>
+                </div>
+                <div class="bd-assistant__form">
+                    {% include "partials/portfolio_ai_search.html" %}
+                </div>
+            </section>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Assistant suggestion chips prefill the live AI search and submit.
+    (function () {
+        var input = document.getElementById('hero-ai-input');
+        var form = document.querySelector('[data-hero-ai-search]');
+        if (!input || !form) { return; }
+        document.querySelectorAll('[data-ask-prefill]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                input.value = chip.dataset.askPrefill;
+                input.focus();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            });
+        });
+    })();
+</script>
+{% endblock %}
