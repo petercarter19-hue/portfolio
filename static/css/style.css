@@ -1047,12 +1047,12 @@ button:focus-visible {
 .cycle-arc {
     fill: none;                                      /* SVG paths are strokes only; no filled shape inside */
     stroke-linecap: round;                           /* Rounds the ends of arrow lines for a cleaner look */
-    stroke-width: 2;                                 /* Thickness of the lifecycle connector arrows */
+    stroke-width: 2.4;                               /* Thickness of the lifecycle connector arrows */
 }
 
 .cycle-arc--gold {
-    stroke: rgb(243 190 79 / 88%);                  /* Gold arrows show the main lifecycle direction */
-    filter: drop-shadow(0 0 8px rgb(243 190 79 / 22%)); /* Soft glow helps arrows stand out on the dark background */
+    stroke: rgb(243 190 79 / 92%);                  /* Gold arrows show the main lifecycle direction */
+    filter: drop-shadow(0 0 10px rgb(243 190 79 / 30%)); /* Soft glow helps arrows stand out on the dark background */
 }
 
 .lifecycle-circuit {
@@ -1067,10 +1067,10 @@ button:focus-visible {
 }
 
 .lifecycle-center {
-    top: 173px;
+    top: 169px;
     left: 50%;
-    width: 210px;
-    height: 132px;
+    width: 224px;
+    height: 140px;
     transform: translateX(-50%);
     display: grid;
     place-items: center;
@@ -1139,17 +1139,17 @@ button:focus-visible {
 }
 
 /* The two left-side cards ("5. Verify & Validate", "6. Deploy & Sustain")
-   have two-line titles, so they're ~14px taller than the right side's
-   one-line cards ("2. Requirements", "3. Architecture"). Anchored at the
-   same offsets they ended up visually crowding each other, so each one
-   is nudged 14px outward to mirror the right side's breathing room. */
+   have two-line titles, so at 122px tall they left only a 33px slit
+   between them — the 5→6 connector arrow was buried under both cards.
+   Pushed 12px further apart (top card up, bottom card down) the gap is
+   ~56px, matching the right side, so the arrow arc fits in the open. */
 .lifecycle-node--verify {
-    bottom: 60px;
+    bottom: 48px;
     left: 20px;
 }
 
 .lifecycle-node--deploy {
-    top: 103px;
+    top: 92px;
     left: 20px;
     border-color: rgb(80 214 232 / 48%);
 }
@@ -3975,10 +3975,12 @@ body[data-theme="light-slate"] {
     --slab-lo: rgb(70 62 52 / 12%);
     --slab-hi-chip: rgb(255 255 255 / 70%);
     --slab-lo-chip: rgb(70 62 52 / 10%);
-    /* Light pages want CRISP type (the mockups have no dark emboss on
-       light stone) — just a hairline white letterpress under the ink. */
-    --slate-type-shadow: 0 1px 0 rgb(255 255 255 / 45%);
-    --slate-accent-text-shadow: 0 1px 0 rgb(255 255 255 / 40%);
+    /* NOTE: light-theme overrides for the shared slate variables
+       (--slate-type-shadow, --pop-shadow, --gilt-shadow, ...) do NOT
+       live here — they must sit AFTER the body[data-slate-photo="on"]
+       block or its later dark values win the cascade at equal
+       specificity. See the light-theme override block near the end of
+       this file (search "Bars: soft light shadows"). */
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(70 62 52 / 12%),
@@ -4058,9 +4060,9 @@ body[data-theme="light-blue-slate"] {
     --slab-lo: rgb(24 52 88 / 12%);
     --slab-hi-chip: rgb(255 255 255 / 72%);
     --slab-lo-chip: rgb(24 52 88 / 10%);
-    /* Crisp navy type on light blue stone — no dark emboss (mockups). */
-    --slate-type-shadow: 0 1px 0 rgb(255 255 255 / 45%);
-    --slate-accent-text-shadow: 0 1px 0 rgb(255 255 255 / 40%);
+    /* NOTE: shared slate variable overrides live in the light-theme
+       block near the end of the file (must come after the
+       body[data-slate-photo="on"] block to win the cascade). */
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(24 52 88 / 12%),
@@ -4952,6 +4954,16 @@ body[data-slate-photo="on"] {
     --slate-accent-text-shadow:
         0 1px 2px rgb(0 0 0 / 42%),
         0 0 14px color-mix(in srgb, var(--accent) 20%, transparent);
+    /* Deep "pop" shadow for the lifecycle medallion + stage cards. */
+    --pop-shadow: 0 28px 56px rgb(0 0 0 / 45%);
+    /* Gilded keyword lettering: a light-catching top, the accent body,
+       and a deep base — mixed from the theme accent, so gold themes
+       gild and the blue theme takes a polished blue. */
+    --gilt-top: color-mix(in srgb, var(--accent) 52%, #ffffff 48%);
+    --gilt-deep: color-mix(in srgb, var(--accent) 70%, #000000 30%);
+    --gilt-shadow:
+        drop-shadow(0 2px 2px rgb(0 0 0 / 45%))
+        drop-shadow(0 10px 18px rgb(0 0 0 / 28%));
     --slate-linkedin-bg: rgb(214 218 220);
     --slate-linkedin-mark: rgb(23 26 28);
 
@@ -5248,6 +5260,21 @@ body[data-slate-photo="on"] .hero-eyebrow,
 body[data-slate-photo="on"] .section-eyebrow,
 body[data-slate-photo="on"] .metric-value {
     text-shadow: var(--slate-accent-text-shadow);
+}
+
+/* Gilded keywords (Pete, 2026-07-06): the highlighted words in the two
+   hero headlines render as polished metal — light-caught top, deep
+   base — lifted off the stone by real drop shadows. text-shadow must be
+   cleared because the letters are gradient-filled (transparent color),
+   and a text-shadow would smear through them. */
+body[data-slate-photo="on"] .hero-copy h1 span,
+body[data-slate-photo="on"] .story-hero__content h1 span {
+    background: linear-gradient(180deg, var(--gilt-top) 0%, var(--accent) 54%, var(--gilt-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: var(--gilt-shadow);
 }
 
 body[data-slate-photo="on"] .profile-tab {
@@ -5650,7 +5677,23 @@ body[data-slate-photo="on"] .lifecycle-center {
     box-shadow:
         inset 0 2px 4px rgb(255 255 255 / 14%),
         inset 0 -5px 12px rgb(0 0 0 / 40%),
-        0 18px 36px rgb(0 0 0 / 40%);
+        var(--pop-shadow);
+}
+
+/* Lifecycle "pop" pass (Pete, 2026-07-06): the six stage cards ride the
+   same deep shadow as the medallion so the whole figure lifts off the
+   page, stage icons cast their own small shadow, and the medallion
+   title takes the raised engraved lettering. */
+body[data-slate-photo="on"] .lifecycle-node {
+    box-shadow: var(--slab-card-shadow), var(--pop-shadow);
+}
+
+body[data-slate-photo="on"] .node-icon svg {
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 38%));
+}
+
+body[data-slate-photo="on"] .lifecycle-center h2 {
+    text-shadow: var(--slate-type-shadow);
 }
 
 /* Metric icon badges use a brushed-steel rim instead of gold, echoing
@@ -5733,11 +5776,22 @@ body[data-theme="light-blue-slate"] {
 body[data-theme="light-slate"] {
     --slate-linkedin-bg: rgb(43 52 66);
     --slate-linkedin-mark: rgb(255 255 255);
+    /* Lifecycle pop + gilded keywords in light ink (these must live in
+       this late block — earlier per-theme declarations lose to the
+       body[data-slate-photo="on"] dark defaults). */
+    --pop-shadow: 0 22px 44px rgb(70 62 52 / 20%);
+    --gilt-shadow:
+        drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
+        drop-shadow(0 2px 3px rgb(70 62 52 / 32%));
 }
 
 body[data-theme="light-blue-slate"] {
     --slate-linkedin-bg: rgb(6 72 138);
     --slate-linkedin-mark: rgb(255 255 255);
+    --pop-shadow: 0 22px 44px rgb(24 52 88 / 20%);
+    --gilt-shadow:
+        drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
+        drop-shadow(0 2px 3px rgb(24 52 88 / 32%));
 }
 
 /* Bars: soft light shadows in place of heavy black. */

@@ -72,13 +72,17 @@
                 </defs>
 
                 <!-- Gold outer arrows carry the lifecycle clockwise around the center. -->
-                <!-- Each short path uses matched spacing so the connector arrows feel balanced around the lifecycle. -->
+                <!-- Paths are tuned to the cards' RENDERED boxes (measured
+                     2026-07-06): left cards sit at y 92-214 and y 270-392,
+                     right cards at y 117-224 and y 278-366, so every arc
+                     starts/ends a few px clear of a card edge instead of
+                     disappearing underneath one. -->
                 <path class="cycle-arc cycle-arc--gold" d="M502 74 C512 78 522 84 532 92" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M636 218 C648 238 648 256 636 270" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M636 230 C648 244 648 258 636 272" marker-end="url(#arrow-gold)"/>
                 <path class="cycle-arc cycle-arc--gold" d="M536 374 C524 382 512 388 500 392" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M270 392 C258 388 246 382 234 374" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M124 270 C112 250 112 232 124 218" marker-end="url(#arrow-gold)"/>
-                <path class="cycle-arc cycle-arc--gold" d="M228 92 C238 84 248 78 258 74" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M270 392 C260 389 252 384 246 379" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M124 264 C110 248 110 234 124 220" marker-end="url(#arrow-gold)"/>
+                <path class="cycle-arc cycle-arc--gold" d="M236 84 C246 78 252 75 260 72" marker-end="url(#arrow-gold)"/>
             </svg>
 
             <div class="lifecycle-circuit" aria-hidden="true"></div>

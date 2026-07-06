@@ -68,6 +68,14 @@ Two goals:
 4. Build admin dashboard to view chat logs
 5. Eventually: smarter retrieval, security hardening, and public deployment
 
+## Recent Session Updates (2026-07-06 later — tabs reorder, gilded keywords, lifecycle pop, Mac, branch main)
+- Profile tab strip is now Overview / My Story / Resume / Projects — the Skills tab LINK was removed per Pete (the /petec/skills page itself still exists and works, it's just not in the strip).
+- GILDED KEYWORDS: the highlighted spans in the two hero headlines ("better outcomes" on Overview, "Behind the Work" on My Story) render as gradient "polished metal" lettering (background-clip: text) lifted by --gilt-shadow drop-shadows. Mixed from the theme accent, so gold themes gild and light-blue takes polished blue. text-shadow must stay none on these spans (gradient fill is transparent; a text-shadow smears through it).
+- LIFECYCLE POP (Overview): center medallion enlarged to 224x140 with a deep --pop-shadow; all six stage cards ride --slab-card-shadow + --pop-shadow; stage icons cast small drop-shadows; medallion title takes the engraved type shadow; arrows thickened to 2.4 stroke with a stronger glow.
+- 5→6 ARROW FIX: the left cards (Verify, Deploy — both 122px tall) left only a 33px slit so the connector arc was buried under both cards. Deploy moved top 103→92, Verify bottom 60→48 → 56px gap (matches right side), and ALL arrow paths in index.html were redrawn against measured card boxes (left cards y 92-214 / 270-392, right y 117-224 / 278-366). If card positions/sizes change, re-measure with offsetTop/offsetHeight and redraw the arcs.
+- CSS CASCADE GOTCHA (caught by adversarial review; cost a real bug): per-theme variable overrides for shared slate vars CANNOT live in the early body[data-theme="light-*"] blocks (~line 3900-4070) — the body[data-slate-photo="on"] block later in the file re-declares them at equal specificity and wins. Light-theme overrides for --pop-shadow/--gilt-shadow (and the pre-existing --slab-*-shadow/--slate-type-shadow overrides) live in the LATE light-theme blocks near the end of the file (search "Bars: soft light shadows"). Comments were added at both sites.
+- style.css cache-buster now ?v=lifecycle-pop-1.
+
 ## Recent Session Updates (2026-07-06 — mockup-matching cosmetic overhaul + mobile redesign, Mac, branch main)
 - Pete added 4 reference mockups in static/Background/ (image=light-slate, image2=light-blue-slate, image3=gray-slate, image4=sage-slate). These are the DESIGN NORTH STAR for the four slate themes — consult them before any slate styling change.
 - ONE-BIG-BACKGROUND RULE: each page reads as one continuous slate background. body[data-slate-photo="on"] .profile-header is now background: transparent (no tint, no veins, no border) so the Pete Carter band can never mismatch the page again. The platform header and tab strip are the darker "chrome" cuts of the SAME fixed photo (new per-theme --slate-tint-header + darker --slate-tint-tabs).
