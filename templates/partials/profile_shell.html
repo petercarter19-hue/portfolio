@@ -58,6 +58,9 @@
         <a class="profile-tab" href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>
             Projects
         </a>
+        <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
+            Slate Board
+        </a>
 
         {# LinkedIn sits alone on the far right of the tab row. #}
         <a

@@ -2211,6 +2211,17 @@ body[data-theme="blueprint-light"] #arrow-gold path {
     fill: #0796b8;
 }
 
+/* Light Slate went green (2026-07-06) — its lifecycle arrows follow the
+   accent instead of staying gold, same pattern as blueprint above. */
+body[data-theme="light-slate"] .cycle-arc--gold {
+    stroke: rgb(46 125 82 / 88%);
+    filter: drop-shadow(0 0 8px rgb(46 125 82 / 20%));
+}
+
+body[data-theme="light-slate"] #arrow-gold path {
+    fill: #2e7d52;
+}
+
 /* My Journey band: swap the hard-coded dark navy gradient for a white
    framed panel so the heading and timeline read on the light page. */
 body[data-theme="blueprint-light"] .story-journey__layout {
@@ -3918,63 +3929,66 @@ body[data-theme="blueprint-light"] .metric-money {
     --button-secondary-text: #f5f2ea;
 }
 
+/* Light Slate, refreshed 2026-07-06 per Pete: whiter page, a tasteful
+   deep-green accent scheme in place of the old warm gold, and the stone
+   texture turned UP so the whiter page still reads as slate. */
 body[data-theme="light-slate"] {
-    --bg: #f3f1ec;
-    --bg-elevated: #ebe7df;
+    --bg: #f7f7f4;
+    --bg-elevated: #f0f0eb;
     --surface: #ffffff;
-    --surface-soft: #f7f5f1;
-    --text: #202633;
-    --text-muted: #606b78;
-    --accent: #b67d28;
-    --accent-hover: #d8a047;
-    --accent-soft: rgb(183 123 34 / 14%);
-    --border: #d9d5cd;
-    --shadow: 0 18px 42px rgb(62 57 49 / 14%);
-    --nav-bg: rgb(249 248 245 / 94%);
-    --tab-active: #b77b22;
-    --button-primary-bg: #d7a84f;
-    --button-primary-text: #211706;
+    --surface-soft: #f4f6f2;
+    --text: #1e2a24;
+    --text-muted: #5b6b60;
+    --accent: #2e7d52;
+    --accent-hover: #389463;
+    --accent-soft: rgb(46 125 82 / 12%);
+    --border: #d7dcd4;
+    --shadow: 0 18px 42px rgb(44 58 50 / 14%);
+    --nav-bg: rgb(250 250 248 / 94%);
+    --tab-active: #2e7d52;
+    --button-primary-bg: #2e7d52;
+    --button-primary-text: #f3faf5;
     --button-secondary-bg: #ffffff;
-    --button-secondary-text: #202633;
-    --color-page: #f3f1ec;
-    --color-page-deep: #e9e4dc;
-    --color-section: #f8f6f1;
+    --button-secondary-text: #1e2a24;
+    --color-page: #f7f7f4;
+    --color-page-deep: #ecece6;
+    --color-section: #f9f9f6;
     --color-card: #ffffff;
-    --color-card-elevated: #f7f5f1;
-    --color-card-hover: #f2eee6;
-    --color-gold: #b77b22;
-    --color-gold-bright: #d49a39;
-    --color-gold-muted: #9d681c;
-    --color-gold-dark: #7d5214;
-    --color-blue: #526173;
-    --color-cyan: #5d7284;
-    --color-text-primary: #202633;
-    --color-text-secondary: #47515e;
-    --color-text-muted: #6f7985;
-    --color-text-dark: #211706;
-    --color-border: #d9d5cd;
-    --color-border-soft: #e5e0d8;
-    --color-border-gold: #c79a4a;
+    --color-card-elevated: #f3f5f1;
+    --color-card-hover: #ecf2ed;
+    --color-gold: #2e7d52;
+    --color-gold-bright: #3a9663;
+    --color-gold-muted: #256844;
+    --color-gold-dark: #1b4d33;
+    --color-blue: #4f6d5d;
+    --color-cyan: #47846a;
+    --color-text-primary: #1e2a24;
+    --color-text-secondary: #435248;
+    --color-text-muted: #6b7a70;
+    --color-text-dark: #10231a;
+    --color-border: #d7dcd4;
+    --color-border-soft: #e3e7e0;
+    --color-border-gold: #7fae95;
     --shadow-card: var(--shadow);
-    --shadow-gold: 0 8px 24px rgb(183 123 34 / 20%);
+    --shadow-gold: 0 8px 24px rgb(46 125 82 / 18%);
 
-    /* Real-photo slab treatment — warm off-white stone. Same raised/
-       textured/shadowed system as Gray & Sage, just light colors. */
+    /* Real-photo slab treatment — near-white stone, thinner washes so
+       more of the real rock grain shows through every surface. */
     --slate-photo: var(--site-slate-bg-light);
-    --slate-header-flat: rgb(240 238 233);
-    --slate-tint-band: rgb(240 238 233 / 58%);
-    --slate-tint-tabs: rgb(250 248 244 / 80%);
-    --slate-tint-header: rgb(246 244 240 / 88%);
-    --slate-tint-card: rgb(252 251 248 / 44%);
-    --slate-tint-chip: rgb(248 246 241 / 48%);
-    --slate-tint-input: rgb(250 249 246 / 88%);
-    --slate-screen: rgb(232 231 227);
-    --slate-edge-lit: rgb(255 255 255 / 80%);
-    /* Light stone slabs: bright top edge, whisper-soft warm shade. */
+    --slate-header-flat: rgb(243 244 240);
+    --slate-tint-band: rgb(245 246 242 / 50%);
+    --slate-tint-tabs: rgb(251 251 248 / 74%);
+    --slate-tint-header: rgb(247 248 244 / 84%);
+    --slate-tint-card: rgb(253 254 252 / 36%);
+    --slate-tint-chip: rgb(249 250 247 / 40%);
+    --slate-tint-input: rgb(251 252 249 / 86%);
+    --slate-screen: rgb(232 234 229);
+    --slate-edge-lit: rgb(255 255 255 / 85%);
+    /* Light stone slabs: bright top edge, whisper-soft green-gray shade. */
     --slab-hi: rgb(255 255 255 / 65%);
-    --slab-lo: rgb(70 62 52 / 12%);
+    --slab-lo: rgb(48 62 53 / 12%);
     --slab-hi-chip: rgb(255 255 255 / 70%);
-    --slab-lo-chip: rgb(70 62 52 / 10%);
+    --slab-lo-chip: rgb(48 62 53 / 10%);
     /* NOTE: light-theme overrides for the shared slate variables
        (--slate-type-shadow, --pop-shadow, --gilt-shadow, ...) do NOT
        live here — they must sit AFTER the body[data-slate-photo="on"]
@@ -3983,26 +3997,26 @@ body[data-theme="light-slate"] {
        this file (search "Bars: soft light shadows"). */
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(70 62 52 / 12%),
-        0 12px 24px rgb(70 62 52 / 16%),
-        0 28px 54px rgb(70 62 52 / 17%);
+        0 2px 4px rgb(48 62 53 / 12%),
+        0 12px 24px rgb(48 62 53 / 16%),
+        0 28px 54px rgb(48 62 53 / 17%);
     --slab-chip-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(70 62 52 / 12%),
-        0 10px 20px rgb(70 62 52 / 16%);
+        0 2px 4px rgb(48 62 53 / 12%),
+        0 10px 20px rgb(48 62 53 / 16%);
     /* Small controls + raised bars use light-ink shadows too, instead of
        inheriting the heavy black stacks tuned for the dark themes. */
     --slab-control-shadow:
         inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(70 62 52 / 16%),
-        0 2px 3px rgb(70 62 52 / 14%),
-        0 8px 16px rgb(70 62 52 / 15%);
+        inset 0 -1px 1px rgb(48 62 53 / 16%),
+        0 2px 3px rgb(48 62 53 / 14%),
+        0 8px 16px rgb(48 62 53 / 15%);
     --slab-bar-shadow:
         inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(70 62 52 / 18%),
-        0 2px 4px rgb(70 62 52 / 10%),
-        0 12px 22px rgb(70 62 52 / 14%),
-        0 24px 42px rgb(70 62 52 / 12%);
+        inset 0 -1px 1px rgb(48 62 53 / 18%),
+        0 2px 4px rgb(48 62 53 / 10%),
+        0 12px 22px rgb(48 62 53 / 14%),
+        0 24px 42px rgb(48 62 53 / 12%);
 }
 
 body[data-theme="light-blue-slate"] {
@@ -5062,8 +5076,10 @@ body[data-theme="sage-slate"] {
 /* Light themes: the same fixed stone photo, but washed LIGHT (not
    darkened) so the page stays bright and airy like the light mockups. */
 body[data-theme="light-slate"] {
+    /* Whiter, thinner wash (2026-07-06): lets more of the real stone
+       grain read through the brighter page. */
     background-image:
-        linear-gradient(180deg, rgb(246 244 240 / 42%), rgb(236 233 227 / 32%)),
+        linear-gradient(180deg, rgb(251 251 248 / 34%), rgb(243 244 239 / 22%)),
         var(--site-slate-bg-light);
 }
 
@@ -5268,7 +5284,8 @@ body[data-slate-photo="on"] .metric-value {
    cleared because the letters are gradient-filled (transparent color),
    and a text-shadow would smear through them. */
 body[data-slate-photo="on"] .hero-copy h1 span,
-body[data-slate-photo="on"] .story-hero__content h1 span {
+body[data-slate-photo="on"] .story-hero__content h1 span,
+body[data-slate-photo="on"] .board-hero__copy h1 span {
     background: linear-gradient(180deg, var(--gilt-top) 0%, var(--accent) 54%, var(--gilt-deep) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -5374,7 +5391,14 @@ body[data-slate-photo="on"] .story-card,
 body[data-slate-photo="on"] .drive-card,
 body[data-slate-photo="on"] .fun-fact-card,
 body[data-slate-photo="on"] .story-journey__layout,
-body[data-slate-photo="on"] .platform-page__card {
+body[data-slate-photo="on"] .platform-page__card,
+body[data-slate-photo="on"] .board-hero-panel,
+body[data-slate-photo="on"] .board-compose,
+body[data-slate-photo="on"] .goal-card,
+body[data-slate-photo="on"] .board-momentum,
+body[data-slate-photo="on"] .badge-card,
+body[data-slate-photo="on"] .board-entry,
+body[data-slate-photo="on"] .feed-card {
     background: var(--slab-card);
     background-size: var(--slab-card-size);
     border: 1px solid var(--border);
@@ -5644,6 +5668,22 @@ body[data-slate-photo="on"] .view-all-link:focus-visible {
     filter: brightness(1.13);
 }
 
+/* Full-width Slate Board surfaces: the card slab's 820px stone tile
+   visibly seams when an element is wider than the tile, so these wide
+   pieces cut one continuous cover-crop of the photo instead (same
+   approach as the metrics strip). */
+body[data-slate-photo="on"] .board-compose,
+body[data-slate-photo="on"] .board-momentum,
+body[data-slate-photo="on"] .board-entry {
+    background:
+        linear-gradient(158deg, var(--slab-hi) 0%, transparent 38%, var(--slab-lo) 100%),
+        linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
+        var(--slate-photo);
+    background-size: auto, auto, cover;
+    background-position: 0 0, 0 0, center;
+    background-repeat: no-repeat;
+}
+
 /* My Story value-chip medallions: raised neutral-ring badges like the
    metric icons (glyphs keep their gold/cyan color, rings go neutral). */
 body[data-slate="on"] .value-chip__icon {
@@ -5774,15 +5814,20 @@ body[data-theme="light-blue-slate"] {
 }
 
 body[data-theme="light-slate"] {
-    --slate-linkedin-bg: rgb(43 52 66);
+    --slate-linkedin-bg: rgb(30 42 36);
     --slate-linkedin-mark: rgb(255 255 255);
     /* Lifecycle pop + gilded keywords in light ink (these must live in
        this late block — earlier per-theme declarations lose to the
        body[data-slate-photo="on"] dark defaults). */
-    --pop-shadow: 0 22px 44px rgb(70 62 52 / 20%);
+    --pop-shadow: 0 22px 44px rgb(48 62 53 / 20%);
     --gilt-shadow:
         drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
-        drop-shadow(0 2px 3px rgb(70 62 52 / 32%));
+        drop-shadow(0 2px 3px rgb(48 62 53 / 32%));
+    /* Texture pop for the whiter page: stronger grain + bolder veins
+       (green-tinted via the accent) than the other light theme. */
+    --slate-grain: 0.34;
+    --slate-vein-strong: color-mix(in srgb, var(--text) 13%, transparent);
+    --slate-vein-soft: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 body[data-theme="light-blue-slate"] {
@@ -5926,6 +5971,805 @@ body[data-theme="light-blue-slate"] #chat-panel {
     .profile-actions {
         grid-column: 2;
         justify-content: flex-start;
+    }
+}
+
+/* =========================================================
+   MY SLATE BOARD (/petec/slate-board) + HOME FEED
+   Pete's goals-and-wins board: quick stats, a compose bar
+   (visual preview), four goal cards with progress rings, a
+   monthly momentum chart, the badge "trophy shelf", and the
+   draft/private/public entry list. The home page's "From the
+   Slate Boards" feed reuses the same card language.
+   Base styles below use the shared theme variables so all 8
+   themes render; the slate-photo slab lists earlier in this
+   file add the stone treatment on the slate themes.
+   ========================================================= */
+
+.board-page {
+    padding: clamp(34px, 5vw, 58px) 0 72px;
+}
+
+.board-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+    gap: 36px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.board-hero__copy h1 {
+    max-width: 620px;
+    margin: 10px 0 16px;
+    color: var(--text);
+    font-size: clamp(1.9rem, 3.4vw, 2.7rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+}
+
+/* Non-slate themes show the keyword in plain accent; the slate themes'
+   gilded-keyword rule (see GILDED KEYWORDS) upgrades it to metal. */
+.board-hero__copy h1 span {
+    color: var(--accent);
+}
+
+.board-hero__lead {
+    max-width: 560px;
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+/* Four quick stats — 2x2 at every width (groups-of-4 rule). */
+.board-hero-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 20px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.board-stat {
+    padding: 10px 6px;
+    text-align: center;
+}
+
+.board-stat strong {
+    display: block;
+    color: var(--accent);
+    font-size: 1.75rem;
+    font-weight: 850;
+    line-height: 1.1;
+}
+
+.board-stat span {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 750;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+/* ---------- Compose bar (visual preview) ---------- */
+.board-compose {
+    padding: 18px 20px 16px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.board-compose__label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.board-compose__input {
+    width: 100%;
+    min-height: 58px;
+    padding: 12px 14px;
+    resize: vertical;
+    color: var(--text);
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.board-compose__input::placeholder {
+    color: var(--text-muted);
+}
+
+.board-compose__input:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+.board-compose__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.board-compose__btn {
+    min-height: 40px;
+    font-size: 0.84rem;
+}
+
+.board-compose__note {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ---------- Shared section headings ---------- */
+.board-section {
+    margin-top: 48px;
+}
+
+.board-section__head {
+    margin-bottom: 20px;
+}
+
+.board-section__head h2 {
+    color: var(--text);
+    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.board-section__head p {
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* ---------- Goal cards with progress rings ---------- */
+.board-goals__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+/* Cards sit tighter than the site's big content cards — they're
+   "bubbles" that hug their text (Pete, 2026-07-06). */
+.goal-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px 15px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+/* Whiteboard ink links jump to these cards — keep them clear of the
+   sticky tab strip when they land. */
+.goal-card[id],
+.board-entry[id] {
+    scroll-margin-top: 140px;
+}
+
+/* Conic-gradient progress ring: --p is the 0-100 percentage and --ring
+   the marker color, both set inline per card. The radial gradient
+   punches the middle back out so only the ring band shows the sweep. */
+.goal-ring {
+    --p: 0;
+    width: 78px;
+    height: 78px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background:
+        radial-gradient(closest-side, var(--surface) 74%, transparent 75% 100%),
+        conic-gradient(var(--ring, var(--accent)) calc(var(--p) * 1%), color-mix(in srgb, var(--text) 14%, transparent) 0);
+    box-shadow: 0 6px 14px rgb(0 0 0 / 18%);
+}
+
+.goal-ring strong {
+    color: var(--text);
+    font-size: 0.96rem;
+    font-weight: 850;
+}
+
+.goal-chip {
+    display: inline-flex;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.goal-chip--career {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.goal-chip--personal {
+    color: var(--color-cyan);
+    border-color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
+}
+
+.goal-card h3 {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.goal-card p {
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+/* ---------- Momentum chart ---------- */
+.board-momentum {
+    padding: 22px 24px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.board-momentum__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+    margin-bottom: 20px;
+}
+
+.board-momentum__head h2 {
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.board-momentum__head p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.momentum-chart {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+    height: 122px;
+}
+
+.momentum-col {
+    display: grid;
+    justify-items: center;
+    align-content: end;
+    gap: 7px;
+    height: 100%;
+}
+
+/* --h is the bar height in px, set inline per month. */
+.momentum-bar {
+    display: block;
+    width: min(26px, 100%);
+    height: calc(var(--h, 8) * 1px);
+    border-radius: 6px 6px 3px 3px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 78%, #ffffff 22%), var(--accent));
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Months that haven't happened yet: quiet neutral stubs. */
+.momentum-col--rest .momentum-bar {
+    background: color-mix(in srgb, var(--text) 14%, transparent);
+    box-shadow: none;
+}
+
+.momentum-col span {
+    color: var(--text-muted);
+    font-size: 0.66rem;
+    font-weight: 750;
+}
+
+.board-momentum__foot {
+    margin-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+/* ---------- Badge trophy shelf ---------- */
+.board-badges__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.badge-card {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 20px 14px 16px;
+    text-align: center;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+/* Earned badges get a small accent medallion — awards are the one
+   place the accent is allowed to be the surface, by design. */
+.badge-medal {
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    background:
+        radial-gradient(circle at 32% 26%, rgb(255 255 255 / 22%), transparent 55%),
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, var(--surface)), color-mix(in srgb, var(--accent) 9%, var(--surface)));
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 50%;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 2px 4px rgb(0 0 0 / 22%),
+        0 10px 18px rgb(0 0 0 / 16%);
+}
+
+.badge-medal svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.badge-card h3 {
+    color: var(--text);
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.badge-state {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.badge-state--earned {
+    color: var(--accent);
+}
+
+/* Not-yet-earned badges: dimmed with a dashed ring — visibly waiting. */
+.badge-card--locked {
+    opacity: 0.62;
+}
+
+.badge-card--locked .badge-medal {
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    border: 1px dashed var(--border);
+    box-shadow: none;
+}
+
+/* ---------- Entry list (draft / private / public) ---------- */
+.board-entries {
+    display: grid;
+    gap: 14px;
+}
+
+.board-entry {
+    padding: 18px 20px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.board-entry__top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.entry-flag {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.entry-flag--public {
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.entry-flag--private {
+    color: var(--color-cyan);
+    background: color-mix(in srgb, var(--color-cyan) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
+}
+
+.entry-flag--draft {
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+    border: 1px dashed var(--border);
+}
+
+.entry-type {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.entry-time {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.board-entry > p {
+    max-width: 72ch;
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.board-entry__foot {
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+}
+
+/* ---------- The Whiteboard ----------
+   A real-looking whiteboard: silver frame, bright writing surface,
+   marker tray. Deliberately FIXED light colors on every theme — it's a
+   physical object hanging on the slate, not a themed panel. Content
+   scrolls inside once it outgrows the board. */
+.whiteboard {
+    padding: 10px;
+    background: linear-gradient(180deg, #e8ebee, #cdd3d9);
+    border: 1px solid #b9c1c8;
+    border-radius: 18px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 70%),
+        0 4px 8px rgb(0 0 0 / 18%),
+        0 26px 50px rgb(0 0 0 / 22%);
+}
+
+.whiteboard__surface {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 470px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    border-radius: 10px;
+    background:
+        radial-gradient(ellipse at 18% 8%, rgb(122 138 152 / 5%), transparent 40%),
+        radial-gradient(ellipse at 78% 85%, rgb(122 138 152 / 7%), transparent 45%),
+        linear-gradient(158deg, #ffffff 0%, #fafbfc 55%, #f1f3f5 100%);
+    box-shadow:
+        inset 0 2px 10px rgb(90 104 116 / 12%),
+        inset 0 -2px 8px rgb(255 255 255 / 60%);
+}
+
+/* Up to four user-named sections, quartered by dashed marker rules. */
+.wb-section {
+    padding: 22px 26px 26px;
+}
+
+.wb-section:nth-child(odd) {
+    border-right: 1.5px dashed rgb(96 110 122 / 24%);
+}
+
+.wb-section:nth-child(-n+2) {
+    border-bottom: 1.5px dashed rgb(96 110 122 / 24%);
+}
+
+/* Kalam = legible print handwriting (marker printing, not cursive). */
+.wb-heading {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding-bottom: 1px;
+    border-bottom: 3px solid currentColor;
+    font-family: "Kalam", "Segoe Print", "Comic Sans MS", cursive;
+    font-size: 1.16rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    transform: rotate(-0.6deg);
+}
+
+.wb-heading--green { color: #2a7d4f; }
+.wb-heading--blue { color: #2b5fa5; }
+.wb-heading--violet { color: #6d3fa9; }
+.wb-heading--red { color: #b83a33; }
+
+.wb-list {
+    display: grid;
+    gap: 9px;
+    list-style: none;
+}
+
+/* Hand-placed feel: alternate lines tilt a hair each way. */
+.wb-list li {
+    transform: rotate(-0.3deg);
+}
+
+.wb-list li:nth-child(even) {
+    transform: rotate(0.35deg);
+}
+
+/* Each line of ink IS a link to the card it created. The underline
+   draws itself in on hover, like running the marker under the words. */
+.wb-ink {
+    display: inline-block;
+    font-family: "Kalam", "Segoe Print", "Comic Sans MS", cursive;
+    font-size: 1.06rem;
+    line-height: 1.35;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-size: 0% 1.5px;
+    background-position: 0 94%;
+    transition: background-size 240ms ease;
+}
+
+.wb-ink::before {
+    content: "\2013\00a0";
+}
+
+.wb-ink:hover,
+.wb-ink:focus-visible {
+    background-size: 100% 1.5px;
+}
+
+.wb-ink--green { color: #2a7d4f; }
+.wb-ink--blue { color: #2b5fa5; }
+.wb-ink--violet { color: #6d3fa9; }
+.wb-ink--red { color: #b83a33; }
+
+/* Marker tray on the frame's bottom rail. */
+.whiteboard__tray {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px 3px;
+}
+
+.wb-marker {
+    width: 46px;
+    height: 9px;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+}
+
+.wb-marker--green { background: linear-gradient(90deg, #2a7d4f 0 68%, #1c5636 68%); }
+.wb-marker--blue { background: linear-gradient(90deg, #2b5fa5 0 68%, #1d4276 68%); }
+.wb-marker--violet { background: linear-gradient(90deg, #6d3fa9 0 68%, #4e2c7c 68%); }
+.wb-marker--red { background: linear-gradient(90deg, #b83a33 0 68%, #872a25 68%); }
+
+.wb-eraser {
+    width: 54px;
+    height: 14px;
+    margin-left: auto;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #5d6a73, #404b53);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 1px 2px rgb(0 0 0 / 35%);
+}
+
+/* ---------- Board motion (skipped for reduced-motion users) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+    /* Ink writes itself onto the board, line by line (--i staggers). */
+    .wb-ink {
+        opacity: 0;
+        translate: 0 6px;
+        animation: wb-ink-in 460ms ease forwards;
+        animation-delay: calc(140ms + var(--i, 0) * 110ms);
+    }
+
+    @keyframes wb-ink-in {
+        to {
+            opacity: 1;
+            translate: 0 0;
+        }
+    }
+
+    /* Momentum bars grow up out of the baseline. */
+    .momentum-bar {
+        transform-origin: bottom;
+        animation: bar-grow 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+    }
+
+    @keyframes bar-grow {
+        from {
+            transform: scaleY(0);
+        }
+    }
+
+    /* Bubbles and badges lift when touched. */
+    .goal-card,
+    .badge-card,
+    .feed-card {
+        transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .goal-card:hover,
+    .badge-card:hover,
+    .feed-card:hover {
+        transform: translateY(-3px);
+    }
+}
+
+/* ---------- Home page: From the Slate Boards feed ---------- */
+.peerslate-feed__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+/* Fixed three cards — a window into the feed, never a scroll trap. */
+.peerslate-feed__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+}
+
+.feed-card {
+    padding: 18px 20px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.feed-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.feed-card__head img {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border: 2px solid rgb(255 255 255 / 35%);
+    border-radius: 50%;
+}
+
+.feed-card__head strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.88rem;
+    line-height: 1.2;
+}
+
+.feed-card__head span {
+    color: var(--text-muted);
+    font-size: 0.74rem;
+}
+
+.feed-card__type {
+    margin-left: auto;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.feed-card > p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+/* ---------- Board + feed responsive ---------- */
+@media (max-width: 1180px) {
+    .board-hero {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .board-hero-panel {
+        max-width: 560px;
+    }
+
+    /* Groups of 4 collapse to 2x2, never 3+1. */
+    .board-goals__grid,
+    .board-badges__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1020px) {
+    .peerslate-feed__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 780px) {
+    .momentum-chart {
+        gap: 6px;
+        height: 104px;
+    }
+
+    .goal-ring {
+        width: 66px;
+        height: 66px;
+    }
+
+    /* Whiteboard sections stack single-file on phones; the quadrant
+       dividers become simple rules between rows. */
+    .whiteboard__surface {
+        grid-template-columns: 1fr;
+        max-height: 520px;
+    }
+
+    .wb-section {
+        padding: 18px 18px 20px;
+    }
+
+    .wb-section:nth-child(odd) {
+        border-right: 0;
+    }
+
+    .wb-section:not(:last-child) {
+        border-bottom: 1.5px dashed rgb(96 110 122 / 24%);
+    }
+
+    .board-compose__actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .entry-time {
+        flex-basis: 100%;
+        margin-left: 0;
+        order: 3;
+    }
+
+    .board-entry__top {
+        flex-wrap: wrap;
     }
 }
 

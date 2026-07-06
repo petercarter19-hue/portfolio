@@ -173,6 +173,86 @@
         </div>
     </section>
 
+    <!-- FROM THE SLATE BOARDS: a small, curated feed of member wins that
+         were PUBLISHED publicly from their Slate Boards. Deliberately a
+         fixed three cards + one link — a tasteful window, not an
+         infinite scroll. Static sample content for the MVP. -->
+    <section class="peerslate-section peerslate-feed" aria-labelledby="peerslate-feed-title">
+        <div class="site-container">
+            <div class="peerslate-section-heading peerslate-feed__heading">
+                <div>
+                    <p class="section-eyebrow">From the Slate Boards</p>
+                    <h2 id="peerslate-feed-title">
+                        Wins members chose to share.
+                    </h2>
+                </div>
+                <a class="view-all-link" href="{{ portfolio_url('slate-board') }}">
+                    Visit Pete's Slate Board
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+
+            <div class="peerslate-feed__grid">
+                <article class="feed-card">
+                    <div class="feed-card__head">
+                        <img
+                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        <div>
+                            <strong>Pete Carter</strong>
+                            <span>Systems Engineer &middot; July 2</span>
+                        </div>
+                        <span class="feed-card__type">Milestone</span>
+                    </div>
+                    <p>
+                        Crossed 300 miles for the year this morning — six months in
+                        and ahead of pace on the 500-mile goal.
+                    </p>
+                </article>
+
+                <article class="feed-card">
+                    <div class="feed-card__head">
+                        <img
+                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        <div>
+                            <strong>Pete Carter</strong>
+                            <span>Systems Engineer &middot; June 15</span>
+                        </div>
+                        <span class="feed-card__type">Badge</span>
+                    </div>
+                    <p>
+                        Earned the Automation Ace badge — every recurring report at
+                        home and on the bench now runs itself.
+                    </p>
+                </article>
+
+                <article class="feed-card">
+                    <div class="feed-card__head">
+                        <img
+                            src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        <div>
+                            <strong>Pete Carter</strong>
+                            <span>Systems Engineer &middot; May 30</span>
+                        </div>
+                        <span class="feed-card__type">Thought</span>
+                    </div>
+                    <p>
+                        Best engineering advice I've gotten this year: model the
+                        boring parts first — that's where the surprises live.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
     <!-- PLATFORM DIRECTION: four short feature blurbs (no icons), a
          plainer sibling to the numbered "How It Works" cards above. -->
     <section class="peerslate-section" aria-labelledby="peerslate-features-title">

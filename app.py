@@ -132,7 +132,7 @@ def keep_portfolio_on_canonical_path():
     old_portfolio_paths = {'/pete', '/portfolio'}
     # /skills is a real page again (the Skills profile tab), so it now
     # canonicalizes to /petec/skills like every other portfolio section.
-    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/work'}
+    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
 
     if request.path in old_portfolio_paths:
         return redirect('/petec', code=302)
@@ -334,6 +334,16 @@ def my_story():
 @app.route('/petec/work')
 def work():
     return render_template('work.html')
+
+@app.route('/slate-board')
+@app.route('/petec/slate-board')
+def slate_board():
+    # "My Slate Board" - Pete's goals, progress, badges, and shareable
+    # wins/thoughts. MVP is a fully designed static preview: the entries,
+    # goal percentages, and badges live in the template as sample content.
+    # A future pass adds real storage plus the draft/private/public flow.
+    return render_template('slate_board.html')
+
 
 @app.route('/skills')
 @app.route('/petec/skills')
