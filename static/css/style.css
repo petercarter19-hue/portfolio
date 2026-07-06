@@ -668,8 +668,9 @@ button:focus-visible {
     transform: translateY(-2px);
 }
 
+/* Buttons size to their label (plus padding) — a fixed min-width left
+   short labels floating inside stretched pills, which Pete flagged. */
 .btn-primary {
-    min-width: 190px;
     color: var(--color-text-dark);
     background: linear-gradient(180deg, var(--color-gold-bright), var(--color-gold));
     box-shadow: var(--shadow-gold);
@@ -681,7 +682,6 @@ button:focus-visible {
 }
 
 .btn-secondary {
-    min-width: 190px;
     color: var(--color-text-primary);
     background: rgb(255 255 255 / 2%);
     border-color: var(--color-border-gold);
@@ -1841,13 +1841,16 @@ button:focus-visible {
     margin-bottom: 24px;
 }
 
+/* The lockup is a transparent PNG (no boxed background), so it sits
+   directly on the page's slate — drop-shadow follows the letterforms
+   instead of drawing a rectangle around them. */
 .peerslate-brand-lockup img {
     display: block;
     width: 100%;
     height: auto;
-    border: 1px solid rgb(176 216 255 / 20%);
-    border-radius: 8px;
-    box-shadow: 0 28px 70px rgb(0 0 0 / 34%);
+    filter:
+        drop-shadow(0 2px 3px rgb(0 0 0 / 45%))
+        drop-shadow(0 14px 28px rgb(0 0 0 / 35%));
 }
 
 .peerslate-hero__copy h1 {
@@ -3960,7 +3963,8 @@ body[data-theme="light-slate"] {
     --slate-photo: var(--site-slate-bg-light);
     --slate-header-flat: rgb(240 238 233);
     --slate-tint-band: rgb(240 238 233 / 58%);
-    --slate-tint-tabs: rgb(245 243 238 / 56%);
+    --slate-tint-tabs: rgb(250 248 244 / 80%);
+    --slate-tint-header: rgb(246 244 240 / 88%);
     --slate-tint-card: rgb(252 251 248 / 44%);
     --slate-tint-chip: rgb(248 246 241 / 48%);
     --slate-tint-input: rgb(250 249 246 / 88%);
@@ -3971,6 +3975,10 @@ body[data-theme="light-slate"] {
     --slab-lo: rgb(70 62 52 / 12%);
     --slab-hi-chip: rgb(255 255 255 / 70%);
     --slab-lo-chip: rgb(70 62 52 / 10%);
+    /* Light pages want CRISP type (the mockups have no dark emboss on
+       light stone) — just a hairline white letterpress under the ink. */
+    --slate-type-shadow: 0 1px 0 rgb(255 255 255 / 45%);
+    --slate-accent-text-shadow: 0 1px 0 rgb(255 255 255 / 40%);
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(70 62 52 / 12%),
@@ -3980,6 +3988,19 @@ body[data-theme="light-slate"] {
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(70 62 52 / 12%),
         0 10px 20px rgb(70 62 52 / 16%);
+    /* Small controls + raised bars use light-ink shadows too, instead of
+       inheriting the heavy black stacks tuned for the dark themes. */
+    --slab-control-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(70 62 52 / 16%),
+        0 2px 3px rgb(70 62 52 / 14%),
+        0 8px 16px rgb(70 62 52 / 15%);
+    --slab-bar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(70 62 52 / 18%),
+        0 2px 4px rgb(70 62 52 / 10%),
+        0 12px 22px rgb(70 62 52 / 14%),
+        0 24px 42px rgb(70 62 52 / 12%);
 }
 
 body[data-theme="light-blue-slate"] {
@@ -4026,7 +4047,8 @@ body[data-theme="light-blue-slate"] {
     --slate-photo: var(--site-slate-bg-lightblue);
     --slate-header-flat: rgb(234 243 251);
     --slate-tint-band: rgb(232 242 251 / 58%);
-    --slate-tint-tabs: rgb(239 247 253 / 56%);
+    --slate-tint-tabs: rgb(246 250 254 / 80%);
+    --slate-tint-header: rgb(240 247 253 / 88%);
     --slate-tint-card: rgb(250 253 255 / 44%);
     --slate-tint-chip: rgb(244 249 254 / 48%);
     --slate-tint-input: rgb(248 251 254 / 88%);
@@ -4036,6 +4058,9 @@ body[data-theme="light-blue-slate"] {
     --slab-lo: rgb(24 52 88 / 12%);
     --slab-hi-chip: rgb(255 255 255 / 72%);
     --slab-lo-chip: rgb(24 52 88 / 10%);
+    /* Crisp navy type on light blue stone — no dark emboss (mockups). */
+    --slate-type-shadow: 0 1px 0 rgb(255 255 255 / 45%);
+    --slate-accent-text-shadow: 0 1px 0 rgb(255 255 255 / 40%);
     --slab-card-shadow:
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(24 52 88 / 12%),
@@ -4045,6 +4070,18 @@ body[data-theme="light-blue-slate"] {
         inset 0 1px 0 rgb(255 255 255 / 85%),
         0 2px 4px rgb(24 52 88 / 12%),
         0 10px 20px rgb(24 52 88 / 17%);
+    /* Light-ink shadows for small controls and raised bars. */
+    --slab-control-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(24 52 88 / 16%),
+        0 2px 3px rgb(24 52 88 / 14%),
+        0 8px 16px rgb(24 52 88 / 15%);
+    --slab-bar-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 88%),
+        inset 0 -1px 1px rgb(24 52 88 / 18%),
+        0 2px 4px rgb(24 52 88 / 10%),
+        0 12px 22px rgb(24 52 88 / 14%),
+        0 24px 42px rgb(24 52 88 / 12%);
 }
 
 body[data-theme="gray-slate"] {
@@ -4057,7 +4094,9 @@ body[data-theme="gray-slate"] {
     --accent: #d7a84f;
     --accent-hover: #e9c26f;
     --accent-soft: rgb(215 168 79 / 14%);
-    --border: rgb(215 175 105 / 20%);
+    /* Neutral hairline — the mockups have NO gold borders anywhere on the
+       slate themes, so edges are quiet white-ink lines, not brass. */
+    --border: rgb(255 255 255 / 13%);
     --shadow: 0 18px 48px rgb(0 0 0 / 32%);
     --nav-bg: rgb(15 17 17 / 92%);
     --tab-active: #d7a84f;
@@ -4097,7 +4136,10 @@ body[data-theme="gray-slate"] {
        (--slate-tint-input) so it reads calmer than everything else. */
     --slate-header-flat: rgb(21 23 25);
     --slate-tint-band: rgb(24 27 30 / 60%);
-    --slate-tint-tabs: rgb(20 23 26 / 54%);
+    /* Darker washes for the tab strip and top header so both bars clearly
+       contrast the page stone, like the mockup's near-black chrome. */
+    --slate-tint-tabs: rgb(13 15 17 / 74%);
+    --slate-tint-header: rgb(12 14 16 / 86%);
     --slate-tint-card: rgb(18 20 23 / 49%);
     --slate-tint-chip: rgb(22 25 28 / 48%);
     --slate-tint-input: rgb(15 17 20 / 86%);
@@ -4117,7 +4159,8 @@ body[data-theme="sage-slate"] {
     --accent: #d6a54d;
     --accent-hover: #ecc56f;
     --accent-soft: rgb(214 165 77 / 14%);
-    --border: rgb(198 154 75 / 22%);
+    /* Neutral hairline (no gold borders on slate — see gray-slate note). */
+    --border: rgb(212 226 211 / 13%);
     --shadow: 0 18px 48px rgb(0 0 0 / 34%);
     --nav-bg: rgb(12 22 18 / 93%);
     --tab-active: #d6a54d;
@@ -4151,7 +4194,9 @@ body[data-theme="sage-slate"] {
     --slate-photo: var(--site-slate-bg-sage);
     --slate-header-flat: rgb(14 23 18);
     --slate-tint-band: rgb(18 30 24 / 60%);
-    --slate-tint-tabs: rgb(14 24 19 / 54%);
+    /* Darker bar washes so the tab strip / header contrast the page. */
+    --slate-tint-tabs: rgb(9 16 12 / 74%);
+    --slate-tint-header: rgb(8 13 10 / 86%);
     --slate-tint-card: rgb(15 25 20 / 49%);
     --slate-tint-chip: rgb(17 29 23 / 48%);
     --slate-tint-input: rgb(13 22 18 / 86%);
@@ -4895,16 +4940,18 @@ body[data-slate-photo="on"] {
     --slab-lo: rgb(0 0 0 / 34%);
     --slab-hi-chip: rgb(255 255 255 / 12%);
     --slab-lo-chip: rgb(0 0 0 / 30%);
+    /* Both vein inks are NEUTRAL stone tones — the mockups' cracks carry
+       no gold tint, so veins mix from the text color, never the accent. */
     --slate-vein-strong: color-mix(in srgb, var(--text) 10%, transparent);
-    --slate-vein-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+    --slate-vein-soft: color-mix(in srgb, var(--text) 6%, transparent);
+    /* Softer than before: enough lift to read as raised lettering on
+       stone, without the blurry double-emboss the old triple stack had. */
     --slate-type-shadow:
-        0 1px 0 rgb(255 255 255 / 10%),
-        0 2px 3px rgb(0 0 0 / 58%),
-        0 10px 18px rgb(0 0 0 / 36%);
+        0 1px 2px rgb(0 0 0 / 50%),
+        0 8px 18px rgb(0 0 0 / 30%);
     --slate-accent-text-shadow:
-        0 1px 0 rgb(255 255 255 / 20%),
-        0 2px 4px rgb(0 0 0 / 48%),
-        0 0 18px color-mix(in srgb, var(--accent) 24%, transparent);
+        0 1px 2px rgb(0 0 0 / 42%),
+        0 0 14px color-mix(in srgb, var(--accent) 20%, transparent);
     --slate-linkedin-bg: rgb(214 218 220);
     --slate-linkedin-mark: rgb(23 26 28);
 
@@ -4913,14 +4960,17 @@ body[data-slate-photo="on"] {
         linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
         var(--slate-photo);
     --slab-card-size: auto, auto, 820px auto;
+    /* Raised bar recipe (tab strip, metrics strip): neutral veins + edge
+       light over a darker wash of the SAME fixed page stone, so each bar
+       is clearly the page's own rock cut deeper — not a pasted panel. */
     --slab-bar:
         linear-gradient(112deg, transparent 0 10%, var(--slate-vein-strong) 10.15% 10.35%, transparent 10.75% 47%, var(--slate-vein-soft) 47.18% 47.42%, transparent 47.8% 100%),
         linear-gradient(72deg, transparent 0 34%, var(--slate-vein-strong) 34.12% 34.28%, transparent 34.7% 74%, var(--slate-vein-soft) 74.15% 74.36%, transparent 74.8% 100%),
-        radial-gradient(ellipse at 18% 0%, rgb(255 255 255 / 10%), transparent 44%),
-        linear-gradient(180deg, rgb(255 255 255 / 10%), transparent 44%, rgb(0 0 0 / 32%)),
+        radial-gradient(ellipse at 18% 0%, rgb(255 255 255 / 8%), transparent 44%),
+        linear-gradient(180deg, rgb(255 255 255 / 8%), transparent 44%, rgb(0 0 0 / 26%)),
         linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
-        linear-gradient(var(--slate-header-flat), var(--slate-header-flat));
-    --slab-bar-size: auto, auto, auto, auto, auto, auto;
+        var(--slate-photo);
+    --slab-bar-size: auto, auto, auto, auto, auto, cover;
     --slab-bar-shadow:
         inset 0 1px 0 rgb(255 255 255 / 16%),
         inset 0 -1px 1px rgb(0 0 0 / 56%),
@@ -4951,12 +5001,17 @@ body[data-slate-photo="on"] {
         0 2px 3px rgb(0 0 0 / 46%),
         0 11px 20px rgb(0 0 0 / 54%),
         0 20px 34px rgb(0 0 0 / 44%);
+    /* Smooth satin gold, like the mockup buttons: a soft top-corner
+       highlight over a light-to-deep gold gradient. No grain, no vein,
+       and mixed from --button-primary-bg (NOT --accent) so the button
+       stays gold even on themes whose accent is blue. */
     --slab-primary:
-        var(--slate-noise),
-        linear-gradient(128deg, transparent 0 38%, rgb(99 65 18 / 20%) 38.2% 38.58%, transparent 39% 100%),
-        radial-gradient(circle at 32% 12%, rgb(255 255 255 / 28%), transparent 46%),
-        linear-gradient(180deg, color-mix(in srgb, var(--accent-hover) 82%, #ffffff 18%), var(--button-primary-bg));
-    --slab-primary-size: 180px 180px, auto, auto, auto;
+        radial-gradient(circle at 30% 0%, rgb(255 255 255 / 30%), transparent 55%),
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--button-primary-bg) 74%, #ffffff 26%) 0%,
+            var(--button-primary-bg) 58%,
+            color-mix(in srgb, var(--button-primary-bg) 84%, #000000 16%) 100%);
+    --slab-primary-size: auto, auto;
     --slab-primary-shadow:
         inset 0 1px 0 rgb(255 255 255 / 52%),
         inset 0 -1px 1px rgb(0 0 0 / 30%),
@@ -5064,50 +5119,37 @@ body[data-slate-photo="on"] .metrics-band {
     border-bottom: 0;
 }
 
-/* ---------- Top platform header: the one FLAT bar ----------
-   Deliberately left untextured (solid dark) so the platform chrome
-   reads as a clean frame above the textured profile/content below.
-   Individual controls on it — like the Sign In button — still get
-   their own stone slab as an accent. */
+/* ---------- Top platform header: the darkest cut of the page stone ----
+   Per the mockups the header keeps the slate texture — it samples the
+   SAME fixed photo crop as the page behind it, under a heavy dark wash
+   (--slate-tint-header), so it reads as the same stone in shadow rather
+   than a flat black strip pasted on top. */
 body[data-slate-photo="on"] .global-header {
     background:
-        linear-gradient(color-mix(in srgb, var(--slate-header-flat) 90%, transparent), color-mix(in srgb, var(--slate-header-flat) 90%, transparent)),
-        var(--slate-noise),
-        linear-gradient(180deg, rgb(255 255 255 / 5%), transparent 48%, rgb(0 0 0 / 18%)),
-        var(--slate-header-flat);
-    background-size: auto, 260px 260px, auto, auto;
-    box-shadow: 0 12px 28px rgb(0 0 0 / 48%);
+        linear-gradient(180deg, rgb(255 255 255 / 4%), transparent 52%, rgb(0 0 0 / 14%)),
+        linear-gradient(var(--slate-tint-header), var(--slate-tint-header)),
+        var(--slate-photo);
+    background-size: auto, auto, cover;
+    background-position: 0 0, 0 0, center top;
+    background-attachment: scroll, scroll, fixed;
+    background-repeat: no-repeat;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 26px rgb(0 0 0 / 30%);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-/* ---------- Profile band + tab row: textured raised bars ---------- */
-
-/* Both bars cut their stone at a SMALLER scale than the full-viewport
-   page photo behind them (plus a grain layer on top) — at "cover" scale
-   the bar was indistinguishable from the page and read as glass. A
-   distinct crack scale + grain is what makes each bar its own slab. */
-/* Both bars sample the SAME fixed slice of the stone photo (matching
-   the body's own cover/center-top recipe, with fixed attachment on just
-   that layer) instead of each cutting its own differently-scaled crop.
-   That's what makes the header and tab strip read as one continuous
-   slab of stone with the profile band carved above the tabs, rather
-   than two panels with unrelated crack patterns stitched together. */
+/* ---------- Profile band: part of the page, not its own slab ----------
+   Pete's rule: each page is ONE big continuous background. The band with
+   his name/photo/actions paints NOTHING of its own — the body's fixed
+   stone photo shows straight through, so it can never mismatch the page.
+   (An earlier tinted+veined slab recipe here always read as a different,
+   warmer material than the stone around it.) The tab strip below and the
+   header above are the darker slabs that frame it. */
 body[data-slate-photo="on"] .profile-header {
-    background:
-        linear-gradient(180deg, rgb(255 255 255 / 6%), transparent 42%, rgb(0 0 0 / 18%)),
-        linear-gradient(120deg, transparent 0 18%, var(--slate-vein-strong) 18.15% 18.35%, transparent 18.72% 63%, var(--slate-vein-soft) 63.18% 63.45%, transparent 63.9% 100%),
-        var(--slate-noise),
-        linear-gradient(var(--slate-tint-band), var(--slate-tint-band)),
-        var(--slate-photo);
-    background-size: auto, auto, 260px 260px, auto, cover;
-    background-position: 0 0, 0 0, 0 0, 0 0, center top;
-    background-attachment: scroll, scroll, scroll, scroll, fixed;
-    background-repeat: no-repeat, no-repeat, repeat, no-repeat, no-repeat;
-    border-bottom: 1px solid var(--border);
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 9%),
-        0 16px 34px rgb(0 0 0 / 52%);
+    background: transparent;
+    border-bottom: 0;
+    box-shadow: none;
 }
 
 body[data-slate-photo="on"] .profile-tabs {
@@ -5115,11 +5157,11 @@ body[data-slate-photo="on"] .profile-tabs {
     overflow: visible;
     background: var(--slab-bar);
     background-size: var(--slab-bar-size);
-    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
-    background-attachment: scroll, scroll, scroll, scroll, scroll, scroll;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, center top;
+    background-attachment: scroll, scroll, scroll, scroll, scroll, fixed;
     background-repeat: no-repeat;
     border-top: 1px solid var(--slate-edge-lit);
-    border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    border-bottom: 1px solid var(--border);
     box-shadow: var(--slab-bar-shadow);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -5153,6 +5195,17 @@ body[data-slate-photo="on"] .platform-brand__logo img {
         drop-shadow(0 4px 9px rgb(0 0 0 / 34%));
 }
 
+/* The wordmark art is silver chrome — nearly invisible on the light
+   stone headers. Darken it to ink there, like the light mockups' dark
+   wordmark, instead of letting it wash out. */
+body[data-theme="light-slate"] .platform-brand__logo img,
+body[data-theme="light-blue-slate"] .platform-brand__logo img {
+    filter:
+        brightness(0.34)
+        contrast(1.15)
+        drop-shadow(0 1px 1px rgb(255 255 255 / 35%));
+}
+
 body[data-slate-photo="on"] .profile-avatar {
     border-color: var(--slate-edge-lit);
     box-shadow:
@@ -5170,6 +5223,21 @@ body[data-slate-photo="on"] .story-hero__content h1,
 body[data-slate-photo="on"] .project-card h3,
 body[data-slate-photo="on"] .lifecycle-node h3 {
     text-shadow: var(--slate-type-shadow);
+}
+
+/* Mockup type scale: headlines are bold (not black) with only a gentle
+   tightening — the old 900-weight / -0.05em setting read compressed and
+   heavier than the mockups' clean lettering. Slate themes only. */
+body[data-slate="on"] .profile-identity h1 {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+body[data-slate="on"] .hero-copy h1,
+body[data-slate="on"] .story-hero__content h1,
+body[data-slate="on"] .projects-copy h2 {
+    font-weight: 800;
+    letter-spacing: -0.025em;
 }
 
 body[data-slate-photo="on"] .hero-copy h1 span,
@@ -5216,17 +5284,45 @@ body[data-slate-photo="on"] .hero-ai-search__box {
     background-size: auto, auto, 820px auto;
 }
 
-/* Metrics strip: one long raised slab, like the mockup's impact bar. */
+/* Metrics strip: one long raised slab, like the mockup's impact bar —
+   the same darker bar wash as the tab strip, lit top edge, and the deep
+   bar shadow stack so it visibly stands off the page. */
 body[data-slate-photo="on"] .metrics-strip {
     background:
-        linear-gradient(160deg, rgb(255 255 255 / 6%) 0%, transparent 40%, rgb(0 0 0 / 20%) 100%),
-        linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
+        linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 46%, rgb(0 0 0 / 22%)),
+        linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
         var(--slate-photo);
     background-size: auto, auto, cover;
     background-position: 0 0, 0 0, center 45%;
     border: 1px solid var(--border);
     border-top-color: var(--slate-edge-lit);
-    box-shadow: var(--slab-card-shadow);
+    box-shadow: var(--slab-bar-shadow);
+}
+
+/* Impact bar contents, matching the mockups: every icon sits in its own
+   raised circular badge (lit top edge + drop shadow), vertically centered
+   against its number/label pair. */
+body[data-slate="on"] .metrics-strip .metric-item {
+    align-items: center;
+}
+
+body[data-slate="on"] .metrics-strip .metric-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    color: var(--text);
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--surface-soft) 96%, transparent),
+        color-mix(in srgb, var(--surface) 92%, transparent));
+    border: 1px solid var(--border);
+    border-top-color: var(--slate-edge-lit);
+    box-shadow: var(--slab-chip-shadow);
+}
+
+body[data-slate="on"] .metrics-strip .metric-icon svg {
+    width: 21px;
+    height: 21px;
+    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 30%));
 }
 
 /* ---------- Card slabs ----------
@@ -5467,6 +5563,69 @@ body[data-slate-photo="on"] #chat-input {
 body[data-slate-photo="on"] #chat-input-area,
 body[data-slate-photo="on"] #chat-disclaimer {
     background: rgb(0 0 0 / 22%);
+}
+
+/* Floating ASK PETE AI chip: chatbot.css ships it as a gold-OUTLINED
+   ghost chip — on the slate themes it becomes the same solid satin-gold
+   button as every other primary CTA (mockups have no gold outlines). */
+body[data-slate-photo="on"] #chat-toggle {
+    color: var(--button-primary-text);
+    background: var(--slab-primary);
+    background-size: var(--slab-primary-size);
+    border: 1px solid rgb(255 255 255 / 28%);
+    box-shadow: var(--slab-primary-shadow);
+}
+
+body[data-slate-photo="on"] #chat-toggle:hover,
+body[data-slate-photo="on"] #chat-toggle:focus-visible {
+    filter: brightness(1.08);
+}
+
+/* Skill popover pointer "tail": chatbot-era navy + gold hairline —
+   match it to the slate popover surface and neutral border instead. */
+body[data-slate="on"] .resume-skill-popover::before {
+    background: var(--surface);
+    border-top-color: var(--border);
+    border-left-color: var(--border);
+}
+
+/* Last static gold hairlines: the metric divider pseudo-element and the
+   "View All ..." outline links. The strip already draws its own neutral
+   border-right separators, so the old gold divider is simply hidden
+   there; View All links become raised slate chips like the mockups'
+   secondary controls. */
+body[data-slate="on"] .metric-item::after {
+    background: var(--border);
+}
+
+body[data-slate="on"] .metrics-strip .metric-item::after {
+    display: none;
+}
+
+body[data-slate-photo="on"] .view-all-link {
+    color: var(--text);
+    background: var(--slab-control);
+    background-size: var(--slab-control-size);
+    border: 1px solid var(--border);
+    border-top-color: var(--slate-edge-lit);
+    box-shadow: var(--slab-control-shadow);
+}
+
+body[data-slate-photo="on"] .view-all-link:hover,
+body[data-slate-photo="on"] .view-all-link:focus-visible {
+    border-color: var(--accent);
+    filter: brightness(1.13);
+}
+
+/* My Story value-chip medallions: raised neutral-ring badges like the
+   metric icons (glyphs keep their gold/cyan color, rings go neutral). */
+body[data-slate="on"] .value-chip__icon {
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--surface-soft) 96%, transparent),
+        color-mix(in srgb, var(--surface) 92%, transparent));
+    border: 1px solid var(--border);
+    border-top-color: var(--slate-edge-lit);
+    box-shadow: var(--slab-chip-shadow);
 }
 
 /* Lifecycle diagram: concentric "sonar rings" radiate out from the
@@ -5716,65 +5875,114 @@ body[data-theme="light-blue-slate"] #chat-panel {
     }
 }
 
+/* =========================================================
+   PHONE LAYOUT (below iPad Mini) — reworked 2026-07-06.
+   Goal: keep the desktop's essence (raised slate slabs, one
+   continuous background, compact confident chrome) instead of
+   the old four-stacked-rows header and oversized controls.
+   ========================================================= */
 @media (max-width: 780px) {
     .global-header {
         position: relative;
     }
 
+    /* Two tight rows: brand + controls together up top, nav links in a
+       scrollable strip beneath — like every polished mobile web app. */
     .platform-nav__inner {
         min-height: 0;
-        padding-top: 14px;
-        padding-bottom: 12px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand actions"
+            "links links";
+        column-gap: 10px;
+        row-gap: 0;
+        padding-top: 10px;
+        padding-bottom: 6px;
     }
 
     .platform-brand {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
+        grid-area: brand;
+        flex-direction: row;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .platform-brand__logo img {
+        height: 22px;
     }
 
     .platform-brand__profile {
-        font-size: 0.8rem;
+        font-size: 0.72rem;
     }
 
-    .platform-nav__links {
-        gap: 22px;
-        padding-bottom: 4px;
+    .platform-actions {
+        grid-area: actions;
+        gap: 8px;
     }
 
     .theme-selector {
-        order: 3;
+        gap: 3px;
+        padding: 3px;
+    }
+
+    .theme-option {
+        width: 10px;
+        height: 10px;
     }
 
     .sign-in-btn {
-        min-height: 38px;
-        padding-inline: 11px;
-        font-size: 0.82rem;
+        min-height: 30px;
+        padding-inline: 9px;
+        font-size: 0.72rem;
+        gap: 5px;
     }
 
+    .platform-nav__links {
+        grid-area: links;
+        gap: 20px;
+        padding-top: 8px;
+        padding-bottom: 6px;
+    }
+
+    .platform-nav__links a {
+        font-size: 0.84rem;
+    }
+
+    /* Profile band: smaller portrait and type, and the two action
+       buttons share ONE row instead of stacking as full-width slabs. */
     .profile-header__inner {
-        grid-template-columns: 78px minmax(0, 1fr);
-        gap: 16px;
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 6px 14px;
         min-height: 0;
-        padding-top: 16px;
+        padding-top: 14px;
         padding-bottom: 16px;
     }
 
     .profile-avatar {
-        width: 78px;
-        height: 78px;
+        width: 64px;
+        height: 64px;
+        border-width: 2px;
+    }
+
+    .profile-status {
+        margin-bottom: 3px;
+        font-size: 0.66rem;
+        letter-spacing: 0.15em;
     }
 
     .profile-identity h1 {
-        font-size: 2rem;
+        font-size: 1.7rem;
     }
 
     .profile-title {
-        letter-spacing: 0.2em;
+        margin-top: 6px;
+        font-size: 0.7rem;
+        letter-spacing: 0.22em;
     }
 
     .profile-subtitle {
-        font-size: 0.86rem;
+        margin-top: 5px;
+        font-size: 0.8rem;
         line-height: 1.45;
     }
 
@@ -5784,17 +5992,65 @@ body[data-theme="light-blue-slate"] #chat-panel {
 
     .profile-actions {
         grid-column: 1 / -1;
-        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 6px;
     }
 
     .profile-action-btn {
         min-width: 0;
-        flex: 1 1 190px;
+        flex: 1 1 0;
+        min-height: 40px;
+        padding: 0 10px;
+        font-size: 0.78rem;
+        gap: 7px;
+        white-space: nowrap;
     }
 
+    .profile-action-btn svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+    }
+
+    /* Tab strip: a touch tighter, still sticky and swipeable. */
     .profile-tabs {
         position: sticky;
         top: 0;
+    }
+
+    .profile-tabs__inner {
+        gap: 22px;
+        min-height: 46px;
+    }
+
+    .profile-tab {
+        min-height: 46px;
+        font-size: 0.86rem;
+    }
+
+    .profile-tabs__linkedin {
+        width: 38px;
+        height: 38px;
+    }
+
+    .profile-tabs__linkedin svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Buttons everywhere drop to a comfortable phone scale — the old
+       48px-tall desktop sizing is what read "blown up" on phones. */
+    .btn {
+        min-height: 42px;
+        padding: 0 18px;
+        font-size: 0.86rem;
+        gap: 10px;
+    }
+
+    /* Hero CTAs size to their labels on the slate shell instead of
+       stretching edge to edge. */
+    body[data-slate="on"] .hero-actions .btn {
+        width: auto;
     }
 
     .metrics-strip {
@@ -5806,26 +6062,43 @@ body[data-theme="light-blue-slate"] #chat-panel {
         padding: 0;
         border-right: 0;
     }
+
+    body[data-slate="on"] .metrics-strip .metric-icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    body[data-slate="on"] .metrics-strip .metric-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+@media (max-width: 620px) {
+    /* Small phones: the "Pete's Slate" label is the one brand element
+       that doesn't fit beside the theme dots + Sign In — drop it (the
+       portrait and tab strip still link to the portfolio). */
+    .platform-brand__profile {
+        display: none;
+    }
 }
 
 @media (max-width: 520px) {
-    .platform-nav__inner {
-        grid-template-columns: 1fr;
-    }
-
-    .platform-actions {
-        justify-self: start;
-        flex-wrap: wrap;
-    }
-
+    /* Keep the single-row header even on small phones — only the nav
+       link strip scrolls. The profile band goes single-column with the
+       portrait beside the name row still reading cleanly. */
     .profile-header__inner {
-        grid-template-columns: 1fr;
-        text-align: left;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 4px 12px;
     }
 
     .profile-avatar {
-        width: 88px;
-        height: 88px;
+        width: 56px;
+        height: 56px;
+    }
+
+    .profile-identity h1 {
+        font-size: 1.5rem;
     }
 
     .metrics-strip {

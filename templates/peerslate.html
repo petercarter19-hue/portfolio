@@ -41,9 +41,12 @@
     <section class="peerslate-hero" aria-labelledby="peerslate-title">
         <div class="site-container peerslate-hero__grid">
             <div class="peerslate-hero__copy">
+                {# Transparent lockup (no boxed backdrop) so the brand sits
+                   directly on the page's slate instead of floating on a
+                   pasted navy rectangle. #}
                 <div class="peerslate-brand-lockup">
                     <img
-                        src="{{ url_for('static', filename='images/peerslate-logo.png') }}"
+                        src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
                         alt="PeerSlate. Your Work. Your Story. Your Future."
                     >
                 </div>
