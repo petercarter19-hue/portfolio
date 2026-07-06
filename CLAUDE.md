@@ -68,6 +68,16 @@ Two goals:
 4. Build admin dashboard to view chat logs
 5. Eventually: smarter retrieval, security hardening, and public deployment
 
+## Recent Session Updates (2026-07-05 evening — PeerSlate redesign pulled + desktop-everywhere sizing, Mac, branch main)
+- IMPORTANT: the Mac repo was 4 commits behind GitHub — a full "PeerSlate platform" redesign built elsewhere (tabbed profile shell, platform nav with Career Search/My Network/Explore Profiles/For Recruiters, 8 themes with gray-slate as the new default, slate photo backgrounds in static/images/slate-backgrounds/, mockups in static/images/background-templates/, app.py rewritten with flask-limiter + canonical-URL redirects). Pulled onto the Mac this session. Much of the theme/layout info in the sections below this one is now OUTDATED (blueprint-light is no longer the default, the old site-menu header is gone).
+- .claude/launch.json gotcha: the pull brought the Windows python path (venv/Scripts/python.exe); switched back to venv/bin/python for Mac. This will flip-flop between machines until made smarter.
+- DESKTOP-EVERYWHERE SIZING RULE (Pete's request): every screen from iPad Mini (744px) on up must show the EXACT desktop layout, just scaled down — no tablet reflow, no growing buttons. Phone layout below 744px is unchanged (to be polished later).
+- Implementation part 1: all old tablet breakpoints in style.css (780/860/900/980/1040/1180/1240) and resume.css (940/1180) retargeted to max-width: 743px, so they are phone-only now; the min-width: 781px block became 744px. Blocks at 700/620/520px untouched.
+- Implementation part 2: inline script at the top of base.html <head> ("DESKTOP-EVERYWHERE SIZING" comment). Touch tablets get the viewport meta swapped to width=1280 (browser scales natively); desktop browser windows between 744-1279px get document.documentElement.style.zoom = width/1280. DESKTOP_WIDTH is 1280 because the largest layout-changing breakpoint was 1240.
+- Cache-busters bumped: style.css ?v=ipad-desktop-1 (base.html), resume.css ?v=ipad-desktop-1 (resume.html).
+- Verified in preview at 744, 1000, 1440, and 375px on the new PeerSlate design: desktop layout scaled at tablet widths, no zoom at 1440, phone layout intact at 375, no console errors.
+- NOTE: preview screenshots taken immediately after navigation with zoom active can render at the wrong scale (tool quirk, not a site bug) — retake the screenshot.
+
 ## Recent Session Updates (2026-07-05 — Blueprint Light theme, Mac, branch main)
 - New "Blueprint Light" theme added and made the SITE-WIDE DEFAULT (base.html body data-theme + theme-preview.js defaultTheme both say blueprint-light; meta theme-color now #f4f9fc). Returning visitors with a saved theme in localStorage (key peerslateTheme) keep their old choice — clear localStorage to see the new default.
 - Palette (from Pete's codex instructions file): pale blueprint-blue page (#f4f9fc) with a faint 48px grid, navy text (#08204a), teal/cyan primary (#0796b8 / #0ea5c6) mapped onto the existing --color-gold variable slots, blue secondary (#1f6feb), soft blue-gray borders (#cfe0eb), navy-tinted shadows.

@@ -5,6 +5,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- DESKTOP-EVERYWHERE SIZING (added 2026-07-05)
+         Rule: every screen from an iPad Mini (744px wide) on up shows the
+         EXACT desktop layout, just scaled down to fit — no tablet reflow,
+         no growing buttons. Screens narrower than 744px keep the phone
+         layout (to be polished later). This runs before the CSS loads so
+         there is no flash of the wrong size. -->
+    <script>
+        (function () {
+            var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
+            var TABLET_MIN = 744;      /* iPad Mini portrait width */
+
+            /* Touch devices (iPads, tablets): swap the viewport tag so the
+               browser itself renders the page 1280px wide and shrinks it to
+               the screen — pixel-perfect desktop, handled natively. */
+            if (navigator.maxTouchPoints > 1) {
+                if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
+                    document.querySelector('meta[name="viewport"]')
+                        .setAttribute('content', 'width=' + DESKTOP_WIDTH);
+                }
+                return;  /* phones fall through untouched */
+            }
+
+            /* Desktop browsers ignore the viewport tag, so when the window
+               is narrower than the full desktop layout we scale the whole
+               page down with CSS zoom instead of letting it reflow. */
+            function fitDesktopScale() {
+                var w = window.innerWidth;
+                if (w >= TABLET_MIN && w < DESKTOP_WIDTH) {
+                    document.documentElement.style.zoom = w / DESKTOP_WIDTH;
+                } else {
+                    document.documentElement.style.zoom = '';
+                }
+            }
+            fitDesktopScale();
+            window.addEventListener('resize', fitDesktopScale);
+        })();
+    </script>
+
     <meta
         name="description"
         content="{% block meta_description %}The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems.{% endblock %}"
@@ -32,7 +70,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=slate-controls-10"
+        href="{{ url_for('static', filename='css/style.css') }}?v=ipad-desktop-1"
     >
     <link
         rel="stylesheet"
