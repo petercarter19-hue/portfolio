@@ -463,6 +463,22 @@ def slate_feed_api():
     return jsonify(load_slate_feed())
 
 
+def load_slate_people():
+    people_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'slate_people.json')
+
+    with open(people_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+@app.route('/slate-feed/people')
+def slate_feed_people():
+    # The People view of the Slate Feed — connections, journeys, goal rooms,
+    # and community posts. Card content lives in slate_people.json; the
+    # composer on the page lets a visitor add their own People card
+    # (stored per-browser by slate-feed.js).
+    return render_template('slate_people.html', people=load_slate_people())
+
+
 # -------------------------------------------------------
 # PLATFORM PLACEHOLDER PAGES
 # These four pages back the global PeerSlate header links.

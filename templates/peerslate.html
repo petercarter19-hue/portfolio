@@ -241,64 +241,54 @@
         </div>
     </section>
 
-    <!-- ============ FROM THE SLATE BOARDS ============ -->
-    <section class="ps-section" aria-labelledby="ps-feed-title">
+    <!-- ============ PROVEN IMPACT (real metrics) ============ -->
+    {# Swapped in for the old sample "From the Slate Boards" cards: Pete's
+       real, quantified outcomes lead the homepage now — the same four
+       metrics featured on his slate, so the numbers are consistent. #}
+    <section class="ps-section" aria-labelledby="ps-impact-title">
         <div class="site-container">
             <div class="ps-section-head ps-section-head--split">
-                <p class="ps-eyebrow" id="ps-feed-title">From the Slate Boards</p>
-                <a class="ps-link" href="{{ portfolio_url('slate-board') }}">
-                    View Example Slate <span aria-hidden="true">&rarr;</span>
+                <div>
+                    <p class="ps-eyebrow" id="ps-impact-title">Proven Impact</p>
+                    <p class="ps-section-sub">Real, quantified outcomes from Pete's slate.</p>
+                </div>
+                <a class="ps-link" href="{{ portfolio_home_url }}">
+                    Explore the evidence <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
-            <div class="ps-feed">
-                <article class="ps-feed-card">
-                    <div class="ps-feed-card__top">
-                        <span class="ps-flag ps-flag--blue">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>
-                            Milestone
-                        </span>
-                        <time>Q1 2024</time>
-                    </div>
-                    <h3>Launched Pricing Optimization Initiative</h3>
-                    <p>Led cross-functional effort to redesign pricing strategy and packaging.</p>
-                    <div class="ps-feed-card__foot">
-                        <span class="ps-mini-chip">$1.8M</span>
-                        <span class="ps-feed-card__note">Incremental revenue</span>
-                        <span class="ps-feed-card__note ps-feed-card__note--team">Team of 6</span>
-                    </div>
-                </article>
-                <article class="ps-feed-card">
-                    <div class="ps-feed-card__top">
-                        <span class="ps-flag ps-flag--green">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
-                            Badge
-                        </span>
-                        <time>Issued Jan 2024</time>
-                    </div>
-                    <h3>Customer Obsession</h3>
-                    <p>Recognized by leadership and peers for consistently driving customer value.</p>
-                    <div class="ps-feed-card__foot">
-                        <span class="ps-avatar-stack" aria-hidden="true"><i></i><i></i><i></i></span>
-                        <span class="ps-feed-card__note ps-feed-card__note--green">Endorsed by 7 peers</span>
-                    </div>
-                </article>
-                <article class="ps-feed-card">
-                    <div class="ps-feed-card__top">
-                        <span class="ps-flag ps-flag--violet">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.7.5-1 1.3-1 2.1h-5c0-.8-.3-1.6-1-2.1A6 6 0 0 1 12 3z"/></svg>
-                            Thought
-                        </span>
-                        <time>Apr 12, 2024</time>
-                    </div>
-                    <h3>On Balancing Speed and Clarity</h3>
-                    <p>Why great product outcomes come from clear decisions, not just fast ones.</p>
-                    <div class="ps-feed-card__foot">
-                        <span class="ps-mini-chip ps-mini-chip--violet">Product Leadership</span>
-                        <span class="ps-feed-card__bookmark" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-                        </span>
-                    </div>
-                </article>
+            <div class="ps-ov-metrics ps-home-metrics">
+                <a class="ps-metric" href="{{ portfolio_home_url }}">
+                    <span class="ps-metric__icon ps-tint--blue" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 1.6 2.7 5 3.4 5 1.6 5 3.6-2.2 3-5 3-5-1.1-5-3"/></svg>
+                    </span>
+                    <strong>$36M+</strong>
+                    <h3>Contract Oversight</h3>
+                    <p>Across AF, L3Harris, and NG programs</p>
+                </a>
+                <a class="ps-metric" href="{{ portfolio_home_url }}">
+                    <span class="ps-metric__icon ps-tint--green" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
+                    </span>
+                    <strong>16 to 0</strong>
+                    <h3>MICAP Reduction</h3>
+                    <p>Eliminated repeat findings</p>
+                </a>
+                <a class="ps-metric" href="{{ portfolio_home_url }}">
+                    <span class="ps-metric__icon ps-tint--sky" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 17l6-6 4 4 6-7"/><path d="M14 8h6v6"/></svg>
+                    </span>
+                    <strong>70%</strong>
+                    <h3>Repair &amp; Test Improvement</h3>
+                    <p>Faster troubleshooting &amp; resolution</p>
+                </a>
+                <a class="ps-metric" href="{{ portfolio_home_url }}">
+                    <span class="ps-metric__icon ps-tint--violet" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                    </span>
+                    <strong>52%</strong>
+                    <h3>Missing-Part Reduction</h3>
+                    <p>Through systemic process redesign</p>
+                </a>
             </div>
         </div>
     </section>
