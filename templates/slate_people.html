@@ -29,29 +29,9 @@
         </header>
 
         <!-- ============ TAB STRIP ============ -->
+        {% set active = 'people' %}
         <div class="sf-tabbar">
-            <nav class="sf-tabs" aria-label="Feed views">
-                <a class="sf-tab" href="{{ url_for('slate_feed') }}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
-                    Progress
-                </a>
-                <button class="sf-tab" type="button" aria-disabled="true" title="Coming soon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg>
-                    Pulse
-                </button>
-                <button class="sf-tab" type="button" aria-disabled="true" title="Coming soon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 2v3M12 2v3"/></svg>
-                    Break
-                </button>
-                <a class="sf-tab" href="{{ url_for('slate_feed_people') }}" aria-current="page">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c.7-4 3.4-6 7-6s6.3 2 7 6"/></svg>
-                    People
-                </a>
-                <a class="sf-tab" href="{{ portfolio_url('slate-board') }}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-                    My Slate
-                </a>
-            </nav>
+            {% include "partials/slate_feed_tabs.html" %}
 
             <label class="sf-filter">
                 <span class="sf-hidden-label">Filter people</span>
