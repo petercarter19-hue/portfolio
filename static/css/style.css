@@ -8751,6 +8751,16 @@ body[data-theme="paper-slate"] #chat-panel {
     color: var(--text-muted);
 }
 
+.ps-feed-card__bookmark svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 /* ---------- HOME: real example band ---------- */
 .ps-example {
     display: flex;
@@ -8943,17 +8953,15 @@ body[data-theme="paper-slate"] #chat-panel {
     color: var(--home-text);
 }
 
+/* Mockup background is a clean near-white page (no grid). The only tint is
+   a whisper of cool blue in the hero, added on .ps-hero below. */
 .peerslate-home-page .ps-home::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background:
-        radial-gradient(circle at 12% 12%, rgb(255 255 255 / 62%), transparent 24%),
-        linear-gradient(90deg, rgb(6 26 58 / 4%) 1px, transparent 1px),
-        linear-gradient(180deg, rgb(6 26 58 / 4%) 1px, transparent 1px);
-    background-size: auto, 76px 76px, 76px 76px;
+    background: #fdfdfe;
 }
 
 .peerslate-home-page .ps-eyebrow {
@@ -8991,11 +8999,17 @@ body[data-theme="paper-slate"] #chat-panel {
 
 .peerslate-home-page .ps-hero {
     padding: 2.2rem 0 3.6rem;
+    /* Faint cool-blue hero wash that fades to the white page (mockup). It
+       lives on the section so it scrolls with the hero rather than staying
+       pinned to the viewport. */
+    background: linear-gradient(180deg, #eef3fb 0%, #f4f7fb 46%, rgb(253 253 254 / 0) 100%);
 }
 
 .peerslate-home-page .ps-hero__grid {
-    grid-template-columns: minmax(0, 1fr) minmax(440px, 0.95fr);
-    gap: 4rem;
+    /* Wider right column so the front card can stay a comfortable size AND
+       the deck can fan out to its right, fully visible inside the rail. */
+    grid-template-columns: minmax(0, 0.9fr) minmax(460px, 1.05fr);
+    gap: 3.2rem;
     align-items: center;
 }
 
@@ -9004,17 +9018,26 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ps-hero__copy h1 {
-    margin: 1rem 0 1.35rem;
+    margin: 1rem 0 1.5rem;
     color: var(--home-text);
     font-family: "Playfair Display", Georgia, serif;
-    font-size: clamp(3.6rem, 5.7vw, 5.25rem);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 0.95;
+    /* Mockup hero is a roomy semibold, not a heavy black. 600 + relaxed
+       letter-spacing/line-height matches the refined display type; 700 with
+       -0.04em/0.95 read as thick and cramped ("YourWork"). */
+    font-size: clamp(3.4rem, 5.4vw, 4.9rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.06;
 }
 
+/* Thin 2px rule beneath the keyword (mockup), sitting just below the
+   baseline with a small gap — not a thick highlight band. */
 .peerslate-home-page .ps-underline {
-    box-shadow: inset 0 -0.12em rgb(6 26 58 / 12%);
+    background-image: linear-gradient(rgb(6 26 58 / 22%), rgb(6 26 58 / 22%));
+    background-repeat: no-repeat;
+    background-size: 100% 2px;
+    background-position: 0 90%;
+    box-shadow: none;
 }
 
 .peerslate-home-page .ps-hero__lead {
@@ -9033,17 +9056,18 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .hero-preview {
     position: relative;
     display: block;
+    /* Fill the right column so the front card can sit at the left and the
+       deck can fan out to the right (mockup). The rail caps the column at
+       ~570px, so it never over-stretches. */
     width: 100%;
-    max-width: 520px;
-    min-height: 430px;
-    margin-left: auto;
+    min-height: 470px;
     padding-top: 0.15rem;
     isolation: isolate;
 }
 
 .peerslate-home-page .preview-stack {
     position: relative;
-    min-height: 330px;
+    min-height: 300px;
 }
 
 .peerslate-home-page .preview-card {
@@ -9056,7 +9080,7 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .preview-main {
     position: relative;
     z-index: 3;
-    width: min(100%, 455px);
+    width: min(100%, 410px);
     padding: 1.25rem;
     background: #ffffff;
 }
@@ -9077,10 +9101,11 @@ body[data-theme="paper-slate"] #chat-panel {
 
 .peerslate-home-page .preview-main__head h2 {
     color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.58rem;
-    font-weight: 700;
-    line-height: 1;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
 }
 
 .peerslate-home-page .preview-main__title {
@@ -9128,8 +9153,10 @@ body[data-theme="paper-slate"] #chat-panel {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-top: 1.1rem;
-    padding: 0.95rem 0.25rem 0;
-    border-top: 1px solid var(--home-border-soft);
+    padding: 0.85rem 0.3rem;
+    background: #f8fafc;
+    border: 1px solid var(--home-border-soft);
+    border-radius: 0.85rem;
     text-align: center;
 }
 
@@ -9140,9 +9167,10 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .preview-main__metrics strong {
     display: block;
     color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
     font-size: 1.25rem;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     line-height: 1;
 }
 
@@ -9162,42 +9190,46 @@ body[data-theme="paper-slate"] #chat-panel {
     pointer-events: none;
 }
 
+/* The deck fans out to the RIGHT of the front card (mockup): Impact
+   Snapshot on top, Recent Milestone lower, blank card edges behind for
+   depth. Anchored from the right so they always stay inside the rail. */
 .peerslate-home-page .preview-impact {
     z-index: 2;
-    top: 48px;
-    right: -36px;
-    width: 175px;
-    padding: 1rem;
-    opacity: 0.96;
+    top: 40px;
+    right: 30px;
+    width: 178px;
+    padding: 1rem 1.05rem;
+    opacity: 1;
 }
 
 .peerslate-home-page .preview-milestone {
     z-index: 1;
-    top: 178px;
-    right: -58px;
+    top: 198px;
+    right: 16px;
     width: 175px;
-    min-height: 160px;
-    padding: 1rem;
-    opacity: 0.86;
+    min-height: 150px;
+    padding: 1rem 1.05rem;
+    opacity: 1;
 }
 
 .peerslate-home-page .preview-ghost {
     z-index: 0;
-    width: 180px;
-    height: 210px;
-    opacity: 0.28;
+    width: 182px;
+    height: 224px;
+    background: #ffffff;
+    opacity: 0.72;
 }
 
 .peerslate-home-page .preview-ghost-one {
-    right: -74px;
-    bottom: 22px;
-    transform: rotate(4deg);
+    top: 92px;
+    right: 6px;
+    transform: rotate(5deg);
 }
 
 .peerslate-home-page .preview-ghost-two {
-    top: 76px;
-    right: -106px;
-    transform: rotate(7deg);
+    top: 150px;
+    right: -14px;
+    transform: rotate(9deg);
 }
 
 .peerslate-home-page .preview-impact p,
@@ -9211,8 +9243,10 @@ body[data-theme="paper-slate"] #chat-panel {
     display: block;
     margin-top: 1rem;
     color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.38rem;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     line-height: 1;
 }
 
@@ -9262,8 +9296,12 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .hero-ai-panel {
     position: relative;
     z-index: 5;
-    width: min(100%, 455px);
-    margin-top: -0.35rem;
+    width: min(100%, 418px);
+    margin-top: 0.95rem;
+}
+
+.peerslate-home-page .home-ask {
+    margin: 0;
 }
 
 .peerslate-home-page .ai-bar {
@@ -9296,46 +9334,93 @@ body[data-theme="paper-slate"] #chat-panel {
     font-weight: 650;
 }
 
-.peerslate-home-page .ai-bar-action {
-    display: grid;
-    place-items: center;
-    width: 2.65rem;
-    height: 2.65rem;
-    color: var(--home-text);
-    background: #ffffff;
-    border-radius: 50%;
-    font-weight: 900;
+/* The dark pill now wraps a live input + submit button. */
+.peerslate-home-page .ai-bar:focus-within {
+    box-shadow: 0 0 0 3px rgb(11 99 229 / 35%), 0 18px 40px rgb(6 26 58 / 22%);
 }
 
+.peerslate-home-page .ai-bar .hero-ai-search__input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    color: #ffffff;
+    background: transparent;
+    border: 0;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.peerslate-home-page .ai-bar .hero-ai-search__input::placeholder {
+    color: rgb(255 255 255 / 66%);
+}
+
+.peerslate-home-page .ai-bar .hero-ai-search__input:focus {
+    outline: none;
+}
+
+/* Extra .ai-bar specificity so the slate-photo theme's generic
+   .hero-ai-search__button rule can't override the white circle. */
+.peerslate-home-page .ai-bar .ai-bar-action {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.65rem;
+    height: 2.65rem;
+    min-height: 0;
+    padding: 0;
+    color: var(--home-text);
+    background: #ffffff;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 900;
+    transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.peerslate-home-page .ai-bar .ai-bar-action:hover {
+    transform: scale(1.06);
+    background: #ffffff;
+}
+
+.peerslate-home-page .ai-bar .ai-bar-action:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+/* Four separate pills in one row under the ask bar (mockup) — no tray. */
 .peerslate-home-page .ai-chip-row {
     display: flex;
     flex-wrap: nowrap;
     gap: 0.5rem;
-    width: max-content;
-    max-width: calc(100vw - 2rem);
-    margin-top: 0.75rem;
-    margin-left: -0.4rem;
-    padding: 0.5rem;
-    background: rgb(255 255 255 / 65%);
-    border: 1px solid rgb(217 226 236 / 54%);
-    border-radius: 1rem;
-    box-shadow: 0 12px 30px rgb(6 26 58 / 8%);
+    width: 100%;
+    margin-top: 0.7rem;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .peerslate-home-page .ai-chip {
+    flex: 1 1 0;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
-    min-height: 2.35rem;
-    padding: 0 0.75rem;
+    min-height: 2.4rem;
+    padding: 0 0.55rem;
     color: var(--home-text);
     background: #ffffff;
     border: 1px solid #e8eef5;
     border-radius: 0.75rem;
     box-shadow: 0 4px 12px rgb(6 26 58 / 6%);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
     font-size: 0.8rem;
-    font-weight: 760;
+    font-weight: 700;
     white-space: nowrap;
+    cursor: pointer;
     transition: border-color 160ms ease, transform 160ms ease;
 }
 
@@ -9348,6 +9433,55 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .ai-chip:hover {
     border-color: var(--home-blue);
     transform: translateY(-1px);
+}
+
+/* Live AI answer (rendered by chatbot.js) restyled light for the homepage;
+   the shared .hero-ai-answer is dark-themed for the old hero. The
+   .hero-ai-panel ancestor lifts specificity above the slate-photo theme
+   rules (which otherwise force it dark and position:absolute). */
+.peerslate-home-page .hero-ai-panel .hero-ai-answer {
+    position: static;
+    width: auto;
+    height: auto;
+    max-height: 264px;
+    margin-top: 0.75rem;
+    overflow-y: auto;
+    color: var(--home-muted);
+    background: #ffffff;
+    border: 1px solid var(--home-border);
+    border-left: 3px solid var(--home-blue);
+    box-shadow: var(--home-shadow-md);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer.is-loading {
+    border-left-color: var(--home-teal);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer::before {
+    background: #ffffff;
+    border-top-color: var(--home-border);
+    border-left-color: var(--home-border);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer__question {
+    color: var(--home-blue);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer__response {
+    color: var(--home-text);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer__close {
+    color: var(--home-soft);
+    background: var(--home-bg-soft);
+    border-color: var(--home-border);
+}
+
+.peerslate-home-page .hero-ai-panel .hero-ai-answer__close:hover,
+.peerslate-home-page .hero-ai-panel .hero-ai-answer__close:focus-visible {
+    color: var(--home-blue);
+    background: var(--home-blue-faint);
+    border-color: var(--home-blue);
 }
 
 .peerslate-home-page .ps-section {
@@ -9370,9 +9504,10 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .ps-section-head h2 {
     color: var(--home-text);
     font-family: "Playfair Display", Georgia, serif;
-    font-size: clamp(1.9rem, 3vw, 2.75rem);
-    font-weight: 700;
-    line-height: 1.12;
+    /* Mockup section headline is ~32px medium-serif, not a 44px black. */
+    font-size: clamp(1.7rem, 2.5vw, 2.3rem);
+    font-weight: 600;
+    line-height: 1.15;
 }
 
 .peerslate-home-page .ps-features {
@@ -9381,8 +9516,8 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ps-feature {
-    min-height: 192px;
-    padding: 1.15rem;
+    min-height: 214px;
+    padding: 1.4rem 1.3rem 2.4rem;
     background: linear-gradient(180deg, #ffffff 0%, var(--home-surface-soft) 100%);
     border-color: var(--home-border-soft);
     border-radius: 1.25rem;
@@ -9390,24 +9525,32 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ps-feature__icon {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
+}
+
+.peerslate-home-page .ps-feature__icon svg {
+    width: 24px;
+    height: 24px;
 }
 
 .peerslate-home-page .ps-feature h3 {
     margin-top: 1.05rem;
     color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.04rem;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.1rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
     line-height: 1.25;
 }
 
+/* Mockup card copy is a comfortable ~15px on exactly three lines. */
 .peerslate-home-page .ps-feature p {
-    margin-top: 0.55rem;
+    margin-top: 0.6rem;
+    max-width: 15.5rem;
     color: var(--home-muted);
-    font-size: 0.82rem;
-    line-height: 1.55;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 
 .peerslate-home-page .ps-feature__arrow {
@@ -9450,17 +9593,27 @@ body[data-theme="paper-slate"] #chat-panel {
     box-shadow: var(--home-shadow-sm);
 }
 
-.peerslate-home-page .ps-step h3 {
-    color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 0.9rem;
-    font-weight: 700;
+/* Slightly larger step glyphs (was the shared 26px). */
+.peerslate-home-page .ps-step__icon svg {
+    width: 30px;
+    height: 30px;
 }
 
+.peerslate-home-page .ps-step h3 {
+    margin-bottom: 0.15rem;
+    color: var(--home-text);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* Narrower column + larger type so each step reads on three lines (mockup). */
 .peerslate-home-page .ps-step p {
+    max-width: 11rem;
     color: var(--home-muted);
-    font-size: 0.74rem;
-    line-height: 1.4;
+    font-size: 0.84rem;
+    line-height: 1.5;
 }
 
 .peerslate-home-page .ps-feed {
@@ -9477,8 +9630,8 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ps-feed-card {
-    min-height: 162px;
-    padding: 1rem;
+    min-height: 176px;
+    padding: 1.2rem 1.25rem;
     background: var(--home-surface);
     border-color: var(--home-border-soft);
     border-radius: 0.85rem;
@@ -9505,14 +9658,18 @@ body[data-theme="paper-slate"] #chat-panel {
 
 .peerslate-home-page .ps-feed-card h3 {
     color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 1rem;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.04rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
 }
 
 .peerslate-home-page .ps-feed-card > p {
+    margin-top: 0.5rem;
     color: var(--home-muted);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
+    line-height: 1.55;
 }
 
 .peerslate-home-page .ps-feed-card__foot {
@@ -9564,33 +9721,39 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ps-example {
-    gap: 1.35rem;
-    padding: 1.05rem 1.35rem;
+    gap: 1.75rem;
+    /* Roomier band with an evenly soft-blue wash (mockup), not a
+       half-white gradient that washed the right side out. */
+    padding: 1.65rem 2rem;
     background:
-        linear-gradient(135deg, rgb(239 246 255 / 82%), rgb(255 255 255 / 90%)),
+        linear-gradient(120deg, #e9f1fc, #eef5fd),
         var(--slate-noise);
-    border-color: var(--home-border-soft);
+    border-color: #d5e3f5;
     border-radius: 1.25rem;
     box-shadow: var(--home-shadow-sm);
 }
 
 .peerslate-home-page .ps-example img {
-    width: 62px;
-    height: 62px;
-    border-color: #ffffff;
+    width: 82px;
+    height: 82px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 12px rgb(6 26 58 / 10%);
 }
 
 .peerslate-home-page .ps-example__copy h2 {
+    margin: 0.4rem 0 0.5rem;
     color: var(--home-text);
     font-family: "Playfair Display", Georgia, serif;
-    font-size: clamp(1.55rem, 2.3vw, 1.95rem);
+    font-size: clamp(1.6rem, 2.3vw, 2rem);
     font-weight: 700;
     line-height: 1.1;
 }
 
 .peerslate-home-page .ps-example__copy p:last-child {
+    max-width: 34rem;
     color: var(--home-muted);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
 
 .peerslate-home-page .footer {

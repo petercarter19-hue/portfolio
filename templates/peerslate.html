@@ -116,18 +116,43 @@
                     <div class="preview-card preview-ghost preview-ghost-two" aria-hidden="true"></div>
                 </div>
 
-                {# The AI bar and chips stay as real links so the mockup remains interactive. #}
+                {# LIVE ask bar: this is a real form wired to the /api/chat
+                   endpoint. chatbot.js hooks any [data-hero-ai-search] form,
+                   sends the question to Flask, and renders the answer in
+                   [data-hero-ai-answer] below. The chips prefill + submit it. #}
                 <div class="hero-ai-panel">
-                    <a class="ai-bar" href="{{ portfolio_home_url }}#ask-pete">
-                        <span class="ai-bar-icon" aria-hidden="true">&#10022;</span>
-                        <span class="ai-bar-text">Ask this Slate anything...</span>
-                        <span class="ai-bar-action" aria-hidden="true">&rarr;</span>
-                    </a>
+                    <form class="home-ask" data-hero-ai-search aria-label="Ask Pete's Slate">
+                        <div class="ai-bar">
+                            <span class="ai-bar-icon" aria-hidden="true">&#10022;</span>
+                            <input
+                                id="home-ai-input"
+                                class="hero-ai-search__input"
+                                type="text"
+                                placeholder="Ask this Slate anything..."
+                                aria-label="Ask this Slate anything"
+                                autocomplete="off"
+                                maxlength="240"
+                            >
+                            <button class="ai-bar-action hero-ai-search__button" type="submit" aria-label="Ask">
+                                <span aria-hidden="true">&rarr;</span>
+                            </button>
+                        </div>
+                        <p class="hero-ai-search__status" data-hero-ai-status hidden>Answers use approved public portfolio evidence.</p>
+                        <div class="hero-ai-answer" data-hero-ai-answer aria-live="polite" hidden></div>
+                    </form>
                     <div class="ai-chip-row">
-                        <a class="ai-chip" href="{{ portfolio_home_url }}#ask-pete"><span class="ai-chip__icon" aria-hidden="true">&#9776;</span> Summarize</a>
-                        <a class="ai-chip" href="{{ portfolio_url('skills') }}"><span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Evidence</a>
-                        <a class="ai-chip" href="{{ portfolio_url('interview-me') }}"><span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Me</a>
-                        <a class="ai-chip" href="{{ portfolio_resume_url }}"><span class="ai-chip__icon" aria-hidden="true">&#9737;</span> Match to Role</a>
+                        <button type="button" class="ai-chip" data-ask-prefill="Give me a 60-second overview of Pete Carter.">
+                            <span class="ai-chip__icon" aria-hidden="true">&#9776;</span> Summarize
+                        </button>
+                        <button type="button" class="ai-chip" data-ask-prefill="What evidence supports Pete's systems-engineering experience?">
+                            <span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Evidence
+                        </button>
+                        <a class="ai-chip" href="{{ portfolio_url('interview-me') }}">
+                            <span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Me
+                        </a>
+                        <button type="button" class="ai-chip" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
+                            <span class="ai-chip__icon" aria-hidden="true">&#9737;</span> Match to Role
+                        </button>
                     </div>
                 </div>
             </div>
@@ -269,7 +294,9 @@
                     <p>Why great product outcomes come from clear decisions, not just fast ones.</p>
                     <div class="ps-feed-card__foot">
                         <span class="ps-mini-chip ps-mini-chip--violet">Product Leadership</span>
-                        <span class="ps-feed-card__bookmark" aria-hidden="true">&#9733;</span>
+                        <span class="ps-feed-card__bookmark" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        </span>
                     </div>
                 </article>
             </div>
@@ -301,4 +328,24 @@
     </section>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Quick-ask chips on the hero pill: prefill the live AI input and submit
+    // it, so each chip produces a real /api/chat answer (chatbot.js handles
+    // the request + rendering). "Interview Me" is a plain link, so skip it.
+    (function () {
+        var input = document.getElementById('home-ai-input');
+        var form = document.querySelector('.hero-ai-panel [data-hero-ai-search]');
+        if (!input || !form) { return; }
+        document.querySelectorAll('.hero-ai-panel [data-ask-prefill]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                input.value = chip.dataset.askPrefill;
+                input.focus();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            });
+        });
+    })();
+</script>
 {% endblock %}
