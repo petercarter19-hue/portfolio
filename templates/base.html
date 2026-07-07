@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=feed-mockups-2"
+        href="{{ url_for('static', filename='css/style.css') }}?v=iv-revamp-1"
     >
     <link
         rel="stylesheet"
@@ -158,12 +158,11 @@
                        theme-preview.js opens/closes it and still reads
                        data-theme-option from the swatch rows. #}
                     <div class="theme-menu">
-                        <button class="theme-menu__btn" type="button" id="theme-menu-btn" aria-haspopup="true" aria-expanded="false">
+                        <button class="theme-menu__btn" type="button" id="theme-menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Theme" title="Theme">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <circle cx="12" cy="12" r="4"/>
                                 <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>
                             </svg>
-                            Theme
                         </button>
                         {# Two themes for now: the clean Light look (the new
                            default, applied via the slate-light class) and one

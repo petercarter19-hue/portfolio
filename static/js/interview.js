@@ -29,7 +29,6 @@
     const questionEl = document.getElementById('iv-question');
     const counterEl = document.getElementById('iv-counter');
     const topicChip = document.getElementById('iv-topic-chip');
-    const modeChip = document.getElementById('iv-mode-chip');
     const answerEl = document.getElementById('iv-answer');
     const countEl = document.getElementById('iv-count');
     const feedbackEl = document.getElementById('iv-feedback');
@@ -37,28 +36,40 @@
     const scoreNum = document.getElementById('iv-score-num');
     const scoreTier = document.getElementById('iv-score-tier');
     const sessionEl = document.getElementById('iv-session');
-    const suggestedEl = document.getElementById('iv-suggested');
-    const modeButtons = Array.from(document.querySelectorAll('.iv-mode'));
+    const levelButtons = Array.from(document.querySelectorAll('#iv-levels .iv-mode'));
+    const typeButtons = Array.from(document.querySelectorAll('.iv-type'));
     const evidenceCard = document.getElementById('iv-evidence');
     const evidenceToggle = document.getElementById('iv-evidence-toggle');
 
     // ---------- State ----------
-    let mode = 'star';                  // star | behavioral | leadership | mixed
+    // TWO independent selectors now:
+    //   type  = the question TYPE (STAR vs Behavioral) — the question card toggle.
+    //   level = the experience track (Entry/Experienced/Management/Leadership/Mixed)
+    //           — the top bar. Full level-tagging is a future feature; for now
+    //           Leadership/Management narrow to matching topics, the rest use the
+    //           whole type pool.
+    let type = 'star';                  // star | behavioral
+    let level = 'mixed';                // entry | experienced | management | leadership | mixed
     let current = null;                 // current question object
     let history = [];                   // visited questions (for the back arrow)
     let asked = 0;                      // question number shown in the counter
     let session = { answered: 0, totalScore: 0 };
     let mockMode = false;
     let busy = false;
+    let aiDirection = false;            // false = "Interview Me", true = "Interview the AI"
 
     function pool() {
-        if (mode === 'star' || mode === 'behavioral') {
-            return bank.filter(function (q) { return q.mode === mode; });
+        const byType = bank.filter(function (q) { return q.mode === type; });
+        if (level === 'leadership') {
+            const led = byType.filter(function (q) { return q.topic === 'Leadership'; });
+            if (led.length) { return led; }
+        } else if (level === 'management') {
+            const mgmt = byType.filter(function (q) {
+                return ['Leadership', 'Decisions', 'Accountability'].indexOf(q.topic) !== -1;
+            });
+            if (mgmt.length) { return mgmt; }
         }
-        if (mode === 'leadership') {
-            return bank.filter(function (q) { return q.topic === 'Leadership'; });
-        }
-        return bank; // mixed
+        return byType; // entry / experienced / mixed → whole type pool (for now)
     }
 
     function pickQuestion() {
@@ -75,7 +86,9 @@
         asked += 1;
         questionEl.textContent = q.text;
         topicChip.textContent = q.topic;
-        modeChip.textContent = q.mode === 'star' ? 'STAR' : 'Behavioral';
+        // Keep the type toggle in sync with the shown question's type.
+        type = q.mode;
+        typeButtons.forEach(function (b) { b.classList.toggle('is-active', b.dataset.type === type); });
         counterEl.textContent = mockMode
             ? 'Mock interview · question ' + (session.answered + 1)
             : 'Question ' + asked;
@@ -143,11 +156,28 @@
     }
 
     function clearFeedback() {
-        feedbackEl.innerHTML = '<p class="iv-feedback__empty">Answer the question above and press <strong>Get Feedback</strong> — the coach reviews your draft against Pete’s slate and scores it.</p>';
+        // Direction-aware: in "Interview the AI" mode the feedback card is the
+        // "why this answer works" panel, and a new question makes any prior
+        // model answer stale — so reset both cards.
+        const fTitle = document.getElementById('iv-feedback-title');
+        const fSub = document.getElementById('iv-feedback-subtitle');
+        const aiAnswer = document.getElementById('iv-askai-answer');
+        if (aiDirection) {
+            if (fTitle) { fTitle.textContent = 'Why This Answer Works'; }
+            if (fSub) { fSub.textContent = 'What makes it strong'; }
+            feedbackEl.innerHTML = '<p class="iv-feedback__empty">Get a model answer above, then the coach breaks down <strong>why it works</strong>.</p>';
+            if (aiAnswer) {
+                aiAnswer.innerHTML = '<p class="iv-feedback__empty">Pick any question above — or type your own — and the AI answers it the way Pete would: first person, STAR-shaped, with real metrics from his slate. Then compare it against your answer.</p>';
+            }
+        } else {
+            if (fTitle) { fTitle.textContent = 'Interview Coach Feedback'; }
+            if (fSub) { fSub.textContent = 'Overall Answer Quality'; }
+            feedbackEl.innerHTML = '<p class="iv-feedback__empty">Answer the question above and press <strong>Get Feedback</strong> — the coach reviews your draft against Pete’s slate and scores it.</p>';
+        }
         scoreEl.style.setProperty('--p', 0);
         scoreEl.setAttribute('aria-label', 'No score yet');
         scoreNum.textContent = '–';
-        scoreTier.textContent = 'Not rated';
+        scoreTier.textContent = aiDirection ? 'Model' : 'Not rated';
         const nextBtn = document.getElementById('iv-mock-next');
         if (nextBtn) { nextBtn.remove(); }
     }
@@ -288,37 +318,22 @@
         recordBtn.lastChild.textContent = ' Stop Recording';
     }
 
-    // ---------- Suggested questions ----------
-    function renderSuggestions() {
-        const picks = [];
-        const source = pool();
-        while (picks.length < 3 && picks.length < source.length) {
-            const q = source[Math.floor(Math.random() * source.length)];
-            if (picks.indexOf(q) === -1 && q !== current) { picks.push(q); }
-        }
-        suggestedEl.textContent = '';
-        picks.forEach(function (q) {
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'iv-suggested__item';
-            card.innerHTML = '<span></span><em></em>';
-            card.querySelector('span').textContent = q.text;
-            card.querySelector('em').textContent = q.topic;
-            card.addEventListener('click', function () {
-                showQuestion(q);
-                document.querySelector('.iv-question-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-            suggestedEl.appendChild(card);
-        });
-    }
-
     // ---------- Wiring ----------
-    modeButtons.forEach(function (btn) {
+    // Top category bar (experience level).
+    levelButtons.forEach(function (btn) {
         btn.addEventListener('click', function () {
-            mode = btn.dataset.mode;
-            modeButtons.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+            level = btn.dataset.level;
+            levelButtons.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
             showQuestion(pickQuestion());
-            renderSuggestions();
+        });
+    });
+
+    // Question-type toggle on the question card (STAR vs Behavioral).
+    typeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            type = btn.dataset.type;
+            typeButtons.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+            showQuestion(pickQuestion());
         });
     });
 
@@ -344,7 +359,6 @@
     document.getElementById('iv-save').addEventListener('click', saveDraft);
     document.getElementById('iv-feedback-btn').addEventListener('click', getFeedback);
     document.getElementById('iv-sample').addEventListener('click', getSample);
-    document.getElementById('iv-shuffle').addEventListener('click', renderSuggestions);
     recordBtn.addEventListener('click', toggleRecording);
     answerEl.addEventListener('input', updateCount);
 
@@ -359,17 +373,6 @@
 
     evidenceToggle.addEventListener('change', function () {
         evidenceCard.hidden = !evidenceToggle.checked;
-    });
-
-    // Question-bank items load straight into the studio.
-    bank.forEach(function (q) {
-        q.el.addEventListener('click', function () {
-            mode = 'mixed';
-            modeButtons.forEach(function (b) { b.classList.toggle('is-active', b.dataset.mode === 'mixed'); });
-            showQuestion(q);
-            document.querySelector('.iv-question-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            answerEl.focus();
-        });
     });
 
     // ---------- Interview direction: "Interview Me" vs "Interview the AI" ----------
@@ -387,9 +390,9 @@
     const askaiAnswer = document.getElementById('iv-askai-answer');
     const responseCard = document.querySelector('.iv-response-card');
     const feedbackCard = document.getElementById('iv-feedback-card');
-    const mockSection = document.querySelector('.iv-mock');
-
-    let aiDirection = false;
+    const feedbackTitle = document.getElementById('iv-feedback-title');
+    const feedbackSubtitle = document.getElementById('iv-feedback-subtitle');
+    const mockbar = document.getElementById('iv-mockbar');
 
     function setDirection(ai) {
         aiDirection = ai;
@@ -399,12 +402,16 @@
         dirMeBtn.setAttribute('aria-selected', String(!ai));
         dirAiBtn.setAttribute('aria-selected', String(ai));
 
-        // Swap which cards the studio shows. The question card stays for
-        // both directions — it feeds whichever side is answering.
+        // Swap which cards the studio shows. The question card and the coach
+        // feedback card stay for BOTH directions — in "Interview Me" the
+        // feedback scores YOUR answer; in "Interview the AI" it sits below the
+        // model answer and explains why that answer works.
         askaiCard.hidden = !ai;
         responseCard.hidden = ai;
-        feedbackCard.hidden = ai;
-        if (mockSection) { mockSection.hidden = ai; }
+        if (mockbar) { mockbar.hidden = ai; }
+        // no scoring session in AI mode
+        sessionEl.hidden = ai;
+        clearFeedback();
     }
 
     if (dirMeBtn && dirAiBtn && askaiCard) {
@@ -419,11 +426,32 @@
             p.textContent = part.trim();
             if (p.textContent) { askaiAnswer.appendChild(p); }
         });
-
         const note = document.createElement('p');
         note.className = 'iv-askai__note';
         note.textContent = 'Model answer grounded in Pete’s approved slate evidence.';
         askaiAnswer.appendChild(note);
+    }
+
+    // In AI mode, fill the coach feedback card with "why this answer works".
+    function renderWhyItWorks(whyText) {
+        feedbackTitle.textContent = 'Why This Answer Works';
+        feedbackSubtitle.textContent = 'What makes it strong';
+        feedbackEl.innerHTML = '';
+        // The model returns one reason per line — render each as its own
+        // checked point so "why it works" reads as distinct takeaways.
+        whyText.split(/\n+/).forEach(function (part) {
+            const clean = part.replace(/^[-•*\d.)\s]+/, '').trim();
+            if (!clean) { return; }
+            const p = document.createElement('p');
+            p.className = 'iv-why__point';
+            p.textContent = clean;
+            feedbackEl.appendChild(p);
+        });
+        // A model answer is, by design, a strong one — show it as such.
+        scoreEl.style.setProperty('--p', 95);
+        scoreEl.setAttribute('aria-label', 'Model answer — strong example');
+        scoreNum.textContent = '95';
+        scoreTier.textContent = 'Strong';
     }
 
     function getModelAnswer() {
@@ -438,19 +466,29 @@
         askaiBtn.textContent = 'Thinking…';
         askaiAnswer.innerHTML =
             '<p class="iv-feedback__empty">Building a model answer from Pete’s career history and slate evidence…</p>';
+        feedbackEl.innerHTML = '<p class="iv-feedback__empty">The coach will break down why it works…</p>';
 
-        // The wording deliberately names Pete's career history, accomplishments,
-        // and skills evidence — those cues route the server's knowledge picker
-        // to the files a strong interview answer needs.
+        // One call returns BOTH the model answer and the "why it works"
+        // breakdown, split on the ---WHY--- delimiter. The wording names
+        // Pete's career history, accomplishments, and skills evidence so the
+        // server's knowledge picker pulls the right files.
         const prompt =
             'Answer this interview question with a model answer, speaking in first person as Pete Carter. ' +
             'Ground every claim in Pete’s real career history, accomplishments, and skills evidence — do not invent anything. ' +
             'Use a STAR shape (situation, task, action, result) in two short plain-text paragraphs, about 150 words total, ' +
-            'and include one or two concrete metrics. Interview question: "' + question + '"';
+            'and include one or two concrete metrics. ' +
+            'Then on a new line write exactly: ---WHY--- ' +
+            'Then give 2 or 3 short plain-text sentences (one per line) explaining why this is a strong interview answer — ' +
+            'name the STAR structure, the specific metrics, and the clear ownership. ' +
+            'Interview question: "' + question + '"';
 
         askCoach(prompt)
-            .then(function (text) {
-                renderModelAnswer(text);
+            .then(function (reply) {
+                const parts = reply.split(/---\s*WHY\s*---/i);
+                renderModelAnswer(parts[0] || reply);
+                if (parts[1] && parts[1].trim()) {
+                    renderWhyItWorks(parts[1]);
+                }
             })
             .catch(function (error) {
                 askaiAnswer.innerHTML = '';
@@ -479,5 +517,4 @@
     // ---------- Boot ----------
     asked = 0;
     showQuestion(pool()[0]);
-    renderSuggestions();
 })();
