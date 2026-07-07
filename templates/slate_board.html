@@ -20,9 +20,10 @@
 {% block meta_description %}Pete Carter's Slate Board: live goals, progress, badges, and the wins he chooses to share publicly.{% endblock %}
 
 {% block extra_head %}
-<!-- Caveat: the mockup whiteboard handwriting (light marker print). -->
+<!-- Kalam: legible print-style marker handwriting for the whiteboard ink
+     (the original board look — readable printing, deliberately NOT cursive). -->
 <link
-    href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap"
     rel="stylesheet"
 >
 {% endblock %}
@@ -102,62 +103,88 @@
         </div>
 
         <!-- ============ MY WHITEBOARD ============ -->
-        <section class="whiteboard ps-card" id="bd-whiteboard" aria-labelledby="board-wall-title">
+        {# Original single-whiteboard design (restored): a "Chalk it up"
+           compose bar to enter information, then ONE physical whiteboard
+           (silver frame, four dashed-quartered sections, marker tray). #}
+        <section class="board-whiteboard" id="bd-whiteboard" aria-labelledby="board-wall-title">
             <div class="whiteboard__head">
                 <div>
                     <h2 id="board-wall-title">My Whiteboard</h2>
-                    <p>Big picture thinking. Organized chaos.</p>
+                    <p>Big picture thinking. Organized chaos &mdash; every line links to its card.</p>
                 </div>
-                <button class="ps-btn ps-btn--ghost" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
-                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M14 4l6 6-10 10H4v-6z"/></svg>
-                    Edit Whiteboard
-                </button>
             </div>
 
-            <div class="whiteboard__surface">
-                <section class="wb-section" aria-label="Short Term">
-                    <h3 class="wb-heading wb-heading--blue">Short Term</h3>
-                    <ul class="wb-list">
-                        <li style="--i: 0;"><a class="wb-ink wb-ink--blue" href="#goal-pmp">Renew PMP &mdash; 39 of 60 PDUs</a></li>
-                        <li style="--i: 1;"><a class="wb-ink wb-ink--blue" href="#goal-run">Hit 400 miles by October</a></li>
-                        <li style="--i: 2;"><a class="wb-ink wb-ink--blue" href="#entry-draft">Publish the home-lab write-up</a></li>
-                        <li style="--i: 3;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_work_url }}">Automate the Cameo reporting pipeline</a></li>
-                    </ul>
-                    <p class="wb-note wb-note--blue"><span aria-hidden="true">&#9733;</span> Focus fuels momentum.</p>
-                </section>
+            <div class="board-compose" aria-label="Add to the board (preview)">
+                <label class="board-compose__label" for="board-compose-input">Chalk it up</label>
+                <textarea
+                    id="board-compose-input"
+                    class="board-compose__input"
+                    rows="2"
+                    placeholder="A win, a milestone, a thought worth keeping..."
+                ></textarea>
+                <div class="board-compose__actions">
+                    <button class="ps-btn ps-btn--ghost board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Save Draft</button>
+                    <button class="ps-btn ps-btn--ghost board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Keep Private</button>
+                    <button class="ps-btn ps-btn--primary board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Publish</button>
+                </div>
+                <p class="board-compose__note">
+                    Preview &mdash; every entry can stay a draft, live privately on your board, or
+                    publish to your site and the PeerSlate feed. Published goals ink onto the
+                    whiteboard below and become cards automatically.
+                </p>
+            </div>
 
-                <section class="wb-section" aria-label="Long Term">
-                    <h3 class="wb-heading wb-heading--violet">Long Term</h3>
-                    <ul class="wb-list">
-                        <li style="--i: 1;"><a class="wb-ink wb-ink--violet" href="#goal-phd">Ph.D. &mdash; January 2027</a></li>
-                        <li style="--i: 2;"><a class="wb-ink wb-ink--violet" href="{{ peerslate_home_url }}">Grow PeerSlate</a></li>
-                        <li style="--i: 3;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">Requirements Traceability Platform</a></li>
-                        <li style="--i: 4;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">AI Requirements Reviewer</a></li>
-                    </ul>
-                    <p class="wb-note wb-note--green"><span aria-hidden="true">&#9813;</span> Build once. Improve forever.</p>
-                </section>
+            <div class="whiteboard">
+                <div class="whiteboard__surface">
+                    <section class="wb-section" aria-label="Short Term">
+                        <h3 class="wb-heading wb-heading--green">Short Term</h3>
+                        <ul class="wb-list">
+                            <li style="--i: 0;"><a class="wb-ink wb-ink--green" href="#goal-pmp">Renew PMP &mdash; 39 of 60 PDUs</a></li>
+                            <li style="--i: 1;"><a class="wb-ink wb-ink--green" href="#goal-run">Hit 400 miles by October</a></li>
+                            <li style="--i: 2;"><a class="wb-ink wb-ink--green" href="#entry-draft">Publish the home-lab write-up</a></li>
+                            <li style="--i: 3;"><a class="wb-ink wb-ink--green" href="{{ portfolio_work_url }}">Automate the Cameo reporting pipeline</a></li>
+                        </ul>
+                    </section>
 
-                <section class="wb-section" aria-label="Projects">
-                    <h3 class="wb-heading wb-heading--purple">Projects</h3>
-                    <ul class="wb-list">
-                        <li style="--i: 2;"><a class="wb-ink wb-ink--purple" href="#goal-homeops">Home Ops Dashboard v2</a></li>
-                        <li style="--i: 3;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_work_url }}">Data Model Refactor</a></li>
-                        <li style="--i: 4;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_work_url }}">Customer Case Study Library</a></li>
-                        <li style="--i: 5;"><a class="wb-ink wb-ink--purple" href="{{ portfolio_url('interview-me') }}">Launch Interview Me Public Beta</a></li>
-                    </ul>
-                    <p class="wb-note wb-note--violet"><span aria-hidden="true">&#128640;</span> Ship small, learn fast.</p>
-                </section>
+                    <section class="wb-section" aria-label="Long Term">
+                        <h3 class="wb-heading wb-heading--violet">Long Term</h3>
+                        <ul class="wb-list">
+                            <li style="--i: 1;"><a class="wb-ink wb-ink--violet" href="#goal-phd">Ph.D. &mdash; January 2027</a></li>
+                            <li style="--i: 2;"><a class="wb-ink wb-ink--violet" href="{{ peerslate_home_url }}">Grow PeerSlate</a></li>
+                            <li style="--i: 3;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">Requirements Traceability Platform</a></li>
+                            <li style="--i: 4;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_work_url }}">AI Requirements Reviewer</a></li>
+                        </ul>
+                    </section>
 
-                <section class="wb-section" aria-label="Work">
-                    <h3 class="wb-heading wb-heading--orange">Work</h3>
-                    <ul class="wb-list">
-                        <li style="--i: 3;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_story_url }}">Mentor two new engineers</a></li>
-                        <li style="--i: 4;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_resume_url }}">Quarterly roadmap alignment</a></li>
-                        <li style="--i: 5;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_resume_url }}">Peer review requirements</a></li>
-                        <li style="--i: 6;"><a class="wb-ink wb-ink--orange" href="{{ portfolio_contact_url }}">Stakeholder syncs</a></li>
-                    </ul>
-                    <p class="wb-note wb-note--orange"><span aria-hidden="true">&#10084;</span> Make impact. Help people.</p>
-                </section>
+                    <section class="wb-section" aria-label="Projects">
+                        <h3 class="wb-heading wb-heading--blue">Projects</h3>
+                        <ul class="wb-list">
+                            <li style="--i: 2;"><a class="wb-ink wb-ink--blue" href="#goal-homeops">Home Ops Dashboard v2</a></li>
+                            <li style="--i: 3;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_work_url }}">Data Model Refactor</a></li>
+                            <li style="--i: 4;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_work_url }}">Customer Case Study Library</a></li>
+                            <li style="--i: 5;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_url('interview-me') }}">Launch Interview Me Public Beta</a></li>
+                        </ul>
+                    </section>
+
+                    <section class="wb-section" aria-label="Work">
+                        <h3 class="wb-heading wb-heading--red">Work</h3>
+                        <ul class="wb-list">
+                            <li style="--i: 3;"><a class="wb-ink wb-ink--red" href="{{ portfolio_story_url }}">Mentor two new engineers</a></li>
+                            <li style="--i: 4;"><a class="wb-ink wb-ink--red" href="{{ portfolio_resume_url }}">Quarterly roadmap alignment</a></li>
+                            <li style="--i: 5;"><a class="wb-ink wb-ink--red" href="{{ portfolio_resume_url }}">Peer review requirements</a></li>
+                            <li style="--i: 6;"><a class="wb-ink wb-ink--red" href="{{ portfolio_contact_url }}">Stakeholder syncs</a></li>
+                        </ul>
+                    </section>
+                </div>
+
+                {# Marker tray: one marker per ink color, plus the eraser. #}
+                <div class="whiteboard__tray" aria-hidden="true">
+                    <span class="wb-marker wb-marker--green"></span>
+                    <span class="wb-marker wb-marker--blue"></span>
+                    <span class="wb-marker wb-marker--violet"></span>
+                    <span class="wb-marker wb-marker--red"></span>
+                    <span class="wb-eraser"></span>
+                </div>
             </div>
         </section>
 

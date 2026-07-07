@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=slate-light-6"
+        href="{{ url_for('static', filename='css/style.css') }}?v=slate-light-8"
     >
     <link
         rel="stylesheet"
@@ -105,14 +105,12 @@
             <div class="site-container platform-nav__inner">
                 <div class="platform-brand">
                     <a class="platform-brand__logo" href="{{ peerslate_home_url }}" aria-label="{{ platform_brand_name }} home">
-                        {# Stacked-diamond mark drawn inline so it recolors
-                           with every theme, + serif wordmark per mockup. #}
-                        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 2.5L21 7.5L12 12.5L3 7.5Z"/>
-                            <path d="M5.4 11.2L3 12.5L12 17.5L21 12.5L18.6 11.2L12 14.9Z"/>
-                            <path d="M5.4 16.2L3 17.5L12 22.5L21 17.5L18.6 16.2L12 19.9Z"/>
-                        </svg>
-                        <span class="brand-word">Peer<em>Slate</em></span>
+                        {# Previous PeerSlate logo lockup (metallic S-mark +
+                           wordmark), restored in place of the inline mark. #}
+                        <img
+                            src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
+                            alt="{{ platform_brand_name }}"
+                        >
                     </a>
                 </div>
 

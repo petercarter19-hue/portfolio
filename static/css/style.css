@@ -4457,6 +4457,20 @@ body[data-slate="on"]::before {
     gap: 9px;
 }
 
+/* Restored PeerSlate logo lockup (metallic S-mark + wordmark). It's a
+   silver/blue image, so it's darkened to read on the light chrome; the
+   Dark Slate theme shows it as-is on the dark page. */
+.platform-brand__logo img {
+    display: block;
+    height: 34px;
+    width: auto;
+    filter: brightness(0.32) contrast(1.14);
+}
+
+body[data-theme="gray-slate"] .platform-brand__logo img {
+    filter: drop-shadow(0 2px 5px rgb(0 0 0 / 45%));
+}
+
 .brand-mark {
     width: 27px;
     height: 27px;
@@ -7013,9 +7027,21 @@ body[data-theme="paper-slate"] #chat-panel {
    marker tray. Deliberately FIXED light colors on every theme — it's a
    physical object hanging on the slate, not a themed panel. Content
    scrolls inside once it outgrows the board. */
+/* Section wrapper: heading, compose bar, then the physical board. */
+.board-whiteboard {
+    margin-top: 42px;
+}
+
 .whiteboard {
-    margin-top: 22px;
-    padding: 22px 26px 26px;
+    margin-top: 20px;
+    padding: 10px;
+    background: linear-gradient(180deg, #e8ebee, #cdd3d9);
+    border: 1px solid #b9c1c8;
+    border-radius: 18px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 70%),
+        0 4px 8px rgb(0 0 0 / 18%),
+        0 26px 50px rgb(0 0 0 / 22%);
 }
 
 .whiteboard__head {
@@ -7041,29 +7067,31 @@ body[data-theme="paper-slate"] #chat-panel {
 
 .whiteboard__surface {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    max-height: 520px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 470px;
     overflow-y: auto;
     scrollbar-width: thin;
+    border-radius: 10px;
+    background:
+        radial-gradient(ellipse at 18% 8%, rgb(122 138 152 / 5%), transparent 40%),
+        radial-gradient(ellipse at 78% 85%, rgb(122 138 152 / 7%), transparent 45%),
+        linear-gradient(158deg, #ffffff 0%, #fafbfc 55%, #f1f3f5 100%);
+    box-shadow:
+        inset 0 2px 10px rgb(90 104 116 / 12%),
+        inset 0 -2px 8px rgb(255 255 255 / 60%);
 }
 
-/* Up to four user-named sections, quartered by dashed marker rules. */
+/* Four user-named sections, quartered by dashed marker rules. */
 .wb-section {
-    display: flex;
-    flex-direction: column;
-    padding: 6px 20px 10px;
+    padding: 22px 26px 26px;
 }
 
-.wb-section:first-child {
-    padding-left: 4px;
+.wb-section:nth-child(odd) {
+    border-right: 1.5px dashed rgb(96 110 122 / 24%);
 }
 
-.wb-note {
-    margin-top: auto;
-}
-
-.wb-section + .wb-section {
-    border-left: 1px solid var(--border);
+.wb-section:nth-child(-n+2) {
+    border-bottom: 1.5px dashed rgb(96 110 122 / 24%);
 }
 
 /* Kalam = legible print handwriting (marker printing, not cursive). */
@@ -7072,7 +7100,7 @@ body[data-theme="paper-slate"] #chat-panel {
     margin-bottom: 12px;
     padding-bottom: 1px;
     border-bottom: 3px solid currentColor;
-    font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+    font-family: "Kalam", "Segoe Print", "Comic Sans MS", cursive;
     font-size: 1.16rem;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -7107,7 +7135,7 @@ body[data-theme="paper-slate"] #chat-panel {
    draws itself in on hover, like running the marker under the words. */
 .wb-ink {
     display: inline-block;
-    font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+    font-family: "Kalam", "Segoe Print", "Comic Sans MS", cursive;
     font-size: 1.06rem;
     line-height: 1.35;
     background-image: linear-gradient(currentColor, currentColor);
@@ -7117,10 +7145,8 @@ body[data-theme="paper-slate"] #chat-panel {
     transition: background-size 240ms ease;
 }
 
-/* Little unchecked circles, like goals waiting to be crossed off. */
 .wb-ink::before {
-    content: "\25CB\00a0\00a0";
-    font-size: 0.85em;
+    content: "\2013\00a0";
 }
 
 .wb-ink:hover,
@@ -9929,6 +9955,124 @@ body[data-theme="paper-slate"] #chat-panel {
     }
 }
 
+/* =========================================================
+   DARK SLATE homepage — when the site's Dark Slate theme is active, the
+   homepage should match the rest of the dark pages instead of staying light.
+   Gated on [data-theme="gray-slate"] (not data-slate-photo) so light-theme
+   visitors never get a dark flash. Most of the homepage is driven by the
+   --home-* vars, so darkening those + the few hardcoded white surfaces flips
+   the whole page.
+   ========================================================= */
+body.peerslate-home-page[data-theme="gray-slate"] {
+    --home-bg: #10171f;
+    --home-bg-soft: #18212c;
+    --home-surface: rgb(30 40 52 / 94%);
+    --home-surface-solid: #1c2734;
+    --home-surface-soft: #202c3a;
+    --home-text: #e9eef4;
+    --home-muted: #a6b5c6;
+    --home-soft: #8394a6;
+    --home-border: #2d3c4d;
+    --home-border-soft: #263340;
+    --home-blue: #4f90f2;
+    --home-blue-hover: #67a2ff;
+    --home-blue-faint: rgb(79 144 242 / 14%);
+    --home-navy: #0b1522;
+    --home-navy-2: #12233c;
+    --home-shadow-sm: 0 4px 12px rgb(0 0 0 / 32%);
+    --home-shadow-md: 0 14px 30px rgb(0 0 0 / 40%);
+    --home-shadow-lg: 0 24px 64px rgb(0 0 0 / 52%);
+    --home-shadow-blue: 0 10px 24px rgb(20 60 140 / 42%);
+    --button-primary-bg: #2f6fe0;
+    --button-primary-text: #ffffff;
+}
+
+/* Page background → the theme's stone photo, like every other dark page. */
+body.peerslate-home-page[data-theme="gray-slate"] .ps-home::before {
+    background-image: var(--slate-photo);
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+}
+
+body.peerslate-home-page[data-theme="gray-slate"] .ps-hero {
+    background: linear-gradient(180deg, rgb(8 14 22 / 45%), transparent 72%);
+}
+
+/* Header + wordmark */
+body.peerslate-home-page[data-theme="gray-slate"] .global-header {
+    background: rgb(12 18 26 / 90%);
+    border-bottom-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .brand-word { color: var(--home-text); }
+body.peerslate-home-page[data-theme="gray-slate"] .brand-mark { fill: var(--home-text); }
+body.peerslate-home-page[data-theme="gray-slate"] .platform-nav__links a { color: var(--home-text); }
+body.peerslate-home-page[data-theme="gray-slate"] .theme-menu__btn {
+    color: var(--home-text);
+    background: rgb(255 255 255 / 8%);
+    border-color: var(--home-border);
+}
+
+/* Hero keyword underline needs to be light on the dark page. */
+body.peerslate-home-page[data-theme="gray-slate"] .ps-underline {
+    background-image: linear-gradient(rgb(233 238 244 / 40%), rgb(233 238 244 / 40%));
+}
+
+/* Cards / surfaces that were hardcoded white. */
+body.peerslate-home-page[data-theme="gray-slate"] .preview-card,
+body.peerslate-home-page[data-theme="gray-slate"] .preview-main {
+    background: var(--home-surface-solid);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .preview-ghost { background: var(--home-surface-solid); }
+body.peerslate-home-page[data-theme="gray-slate"] .preview-main__metrics {
+    background: var(--home-surface-soft);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .preview-main__chips span {
+    background: rgb(255 255 255 / 6%);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ps-feature {
+    background: linear-gradient(180deg, var(--home-surface-solid), var(--home-surface-soft));
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ps-step__icon {
+    background: var(--home-surface-solid);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ps-feed-card {
+    background: var(--home-surface-solid);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ps-example {
+    background: var(--home-surface-solid);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ai-chip {
+    color: var(--home-text);
+    background: var(--home-surface-solid);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .ai-chip__icon { color: var(--home-muted); }
+/* The ask-bar go button becomes a light circle on the dark pill. */
+body.peerslate-home-page[data-theme="gray-slate"] .ai-bar .ai-bar-action {
+    color: var(--home-navy);
+    background: var(--home-text);
+}
+
+/* Ghost button (See How It Works) + Sign In: hardcoded white → dark. */
+body.peerslate-home-page[data-theme="gray-slate"] .ps-btn--ghost {
+    color: var(--home-text);
+    background: rgb(255 255 255 / 6%);
+    border-color: var(--home-border);
+}
+body.peerslate-home-page[data-theme="gray-slate"] .sign-in-btn {
+    color: var(--home-text);
+    background: rgb(255 255 255 / 8%);
+    border: 1px solid var(--home-border);
+}
+
 /* ---------- OVERVIEW (mockup profile page) ---------- */
 .ps-ov {
     padding: 26px 0 70px;
@@ -11162,6 +11306,10 @@ body.slate-light {
     --accent-soft: rgb(11 99 229 / 8%);
     --shadow: 0 12px 30px rgb(6 26 58 / 8%);
     --tab-active: #0b63e5;
+    /* Primary buttons are blue on the Light theme (the shared default was a
+       leftover gold from the old theme). */
+    --button-primary-bg: #0b63e5;
+    --button-primary-text: #ffffff;
     --askbar-bg: linear-gradient(135deg, #0b1f3f, #16305e);
     /* The overview mockup uses Source Serif 4 (moderate-contrast humanist
        serif), NOT the homepage's Playfair — Playfair read far too thick /
