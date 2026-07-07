@@ -197,6 +197,14 @@ def build_knowledge_context(user_message):
 
     if any(word in question for word in ['skill', 'tool', 'technology', 'mbse', 'cameo', 'doors', 'sysml', 'jira', 'python', 'ai', 'automation']):
         selected_files.append('technical_skills.md')
+        selected_files.append('skills_evidence.md')
+
+    # "How many instances of leadership...", "how is that backed up", etc. —
+    # route to the evidence-count summary so the numbers on the skill badges
+    # can be verified and supported with examples.
+    if any(word in question for word in ['how many', 'how much', 'instances', 'number of', 'evidence', 'backed', 'verify', 'count', 'leadership', 'project management', 'sustainment', 'requirements']):
+        selected_files.append('skills_evidence.md')
+        selected_files.append('accomplishments.md')
 
     if any(word in question for word in ['certification', 'certifications', 'degree', 'education', 'school', 'pmp', 'phd', 'award', 'accomplishment']):
         selected_files.append('accomplishments.md')

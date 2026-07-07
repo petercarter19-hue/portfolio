@@ -9934,6 +9934,16 @@ body[data-theme="paper-slate"] #chat-panel {
     padding: 26px 0 70px;
 }
 
+/* Metric cards + ask bar sit between the profile band and the tab strip
+   (mockup). Small gaps above (from the band card) and below (to the tabs). */
+.ps-ov-preface {
+    padding: 20px 0 2px;
+}
+
+body.slate-light .ps-ov {
+    padding-top: 22px;
+}
+
 .ps-ov-metrics {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -9941,6 +9951,12 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .ps-metric {
+    /* Mockup: pastel circle icon + big value share the top row, then the
+       title and description span full width below. */
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 14px;
     padding: 18px 20px;
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     border: 1px solid var(--border);
@@ -9949,11 +9965,13 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .ps-metric__icon {
+    grid-column: 1;
+    grid-row: 1;
     display: grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
 }
 
 .ps-metric__icon svg {
@@ -9967,24 +9985,29 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .ps-metric strong {
-    display: block;
-    margin-top: 12px;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
     color: var(--text);
     font-family: var(--font-serif);
-    font-size: 1.75rem;
+    font-size: 1.85rem;
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1;
 }
 
 .ps-metric h3 {
-    margin-top: 6px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 14px;
     color: var(--text);
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 700;
 }
 
 .ps-metric p {
+    grid-column: 1 / -1;
+    grid-row: 3;
     margin-top: 4px;
     color: var(--text-muted);
     font-size: 0.78rem;
@@ -10147,14 +10170,16 @@ body[data-slate="on"] .ps-askbar .hero-ai-search__box {
 .ps-skills a {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 11px;
+    padding: 10px 15px;
     color: var(--text);
     background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 0.85rem;
-    font-weight: 650;
+    border-radius: 12px;
+    font-family: var(--font-serif);
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.2;
     transition: border-color 160ms ease, transform 160ms ease;
 }
 
@@ -10163,16 +10188,42 @@ body[data-slate="on"] .ps-askbar .hero-ai-search__box {
     transform: translateY(-2px);
 }
 
+/* Mockup: each icon sits in a bigger pastel-blue circle badge. */
 .ps-skills svg {
-    width: 17px;
-    height: 17px;
+    box-sizing: content-box;
+    width: 20px;
+    height: 20px;
+    padding: 8px;
     flex-shrink: 0;
-    color: var(--accent);
+    color: #2f5fb3;
+    background: #e3ebfa;
+    border-radius: 50%;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.ps-skills .ps-skill-name {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Small "evidence-backed" count: how many documented accomplishments back
+   the skill. Kept subtle and teal so it reads as a verification badge. */
+.ps-skills .ps-skill-count {
+    flex-shrink: 0;
+    min-width: 22px;
+    padding: 1px 7px;
+    color: #0d9488;
+    background: rgb(13 148 136 / 11%);
+    border-radius: 999px;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0;
 }
 
 /* Experience role cards. */
@@ -10320,11 +10371,26 @@ body[data-slate="on"] .ps-askbar .hero-ai-search__box {
 }
 
 .ps-project__foot {
-    display: block;
-    margin-top: 12px;
-    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+    color: #0d9488;
     font-size: 0.74rem;
-    font-weight: 650;
+    font-weight: 700;
+}
+
+.ps-project__foot svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: color-mix(in srgb, var(--text-muted) 65%, transparent);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .ps-ov-cta {
@@ -11073,4 +11139,195 @@ body[data-slate="on"] .bd-assistant__form .hero-ai-search__box {
     .portfolio-shell #chat-toggle {
         display: none !important;
     }
+}
+
+/* =========================================================
+   SLATE-LIGHT — clean near-white treatment for portfolio pages
+   (Example Slate, etc.) so they match the homepage + their mockups.
+   Maps a light palette onto the shared theme vars (so the var-driven
+   ps-* components + profile chrome render light), then de-stones the
+   platform header, profile band, and tab strip (which carry
+   slate-photo rules). Applied via {% block body_class %}slate-light.
+   Placed LAST so it wins cascade ties with body[data-slate-photo].
+   ========================================================= */
+body.slate-light {
+    --bg: #fdfdfe;
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;
+    --surface-soft: #f4f8fd;
+    --border: #d9e2ec;
+    --text: #061a3a;
+    --text-muted: #49617a;
+    --accent: #0b63e5;
+    --accent-soft: rgb(11 99 229 / 8%);
+    --shadow: 0 12px 30px rgb(6 26 58 / 8%);
+    --tab-active: #0b63e5;
+    --askbar-bg: linear-gradient(135deg, #0b1f3f, #16305e);
+    /* The overview mockup uses Source Serif 4 (moderate-contrast humanist
+       serif), NOT the homepage's Playfair — Playfair read far too thick /
+       high-contrast on "Pete Carter" and the section headings. */
+    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    background: #fdfdfe;
+    color: var(--text);
+}
+
+body.slate-light .main-content {
+    background: transparent;
+}
+
+/* ---- global platform header (light, like the homepage) ---- */
+body.slate-light .global-header {
+    background: rgb(255 255 255 / 92%);
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+}
+
+body.slate-light .brand-mark { fill: var(--text); }
+
+body.slate-light .brand-word {
+    color: var(--text);
+    filter: none;
+}
+
+body.slate-light .platform-nav__links a { color: var(--text); }
+body.slate-light .platform-nav__links a[aria-current="page"] { color: var(--accent); }
+body.slate-light .platform-nav__links a[aria-current="page"]::after { background: var(--accent); }
+
+body.slate-light .theme-menu__btn {
+    color: var(--text);
+    background: rgb(255 255 255 / 90%);
+    border-color: var(--border);
+}
+
+body.slate-light .sign-in-btn {
+    color: #ffffff;
+    background: #0a1f44;
+}
+
+/* ---- profile band → clean white card (mockup) ---- */
+body.slate-light .profile-header,
+body.slate-light[data-slate="on"] .profile-header {
+    background: transparent;
+    border-bottom: 0;
+}
+
+body.slate-light .profile-header__inner {
+    margin-top: 24px;
+    padding: 26px 30px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+body.slate-light .profile-avatar {
+    border-color: #ffffff;
+    box-shadow: 0 10px 26px rgb(6 26 58 / 14%);
+}
+
+body.slate-light .profile-identity h1 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Mockup: the title under the name is bold Inter (sans), not serif. */
+body.slate-light .profile-title {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+}
+
+/* Shrink the specialty row so it stays on one line. */
+body.slate-light .profile-subtitle {
+    font-size: 0.85rem;
+}
+
+/* ---- tab strip → clean static row with a rail-width underline ---- */
+body.slate-light .profile-tabs {
+    position: static;
+    margin-top: 6px;
+    background: transparent;
+    border-bottom: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.slate-light .profile-tabs::before,
+body.slate-light .profile-tabs::after {
+    display: none;
+}
+
+body.slate-light .profile-tabs__inner {
+    border-bottom: 1px solid var(--border);
+}
+
+body.slate-light .profile-tabs__linkedin {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+body.slate-light .profile-tabs__linkedin svg rect { fill: #0a66c2; }
+body.slate-light .profile-tabs__linkedin svg path { fill: #ffffff; }
+
+/* Live AI answer on the ask bar: light card to match the page (the shared
+   .hero-ai-answer is dark-themed). */
+body.slate-light .ps-askbar .hero-ai-answer {
+    color: var(--text-muted);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    box-shadow: var(--shadow);
+}
+
+body.slate-light .ps-askbar .hero-ai-answer::before {
+    background: #ffffff;
+    border-top-color: var(--border);
+    border-left-color: var(--border);
+}
+
+body.slate-light .ps-askbar .hero-ai-answer__question { color: var(--accent); }
+body.slate-light .ps-askbar .hero-ai-answer__response { color: var(--text); }
+body.slate-light .ps-askbar .hero-ai-answer__close {
+    color: var(--text-muted);
+    background: var(--surface-soft);
+    border-color: var(--border);
+}
+
+/* Ask bar: white chips + a white circular arrow button (mockup). */
+body.slate-light .ps-askbar__chips button,
+body.slate-light .ps-askbar__chips a {
+    color: #0a1f44;
+    background: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: 0 3px 10px rgb(6 16 34 / 28%);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+body.slate-light .ps-askbar__chips button:hover,
+body.slate-light .ps-askbar__chips a:hover {
+    background: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgb(6 16 34 / 34%);
+}
+
+body.slate-light .ps-askbar .hero-ai-search__button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    color: #0a1f44;
+    background: #ffffff;
+    border-radius: 50%;
+    font-size: 0;
+}
+
+body.slate-light .ps-askbar .hero-ai-search__button::after {
+    content: "\2192";
+    font-size: 1.2rem;
+    font-weight: 900;
+    line-height: 1;
 }
