@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=light-pages-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=phase2-fixes-1"
     >
     <link
         rel="stylesheet"
@@ -130,6 +130,29 @@
                 </ul>
 
                 <div class="platform-actions">
+                    {# Header search (2026-07-07): quick-nav across the site
+                       plus an "Ask Pete's AI" fallthrough as the last row of
+                       every result list — a typed question is never a dead
+                       end. Destination index: the #nav-search-data JSON block
+                       near the scripts (URLs rendered by Flask). Behavior:
+                       static/js/site-search.js. Desktop-first for now — the
+                       compact phone header gets its own pass later. #}
+                    <div class="nav-search" id="nav-search" data-ask-url="{{ portfolio_home_url }}">
+                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+                        <input
+                            class="nav-search__input"
+                            id="nav-search-input"
+                            type="search"
+                            placeholder="Search..."
+                            autocomplete="off"
+                            aria-label="Search PeerSlate"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="nav-search-results"
+                        >
+                        <div class="nav-search__results" id="nav-search-results" role="listbox" hidden></div>
+                    </div>
+
                     {# Theme picker is now a dropdown button (mockup) — the
                        nine swatches live inside the panel with their names.
                        theme-preview.js opens/closes it and still reads
@@ -261,8 +284,30 @@
         </p>
     </div>
 
+    {# Destination index for the header search — URLs come from Flask so
+       they stay correct on every host. site-search.js reads this block. #}
+    <script id="nav-search-data" type="application/json">
+    [
+        {"title": "Overview", "sub": "Pete's slate home", "href": "{{ portfolio_home_url }}", "keys": "home overview profile pete carter example slate"},
+        {"title": "My Slate", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my slate personal life"},
+        {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
+        {"title": "Projects", "sub": "Practical builds with purpose", "href": "{{ portfolio_work_url }}", "keys": "projects work builds apps case studies traceability dashboard"},
+        {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
+        {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
+        {"title": "Interview Me", "sub": "Interview practice studio", "href": "{{ portfolio_url('interview-me') }}", "keys": "interview practice questions star behavioral coach mock answer"},
+        {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
+        {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
+        {"title": "Slate Feed", "sub": "Progress across the community", "href": "{{ url_for('slate_feed') }}", "keys": "feed activity progress updates community posts milestones"},
+        {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
+        {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
+        {"title": "Feed · People", "sub": "Journeys and goal rooms", "href": "{{ url_for('slate_feed_people') }}", "keys": "people connections journeys goal rooms community spotlight"},
+        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"}
+    ]
+    </script>
+
     <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=two-themes-1"></script>
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=scroll-toggle-1"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=relaunch-1"></script>
+    <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
     {% block extra_scripts %}{% endblock %}
 
 </body>

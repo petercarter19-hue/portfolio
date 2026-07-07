@@ -118,23 +118,33 @@ function initializeChatbot() {
     }
 
     // -------------------------------------------------------
-    // FLOATING LAUNCHER VISIBILITY
-    // The floating bottom-right button stays hidden while the profile
-    // header's "Ask Pete AI" button is on screen. Once the visitor
-    // scrolls far enough that the header button leaves the viewport
-    // (long pages like Resume and My Story), the floating button fades
-    // in so the assistant is always one click away.
+    // FLOATING LAUNCHER VISIBILITY (re-anchored 2026-07-07)
+    // The old anchor (.profile-actions [data-chat-open]) was removed in
+    // the profile-band redesign, which left the launcher permanently
+    // hidden on every page. New behavior: watch the page's primary
+    // Ask-AI element — the launcher stays hidden while that element is
+    // on screen and fades in once the visitor scrolls past it. Pages
+    // with no ask element (feed views, placeholder pages) show the
+    // launcher right away, so the assistant is one click away everywhere.
     // -------------------------------------------------------
 
-    const headerAskButton = document.querySelector('.profile-actions [data-chat-open]');
+    const pageAskAnchor = document.querySelector(
+        '.ps-askbar, .resume-ai-panel, .story-hero__ai, .page-ai-after-hero, .ct-ai, .hero-ai-panel, .bd-assistant'
+    );
 
-    if (toggle && headerAskButton && 'IntersectionObserver' in window) {
-        const askButtonWatcher = new IntersectionObserver(function (entries) {
-            // isIntersecting is true while the header button is visible.
-            toggle.classList.toggle('is-visible', !entries[0].isIntersecting);
-        });
+    if (toggle) {
+        if (pageAskAnchor && 'IntersectionObserver' in window) {
+            const askAnchorWatcher = new IntersectionObserver(function (entries) {
+                // isIntersecting is true while the ask element is visible.
+                toggle.classList.toggle('is-visible', !entries[0].isIntersecting);
+            });
 
-        askButtonWatcher.observe(headerAskButton);
+            askAnchorWatcher.observe(pageAskAnchor);
+        } else {
+            // No ask element on this page: the floating launcher is the
+            // only way to reach the assistant, so it is always visible.
+            toggle.classList.add('is-visible');
+        }
     }
 
     closeBtn.addEventListener('click', function () {
@@ -375,6 +385,35 @@ function initializeChatbot() {
             }
         });
     });
+
+    // -------------------------------------------------------
+    // HEADER SEARCH HANDOFF (?ask=...)
+    // The header search bar's "Ask Pete's AI" row navigates with
+    // ?ask=<question>. Prefill the page's first Ask-AI search and
+    // submit it for real; if this page has no ask bar, open the chat
+    // panel with the question instead — it is never dropped.
+    // -------------------------------------------------------
+
+    const askParam = new URLSearchParams(window.location.search).get('ask');
+
+    if (askParam && askParam.trim()) {
+        const askQuestion = askParam.trim().slice(0, 240);
+        const firstHeroSearch = document.querySelector('[data-hero-ai-search]');
+
+        if (firstHeroSearch) {
+            const firstHeroInput = firstHeroSearch.querySelector('.hero-ai-search__input');
+            if (firstHeroInput) {
+                firstHeroInput.value = askQuestion;
+            }
+            firstHeroSearch.scrollIntoView({ block: 'center' });
+            firstHeroSearch.dispatchEvent(new Event('submit', { cancelable: true }));
+        } else {
+            window.askPeteAI(askQuestion);
+        }
+
+        // Clean the URL so refresh/back never silently re-asks.
+        window.history.replaceState(null, '', window.location.pathname);
+    }
 
 
     // -------------------------------------------------------

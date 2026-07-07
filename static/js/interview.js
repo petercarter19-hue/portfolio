@@ -372,6 +372,110 @@
         });
     });
 
+    // ---------- Interview direction: "Interview Me" vs "Interview the AI" ----------
+    // (added 2026-07-07) The studio works both ways now. "Interview Me" is
+    // the original coach flow. "Interview the AI" flips the table: the
+    // visitor asks (the current question, or their own) and the AI answers
+    // as Pete — a model answer to measure your own attempt against. Same
+    // /api/chat endpoint as every other AI feature on the site.
+
+    const dirMeBtn = document.getElementById('iv-dir-me');
+    const dirAiBtn = document.getElementById('iv-dir-ai');
+    const askaiCard = document.getElementById('iv-askai-card');
+    const askaiInput = document.getElementById('iv-askai-input');
+    const askaiBtn = document.getElementById('iv-askai-btn');
+    const askaiAnswer = document.getElementById('iv-askai-answer');
+    const responseCard = document.querySelector('.iv-response-card');
+    const feedbackCard = document.getElementById('iv-feedback-card');
+    const mockSection = document.querySelector('.iv-mock');
+
+    let aiDirection = false;
+
+    function setDirection(ai) {
+        aiDirection = ai;
+
+        dirMeBtn.classList.toggle('is-active', !ai);
+        dirAiBtn.classList.toggle('is-active', ai);
+        dirMeBtn.setAttribute('aria-selected', String(!ai));
+        dirAiBtn.setAttribute('aria-selected', String(ai));
+
+        // Swap which cards the studio shows. The question card stays for
+        // both directions — it feeds whichever side is answering.
+        askaiCard.hidden = !ai;
+        responseCard.hidden = ai;
+        feedbackCard.hidden = ai;
+        if (mockSection) { mockSection.hidden = ai; }
+    }
+
+    if (dirMeBtn && dirAiBtn && askaiCard) {
+        dirMeBtn.addEventListener('click', function () { setDirection(false); });
+        dirAiBtn.addEventListener('click', function () { setDirection(true); });
+    }
+
+    function renderModelAnswer(text) {
+        askaiAnswer.innerHTML = '';
+        text.split(/\n{2,}/).forEach(function (part) {
+            const p = document.createElement('p');
+            p.textContent = part.trim();
+            if (p.textContent) { askaiAnswer.appendChild(p); }
+        });
+
+        const note = document.createElement('p');
+        note.className = 'iv-askai__note';
+        note.textContent = 'Model answer grounded in Pete’s approved slate evidence.';
+        askaiAnswer.appendChild(note);
+    }
+
+    function getModelAnswer() {
+        if (busy) { return; }
+
+        // A typed question wins; otherwise answer the current studio question.
+        const question = (askaiInput.value.trim() || questionEl.textContent.trim());
+        if (!question) { return; }
+
+        busy = true;
+        askaiBtn.disabled = true;
+        askaiBtn.textContent = 'Thinking…';
+        askaiAnswer.innerHTML =
+            '<p class="iv-feedback__empty">Building a model answer from Pete’s career history and slate evidence…</p>';
+
+        // The wording deliberately names Pete's career history, accomplishments,
+        // and skills evidence — those cues route the server's knowledge picker
+        // to the files a strong interview answer needs.
+        const prompt =
+            'Answer this interview question with a model answer, speaking in first person as Pete Carter. ' +
+            'Ground every claim in Pete’s real career history, accomplishments, and skills evidence — do not invent anything. ' +
+            'Use a STAR shape (situation, task, action, result) in two short plain-text paragraphs, about 150 words total, ' +
+            'and include one or two concrete metrics. Interview question: "' + question + '"';
+
+        askCoach(prompt)
+            .then(function (text) {
+                renderModelAnswer(text);
+            })
+            .catch(function (error) {
+                askaiAnswer.innerHTML = '';
+                const p = document.createElement('p');
+                p.className = 'iv-feedback__empty';
+                p.textContent = (error && error.message) || 'The assistant is unavailable right now — please try again.';
+                askaiAnswer.appendChild(p);
+            })
+            .finally(function () {
+                busy = false;
+                askaiBtn.disabled = false;
+                askaiBtn.textContent = 'Get Model Answer';
+            });
+    }
+
+    if (askaiBtn) {
+        askaiBtn.addEventListener('click', getModelAnswer);
+        askaiInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                getModelAnswer();
+            }
+        });
+    }
+
     // ---------- Boot ----------
     asked = 0;
     showQuestion(pool()[0]);

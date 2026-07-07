@@ -8880,6 +8880,22 @@ body[data-theme="paper-slate"] #chat-panel {
    ========================================================= */
 
 .peerslate-home-page {
+    /* CONTRAST FIX (2026-07-07): the landing is the ONLY page that never
+       takes body.slate-light, so the shared design tokens (--surface/--text/
+       --text-muted/--border/--accent) that every ps-* component reads were
+       left at their dark-era defaults here — that's why the Proven Impact
+       band rendered near-invisible heads and charcoal metric cards on an
+       otherwise light page. Map the shared tokens onto the landing's own
+       light palette so shared components resolve correctly. */
+    --surface: #ffffff;
+    --surface-soft: #f8fbff;
+    --border: #d9e2ec;
+    --text: #061a3a;
+    --text-muted: #49617a;
+    --accent: #0758c9;
+    --accent-soft: #eff6ff;
+    --shadow: 0 12px 30px rgb(6 26 58 / 8%);
+
     --font-serif: "Playfair Display", Georgia, serif;
     --home-bg: #f8fafc;
     --home-bg-soft: #f1f5f9;
@@ -8980,13 +8996,13 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 /* Mockup background is a clean near-white page (no grid). The only tint is
-   a whisper of cool blue in the hero, added on .ps-hero below. */
-.peerslate-home-page .ps-home::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
+   a whisper of cool blue in the hero, added on .ps-hero below.
+   CONTRAST FIX (2026-07-07): this used to be a position: fixed ::before
+   overlay painting white over the body's DARK default gradient. Fixed
+   overlays only cover the viewport, so overscroll (iOS rubber-banding),
+   print, and any stitched full-page rendering showed dark voids/banding.
+   Paint the page background on the body itself instead. */
+body.peerslate-home-page {
     background: #fdfdfe;
 }
 
@@ -13926,4 +13942,368 @@ body.slate-light .story-hero__portrait {
     .brk-ideas,
     .brk-shouts { grid-template-columns: 1fr; }
     .brk-hero { flex-direction: column; align-items: flex-start; }
+}
+
+/* =========================================================
+   CONTACT PAGE (rebuilt 2026-07-07 — was a "coming soon" stub)
+   Four live channel cards + the Ask Pete AI panel, all on the
+   shared design tokens so Light and Dark Slate both work.
+   ========================================================= */
+.ct-page {
+    padding: 40px 0 64px;
+}
+
+.ct-head h1 {
+    margin: 8px 0 10px;
+    color: var(--text);
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    font-weight: 800;
+}
+
+.ct-lead {
+    max-width: 560px;
+    color: var(--text-muted);
+    font-size: 0.98rem;
+    line-height: 1.55;
+}
+
+/* Four channels: 4-across, 2x2 on tablets, stacked on phones —
+   the groups-of-4 rule, never 3+1. */
+.ct-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+}
+
+.ct-card {
+    display: block;
+    padding: 22px;
+    text-decoration: none;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+a.ct-card:hover,
+a.ct-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.ct-card__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+}
+
+.ct-card__icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ct-card__icon--linkedin {
+    background: #eaf2fb;
+}
+
+.ct-card h2 {
+    margin: 0 0 4px;
+    color: var(--text);
+    font-size: 1.02rem;
+    font-weight: 750;
+}
+
+.ct-card > p {
+    margin: 0 0 12px;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;   /* long email/URL never overflows the card */
+}
+
+.ct-card__meta {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+/* AI panel: copy on the left, the live search on the right. */
+.ct-ai {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 26px;
+    align-items: center;
+    margin-top: 26px;
+    padding: 26px 28px;
+}
+
+.ct-ai__copy h2 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.ct-ai__copy p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.ct-ai .hero-ai-search {
+    max-width: none;
+    margin: 0;
+}
+
+.ct-note {
+    margin-top: 18px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+@media (max-width: 1040px) {
+    .ct-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ct-ai { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+    .ct-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   HEADER SEARCH (added 2026-07-07)
+   Compact pill in the header's actions cluster. Results drop
+   down in a ps-card-style panel; the last row is always the
+   "Ask Pete's AI" fallthrough. Built on the shared tokens so
+   it works on the landing, Light, and Dark Slate without
+   per-theme rules. Desktop-first: hidden below 1180px until
+   the compact phone header gets its own pass.
+   ========================================================= */
+.nav-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.nav-search__icon {
+    position: absolute;
+    left: 12px;
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.nav-search__input {
+    width: 150px;
+    padding: 9px 12px 9px 34px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border) 22%, var(--surface));
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.86rem;
+    transition: width 180ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.nav-search__input::placeholder { color: var(--text-muted); }
+.nav-search__input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.nav-search__input:focus {
+    width: 230px;
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface);
+}
+
+/* Tight middle range: the header holds brand + 6 links + actions, so the
+   search slims down before the nav's own 1180px wrap point. */
+@media (max-width: 1360px) {
+    .nav-search__input { width: 118px; }
+    .nav-search__input:focus { width: 200px; }
+}
+
+.nav-search__results {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 60;
+    min-width: 300px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.nav-search__item {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 9px;
+    text-decoration: none;
+}
+
+.nav-search__item strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 650;
+}
+
+.nav-search__item small {
+    display: block;
+    margin-top: 1px;
+    color: var(--text-muted);
+    font-size: 0.74rem;
+}
+
+.nav-search__item:hover,
+.nav-search__item.is-active {
+    background: var(--accent-soft);
+}
+
+.nav-search__item--ask {
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    border-radius: 0 0 9px 9px;
+}
+
+.nav-search__item--ask strong {
+    color: var(--accent);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+
+@media (max-width: 1180px) {
+    .nav-search { display: none; }
+}
+
+/* =========================================================
+   INTERVIEW ME — DIRECTION TOGGLE + "INTERVIEW THE AI"
+   (added 2026-07-07) Segmented two-way switch above the studio,
+   plus the model-answer card. Shared tokens: adapts to Light and
+   Dark Slate automatically.
+   ========================================================= */
+.iv-direction {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 720px;
+    margin: 18px 0 4px;
+}
+
+.iv-dir {
+    padding: 12px 16px;
+    text-align: left;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.iv-dir:hover { transform: translateY(-2px); }
+
+.iv-dir strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 750;
+}
+
+.iv-dir span {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.iv-dir.is-active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.iv-dir.is-active strong { color: var(--accent); }
+
+/* Model-answer card */
+.iv-askai__row {
+    display: flex;
+    gap: 10px;
+    margin: 4px 0 14px;
+}
+
+.iv-askai__row input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.iv-askai__row input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.iv-askai__answer p {
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
+.iv-askai__answer .iv-feedback__empty {
+    color: var(--text-muted);
+}
+
+.iv-askai__note {
+    margin-top: 4px;
+    color: var(--text-muted) !important;
+    font-size: 0.76rem !important;
+}
+
+@media (max-width: 620px) {
+    .iv-direction { grid-template-columns: 1fr; }
+    .iv-askai__row { flex-direction: column; }
+}
+
+/* Floating Ask Pete AI launcher: the old gold ghost chip was the last
+   piece of the retired gold language — restyle it as the site's navy
+   pill (same family as the dark ask bar) on the light theme and the
+   landing. Dark Slate keeps the original gold treatment. */
+body.slate-light #chat-toggle,
+body.peerslate-home-page #chat-toggle {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0b1f3f, #16305e);
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: 999px;
+    box-shadow: 0 12px 30px rgb(6 26 58 / 28%);
+}
+
+body.slate-light #chat-toggle:hover,
+body.slate-light #chat-toggle:focus-visible,
+body.peerslate-home-page #chat-toggle:hover,
+body.peerslate-home-page #chat-toggle:focus-visible {
+    background: linear-gradient(135deg, #10294f, #1d3c72);
+    color: #ffffff;
 }

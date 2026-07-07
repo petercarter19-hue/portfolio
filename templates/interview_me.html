@@ -87,6 +87,22 @@
             </label>
         </div>
 
+        {# Direction toggle (2026-07-07): the studio now works both ways.
+           "Interview Me" = the original coach flow (you answer, it scores).
+           "Interview the AI" = you ask the question and the AI answers it
+           as Pete — a model answer to measure your own against. Both hit
+           the same /api/chat endpoint as every AI feature on the site. #}
+        <div class="iv-direction" role="tablist" aria-label="Choose who answers">
+            <button class="iv-dir is-active" type="button" id="iv-dir-me" role="tab" aria-selected="true">
+                <strong>Interview Me</strong>
+                <span>You answer &mdash; the coach scores you</span>
+            </button>
+            <button class="iv-dir" type="button" id="iv-dir-ai" role="tab" aria-selected="false">
+                <strong>Interview the AI</strong>
+                <span>You ask &mdash; the AI answers as Pete</span>
+            </button>
+        </div>
+
         <!-- ============ STUDIO ============ -->
         <div class="iv-studio">
             <div class="iv-studio__main">
@@ -144,6 +160,36 @@
                             </button>
                             <button type="button" class="btn btn-primary iv-btn" id="iv-feedback-btn">Get Feedback</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Interview the AI: model answer card (hidden until the
+                     "Interview the AI" direction is selected). The question
+                     card above still drives it — prev/next/rephrase and the
+                     question banks all set the question the AI will answer.
+                     Or type a custom question right here. -->
+                <div class="iv-card iv-askai-card" id="iv-askai-card" hidden>
+                    <div class="iv-card__top">
+                        <span class="iv-label">Pete's AI Model Answer</span>
+                        <span class="iv-label iv-label--right">Grounded in his slate</span>
+                    </div>
+                    <div class="iv-askai__row">
+                        <label class="sf-hidden-label" for="iv-askai-input">Ask your own interview question</label>
+                        <input
+                            type="text"
+                            id="iv-askai-input"
+                            maxlength="240"
+                            autocomplete="off"
+                            placeholder="Type your own interview question — or leave blank to use the current question above"
+                        >
+                        <button type="button" class="btn btn-primary iv-btn" id="iv-askai-btn">Get Model Answer</button>
+                    </div>
+                    <div class="iv-askai__answer" id="iv-askai-answer" aria-live="polite">
+                        <p class="iv-feedback__empty">
+                            Pick any question above &mdash; or type your own &mdash; and the AI
+                            answers it the way Pete would: first person, STAR-shaped, with
+                            real metrics from his slate. Then compare it against your answer.
+                        </p>
                     </div>
                 </div>
 
@@ -363,5 +409,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/interview.js') }}?v=interview-1"></script>
+<script src="{{ url_for('static', filename='js/interview.js') }}?v=interview-ai-1"></script>
 {% endblock %}

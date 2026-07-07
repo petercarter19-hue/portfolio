@@ -1,20 +1,92 @@
-{# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
+{# ============================================================
+   CONTACT — rebuilt 2026-07-07 (was a "coming soon" placeholder).
+   A real, working contact page: every card is a live channel —
+   email (mailto), LinkedIn, location note, and the actual resume
+   PDF — plus the live Ask Pete AI search for instant answers.
+   Light-themed like the rest of the site (ps-card system).
+   Direct on-platform messaging ships later with PeerSlate accounts.
+   ============================================================ #}
 {% extends "base.html" %}
 
-{# This block controls the text shown in the browser tab for this page. #}
 {% block title %}Contact | Pete Carter{% endblock %}
 
-{# Everything inside this content block gets inserted into base.html's <main> area. #}
+{% block meta_description %}Contact Pete Carter — email, LinkedIn, and an AI assistant that answers recruiter questions instantly from his approved career evidence.{% endblock %}
+
 {% block content %}
 
-<!-- Placeholder section: this prevents /contact from crashing until we build the full page. -->
-<section class="projects-section" aria-labelledby="contact-title">
-    <div class="site-container projects-copy">
-        <p class="section-eyebrow">Contact</p>
-        <h2 id="contact-title">Contact page coming soon</h2>
-        <p>
-            This page is ready for contact information, a contact form, or professional links.
+<section class="ct-page" aria-labelledby="contact-title">
+    <div class="site-container">
+
+        <header class="ct-head">
+            <p class="ps-eyebrow">Contact</p>
+            <h1 id="contact-title">Let's start a conversation.</h1>
+            <p class="ct-lead">
+                Whether it's a role, a project, or PeerSlate itself &mdash;
+                every message gets read. Pick whichever channel suits you.
+            </p>
+        </header>
+
+        {# Four channels — 4-across / 2x2 per the groups-of-4 rule. #}
+        <div class="ct-grid">
+
+            <a class="ps-card ct-card" href="mailto:petercarter19@gmail.com">
+                <span class="ct-card__icon ps-tint--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                </span>
+                <h2>Email</h2>
+                <p>petercarter19@gmail.com</p>
+                <span class="ps-link">Write to Pete <span aria-hidden="true">&rarr;</span></span>
+            </a>
+
+            <a class="ps-card ct-card" href="https://www.linkedin.com/in/pete-carter19" target="_blank" rel="noopener noreferrer">
+                <span class="ct-card__icon ct-card__icon--linkedin" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2" stroke="none"/><path fill="#ffffff" stroke="none" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/></svg>
+                </span>
+                <h2>LinkedIn</h2>
+                <p>linkedin.com/in/pete-carter19</p>
+                <span class="ps-link">Connect professionally <span aria-hidden="true">&rarr;</span></span>
+            </a>
+
+            <div class="ps-card ct-card">
+                <span class="ct-card__icon ps-tint--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg>
+                </span>
+                <h2>Location</h2>
+                <p>Athens, Alabama &mdash; Huntsville area</p>
+                <span class="ct-card__meta">Open to Huntsville-area and remote opportunities.</span>
+            </div>
+
+            <a class="ps-card ct-card" href="{{ url_for('static', filename='files/pete-carter-resume.pdf') }}" download>
+                <span class="ct-card__icon ps-tint--violet" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+                </span>
+                <h2>Resume</h2>
+                <p>One-page PDF, ready for your ATS</p>
+                <span class="ps-link">Download resume <span aria-hidden="true">&rarr;</span></span>
+            </a>
+
+        </div>
+
+        {# The AI assistant is the instant channel — same live /api/chat
+           endpoint as everywhere else on the site. #}
+        <section class="ps-card ct-ai" aria-labelledby="ct-ai-title">
+            <div class="ct-ai__copy">
+                <h2 id="ct-ai-title">Need an answer right now?</h2>
+                <p>
+                    Pete's AI assistant answers recruiter-style questions instantly,
+                    grounded in his approved career evidence &mdash; experience,
+                    skills, clearance, education, and results.
+                </p>
+            </div>
+            <div class="ct-ai__search">
+                {% include "partials/portfolio_ai_search.html" %}
+            </div>
+        </section>
+
+        <p class="ct-note">
+            Direct on-platform messaging arrives with PeerSlate accounts.
         </p>
+
     </div>
 </section>
 
