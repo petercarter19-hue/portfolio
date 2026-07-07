@@ -9305,11 +9305,13 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .ai-bar {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 1rem;
     min-height: 64px;
     padding: 0.85rem 1rem;
+    overflow: hidden;
     color: #ffffff;
     background: linear-gradient(135deg, var(--home-navy), var(--home-navy-2));
     border-radius: 1rem;
@@ -9320,6 +9322,32 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .ai-bar:hover {
     transform: translateY(-1px);
     box-shadow: 0 22px 46px rgb(6 26 58 / 25%);
+}
+
+/* Keep the icon/input/button above the scanning glow layer. */
+.peerslate-home-page .ai-bar > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Searching glow: the same sweeping gradient every AI bar uses
+   (reuses the shared @keyframes ai-border-scan), tinted for the light
+   homepage. Fires while chatbot.js adds .is-searching to the form. */
+.peerslate-home-page .ai-bar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, rgb(96 160 255 / 78%), rgb(45 212 191 / 55%), transparent);
+    opacity: 0;
+    transform: translateX(-100%);
+    pointer-events: none;
+}
+
+.peerslate-home-page .home-ask.is-searching .ai-bar::before {
+    opacity: 1;
+    animation: ai-border-scan 1.25s linear infinite;
 }
 
 .peerslate-home-page .ai-bar-icon {
