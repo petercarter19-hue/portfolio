@@ -1,219 +1,284 @@
 {# ============================================================
-   SLATE FEED — PULSE VIEW (/slate-feed/pulse), built 2026-07-07.
-   The "Pulse" tab: the community's momentum at a glance — this-week
-   stat cards, trending skills with momentum bars, what's moving
-   right now, and a rising-goals rail. Same page shell + shared tab
-   strip as the Progress and People views, Pulse tab active.
-
-   MVP is a static, representative preview (like the People view's
-   sample cards): PeerSlate is pre-launch with Pete as the only real
-   member, so the community numbers here are illustrative. The layout
-   is the seam where a real cross-member "pulse" service plugs in later.
+   SLATE FEED — PULSE VIEW (/slate-feed/pulse)
+   Rebuilt 2026-07-07 to match Pete's Pulse mockup exactly:
+   a personalized daily mix. Three columns —
+     LEFT  : Filter Your Feed (topics + following topics)
+     CENTER: hero banner + feed cards (Tech Trend / news, Local
+             Opportunity event, a community post, Quick Pulse poll)
+     RIGHT : Saved to Board, Upcoming Challenge, Suggested Rooms,
+             Inspiration for Today
+   Blue accent (matches the mockup + the site default). Content is a
+   static, representative preview — this is where real curated news,
+   events, posts, and polls plug in next. Image slots are designed
+   gradient placeholders, ready to swap for real media.
    ============================================================ #}
 {% extends "base.html" %}
 
 {% block title %}Pulse | Slate Feed | PeerSlate{% endblock %}
 
-{% block meta_description %}The Pulse view of the PeerSlate Slate Feed: community momentum, trending skills, rising goals, and what members are building right now.{% endblock %}
+{% block meta_description %}The Pulse view of the PeerSlate Slate Feed: a personalized daily mix of insights, opportunities, trends, and lighter content.{% endblock %}
 
 {% block content %}
 
-<section class="sf-page" aria-labelledby="sf-title">
+<section class="sf-page pf-page" aria-labelledby="sf-title">
     <div class="site-container">
 
         <!-- ============ PAGE HEAD ============ -->
         <header class="sf-head">
             <h1 id="sf-title">Slate Feed</h1>
-            <p>The Pulse — momentum, milestones, and what the community is building right now.</p>
+            <p>Your daily mix of insights, opportunities, and inspiration.</p>
         </header>
 
         <!-- ============ TAB STRIP ============ -->
         {% set active = 'pulse' %}
         <div class="sf-tabbar">
             {% include "partials/slate_feed_tabs.html" %}
-            <span class="pulse-range" aria-hidden="true">This week</span>
         </div>
 
-        <!-- ============ STAT BAND ============ -->
-        <div class="pulse-stats" aria-label="This week across the community">
-            <div class="ps-card pulse-stat">
-                <span class="pulse-stat__icon ps-tint--blue" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 2.7-5.5 5.5-5.5s4.9 2.1 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.8M17 14.4c2.4.5 3.8 2.2 4.3 5.1"/></svg>
-                </span>
-                <strong>1,284</strong>
-                <span>Active builders</span>
-                <small class="pulse-trend pulse-trend--up">&#9650; 12% vs last week</small>
-            </div>
-            <div class="ps-card pulse-stat">
-                <span class="pulse-stat__icon ps-tint--green" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-                </span>
-                <strong>342</strong>
-                <span>Milestones logged</span>
-                <small class="pulse-trend pulse-trend--up">&#9650; 8% vs last week</small>
-            </div>
-            <div class="ps-card pulse-stat">
-                <span class="pulse-stat__icon ps-tint--violet" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.6 12l2.4 2.4 4.4-4.8"/></svg>
-                </span>
-                <strong>176</strong>
-                <span>Badges earned</span>
-                <small class="pulse-trend pulse-trend--up">&#9650; 5% vs last week</small>
-            </div>
-            <div class="ps-card pulse-stat">
-                <span class="pulse-stat__icon ps-tint--orange" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3.5V6M12 18v2.5M3.5 12H6M18 12h2.5"/></svg>
-                </span>
-                <strong>908</strong>
-                <span>Goals in motion</span>
-                <small class="pulse-trend pulse-trend--flat">&#8226; Steady</small>
-            </div>
-        </div>
+        <!-- ============ THREE-COLUMN LAYOUT ============ -->
+        <div class="pf-layout">
 
-        <!-- ============ TWO-COLUMN BODY ============ -->
-        <div class="pulse-layout">
-
-            <!-- ---- MAIN ---- -->
-            <div class="pulse-main">
-
-                <section class="ps-card pulse-panel" aria-labelledby="pulse-skills-title">
-                    <header class="pulse-panel__head">
-                        <h2 id="pulse-skills-title">Trending Skills</h2>
-                        <span class="pulse-panel__meta">Most-added to slates this week</span>
+            <!-- ---- LEFT: FILTER YOUR FEED ---- -->
+            <aside class="pf-rail pf-rail--left" aria-label="Filter your feed">
+                <section class="ps-card pf-filter">
+                    <header class="pf-filter__head">
+                        <h2>Filter Your Feed</h2>
+                        <span class="pf-filter__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="12" cy="18" r="2"/></svg>
+                        </span>
                     </header>
-                    <ul class="pulse-skills">
-                        <li>
-                            <span class="pulse-skill__name">Model-Based Systems Engineering</span>
-                            <span class="sf-bar" role="img" aria-label="92 percent momentum"><i style="width: 92%;"></i></span>
-                            <span class="pulse-skill__val">92</span>
-                        </li>
-                        <li>
-                            <span class="pulse-skill__name">SysML Modeling</span>
-                            <span class="sf-bar" role="img" aria-label="78 percent momentum"><i style="width: 78%;"></i></span>
-                            <span class="pulse-skill__val">78</span>
-                        </li>
-                        <li>
-                            <span class="pulse-skill__name">AI-Assisted Requirements</span>
-                            <span class="sf-bar" role="img" aria-label="71 percent momentum"><i style="width: 71%;"></i></span>
-                            <span class="pulse-skill__val">71</span>
-                        </li>
-                        <li>
-                            <span class="pulse-skill__name">Requirements Traceability</span>
-                            <span class="sf-bar" role="img" aria-label="64 percent momentum"><i style="width: 64%;"></i></span>
-                            <span class="pulse-skill__val">64</span>
-                        </li>
-                        <li>
-                            <span class="pulse-skill__name">Automation & Scripting</span>
-                            <span class="sf-bar" role="img" aria-label="58 percent momentum"><i style="width: 58%;"></i></span>
-                            <span class="pulse-skill__val">58</span>
-                        </li>
+                    <p class="pf-filter__sub">Choose topics and interests</p>
+
+                    <ul class="pf-topics">
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>Career</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></span>Tech</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg></span>Home</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-6.5-4.4-6.5-9A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 6.5 3c0 4.6-6.5 9-6.5 9z"/></svg></span>Fitness</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 16l9-3 4-9 2 1-2 9 7 4-2 2-7-3-4 5-2-1 1-6z"/></svg></span>Travel</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg></span>Local</button></li>
+                        <li><button type="button" class="pf-topic"><span class="pf-topic__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/><circle cx="12" cy="15" r="1.2"/></svg></span>Creative</button></li>
                     </ul>
                 </section>
 
-                <section class="ps-card pulse-panel" aria-labelledby="pulse-moving-title">
-                    <header class="pulse-panel__head">
-                        <h2 id="pulse-moving-title">What's Moving Today</h2>
-                        <a class="ps-link" href="{{ url_for('slate_feed') }}">See the live feed <span aria-hidden="true">&rarr;</span></a>
+                <section class="ps-card pf-following">
+                    <header class="pf-following__head">
+                        <h2>Following Topics</h2>
+                        <button type="button" class="pf-link" aria-disabled="true" title="Editing lands with PeerSlate accounts">Edit</button>
                     </header>
-                    <ul class="pulse-moves">
-                        <li>
-                            <span class="pulse-move__icon ps-tint--green" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-                            </span>
-                            <span class="pulse-move__text"><strong>Milestones</strong> are up across engineering slates — 42 logged since this morning.</span>
-                            <span class="pulse-move__pct pulse-trend--up">+42</span>
-                        </li>
-                        <li>
-                            <span class="pulse-move__icon ps-tint--violet" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M13 3L4 14h6l-1 7 9-11h-6z"/></svg>
-                            </span>
-                            <span class="pulse-move__text"><strong>Automation Ace</strong> is the most-earned badge this week.</span>
-                            <span class="pulse-move__pct pulse-trend--up">31 earned</span>
-                        </li>
-                        <li>
-                            <span class="pulse-move__icon ps-tint--sky" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
-                            </span>
-                            <span class="pulse-move__text"><strong>Ph.D. journeys</strong> are trending as members share study milestones.</span>
-                            <span class="pulse-move__pct pulse-trend--up">+18</span>
-                        </li>
-                        <li>
-                            <span class="pulse-move__icon ps-tint--orange" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M4 20a8 8 0 0 1 16 0"/><path d="M12 4v4M12 12l3-2"/></svg>
-                            </span>
-                            <span class="pulse-move__text"><strong>Fitness goals</strong> picked up steam — 5 a.m. run streaks are climbing.</span>
-                            <span class="pulse-move__pct pulse-trend--up">+9</span>
-                        </li>
+                    <ul class="pf-tags">
+                        <li>#AI Tools</li>
+                        <li>#Remote Work</li>
+                        <li>#Leadership</li>
+                        <li>#Product Design</li>
+                        <li>#Mental Wellness</li>
                     </ul>
+                    <button type="button" class="pf-reset">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-1 5"/><path d="M20 5v6h-6"/></svg>
+                        Reset Filters
+                    </button>
                 </section>
+            </aside>
 
-            </div>
+            <!-- ---- CENTER: THE FEED ---- -->
+            <div class="pf-center">
 
-            <!-- ---- RAIL ---- -->
-            <aside class="pulse-rail" aria-label="Rising goals and weekly numbers">
-
-                <section class="ps-card pulse-panel" aria-labelledby="pulse-goals-title">
-                    <header class="pulse-panel__head">
-                        <h2 id="pulse-goals-title">Rising Goals</h2>
-                    </header>
-                    <ol class="pulse-goals">
-                        <li>
-                            <span class="pulse-goals__rank">1</span>
-                            <span class="pulse-goals__label">Earn an advanced degree</span>
-                            <span class="pulse-goals__people">1,842</span>
-                        </li>
-                        <li>
-                            <span class="pulse-goals__rank">2</span>
-                            <span class="pulse-goals__label">Ship an AI-assisted tool</span>
-                            <span class="pulse-goals__people">1,190</span>
-                        </li>
-                        <li>
-                            <span class="pulse-goals__rank">3</span>
-                            <span class="pulse-goals__label">Earn a PMP certification</span>
-                            <span class="pulse-goals__people">970</span>
-                        </li>
-                        <li>
-                            <span class="pulse-goals__rank">4</span>
-                            <span class="pulse-goals__label">Run 500 miles this year</span>
-                            <span class="pulse-goals__people">744</span>
-                        </li>
-                        <li>
-                            <span class="pulse-goals__rank">5</span>
-                            <span class="pulse-goals__label">Build a home operations dashboard</span>
-                            <span class="pulse-goals__people">512</span>
-                        </li>
-                    </ol>
-                </section>
-
-                <section class="ps-card pulse-panel pulse-panel--numbers" aria-labelledby="pulse-numbers-title">
-                    <header class="pulse-panel__head">
-                        <h2 id="pulse-numbers-title">This Week in Numbers</h2>
-                    </header>
-                    <ul class="pulse-numbers">
-                        <li><strong>2,410</strong><span>Slate updates</span></li>
-                        <li><strong>318</strong><span>New connections</span></li>
-                        <li><strong>1,067</strong><span>Cheers &amp; reactions</span></li>
-                        <li><strong>96%</strong><span>Weekly actions on track</span></li>
-                    </ul>
-                </section>
-
-                <aside class="sf-invite">
-                    <span class="sf-invite__art" aria-hidden="true">
-                        <svg viewBox="0 0 64 64">
-                            <path class="sf-invite__hill" d="M2 58c12-20 26-32 44-34l8 34z"/>
-                            <path class="sf-invite__hill sf-invite__hill--near" d="M18 58c9-13 21-20 34-21l10 21z"/>
-                            <path class="sf-invite__pole" d="M46 8v16"/>
-                            <path class="sf-invite__flag" d="M46 8l11 3.4L46 14.8z"/>
-                            <circle class="sf-invite__head" cx="27" cy="30" r="3.6"/>
-                            <path class="sf-invite__body" d="M27 33.6V44M27 36.5l-5 4.5M27 36.5l5 3.5M27 44l-4 9M27 44l4 9"/>
+                <!-- Hero banner -->
+                <div class="pf-hero">
+                    <p>A personalized mix of progress, opportunities, trends, and lighter content.</p>
+                    <span class="pf-hero__art" aria-hidden="true">
+                        <svg viewBox="0 0 150 96">
+                            <ellipse cx="70" cy="82" rx="52" ry="8" fill="#0b63e5" opacity="0.08"/>
+                            <g transform="translate(44 20)">
+                                <path d="M2 30 L30 16 L58 30 L30 44 Z" fill="#7fb0f6"/>
+                                <path d="M2 22 L30 8 L58 22 L30 36 Z" fill="#4f8cf0"/>
+                                <path d="M2 14 L30 0 L58 14 L30 28 Z" fill="#2f6fe0"/>
+                            </g>
+                            <circle cx="122" cy="70" r="10" fill="#ffffff"/>
+                            <circle cx="122" cy="70" r="10" fill="#cdddf9" opacity="0.6"/>
+                            <g transform="translate(14 44)">
+                                <rect x="6" y="14" width="16" height="16" rx="3" fill="#ffffff"/>
+                                <rect x="6" y="14" width="16" height="16" rx="3" fill="#dbe8fb" opacity="0.7"/>
+                                <path d="M14 14c0-6 3-9 8-10-1 6-4 9-8 10z" fill="#2f9e64"/>
+                                <path d="M14 14c0-5-2-8-7-9 1 5 3 8 7 9z" fill="#39b374"/>
+                            </g>
                         </svg>
                     </span>
-                    <div class="sf-invite__copy">
-                        <strong>Add to the pulse.</strong>
-                        <p>Post a win and move the needle.</p>
-                        <a class="sf-invite__cta" href="{{ url_for('slate_feed') }}">Share an update <span aria-hidden="true">&rarr;</span></a>
+                </div>
+
+                <!-- Card: Tech Trend (news) -->
+                <article class="ps-card pf-card pf-card--news">
+                    <div class="pf-news__body">
+                        <span class="pf-kicker pf-kicker--blue">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+                            Tech Trend <i>&middot; 5 min read</i>
+                        </span>
+                        <h3>5 AI Tools That Can 10x Your Productivity</h3>
+                        <p>From writing assistants to automated research &mdash; these tools are helping professionals get more done in less time.</p>
+                        <div class="pf-facesmall">
+                            <span class="pf-facepile" aria-hidden="true"><i>A</i><i>J</i></span>
+                            128 saved
+                        </div>
                     </div>
-                </aside>
+                    <div class="pf-news__media">
+                        <span class="feed-img feed-img--ai" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+                            <b>AI</b>
+                        </span>
+                        <div class="pf-card__acts">
+                            <button type="button" class="pf-act" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</button>
+                            <button type="button" class="pf-act" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-6-7-2z"/></svg>Share</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Card: Local Opportunity (event) -->
+                <article class="ps-card pf-card pf-card--event">
+                    <span class="feed-img feed-img--city pf-event__media" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l5-3v16M14 21V11l5-2v12M8 11h0M8 14h0M8 17h0"/></svg>
+                        <span class="pf-going"><span class="pf-facepile" aria-hidden="true"><i>D</i><i>K</i><i>R</i></span>12 going</span>
+                    </span>
+                    <div class="pf-event__body">
+                        <span class="pf-kicker pf-kicker--green">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg>
+                            Local Opportunity <i>&middot; Event</i>
+                        </span>
+                        <h3>Design Leaders Meetup &ndash; Boston</h3>
+                        <p class="pf-event__meta">Thu, Jun 12 &middot; 6:00 PM<br>WeWork, Seaport &middot; Boston, MA</p>
+                        <p>Connect with local design leaders and peers over insights, challenges, and opportunities.</p>
+                        <button type="button" class="pf-btn pf-btn--outline" aria-disabled="true" title="Preview — coming with PeerSlate accounts">View Details</button>
+                    </div>
+                </article>
+
+                <!-- Card: community post -->
+                <article class="ps-card pf-card pf-card--post">
+                    <header class="pf-post__head">
+                        <span class="pf-avatar" aria-hidden="true">AK</span>
+                        <span class="pf-post__who">
+                            <strong>Aisha Khan</strong>
+                            <small>Product Designer @ Vertex &middot; 2h ago</small>
+                        </span>
+                        <button class="pf-more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </header>
+                    <p class="pf-post__text">Just wrapped up a user research sprint and the insights were &#128293; Grateful for an amazing team and curious users!</p>
+                    <p class="pf-post__tags">#UserResearch #DesignProcess #TeamWins</p>
+                    <footer class="pf-post__foot">
+                        <button type="button" class="pf-react" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM7 11l4-8a2 2 0 0 1 2 2v3h5.5a2 2 0 0 1 2 2.4l-1.5 7a2 2 0 0 1-2 1.6H7z"/></svg>43</button>
+                        <button type="button" class="pf-react" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>6</button>
+                        <span class="pf-post__spacer"></span>
+                        <button type="button" class="pf-act" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Save</button>
+                        <button type="button" class="pf-act" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-6-7-2z"/></svg>Share</button>
+                    </footer>
+                </article>
+
+                <!-- Card: Quick Pulse (poll) -->
+                <article class="ps-card pf-card pf-card--poll">
+                    <div class="pf-poll__body">
+                        <span class="pf-kicker pf-kicker--violet">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg>
+                            Quick Pulse <i>&middot; Your voice matters</i>
+                        </span>
+                        <h3>What's your go-to way to reset after a busy week?</h3>
+                        <p class="pf-poll__sub">Your vote helps others and sparks great conversations.</p>
+                        <ul class="pf-poll">
+                            <li><span class="pf-poll__fill" style="width: 42%;"></span><span class="pf-poll__label">A long walk outdoors</span><span class="pf-poll__pct">42%</span></li>
+                            <li><span class="pf-poll__fill" style="width: 27%;"></span><span class="pf-poll__label">Unplug and read</span><span class="pf-poll__pct">27%</span></li>
+                            <li><span class="pf-poll__fill" style="width: 18%;"></span><span class="pf-poll__label">Workout or yoga</span><span class="pf-poll__pct">18%</span></li>
+                            <li><span class="pf-poll__fill" style="width: 13%;"></span><span class="pf-poll__label">Plan my next adventure</span><span class="pf-poll__pct">13%</span></li>
+                        </ul>
+                    </div>
+                    <span class="pf-poll__votes">221 votes</span>
+                    <span class="feed-img feed-img--calm pf-poll__art" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M8 21h8M10 21c0-3-4-3-4-8V6h12v7c0 5-4 5-4 8"/><path d="M13 6c0-2 1-3 3-3.5"/></svg>
+                    </span>
+                </article>
+
+            </div>
+
+            <!-- ---- RIGHT RAIL ---- -->
+            <aside class="pf-rail pf-rail--right" aria-label="Saved, challenges, rooms and inspiration">
+
+                <!-- Saved to Board -->
+                <section class="ps-card pf-side">
+                    <header class="pf-side__head">
+                        <h2>Saved to Board</h2>
+                        <a class="pf-link" href="{{ portfolio_url('slate-board') }}">View all</a>
+                    </header>
+                    <ul class="pf-saved">
+                        <li>
+                            <span class="feed-img feed-img--ai pf-thumb" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></span>
+                            <span class="pf-saved__txt"><strong>Top AI Tools for Productivity</strong><small>&#9881; Tech</small></span>
+                            <svg class="pf-bookmark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        </li>
+                        <li>
+                            <span class="feed-img feed-img--city pf-thumb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l5-3v16M14 21V11l5-2v12"/></svg></span>
+                            <span class="pf-saved__txt"><strong>Remote Work Salary Guide 2024</strong><small>&#9993; Career</small></span>
+                            <svg class="pf-bookmark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        </li>
+                        <li>
+                            <span class="feed-img feed-img--calm pf-thumb" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/></svg></span>
+                            <span class="pf-saved__txt"><strong>Building Better Design Systems</strong><small>&#10022; Creative</small></span>
+                            <svg class="pf-bookmark" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Upcoming Challenge -->
+                <section class="ps-card pf-side pf-challenge">
+                    <header class="pf-side__head">
+                        <span class="pf-side__ic pf-side__ic--amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12v3a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"/><path d="M9 15h6M12 11v4M8 20h8"/><path d="M6 6H4a2 2 0 0 0 2 3M18 6h2a2 2 0 0 1-2 3"/></svg></span>
+                        <h2>Upcoming Challenge</h2>
+                    </header>
+                    <div class="pf-challenge__body">
+                        <span class="pf-ring" role="img" aria-label="60 percent complete">
+                            <svg viewBox="0 0 72 72"><circle class="pf-ring__track" cx="36" cy="36" r="30"/><circle class="pf-ring__val" cx="36" cy="36" r="30" style="stroke-dasharray: 113 188.5;"/></svg>
+                            <strong>60%</strong>
+                        </span>
+                        <div class="pf-challenge__copy">
+                            <strong>7-Day Focus Boost</strong>
+                            <small>Day 4 of 7</small>
+                            <p>Stay consistent and build momentum.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="pf-btn pf-btn--outline pf-btn--full" aria-disabled="true" title="Preview — coming with PeerSlate accounts">View Challenge</button>
+                </section>
+
+                <!-- Suggested Rooms -->
+                <section class="ps-card pf-side">
+                    <header class="pf-side__head">
+                        <h2>Suggested Rooms</h2>
+                        <a class="pf-link" href="{{ url_for('slate_feed_people') }}">View all</a>
+                    </header>
+                    <ul class="pf-rooms">
+                        <li>
+                            <span class="pf-room__ic ps-tint--violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/></svg></span>
+                            <span class="pf-room__txt"><strong>AI &amp; The Future</strong><small>12.4K members</small></span>
+                            <button type="button" class="pf-join" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Join</button>
+                        </li>
+                        <li>
+                            <span class="pf-room__ic ps-tint--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8l9 5 9-5"/></svg></span>
+                            <span class="pf-room__txt"><strong>Product People</strong><small>8.7K members</small></span>
+                            <button type="button" class="pf-join" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Join</button>
+                        </li>
+                        <li>
+                            <span class="pf-room__ic ps-tint--sky" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2"/><circle cx="15.5" cy="10" r="1.2"/></svg></span>
+                            <span class="pf-room__txt"><strong>Design Thinkers</strong><small>6.1K members</small></span>
+                            <button type="button" class="pf-join" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Join</button>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Inspiration for Today -->
+                <section class="ps-card pf-side pf-inspire">
+                    <h2>Inspiration for Today</h2>
+                    <span class="pf-inspire__mark" aria-hidden="true">&ldquo;</span>
+                    <p class="pf-inspire__quote">Small progress each day adds up to big results.</p>
+                    <p class="pf-inspire__by">&mdash; Unknown</p>
+                    <span class="pf-inspire__art" aria-hidden="true">
+                        <svg viewBox="0 0 120 40" preserveAspectRatio="none"><path d="M0 40 L26 20 L40 30 L64 10 L86 26 L104 14 L120 26 L120 40 Z" fill="#2f6fe0" opacity="0.14"/><path d="M0 40 L30 26 L52 34 L78 20 L100 30 L120 22 L120 40 Z" fill="#2f6fe0" opacity="0.22"/></svg>
+                    </span>
+                </section>
 
             </aside>
 
