@@ -7,7 +7,7 @@ This file organizes the full career-history bullet library by employer and role.
 # Northrop Grumman
 
 ## Systems Engineer — Systems Engineering, Integration, and Test
-**Employment dates:** December 1, 2025–Present  
+**Employment dates:** December 1, 2025–Present
 **Location:** Huntsville, Alabama
 
 - Collaborates with subject-matter experts and Product Owners to define, analyze, decompose, derive, allocate, validate, and maintain system requirements for the Sentinel intercontinental ballistic missile replacement program.
@@ -29,7 +29,7 @@ This file organizes the full career-history bullet library by employer and role.
 # L3Harris Technologies
 
 ## Systems Effectiveness Engineer — Integrated Logistics Support Team
-**Employment dates:** November 17, 2024–November 18, 2025  
+**Employment dates:** November 17, 2024–November 18, 2025
 **Location:** Salt Lake City, Utah
 
 ### Integrated Logistics Support, Provisioning, and Sustainment
@@ -46,7 +46,7 @@ This file organizes the full career-history bullet library by employer and role.
 
 - Derived recommended A3M spare quantities from area-of-responsibility assumptions, cost, reliability, repair-cycle data, turnaround time, supplier lead time, and operational constraints to improve readiness and budget accuracy.
 
-- Created a Level of Repair Analysis for the Army Resilient Anti-Jam Modem/A3M modem, establishing organizational- and depot-level repair echelons, repair-versus-replace policy, maintenance concepts, and Source, Maintenance, and Recoverability coding considerations.
+- Created a Level of Repair Analysis for the Army Resilient Anti-Jam Modem/A3M modem, establishing organizational- and depot-level repair echelons, repair-versus-replace policy, maintenance concepts, and Source, Maintenance, and Recoverability code considerations.
 
 - Developed, owned, and delivered customer Contract Data Requirements List and Contract Data Element products, including Level of Repair Analysis, Product Support Plans, Product Support Analysis, recommended spares documentation, depot-maintenance studies, provisioning information, and other lifecycle-support deliverables.
 
@@ -74,7 +74,7 @@ This file organizes the full career-history bullet library by employer and role.
 
 - Developed logical and physical architecture, imported system requirements, implemented profiles and stereotypes, defined value types and tables, created packages and blocks, and produced block-definition, internal-block, and activity diagrams.
 
-- Leveraged policy-compliant artificial-intelligence practices to decompose requirements, analyze technical documentation, improve consistency, accelerate content development, and reduce rework.
+- Leveraged policy-compliant artificial intelligence practices to decompose requirements, analyze technical documentation, improve consistency, accelerate content development, and reduce rework.
 
 - Used AI-assisted engineering methods to support the design of Excel macros and Python scripts for engineering, documentation, data-processing, and product-support workflows.
 
@@ -83,7 +83,7 @@ This file organizes the full career-history bullet library by employer and role.
 # Department of Defense — United States Air Force
 
 ## Systems Engineer / Electronics Engineer / Lead Systems Engineer / Lead Special Projects Engineer
-**Employment dates:** February 16, 2021–November 10, 2024  
+**Employment dates:** February 16, 2021–November 10, 2024
 **Organization:** 407th Supply Chain Management Squadron, Robins Air Force Base, Georgia
 
 ---

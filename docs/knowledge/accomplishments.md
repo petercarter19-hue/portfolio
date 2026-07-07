@@ -38,7 +38,7 @@
 * Served as Control Account Manager and Integrated Logistics Support manager for the $9.1 million A3M Modem sustainment effort.
 * Managed cost, schedule, scope, risks, actuals, variances, Estimate to Complete, Estimate at Completion, customer deliverables, and product-support execution using Earned Value Management principles.
 * Developed and delivered product-support documentation including Level of Repair Analysis, Product Support Plans, Product Support Analysis, recommended spares documentation, depot-maintenance studies, and provisioning information.
-* Created a Level of Repair Analysis for the Army Resilient Anti-Jam Modem, establishing repair echelons, repair-versus-replace policy, maintenance concepts, and Source, Maintenance, and Recoverability coding considerations.
+* Created a Level of Repair Analysis for the Army Resilient Anti-Jam Modem, establishing repair echelons, repair-versus-replace policy, maintenance concepts, and Source, Maintenance, and Recoverability code considerations.
 * Coordinated development of the A3M Modem Recommended Spare Parts List using cost, reliability, repair-cycle, turnaround-time, lead-time, and operational assumptions.
 * Defined logistics-provisioning and logistics-product data for the Navy Next Generation Jammer program to support part-level supportability, sustainment, maintenance, materials management, and operational readiness.
 * Supported requirements development, decomposition, allocation, validation, and bidirectional traceability for the Sentinel intercontinental ballistic missile replacement program using IBM DOORS and systems-architecture processes.

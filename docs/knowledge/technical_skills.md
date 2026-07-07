@@ -364,7 +364,6 @@
 * Sustainment tracker development
 * Parts tracker development
 * Project tracking
-* Data consolidation
 * Data organization
 * Data filtering
 * Data sorting
@@ -381,7 +380,6 @@
 * Engineering team leadership
 * Technical team coordination
 * Project team leadership
-* Integrated Product Team leadership
 * Meeting facilitation
 * Program management meeting leadership
 * Engineering flight meeting leadership
