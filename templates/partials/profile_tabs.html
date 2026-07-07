@@ -6,11 +6,14 @@
 #}
 <nav class="profile-tabs" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
-        {# Mockup tab order: Overview / Evidence / Projects / Slate Board /
-           Resume — plus My Slate (the story page) kept reachable at the
-           end. "Evidence" is the skills-backed-by-evidence page. #}
+        {# Tab order: Overview / My Slate / Evidence / Projects / Slate Board /
+           Resume. Pete asked for My Slate (the story page) to sit right next to
+           Overview. "Evidence" is the skills-backed-by-evidence page. #}
         <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
             Overview
+        </a>
+        <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
+            My Slate
         </a>
         <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
             Evidence
@@ -23,9 +26,6 @@
         </a>
         <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
             Resume
-        </a>
-        <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
-            My Slate
         </a>
 
         {# LinkedIn stays pinned to the far right of the tab row. #}

@@ -1,0 +1,224 @@
+{# ============================================================
+   SLATE FEED — PULSE VIEW (/slate-feed/pulse), built 2026-07-07.
+   The "Pulse" tab: the community's momentum at a glance — this-week
+   stat cards, trending skills with momentum bars, what's moving
+   right now, and a rising-goals rail. Same page shell + shared tab
+   strip as the Progress and People views, Pulse tab active.
+
+   MVP is a static, representative preview (like the People view's
+   sample cards): PeerSlate is pre-launch with Pete as the only real
+   member, so the community numbers here are illustrative. The layout
+   is the seam where a real cross-member "pulse" service plugs in later.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Pulse | Slate Feed | PeerSlate{% endblock %}
+
+{% block meta_description %}The Pulse view of the PeerSlate Slate Feed: community momentum, trending skills, rising goals, and what members are building right now.{% endblock %}
+
+{% block content %}
+
+<section class="sf-page" aria-labelledby="sf-title">
+    <div class="site-container">
+
+        <!-- ============ PAGE HEAD ============ -->
+        <header class="sf-head">
+            <h1 id="sf-title">Slate Feed</h1>
+            <p>The Pulse — momentum, milestones, and what the community is building right now.</p>
+        </header>
+
+        <!-- ============ TAB STRIP ============ -->
+        {% set active = 'pulse' %}
+        <div class="sf-tabbar">
+            {% include "partials/slate_feed_tabs.html" %}
+            <span class="pulse-range" aria-hidden="true">This week</span>
+        </div>
+
+        <!-- ============ STAT BAND ============ -->
+        <div class="pulse-stats" aria-label="This week across the community">
+            <div class="ps-card pulse-stat">
+                <span class="pulse-stat__icon ps-tint--blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 2.7-5.5 5.5-5.5s4.9 2.1 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.8M17 14.4c2.4.5 3.8 2.2 4.3 5.1"/></svg>
+                </span>
+                <strong>1,284</strong>
+                <span>Active builders</span>
+                <small class="pulse-trend pulse-trend--up">&#9650; 12% vs last week</small>
+            </div>
+            <div class="ps-card pulse-stat">
+                <span class="pulse-stat__icon ps-tint--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                </span>
+                <strong>342</strong>
+                <span>Milestones logged</span>
+                <small class="pulse-trend pulse-trend--up">&#9650; 8% vs last week</small>
+            </div>
+            <div class="ps-card pulse-stat">
+                <span class="pulse-stat__icon ps-tint--violet" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.6 12l2.4 2.4 4.4-4.8"/></svg>
+                </span>
+                <strong>176</strong>
+                <span>Badges earned</span>
+                <small class="pulse-trend pulse-trend--up">&#9650; 5% vs last week</small>
+            </div>
+            <div class="ps-card pulse-stat">
+                <span class="pulse-stat__icon ps-tint--orange" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3.5V6M12 18v2.5M3.5 12H6M18 12h2.5"/></svg>
+                </span>
+                <strong>908</strong>
+                <span>Goals in motion</span>
+                <small class="pulse-trend pulse-trend--flat">&#8226; Steady</small>
+            </div>
+        </div>
+
+        <!-- ============ TWO-COLUMN BODY ============ -->
+        <div class="pulse-layout">
+
+            <!-- ---- MAIN ---- -->
+            <div class="pulse-main">
+
+                <section class="ps-card pulse-panel" aria-labelledby="pulse-skills-title">
+                    <header class="pulse-panel__head">
+                        <h2 id="pulse-skills-title">Trending Skills</h2>
+                        <span class="pulse-panel__meta">Most-added to slates this week</span>
+                    </header>
+                    <ul class="pulse-skills">
+                        <li>
+                            <span class="pulse-skill__name">Model-Based Systems Engineering</span>
+                            <span class="sf-bar" role="img" aria-label="92 percent momentum"><i style="width: 92%;"></i></span>
+                            <span class="pulse-skill__val">92</span>
+                        </li>
+                        <li>
+                            <span class="pulse-skill__name">SysML Modeling</span>
+                            <span class="sf-bar" role="img" aria-label="78 percent momentum"><i style="width: 78%;"></i></span>
+                            <span class="pulse-skill__val">78</span>
+                        </li>
+                        <li>
+                            <span class="pulse-skill__name">AI-Assisted Requirements</span>
+                            <span class="sf-bar" role="img" aria-label="71 percent momentum"><i style="width: 71%;"></i></span>
+                            <span class="pulse-skill__val">71</span>
+                        </li>
+                        <li>
+                            <span class="pulse-skill__name">Requirements Traceability</span>
+                            <span class="sf-bar" role="img" aria-label="64 percent momentum"><i style="width: 64%;"></i></span>
+                            <span class="pulse-skill__val">64</span>
+                        </li>
+                        <li>
+                            <span class="pulse-skill__name">Automation & Scripting</span>
+                            <span class="sf-bar" role="img" aria-label="58 percent momentum"><i style="width: 58%;"></i></span>
+                            <span class="pulse-skill__val">58</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="ps-card pulse-panel" aria-labelledby="pulse-moving-title">
+                    <header class="pulse-panel__head">
+                        <h2 id="pulse-moving-title">What's Moving Today</h2>
+                        <a class="ps-link" href="{{ url_for('slate_feed') }}">See the live feed <span aria-hidden="true">&rarr;</span></a>
+                    </header>
+                    <ul class="pulse-moves">
+                        <li>
+                            <span class="pulse-move__icon ps-tint--green" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                            </span>
+                            <span class="pulse-move__text"><strong>Milestones</strong> are up across engineering slates — 42 logged since this morning.</span>
+                            <span class="pulse-move__pct pulse-trend--up">+42</span>
+                        </li>
+                        <li>
+                            <span class="pulse-move__icon ps-tint--violet" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M13 3L4 14h6l-1 7 9-11h-6z"/></svg>
+                            </span>
+                            <span class="pulse-move__text"><strong>Automation Ace</strong> is the most-earned badge this week.</span>
+                            <span class="pulse-move__pct pulse-trend--up">31 earned</span>
+                        </li>
+                        <li>
+                            <span class="pulse-move__icon ps-tint--sky" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+                            </span>
+                            <span class="pulse-move__text"><strong>Ph.D. journeys</strong> are trending as members share study milestones.</span>
+                            <span class="pulse-move__pct pulse-trend--up">+18</span>
+                        </li>
+                        <li>
+                            <span class="pulse-move__icon ps-tint--orange" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M4 20a8 8 0 0 1 16 0"/><path d="M12 4v4M12 12l3-2"/></svg>
+                            </span>
+                            <span class="pulse-move__text"><strong>Fitness goals</strong> picked up steam — 5 a.m. run streaks are climbing.</span>
+                            <span class="pulse-move__pct pulse-trend--up">+9</span>
+                        </li>
+                    </ul>
+                </section>
+
+            </div>
+
+            <!-- ---- RAIL ---- -->
+            <aside class="pulse-rail" aria-label="Rising goals and weekly numbers">
+
+                <section class="ps-card pulse-panel" aria-labelledby="pulse-goals-title">
+                    <header class="pulse-panel__head">
+                        <h2 id="pulse-goals-title">Rising Goals</h2>
+                    </header>
+                    <ol class="pulse-goals">
+                        <li>
+                            <span class="pulse-goals__rank">1</span>
+                            <span class="pulse-goals__label">Earn an advanced degree</span>
+                            <span class="pulse-goals__people">1,842</span>
+                        </li>
+                        <li>
+                            <span class="pulse-goals__rank">2</span>
+                            <span class="pulse-goals__label">Ship an AI-assisted tool</span>
+                            <span class="pulse-goals__people">1,190</span>
+                        </li>
+                        <li>
+                            <span class="pulse-goals__rank">3</span>
+                            <span class="pulse-goals__label">Earn a PMP certification</span>
+                            <span class="pulse-goals__people">970</span>
+                        </li>
+                        <li>
+                            <span class="pulse-goals__rank">4</span>
+                            <span class="pulse-goals__label">Run 500 miles this year</span>
+                            <span class="pulse-goals__people">744</span>
+                        </li>
+                        <li>
+                            <span class="pulse-goals__rank">5</span>
+                            <span class="pulse-goals__label">Build a home operations dashboard</span>
+                            <span class="pulse-goals__people">512</span>
+                        </li>
+                    </ol>
+                </section>
+
+                <section class="ps-card pulse-panel pulse-panel--numbers" aria-labelledby="pulse-numbers-title">
+                    <header class="pulse-panel__head">
+                        <h2 id="pulse-numbers-title">This Week in Numbers</h2>
+                    </header>
+                    <ul class="pulse-numbers">
+                        <li><strong>2,410</strong><span>Slate updates</span></li>
+                        <li><strong>318</strong><span>New connections</span></li>
+                        <li><strong>1,067</strong><span>Cheers &amp; reactions</span></li>
+                        <li><strong>96%</strong><span>Weekly actions on track</span></li>
+                    </ul>
+                </section>
+
+                <aside class="sf-invite">
+                    <span class="sf-invite__art" aria-hidden="true">
+                        <svg viewBox="0 0 64 64">
+                            <path class="sf-invite__hill" d="M2 58c12-20 26-32 44-34l8 34z"/>
+                            <path class="sf-invite__hill sf-invite__hill--near" d="M18 58c9-13 21-20 34-21l10 21z"/>
+                            <path class="sf-invite__pole" d="M46 8v16"/>
+                            <path class="sf-invite__flag" d="M46 8l11 3.4L46 14.8z"/>
+                            <circle class="sf-invite__head" cx="27" cy="30" r="3.6"/>
+                            <path class="sf-invite__body" d="M27 33.6V44M27 36.5l-5 4.5M27 36.5l5 3.5M27 44l-4 9M27 44l4 9"/>
+                        </svg>
+                    </span>
+                    <div class="sf-invite__copy">
+                        <strong>Add to the pulse.</strong>
+                        <p>Post a win and move the needle.</p>
+                        <a class="sf-invite__cta" href="{{ url_for('slate_feed') }}">Share an update <span aria-hidden="true">&rarr;</span></a>
+                    </div>
+                </aside>
+
+            </aside>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}

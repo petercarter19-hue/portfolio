@@ -1,0 +1,464 @@
+{# ============================================================
+   SLATE FEED — built 2026-07-07 from Pete's Slate Feed mockup
+   (Progress tab). Platform-level page: "Slate Feed" title +
+   "Your growth, in real time.", a five-tab strip (Progress is
+   live; Pulse / Break / People are coming-soon per the other
+   mockups; My Slate jumps to Pete's board), and a three-column
+   layout — Shortcuts / Keep building / Invite rail on the left,
+   the live activity feed in the middle, Weekly Review /
+   Suggested Next Step / Trending Goals on the right.
+
+   LIVE DATA: the feed renders from static/data/slate_feed.json
+   via app.py's load_slate_feed(). Every card is pulled from
+   Pete's real Slate Board (same titles, dates, and progress
+   numbers) and links back to the exact card it came from.
+   Each item names its author, so other members' slates can
+   join this same feed later. Time labels ("5d ago") and the
+   Weekly Review week range are computed fresh on every request.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Slate Feed | PeerSlate{% endblock %}
+
+{% block meta_description %}The PeerSlate activity feed: milestones, badges, project updates, and board moves from member slates — your growth, in real time.{% endblock %}
+
+{% block content %}
+
+<section class="sf-page" aria-labelledby="sf-title">
+    <div class="site-container">
+
+        <!-- ============ PAGE HEAD ============ -->
+        <header class="sf-head">
+            <h1 id="sf-title">Slate Feed</h1>
+            <p>Your growth, in real time.</p>
+        </header>
+
+        <!-- ============ TAB STRIP ============ -->
+        {% set active = 'progress' %}
+        <div class="sf-tabbar">
+            {% include "partials/slate_feed_tabs.html" %}
+
+            <label class="sf-filter">
+                <span class="sf-hidden-label">Filter activity</span>
+                <select id="sf-filter">
+                    <option value="all">All Activity</option>
+                    <option value="post">Posts</option>
+                    <option value="milestone">Milestones</option>
+                    <option value="badge">Badges</option>
+                    <option value="project">Projects</option>
+                    <option value="board_move">Boards</option>
+                </select>
+            </label>
+        </div>
+
+        <!-- ============ THREE-COLUMN LAYOUT ============ -->
+        <div class="sf-layout">
+
+            <!-- ---- LEFT RAIL ---- -->
+            <aside class="sf-rail sf-rail--left" aria-label="Feed shortcuts">
+
+                <section class="ps-card sf-shortcuts" aria-labelledby="sf-shortcuts-title">
+                    <h2 id="sf-shortcuts-title">Shortcuts</h2>
+                    <ul>
+                        <li>
+                            <a href="{{ portfolio_url('slate-board') }}">
+                                <span class="sf-shortcut__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+                                </span>
+                                <span class="sf-shortcut__text">
+                                    <strong>Boards</strong>
+                                    <small>View and manage your boards</small>
+                                </span>
+                                <i class="sf-chevron" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ portfolio_url('interview-me') }}">
+                                <span class="sf-shortcut__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
+                                </span>
+                                <span class="sf-shortcut__text">
+                                    <strong>Challenges</strong>
+                                    <small>Join and track challenges</small>
+                                </span>
+                                <i class="sf-chevron" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ portfolio_url('slate-board') }}#bd-whiteboard">
+                                <span class="sf-shortcut__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 6 6c0 2.2-1.2 3.6-2.4 4.8-.7.7-1.1 1.4-1.3 2.2h-4.6c-.2-.8-.6-1.5-1.3-2.2C7.2 12.6 6 11.2 6 9a6 6 0 0 1 6-6z"/></svg>
+                                </span>
+                                <span class="sf-shortcut__text">
+                                    <strong>Saved Ideas</strong>
+                                    <small>Ideas you've saved</small>
+                                </span>
+                                <i class="sf-chevron" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ portfolio_url('slate-board') }}#bd-tracking">
+                                <span class="sf-shortcut__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4V2M20 12h2"/></svg>
+                                </span>
+                                <span class="sf-shortcut__text">
+                                    <strong>Goal Rooms</strong>
+                                    <small>Focus rooms for your goals</small>
+                                </span>
+                                <i class="sf-chevron" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="ps-card sf-keep" aria-labelledby="sf-keep-title">
+                    <h2 id="sf-keep-title">Keep building</h2>
+                    <p>Small steps lead to big outcomes.</p>
+                    <small>{{ feed.keep_building.done }} of {{ feed.keep_building.total }} weekly actions completed</small>
+                    <span class="sf-bar" role="img" aria-label="{{ feed.keep_building.percent }} percent of weekly actions completed">
+                        <i style="width: {{ feed.keep_building.percent }}%;"></i>
+                    </span>
+                </section>
+
+                <aside class="sf-invite">
+                    <span class="sf-invite__art" aria-hidden="true">
+                        <svg viewBox="0 0 64 64">
+                            <path class="sf-invite__hill" d="M2 58c12-20 26-32 44-34l8 34z"/>
+                            <path class="sf-invite__hill sf-invite__hill--near" d="M18 58c9-13 21-20 34-21l10 21z"/>
+                            <path class="sf-invite__pole" d="M46 8v16"/>
+                            <path class="sf-invite__flag" d="M46 8l11 3.4L46 14.8z"/>
+                            <circle class="sf-invite__head" cx="27" cy="30" r="3.6"/>
+                            <path class="sf-invite__body" d="M27 33.6V44M27 36.5l-5 4.5M27 36.5l5 3.5M27 44l-4 9M27 44l4 9"/>
+                        </svg>
+                    </span>
+                    <div class="sf-invite__copy">
+                        <strong>Invite a peer, grow together.</strong>
+                        <p>Collaboration fuels progress.</p>
+                        <button type="button" class="sf-invite__cta" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                            Invite Now <span aria-hidden="true">&rarr;</span>
+                        </button>
+                    </div>
+                </aside>
+
+            </aside>
+
+            <!-- ---- CENTER: THE LIVE FEED ---- -->
+            <div class="sf-center">
+
+                {# Composer — share straight to the feed: up to 500
+                   characters (live counter), optional image. Posts render
+                   as feed cards and save in this browser until PeerSlate
+                   accounts bring real cross-visitor storage. #}
+                <div class="sf-compose ps-card"
+                     id="sf-compose"
+                     data-author-name="{{ feed.authors.petec.name }}"
+                     data-author-avatar="{{ url_for('static', filename=feed.authors.petec.avatar) }}"
+                     data-author-url="{{ feed.authors.petec.profile_url }}">
+                    <img
+                        class="sf-avatar"
+                        src="{{ url_for('static', filename=feed.authors.petec.avatar) }}"
+                        alt=""
+                        aria-hidden="true"
+                    >
+                    <div class="sf-compose__main">
+                        <label class="sf-hidden-label" for="sf-compose-text">Share an update (500 characters max)</label>
+                        <textarea
+                            id="sf-compose-text"
+                            rows="2"
+                            maxlength="500"
+                            placeholder="Share a win, an update, or what you're building..."
+                        ></textarea>
+                        <div class="sf-compose__preview" id="sf-compose-preview" hidden>
+                            <img id="sf-compose-preview-img" src="" alt="Attached image preview">
+                            <button type="button" id="sf-compose-remove-img" aria-label="Remove image">&times;</button>
+                        </div>
+                        <div class="sf-compose__bar">
+                            <label class="sf-compose__photo" title="Add an image">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="M3.5 18l5-5 3.5 3.5L15.5 13l5 5"/></svg>
+                                <input type="file" id="sf-compose-image" accept="image/*" hidden>
+                                <span class="sf-hidden-label">Attach an image</span>
+                            </label>
+                            <span class="sf-compose__count" id="sf-compose-count" aria-live="polite">0 / 500</span>
+                            <button class="sf-compose__post" id="sf-compose-post" type="button" disabled>Post</button>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="sf-feed" id="sf-feed" aria-label="Activity feed">
+                {% for item in feed['items'] %}
+                <article class="sf-item" data-feed-type="{{ item.type }}" id="{{ item.id }}">
+
+                    {# Shared card header: author, action, live time label. #}
+                    <header class="sf-item__head">
+                        <img
+                            class="sf-avatar"
+                            src="{{ url_for('static', filename=item.author.avatar) }}"
+                            alt=""
+                            aria-hidden="true"
+                        >
+                        <p class="sf-item__who">
+                            <a class="sf-item__name" href="{{ item.author.profile_url }}">{{ item.author.name }}</a>
+                            <span class="sf-item__action">
+                                {{ item.action }}{% if item.type == 'board_move' %}
+                                <a class="sf-item__boardlink" href="{{ item.board_href }}">{{ item.board_name }}</a>{% endif %}
+                            </span>
+                        </p>
+                        <span class="sf-item__meta">
+                            <time datetime="{{ item.timestamp }}">{{ item.time_label }}</time>
+                            <button class="sf-item__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                            </button>
+                        </span>
+                    </header>
+
+                    {% if item.type == 'milestone' %}
+                    <div class="sf-item__body sf-item__body--split">
+                        <div class="sf-item__copy">
+                            <h2>{{ item.title }}</h2>
+                            <p>{{ item.body }}</p>
+                            <span class="sf-chip sf-chip--green">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.6 12.4l2.3 2.3 4.5-4.9"/></svg>
+                                {{ item.chip }}
+                            </span>
+                        </div>
+                        {# Milestone medal: blue hexagon + flag, sparkles — mockup art. #}
+                        <span class="sf-hexart sf-hexart--milestone" aria-hidden="true">
+                            <svg viewBox="0 0 104 96">
+                                <defs>
+                                    <linearGradient id="sfHexBlue" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0" stop-color="#5490f4"/>
+                                        <stop offset="1" stop-color="#1c50c8"/>
+                                    </linearGradient>
+                                </defs>
+                                <path class="sf-spark" d="M13 20l2 4.6 4.6 2-4.6 2-2 4.6-2-4.6L6.4 26.6l4.6-2z"/>
+                                <path class="sf-spark sf-spark--small" d="M90 12l1.3 3 3 1.3-3 1.3-1.3 3-1.3-3-3-1.3 3-1.3z"/>
+                                <path class="sf-spark sf-spark--small" d="M95 60l1.3 3 3 1.3-3 1.3-1.3 3-1.3-3-3-1.3 3-1.3z"/>
+                                {# Pointy-top hexagon medal with a mountain + summit flag. #}
+                                <path d="M52 12l30 17.5v35L52 82 22 64.5v-35z" fill="url(#sfHexBlue)"/>
+                                <path d="M52 12l30 17.5L52 47 22 29.5z" fill="#ffffff" opacity="0.1"/>
+                                <path d="M37 62l12-18 6 7.5 5-6.5 8 17z" fill="#ffffff" opacity="0.95"/>
+                                <path d="M49 44V30" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                                <path d="M49 28.6l11 3.2-11 3.2z" fill="#ffffff"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <footer class="sf-item__foot">
+                        <span class="sf-social">
+                            <span class="sf-facepile" aria-hidden="true">
+                                {% for initial in item.peer_initials %}<i>{{ initial }}</i>{% endfor %}
+                            </span>
+                            <span class="sf-social__count" data-count="{{ item.social_count }}" data-label="{{ item.social_label }}">{{ item.social_count }} {{ item.social_label }}</span>
+                        </span>
+                        <span class="sf-item__acts">
+                            <button class="sf-act" type="button" data-cheer aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l-3 9 9-3z"/><path d="M6.5 13.5l4 4"/><path d="M13 6.5l1-3M17.5 10l3-1M15.5 4.5l-.5 2.5M20 15l-2.5.5M19.5 4.5l-3.5 3.5"/></svg>
+                                Celebrate
+                            </button>
+                            <button class="sf-act" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                Comment
+                            </button>
+                        </span>
+                    </footer>
+
+                    {% elif item.type == 'badge' %}
+                    <div class="sf-item__body sf-item__body--badge">
+                        {# Badge medal: violet hexagon + bolt (Pete's Automation Ace). #}
+                        <span class="sf-hexart sf-hexart--badge" aria-hidden="true">
+                            <svg viewBox="0 0 96 96">
+                                <defs>
+                                    <linearGradient id="sfHexViolet" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0" stop-color="#9d6bf5"/>
+                                        <stop offset="1" stop-color="#6427cf"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M48 10l30 17v34L48 78 18 61V27z" fill="url(#sfHexViolet)"/>
+                                <path d="M48 10l30 17-30 17-30-17z" fill="#ffffff" opacity="0.14"/>
+                                <path d="M53 26L37 50h9l-4 16 17-24h-9z" fill="#ffffff"/>
+                            </svg>
+                        </span>
+                        <div class="sf-item__copy">
+                            <h2>{{ item.title }}</h2>
+                            <p>{{ item.body }}</p>
+                        </div>
+                    </div>
+                    <footer class="sf-item__foot">
+                        <span class="sf-social">
+                            <span class="sf-facepile" aria-hidden="true">
+                                {% for initial in item.peer_initials %}<i>{{ initial }}</i>{% endfor %}
+                            </span>
+                            <span class="sf-social__count" data-count="{{ item.social_count }}" data-label="{{ item.social_label }}">{{ item.social_count }} {{ item.social_label }}</span>
+                        </span>
+                        <span class="sf-item__acts">
+                            <button class="sf-act" type="button" data-cheer aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8"/><path d="M9 10h.01M15 10h.01" stroke-width="2.4"/></svg>
+                                React
+                            </button>
+                            <button class="sf-act" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                Comment
+                            </button>
+                        </span>
+                    </footer>
+
+                    {% elif item.type == 'project' %}
+                    <div class="sf-item__body sf-item__body--project">
+                        <div class="sf-item__copy">
+                            <h2>{{ item.title }}</h2>
+                            <p>{{ item.body }}</p>
+                        </div>
+                        <span class="sf-progress">
+                            <span class="sf-progress__pct">{{ item.percent }}% complete</span>
+                            <span class="sf-progress__bar" role="img" aria-label="{{ item.percent }} percent complete">
+                                <i style="width: {{ item.percent }}%;"></i>
+                            </span>
+                        </span>
+                    </div>
+                    <footer class="sf-item__foot">
+                        <span class="sf-chip sf-chip--blue">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                            {{ item.chip }}
+                        </span>
+                        <span class="sf-item__acts">
+                            <a class="sf-act" href="{{ item.link_href }}">
+                                {{ item.link_label }}
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8"/><path d="M19 14v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
+                            </a>
+                            <button class="sf-act" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                Comment
+                            </button>
+                        </span>
+                    </footer>
+
+                    {% elif item.type == 'board_move' %}
+                    <div class="sf-boardmove">
+                        <span class="sf-minicard">
+                            <span class="sf-minicard__status"><i class="sf-dot sf-dot--blue" aria-hidden="true"></i>{{ item.from_status }}</span>
+                            <strong>{{ item.card_title }}</strong>
+                        </span>
+                        <span class="sf-boardmove__arrow" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></svg>
+                        </span>
+                        <span class="sf-minicard">
+                            <span class="sf-minicard__status"><i class="sf-dot sf-dot--green" aria-hidden="true"></i>{{ item.to_status }}</span>
+                            <strong>{{ item.card_title }}</strong>
+                        </span>
+                    </div>
+                    <footer class="sf-item__foot">
+                        <span class="sf-chip sf-chip--blue">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+                            {{ item.chip }}
+                        </span>
+                        <span class="sf-item__acts">
+                            <a class="sf-act" href="{{ item.link_href }}">
+                                {{ item.link_label }}
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8"/><path d="M19 14v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
+                            </a>
+                            <button class="sf-act" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                Comment
+                            </button>
+                        </span>
+                    </footer>
+                    {% endif %}
+
+                </article>
+                {% endfor %}
+            </div>
+
+            </div>{# /sf-center #}
+
+            <!-- ---- RIGHT RAIL ---- -->
+            <aside class="sf-rail sf-rail--right" aria-label="Weekly summary and suggestions">
+
+                <section class="ps-card sf-review" aria-labelledby="sf-review-title">
+                    <header class="sf-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        <h2 id="sf-review-title">Weekly Review</h2>
+                        <span class="sf-railhead__meta">{{ feed.weekly_review.range_label }}</span>
+                    </header>
+                    <div class="sf-review__body">
+                        {# 76% ring — r=34, circumference 213.6; the dash length is percent-of-213.6. #}
+                        <span class="sf-ring" role="img" aria-label="{{ feed.weekly_review.percent }} percent of planned actions completed">
+                            <svg viewBox="0 0 80 80">
+                                <circle class="sf-ring__track" cx="40" cy="40" r="34"/>
+                                <circle class="sf-ring__value" cx="40" cy="40" r="34"
+                                        style="stroke-dasharray: {{ '%.1f' | format(feed.weekly_review.percent * 2.136) }} 213.6;"/>
+                            </svg>
+                            <strong>{{ feed.weekly_review.percent }}<i>%</i></strong>
+                        </span>
+                        <div class="sf-review__copy">
+                            <strong>{{ feed.weekly_review.headline }}</strong>
+                            <p>You completed {{ feed.weekly_review.actions_done }} of {{ feed.weekly_review.actions_planned }} planned actions.</p>
+                            <a class="ps-link" href="{{ portfolio_url('slate-board') }}">See full review <span aria-hidden="true">&rarr;</span></a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ps-card sf-suggest" aria-labelledby="sf-suggest-title">
+                    <header class="sf-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z"/><path d="M19 15l1 2.5L22.5 18 20 19l-1 2.5L18 19l-2.5-1 2.5-.5z"/></svg>
+                        <h2 id="sf-suggest-title">Suggested Next Step</h2>
+                    </header>
+                    <div class="sf-suggest__panel" id="sf-suggest-panel">
+                        <span class="sf-suggest__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
+                        </span>
+                        <div class="sf-suggest__copy">
+                            <strong>{{ feed.suggested_next_step.title }}</strong>
+                            <p>{{ feed.suggested_next_step.body }}</p>
+                            <span class="sf-suggest__acts">
+                                <a class="sf-suggest__go" href="{{ feed.suggested_next_step.primary_href }}">{{ feed.suggested_next_step.primary_label }}</a>
+                                <button class="sf-suggest__later" type="button" data-dismiss-suggest>{{ feed.suggested_next_step.dismiss_label }}</button>
+                            </span>
+                        </div>
+                    </div>
+                    <p class="sf-suggest__done" id="sf-suggest-done" hidden>Got it — a fresh suggestion will be waiting next week.</p>
+                </section>
+
+                <section class="ps-card sf-trending" aria-labelledby="sf-trending-title">
+                    <header class="sf-railhead">
+                        <svg class="sf-railhead__flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.6 7-7 0-3-1.6-5.4-3.2-7.2C14 6 13 4 13 2c-3 2-4.4 4.6-4.4 6.6-1-.8-1.7-2-2-3.1C5 7.5 5 10.5 5 15c0 4.4 3 7 7 7z"/></svg>
+                        <h2 id="sf-trending-title">Trending Goals</h2>
+                        <a class="ps-link" href="{{ portfolio_url('slate-board') }}#bd-tracking">View all</a>
+                    </header>
+                    <ol class="sf-trending__list">
+                        {% for goal in feed.trending_goals.goals %}
+                        <li>
+                            <span class="sf-trending__rank">{{ loop.index }}</span>
+                            <span class="sf-trend sf-trend--{{ goal.direction }}" aria-hidden="true">
+                                {% if goal.direction == 'up' %}
+                                <svg viewBox="0 0 24 24"><path d="M4 17l5.5-5.5 3.5 3.5L20 8"/><path d="M14.5 8H20v5.5"/></svg>
+                                {% else %}
+                                <svg viewBox="0 0 24 24"><path d="M4 7l5.5 5.5L13 9l7 7"/><path d="M14.5 16H20v-5.5"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="sf-trending__label">{{ goal.label }}</span>
+                            <span class="sf-trending__people">{{ goal.people }} people</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
+                <section class="ps-card sf-cheer">
+                    <span class="sf-cheer__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 21v-6"/><path d="M12 15c0-3.5 2.5-6 6-6 0 3.5-2.5 6-6 6z"/><path d="M12 12c0-3.5-2.5-6-6-6 0 3.5 2.5 6 6 6z"/><path d="M7 21h10"/></svg>
+                    </span>
+                    <div class="sf-cheer__copy">
+                        <strong>Growth looks good on you.</strong>
+                        <p>Keep showing up for your future self.</p>
+                    </div>
+                </section>
+
+            </aside>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/slate-feed.js') }}?v=people-edit-1"></script>
+{% endblock %}
