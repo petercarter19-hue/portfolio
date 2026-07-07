@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=slate-light-8"
+        href="{{ url_for('static', filename='css/style.css') }}?v=slate-feed-1"
     >
     <link
         rel="stylesheet"
@@ -116,6 +116,8 @@
 
                 <ul class="platform-nav__links">
                     <li><a href="{{ peerslate_home_url }}" {% if request.path in ['/', '/peerslate'] %}aria-current="page"{% endif %}>Home</a></li>
+                    {# Slate Feed sits right after Home, per the feed mockup. #}
+                    <li><a href="{{ url_for('slate_feed') }}" {% if request.path == '/slate-feed' %}aria-current="page"{% endif %}>Slate Feed</a></li>
                     <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>Slate Board</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
