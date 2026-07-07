@@ -2,35 +2,35 @@
 // This stays browser-only: it never reads environment variables or secrets.
 
 (function () {
-    const defaultTheme = 'modern-blue';
+    // Two themes for now (more later):
+    //   'slate-light' — the clean Light look (the default). It renders via the
+    //                   body.slate-light class, which base.html already adds to
+    //                   every page except the homepage (so there's no flash).
+    //   'gray-slate'  — one Dark Slate stone theme (data-slate-photo pipeline).
+    // The homepage keeps its own look (body.peerslate-home-page) and never
+    // takes the slate-light class.
+    const defaultTheme = 'slate-light';
     const storageKey = 'peerslateTheme';
     const themeButtons = document.querySelectorAll('[data-theme-option]');
     const profileTabLinks = document.querySelectorAll('.profile-tab[href*="#"]');
     const allProfileTabs = document.querySelectorAll('.profile-tab');
 
-    // The four NEW slate themes get the platform slate treatment (stone
-    // texture, restyled hero/cards/buttons). The four ORIGINAL themes
-    // (command-gold, modern-blue, blueprint-light, secure-green) must look
-    // exactly as they did before, so all that new styling is gated in
-    // style.css behind body[data-slate="on"] — which we only set here for
-    // the slate themes.
-    // modern-blue (the mockup theme) is slate-family WITHOUT the stone
-    // photo — platform layout + paper grain, never the rock slabs.
-    // paper-slate ("White Slate") is its stone-photo twin.
-    const slateThemes = ['light-slate', 'light-blue-slate', 'gray-slate', 'sage-slate', 'paper-slate', 'modern-blue'];
-
-    // The two DARK slate themes go further: they use a real slate
-    // photograph for the page and give every card/button/strip its own
-    // raised stone-slab surface. style.css keys that treatment off
-    // body[data-slate-photo="on"].
-    // modern-blue rides the photo pipeline too, but with a near-opaque
-    // white wash: flat white mockup cards over the faintest texture.
-    const photoSlateThemes = ['gray-slate', 'sage-slate', 'light-slate', 'light-blue-slate', 'paper-slate', 'modern-blue'];
-
     function applyTheme(themeName) {
         document.body.dataset.theme = themeName;
-        document.body.dataset.slate = slateThemes.indexOf(themeName) !== -1 ? 'on' : 'off';
-        document.body.dataset.slatePhoto = photoSlateThemes.indexOf(themeName) !== -1 ? 'on' : 'off';
+
+        const isHomepage = document.body.classList.contains('peerslate-home-page');
+        const useStone = themeName === 'gray-slate';
+
+        // Light = the slate-light class (never on the homepage). Dark Slate =
+        // the stone photo pipeline (data-slate / data-slate-photo).
+        if (!useStone && !isHomepage) {
+            document.body.classList.add('slate-light');
+        } else {
+            document.body.classList.remove('slate-light');
+        }
+        document.body.dataset.slate = useStone ? 'on' : 'off';
+        document.body.dataset.slatePhoto = useStone ? 'on' : 'off';
+
         localStorage.setItem(storageKey, themeName);
 
         themeButtons.forEach(function (button) {
