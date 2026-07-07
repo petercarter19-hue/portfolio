@@ -479,6 +479,22 @@ def slate_feed_people():
     return render_template('slate_people.html', people=load_slate_people())
 
 
+@app.route('/slate-feed/pulse')
+def slate_feed_pulse():
+    # The Pulse view — the community's momentum at a glance: this-week
+    # stats, trending skills, rising goals, and what's moving right now.
+    # Static preview content for the MVP (no live cross-member data yet).
+    return render_template('slate_pulse.html')
+
+
+@app.route('/slate-feed/break')
+def slate_feed_break():
+    # The Break view — the "step back and recharge" tab: an encouragement
+    # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
+    # the platform human, not just a metrics grind. Static preview for now.
+    return render_template('slate_break.html')
+
+
 # -------------------------------------------------------
 # PLATFORM PLACEHOLDER PAGES
 # These four pages back the global PeerSlate header links.

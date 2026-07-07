@@ -1,0 +1,130 @@
+{# ============================================================
+   SLATE FEED — BREAK VIEW (/slate-feed/break), built 2026-07-07.
+   The "Break" tab (coffee-cup icon): the "step back and recharge"
+   corner of the platform. An encouragement panel, a grid of recharge
+   ideas, community shout-outs, and a daily spark quote — so PeerSlate
+   stays human, not just a metrics grind. Same page shell + shared tab
+   strip as the other feed views, Break tab active. Static preview.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Break | Slate Feed | PeerSlate{% endblock %}
+
+{% block meta_description %}The Break view of the PeerSlate Slate Feed: step back, recharge, and celebrate progress — encouragement, recharge ideas, and community shout-outs.{% endblock %}
+
+{% block content %}
+
+<section class="sf-page" aria-labelledby="sf-title">
+    <div class="site-container">
+
+        <!-- ============ PAGE HEAD ============ -->
+        <header class="sf-head">
+            <h1 id="sf-title">Slate Feed</h1>
+            <p>Break — step back, recharge, and celebrate how far you've come.</p>
+        </header>
+
+        <!-- ============ TAB STRIP ============ -->
+        {% set active = 'break' %}
+        <div class="sf-tabbar">
+            {% include "partials/slate_feed_tabs.html" %}
+        </div>
+
+        <!-- ============ ENCOURAGEMENT HERO ============ -->
+        <section class="brk-hero" aria-labelledby="brk-hero-title">
+            <span class="brk-hero__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M17 8h2.5a2.5 2.5 0 0 1 0 5H17"/><path d="M4 8h13v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 2v3M12 2v3M15 2v3"/></svg>
+            </span>
+            <div class="brk-hero__copy">
+                <p class="brk-eyebrow">Take a breath</p>
+                <h2 id="brk-hero-title">You've been building. Now recharge.</h2>
+                <p>Progress isn't only measured in milestones. Rest, reflection, and a little
+                   fun are part of the work too. Step away, come back sharper.</p>
+                <span class="brk-hero__chip"><span aria-hidden="true">&#9728;</span> 21-day building streak &mdash; you've earned a break</span>
+            </div>
+        </section>
+
+        <!-- ============ RECHARGE IDEAS ============ -->
+        <section class="brk-section" aria-labelledby="brk-ideas-title">
+            <header class="brk-section__head">
+                <h2 id="brk-ideas-title">Ways to recharge</h2>
+                <p>Small resets that keep the momentum healthy.</p>
+            </header>
+            <div class="brk-ideas">
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--green" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3c3 3 4 6 4 9a4 4 0 0 1-8 0c0-3 1-6 4-9z"/><path d="M12 21v-6"/></svg>
+                    </span>
+                    <h3>Step outside</h3>
+                    <p>A short walk resets focus better than one more refresh of the feed.</p>
+                </article>
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--violet" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M5 4h14v6a7 7 0 0 1-14 0z"/><path d="M9 20h6M12 17v3"/><path d="M5 6H3a3 3 0 0 0 3 4M19 6h2a3 3 0 0 1-3 4"/></svg>
+                    </span>
+                    <h3>Celebrate a win</h3>
+                    <p>Look back at your Slate Board. Give a past-you a little credit.</p>
+                </article>
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--blue" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 2.7-5.5 5.5-5.5s4.9 2.1 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.8"/></svg>
+                    </span>
+                    <h3>Reconnect</h3>
+                    <p>Message a peer, cheer someone's milestone, or say thanks.</p>
+                </article>
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--orange" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l2.4 5 5.6.7-4 3.9 1 5.4-5-2.6-5 2.6 1-5.4-4-3.9 5.6-.7z"/></svg>
+                    </span>
+                    <h3>Learn something fun</h3>
+                    <p>Curiosity outside your lane often sparks the next idea inside it.</p>
+                </article>
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--sky" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                    </span>
+                    <h3>Rest well</h3>
+                    <p>Sleep is a performance tool. The requirements can wait until morning.</p>
+                </article>
+                <article class="ps-card brk-idea">
+                    <span class="brk-idea__icon ps-tint--green" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2z"/><path d="M8 12h8M8 16h6"/></svg>
+                    </span>
+                    <h3>Reflect</h3>
+                    <p>Jot one thing that went well and one thing you learned this week.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============ COMMUNITY SHOUT-OUTS ============ -->
+        <section class="brk-section" aria-labelledby="brk-shout-title">
+            <header class="brk-section__head">
+                <h2 id="brk-shout-title">Community shout-outs</h2>
+                <p>Kind words members shared this week.</p>
+            </header>
+            <div class="brk-shouts">
+                <figure class="ps-card brk-shout">
+                    <blockquote>&ldquo;Watching this community log real progress every day keeps me showing up for my own goals.&rdquo;</blockquote>
+                    <figcaption><span class="brk-shout__avatar" aria-hidden="true">P</span> Priya D. &middot; Requirements Lead</figcaption>
+                </figure>
+                <figure class="ps-card brk-shout">
+                    <blockquote>&ldquo;Took a real weekend off and came back and shipped the thing I'd been stuck on for a month.&rdquo;</blockquote>
+                    <figcaption><span class="brk-shout__avatar" aria-hidden="true">E</span> Ethan P. &middot; MBSE Consultant</figcaption>
+                </figure>
+                <figure class="ps-card brk-shout">
+                    <blockquote>&ldquo;The wins add up faster than you think. Be proud of the small steps.&rdquo;</blockquote>
+                    <figcaption><span class="brk-shout__avatar" aria-hidden="true">S</span> Sarah K. &middot; Systems Engineer</figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <!-- ============ DAILY SPARK ============ -->
+        <section class="brk-spark" aria-label="Daily spark">
+            <span class="brk-spark__mark" aria-hidden="true">&ldquo;</span>
+            <p class="brk-spark__quote">Rest is not the reward for finishing the work. It's part of doing the work well.</p>
+            <p class="brk-spark__by">Daily spark &middot; refreshes each day</p>
+        </section>
+
+    </div>
+</section>
+
+{% endblock %}

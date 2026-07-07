@@ -13453,3 +13453,477 @@ body[data-theme="gray-slate"] .sf-filter select {
     .sf-people__action { margin-left: 0; }
     .sf-people .sf-item__foot { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
+
+/* =========================================================
+   LIGHT-THEME CONVERSION — MY SLATE (story) & PROJECTS (work)
+   (added 2026-07-07)
+   These two pages (.my-story-page and .work-page) were built in the
+   original dark theme and never converted when the site went light
+   site-wide, so on the default Light theme (body.slate-light) they
+   rendered as dark navy pages while every other page was light — the
+   "backgrounds don't match, like my slate" issue Pete flagged. We
+   remap the old dark --color-* variables to the light palette for
+   these page scopes, then override the handful of HARDCODED dark
+   backgrounds (page circuit art + card gradients) that don't come
+   from variables. The old "gold" accent slots become the site's blue
+   accent so the pages match the rest of the Light theme. Placed at
+   the very end of the file so they win the cascade over the base
+   dark rules. (Resume & Evidence get the same treatment in resume.css.)
+   ========================================================= */
+body.slate-light .my-story-page,
+body.slate-light .work-page {
+    /* remap the dark-theme palette to light */
+    --color-text-primary: #0c1f3d;
+    --color-text-secondary: #4a6076;
+    --color-text-muted: #6b7d92;
+    --color-text-dark: #ffffff;          /* text that sits ON the accent */
+    --color-gold: #0b63e5;               /* accent → site blue */
+    --color-gold-bright: #2f79f0;
+    --color-gold-muted: #0a53c2;
+    --color-gold-dark: #0a3f8c;
+    --color-blue: #0b63e5;
+    --color-cyan: #0e7ea3;
+    --color-card: #ffffff;
+    --color-card-elevated: #eef4fb;
+    --color-card-hover: #e7eefb;
+    --color-border: #d9e2ec;
+    --color-border-soft: #e4ebf3;
+    --color-border-gold: #a9c8f7;
+    --shadow-card: 0 12px 30px rgb(6 26 58 / 8%);
+    --shadow-gold: 0 0 0 rgb(0 0 0 / 0%);
+
+    /* kill the dark circuit-photo page background */
+    background: transparent;
+    color: var(--color-text-primary);
+}
+
+body.slate-light .my-story-page::before,
+body.slate-light .work-page::before {
+    background: none;
+}
+
+/* ---- Projects (work) page: white cards ---- */
+body.slate-light .work-hero-panel,
+body.slate-light .work-project-tab,
+body.slate-light .work-project-panel {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+}
+body.slate-light .work-project-tab:hover,
+body.slate-light .work-project-tab:focus-visible,
+body.slate-light .work-project-tab.is-active {
+    background: #eef4fb;
+    border-color: var(--color-gold);
+}
+body.slate-light .work-ask-btn {
+    background: #f4f8fd;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+}
+
+/* ---- My Slate (story) page: white cards ---- */
+body.slate-light .story-journey__layout,
+body.slate-light .drive-card,
+body.slate-light .story-card,
+body.slate-light .fun-fact-card {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+}
+body.slate-light .timeline-item__icon {
+    background: #eef4fb;
+    border: 1px solid var(--color-border);
+}
+body.slate-light .timeline-item__icon--light {
+    color: #0c1f3d;
+}
+/* timeline connector line + node → blue */
+body.slate-light .timeline-item + .timeline-item::before {
+    background: rgb(11 99 229 / 35%);
+}
+body.slate-light .timeline-item + .timeline-item::after {
+    background: var(--color-gold);
+}
+/* icon-circle borders were gold/cyan tinted → blue on light */
+body.slate-light .value-chip__icon--gold {
+    border-color: rgb(11 99 229 / 45%);
+}
+body.slate-light .interest-item__icon {
+    border-color: rgb(11 99 229 / 30%);
+}
+
+/* ---- Reframe the hero collage as a clean framed photo ----
+   The collage (hero-collage.png) has a dark navy background baked
+   in; on the old dark page a radial mask faded its edges into the
+   page. On light we drop that edge-fade and present it as a rounded,
+   bordered photo so it reads as an intentional "moments" frame
+   instead of a dark blob bleeding into white. */
+body.slate-light .portrait-frame {
+    mask-image: none;
+    -webkit-mask-image: none;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 20px 44px rgb(6 26 58 / 16%);
+}
+body.slate-light .portrait-frame img {
+    filter: none;
+}
+/* the -72px pulled up the now-invisible faded strip; not needed once framed */
+body.slate-light .story-hero__portrait {
+    margin-bottom: 6px;
+}
+
+/* =========================================================
+   SLATE FEED — PULSE & BREAK VIEWS (added 2026-07-07)
+   Two new feed tabs built on the shared feed shell (.sf-page /
+   .sf-tabbar) and the design tokens (--surface/--border/--text/
+   --accent), so they match the Progress and People views and adapt
+   to both the Light and Dark Slate themes with no per-theme work.
+   ========================================================= */
+
+/* Timeframe pill sitting at the right of the Pulse tab bar. */
+.pulse-range {
+    margin-bottom: 10px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+/* ---- Pulse: stat band ---- */
+.pulse-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 26px;
+}
+.pulse-stat {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 14px;
+    row-gap: 2px;
+    align-content: center;
+    padding: 18px;
+}
+.pulse-stat__icon {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+}
+.pulse-stat__icon svg,
+.pulse-move__icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.pulse-stat strong {
+    grid-column: 2;
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.05;
+}
+.pulse-stat > span:not(.pulse-stat__icon) {
+    grid-column: 2;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.pulse-stat small {
+    grid-column: 2;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.pulse-trend--up { color: #16a34a; }
+.pulse-trend--flat { color: var(--text-muted); }
+
+/* ---- Pulse: two-column body ---- */
+.pulse-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 26px;
+    align-items: start;
+    margin-top: 26px;
+}
+.pulse-main,
+.pulse-rail {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
+}
+.pulse-panel { padding: 20px 22px; }
+.pulse-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.pulse-panel__head h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+.pulse-panel__meta { color: var(--text-muted); font-size: 0.8rem; }
+
+/* trending skills list (reuses .sf-bar for the momentum bars) */
+.pulse-skills { list-style: none; display: grid; gap: 15px; }
+.pulse-skills li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 120px auto;
+    align-items: center;
+    gap: 12px;
+}
+.pulse-skill__name { color: var(--text); font-size: 0.9rem; font-weight: 650; }
+.pulse-skill__val {
+    min-width: 24px;
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-align: right;
+}
+
+/* what's moving */
+.pulse-moves { list-style: none; display: grid; gap: 15px; }
+.pulse-moves li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+}
+.pulse-move__icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+}
+.pulse-move__icon svg { width: 19px; height: 19px; }
+.pulse-move__text { color: var(--text-muted); font-size: 0.86rem; line-height: 1.4; }
+.pulse-move__text strong { color: var(--text); font-weight: 700; }
+.pulse-move__pct { font-size: 0.8rem; font-weight: 800; white-space: nowrap; }
+
+/* rising goals rail list */
+.pulse-goals { list-style: none; display: grid; gap: 13px; }
+.pulse-goals li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+}
+.pulse-goals__rank {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+.pulse-goals__label { color: var(--text); font-size: 0.86rem; font-weight: 600; }
+.pulse-goals__people { color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
+
+/* this week in numbers */
+.pulse-numbers {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+}
+.pulse-numbers li { display: grid; gap: 2px; }
+.pulse-numbers strong { color: var(--text); font-size: 1.35rem; font-weight: 800; }
+.pulse-numbers span { color: var(--text-muted); font-size: 0.78rem; }
+
+/* ---- Break view ---- */
+.brk-hero {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    margin-top: 26px;
+    padding: 26px 28px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+.brk-hero__icon {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+.brk-hero__icon svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.brk-eyebrow {
+    margin: 0 0 4px;
+    color: var(--accent);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.brk-hero__copy h2 {
+    margin: 0 0 8px;
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+.brk-hero__copy > p {
+    margin: 0;
+    max-width: 620px;
+    color: var(--text-muted);
+    font-size: 0.94rem;
+    line-height: 1.5;
+}
+.brk-hero__chip {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.brk-section { margin-top: 34px; }
+.brk-section__head { margin-bottom: 18px; }
+.brk-section__head h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.brk-section__head p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+.brk-ideas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+.brk-idea { padding: 20px; }
+.brk-idea__icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+.brk-idea__icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.brk-idea h3 { margin: 0 0 6px; color: var(--text); font-size: 1rem; font-weight: 750; }
+.brk-idea p { margin: 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.45; }
+
+.brk-shouts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+.brk-shout { margin: 0; padding: 20px; display: grid; gap: 14px; }
+.brk-shout blockquote {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.94rem;
+    line-height: 1.5;
+}
+.brk-shout figcaption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.brk-shout__avatar {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.brk-spark {
+    position: relative;
+    margin-top: 34px;
+    padding: 30px 32px;
+    text-align: center;
+    background: linear-gradient(135deg, #0b1f3f, #16305e);
+    border-radius: 16px;
+    color: #ffffff;
+    overflow: hidden;
+}
+.brk-spark__mark {
+    position: absolute;
+    top: -6px;
+    left: 24px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 5rem;
+    line-height: 1;
+    color: rgb(255 255 255 / 16%);
+}
+.brk-spark__quote {
+    position: relative;
+    margin: 0 auto;
+    max-width: 680px;
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: 1.35rem;
+    line-height: 1.5;
+    font-weight: 600;
+}
+.brk-spark__by { margin: 12px 0 0; color: rgb(255 255 255 / 70%); font-size: 0.82rem; }
+
+/* Pulse / Break responsive */
+@media (max-width: 960px) {
+    .pulse-layout { grid-template-columns: 1fr; }
+    .pulse-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .brk-ideas,
+    .brk-shouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+    .pulse-stats,
+    .brk-ideas,
+    .brk-shouts { grid-template-columns: 1fr; }
+    .brk-hero { flex-direction: column; align-items: flex-start; }
+}

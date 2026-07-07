@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=people-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=light-pages-1"
     >
     <link
         rel="stylesheet"
@@ -115,10 +115,15 @@
                 </div>
 
                 <ul class="platform-nav__links">
-                    <li><a href="{{ peerslate_home_url }}" {% if request.path in ['/', '/peerslate'] %}aria-current="page"{% endif %}>Home</a></li>
+                    {# "Home" points at Pete's Overview (his profile home), not the
+                       PeerSlate marketing splash — this is his personal site, so
+                       Home should land visitors on his slate. It owns the bare
+                       overview paths; Example Slate then highlights on the deeper
+                       portfolio sub-pages so the two links never both light up. #}
+                    <li><a href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>Home</a></li>
                     {# Slate Feed sits right after Home, per the feed mockup. #}
                     <li><a href="{{ url_for('slate_feed') }}" {% if request.path == '/slate-feed' %}aria-current="page"{% endif %}>Slate Feed</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/slate-board', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>Slate Board</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     <li><a href="{{ url_for('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
