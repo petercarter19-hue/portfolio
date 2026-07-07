@@ -7,6 +7,7 @@ import os                                       # Lets us read file paths and en
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
+from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
 from flask import Flask, render_template, request, jsonify, url_for, redirect  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -376,6 +377,90 @@ def skills():
         resume_data = json.load(f)
 
     return render_template('skills.html', resume=resume_data)
+
+
+# -------------------------------------------------------
+# SLATE FEED (platform page)
+# The community activity feed from Pete's mockups. The feed is
+# built to aggregate events from EVERY member's slate — each item
+# in static/data/slate_feed.json names its author, so when other
+# profiles exist their events join the same feed automatically.
+# Today the only profile is Pete's, so every card is pulled from
+# his real Slate Board content and links back to it.
+# -------------------------------------------------------
+
+def relative_time_label(iso_timestamp, now):
+    # Turns a stored timestamp like "2026-07-02T09:15:00" into the live
+    # feed label a visitor expects ("2h ago", "5d ago"), computed fresh
+    # on every request — this is what keeps the feed feeling alive.
+    event_time = datetime.fromisoformat(iso_timestamp)
+    seconds = max(0, (now - event_time).total_seconds())
+
+    minutes = int(seconds // 60)
+    if minutes < 60:
+        return f"{max(1, minutes)}m ago"
+
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours}h ago"
+
+    days = hours // 24
+    if days < 7:
+        return f"{days}d ago"
+
+    weeks = days // 7
+    if weeks < 5:
+        return f"{weeks}w ago"
+
+    # Older than about a month: show the calendar date instead.
+    # (event_time.day avoids strftime's %-d, which breaks on Windows.)
+    return f"{event_time.strftime('%b')} {event_time.day}"
+
+
+def load_slate_feed():
+    feed_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'slate_feed.json')
+
+    with open(feed_path, 'r', encoding='utf-8') as f:
+        feed = json.load(f)
+
+    now = datetime.now()
+
+    # Newest events first, like any real activity feed.
+    feed['items'] = sorted(feed['items'], key=lambda item: item['timestamp'], reverse=True)
+
+    for item in feed['items']:
+        item['time_label'] = relative_time_label(item['timestamp'], now)
+        # Swap the author key ("petec") for the full author object so the
+        # template can read item.author.name / item.author.avatar directly.
+        item['author'] = feed['authors'][item['author']]
+
+    # Weekly Review: percent + the current Monday-to-Sunday range are
+    # computed here, not stored, so the card is always this week's.
+    review = feed['weekly_review']
+    review['percent'] = round(100 * review['actions_done'] / review['actions_planned'])
+    week_start = (now - timedelta(days=now.weekday())).date()
+    week_end = week_start + timedelta(days=6)
+    review['range_label'] = (
+        f"{week_start.strftime('%b')} {week_start.day} – "
+        f"{week_end.strftime('%b')} {week_end.day}"
+    )
+
+    keep_building = feed['keep_building']
+    keep_building['percent'] = round(100 * keep_building['done'] / keep_building['total'])
+
+    return feed
+
+
+@app.route('/slate-feed')
+def slate_feed():
+    return render_template('slate_feed.html', feed=load_slate_feed())
+
+
+@app.route('/api/slate-feed')
+def slate_feed_api():
+    # The same feed as JSON — this is the seam where the page's data layer
+    # already works like a real multi-profile feed service.
+    return jsonify(load_slate_feed())
 
 
 # -------------------------------------------------------
