@@ -112,31 +112,46 @@
                     <h2 id="board-wall-title">My Whiteboard</h2>
                     <p>Big picture thinking. Organized chaos &mdash; every line links to its card.</p>
                 </div>
+                {# Board style toggle: classic whiteboard or chalkboard.
+                   slate-board.js flips data-board-mode on .whiteboard and
+                   remembers the choice in this browser. #}
+                <div class="wb-mode" role="group" aria-label="Board style">
+                    <button class="wb-mode__btn is-active" type="button" data-board-mode="white" aria-pressed="true">Whiteboard</button>
+                    <button class="wb-mode__btn" type="button" data-board-mode="chalk" aria-pressed="false">Chalkboard</button>
+                </div>
             </div>
 
-            <div class="board-compose" aria-label="Add to the board (preview)">
+            {# Chalk It Up — WORKING: pick a section, write the goal, and it
+               inks straight onto that quarter of the board below. Entries
+               save in this browser (localStorage) until accounts exist. #}
+            <div class="board-compose" aria-label="Add a goal to the board">
                 <label class="board-compose__label" for="board-compose-input">Chalk it up</label>
+                <div class="board-compose__sections" role="group" aria-label="Choose a board section">
+                    <button class="board-compose__section is-active" type="button" data-wb-target="short">Short Term</button>
+                    <button class="board-compose__section" type="button" data-wb-target="long">Long Term</button>
+                    <button class="board-compose__section" type="button" data-wb-target="projects">Projects</button>
+                    <button class="board-compose__section" type="button" data-wb-target="work">Work</button>
+                </div>
                 <textarea
                     id="board-compose-input"
                     class="board-compose__input"
                     rows="2"
-                    placeholder="A win, a milestone, a thought worth keeping..."
+                    maxlength="90"
+                    placeholder="A goal, a win, a thought worth keeping..."
                 ></textarea>
                 <div class="board-compose__actions">
-                    <button class="ps-btn ps-btn--ghost board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Save Draft</button>
-                    <button class="ps-btn ps-btn--ghost board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Keep Private</button>
-                    <button class="ps-btn ps-btn--primary board-compose__btn" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Publish</button>
+                    <span class="board-compose__count" id="board-compose-count" aria-live="polite">0 / 90</span>
+                    <button class="ps-btn ps-btn--primary board-compose__btn" type="button" id="board-compose-add" disabled>Chalk It Up</button>
                 </div>
                 <p class="board-compose__note">
-                    Preview &mdash; every entry can stay a draft, live privately on your board, or
-                    publish to your site and the PeerSlate feed. Published goals ink onto the
-                    whiteboard below and become cards automatically.
+                    Your entries ink onto the board below and stay saved in this browser.
+                    With PeerSlate accounts they'll publish to your site and the Slate Feed too.
                 </p>
             </div>
 
             <div class="whiteboard">
                 <div class="whiteboard__surface">
-                    <section class="wb-section" aria-label="Short Term">
+                    <section class="wb-section" data-wb="short" aria-label="Short Term">
                         <h3 class="wb-heading wb-heading--green">Short Term</h3>
                         <ul class="wb-list">
                             <li style="--i: 0;"><a class="wb-ink wb-ink--green" href="#goal-pmp">Renew PMP &mdash; 39 of 60 PDUs</a></li>
@@ -146,7 +161,7 @@
                         </ul>
                     </section>
 
-                    <section class="wb-section" aria-label="Long Term">
+                    <section class="wb-section" data-wb="long" aria-label="Long Term">
                         <h3 class="wb-heading wb-heading--violet">Long Term</h3>
                         <ul class="wb-list">
                             <li style="--i: 1;"><a class="wb-ink wb-ink--violet" href="#goal-phd">Ph.D. &mdash; January 2027</a></li>
@@ -156,7 +171,7 @@
                         </ul>
                     </section>
 
-                    <section class="wb-section" aria-label="Projects">
+                    <section class="wb-section" data-wb="projects" aria-label="Projects">
                         <h3 class="wb-heading wb-heading--blue">Projects</h3>
                         <ul class="wb-list">
                             <li style="--i: 2;"><a class="wb-ink wb-ink--blue" href="#goal-homeops">Home Ops Dashboard v2</a></li>
@@ -166,7 +181,7 @@
                         </ul>
                     </section>
 
-                    <section class="wb-section" aria-label="Work">
+                    <section class="wb-section" data-wb="work" aria-label="Work">
                         <h3 class="wb-heading wb-heading--red">Work</h3>
                         <ul class="wb-list">
                             <li style="--i: 3;"><a class="wb-ink wb-ink--red" href="{{ portfolio_story_url }}">Mentor two new engineers</a></li>
@@ -399,6 +414,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/slate-board.js') }}?v=chalkboard-1"></script>
 <script>
     // Assistant suggestion chips prefill the live AI search and submit.
     (function () {

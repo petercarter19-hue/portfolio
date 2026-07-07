@@ -3652,7 +3652,7 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     /* The hero keeps its desktop shape on phones: headline and value
        chips on the left, collage on the right, and the AI search box
        spanning the full width underneath both columns.
@@ -7351,7 +7351,7 @@ body[data-theme="paper-slate"] #chat-panel {
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     .momentum-chart {
         gap: 6px;
         height: 104px;
@@ -8176,7 +8176,7 @@ body[data-theme="paper-slate"] #chat-panel {
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     .iv-bank__list {
         grid-template-columns: 1fr;
     }
@@ -9855,7 +9855,7 @@ body[data-theme="paper-slate"] #chat-panel {
     }
 }
 
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     .peerslate-home-page .site-container {
         width: min(100% - 2rem, 1180px);
     }
@@ -11056,7 +11056,7 @@ body[data-slate="on"] .bd-assistant__form .hero-ai-search__box {
    continuous background, compact confident chrome) instead of
    the old four-stacked-rows header and oversized controls.
    ========================================================= */
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     .global-header {
         position: relative;
     }
@@ -11626,6 +11626,7 @@ body.slate-light .ps-askbar .hero-ai-search__button::after {
 .sf-rail {
     display: grid;
     gap: 22px;
+    min-width: 0;
 }
 
 /* Dark Slate keeps the filter readable: dark surface + light chevron. */
@@ -12246,7 +12247,6 @@ body[data-theme="gray-slate"] .sf-filter select {
     color: var(--text);
     font-size: 0.92rem;
     font-weight: 700;
-    white-space: nowrap;
 }
 
 .sf-review__copy p {
@@ -12460,7 +12460,7 @@ body[data-theme="gray-slate"] .sf-filter select {
 @media (max-width: 1180px) {
     .sf-layout { grid-template-columns: minmax(0, 1fr) 320px; }
 
-    .sf-feed { order: 1; }
+    .sf-center { order: 1; }
     .sf-rail--right { order: 2; }
 
     .sf-rail--left {
@@ -12472,7 +12472,7 @@ body[data-theme="gray-slate"] .sf-filter select {
 }
 
 /* Phones: one column, feed first. */
-@media (max-width: 780px) {
+@media (max-width: 743px) {
     .sf-layout { grid-template-columns: 1fr; }
 
     .sf-rail--left { grid-template-columns: 1fr; }
@@ -12513,3 +12513,588 @@ body[data-theme="gray-slate"] .sf-filter select {
         gap: 10px;
     }
 }
+
+
+/* =========================================================
+   DESKTOP LAYOUT DOWN TO iPAD MINI (744px) — added 2026-07-07
+   Pete's rule: every width from 744px up shows the DESKTOP
+   arrangement (multi-column, side-by-side), never the stacked
+   "blown-up phone" look. The tablet blocks earlier in this file
+   stack live components between 780-1240px; rather than editing
+   two dozen historical blocks, this section comes LAST and
+   re-asserts each component's desktop grid for >=744px (source
+   order wins at equal specificity). A compression tier then
+   shrinks paddings/type between 744-1080px so those desktop
+   grids genuinely fit.
+
+   Deliberately NOT re-asserted (checked individually — the
+   lesson from the reverted 2026-07-05 attempt):
+   - .platform-nav (1180px block): the header genuinely cannot
+     hold logo + 6 links + Theme + Sign In in one row below
+     ~1180px — its link-row wrap is load-bearing.
+   - .sf-layout (slate feed): 3 rails cannot fit in 744px; its
+     2-column tablet form is already a desktop-style layout.
+   - Old-design selectors (.hero-grid, .lifecycle-*, .nav-container
+     etc.) — dead markup, their tablet rules never fire.
+   ========================================================= */
+
+@media (min-width: 744px) {
+    /* ---- PeerSlate homepage ---- */
+    .ps-hero__grid,
+    .peerslate-home-page .ps-hero__grid {
+        grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+    }
+
+    .ps-features,
+    .ps-steps,
+    .peerslate-home-page .ps-features,
+    .peerslate-home-page .ps-steps {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .ps-feed,
+    .peerslate-home-page .ps-feed {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .peerslate-home-page .ps-hero__copy {
+        max-width: none;
+    }
+
+    /* ---- Example Slate overview ---- */
+    .ps-ov-metrics {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .ps-roles {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .ps-projects {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .profile-header__inner {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .profile-about {
+        grid-column: auto;
+        max-width: 320px;
+    }
+
+    .profile-actions {
+        grid-column: auto;
+    }
+
+    /* ---- Slate Board ---- */
+    .bd-stats,
+    .bd-goals {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .bd-entries {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .bd-bottom {
+        grid-template-columns: 1.15fr 1fr 1.1fr;
+    }
+
+    /* The quartered whiteboard IS the desktop design (2x2) — the
+       1180px block only trims padding, so nothing to re-assert. */
+
+    /* ---- Interview Me ---- */
+    .iv-hero {
+        grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+        gap: 24px;
+    }
+
+    .iv-benefits {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .iv-studio {
+        grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.85fr);
+    }
+
+    /* ---- My Slate (story) ---- */
+    .story-timeline {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .timeline-item + .timeline-item::after {
+        display: block;
+    }
+
+    .story-drives__layout {
+        grid-template-columns: minmax(180px, 0.84fr) minmax(0, 3.16fr);
+    }
+
+    .story-cards__grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
+    }
+
+    /* ---- Work / Projects page ---- */
+    .work-project-selector {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .work-project-panel {
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 330px);
+    }
+
+    .work-hero {
+        grid-template-columns: minmax(0, 1fr) minmax(230px, 330px);
+    }
+
+    .work-proof-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(190px, 0.7fr);
+    }
+}
+
+/* Compression tier: between iPad Mini and small laptops the desktop
+   grids above stay, but cards/type/gaps tighten so they truly fit. */
+@media (min-width: 744px) and (max-width: 1080px) {
+    .ps-card { border-radius: 12px; }
+
+    .ps-features,
+    .ps-steps,
+    .ps-ov-metrics,
+    .bd-stats,
+    .bd-goals,
+    .iv-benefits,
+    .ps-projects,
+    .peerslate-home-page .ps-features,
+    .peerslate-home-page .ps-steps {
+        gap: 10px;
+    }
+
+    .ps-feed,
+    .peerslate-home-page .ps-feed,
+    .bd-entries,
+    .ps-roles {
+        gap: 10px;
+    }
+
+    .story-timeline { gap: 14px; }
+
+    /* Ask-bar chips wrap instead of clipping the last chip. The
+       homepage rules are namespaced, so these selectors must match
+       that specificity to win the cascade. */
+    .ps-askbar__chips,
+    .peerslate-home-page .ai-chip-row,
+    .hero-ai-panel .ai-chip-row { flex-wrap: wrap; }
+
+    .peerslate-home-page .ai-chip,
+    .hero-ai-panel .ai-chip { font-size: 0.78rem; padding: 7px 12px; }
+
+    /* The hero preview's floating mini-cards tuck fully inside the
+       viewport instead of poking past the right edge. */
+    .peerslate-home-page .preview-impact,
+    .peerslate-home-page .preview-milestone { right: 4px; }
+
+    /* Profile band: the name takes one line again at tablet widths. */
+    .profile-identity h1 { font-size: 1.7rem; }
+
+    /* Step connectors get little room at these widths — hide the
+       dashes, keep the 4-across cards. */
+    .ps-step:not(:last-child)::after,
+    .peerslate-home-page .ps-step:not(:last-child)::after {
+        display: none;
+    }
+
+    h1 { letter-spacing: -0.015em; }
+}
+
+/* =========================================================
+   PHONE DENSITY (<=743px) — Pete: cards and buttons were too
+   big, wasted space. Tighter paddings, smaller controls, and
+   2-up grids so phones fit more horizontally. This block is
+   last in the file, so it wins over the older 620/520 blocks
+   wherever they disagree.
+   ========================================================= */
+@media (max-width: 743px) {
+    /* Controls: compact but still comfortably tappable (38px). */
+    .btn,
+    .ps-btn {
+        min-height: 38px;
+        padding: 0 14px;
+        font-size: 0.8rem;
+        border-radius: 9px;
+    }
+
+    .sign-in-btn { padding: 8px 14px; font-size: 0.8rem; }
+
+    /* Card groups go 2-up instead of one huge card per row. */
+    .ps-features,
+    .ps-steps,
+    .ps-ov-metrics,
+    .bd-stats,
+    .bd-goals,
+    .iv-benefits,
+    .ps-projects,
+    .bd-entries,
+    .peerslate-home-page .ps-features,
+    .peerslate-home-page .ps-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .ps-feed,
+    .peerslate-home-page .ps-feed {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    /* Core Skills: two dense columns of smaller pills. */
+    .ps-skills {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .ps-skills a { padding: 9px 10px; }
+    .ps-skills .ps-skill-name { font-size: 0.78rem; }
+
+    /* Tighter card interiors across the ps-* pages. */
+    .ps-ov-block { padding: 14px; }
+    .sf-item { padding: 14px 14px 11px; }
+    .sf-shortcuts { padding: 14px 14px 4px; }
+    .sf-keep,
+    .sf-review,
+    .sf-suggest,
+    .sf-trending { padding: 14px; }
+
+    /* Type scale: match the My Story phone reference (~24px h1). */
+    .sf-head h1 { font-size: 1.55rem; }
+    .sf-head p { font-size: 0.9rem; }
+
+    /* Section rhythm tightens so pages feel dense, not airy. */
+    .ps-section { padding: 18px 0; }
+}
+
+
+/* =========================================================
+   FEED COMPOSER + POSTS (Slate Feed) — added 2026-07-07.
+   Twitter-style share bar: 500-char limit with live counter,
+   optional image attach. Posts render as sf-item cards (type
+   "post") and persist per-browser via slate-feed.js.
+   ========================================================= */
+
+.sf-center {
+    display: grid;
+    gap: 20px;
+    align-content: start;
+    min-width: 0;
+}
+
+.sf-compose {
+    display: flex;
+    gap: 12px;
+    padding: 16px 18px 14px;
+}
+
+.sf-compose__main { flex: 1; min-width: 0; }
+
+.sf-compose textarea {
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 2px;
+    border: 0;
+    resize: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.sf-compose textarea:focus { outline: none; }
+
+.sf-compose textarea::placeholder { color: var(--text-muted); }
+
+.sf-compose__preview {
+    position: relative;
+    margin: 4px 0 8px;
+    max-width: 280px;
+}
+
+.sf-compose__preview img {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.sf-compose__preview button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(10 20 35 / 72%);
+    color: #ffffff;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sf-compose__bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.sf-compose__photo {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 140ms ease;
+}
+
+.sf-compose__photo:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.sf-compose__photo svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sf-compose__count {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Counter warms up near the cap: amber from 450, red at 500. */
+.sf-compose__count.is-warn { color: #b45309; font-weight: 700; }
+.sf-compose__count.is-max { color: #dc2626; font-weight: 700; }
+
+.sf-compose__post {
+    padding: 8px 20px;
+    border: 0;
+    border-radius: 99px;
+    background: var(--accent);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sf-compose__post:hover { filter: brightness(1.08); }
+
+.sf-compose__post:disabled {
+    opacity: 0.45;
+    cursor: default;
+    filter: none;
+}
+
+/* Posted cards: text + optional image, plus a quiet delete. */
+.sf-item__post-text {
+    margin: 12px 0 0;
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.sf-item__post-img {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    margin-top: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.sf-item__delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sf-item__delete:hover { color: #dc2626; }
+
+/* =========================================================
+   BOARD STYLE TOGGLE + CHALKBOARD MODE (Slate Board).
+   The toggle flips data-board-mode="chalk" on .whiteboard:
+   deep chalkboard-green surface in a walnut frame, chalk-tint
+   ink and headings, chalk sticks in the tray. Same Kalam
+   handwriting, same layout — only the physical board changes.
+   ========================================================= */
+
+.wb-mode {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.wb-mode__btn {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.wb-mode__btn.is-active {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+/* ---- compose section chips (Short Term / Long Term / ...) ---- */
+.board-compose__sections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 12px;
+}
+
+.board-compose__section {
+    padding: 7px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 99px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    cursor: pointer;
+    transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+/* Selected chip takes its section's marker color. */
+.board-compose__section.is-active[data-wb-target="short"] { border-color: #2a7d4f; color: #2a7d4f; background: color-mix(in srgb, #2a7d4f 9%, var(--surface)); }
+.board-compose__section.is-active[data-wb-target="long"] { border-color: #6d3fa9; color: #6d3fa9; background: color-mix(in srgb, #6d3fa9 9%, var(--surface)); }
+.board-compose__section.is-active[data-wb-target="projects"] { border-color: #2b5fa5; color: #2b5fa5; background: color-mix(in srgb, #2b5fa5 9%, var(--surface)); }
+.board-compose__section.is-active[data-wb-target="work"] { border-color: #b83a33; color: #b83a33; background: color-mix(in srgb, #b83a33 9%, var(--surface)); }
+
+.board-compose__count {
+    margin-right: auto;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.board-compose__btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* ---- user-added ink lines: plain ink + a tiny eraser button ---- */
+.wb-list .wb-user {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.wb-user .wb-ink { cursor: default; }
+
+.wb-del {
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+
+.wb-list li:hover .wb-del,
+.wb-del:focus-visible { opacity: 0.75; }
+
+.wb-del:hover { color: #b83a33; opacity: 1; }
+
+/* ---- CHALKBOARD MODE ---- */
+.whiteboard[data-board-mode="chalk"] {
+    background: linear-gradient(180deg, #8a6844, #6c4e2f);
+    border-color: #57402a;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 28%),
+        0 4px 8px rgb(0 0 0 / 22%),
+        0 26px 50px rgb(0 0 0 / 26%);
+}
+
+.whiteboard[data-board-mode="chalk"] .whiteboard__surface {
+    background:
+        radial-gradient(ellipse at 22% 12%, rgb(255 255 255 / 5%), transparent 42%),
+        radial-gradient(ellipse at 80% 88%, rgb(255 255 255 / 4%), transparent 45%),
+        linear-gradient(158deg, #33473c 0%, #2c3f35 55%, #26372e 100%);
+    box-shadow:
+        inset 0 2px 12px rgb(0 0 0 / 42%),
+        inset 0 -2px 8px rgb(255 255 255 / 4%);
+}
+
+.whiteboard[data-board-mode="chalk"] .wb-section:nth-child(odd) { border-right-color: rgb(255 255 255 / 26%); }
+.whiteboard[data-board-mode="chalk"] .wb-section:nth-child(-n+2) { border-bottom-color: rgb(255 255 255 / 26%); }
+
+/* Chalk ink: pale section tints with a soft chalk-dust glow. */
+.whiteboard[data-board-mode="chalk"] .wb-heading--green,
+.whiteboard[data-board-mode="chalk"] .wb-ink--green { color: #c8ecd3; }
+.whiteboard[data-board-mode="chalk"] .wb-heading--violet,
+.whiteboard[data-board-mode="chalk"] .wb-ink--violet { color: #ddccf6; }
+.whiteboard[data-board-mode="chalk"] .wb-heading--blue,
+.whiteboard[data-board-mode="chalk"] .wb-ink--blue { color: #c6ddf8; }
+.whiteboard[data-board-mode="chalk"] .wb-heading--red,
+.whiteboard[data-board-mode="chalk"] .wb-ink--red { color: #f7cbc7; }
+
+.whiteboard[data-board-mode="chalk"] .wb-heading,
+.whiteboard[data-board-mode="chalk"] .wb-ink {
+    text-shadow: 0 0 6px rgb(255 255 255 / 18%);
+}
+
+.whiteboard[data-board-mode="chalk"] .wb-del { color: rgb(255 255 255 / 60%); }
+.whiteboard[data-board-mode="chalk"] .wb-del:hover { color: #f7cbc7; }
+
+/* Tray: markers become chalk sticks; the eraser goes wood + felt. */
+.whiteboard[data-board-mode="chalk"] .wb-marker { height: 8px; border-radius: 3px; }
+.whiteboard[data-board-mode="chalk"] .wb-marker--green { background: #cfeed8; }
+.whiteboard[data-board-mode="chalk"] .wb-marker--blue { background: #cfe2f8; }
+.whiteboard[data-board-mode="chalk"] .wb-marker--violet { background: #e2d4f7; }
+.whiteboard[data-board-mode="chalk"] .wb-marker--red { background: #f8d6d2; }
+
+.whiteboard[data-board-mode="chalk"] .wb-eraser {
+    background: linear-gradient(180deg, #caa36f 0 55%, #3d332b 55%);
+}
+
+/* Sticky notes read fine on both surfaces — no change needed. */
