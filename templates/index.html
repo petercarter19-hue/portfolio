@@ -10,6 +10,34 @@
 
 {% block title %}Pete Carter | Systems Engineer{% endblock %}
 
+{# The Ask Pete AI bar lives ABOVE the tab strip again (Pete), in the dark
+   "Ask Pete's Slate" bar between the profile band and the tabs. The four
+   metric cards that used to sit above it stay removed. #}
+{% block profile_preface %}
+<div class="ps-ov-preface">
+    <div class="site-container">
+        <section class="ps-askbar" id="ask-pete" aria-label="Ask Pete's Slate">
+            <div class="ps-askbar__lead">
+                <span class="ps-askbar__spark" aria-hidden="true">&#10022;</span>
+                <strong>Ask Pete's Slate</strong>
+            </div>
+            <div class="ps-askbar__form">
+                {% include "partials/portfolio_ai_search.html" %}
+            </div>
+            <div class="ps-askbar__chips">
+                <button type="button" data-ask-prefill="Give me a 60-second overview of Pete Carter.">
+                    &#9776; Summarize Pete
+                </button>
+                <button type="button" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
+                    &#9737; Match to Role
+                </button>
+                <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Pete</a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
 
 <div class="ps-ov">

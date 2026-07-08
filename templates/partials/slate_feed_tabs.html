@@ -1,26 +1,22 @@
 {#
-    Slate Feed LAYER strip (Progress / Pulse / Break / People) — the four
-    feed layers inside The Slate's Slate Feed tab (2026-07-08 mockups).
-    "My Slate" left this strip when it became one of The Slate's main tabs.
-    Pass `active` as one of: 'progress', 'pulse', 'break', 'people'.
-    People is the hub's landing view, so it lives at /the-slate itself.
+    Slate Feed LAYER strip — People & Progress / Pulse / Break (2026-07-08).
+    People and Progress merged into one landing layer (Pete): the landing
+    (/the-slate) shows people AND their progress. Pass `active` as one of:
+    'people', 'pulse', 'break'. The old 'progress' value maps to 'people'.
     Wrap the include in <div class="ts-layerbar ps-card"> on each page.
 #}
+{% set _active = 'people' if active in ['people', 'progress'] else active %}
 <nav class="sf-tabs" aria-label="Feed layers">
-    <a class="sf-tab" href="{{ url_for('slate_feed') }}" {% if active == 'progress' %}aria-current="page"{% endif %}>
+    <a class="sf-tab" href="{{ url_for('the_slate') }}" {% if _active == 'people' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
-        Progress
+        People &amp; Progress
     </a>
-    <a class="sf-tab" href="{{ url_for('slate_feed_pulse') }}" {% if active == 'pulse' %}aria-current="page"{% endif %}>
+    <a class="sf-tab" href="{{ url_for('slate_feed_pulse') }}" {% if _active == 'pulse' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-8 6 16 3-8h4"/></svg>
         Pulse
     </a>
-    <a class="sf-tab" href="{{ url_for('slate_feed_break') }}" {% if active == 'break' %}aria-current="page"{% endif %}>
+    <a class="sf-tab" href="{{ url_for('slate_feed_break') }}" {% if _active == 'break' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 2v3M12 2v3"/></svg>
         Break
-    </a>
-    <a class="sf-tab" href="{{ url_for('the_slate') }}" {% if active == 'people' %}aria-current="page"{% endif %}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c.7-4 3.4-6 7-6s6.3 2 7 6"/></svg>
-        People
     </a>
 </nav>
