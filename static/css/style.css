@@ -10832,9 +10832,18 @@ body[data-slate="on"] .ps-askbar .hero-ai-search__box {
 }
 
 /* ---------- Overview content blocks ---------- */
+/* Flattened sections (Pete): the Overview blocks are no longer cards — the
+   heading and the smaller cards inside sit directly on the page, which reads
+   cleaner and gives the section more breathing room. The card look (border,
+   shadow, fill) came from .ps-card, now removed in the markup; here we just
+   drop the interior padding and open up the gap between sections. */
 .ps-ov-block {
-    margin-top: 22px;
-    padding: 24px;
+    margin-top: 42px;
+    padding: 0;
+}
+
+.ps-ov-block:first-child {
+    margin-top: 8px;
 }
 
 .ps-ov-block__head {
@@ -16766,7 +16775,9 @@ button.ts-react:hover { color: #d23b5e; }
    SLATE PATHS TAB
    ========================= */
 
-.ts-featured { padding: 20px; }
+/* Flattened section (Pete): My Paths is a heading + path cards on the page,
+   not a card wrapping cards. */
+.ts-featured { padding: 0; }
 
 .ts-featured__head {
     display: flex;
@@ -17440,8 +17451,9 @@ button.ts-react:hover { color: #d23b5e; }
 .ts-subnav__item.is-active { color: var(--accent); background: var(--accent-soft); }
 .ts-subnav__item[aria-disabled="true"] { cursor: default; opacity: 0.55; }
 
-/* Spacing between the stacked dashboard sections */
-.ts-section { margin-top: 22px; }
+/* Spacing between the stacked dashboard sections — a touch more air now
+   that some sections are flattened onto the page. */
+.ts-section { margin-top: 32px; }
 
 /* Two-column rows */
 .ts-two {
@@ -17637,8 +17649,8 @@ button.ts-react:hover { color: #d23b5e; }
 .ts-upcoming__body small { color: var(--text-muted); font-size: 0.74rem; }
 .ts-upcoming__when { color: var(--accent); font-size: 0.76rem; font-weight: 750; white-space: nowrap; }
 
-/* Recommended for You */
-.ts-reco { padding: 20px; }
+/* Recommended for You — flattened (heading + reco cards on the page). */
+.ts-reco { padding: 0; }
 
 .ts-reco__grid {
     display: grid;

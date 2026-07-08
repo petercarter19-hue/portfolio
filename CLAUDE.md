@@ -68,6 +68,14 @@ Two goals:
 4. Build admin dashboard to view chat logs
 5. Eventually: smarter retrieval, security hardening, and public deployment
 
+## Recent Session Updates (2026-07-08 — flatten section-wrapper cards, remote, branch claude/the-slate-mockup-integration-tviz2h rebased onto merged main again)
+- CONCEPT (Pete): stop "cards on top of cards" — where a SECTION is a card (bottom layer) that WRAPS a grid of smaller cards (top layer), drop the outer card so the heading + small cards sit directly on the page background. Better spacing. Keep: single-content cards (About Pete, ask bar, CTA band), list/form cards (Today's Goals, Daily Check-in, People & Progress, rail cards), and DESIGNED surfaces (goal-map board, whiteboard). Rule = flatten only when the section card contains a grid/row of smaller CARDS.
+- OVERVIEW (index.html): removed `ps-card` from all 4 `.ps-ov-block` sections (What Drives Me / Core Skills / Experience / Projects). CSS `.ps-ov-block` now `margin-top:42px; padding:0` (+ `:first-child` 8px) so sections breathe and inner cards (drive-card / ps-skills a / ps-role / ps-project — all keep their own borders) sit on the page.
+- MY SLATE (the_slate_my.html): flattened `.ts-featured` (My Paths) and `.ts-reco` (Recommended) — removed ps-card, padding:0. Kept carded: `.ts-board` (goal map = designed board), `.ts-today`, `.ts-checkin`, `.ts-pp` (People & Progress = lists), `.ts-upcoming`, and the rail cards. `.ts-section` margin bumped 22→32px.
+- Evidence + Resume were ALREADY flat (`.resume-section` has no card fill) — no change; they now match the new look. Work panels are single tabbed cards (not card-on-card) — left as-is.
+- Profile tab next to Overview stays "My Story" (done in PR #10; re-confirmed).
+- Cache-buster: style.css already ?v=slate-merge-1 this session; bumped again isn't needed (same session), but if caching bites on Pete's Mac do a hard refresh. Verified (Playwright) Overview + My Slate in Light + Dark Slate at 1280; no console/page errors. NOTE: this was a FIRST PASS — Pete said "we can touch up from there," so expect spacing/refinement follow-ups.
+
 ## Recent Session Updates (2026-07-08 — Slate consolidation + mobile nav, remote, branch claude/the-slate-mockup-integration-tviz2h rebased onto merged main again)
 - BRANCH: PR #9 merged; this round rebased onto updated main → new draft PR. Same branch name reused after each merge (never reuse the merged PR).
 - PROFILE TAB RENAME: the profile-strip "My Slate" (next to Overview) is now "My Story" (disambiguates from The Slate's own "My Slate" goal-map tab). URL still /petec/my-story. Page eyebrow + <title> + base.html search index updated. (partials/profile_tabs.html, my_story.html, base.html)
