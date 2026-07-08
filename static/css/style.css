@@ -9454,6 +9454,16 @@ body[data-theme="paper-slate"] #chat-panel {
     box-shadow: none;
 }
 
+@media (max-width: 743px) {
+    /* Same phone legibility fix as the Light theme header: more opaque +
+       a touch more blur so the nav links stay readable while scrolling. */
+    .peerslate-home-page .global-header {
+        background: rgb(255 255 255 / 90%);
+        backdrop-filter: blur(26px) saturate(1.5);
+        -webkit-backdrop-filter: blur(26px) saturate(1.5);
+    }
+}
+
 .peerslate-home-page .platform-nav__inner {
     min-height: 80px;
     gap: 30px;
@@ -11908,6 +11918,18 @@ body.slate-light .global-header {
     background: rgb(255 255 255 / 72%);
     border-bottom: 1px solid var(--border);
     box-shadow: none;
+}
+
+@media (max-width: 743px) {
+    /* On phones the header stays pinned while the page scrolls behind it,
+       so the 72% wash let content bleed through enough to blur the nav
+       links. More opaque + a touch more blur keeps the frosted look but
+       keeps the links readable while scrolling. */
+    body.slate-light .global-header {
+        background: rgb(255 255 255 / 90%);
+        backdrop-filter: blur(26px) saturate(1.5);
+        -webkit-backdrop-filter: blur(26px) saturate(1.5);
+    }
 }
 
 body.slate-light .brand-mark { fill: var(--text); }
@@ -14492,12 +14514,14 @@ a.ct-card:focus-visible {
         display: flex;
         gap: 2px;
         padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-        /* Frosted glass, matching the header — content shows through. */
-        background: color-mix(in srgb, var(--bg-elevated) 74%, transparent);
+        /* Frosted glass, matching the header — content shows through, but
+           opaque/blurred enough that the tab labels stay legible while the
+           page scrolls behind it. */
+        background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
         border-top: 1px solid var(--border);
         box-shadow: 0 -8px 22px rgb(0 0 0 / 14%);
-        backdrop-filter: blur(20px) saturate(1.5);
-        -webkit-backdrop-filter: blur(20px) saturate(1.5);
+        backdrop-filter: blur(26px) saturate(1.5);
+        -webkit-backdrop-filter: blur(26px) saturate(1.5);
         overflow-x: auto;
         scrollbar-width: none;
         transition: transform 220ms ease;
