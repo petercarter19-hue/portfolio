@@ -4774,10 +4774,12 @@ body[data-slate="on"]::before {
     position: sticky;
     top: 0;
     z-index: 1200;
-    background: var(--nav-bg);
+    /* Frosted glass: a translucent tint over a strong blur, so page content
+       shows through as you scroll — clearer and classier than a solid bar. */
+    background: color-mix(in srgb, var(--nav-bg) 78%, transparent);
     border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(22px) saturate(1.5);
+    -webkit-backdrop-filter: blur(22px) saturate(1.5);
 }
 
 .platform-nav__inner {
@@ -5346,11 +5348,12 @@ body[data-slate="on"] .profile-header {
     position: sticky;
     top: 68px;
     z-index: 850;
-    background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+    /* Frosted glass, matching the header. */
+    background: color-mix(in srgb, var(--bg-elevated) 76%, transparent);
     border-bottom: 1px solid var(--border);
     box-shadow: 0 12px 22px rgb(0 0 0 / 12%);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
 }
 
 .profile-tabs__inner {
@@ -9445,7 +9448,8 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 .peerslate-home-page .global-header {
-    background: rgb(255 255 255 / 92%);
+    /* Frosted glass so the marketing hero shows through the pinned header. */
+    background: rgb(255 255 255 / 72%);
     border-bottom-color: var(--home-border);
     box-shadow: none;
 }
@@ -11623,7 +11627,16 @@ body[data-slate="on"] .bd-assistant__form .hero-ai-search__box {
    the old four-stacked-rows header and oversized controls.
    ========================================================= */
 @media (max-width: 743px) {
+    /* The header stays pinned at the top on pages with no bottom nav (home,
+       Interview Me, About, Contact), so navigation is always reachable there.
+       Pages that DO have the bottom section bar (portfolio / Slate) let the
+       header scroll away — the bottom bar covers navigation for them. */
     .global-header {
+        position: sticky;
+        top: 0;
+    }
+
+    body.has-mobile-tabbar .global-header {
         position: relative;
     }
 
@@ -11891,7 +11904,8 @@ body.slate-light .main-content {
 
 /* ---- global platform header (light, like the homepage) ---- */
 body.slate-light .global-header {
-    background: rgb(255 255 255 / 92%);
+    /* Frosted glass on the Light theme (inherits the base blur). */
+    background: rgb(255 255 255 / 72%);
     border-bottom: 1px solid var(--border);
     box-shadow: none;
 }
@@ -14478,11 +14492,12 @@ a.ct-card:focus-visible {
         display: flex;
         gap: 2px;
         padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-        background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+        /* Frosted glass, matching the header — content shows through. */
+        background: color-mix(in srgb, var(--bg-elevated) 74%, transparent);
         border-top: 1px solid var(--border);
         box-shadow: 0 -8px 22px rgb(0 0 0 / 14%);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(20px) saturate(1.5);
+        -webkit-backdrop-filter: blur(20px) saturate(1.5);
         overflow-x: auto;
         scrollbar-width: none;
         transition: transform 220ms ease;
