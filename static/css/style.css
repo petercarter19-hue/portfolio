@@ -4498,29 +4498,32 @@ body[data-theme="gray-slate"] .platform-brand__logo img {
     position: relative;
 }
 
+/* Compact icon-only theme toggle (Pete: "a lot smaller"). The sun icon
+   alone reads as a theme control; the label is kept for screen readers
+   via aria-label/title on the button. */
 .theme-menu__btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 37px;
-    padding: 0 14px;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     color: var(--text);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
-    font-size: 0.86rem;
-    font-weight: 650;
-    transition: border-color 160ms ease;
+    transition: border-color 160ms ease, color 160ms ease;
 }
 
 .theme-menu__btn:hover {
     border-color: var(--accent);
+    color: var(--accent);
 }
 
 .theme-menu__btn svg {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -14427,4 +14430,151 @@ body.peerslate-home-page #chat-toggle:focus-visible {
     .bk-challenge { grid-template-columns: 1fr; }
     .bk-band { padding-right: 22px; }
     .bk-band__art { display: none; }
+}
+
+/* =========================================================
+   INTERVIEW ME — REVAMP (2026-07-07)
+   Top bar = experience level; STAR/Behavioral type toggle moved
+   to the question card's bottom-right; question banks removed;
+   Interview Tips card added to the rail; mock interview is a slim
+   standalone bar. Built on the shared tokens (Light + Dark Slate).
+   ========================================================= */
+
+/* Question card bottom: links on the left, type toggle on the right. */
+.iv-question__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+/* the links row inside the foot loses its own top border/margin now */
+.iv-question__foot .iv-question__links {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+/* STAR / Behavioral segmented toggle (question TYPE). */
+.iv-typeswitch {
+    display: inline-flex;
+    padding: 3px;
+    background: color-mix(in srgb, var(--border) 34%, transparent);
+    border-radius: 999px;
+}
+.iv-type {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 140ms ease, background 140ms ease;
+}
+.iv-type:hover { color: var(--text); }
+.iv-type.is-active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 1px 3px rgb(6 26 58 / 12%);
+}
+
+/* Slim standalone mock-interview bar (replaced the suggested card). */
+.iv-mockbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+    border-radius: 12px;
+}
+.iv-mockbar p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+.iv-mockbar .btn { flex: none; }
+
+/* Interview Tips card (rail, below the STAR helper). */
+.iv-tips__list {
+    display: grid;
+    gap: 14px;
+    margin-top: 4px;
+}
+.iv-tips__list li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 11px;
+    align-items: start;
+}
+.iv-tips__ic {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+.iv-tips__ic svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.iv-tips__list strong {
+    display: block;
+    color: var(--text);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+.iv-tips__list span {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* AI-mode: the feedback card reads as a "why it works" explainer. */
+.iv-askai-card + .iv-feedback-card { margin-top: 0; }
+.iv-why__point {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 10px;
+}
+.iv-why__point::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background:
+        var(--accent-soft)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f9e64' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E")
+        center / 10px no-repeat;
+}
+
+/* Light-theme primary buttons were still the old dark-era gold gradient
+   (base .btn-primary reads --color-gold, which slate-light never remapped),
+   which left Interview Me's Record/Get Feedback/Mock buttons gold — the only
+   gold on the light site. Make .btn-primary the site blue on light themes. */
+body.slate-light .btn-primary {
+    color: #ffffff;
+    background: var(--accent);
+    box-shadow: none;
+}
+body.slate-light .btn-primary:hover,
+body.slate-light .btn-primary:focus-visible {
+    background: color-mix(in srgb, var(--accent) 88%, #000);
 }

@@ -1,17 +1,17 @@
 {# ============================================================
    INTERVIEW ME — the Interview Practice Studio.
-   Concept: the more a candidate adds to their slate, the better
-   this page coaches them. The studio asks questions (STAR +
-   behavioral banks below), the candidate answers by typing or
-   speaking, and the AI coach (the SAME /api/chat endpoint as
-   every Ask Pete AI feature) suggests slate-grounded sample
-   answers, gives feedback, and scores the answer out of 100.
-
-   Layout follows Pete's Interview Me mockup: mode bar, current
-   question card, response draft card, coach feedback with a
-   score ring, suggested questions, and a right rail with
-   Evidence Suggestions pulled from the slate plus a STAR
-   framework helper. static/js/interview.js runs everything.
+   Two directions (toggle above the studio):
+     • "Interview Me"      — you answer, the coach scores you.
+     • "Interview the AI"  — you ask, the AI answers as Pete, and
+                             the coach explains WHY that answer works.
+   Controls: a top experience-level bar (Entry / Experienced /
+   Management / Leadership / Mixed) and a STAR-vs-Behavioral type
+   toggle on the question card's bottom-right. The 60 questions live
+   in a hidden data island (#iv-qbank) that drives New Question, the
+   filters, and mock interviews — the big visible banks were removed.
+   Right rail: Evidence Suggestions, STAR Framework Helper, and
+   Interview Tips. Every AI call hits the SAME /api/chat endpoint as
+   the rest of the site. static/js/interview.js runs everything.
    ============================================================ #}
 {% extends "base.html" %}
 
@@ -71,15 +71,20 @@
             </article>
         </div>
 
-        <!-- ============ MODE BAR ============ -->
-        <div class="iv-modebar" role="toolbar" aria-label="Interview mode">
-            <div class="iv-modes">
-                <button class="iv-mode is-active" type="button" data-mode="star">STAR Stories</button>
-                <button class="iv-mode" type="button" data-mode="behavioral">Behavioral</button>
-                <button class="iv-mode" type="button" data-mode="leadership">Leadership</button>
-                <button class="iv-mode" type="button" data-mode="mixed">Mixed</button>
+        <!-- ============ CATEGORY BAR ============
+             Top-level category is the experience track. Full level-tagging
+             of every question is a future feature ("people can categorize
+             them"); for now Leadership/Management narrow to the matching
+             topics and the rest draw from the whole pool. STAR vs Behavioral
+             (the question TYPE) lives on the question card's bottom-right. -->
+        <div class="iv-modebar" role="toolbar" aria-label="Interview category">
+            <div class="iv-modes" id="iv-levels">
+                <button class="iv-mode" type="button" data-level="entry">Entry Level</button>
+                <button class="iv-mode" type="button" data-level="experienced">Experienced</button>
+                <button class="iv-mode" type="button" data-level="management">Management</button>
+                <button class="iv-mode" type="button" data-level="leadership">Leadership</button>
+                <button class="iv-mode is-active" type="button" data-level="mixed">Mixed</button>
             </div>
-            <span class="iv-slate-chip" title="Coaching uses Pete's slate evidence">Use My Slate &#10003;</span>
             <label class="iv-toggle">
                 <input type="checkbox" id="iv-evidence-toggle" checked>
                 <span class="iv-toggle__track" aria-hidden="true"></span>
@@ -127,11 +132,17 @@
                     </div>
                     <div class="iv-question__meta">
                         <span class="iv-chip" id="iv-topic-chip">Leadership</span>
-                        <span class="iv-chip iv-chip--mode" id="iv-mode-chip">STAR</span>
                     </div>
-                    <div class="iv-question__links">
-                        <button type="button" id="iv-rephrase">Rephrase Question</button>
-                        <button type="button" id="iv-new">New Question</button>
+                    <div class="iv-question__foot">
+                        <div class="iv-question__links">
+                            <button type="button" id="iv-rephrase">Rephrase Question</button>
+                            <button type="button" id="iv-new">New Question</button>
+                        </div>
+                        {# Question TYPE toggle, bottom-right of the question card. #}
+                        <div class="iv-typeswitch" role="group" aria-label="Question type">
+                            <button class="iv-type is-active" type="button" data-type="star">STAR Stories</button>
+                            <button class="iv-type" type="button" data-type="behavioral">Behavioral</button>
+                        </div>
                     </div>
                 </div>
 
@@ -193,11 +204,13 @@
                     </div>
                 </div>
 
-                <!-- Coach feedback -->
+                <!-- Coach feedback. In "Interview Me" mode it scores YOUR
+                     answer; in "Interview the AI" mode it sits below the model
+                     answer and explains why that answer works. -->
                 <div class="iv-card iv-feedback-card" id="iv-feedback-card">
                     <div class="iv-card__top">
-                        <span class="iv-label">Interview Coach Feedback</span>
-                        <span class="iv-label iv-label--right">Overall Answer Quality</span>
+                        <span class="iv-label" id="iv-feedback-title">Interview Coach Feedback</span>
+                        <span class="iv-label iv-label--right" id="iv-feedback-subtitle">Overall Answer Quality</span>
                     </div>
                     <div class="iv-feedback__body">
                         <div class="iv-feedback__text" id="iv-feedback" aria-live="polite">
@@ -214,19 +227,12 @@
                     <p class="iv-session" id="iv-session">This session: 0 answered</p>
                 </div>
 
-                <!-- Suggested + mock interview -->
-                <div class="iv-card iv-suggested-card">
-                    <div class="iv-card__top">
-                        <span class="iv-label">Suggested Questions</span>
-                        <button type="button" class="iv-clear" id="iv-shuffle">Shuffle</button>
-                    </div>
-                    <div class="iv-suggested" id="iv-suggested">
-                        {# Filled by interview.js with three picks from the banks. #}
-                    </div>
-                    <div class="iv-mock">
-                        <button type="button" class="btn btn-primary" id="iv-mock-btn">Start Mock Interview</button>
-                        <p>Simulates a full interview — one question at a time, scored answers, running average.</p>
-                    </div>
+                <!-- Mock interview: slim standalone control (the old Suggested
+                     Questions card was removed — the studio cycles questions
+                     itself via New Question / the category + type filters). -->
+                <div class="iv-mockbar" id="iv-mockbar">
+                    <button type="button" class="btn btn-primary" id="iv-mock-btn">Start Mock Interview</button>
+                    <p>Simulates a full interview — one question at a time, scored answers, running average.</p>
                 </div>
             </div>
 
@@ -310,27 +316,28 @@
                     </ul>
                 </div>
 
-                <div class="iv-card iv-match">
+                <!-- Interview Tips (below the STAR helper, per Pete) -->
+                <div class="iv-card iv-tips">
                     <div class="iv-card__top">
-                        <span class="iv-label">Coming Next</span>
+                        <span class="iv-label">Interview Tips</span>
                     </div>
-                    <h3>Qualification Match</h3>
-                    <p>
-                        Paste a job posting and see how closely your slate matches —
-                        100%, 90%, 75% — with a strictness dial you control.
-                    </p>
-                    <span class="iv-chip iv-chip--soon">In design</span>
+                    <ul class="iv-tips__list">
+                        <li><span class="iv-tips__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 21v-2M5 12H3M21 12h-2M6 6l1.5 1.5M18 6l-1.5 1.5"/><circle cx="12" cy="13" r="4"/></svg></span><div><strong>Lead with the result.</strong><span>Say the outcome early, then explain how you got there.</span></div></li>
+                        <li><span class="iv-tips__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><div><strong>Use numbers.</strong><span>A metric ("16 to 0", "70% faster") beats an adjective every time.</span></div></li>
+                        <li><span class="iv-tips__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><strong>Keep it under 2 minutes.</strong><span>Tight answers signal clear thinking. Practice trimming.</span></div></li>
+                        <li><span class="iv-tips__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5L12 14.8 7.5 17l.9-5L4.8 8.3l5-.7z"/></svg></span><div><strong>Say "I", not "we".</strong><span>Interviewers want your role — name what you personally did.</span></div></li>
+                        <li><span class="iv-tips__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div><strong>End on impact.</strong><span>Close with what changed for the team, customer, or mission.</span></div></li>
+                    </ul>
                 </div>
             </aside>
         </div>
 
-        <!-- ============ QUESTION BANKS ============ -->
-        <section class="iv-bank" aria-labelledby="iv-star-bank-title">
-            <div class="board-section__head">
-                <h2 id="iv-star-bank-title">STAR Method Practice</h2>
-                <p>Thirty stories every interviewer asks for. Click any question to practice it in the studio.</p>
-            </div>
-            <ol class="iv-bank__list" id="iv-bank-star">
+        {# Question data island — hidden. The big visible banks were removed
+           (redundant, and cluttered the page); the studio still reads these
+           60 questions to drive New Question, the category/type filters, and
+           mock interviews. Each carries data-mode (star|behavioral) + data-topic. #}
+        <div id="iv-qbank" hidden aria-hidden="true">
+            <ol id="iv-bank-star">
                 <li><button type="button" class="iq-item" data-mode="star" data-topic="Leadership">Tell me about a time you led a project from start to finish.</button></li>
                 <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you had to meet a very tight deadline.</button></li>
                 <li><button type="button" class="iq-item" data-mode="star" data-topic="Conflict">Tell me about a time you disagreed with a supervisor.</button></li>
@@ -362,14 +369,7 @@
                 <li><button type="button" class="iq-item" data-mode="star" data-topic="Adaptability">Tell me about a time you delivered with limited resources or budget.</button></li>
                 <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you turned around a failing project or task.</button></li>
             </ol>
-        </section>
-
-        <section class="iv-bank" aria-labelledby="iv-beh-bank-title">
-            <div class="board-section__head">
-                <h2 id="iv-beh-bank-title">Behavioral Interview Practice</h2>
-                <p>Thirty questions about how you work — leadership, conflict, communication, accountability, and pressure.</p>
-            </div>
-            <ol class="iv-bank__list" id="iv-bank-behavioral">
+            <ol id="iv-bank-behavioral">
                 <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">How do you prioritize when everything feels urgent?</button></li>
                 <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Conflict">How do you handle disagreeing with a team decision?</button></li>
                 <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How would you describe your leadership style?</button></li>
@@ -401,7 +401,7 @@
                 <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you evaluate whether a project truly succeeded?</button></li>
                 <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">Where do you want to grow in the next few years?</button></li>
             </ol>
-        </section>
+        </div>
 
     </div>
 </section>
@@ -409,5 +409,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/interview.js') }}?v=interview-ai-1"></script>
+<script src="{{ url_for('static', filename='js/interview.js') }}?v=interview-revamp-1"></script>
 {% endblock %}
