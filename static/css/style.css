@@ -14418,6 +14418,96 @@ a.ct-card:focus-visible {
 }
 
 /* =========================================================
+   MOBILE NAV (2026-07-08, Pete): the header stays sticky (already is)
+   with an always-available "Ask AI" button, plus a bottom tab bar that
+   mirrors the page's section tabs and reveals on scroll-up. mobile-nav.js
+   clones the tabs + wires the reveal. Desktop hides both.
+   ========================================================= */
+
+/* Always-on Ask Pete AI button — phones only (desktop keeps the search
+   box, which already has an Ask-AI fallthrough). */
+.nav-ask-ai { display: none; }
+
+/* Bottom section tab bar — phones only. */
+.mobile-tabbar { display: none; }
+
+@media (max-width: 743px) {
+    .nav-ask-ai {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .nav-ask-ai svg {
+        width: 15px;
+        height: 15px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mobile-tabbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1150;
+        display: flex;
+        gap: 2px;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+        background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -8px 22px rgb(0 0 0 / 14%);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        overflow-x: auto;
+        scrollbar-width: none;
+        transition: transform 220ms ease;
+    }
+
+    .mobile-tabbar::-webkit-scrollbar { display: none; }
+
+    .mobile-tabbar.is-hidden { transform: translateY(115%); }
+
+    .mobile-tabbar__item {
+        flex: 1 0 auto;
+        text-align: center;
+        padding: 7px 12px;
+        border-radius: 9px;
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        font-weight: 650;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+    .mobile-tabbar__item[aria-current="page"] {
+        color: var(--accent);
+        background: var(--accent-soft);
+        font-weight: 750;
+    }
+
+    /* Room so the fixed bar never covers the last of the page content. */
+    body { padding-bottom: 58px; }
+
+    /* Lift the floating chat launcher above the bottom bar. */
+    #chat-toggle { bottom: 70px; }
+}
+
+/* =========================================================
    INTERVIEW ME — DIRECTION TOGGLE + "INTERVIEW THE AI"
    (added 2026-07-07) Segmented two-way switch above the studio,
    plus the model-answer card. Shared tokens: adapts to Light and
@@ -17293,6 +17383,318 @@ button.ts-react:hover { color: #d23b5e; }
     .ts-banner__cta { margin-left: 0; }
     .ts-mile__state { display: none; }
     .ts-path__stats { flex-wrap: wrap; gap: 16px; }
+}
+
+/* =========================================================
+   MY SLATE — merged dashboard (2026-07-08): the goal map, My Paths,
+   Today's Goals + Daily Check-in, People & Progress, Upcoming
+   Milestones, and Recommended, all on one page (Slate Paths folded in).
+   Reuses the ts-* family; these are the additional pieces.
+   ========================================================= */
+
+.ts-filters-btn { margin-left: 2px; }
+
+/* Dashboard sub-nav (mockup) */
+.ts-subnav {
+    display: flex;
+    gap: 4px;
+    margin-top: 16px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.ts-subnav::-webkit-scrollbar { display: none; }
+
+.ts-subnav__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 13px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.ts-subnav__item svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ts-subnav__item:hover { color: var(--text); background: var(--accent-soft); }
+.ts-subnav__item.is-active { color: var(--accent); background: var(--accent-soft); }
+.ts-subnav__item[aria-disabled="true"] { cursor: default; opacity: 0.55; }
+
+/* Spacing between the stacked dashboard sections */
+.ts-section { margin-top: 22px; }
+
+/* Two-column rows */
+.ts-two {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.ts-two--reco { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+
+/* Today's Goals */
+.ts-today { padding: 20px; }
+
+.ts-today__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.ts-today__head h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.06rem;
+    font-weight: 750;
+}
+
+.ts-today__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: #ddf0e4;
+    color: #14663f;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.ts-today__count svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.ts-today .ts-miles { margin: 0; }
+
+/* Check-in as a standalone card (reuses .ts-checkin internals). */
+.ts-checkin--card { align-self: start; }
+
+/* People & Progress */
+.ts-pp { padding: 22px; }
+
+.ts-pp__head h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.ts-pp__tabs {
+    display: flex;
+    gap: 4px;
+    margin: 14px 0 6px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.ts-pp__tabs::-webkit-scrollbar { display: none; }
+
+.ts-pp__tab {
+    position: relative;
+    padding: 9px 13px 12px;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ts-pp__tab[aria-disabled="true"] { cursor: default; }
+.ts-pp__tab.is-active { color: var(--accent); font-weight: 750; }
+
+.ts-pp__tab.is-active::after {
+    content: "";
+    position: absolute;
+    inset: auto 8px -1px;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent);
+}
+
+.ts-pp__cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 16px;
+}
+
+.ts-pp__col { min-width: 0; }
+
+.ts-pp__colhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.ts-pp__colhead h4 {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 750;
+}
+
+/* Progress Highlights (avatar + name/goal/bar + percent) */
+.ts-highlights {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 13px;
+}
+
+.ts-highlights li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.ts-highlights .ts-ava { width: 34px; height: 34px; flex-basis: 34px; font-size: 0.66rem; }
+
+.ts-hl__body { display: grid; gap: 4px; min-width: 0; }
+
+.ts-hl__body strong { color: var(--text); font-size: 0.83rem; font-weight: 700; }
+
+.ts-hl__body small {
+    color: var(--text-muted);
+    font-size: 0.73rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ts-hl__body .ts-bar { height: 5px; margin-top: 1px; }
+
+.ts-hl__pct { color: var(--text-muted); font-size: 0.76rem; font-weight: 750; }
+
+/* Achievements */
+.ts-achievements { margin: 0; padding: 0; list-style: none; display: grid; gap: 13px; }
+.ts-achievements li { display: flex; align-items: center; gap: 11px; }
+
+.ts-ach__icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+}
+
+.ts-ach__icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.ts-ach__body { display: grid; }
+.ts-ach__body strong { color: var(--text); font-size: 0.87rem; font-weight: 750; }
+.ts-ach__body small { color: var(--text-muted); font-size: 0.75rem; }
+
+/* Upcoming Milestones */
+.ts-upcoming { padding: 20px; }
+.ts-upcominglist { margin: 6px 0 0; padding: 0; list-style: none; }
+.ts-upcominglist li { display: flex; align-items: center; gap: 11px; padding: 11px 0; }
+.ts-upcominglist li + li { border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+
+.ts-upcoming__date {
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.ts-upcoming__date svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.ts-upcoming__body { flex: 1; min-width: 0; display: grid; }
+.ts-upcoming__body strong { color: var(--text); font-size: 0.87rem; font-weight: 750; }
+.ts-upcoming__body small { color: var(--text-muted); font-size: 0.74rem; }
+.ts-upcoming__when { color: var(--accent); font-size: 0.76rem; font-weight: 750; white-space: nowrap; }
+
+/* Recommended for You */
+.ts-reco { padding: 20px; }
+
+.ts-reco__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.ts-reco__card {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.ts-reco__card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+.ts-reco__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+}
+
+.ts-reco__icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.ts-reco__tag {
+    justify-self: start;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.ts-reco__card strong { color: var(--text); font-size: 0.85rem; font-weight: 750; }
+.ts-reco__card small { color: var(--text-muted); font-size: 0.73rem; line-height: 1.4; }
+
+@media (max-width: 1040px) {
+    .ts-two,
+    .ts-two--reco { grid-template-columns: 1fr; }
+    .ts-pp__cols { grid-template-columns: 1fr; }
+    .ts-reco__grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 620px) {
+    .ts-reco__grid { grid-template-columns: 1fr; }
+    .ts-subnav { gap: 2px; }
 }
 
 /* =========================================================

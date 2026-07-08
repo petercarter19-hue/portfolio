@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=refinements-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=slate-merge-1"
     >
     <link
         rel="stylesheet"
@@ -154,6 +154,15 @@
                         >
                         <div class="nav-search__results" id="nav-search-results" role="listbox" hidden></div>
                     </div>
+
+                    {# Ask Pete AI — always available in the header (Pete). On
+                       phones the search box is hidden, so this compact button
+                       keeps the assistant one tap away at all times. It opens
+                       the chat panel (mobile-nav.js). #}
+                    <button class="nav-ask-ai" type="button" data-open-chat aria-label="Ask Pete AI">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span>Ask AI</span>
+                    </button>
 
                     {# Theme picker is now a dropdown button (mockup) — the
                        nine swatches live inside the panel with their names.
@@ -298,7 +307,7 @@
     <script id="nav-search-data" type="application/json">
     [
         {"title": "Overview", "sub": "Pete's slate home", "href": "{{ portfolio_home_url }}", "keys": "home overview profile pete carter example slate"},
-        {"title": "My Slate", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my slate personal life"},
+        {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
         {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
         {"title": "Projects", "sub": "Practical builds with purpose", "href": "{{ portfolio_work_url }}", "keys": "projects work builds apps case studies traceability dashboard"},
         {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
@@ -317,9 +326,18 @@
     ]
     </script>
 
+    {# Mobile bottom nav (Pete): mirrors the page's primary tab strip — the
+       profile tabs (Overview / My Story / …) on portfolio pages, or The
+       Slate tabs (Slate Feed / My Slate / …) on the hub — so phone users can
+       jump between sections without scrolling back up. mobile-nav.js clones
+       the [data-mobile-tabsource] links into it and reveals it on scroll-up.
+       Hidden on desktop via CSS. #}
+    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
+
     <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=four-themes-1"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=refinements-1"></script>
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
+    <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-1"></script>
     {% block extra_scripts %}{% endblock %}
 
 </body>

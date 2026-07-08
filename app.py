@@ -423,9 +423,11 @@ def the_slate_daily():
 
 @app.route('/the-slate/paths')
 def the_slate_paths():
-    # Tab 4 — Slate Paths: guided tracks with milestones, check-ins,
-    # and community. Static preview built around the PMP example path.
-    return render_template('the_slate_paths.html')
+    # Slate Paths merged INTO My Slate (2026-07-08): the goal map, paths,
+    # daily check-in, and people/progress now live on one dashboard. This
+    # route redirects so old links (and url_for('the_slate_paths')) keep
+    # working.
+    return redirect(url_for('the_slate_my'), code=302)
 
 def relative_time_label(iso_timestamp, now):
     # Turns a stored timestamp like "2026-07-02T09:15:00" into the live
@@ -491,9 +493,10 @@ def load_slate_feed():
 
 @app.route('/the-slate/progress')
 def slate_feed():
-    # The Progress layer of the Slate Feed (the original feed page).
-    # Endpoint name stays "slate_feed" so every url_for() keeps working.
-    return render_template('slate_feed.html', feed=load_slate_feed())
+    # Progress merged INTO the feed landing (People & Progress) on
+    # 2026-07-08. Endpoint name stays "slate_feed" so every url_for()
+    # keeps working; it now redirects to the combined landing.
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/api/slate-feed')
