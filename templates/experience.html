@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{#  EXPERIENCE — the cinematic homepage candidate (2026-07-08)
+    ============================================================
+    An Apple/Samsung-style scroll experience: five full-screen scenic
+    sections (aurora hero, mountain sunrise, pink clouds, golden valley,
+    purple sunset), each with centered display text above a row of large
+    translucent glass cards. It lives at /experience next to the current
+    homepage so the two can be compared before deciding which one wins.
+
+    The pieces:
+      - templates/experience.html   this file: content + reusable macros
+      - static/css/cinematic.css    all styling (loaded only on this page)
+      - static/js/cinematic-home.js scroll reveals + gentle parallax
+      - static/images/cinematic/    the five generated scenic backgrounds
+#}
+
+{% block title %}Experience PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
+
+{% block meta_description %}PeerSlate is your all-in-one platform to plan, build, connect, and achieve the life and career you envision.{% endblock %}
+
+{# peerslate-home-page keeps the frosted homepage header + keeps the theme
+   switcher from repainting this page (same behavior as the current
+   homepage); cinematic-home-page scopes everything in cinematic.css. #}
+{% block body_class %}peerslate-home-page cinematic-home-page{% endblock %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-1"
+>
+{# The hero backdrop is the largest thing on screen — start fetching it
+   before the CSS asks for it so the first paint feels instant. #}
+<link rel="preload" as="image" media="(min-width: 761px)"
+      href="{{ url_for('static', filename='images/cinematic/hero-aurora.jpg') }}">
+<link rel="preload" as="image" media="(max-width: 760px)"
+      href="{{ url_for('static', filename='images/cinematic/hero-aurora-m.jpg') }}">
+{% endblock %}
+
+{% block content %}
+
+{# ------------------------------------------------------------------
+   Icon library: simple 24x24 stroke icons drawn inline so the page
+   needs no icon font or extra requests. Referenced by key from the
+   card lists below.
+   ------------------------------------------------------------------ #}
+{% set icons = {
+    'projects':    '<path d="M3 6.8A1.8 1.8 0 0 1 4.8 5h4.4l2.1 2.6h7.9A1.8 1.8 0 0 1 21 9.4v8.8a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 18.2z"/>',
+    'skills':      '<path d="M11 3.6l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z"/><path d="M18.6 14.9l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8z"/>',
+    'experience':  '<rect x="3" y="7.4" width="18" height="12.6" rx="2"/><path d="M8.6 7.4V5.6A1.6 1.6 0 0 1 10.2 4h3.6a1.6 1.6 0 0 1 1.6 1.6v1.8M3 12.4h18"/>',
+    'results':     '<path d="M4 20.2v-7.2M9.4 20.2V8.4M14.8 20.2v-9.2M20.2 20.2V4.8"/>',
+    'journal':     '<path d="M4.6 19.2A2.4 2.4 0 0 1 7 16.8h12.4V3.6H7A2.4 2.4 0 0 0 4.6 6z"/><path d="M4.6 19.2A2.4 2.4 0 0 0 7 21.6h12.4v-4.8"/>',
+    'memories':    '<rect x="2.8" y="7" width="18.4" height="13" rx="2.4"/><path d="M8 7l1.5-2.6h5L16 7"/><circle cx="12" cy="13.4" r="3.6"/>',
+    'milestones':  '<path d="M5.4 21.4V3.4"/><path d="M5.4 4.4h11.8l-2.3 4 2.3 4H5.4"/>',
+    'values':      '<circle cx="12" cy="12" r="9.2"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z"/>',
+    'goals':       '<circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="5.2"/><circle cx="12" cy="12" r="1.4"/>',
+    'plans':       '<path d="M4 5.8h10M4 12h13M4 18.2h8"/><path d="M19.4 14.6l-3.2 4-1.8-1.7"/>',
+    'progress':    '<path d="M3.4 17.8l5.2-5.2 3.6 3.6 7.4-8"/><path d="M15 8.2h4.6v4.6"/>',
+    'vision':      '<path d="M2.6 12S6 5.8 12 5.8 21.4 12 21.4 12 18 18.2 12 18.2 2.6 12 2.6 12z"/><circle cx="12" cy="12" r="2.9"/>',
+    'community':   '<circle cx="9" cy="8.4" r="3.4"/><path d="M3.2 19.6c.7-3.4 3-5.2 5.8-5.2s5.1 1.8 5.8 5.2"/><circle cx="17.2" cy="9.4" r="2.7"/><path d="M16.3 14.7c2.4.3 4 1.8 4.5 4.3"/>',
+    'collaborate': '<path d="M9.4 12.6a4.4 4.4 0 0 0 6.6.5l2.6-2.6a4.4 4.4 0 0 0-6.2-6.2L11 5.7"/><path d="M14.6 11.4a4.4 4.4 0 0 0-6.6-.5l-2.6 2.6a4.4 4.4 0 0 0 6.2 6.2l1.4-1.4"/>',
+    'share':       '<circle cx="17.8" cy="5.4" r="2.7"/><circle cx="6.2" cy="12" r="2.7"/><circle cx="17.8" cy="18.6" r="2.7"/><path d="M8.6 10.8l6.8-4M8.6 13.2l6.8 4"/>',
+    'impact':      '<path d="M13.2 2.6L4.6 13.4h6l-1 8 8.6-10.8h-6z"/>'
+} %}
+
+{# ------------------------------------------------------------------
+   Reusable components: one macro for a glass feature card, one for a
+   whole full-screen section (background, veil, heading, card grid).
+   Every section below the hero is built from cine_section().
+   ------------------------------------------------------------------ #}
+{% macro feature_card(icon, title, desc, i) %}
+    <article class="glass-feature-card reveal" style="--reveal-i: {{ i }};">
+        <span class="glass-feature-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">{{ icons[icon]|safe }}</svg>
+        </span>
+        <h3 class="glass-feature-card__title">{{ title }}</h3>
+        <p class="glass-feature-card__desc">{{ desc }}</p>
+    </article>
+{% endmacro %}
+
+{% macro cine_section(id, mod, eyebrow, title, subtitle, cards) %}
+    <section class="cinematic-section {{ mod }}" id="{{ id }}" aria-labelledby="{{ id }}-title">
+        {# The scenic backdrop lives on its own oversized layer so the JS
+           can drift it slightly (parallax) without exposing edges. #}
+        <div class="section-bg" data-parallax aria-hidden="true"></div>
+        {# A whisper of gradient between photo and text keeps the heading
+           readable no matter what the scenery is doing behind it. #}
+        <div class="section-veil" aria-hidden="true"></div>
+        <div class="section-content">
+            <p class="section-eyebrow reveal">{{ eyebrow }}</p>
+            <h2 class="section-title reveal" id="{{ id }}-title">{{ title }}</h2>
+            <p class="section-subtitle reveal">{{ subtitle }}</p>
+            <div class="glass-card-grid">
+                {% for c in cards %}{{ feature_card(c[0], c[1], c[2], loop.index0) }}{% endfor %}
+            </div>
+            {{ caller() if caller }}
+        </div>
+    </section>
+{% endmacro %}
+
+<div class="cinematic-home">
+
+    {# ==============================================================
+       1 · HERO — dark aurora over a still lake. Full-screen, pulled up
+       underneath the frosted header so the sky runs behind the glass.
+       Entrance animation is pure CSS (no JS dependency above the fold).
+       ============================================================== #}
+    <section class="cinematic-section cinematic-hero" id="top" aria-label="PeerSlate introduction">
+        <div class="section-bg" aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+        <div class="section-content">
+            <p class="section-eyebrow cine-fade" style="--fade-i: 0;">Introducing PeerSlate</p>
+            <h1 class="cinematic-hero__title">
+                <span class="cine-fade" style="--fade-i: 1;">Your work.</span>
+                <span class="cine-fade" style="--fade-i: 2;">Your story.</span>
+                <span class="cine-fade" style="--fade-i: 3;">Your future.</span>
+            </h1>
+            <p class="section-subtitle cinematic-hero__lead cine-fade" style="--fade-i: 4;">
+                PeerSlate is your all-in-one platform to plan, build, connect,
+                and achieve the life and career you envision.
+            </p>
+            <div class="cinematic-hero__actions cine-fade" style="--fade-i: 5;">
+                <a class="cine-btn cine-btn--primary" href="{{ portfolio_home_url }}">Start Your Slate</a>
+                <a class="cine-btn cine-btn--ghost" href="#your-work">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 5.8v12.4l10.2-6.2z"/></svg>
+                    Watch Overview
+                </a>
+            </div>
+        </div>
+        {# Gentle invitation to scroll — fades once you leave the hero. #}
+        <a class="scroll-cue cine-fade" style="--fade-i: 6;" href="#your-work" aria-label="Scroll to explore">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.6l6 6 6-6"/></svg>
+        </a>
+    </section>
+
+    {# ==============================================================
+       2 · YOUR WORK — bright mountain sunrise. Professional presence.
+       ============================================================== #}
+    {{ cine_section('your-work', 'cinematic-section--work cinematic-section--curved',
+        'Chapter 01 · Showcase',
+        'Your work.',
+        'Build your professional presence. Showcase your experience, skills, projects, and results that matter.',
+        [
+            ('projects',   'Projects',           'Show your work and achievements.'),
+            ('skills',     'Skills & Expertise', 'Highlight your capabilities.'),
+            ('experience', 'Experience',         'Share your journey and impact.'),
+            ('results',    'Results',            'Prove the value you deliver.')
+        ]) }}
+
+    {# ==============================================================
+       3 · YOUR STORY — bright pink cloud field. The personal journey.
+       ============================================================== #}
+    {{ cine_section('your-story', 'cinematic-section--story cinematic-section--curved',
+        'Chapter 02 · Reflect',
+        'Your story.',
+        'Document your journey. Capture the moments, milestones, and lessons that have shaped who you are.',
+        [
+            ('journal',    'Journal',    'Write and reflect on your experiences.'),
+            ('memories',   'Memories',   'Capture meaningful moments.'),
+            ('milestones', 'Milestones', 'Share key achievements.'),
+            ('values',     'Values',     'Define what drives you forward.')
+        ]) }}
+
+    {# ==============================================================
+       4 · YOUR FUTURE — golden valley sunrise. Intentional planning.
+       ============================================================== #}
+    {{ cine_section('your-future', 'cinematic-section--future cinematic-section--curved',
+        'Chapter 03 · Achieve',
+        'Your future.',
+        'Plan intentionally. Set goals, track progress, and turn your vision into real-world achievement.',
+        [
+            ('goals',    'Goals',    'Define what you want to achieve.'),
+            ('plans',    'Plans',    'Create actionable steps.'),
+            ('progress', 'Progress', 'Track your progress and stay focused.'),
+            ('vision',   'Vision',   'Build the future you imagine.')
+        ]) }}
+
+    {# ==============================================================
+       5 · LET'S BUILD THIS TOGETHER — purple/pink community sunset.
+       Dark glass cards + a closing call to action.
+       ============================================================== #}
+    {% call cine_section('together', 'cinematic-section--together cinematic-section--curved cinematic-section--dark',
+        'Chapter 04 · Connect',
+        'Let’s build this together.',
+        'Connect with like-minded people, collaborate on ideas, and create something extraordinary.',
+        [
+            ('community',   'Community',   'Connect with people who get it.'),
+            ('collaborate', 'Collaborate', 'Work together on ideas.'),
+            ('share',       'Share',       'Exchange insights and resources.'),
+            ('impact',      'Impact',      'Create impact together.')
+        ]) %}
+        <div class="cinematic-outro reveal">
+            <a class="cine-btn cine-btn--primary" href="{{ portfolio_home_url }}">Start Your Slate</a>
+            <p class="cinematic-outro__note">Free while PeerSlate is in preview · See a real slate first</p>
+        </div>
+    {% endcall %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-1"></script>
+{% endblock %}

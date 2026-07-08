@@ -326,6 +326,14 @@ def portfolio_home():
 def peerslate_home():
     return render_template('peerslate.html')
 
+# EXPERIENCE (2026-07-08): the new cinematic homepage candidate. It lives
+# at its own address (linked as "Experience" in the header) so Pete can
+# compare it side-by-side with the current homepage at / before deciding
+# which one wins. Nothing about the old homepage changes.
+@app.route('/experience')
+def experience():
+    return render_template('experience.html')
+
 @app.route('/about')
 @app.route('/petec/about')
 def about():
