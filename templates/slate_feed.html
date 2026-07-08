@@ -18,24 +18,31 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}Slate Feed | PeerSlate{% endblock %}
+{% block title %}Progress · The Slate | PeerSlate{% endblock %}
 
 {% block meta_description %}The PeerSlate activity feed: milestones, badges, project updates, and board moves from member slates — your growth, in real time.{% endblock %}
 
 {% block content %}
 
-<section class="sf-page" aria-labelledby="sf-title">
+<section class="sf-page ts-page" aria-labelledby="ts-title">
     <div class="site-container">
 
-        <!-- ============ PAGE HEAD ============ -->
-        <header class="sf-head">
-            <h1 id="sf-title">Slate Feed</h1>
-            <p>Your growth, in real time.</p>
-        </header>
+        {# The Slate shell (2026-07-08): this page is now the Progress
+           LAYER of the hub's Slate Feed tab, not a standalone page. #}
+        {% set ts_active = 'feed' %}
+        {% include "partials/the_slate_head.html" %}
 
-        <!-- ============ TAB STRIP ============ -->
+        <!-- ============ TAB INTRO ============ -->
+        <div class="ts-intro">
+            <div class="ts-intro__copy">
+                <h2>Slate Feed</h2>
+                <p>Your growth, in real time.</p>
+            </div>
+        </div>
+
+        <!-- ============ FEED LAYERS (Progress active) ============ -->
         {% set active = 'progress' %}
-        <div class="sf-tabbar">
+        <div class="ts-layerbar ps-card">
             {% include "partials/slate_feed_tabs.html" %}
 
             <label class="sf-filter">

@@ -380,14 +380,52 @@ def skills():
 
 
 # -------------------------------------------------------
-# SLATE FEED (platform page)
-# The community activity feed from Pete's mockups. The feed is
-# built to aggregate events from EVERY member's slate — each item
-# in static/data/slate_feed.json names its author, so when other
-# profiles exist their events join the same feed automatically.
-# Today the only profile is Pete's, so every card is pulled from
-# his real Slate Board content and links back to it.
+# THE SLATE (platform hub) + SLATE FEED layers
+# "The Slate" is the main product experience: one page with four
+# internal tabs — Slate Feed / My Slate / Daily Slate / Slate
+# Paths (from Pete's four 2026-07-08 mockups). The old separate
+# top-level "Slate Feed" and "Slate Board" nav links now live
+# inside it. The feed's deeper layers (Progress / Pulse / Break)
+# kept their own pages and simply moved under /the-slate/*; the
+# People layer is the hub's landing view. Old /slate-feed URLs
+# redirect so no bookmark or shared link ever breaks.
+#
+# The feed is built to aggregate events from EVERY member's
+# slate — each item in static/data/slate_feed.json names its
+# author, so when other profiles exist their events join the
+# same feed automatically. Today the only profile is Pete's, so
+# every card is pulled from his real Slate Board content and
+# links back to it.
 # -------------------------------------------------------
+
+
+@app.route('/the-slate')
+def the_slate():
+    # Tab 1 — Slate Feed, with the People layer active (the layer that
+    # best shows the PeerSlate idea: people connected by public goals).
+    return render_template('the_slate_feed.html')
+
+
+@app.route('/the-slate/my-slate')
+def the_slate_my():
+    # Tab 2 — My Slate: the user's personal goal map. Static preview
+    # content in the template (same convention as the Slate Board MVP).
+    return render_template('the_slate_my.html')
+
+
+@app.route('/the-slate/daily')
+def the_slate_daily():
+    # Tab 3 — Daily Slate: the daily return hook ("What did you move
+    # forward today?"). The composer posts a real card (the-slate.js,
+    # stored per-browser) so the page demonstrates the loop end-to-end.
+    return render_template('the_slate_daily.html')
+
+
+@app.route('/the-slate/paths')
+def the_slate_paths():
+    # Tab 4 — Slate Paths: guided tracks with milestones, check-ins,
+    # and community. Static preview built around the PMP example path.
+    return render_template('the_slate_paths.html')
 
 def relative_time_label(iso_timestamp, now):
     # Turns a stored timestamp like "2026-07-02T09:15:00" into the live
@@ -451,8 +489,10 @@ def load_slate_feed():
     return feed
 
 
-@app.route('/slate-feed')
+@app.route('/the-slate/progress')
 def slate_feed():
+    # The Progress layer of the Slate Feed (the original feed page).
+    # Endpoint name stays "slate_feed" so every url_for() keeps working.
     return render_template('slate_feed.html', feed=load_slate_feed())
 
 
@@ -463,23 +503,7 @@ def slate_feed_api():
     return jsonify(load_slate_feed())
 
 
-def load_slate_people():
-    people_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'slate_people.json')
-
-    with open(people_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-@app.route('/slate-feed/people')
-def slate_feed_people():
-    # The People view of the Slate Feed — connections, journeys, goal rooms,
-    # and community posts. Card content lives in slate_people.json; the
-    # composer on the page lets a visitor add their own People card
-    # (stored per-browser by slate-feed.js).
-    return render_template('slate_people.html', people=load_slate_people())
-
-
-@app.route('/slate-feed/pulse')
+@app.route('/the-slate/pulse')
 def slate_feed_pulse():
     # The Pulse view — the community's momentum at a glance: this-week
     # stats, trending skills, rising goals, and what's moving right now.
@@ -487,12 +511,38 @@ def slate_feed_pulse():
     return render_template('slate_pulse.html')
 
 
-@app.route('/slate-feed/break')
+@app.route('/the-slate/break')
 def slate_feed_break():
     # The Break view — the "step back and recharge" tab: an encouragement
     # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
     # the platform human, not just a metrics grind. Static preview for now.
     return render_template('slate_break.html')
+
+
+# Old /slate-feed addresses: everything moved into The Slate on
+# 2026-07-08, so these permanently forward to the new homes. The old
+# People view (slate_people.html) was superseded by the hub's People
+# layer — its URL lands on The Slate itself.
+@app.route('/slate-feed')
+def slate_feed_legacy():
+    return redirect(url_for('slate_feed'), code=302)
+
+
+@app.route('/slate-feed/pulse')
+def slate_feed_pulse_legacy():
+    return redirect(url_for('slate_feed_pulse'), code=302)
+
+
+@app.route('/slate-feed/break')
+def slate_feed_break_legacy():
+    return redirect(url_for('slate_feed_break'), code=302)
+
+
+@app.route('/slate-feed/people')
+def slate_feed_people():
+    # Keeps old links alive AND keeps url_for('slate_feed_people')
+    # working anywhere it still appears.
+    return redirect(url_for('the_slate'), code=302)
 
 
 # -------------------------------------------------------

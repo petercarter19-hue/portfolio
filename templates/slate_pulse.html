@@ -14,24 +14,31 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}Pulse | Slate Feed | PeerSlate{% endblock %}
+{% block title %}Pulse · The Slate | PeerSlate{% endblock %}
 
 {% block meta_description %}The Pulse view of the PeerSlate Slate Feed: a personalized daily mix of insights, opportunities, trends, and lighter content.{% endblock %}
 
 {% block content %}
 
-<section class="sf-page pf-page" aria-labelledby="sf-title">
+<section class="sf-page ts-page pf-page" aria-labelledby="ts-title">
     <div class="site-container">
 
-        <!-- ============ PAGE HEAD ============ -->
-        <header class="sf-head">
-            <h1 id="sf-title">Slate Feed</h1>
-            <p>Your daily mix of insights, opportunities, and inspiration.</p>
-        </header>
+        {# The Slate shell (2026-07-08): Pulse is now a LAYER of the
+           hub's Slate Feed tab, not a standalone page. #}
+        {% set ts_active = 'feed' %}
+        {% include "partials/the_slate_head.html" %}
 
-        <!-- ============ TAB STRIP ============ -->
+        <!-- ============ TAB INTRO ============ -->
+        <div class="ts-intro">
+            <div class="ts-intro__copy">
+                <h2>Slate Feed</h2>
+                <p>Your daily mix of insights, opportunities, and inspiration.</p>
+            </div>
+        </div>
+
+        <!-- ============ FEED LAYERS (Pulse active) ============ -->
         {% set active = 'pulse' %}
-        <div class="sf-tabbar">
+        <div class="ts-layerbar ps-card">
             {% include "partials/slate_feed_tabs.html" %}
         </div>
 
@@ -248,7 +255,7 @@
                 <section class="ps-card pf-side">
                     <header class="pf-side__head">
                         <h2>Suggested Rooms</h2>
-                        <a class="pf-link" href="{{ url_for('slate_feed_people') }}">View all</a>
+                        <a class="pf-link" href="{{ url_for('the_slate') }}">View all</a>
                     </header>
                     <ul class="pf-rooms">
                         <li>

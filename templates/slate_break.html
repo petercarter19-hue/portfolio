@@ -22,24 +22,31 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}Break | Slate Feed | PeerSlate{% endblock %}
+{% block title %}Break · The Slate | PeerSlate{% endblock %}
 
 {% block meta_description %}The Break view of the PeerSlate Slate Feed: step away, recharge, and come back with more you — transformation stories, challenges, polls, local discovery, and daily inspiration.{% endblock %}
 
 {% block content %}
 
-<section class="sf-page bk-page bk-green" aria-labelledby="sf-title">
+<section class="sf-page ts-page bk-page bk-green" aria-labelledby="ts-title">
     <div class="site-container">
 
-        <!-- ============ PAGE HEAD ============ -->
-        <header class="sf-head">
-            <h1 id="sf-title">Slate Feed</h1>
-            <p>Step away. Recharge. Come back with more you.</p>
-        </header>
+        {# The Slate shell (2026-07-08): Break is now a LAYER of the
+           hub's Slate Feed tab, not a standalone page. #}
+        {% set ts_active = 'feed' %}
+        {% include "partials/the_slate_head.html" %}
 
-        <!-- ============ TAB STRIP ============ -->
+        <!-- ============ TAB INTRO ============ -->
+        <div class="ts-intro">
+            <div class="ts-intro__copy">
+                <h2>Slate Feed</h2>
+                <p>Step away. Recharge. Come back with more you.</p>
+            </div>
+        </div>
+
+        <!-- ============ FEED LAYERS (Break active) ============ -->
         {% set active = 'break' %}
-        <div class="sf-tabbar">
+        <div class="ts-layerbar ps-card">
             {% include "partials/slate_feed_tabs.html" %}
         </div>
 

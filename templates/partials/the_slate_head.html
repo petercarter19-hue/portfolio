@@ -1,0 +1,47 @@
+{#
+    THE SLATE — shared page head (2026-07-08, from the four "The Slate"
+    mockups). One unified product hub: page title + subtitle + streak pill,
+    then the four internal tabs that hold the four mockup concepts.
+    Set `ts_active` before including: 'feed' | 'my' | 'daily' | 'paths'.
+    The Slate Feed tab stays active on the deeper feed layers too
+    (/the-slate/progress|pulse|break), so the hub never loses its place.
+#}
+<header class="ts-head">
+    <div class="ts-head__row">
+        <div class="ts-head__copy">
+            <h1 id="ts-title">The Slate</h1>
+            <p>Your goals, progress, paths, feed, and people &mdash; all connected in one place.</p>
+        </div>
+        {# Day-streak pill (mockups show it on Feed / Daily / Paths). Static
+           sample value for the MVP preview, like the rest of the hub data. #}
+        <a class="ts-streak ps-card" href="{{ url_for('the_slate_daily') }}" title="Your Daily Slate streak">
+            <span class="ts-streak__flame" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.6 7-7 0-3-1.6-5.4-3.2-7.2C14 6 13 4 13 2c-3 2-4.4 4.6-4.4 6.6-1-.8-1.7-2-2-3.1C5 7.5 5 10.5 5 15c0 4.4 3 7 7 7z"/></svg>
+            </span>
+            <span class="ts-streak__copy">
+                <strong>12</strong>
+                <small>day streak</small>
+            </span>
+            <i class="sf-chevron" aria-hidden="true"></i>
+        </a>
+    </div>
+
+    <nav class="ts-tabs" aria-label="The Slate sections">
+        <a class="ts-tab" href="{{ url_for('the_slate') }}" {% if ts_active == 'feed' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+            Slate Feed
+        </a>
+        <a class="ts-tab" href="{{ url_for('the_slate_my') }}" {% if ts_active == 'my' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 21h6M12 18v3"/><path d="M7.5 9.5h4M7.5 13h6"/></svg>
+            My Slate
+        </a>
+        <a class="ts-tab" href="{{ url_for('the_slate_daily') }}" {% if ts_active == 'daily' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+            Daily Slate
+        </a>
+        <a class="ts-tab" href="{{ url_for('the_slate_paths') }}" {% if ts_active == 'paths' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4h11l-3 3.5 3 3.5H6"/></svg>
+            Slate Paths
+        </a>
+    </nav>
+</header>
