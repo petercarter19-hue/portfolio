@@ -1,0 +1,490 @@
+{# ============================================================
+   THE SLATE — TAB 3: DAILY SLATE (/the-slate/daily)
+   Built 2026-07-08 from Pete's "Daily Slate" mockup. The daily
+   return hook: "What did you move forward today?" — fast,
+   rewarding, useful. Small daily progress becomes visible proof
+   over time.
+
+   Layout: The Slate head → tab intro → two columns:
+     MAIN : the Daily Slate composer (category chips, 500-char
+            counter, Public/Private, Create Slate Card), then the
+            feed-layer strip and six example progress cards.
+     RAIL : Suggested Next Step (AI 2-step plan), Trending Slate
+            Paths, People moving with you.
+   Bottom: "Progress becomes proof" band.
+
+   LIVE: the composer posts a REAL card to the top of this list
+   (the-slate.js, stored per-browser under theSlateDailyCards),
+   with the picked category chip and Public/Private label — the
+   same composer the Slate Feed tab shares. Hearts on example
+   cards toggle. Everything else is representative sample content
+   (same convention as the rest of the hub).
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Daily Slate · The Slate | PeerSlate{% endblock %}
+
+{% block meta_description %}Daily Slate: log what you moved forward today on PeerSlate. Small steps, real progress, shared momentum — daily updates become visible proof over time.{% endblock %}
+
+{% block content %}
+
+<section class="sf-page ts-page" aria-labelledby="ts-title">
+    <div class="site-container">
+
+        {% set ts_active = 'daily' %}
+        {% include "partials/the_slate_head.html" %}
+
+        <!-- ============ TAB INTRO ============ -->
+        <div class="ts-intro">
+            <div class="ts-intro__copy">
+                <h2>Your Daily Slate</h2>
+                <p>Small steps. Real progress. Shared momentum.</p>
+            </div>
+        </div>
+
+        <!-- ============ TWO-COLUMN LAYOUT ============ -->
+        <div class="ts-layout">
+
+            <!-- ---- MAIN COLUMN ---- -->
+            <div class="ts-main">
+
+                {# Daily Slate composer — the heart of the tab. Same shared
+                   composer as the Slate Feed tab; here the new card lands
+                   right below in this list. #}
+                <section class="ps-card ts-compose ts-compose--hero" data-ts-compose aria-label="Create a Slate Card">
+                    <h3 class="ts-compose__title">What did you move forward today?</h3>
+
+                    <div class="ts-cats" role="group" aria-label="Pick a category">
+                        <button class="ts-cat ts-cat--work is-active" type="button" data-cat="Work" aria-pressed="true">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Work
+                        </button>
+                        <button class="ts-cat ts-cat--career" type="button" data-cat="Career" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V4M16 19v-9M21 19H3"/></svg>
+                            Career
+                        </button>
+                        <button class="ts-cat ts-cat--project" type="button" data-cat="Project" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg>
+                            Project
+                        </button>
+                        <button class="ts-cat ts-cat--health" type="button" data-cat="Health" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-6.5-4.4-6.5-9A3.5 3.5 0 0 1 12 8a3.5 3.5 0 0 1 6.5 3c0 4.6-6.5 9-6.5 9z"/></svg>
+                            Health
+                        </button>
+                        <button class="ts-cat ts-cat--education" type="button" data-cat="Education" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V6a2 2 0 0 1 2-2h13v13H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/></svg>
+                            Education
+                        </button>
+                        <button class="ts-cat ts-cat--personal" type="button" data-cat="Personal" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21c.7-4 3.4-6 7-6s6.3 2 7 6"/></svg>
+                            Personal
+                        </button>
+                    </div>
+
+                    <label class="sf-hidden-label" for="ts-compose-text">Share your progress (500 characters max)</label>
+                    <textarea
+                        id="ts-compose-text"
+                        class="ts-compose__text"
+                        rows="2"
+                        maxlength="500"
+                        placeholder="Share your progress, wins, or what you completed..."
+                    ></textarea>
+
+                    <div class="ts-compose__bar">
+                        <div class="ts-privacy" role="group" aria-label="Who can see this">
+                            <button class="ts-privacy__opt is-active" type="button" data-privacy="Public" aria-pressed="true">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+                                Public
+                            </button>
+                            <button class="ts-privacy__opt" type="button" data-privacy="Private" aria-pressed="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                                Private
+                            </button>
+                        </div>
+                        <span class="ts-compose__count" aria-live="polite">0 / 500</span>
+                        <button class="ps-btn ps-btn--primary ts-compose__post" type="button" disabled>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>
+                            Create Slate Card
+                        </button>
+                    </div>
+                    <p class="ts-compose__done" hidden>
+                        Slate Card created &mdash; it's at the top of your Daily Slate below.
+                    </p>
+                </section>
+
+                <!-- ============ FEED LAYERS (Progress active) ============ -->
+                {% set active = 'progress' %}
+                <div class="ts-layerbar ps-card">
+                    {% include "partials/slate_feed_tabs.html" %}
+                </div>
+
+                {# ---- Daily progress cards. The visitor's own cards are
+                   prepended here by the-slate.js. ---- #}
+                <div class="ts-dailylist" data-ts-daily-list aria-label="Daily Slate cards">
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-done" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        </span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--blue" aria-hidden="true">AN</span>
+                            <strong>Arjun N.</strong>
+                            <small>2h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>🏃 Crossed 300 miles for the year</h4>
+                            <p>Big milestone! Consistency is paying off.</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--green">Health</span>
+                                <span class="ts-tag ts-tag--green">Running</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>24</b>
+                                </button>
+                                <span class="ts-react" aria-label="6 comments">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>6</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__meter"><strong>300</strong> <i>/ 500 miles</i></p>
+                            <i class="ts-bar"><b style="width: 60%; background: #22a75d;"></b></i>
+                            <small class="ts-daily__pct">60%</small>
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>A</i><i>R</i><i>P</i></span>
+                                12 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-going" aria-hidden="true"></span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--violet" aria-hidden="true">PS</span>
+                            <strong>Priya S.</strong>
+                            <small>4h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>🖥️ Publish the home-lab write-up</h4>
+                            <p>Documented the network setup &amp; automation. Ready to ship!</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--blue">Project</span>
+                                <span class="ts-tag ts-tag--blue">Home Lab</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>18</b>
+                                </button>
+                                <span class="ts-react" aria-label="4 comments">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>4</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__meter"><strong>80%</strong> <i>complete</i></p>
+                            <i class="ts-bar"><b style="width: 80%; background: #2f6fe0;"></b></i>
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>N</i><i>K</i><i>S</i></span>
+                                9 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-done" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        </span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--orange" aria-hidden="true">RM</span>
+                            <strong>Rahul M.</strong>
+                            <small>6h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>🎯 Renew PMP &mdash; 39 of 60 PDUs</h4>
+                            <p>Completed a leadership webinar + agile course.</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--violet">Career</span>
+                                <span class="ts-tag ts-tag--violet">PMP</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>16</b>
+                                </button>
+                                <span class="ts-react" aria-label="3 comments">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>3</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__meter"><strong>39</strong> <i>/ 60 PDUs</i></p>
+                            <i class="ts-bar"><b style="width: 65%; background: #7c4fd8;"></b></i>
+                            <small class="ts-daily__pct">65%</small>
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>V</i><i>P</i><i>D</i></span>
+                                7 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-done" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        </span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--green" aria-hidden="true">AK</span>
+                            <strong>Aisha K.</strong>
+                            <small>8h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>Ran 6 miles before work</h4>
+                            <p>Kept the streak alive &mdash; legs felt strong today.</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--green">Health</span>
+                                <span class="ts-tag ts-tag--green">Running</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>12</b>
+                                </button>
+                                <span class="ts-react" aria-label="2 comments">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>2</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>R</i><i>P</i><i>M</i></span>
+                                5 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-going" aria-hidden="true"></span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--sky" aria-hidden="true">SD</span>
+                            <strong>Sneha D.</strong>
+                            <small>9h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>Added a case study section to portfolio</h4>
+                            <p>New project pages lead with outcomes and metrics.</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--blue">Project</span>
+                                <span class="ts-tag ts-tag--blue">Portfolio</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>9</b>
+                                </button>
+                                <span class="ts-react" aria-label="2 comments">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>2</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__meter"><strong>85%</strong> <i>complete</i></p>
+                            <i class="ts-bar"><b style="width: 85%; background: #2f6fe0;"></b></i>
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>A</i><i>K</i><i>N</i></span>
+                                4 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                    <article class="ps-card ts-daily">
+                        <span class="ts-daily__dot is-done" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        </span>
+                        <div class="ts-daily__who">
+                            <span class="ts-ava ts-ava--violet" aria-hidden="true">KP</span>
+                            <strong>Karan P.</strong>
+                            <small>11h ago</small>
+                        </div>
+                        <div class="ts-daily__copy">
+                            <h4>Finished one Python lesson</h4>
+                            <p>Generators and iterators, done. One lesson a day.</p>
+                            <div class="ts-goal__tags">
+                                <span class="ts-tag ts-tag--orange">Education</span>
+                                <span class="ts-tag ts-tag--orange">Learning</span>
+                            </div>
+                            <div class="ts-daily__social">
+                                <button class="ts-react" type="button" data-ts-heart aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-5-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15 12 20 12 20z"/></svg>
+                                    <b data-ts-heart-count>7</b>
+                                </button>
+                                <span class="ts-react" aria-label="1 comment">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H4l2.4-3A8 8 0 1 1 21 12z"/></svg>
+                                    <b>1</b>
+                                </span>
+                                <span class="ts-react" aria-label="Save">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="ts-daily__side">
+                            <p class="ts-daily__meter"><strong>12</strong> <i>/ 60 lessons</i></p>
+                            <i class="ts-bar"><b style="width: 20%; background: #e0762f;"></b></i>
+                            <small class="ts-daily__pct">20%</small>
+                            <p class="ts-daily__peers">
+                                <span class="ts-faces" aria-hidden="true"><i>S</i><i>R</i><i>V</i></span>
+                                3 others high-fived
+                            </p>
+                        </div>
+                        <button class="sf-item__more ts-daily__more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More options">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                        </button>
+                    </article>
+
+                </div>
+
+                {# ---- the mockup's bottom band ---- #}
+                <aside class="ts-banner">
+                    <span class="ts-banner__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
+                    </span>
+                    <div class="ts-banner__copy">
+                        <strong>Progress becomes proof. People are connected by goals.</strong>
+                        <p>Show up daily. Share honestly. Grow together.</p>
+                    </div>
+                    <a class="ts-btn ts-btn--outline ts-banner__cta" href="{{ peerslate_home_url }}#how-it-works">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/></svg>
+                        Learn how PeerSlate works
+                    </a>
+                </aside>
+
+            </div>{# /ts-main #}
+
+            <!-- ---- RIGHT RAIL ---- -->
+            <aside class="ts-rail" aria-label="Suggestions, trending paths, and people">
+
+                <section class="ps-card ts-ai" aria-labelledby="ts-daily-ai-title">
+                    <header class="sf-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z"/><path d="M19 15l1 2.5L22.5 18 20 19l-1 2.5L18 19l-2.5-1 2.5-.5z"/></svg>
+                        <h2 id="ts-daily-ai-title">Suggested Next Step</h2>
+                        <span class="ts-ai__tag">AI</span>
+                    </header>
+                    <div class="ts-ai__panel" data-ts-plan-panel>
+                        <p class="ts-ai__msg">You're on a roll! Consider breaking down <strong>&ldquo;Publish the home-lab write-up&rdquo;</strong> into a 2-step plan: finalize diagrams and write the post. Want to schedule time for it?</p>
+                        <div class="ts-ai__acts">
+                            <button class="ps-btn ps-btn--primary" type="button" data-ts-plan>Create 2-Step Plan</button>
+                            <button class="ts-btn ts-btn--outline" type="button" data-ts-dismiss>Not now</button>
+                        </div>
+                        {# Revealed by "Create 2-Step Plan" — the plan itself. #}
+                        <ol class="ts-ai__plan" data-ts-plan-steps hidden>
+                            <li><span aria-hidden="true">1</span> Finalize the network + automation diagrams</li>
+                            <li><span aria-hidden="true">2</span> Write and publish the home-lab post</li>
+                        </ol>
+                    </div>
+                    <p class="ts-ai__done" hidden>Got it &mdash; a fresh suggestion will be waiting tomorrow.</p>
+                </section>
+
+                <section class="ps-card ts-trending" aria-labelledby="ts-trendpaths-title">
+                    <header class="sf-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+                        <h2 id="ts-trendpaths-title">Trending Slate Paths</h2>
+                        <a class="ps-link" href="{{ url_for('the_slate_paths') }}">View all</a>
+                    </header>
+                    <ol class="ts-trendlist">
+                        <li>
+                            <span class="ts-trendlist__rank">1</span>
+                            <span class="ts-heat__body"><strong>Build a portfolio website</strong><i class="ts-heat__bar"><b style="width: 88%;"></b></i></span>
+                            <span class="ts-heat__count">🔥 1.8k</span>
+                        </li>
+                        <li>
+                            <span class="ts-trendlist__rank">2</span>
+                            <span class="ts-heat__body"><strong>Run 500 miles</strong><i class="ts-heat__bar"><b style="width: 62%;"></b></i></span>
+                            <span class="ts-heat__count">🔥 1.2k</span>
+                        </li>
+                        <li>
+                            <span class="ts-trendlist__rank">3</span>
+                            <span class="ts-heat__body"><strong>Pass the PMP certification</strong><i class="ts-heat__bar"><b style="width: 50%;"></b></i></span>
+                            <span class="ts-heat__count">🔥 982</span>
+                        </li>
+                        <li>
+                            <span class="ts-trendlist__rank">4</span>
+                            <span class="ts-heat__body"><strong>Ship a side project</strong><i class="ts-heat__bar"><b style="width: 43%;"></b></i></span>
+                            <span class="ts-heat__count">🔥 845</span>
+                        </li>
+                    </ol>
+                </section>
+
+                <section class="ps-card ts-movers" aria-labelledby="ts-movers-title">
+                    <header class="sf-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                        <h2 id="ts-movers-title">People moving with you</h2>
+                        <a class="ps-link" href="{{ url_for('the_slate') }}">View all</a>
+                    </header>
+                    <p class="ts-rail__sub">Matched by similar public goals</p>
+                    <ul class="ts-moverlist">
+                        <li>
+                            <span class="ts-ava ts-ava--green" aria-hidden="true">NP</span>
+                            <span class="ts-moverlist__body"><strong>Neha P.</strong><small>Building · Ship a side project</small></span>
+                            <button class="ts-btn ts-btn--soft" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Connect</button>
+                        </li>
+                        <li>
+                            <span class="ts-ava ts-ava--violet" aria-hidden="true">VR</span>
+                            <span class="ts-moverlist__body"><strong>Vikram R.</strong><small>Learning · Pass the PMP</small></span>
+                            <button class="ts-btn ts-btn--soft" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Connect</button>
+                        </li>
+                        <li>
+                            <span class="ts-ava ts-ava--blue" aria-hidden="true">AK</span>
+                            <span class="ts-moverlist__body"><strong>Aisha K.</strong><small>Health · Run 500 miles</small></span>
+                            <button class="ts-btn ts-btn--soft" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">Connect</button>
+                        </li>
+                    </ul>
+                    <a class="ts-movers__more ps-link" href="{{ url_for('the_slate') }}">See more matches <span aria-hidden="true">&darr;</span></a>
+                </section>
+
+            </aside>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/the-slate.js') }}?v=the-slate-1"></script>
+{% endblock %}

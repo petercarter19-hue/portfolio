@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=surface-slate-2"
+        href="{{ url_for('static', filename='css/style.css') }}?v=the-slate-1"
     >
     <link
         rel="stylesheet"
@@ -121,10 +121,12 @@
                        overview paths; Example Slate then highlights on the deeper
                        portfolio sub-pages so the two links never both light up. #}
                     <li><a href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>Home</a></li>
-                    {# Slate Feed sits right after Home, per the feed mockup. #}
-                    <li><a href="{{ url_for('slate_feed') }}" {% if request.path == '/slate-feed' %}aria-current="page"{% endif %}>Slate Feed</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/slate-board', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
-                    <li><a href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>Slate Board</a></li>
+                    {# THE SLATE (2026-07-08): one main link to the product hub.
+                       It replaced the separate "Slate Feed" and "Slate Board"
+                       links — both experiences now live inside The Slate's
+                       tabs (feed layers + My Slate goal map + Daily + Paths). #}
+                    <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     <li><a href="{{ url_for('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
                 </ul>
@@ -304,10 +306,13 @@
         {"title": "Interview Me", "sub": "Interview practice studio", "href": "{{ portfolio_url('interview-me') }}", "keys": "interview practice questions star behavioral coach mock answer"},
         {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
         {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
-        {"title": "Slate Feed", "sub": "Progress across the community", "href": "{{ url_for('slate_feed') }}", "keys": "feed activity progress updates community posts milestones"},
+        {"title": "The Slate", "sub": "Feed, goals, daily progress, paths", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
+        {"title": "The Slate · My Slate", "sub": "Your goal map", "href": "{{ url_for('the_slate_my') }}", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},
+        {"title": "The Slate · Daily Slate", "sub": "Log what moved forward today", "href": "{{ url_for('the_slate_daily') }}", "keys": "daily slate log progress today streak wins check-in updates"},
+        {"title": "The Slate · Slate Paths", "sub": "Guided tracks with milestones", "href": "{{ url_for('the_slate_paths') }}", "keys": "paths guided tracks milestones pmp run portfolio join community"},
+        {"title": "Feed · Progress", "sub": "Activity across the community", "href": "{{ url_for('slate_feed') }}", "keys": "feed activity progress updates community posts milestones"},
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
-        {"title": "Feed · People", "sub": "Journeys and goal rooms", "href": "{{ url_for('slate_feed_people') }}", "keys": "people connections journeys goal rooms community spotlight"},
         {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"}
     ]
     </script>
