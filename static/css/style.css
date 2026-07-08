@@ -3100,11 +3100,12 @@ body[data-theme="blueprint-light"] .metric-money {
     width: clamp(320px, 38vw, 480px);
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    /* Fade starts earlier (30% vs 42%) and finishes sooner (78% vs 88%),
-       so the collage's edges dissolve into the dark page background
-       instead of reading as a photo with a visible boundary. */
-    mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 30%, transparent 78%);
-    -webkit-mask-image: radial-gradient(ellipse 66% 58% at 50% 44%, black 30%, transparent 78%);
+    /* A soft radial feather dissolves every edge of the collage into the
+       page instead of showing a photo boundary. Extended a touch (finishes
+       at 84% with a gentler ramp) so the blend reads smoother all the way
+       around, not just top/bottom. */
+    mask-image: radial-gradient(ellipse 70% 62% at 50% 45%, #000 24%, transparent 84%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 62% at 50% 45%, #000 24%, transparent 84%);
 }
 
 .portrait-frame img {
@@ -3285,6 +3286,310 @@ body[data-theme="blueprint-light"] .metric-money {
     line-height: 1.38;
 }
 
+/* ---------- Completed goals on the timeline ----------
+   The visitor adds their own finished goals here, each Public or Private.
+   Spans the full journey width, below the four career milestones. Uses the
+   story page's --color-* tokens (remapped to the light palette on
+   slate-light) so it reads on both dark and light, plus a green "completed"
+   accent that works on any theme. */
+.timeline-goals {
+    grid-column: 1 / -1;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border-soft);
+}
+
+.timeline-goals__head h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.timeline-goals__head p {
+    margin: 3px 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+.timeline-goals__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.timeline-goals__list:empty {
+    margin-top: 0;
+}
+
+.timeline-goal {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 12px;
+    background: color-mix(in srgb, #1d9a5f 12%, transparent);
+    border: 1px solid color-mix(in srgb, #1d9a5f 34%, transparent);
+    border-radius: 10px;
+}
+
+.timeline-goal__mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #1d9a5f;
+}
+
+.timeline-goal__mark svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.timeline-goal__body {
+    min-width: 0;
+    padding-right: 14px;
+}
+
+.timeline-goal__date {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.timeline-goal__body h4 {
+    margin: 2px 0 6px;
+    color: var(--color-text-primary);
+    font-size: 0.76rem;
+    font-weight: 750;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.timeline-goal__vis {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 750;
+}
+
+.timeline-goal__vis--public {
+    color: #14663f;
+    background: #d3efdf;
+}
+
+.timeline-goal__vis--private {
+    color: var(--color-text-secondary);
+    background: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+}
+
+.timeline-goal__delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.timeline-goal__delete:hover {
+    background: color-mix(in srgb, #d23b5e 16%, transparent);
+    color: #d23b5e;
+}
+
+/* Add affordance */
+.timeline-goals__add {
+    margin-top: 12px;
+}
+
+.timeline-goals__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 15px;
+    border: 1px dashed color-mix(in srgb, var(--color-gold) 55%, transparent);
+    border-radius: 10px;
+    background: none;
+    color: var(--color-gold);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+
+.timeline-goals__toggle:hover {
+    background: color-mix(in srgb, var(--color-gold) 12%, transparent);
+    border-color: var(--color-gold);
+}
+
+/* inline-flex beats the UA [hidden] rule — restate so the toggle actually
+   disappears while the form is open. */
+.timeline-goals__toggle[hidden] {
+    display: none;
+}
+
+.timeline-goals__toggle svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+}
+
+.timeline-goals__form {
+    display: grid;
+    gap: 12px;
+    max-width: 520px;
+    padding: 15px;
+    border: 1px solid var(--color-border-soft);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 4%);
+}
+
+/* display:grid beats the UA [hidden] rule, so the form would show on load —
+   restate it (same gotcha as the theme dropdown + ts-ai plan). */
+.timeline-goals__form[hidden] {
+    display: none;
+}
+
+.timeline-goals__form input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: var(--surface, #fff);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: 0.82rem;
+}
+
+.timeline-goals__form input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.timeline-goals__form input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+}
+
+.timeline-goals__vis {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.timeline-goals__visopt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--color-text-muted);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.timeline-goals__visopt svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.timeline-goals__visopt.is-active {
+    border-color: #1d9a5f;
+    background: #d3efdf;
+    color: #14663f;
+}
+
+.timeline-goals__visopt[data-vis="Private"].is-active {
+    border-color: color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+    background: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+    color: var(--color-text-primary);
+}
+
+.timeline-goals__actions {
+    display: flex;
+    gap: 10px;
+}
+
+.timeline-goals__save {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--color-gold);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.timeline-goals__save:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.timeline-goals__cancel {
+    padding: 8px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 9px;
+    background: none;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.timeline-goals__hint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.66rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+    .timeline-goals__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .timeline-goals__list {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ---------- Values (What Drives Me) ---------- */
 
 .story-drives {
@@ -3446,6 +3751,23 @@ body[data-theme="blueprint-light"] .metric-money {
     list-style: none;
 }
 
+/* Outside of Work card: no bottom link anymore, so it shouldn't reserve
+   space for one. Tighter padding + a snug interest grid keep it a little
+   shorter than the Learning card beside it (Pete: smaller vertically). */
+.story-card--interests {
+    padding: 16px 20px;
+    justify-content: center;
+}
+
+.story-card--interests .interest-grid {
+    row-gap: 12px;
+    margin-bottom: 0;
+}
+
+.interest-item {
+    align-items: center;
+}
+
 .interest-item {
     display: flex;
     align-items: flex-start;
@@ -3453,19 +3775,19 @@ body[data-theme="blueprint-light"] .metric-money {
 }
 
 .interest-item__icon {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
     display: grid;
     place-items: center;
     color: var(--color-cyan);
     border: 1px solid rgb(80 214 232 / 35%);
-    border-radius: 8px;
+    border-radius: 9px;
 }
 
 .interest-item__icon svg {
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.6;
@@ -3476,14 +3798,14 @@ body[data-theme="blueprint-light"] .metric-money {
 .interest-item h3 {
     margin-bottom: 2px;
     color: var(--color-text-primary);
-    font-size: 0.66rem;
+    font-size: 0.8rem;
     font-weight: 750;
 }
 
 .interest-item p {
     color: var(--color-text-muted);
-    font-size: 0.58rem;
-    line-height: 1.28;
+    font-size: 0.7rem;
+    line-height: 1.3;
 }
 
 /* ---------- Shared card hover ----------
@@ -3531,26 +3853,29 @@ body[data-theme="blueprint-light"] .metric-money {
     line-height: 1.2;
 }
 
+/* Five compact fact tiles in one row (Pete: smaller, five not three).
+   Vertical layout — small icon on top, short fact below — so five fit
+   comfortably side by side without cramping the text. */
 .fun-facts__grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .fun-fact-card {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px 18px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 13px 13px;
     background: linear-gradient(180deg, #0b1827, #081420);
     border: 1px solid var(--color-border-soft);
     border-radius: 10px;
 }
 
 .fun-fact-card__icon {
-    width: 30px;
-    height: 30px;
-    flex: 0 0 30px;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
     display: grid;
     place-items: center;
     color: var(--color-gold);
@@ -3559,8 +3884,8 @@ body[data-theme="blueprint-light"] .metric-money {
 }
 
 .fun-fact-card__icon svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.6;
@@ -3570,8 +3895,8 @@ body[data-theme="blueprint-light"] .metric-money {
 
 .fun-fact-card p {
     color: var(--color-text-secondary);
-    font-size: 0.82rem;
-    line-height: 1.5;
+    font-size: 0.72rem;
+    line-height: 1.4;
 }
 
 
@@ -3649,6 +3974,11 @@ body[data-theme="blueprint-light"] .metric-money {
     /* Cards stack one per row so the 4x2 interest grid keeps room */
     .story-cards__grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Five fact tiles wrap to three across on tablets. */
+    .fun-facts__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 
@@ -3766,7 +4096,7 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 
     .fun-facts__grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .story-hero__grid {
@@ -4960,9 +5290,11 @@ body[data-slate="on"] .profile-header {
 }
 
 /* About Pete card on the right of the band (mockup). */
+/* Wider + shorter (Pete): a wider card lets the blurb wrap in fewer lines,
+   so the About box takes less vertical space and the band reads lighter. */
 .profile-about {
-    max-width: 320px;
-    padding: 18px 20px;
+    max-width: 430px;
+    padding: 14px 18px;
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -4971,15 +5303,15 @@ body[data-slate="on"] .profile-header {
 
 .profile-about h2 {
     color: var(--text);
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-weight: 650;
 }
 
 .profile-about p {
-    margin: 8px 0 10px;
+    margin: 6px 0 8px;
     color: var(--text-muted);
     font-size: 0.8rem;
-    line-height: 1.55;
+    line-height: 1.5;
 }
 
 .profile-subtitle {
@@ -5024,14 +5356,163 @@ body[data-slate="on"] .profile-header {
 .profile-tabs__inner {
     display: flex;
     align-items: center;
-    gap: clamp(18px, 5vw, 58px);
+    gap: 18px;
     min-height: 54px;
+    /* visible so the floating Ask answer panel isn't clipped; the tab LIST
+       does the horizontal scrolling now. */
+    overflow: visible;
+}
+
+/* Tabs live in their own scroller so they can sit closer together (Pete)
+   while the Ask Pete AI field stays pinned on the right, not scrolling. */
+.profile-tabs__list {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 2.3vw, 30px);
+    min-width: 0;
+    flex: 1 1 auto;
     overflow-x: auto;
     scrollbar-width: none;
 }
 
+.profile-tabs__list::-webkit-scrollbar {
+    display: none;
+}
+
+/* ---- Ask Pete AI, pinned to the right of the tab strip (overview) ---- */
+.profile-tabs__ask {
+    position: relative;
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.profile-tabs__ask .hero-ai-search {
+    max-width: none;
+    margin: 0;
+}
+
+/* The label + status line are redundant in the compact strip. */
+.profile-tabs__ask .hero-ai-search__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.profile-tabs__ask .hero-ai-search__status {
+    display: none;
+}
+
+.profile-tabs__ask .hero-ai-search__box {
+    margin: 0;
+}
+
+/* Half the old field width (Pete) so the strip stays balanced. */
+.profile-tabs__ask .hero-ai-search__input {
+    width: 232px;
+    min-width: 0;
+}
+
+/* The answer floats below the strip as a panel, so the sticky bar keeps
+   its height instead of stretching when an answer comes back. */
+.profile-tabs__ask .hero-ai-answer {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(560px, 86vw);
+    max-height: 62vh;
+    overflow-y: auto;
+    z-index: 40;
+}
+
+/* ---- Quick-ask chips, slim row under the tab strip (overview) ---- */
+.profile-tabs__chips {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 9px;
+}
+
+.profile-tabs__chips button,
+.profile-tabs__chips a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.profile-tabs__chips button:hover,
+.profile-tabs__chips a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* On narrower screens the ask drops to its own full-width row under the
+   tabs so nothing gets cramped. */
+@media (max-width: 860px) {
+    .profile-tabs__inner {
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .profile-tabs__ask {
+        width: 100%;
+        margin: 4px 0 8px;
+    }
+
+    .profile-tabs__ask .hero-ai-search__box {
+        width: 100%;
+    }
+
+    .profile-tabs__ask .hero-ai-search__input {
+        width: 100%;
+        flex: 1 1 auto;
+    }
+
+    .profile-tabs__ask .hero-ai-answer {
+        width: 100%;
+    }
+
+    .profile-tabs__chips {
+        justify-content: flex-start;
+    }
+}
+
 .profile-tabs__inner::-webkit-scrollbar {
     display: none;
+}
+
+/* Dark Slate Stone: the Ask field was cut from the same dark stone as the
+   strip, so it blended in. Keep the stone texture but lighten the wash to a
+   warm champagne tone and add a gold hairline + soft glow, so it draws the
+   eye like the ask boxes on the other pages (Pete). Scoped to the overview
+   tab-strip ask only. */
+body[data-theme="stone-slate"] .profile-tabs__ask .hero-ai-search__box {
+    background:
+        linear-gradient(158deg, rgb(255 255 255 / 13%) 0%, transparent 42%, rgb(0 0 0 / 20%) 100%),
+        linear-gradient(rgb(78 71 57 / 60%), rgb(78 71 57 / 60%)),
+        var(--slate-photo);
+    background-size: auto, auto, 820px auto;
+    border: 1px solid color-mix(in srgb, var(--accent) 62%, rgb(255 255 255 / 24%));
+    box-shadow:
+        0 10px 26px rgb(0 0 0 / 34%),
+        0 0 0 1px rgb(215 168 79 / 20%),
+        inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 
 .section-anchor {
@@ -13607,26 +14088,86 @@ body.slate-light .interest-item__icon {
     border-color: rgb(11 99 229 / 30%);
 }
 
-/* ---- Reframe the hero collage as a clean framed photo ----
-   The collage (hero-collage.png) has a dark navy background baked
-   in; on the old dark page a radial mask faded its edges into the
-   page. On light we drop that edge-fade and present it as a rounded,
-   bordered photo so it reads as an intentional "moments" frame
-   instead of a dark blob bleeding into white. */
+/* ---- Blend the hero collage into the light background ----
+   The collage (hero-collage.png) has a dark navy background baked in.
+   Rather than framing it with a hard border on white (which read as a
+   pasted rectangle), feather its edges so they dissolve into the page —
+   Pete asked for the collage to blend into the background around the
+   edges. A slightly tighter feather than the dark themes keeps the
+   navy from washing too far into the white. */
 body.slate-light .portrait-frame {
-    mask-image: none;
-    -webkit-mask-image: none;
-    border-radius: 18px;
-    border: 1px solid var(--color-border);
-    box-shadow: 0 20px 44px rgb(6 26 58 / 16%);
+    mask-image: radial-gradient(ellipse 72% 64% at 50% 46%, #000 30%, transparent 86%);
+    -webkit-mask-image: radial-gradient(ellipse 72% 64% at 50% 46%, #000 30%, transparent 86%);
+    border: 0;
+    box-shadow: none;
 }
 body.slate-light .portrait-frame img {
     filter: none;
 }
-/* the -72px pulled up the now-invisible faded strip; not needed once framed */
+/* The collage is feathered again on light (not framed), so keep the base
+   -72px that pulls the now-transparent bottom strip back out of the layout. */
 body.slate-light .story-hero__portrait {
-    margin-bottom: 6px;
+    margin-bottom: -72px;
 }
+
+/* =========================================================
+   LIGHT THEME — RAISED CARDS + THIN LIGHT-BLUE BORDER (site-wide)
+   Pete: every card should read as slightly raised, with a thin light-blue
+   hairline in the Light theme. Applied broadly across the card families so
+   the whole site is consistent. Placed AFTER the per-page slate-light card
+   rules above so this border/shadow wins; the homepage never takes
+   slate-light, so its composition is untouched. Cards that ride .ps-card
+   are covered once by that selector; the rest are listed explicitly.
+   ========================================================= */
+body.slate-light .ps-card,
+body.slate-light .profile-about,
+body.slate-light .ps-metric,
+body.slate-light .ps-role,
+body.slate-light .ps-project,
+body.slate-light .ps-feature,
+body.slate-light .ps-preview-card,
+body.slate-light .ps-feed-card,
+body.slate-light .story-card,
+body.slate-light .drive-card,
+body.slate-light .fun-fact-card,
+body.slate-light .story-journey__layout,
+body.slate-light .sf-item,
+body.slate-light .sf-compose,
+body.slate-light .ts-pathcard,
+body.slate-light .resume-role-card,
+body.slate-light .resume-role-panel,
+body.slate-light .resume-metric-card,
+body.slate-light .resume-education-card,
+body.slate-light .resume-project-card,
+body.slate-light .resume-impact-card,
+body.slate-light .resume-impact-panel,
+body.slate-light .resume-recruiter-panel,
+body.slate-light .resume-ai-panel,
+body.slate-light .work-project-panel,
+body.slate-light .work-proof-card,
+body.slate-light .project-card,
+body.slate-light .iv-card,
+body.slate-light .iv-benefit,
+body.slate-light .iv-confidence,
+body.slate-light .bd-stat,
+body.slate-light .bd-entry,
+body.slate-light .goal-card,
+body.slate-light .badge-card,
+body.slate-light .ct-card {
+    border: 1px solid #cbdcf8;
+    box-shadow:
+        0 6px 18px rgb(11 99 229 / 8%),
+        0 1px 2px rgb(6 26 58 / 6%);
+}
+
+/* The life-values cards also appear on the Overview (outside .my-story-page,
+   which is where the story page remaps the old --color-* tokens). Under the
+   Light theme, give their text the shared light tokens so it isn't near-white
+   on a white card. Dark/stone themes have no slate-light class, so they keep
+   the theme palette (correct light-on-dark text) untouched. */
+body.slate-light .drive-card h3 { color: var(--text); }
+body.slate-light .drive-card p { color: var(--text-muted); }
+body.slate-light .drive-card__icon { color: var(--accent); }
 
 /* =========================================================
    CONTACT PAGE (rebuilt 2026-07-07 — was a "coming soon" stub)

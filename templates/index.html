@@ -10,79 +10,27 @@
 
 {% block title %}Pete Carter | Systems Engineer{% endblock %}
 
-{# The mockup places the metric cards + ask bar ABOVE the tab strip, so
-   they render in the profile_preface block (between the band and tabs). #}
-{% block profile_preface %}
-<div class="ps-ov-preface">
-    <div class="site-container">
-
-        <!-- ============ METRIC CARDS ============ -->
-        <section class="ps-ov-metrics" aria-label="Selected professional metrics">
-            <article class="ps-metric">
-                <span class="ps-metric__icon ps-tint--blue" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 1.6 2.7 5 3.4 5 1.6 5 3.6-2.2 3-5 3-5-1.1-5-3"/></svg>
-                </span>
-                <strong>$36M+</strong>
-                <h3>Contract Oversight</h3>
-                <p>Across AF, L3Harris, and NG programs</p>
-            </article>
-            <article class="ps-metric">
-                <span class="ps-metric__icon ps-tint--green" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
-                </span>
-                <strong>16 to 0</strong>
-                <h3>MICAP Reduction</h3>
-                <p>Eliminated repeat findings</p>
-            </article>
-            <article class="ps-metric">
-                <span class="ps-metric__icon ps-tint--sky" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M4 17l6-6 4 4 6-7"/><path d="M14 8h6v6"/></svg>
-                </span>
-                <strong>70%</strong>
-                <h3>Repair &amp; Test Improvement</h3>
-                <p>Faster troubleshooting &amp; resolution</p>
-            </article>
-            <article class="ps-metric">
-                <span class="ps-metric__icon ps-tint--violet" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-                </span>
-                <strong>52%</strong>
-                <h3>Missing-Part Reduction</h3>
-                <p>Through systemic process redesign</p>
-            </article>
-        </section>
-
-        <!-- ============ DARK ASK BAR (real AI search) ============ -->
-        <section class="ps-askbar" id="ask-pete" aria-label="Ask Pete's Slate">
-            <div class="ps-askbar__lead">
-                <span class="ps-askbar__spark" aria-hidden="true">&#10022;</span>
-                <strong>Ask Pete's Slate</strong>
-            </div>
-            <div class="ps-askbar__form">
-                {% include "partials/portfolio_ai_search.html" %}
-            </div>
-            <div class="ps-askbar__chips">
-                <button type="button" data-ask-prefill="Give me a 60-second overview of Pete Carter.">
-                    &#9776; Summarize Pete
-                </button>
-                <button type="button" data-ask-prefill="What evidence supports Pete's systems-engineering experience?">
-                    &#128737; Show Systems Evidence
-                </button>
-                <button type="button" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
-                    &#9737; Match to Role
-                </button>
-                <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Pete</a>
-            </div>
-        </section>
-
-    </div>
-</div>
-{% endblock %}
-
 {% block content %}
 
 <div class="ps-ov">
     <div class="site-container">
+
+        <!-- ============ VALUES (life-related) ============
+             Placed above Core Skills, below the tab strip (Pete). The same
+             four life values shown on My Slate, reused via the shared
+             partial so they never drift apart. -->
+        <section class="ps-card ps-ov-block ps-ov-values" aria-labelledby="ov-values-title">
+            <div class="ps-ov-block__head">
+                <div>
+                    <h2 id="ov-values-title">What Drives Me</h2>
+                    <p>The values behind the work &mdash; and the life outside it.</p>
+                </div>
+                <a class="ps-link" href="{{ portfolio_story_url }}">More about me <span aria-hidden="true">&rarr;</span></a>
+            </div>
+            <div class="story-drives__grid">
+                {% include "partials/life_values.html" %}
+            </div>
+        </section>
 
         <!-- ============ CORE SKILLS ============ -->
         <section class="ps-card ps-ov-block" aria-labelledby="ov-skills-title">
@@ -119,7 +67,7 @@
                     <h2 id="ov-exp-title">Experience Connected to Evidence</h2>
                     <p>Three roles. One throughline&mdash;delivering mission-ready systems with measurable outcomes.</p>
                 </div>
-                <a class="ps-link" href="{{ portfolio_story_url }}">View full timeline <span aria-hidden="true">&rarr;</span></a>
+                <a class="ps-link" href="{{ portfolio_resume_url }}#resume-career-section">View full timeline <span aria-hidden="true">&rarr;</span></a>
             </div>
             <div class="ps-roles">
                 <article class="ps-role">
