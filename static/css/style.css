@@ -13326,8 +13326,9 @@ body[data-theme="gray-slate"] .sf-filter select {
     .ps-skills a { padding: 9px 10px; }
     .ps-skills .ps-skill-name { font-size: 0.78rem; }
 
-    /* Tighter card interiors across the ps-* pages. */
-    .ps-ov-block { padding: 14px; }
+    /* Tighter card interiors across the ps-* pages. (.ps-ov-block is no
+       longer a card — it stays flush with the page on phones too.) */
+    .ps-ov-block { padding: 0; }
     .sf-item { padding: 14px 14px 11px; }
     .sf-shortcuts { padding: 14px 14px 4px; }
     .sf-keep,
