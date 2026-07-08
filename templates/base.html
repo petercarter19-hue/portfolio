@@ -92,7 +92,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path not in ['/', '/peerslate'] %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" data-slate="on" data-slate-photo="on" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}'); --site-slate-bg-gray: url('{{ url_for('static', filename='images/slate-backgrounds/gray-slate-bg.jpg') }}'); --site-slate-bg-sage: url('{{ url_for('static', filename='images/slate-backgrounds/sage-slate-bg.jpg') }}'); --site-slate-bg-light: url('{{ url_for('static', filename='images/slate-backgrounds/light-slate-bg.jpg') }}'); --site-slate-bg-lightblue: url('{{ url_for('static', filename='images/slate-backgrounds/light-blue-slate-bg.jpg') }}');">
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path not in ['/', '/peerslate', '/experience'] %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" data-slate="on" data-slate-photo="on" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}'); --site-slate-bg-gray: url('{{ url_for('static', filename='images/slate-backgrounds/gray-slate-bg.jpg') }}'); --site-slate-bg-sage: url('{{ url_for('static', filename='images/slate-backgrounds/sage-slate-bg.jpg') }}'); --site-slate-bg-light: url('{{ url_for('static', filename='images/slate-backgrounds/light-slate-bg.jpg') }}'); --site-slate-bg-lightblue: url('{{ url_for('static', filename='images/slate-backgrounds/light-blue-slate-bg.jpg') }}');">
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -121,6 +121,11 @@
                        overview paths; Example Slate then highlights on the deeper
                        portfolio sub-pages so the two links never both light up. #}
                     <li><a href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>Home</a></li>
+                    {# EXPERIENCE (2026-07-08): the cinematic homepage
+                       candidate — full-screen scenic sections with glass
+                       cards. Lives on its own link so Pete can compare it
+                       with the current homepage before switching. #}
+                    <li><a href="{{ url_for('experience') }}" {% if request.path == '/experience' %}aria-current="page"{% endif %}>Experience</a></li>
                     {# THE SLATE (2026-07-08): one main link to the product hub.
                        It replaced the separate "Slate Feed" and "Slate Board"
                        links — both experiences now live inside The Slate's
@@ -322,7 +327,8 @@
         {"title": "Feed · Progress", "sub": "Activity across the community", "href": "{{ url_for('slate_feed') }}", "keys": "feed activity progress updates community posts milestones"},
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
-        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"}
+        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"},
+        {"title": "Experience", "sub": "The cinematic homepage", "href": "{{ url_for('experience') }}", "keys": "experience cinematic homepage new home scroll aurora preview"}
     ]
     </script>
 

@@ -1,0 +1,671 @@
+/* =====================================================================
+   CINEMATIC HOMEPAGE (/experience) — cinematic.css
+   =====================================================================
+   Apple/Samsung-style scroll experience: five full-screen scenic
+   sections, big centered display type, and large translucent glass
+   cards that are the star of the page. Loaded ONLY by
+   templates/experience.html, and everything is scoped under
+   .cinematic-home-page / .cinematic-home so it cannot leak into the
+   rest of the site.
+
+   Structure of this file:
+     1. Page-level tokens + shell adjustments
+     2. Shared section skeleton (backdrop, veil, content, type)
+     3. Glass cards
+     4. Buttons, scroll cue, outro
+     5. Per-section scenery + tones (hero / work / story / future / together)
+     6. Scroll-reveal + hero entrance animation
+     7. Responsive: phones, tablets, and very large (4K) screens
+     8. Reduced-motion fallback
+   ===================================================================== */
+
+
+/* -----------------------------------------------------------------
+   1 · PAGE-LEVEL TOKENS + SHELL
+   ----------------------------------------------------------------- */
+
+.cinematic-home {
+    /* One place to tune the whole page's look. */
+    --cine-rail: min(92vw, 1760px);        /* content width — generous for 4K */
+    --cine-radius: 28px;                   /* card corner radius (spec) */
+    --cine-blur: 18px;                     /* card glass blur (spec) */
+    --cine-curve: clamp(48px, 7vw, 130px); /* curved divider height */
+
+    /* Ink = text color; each section overrides for its own scenery. */
+    --cine-ink: #10213f;
+    --cine-ink-soft: rgb(16 33 63 / 80%);
+    --cine-accent: #0b63e5;
+
+    /* Glass recipes (spec): light scenes get white glass, dark scenes
+       get deep navy glass. Sections flip these via --dark modifier. */
+    --cine-glass-bg: rgb(255 255 255 / 14%);
+    --cine-glass-border: rgb(255 255 255 / 35%);
+    --cine-glass-highlight: rgb(255 255 255 / 50%);
+    --cine-glass-shadow: 0 26px 70px rgb(10 18 40 / 20%);
+
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--cine-ink);
+    overflow-x: clip;
+}
+
+/* Pull the whole page up underneath the sticky frosted header so the
+   aurora sky runs behind the glass bar (JS measures the real header
+   height into --cine-header-h; 81px is the desktop fallback). */
+.cinematic-home-page .main-content {
+    margin-top: calc(-1 * var(--cine-header-h, 81px));
+}
+
+/* Dark page canvas so overscroll/rubber-banding never flashes white
+   above the night-sky hero or below the sunset footer. */
+body.cinematic-home-page {
+    background: #060b18;
+}
+
+
+/* -----------------------------------------------------------------
+   2 · SECTION SKELETON
+   Every major section is a full-viewport scene: an oversized photo
+   layer (so parallax can drift it without showing edges), a gradient
+   veil for text contrast, and centered content on top.
+   ----------------------------------------------------------------- */
+
+.cinematic-section {
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100svh;   /* stable full-screen on mobile browsers */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Anchor jumps (Watch Overview, scroll cue) land just below the
+       pinned frosted header instead of tucking the heading under it. */
+    scroll-margin-top: calc(var(--cine-header-h, 81px) * 0.4);
+}
+
+.cinematic-section .section-bg {
+    position: absolute;
+    inset: -9% 0;          /* extra bleed = headroom for parallax drift */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: translateZ(0);
+}
+
+.cinematic-section .section-veil {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* Curved "cloud-like" divider: each scene after the hero rises into the
+   previous one as a soft dome, with a shadow that lifts it off the page. */
+.cinematic-section--curved {
+    margin-top: calc(-1 * var(--cine-curve));
+    border-radius: 48% 48% 0 0 / var(--cine-curve) var(--cine-curve) 0 0;
+    box-shadow: 0 -26px 64px rgb(4 10 24 / 26%);
+}
+
+.cinematic-section .section-content {
+    position: relative;
+    width: var(--cine-rail);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: calc(var(--cine-curve) + clamp(56px, 8vh, 120px));
+    padding-bottom: clamp(72px, 10vh, 150px);
+}
+
+/* Display type — the serif face the homepage already uses. */
+.section-eyebrow {
+    margin: 0 0 clamp(14px, 2.2vh, 26px);
+    font-size: clamp(0.72rem, 0.85vw, 1.1rem);
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--cine-accent);
+}
+
+/* style.css also styles .section-eyebrow (legacy hero pages) and its
+   stone-theme rule carries higher specificity — if a visitor arrives
+   with a Dark Slate theme saved, it would stamp a slate text-shadow on
+   these. Match its specificity and switch it off for this page. */
+body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
+    text-shadow: none;
+}
+
+.section-title {
+    margin: 0;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(2.7rem, 5vw, 7.2rem);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    color: var(--cine-ink);
+    text-wrap: balance;
+}
+
+.section-subtitle {
+    margin: clamp(18px, 2.6vh, 30px) 0 0;
+    max-width: clamp(560px, 46vw, 1020px);
+    font-size: clamp(1.04rem, 1.25vw, 1.7rem);
+    font-weight: 500;
+    line-height: 1.65;
+    color: var(--cine-ink-soft);
+    text-wrap: balance;
+}
+
+
+/* -----------------------------------------------------------------
+   3 · GLASS CARDS — the star of the page
+   Wide, tall, centered content, frosted glass over the scenery.
+   Four across on desktop, two on tablets, stacked on phones (see §7).
+   ----------------------------------------------------------------- */
+
+.glass-card-grid {
+    width: 100%;
+    margin-top: clamp(44px, 6.5vh, 92px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(16px, 1.5vw, 30px);
+}
+
+.glass-feature-card {
+    min-height: clamp(290px, 36vh, 470px);
+    padding: clamp(28px, 2.4vw, 54px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 1.6vh, 20px);
+    text-align: center;
+
+    border-radius: var(--cine-radius);
+    background: var(--cine-glass-bg);
+    border: 1px solid var(--cine-glass-border);
+    box-shadow: var(--cine-glass-shadow),
+                inset 0 1px 0 var(--cine-glass-highlight);
+    -webkit-backdrop-filter: blur(var(--cine-blur)) saturate(1.35);
+    backdrop-filter: blur(var(--cine-blur)) saturate(1.35);
+    transition: transform 0.45s cubic-bezier(0.2, 0.6, 0.25, 1),
+                box-shadow 0.45s cubic-bezier(0.2, 0.6, 0.25, 1);
+}
+
+.glass-feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 40px 90px rgb(10 18 40 / 28%),
+                inset 0 1px 0 var(--cine-glass-highlight);
+}
+
+.glass-feature-card__icon {
+    width: clamp(60px, 4.6vw, 92px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--cine-accent) 16%, rgb(255 255 255 / 28%));
+    border: 1px solid rgb(255 255 255 / 45%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%),
+                0 12px 28px rgb(10 18 40 / 14%);
+    margin-bottom: clamp(4px, 1vh, 10px);
+}
+
+.glass-feature-card__icon svg {
+    width: 46%;
+    height: 46%;
+    fill: none;
+    stroke: var(--cine-ink);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.glass-feature-card__title {
+    margin: 0;
+    font-size: clamp(1.22rem, 1.5vw, 2rem);
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    color: var(--cine-ink);
+}
+
+.glass-feature-card__desc {
+    margin: 0;
+    max-width: 30ch;
+    font-size: clamp(0.96rem, 1.05vw, 1.38rem);
+    line-height: 1.55;
+    color: var(--cine-ink-soft);
+}
+
+
+/* -----------------------------------------------------------------
+   4 · BUTTONS, SCROLL CUE, OUTRO
+   ----------------------------------------------------------------- */
+
+.cinematic-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(12px, 1.4vw, 22px);
+    margin-top: clamp(28px, 4.4vh, 52px);
+}
+
+.cine-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: clamp(14px, 1.1vw, 21px) clamp(30px, 2.4vw, 48px);
+    border-radius: 999px;
+    font-size: clamp(0.98rem, 1vw, 1.32rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    transition: transform 0.35s cubic-bezier(0.2, 0.6, 0.25, 1),
+                box-shadow 0.35s, background-color 0.35s;
+}
+
+.cine-btn svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+    stroke: none;
+}
+
+.cine-btn--primary {
+    background: #ffffff;
+    color: #0b1430;
+    box-shadow: 0 18px 46px rgb(2 8 24 / 38%);
+}
+
+.cine-btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 26px 60px rgb(2 8 24 / 46%);
+}
+
+.cine-btn--ghost {
+    color: #ffffff;
+    background: rgb(255 255 255 / 10%);
+    border: 1px solid rgb(255 255 255 / 48%);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.cine-btn--ghost:hover {
+    transform: translateY(-2px);
+    background: rgb(255 255 255 / 18%);
+}
+
+/* Bouncing chevron pinned to the bottom of the hero. The next scene's
+   curved dome overlaps the hero's last --cine-curve pixels, so the cue
+   floats above that line or it would be buried under the dome. */
+.scroll-cue {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--cine-curve) + clamp(18px, 3vh, 42px));
+    translate: -50% 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: rgb(255 255 255 / 10%);
+    border: 1px solid rgb(255 255 255 / 38%);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: cine-cue-bob 2.4s ease-in-out infinite;
+}
+
+.scroll-cue svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@keyframes cine-cue-bob {
+    50% { transform: translateY(7px); }
+}
+
+/* Closing call to action under the community cards. */
+.cinematic-outro {
+    margin-top: clamp(44px, 7vh, 90px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.cinematic-outro__note {
+    margin: 0;
+    font-size: clamp(0.85rem, 0.9vw, 1.15rem);
+    color: rgb(255 255 255 / 66%);
+}
+
+
+/* -----------------------------------------------------------------
+   5 · THE FIVE SCENES
+   Each section picks its backdrop, veil gradient, ink + accent.
+   Phone-size backdrops are swapped in at the end of §7.
+   ----------------------------------------------------------------- */
+
+/* — 1 · HERO: dark aurora over a still lake — */
+.cinematic-hero {
+    --cine-ink: #f2f7ff;
+    --cine-ink-soft: rgb(232 240 255 / 84%);
+    --cine-accent: #8ef0c8;
+}
+
+.cinematic-hero .section-bg {
+    background-image: url("../images/cinematic/hero-aurora.jpg");
+    /* Slow drift keeps the night sky alive (Ken Burns). */
+    animation: cine-drift 46s ease-in-out infinite alternate;
+}
+
+.cinematic-hero .section-veil {
+    background: linear-gradient(180deg,
+        rgb(2 6 16 / 40%) 0%,
+        rgb(2 6 16 / 0%) 32%,
+        rgb(2 6 16 / 0%) 70%,
+        rgb(3 8 18 / 46%) 100%);
+}
+
+.cinematic-hero .section-content {
+    padding-top: calc(var(--cine-header-h, 81px) + clamp(40px, 6vh, 90px));
+    /* Reserve the bottom of the hero for the scroll cue + the next
+       scene's dome, so the CTA buttons never collide with either. */
+    padding-bottom: calc(var(--cine-curve) + clamp(92px, 13vh, 170px));
+}
+
+.cinematic-hero__title {
+    margin: 0;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(3.1rem, 6.4vw, 9.4rem);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.018em;
+    color: var(--cine-ink);
+    text-shadow: 0 4px 44px rgb(2 8 20 / 55%);
+}
+
+.cinematic-hero__title span {
+    display: block;
+}
+
+/* The last line catches the aurora: gradient-filled lettering.
+   text-shadow must stay off here — the fill is transparent and a
+   shadow would smear straight through it. */
+.cinematic-hero__title span:last-child {
+    background: linear-gradient(100deg, #8ef0c8 5%, #6fd7e8 45%, #a68cff 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
+    padding-bottom: 0.08em;   /* keep the descender inside the clip box */
+}
+
+.cinematic-hero__lead {
+    text-shadow: 0 2px 22px rgb(2 8 20 / 55%);
+}
+
+@keyframes cine-drift {
+    from { transform: scale(1.03) translateY(-0.5%); }
+    to   { transform: scale(1.09) translateY(0.8%); }
+}
+
+/* — 2 · YOUR WORK: bright mountain sunrise — */
+.cinematic-section--work {
+    --cine-ink: #17264a;
+    --cine-ink-soft: rgb(23 38 74 / 82%);
+    --cine-accent: #b45309;
+}
+
+.cinematic-section--work .section-bg {
+    background-image: url("../images/cinematic/work-mountain.jpg");
+}
+
+.cinematic-section--work .section-veil {
+    background: linear-gradient(180deg,
+        rgb(255 255 255 / 30%) 0%,
+        rgb(255 255 255 / 0%) 42%,
+        rgb(35 46 84 / 16%) 100%);
+}
+
+/* — 3 · YOUR STORY: bright pink cloud field — */
+.cinematic-section--story {
+    --cine-ink: #46215c;
+    --cine-ink-soft: rgb(70 33 92 / 82%);
+    --cine-accent: #b0378f;
+}
+
+.cinematic-section--story .section-bg {
+    background-image: url("../images/cinematic/story-clouds.jpg");
+}
+
+.cinematic-section--story .section-veil {
+    background: linear-gradient(180deg,
+        rgb(255 240 250 / 28%) 0%,
+        rgb(255 240 250 / 0%) 40%,
+        rgb(84 62 150 / 16%) 100%);
+}
+
+/* — 4 · YOUR FUTURE: golden valley sunrise — */
+.cinematic-section--future {
+    --cine-ink: #4a2c0a;
+    --cine-ink-soft: rgb(74 44 10 / 82%);
+    --cine-accent: #99540b;
+}
+
+.cinematic-section--future .section-bg {
+    background-image: url("../images/cinematic/future-valley.jpg");
+}
+
+.cinematic-section--future .section-veil {
+    background: linear-gradient(180deg,
+        rgb(255 240 208 / 26%) 0%,
+        rgb(255 240 208 / 0%) 40%,
+        rgb(94 58 18 / 20%) 100%);
+}
+
+/* — 5 · LET'S BUILD THIS TOGETHER: purple/pink community sunset —
+   The one dark scene below the hero: light ink + dark navy glass. */
+.cinematic-section--dark {
+    --cine-ink: #f4f6ff;
+    --cine-ink-soft: rgb(238 242 255 / 84%);
+    --cine-accent: #ffb2c8;
+    --cine-glass-bg: rgb(8 12 28 / 42%);
+    --cine-glass-border: rgb(255 255 255 / 26%);
+    --cine-glass-highlight: rgb(255 255 255 / 16%);
+    --cine-glass-shadow: 0 26px 70px rgb(2 6 18 / 45%);
+}
+
+.cinematic-section--dark .section-title,
+.cinematic-section--dark .section-subtitle {
+    text-shadow: 0 2px 26px rgb(10 4 30 / 45%);
+}
+
+.cinematic-section--dark .glass-feature-card__icon {
+    background: color-mix(in srgb, var(--cine-accent) 22%, rgb(255 255 255 / 8%));
+    border-color: rgb(255 255 255 / 28%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%),
+                0 12px 28px rgb(2 6 18 / 30%);
+}
+
+.cinematic-section--together .section-bg {
+    background-image: url("../images/cinematic/together-sunset.jpg");
+}
+
+.cinematic-section--together .section-veil {
+    background: linear-gradient(180deg,
+        rgb(18 10 44 / 42%) 0%,
+        rgb(18 10 44 / 0%) 38%,
+        rgb(8 5 24 / 52%) 100%);
+}
+
+
+/* -----------------------------------------------------------------
+   6 · MOTION — scroll reveals + hero entrance
+   .cine-js is stamped on <html> by cinematic-home.js; without JS the
+   page simply renders fully visible.
+   ----------------------------------------------------------------- */
+
+.cine-js .reveal {
+    opacity: 0;
+    transform: translateY(clamp(24px, 4vh, 44px));
+    transition: opacity 0.9s cubic-bezier(0.2, 0.6, 0.25, 1),
+                transform 0.9s cubic-bezier(0.2, 0.6, 0.25, 1);
+    transition-delay: calc(var(--reveal-i, 0) * 95ms);
+}
+
+.cine-js .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* Heading trio reveals in order, then the cards sweep in after. */
+.cine-js .section-eyebrow.reveal { --reveal-i: 0; }
+.cine-js .section-title.reveal { --reveal-i: 1; }
+.cine-js .section-subtitle.reveal { --reveal-i: 2; }
+
+.cine-js .glass-card-grid .glass-feature-card.reveal {
+    transition-delay: calc(250ms + var(--reveal-i, 0) * 110ms);
+}
+
+/* Hero entrance: pure CSS so the top of the page never depends on JS. */
+@media (prefers-reduced-motion: no-preference) {
+    .cinematic-hero .cine-fade {
+        opacity: 0;
+        animation: cine-fade-up 1s cubic-bezier(0.2, 0.6, 0.25, 1) forwards;
+        animation-delay: calc(0.12s + var(--fade-i, 0) * 0.14s);
+    }
+
+    @keyframes cine-fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+
+
+/* -----------------------------------------------------------------
+   7 · RESPONSIVE
+   ----------------------------------------------------------------- */
+
+/* Tablets / small laptops: two cards per row. */
+@media (max-width: 1100px) {
+    .glass-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .glass-feature-card {
+        min-height: clamp(240px, 30vh, 340px);
+    }
+}
+
+/* Very large displays (2K/4K): widen the rail so the scenes stay
+   grand instead of leaving giant empty margins. Type and cards keep
+   scaling through their vw-based clamps. */
+@media (min-width: 2200px) {
+    .cinematic-home {
+        --cine-rail: min(86vw, 2460px);
+    }
+}
+
+/* Phones: stack the cards, relax the full-height rule so sections
+   size to their content, and swap in the portrait backdrops. */
+@media (max-width: 760px) {
+    .cinematic-section {
+        min-height: 100svh;
+    }
+
+    .cinematic-section--curved {
+        --cine-curve: 44px;
+    }
+
+    /* The phone header is two rows tall and stays pinned on this page,
+       so give section headings extra clearance — otherwise an eyebrow
+       can hide behind the frosted glass right after an anchor jump. */
+    .cinematic-section .section-content {
+        padding-top: calc(var(--cine-curve) + var(--cine-header-h, 118px) + 28px);
+    }
+
+    .cinematic-hero .section-content {
+        padding-top: calc(var(--cine-header-h, 118px) + 34px);
+    }
+
+    .glass-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        margin-top: 34px;
+    }
+
+    .glass-feature-card {
+        min-height: 218px;
+        padding: 26px 22px;
+    }
+
+    .cinematic-hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: min(100%, 340px);
+    }
+
+    .section-subtitle {
+        max-width: 92%;
+    }
+
+    .scroll-cue {
+        width: 46px;
+        height: 46px;
+    }
+
+    .cinematic-hero .section-bg { background-image: url("../images/cinematic/hero-aurora-m.jpg"); }
+    .cinematic-section--work .section-bg { background-image: url("../images/cinematic/work-mountain-m.jpg"); }
+    .cinematic-section--story .section-bg { background-image: url("../images/cinematic/story-clouds-m.jpg"); }
+    .cinematic-section--future .section-bg { background-image: url("../images/cinematic/future-valley-m.jpg"); }
+    .cinematic-section--together .section-bg { background-image: url("../images/cinematic/together-sunset-m.jpg"); }
+}
+
+
+/* -----------------------------------------------------------------
+   8 · REDUCED MOTION — everything lands calm and visible.
+   ----------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .cinematic-home .section-bg {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .cine-js .reveal,
+    .cinematic-hero .cine-fade {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .scroll-cue {
+        animation: none;
+    }
+
+    .glass-feature-card,
+    .cine-btn {
+        transition: none;
+    }
+
+    .glass-feature-card:hover,
+    .cine-btn--primary:hover,
+    .cine-btn--ghost:hover {
+        transform: none;
+    }
+}
