@@ -4112,13 +4112,18 @@ body[data-theme="light-blue-slate"] {
         0 24px 42px rgb(24 52 88 / 12%);
 }
 
-body[data-theme="gray-slate"] {
+/* Dark Slate (gray-slate) + Dark Slate Stone (stone-slate) share ONE dark
+   palette. stone-slate is a gray-slate twin; the only difference is that
+   stone-slate also carries data-surface-slate="on" (set in theme-preview.js),
+   which cuts every card/button from the same stone as the page. */
+body[data-theme="gray-slate"],
+body[data-theme="stone-slate"] {
     --bg: #111719;
     --bg-elevated: #171f22;
     --surface: #1c2528;
     --surface-soft: #243034;
     --text: #f5f2ea;
-    --text-muted: #c8c1b3;
+    --text-muted: #d8d2c6;
     --accent: #d7a84f;
     --accent-hover: #e9c26f;
     --accent-soft: rgb(215 168 79 / 14%);
@@ -4145,8 +4150,10 @@ body[data-theme="gray-slate"] {
     --color-blue: #9aa7b2;
     --color-cyan: #b8c2c8;
     --color-text-primary: #f5f2ea;
-    --color-text-secondary: #d9d4ca;
-    --color-text-muted: #a9a396;
+    --color-text-secondary: #e2ddd3;
+    /* Brightened (was #a9a396): the old muted read too faint on the flat
+       dark cards for meta rows, sub-labels and body copy. */
+    --color-text-muted: #c2bcae;
     --color-text-dark: #151311;
     --color-border: rgb(255 255 255 / 14%);
     --color-border-soft: rgb(255 255 255 / 9%);
@@ -4322,45 +4329,54 @@ body[data-theme="modern-blue"] {
 /* WHITE SLATE — the "slate version of the mockup": exactly the Modern
    Blue palette, but the page is the real light stone photo with a
    white wash, and every bar/card is a pale stone slab. */
+/* WHITE SLATE — the same palette as the Light theme (slate-light), but
+   rendered on the real white-stone photo via the dark-theme slate
+   pipeline (data-slate-photo). So: the Light theme's exact colors, with
+   every white surface replaced by cut white slate. Retuned 2026-07-07 to
+   mirror slate-light's tokens (blue #0b63e5, ink #061a3a) instead of the
+   old #2f6fe0/#16213a. The stone-photo vars below the palette are kept —
+   they are what make the white surfaces read as slate. */
 body[data-theme="paper-slate"] {
-    --bg: #f4f5f7;
-    --bg-elevated: #edeff2;
+    --bg: #fdfdfe;
+    --bg-elevated: #ffffff;
     --surface: #ffffff;
-    --surface-soft: #f6f7f9;
-    --text: #16213a;
-    --text-muted: #5c6575;
-    --accent: #2f6fe0;
-    --accent-hover: #4a83e8;
-    --accent-soft: rgb(47 111 224 / 9%);
-    --border: #e3e5ea;
-    --shadow: 0 10px 26px rgb(23 33 58 / 8%);
+    --surface-soft: #f4f8fd;
+    --text: #061a3a;
+    --text-muted: #49617a;
+    --accent: #0b63e5;
+    --accent-hover: #2f7bef;
+    --accent-soft: rgb(11 99 229 / 8%);
+    --border: #d9e2ec;
+    --shadow: 0 12px 30px rgb(6 26 58 / 8%);
     --nav-bg: rgb(255 255 255 / 96%);
-    --tab-active: #2f6fe0;
-    --button-primary-bg: #2f6fe0;
+    --tab-active: #0b63e5;
+    --button-primary-bg: #0b63e5;
     --button-primary-text: #ffffff;
     --button-secondary-bg: #ffffff;
-    --button-secondary-text: #16213a;
-    --color-page: #f4f5f7;
-    --color-page-deep: #e9ebef;
-    --color-section: #f8f9fb;
+    --button-secondary-text: #061a3a;
+    /* The dark "Ask this Slate" bar matches the Light theme's navy pill. */
+    --askbar-bg: linear-gradient(135deg, #0b1f3f, #16305e);
+    --color-page: #fdfdfe;
+    --color-page-deep: #eef2f7;
+    --color-section: #f4f8fd;
     --color-card: #ffffff;
-    --color-card-elevated: #f6f7f9;
-    --color-card-hover: #eff4fd;
-    --color-gold: #2f6fe0;
-    --color-gold-bright: #4a83e8;
-    --color-gold-muted: #2559b8;
-    --color-gold-dark: #1b4390;
-    --color-blue: #2f6fe0;
+    --color-card-elevated: #f7fafe;
+    --color-card-hover: #eef4fd;
+    --color-gold: #0b63e5;
+    --color-gold-bright: #2f7bef;
+    --color-gold-muted: #0a54c4;
+    --color-gold-dark: #0842a0;
+    --color-blue: #0b63e5;
     --color-cyan: #12866b;
-    --color-text-primary: #16213a;
-    --color-text-secondary: #414d66;
-    --color-text-muted: #6b7486;
-    --color-text-dark: #101c33;
-    --color-border: #e3e5ea;
-    --color-border-soft: #edeff3;
-    --color-border-gold: #b7cdf3;
+    --color-text-primary: #061a3a;
+    --color-text-secondary: #33465f;
+    --color-text-muted: #49617a;
+    --color-text-dark: #04152e;
+    --color-border: #d9e2ec;
+    --color-border-soft: #e6edf4;
+    --color-border-gold: #b3ccf5;
     --shadow-card: var(--shadow);
-    --shadow-gold: 0 8px 22px rgb(47 111 224 / 14%);
+    --shadow-gold: 0 8px 22px rgb(11 99 229 / 14%);
 
     /* Real-photo slab treatment — the light stone under a WHITE wash. */
     --slate-photo: var(--site-slate-bg-light);
@@ -4469,7 +4485,8 @@ body[data-slate="on"]::before {
     filter: drop-shadow(0 1px 1px rgb(6 26 58 / 22%));
 }
 
-body[data-theme="gray-slate"] .platform-brand__logo img {
+body[data-theme="gray-slate"] .platform-brand__logo img,
+body[data-theme="stone-slate"] .platform-brand__logo img {
     filter: drop-shadow(0 2px 5px rgb(0 0 0 / 45%));
 }
 
@@ -4687,12 +4704,14 @@ body[data-theme="gray-slate"] .platform-brand__logo img {
 }
 
 .theme-option--light {
-    /* Matches the 2026-07-06 green refresh of Light Slate. */
-    --swatch: linear-gradient(135deg, #fbfaf7, #2e7d52);
+    /* Light theme: pure white paper → the theme's blue accent. */
+    --swatch: linear-gradient(135deg, #ffffff, #0b63e5);
 }
 
 .theme-option--paper {
-    --swatch: linear-gradient(135deg, #ffffff, #8fa6c8);
+    /* White Slate: a stony white → the same blue, so its dot reads as
+       the Light palette rendered on stone (distinct from the flat Light dot). */
+    --swatch: linear-gradient(135deg, #e7ebf1, #0b63e5);
 }
 
 .theme-option--blue {
@@ -4701,6 +4720,12 @@ body[data-theme="gray-slate"] .platform-brand__logo img {
 
 .theme-option--gray {
     --swatch: linear-gradient(135deg, #283236, #d7a84f);
+}
+
+/* Dark Slate Stone: a lighter, cut-stone grey → gold, to read as the
+   "everything is slate" dark theme next to the flatter Dark Slate dot. */
+.theme-option--stone {
+    --swatch: linear-gradient(135deg, #4a565b 20%, #2c363a 60%, #d7a84f);
 }
 
 .theme-option--sage {
@@ -5492,6 +5517,14 @@ body[data-theme="gray-slate"] {
         var(--site-slate-bg-gray);
 }
 
+/* Dark Slate Stone: same dark stone, a touch lighter wash so the rock
+   texture reads crisper (it's the "everything is stone" theme). */
+body[data-theme="stone-slate"] {
+    background-image:
+        linear-gradient(180deg, rgb(10 11 12 / 34%), rgb(10 11 12 / 58%)),
+        var(--site-slate-bg-gray);
+}
+
 body[data-theme="sage-slate"] {
     background-image:
         linear-gradient(180deg, rgb(8 15 12 / 45%), rgb(8 15 12 / 68%)),
@@ -5523,8 +5556,11 @@ body[data-theme="modern-blue"] {
 }
 
 body[data-theme="paper-slate"] {
+    /* Whiter page (2026-07-07): a brighter, heavier veil over the white
+       stone so the whole page reads clean-white with the slate texture
+       still just visible through it (was 55%/42% over duller paper). */
     background-image:
-        linear-gradient(180deg, rgb(250 251 252 / 55%), rgb(244 245 247 / 42%)),
+        linear-gradient(180deg, rgb(253 253 254 / 74%), rgb(250 251 252 / 64%)),
         var(--site-slate-bg-light);
 }
 
@@ -14577,4 +14613,167 @@ body.slate-light .btn-primary {
 body.slate-light .btn-primary:hover,
 body.slate-light .btn-primary:focus-visible {
     background: color-mix(in srgb, var(--accent) 88%, #000);
+}
+
+/* =========================================================
+   SURFACE SLATE — every card, chip, bar and button cut from the SAME
+   fixed stone as the page, so nothing is a flat panel and every surface
+   matches the background texture. Applied when theme-preview.js sets
+   data-surface-slate="on": White Slate (paper-slate) and Dark Slate Stone
+   (stone-slate). Plain Dark Slate (gray-slate) keeps its flat cards, and
+   the homepage is never surfaced (JS gates it off there).
+
+   HOW IT MATCHES: each surface paints the fixed --slate-photo at
+   background-size:cover / attachment:fixed — exactly like the platform
+   header and tab strip — so the stone lines up 1:1 with the page behind
+   it (same crop, same scale, no seams). A translucent --surf-wash tints
+   it toward the surface colour; an edge-light gradient (--slab-hi/lo, per
+   theme) + raised shadow (--slab-card-shadow) lift it off the page. This
+   is the ONE recipe for cards, chips AND buttons, so their textures can
+   never disagree — the old satin --slab-primary button is gone here.
+   ========================================================= */
+
+/* Per-theme washes: how much stone shows through each kind of surface. */
+body[data-theme="paper-slate"][data-surface-slate="on"] {
+    --surf-wash: rgb(255 255 255 / 58%);
+    --surf-wash-chip: rgb(255 255 255 / 48%);
+    /* Primary buttons: the same stone, tinted toward the accent so they
+       still read as the call to action (not a flat colour fill). */
+    --surf-wash-btn: color-mix(in srgb, var(--accent) 42%, rgb(255 255 255 / 30%));
+    --surf-wash-btn-text: #ffffff;
+    /* The dark "Ask" bar stays dark, but now it too is cut from the stone. */
+    --surf-askbar: rgb(11 24 46 / 66%);
+}
+
+body[data-theme="stone-slate"][data-surface-slate="on"] {
+    --surf-wash: rgb(40 47 51 / 40%);
+    --surf-wash-chip: rgb(48 56 61 / 48%);
+    --surf-wash-btn: color-mix(in srgb, var(--accent) 40%, rgb(22 26 29 / 45%));
+    --surf-wash-btn-text: #171310;
+    --surf-askbar: rgb(9 12 14 / 52%);
+}
+
+/* ---- Cards & panels: raised stone slabs ---- */
+body[data-surface-slate="on"] .ps-card,
+body[data-surface-slate="on"] .ps-metric,
+body[data-surface-slate="on"] .profile-about,
+body[data-surface-slate="on"] .ps-role,
+body[data-surface-slate="on"] .ps-project,
+body[data-surface-slate="on"] .ps-feature,
+body[data-surface-slate="on"] .ps-feed-card,
+body[data-surface-slate="on"] .ps-preview-card,
+body[data-surface-slate="on"] .feed-card,
+body[data-surface-slate="on"] .metrics-strip,
+body[data-surface-slate="on"] .bd-entry,
+body[data-surface-slate="on"] .bd-stat,
+body[data-surface-slate="on"] .board-compose,
+body[data-surface-slate="on"] .board-entry,
+body[data-surface-slate="on"] .board-hero-panel,
+body[data-surface-slate="on"] .board-momentum,
+body[data-surface-slate="on"] .goal-card,
+body[data-surface-slate="on"] .badge-card,
+body[data-surface-slate="on"] .iv-card,
+body[data-surface-slate="on"] .iv-benefit,
+body[data-surface-slate="on"] .iv-confidence,
+body[data-surface-slate="on"] .iv-modebar,
+body[data-surface-slate="on"] .iq-item,
+body[data-surface-slate="on"] .iv-suggested__item,
+body[data-surface-slate="on"] .platform-page__points li {
+    background:
+        linear-gradient(158deg, var(--slab-hi) 0%, transparent 44%, var(--slab-lo) 100%),
+        linear-gradient(var(--surf-wash), var(--surf-wash)),
+        var(--slate-photo);
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
+    background-position: center, center, center top;
+    background-attachment: scroll, scroll, fixed;
+    border: 1px solid var(--border);
+    box-shadow: var(--slab-card-shadow);
+}
+
+/* ---- Chips & small pills: the same stone, lighter wash ---- */
+body[data-surface-slate="on"] .ps-skills a,
+body[data-surface-slate="on"] .ps-role__tags span,
+body[data-surface-slate="on"] .ps-preview-card__chips span,
+body[data-surface-slate="on"] .ps-askpill__chips a,
+body[data-surface-slate="on"] .goal-chip,
+body[data-surface-slate="on"] .iv-chip,
+body[data-surface-slate="on"] .iv-evidence__list li {
+    background:
+        linear-gradient(158deg, var(--slab-hi-chip, var(--slab-hi)) 0%, transparent 46%, var(--slab-lo-chip, var(--slab-lo)) 100%),
+        linear-gradient(var(--surf-wash-chip), var(--surf-wash-chip)),
+        var(--slate-photo);
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
+    background-position: center, center, center top;
+    background-attachment: scroll, scroll, fixed;
+    border: 1px solid var(--border);
+    box-shadow: var(--slab-chip-shadow);
+}
+
+/* ---- Buttons: same stone, accent-tinted so the CTA still reads ---- */
+body[data-surface-slate="on"] .ps-btn,
+body[data-surface-slate="on"] .ps-btn--primary,
+body[data-surface-slate="on"] .btn-primary {
+    color: var(--surf-wash-btn-text);
+    background:
+        linear-gradient(158deg, var(--slab-hi) 0%, transparent 50%, var(--slab-lo) 100%),
+        linear-gradient(var(--surf-wash-btn), var(--surf-wash-btn)),
+        var(--slate-photo);
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
+    background-position: center, center, center top;
+    background-attachment: scroll, scroll, fixed;
+    border: 1px solid var(--border);
+    box-shadow: var(--slab-chip-shadow);
+}
+
+/* Ghost / secondary buttons: plain stone, no accent tint. */
+body[data-surface-slate="on"] .ps-btn--ghost,
+body[data-surface-slate="on"] .ps-btn--ink,
+body[data-surface-slate="on"] .btn-secondary {
+    color: var(--text);
+    background:
+        linear-gradient(158deg, var(--slab-hi) 0%, transparent 50%, var(--slab-lo) 100%),
+        linear-gradient(var(--surf-wash-chip), var(--surf-wash-chip)),
+        var(--slate-photo);
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
+    background-position: center, center, center top;
+    background-attachment: scroll, scroll, fixed;
+    border: 1px solid var(--border);
+    box-shadow: var(--slab-chip-shadow);
+}
+
+/* ---- The dark "Ask Pete's Slate" bar: dark stone slab ---- */
+body[data-surface-slate="on"] .ps-askbar {
+    background:
+        linear-gradient(158deg, rgb(255 255 255 / 8%) 0%, transparent 46%, rgb(0 0 0 / 30%) 100%),
+        linear-gradient(var(--surf-askbar), var(--surf-askbar)),
+        var(--slate-photo);
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
+    background-position: center, center, center top;
+    background-attachment: scroll, scroll, fixed;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 12%),
+        0 16px 34px rgb(0 0 0 / 34%);
+}
+
+/* Ask-bar chips sit ON the dark bar, so they stay translucent-white on
+   both surface themes (not stone) — they read as controls, not slabs. */
+body[data-surface-slate="on"] .ps-askbar__chips button,
+body[data-surface-slate="on"] .ps-askbar__chips a,
+body[data-surface-slate="on"] .bd-assistant__chips button {
+    color: #ffffff;
+    background: rgb(255 255 255 / 8%);
+    border: 1px solid rgb(255 255 255 / 24%);
+}
+
+/* The round Ask button inside the bar keeps the accent fill (it sits on
+   the dark bar, so a stone-on-stone button would vanish). */
+body[data-surface-slate="on"] .ps-askbar .hero-ai-search__button {
+    color: #ffffff;
+    background: var(--accent);
+    border: 0;
 }

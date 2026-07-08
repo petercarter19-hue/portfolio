@@ -2,11 +2,18 @@
 // This stays browser-only: it never reads environment variables or secrets.
 
 (function () {
-    // Two themes for now (more later):
+    // Four themes for now (more later):
     //   'slate-light' — the clean Light look (the default). It renders via the
     //                   body.slate-light class, which base.html already adds to
     //                   every page except the homepage (so there's no flash).
-    //   'gray-slate'  — one Dark Slate stone theme (data-slate-photo pipeline).
+    //   'paper-slate' — "White Slate": the Light palette, but every surface
+    //                   (page + cards + buttons) cut from the white-stone
+    //                   photo through the slate pipeline. surfaceSlate=on.
+    //   'stone-slate' — "Dark Slate Stone": the dark palette (a gray-slate
+    //                   twin), with every surface ALSO cut from the dark stone.
+    //                   surfaceSlate=on. This is the dark twin White Slate matches.
+    //   'gray-slate'  — "Dark Slate": dark stone PAGE, but flat (non-stone)
+    //                   cards/buttons. surfaceSlate=off.
     // The homepage keeps its own look (body.peerslate-home-page) and never
     // takes the slate-light class.
     const defaultTheme = 'slate-light';
@@ -16,12 +23,32 @@
     const allProfileTabs = document.querySelectorAll('.profile-tab');
 
     function applyTheme(themeName) {
-        document.body.dataset.theme = themeName;
-
         const isHomepage = document.body.classList.contains('peerslate-home-page');
-        const useStone = themeName === 'gray-slate';
 
-        // Light = the slate-light class (never on the homepage). Dark Slate =
+        // All three stone themes run the photo pipeline: gray-slate (Dark
+        // Slate), stone-slate (Dark Slate Stone) and paper-slate (White Slate).
+        // Everything else is the flat Light look.
+        const useStone = themeName === 'gray-slate'
+            || themeName === 'stone-slate'
+            || themeName === 'paper-slate';
+
+        // "Surface slate": White Slate + Dark Slate Stone cut every card,
+        // button and chip from the SAME fixed stone as the page, so nothing is
+        // a flat panel. Plain Dark Slate keeps its flat cards. Never on the
+        // homepage (it has its own dark composition), which keeps the CSS
+        // scope to a plain body[data-surface-slate="on"].
+        const surfaceSlate = !isHomepage
+            && (themeName === 'stone-slate' || themeName === 'paper-slate');
+
+        // The homepage has its own dark look gated on data-theme="gray-slate";
+        // render Dark Slate Stone as gray-slate there so home styling applies
+        // (the active-button highlight below still keys off the real themeName).
+        const renderedTheme = (isHomepage && themeName === 'stone-slate')
+            ? 'gray-slate'
+            : themeName;
+        document.body.dataset.theme = renderedTheme;
+
+        // Light = the slate-light class (never on the homepage). Stone themes =
         // the stone photo pipeline (data-slate / data-slate-photo).
         if (!useStone && !isHomepage) {
             document.body.classList.add('slate-light');
@@ -30,6 +57,7 @@
         }
         document.body.dataset.slate = useStone ? 'on' : 'off';
         document.body.dataset.slatePhoto = useStone ? 'on' : 'off';
+        document.body.dataset.surfaceSlate = surfaceSlate ? 'on' : 'off';
 
         localStorage.setItem(storageKey, themeName);
 

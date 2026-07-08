@@ -82,7 +82,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=iv-revamp-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=surface-slate-2"
     >
     <link
         rel="stylesheet"
@@ -164,12 +164,20 @@
                                 <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>
                             </svg>
                         </button>
-                        {# Two themes for now: the clean Light look (the new
-                           default, applied via the slate-light class) and one
-                           Dark Slate stone theme. More themes to come later. #}
+                        {# Four themes: Light (flat white, via slate-light),
+                           White Slate (Light palette, every surface cut from
+                           white stone), Dark Slate Stone (dark palette, every
+                           surface cut from dark stone — White Slate's twin),
+                           and Dark Slate (dark stone page, flat cards). #}
                         <div class="theme-menu__panel" id="theme-menu-panel" hidden>
-                            <button class="theme-option theme-option--paper" type="button" data-theme-option="slate-light" aria-pressed="false">
+                            <button class="theme-option theme-option--light" type="button" data-theme-option="slate-light" aria-pressed="false">
                                 <span class="theme-tooltip">Light</span>
+                            </button>
+                            <button class="theme-option theme-option--paper" type="button" data-theme-option="paper-slate" aria-pressed="false">
+                                <span class="theme-tooltip">White Slate</span>
+                            </button>
+                            <button class="theme-option theme-option--stone" type="button" data-theme-option="stone-slate" aria-pressed="false">
+                                <span class="theme-tooltip">Dark Slate Stone</span>
                             </button>
                             <button class="theme-option theme-option--gray" type="button" data-theme-option="gray-slate" aria-pressed="false">
                                 <span class="theme-tooltip">Dark Slate</span>
@@ -304,7 +312,7 @@
     ]
     </script>
 
-    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=two-themes-1"></script>
+    <script src="{{ url_for('static', filename='js/theme-preview.js') }}?v=four-themes-1"></script>
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=relaunch-1"></script>
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
     {% block extra_scripts %}{% endblock %}
