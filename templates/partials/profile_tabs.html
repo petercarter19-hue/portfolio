@@ -1,45 +1,60 @@
 {#
     Pete's profile tab strip, split out of profile_shell.html so pages can
-    render content (metric cards + ask bar) BETWEEN the profile band and the
-    tabs — the overview mockup puts the summary above the tabs, then the tabs
-    act as the navigator for the sections below them.
-#}
-<nav class="profile-tabs" aria-label="Pete Carter profile tabs">
-    <div class="site-container profile-tabs__inner">
-        {# Tab order: Overview / My Slate / Evidence / Projects / Slate Board /
-           Resume. Pete asked for My Slate (the story page) to sit right next to
-           Overview. "Evidence" is the skills-backed-by-evidence page. #}
-        <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
-            Overview
-        </a>
-        <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
-            My Slate
-        </a>
-        <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
-            Evidence
-        </a>
-        <a class="profile-tab" href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>
-            Projects
-        </a>
-        <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
-            Slate Board
-        </a>
-        <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
-            Resume
-        </a>
+    render content between the profile band and the tabs.
 
-        {# LinkedIn stays pinned to the far right of the tab row. #}
-        <a
-            class="profile-tabs__linkedin"
-            href="https://www.linkedin.com/in/pete-carter19"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View Pete Carter on LinkedIn"
-        >
-            <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2"/>
-                <path fill="#ffffff" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/>
-            </svg>
-        </a>
+    2026-07-08 (Pete): LinkedIn logo removed; tabs tightened; on the Overview
+    only, the "Ask Pete AI" field now lives here on the right of the strip
+    (right of Resume) instead of a separate dark ask bar above. Three quick
+    chips sit in a slim row beneath. Gated to the overview paths so the other
+    portfolio pages (which have their own ask boxes, sharing #hero-ai-input)
+    never render a duplicate id.
+#}
+{% set is_overview = request.path in ['/petec', '/portfolio', '/pete'] %}
+<nav class="profile-tabs{% if is_overview %} profile-tabs--ask{% endif %}" aria-label="Pete Carter profile tabs">
+    <div class="site-container profile-tabs__inner">
+        <div class="profile-tabs__list">
+            {# Tab order: Overview / My Slate / Evidence / Projects / Slate Board /
+               Resume. #}
+            <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
+                Overview
+            </a>
+            <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
+                My Slate
+            </a>
+            <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
+                Evidence
+            </a>
+            <a class="profile-tab" href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>
+                Projects
+            </a>
+            <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
+                Slate Board
+            </a>
+            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
+                Resume
+            </a>
+        </div>
+
+        {% if is_overview %}
+        {# Ask Pete AI — pinned to the right of the tab row on the Overview.
+           Reuses the shared ask form (wired to the real /api/chat via
+           chatbot.js); CSS makes the field compact and floats the answer
+           panel below so the strip height stays stable. #}
+        <div class="profile-tabs__ask">
+            {% include "partials/portfolio_ai_search.html" %}
+        </div>
+        {% endif %}
     </div>
+
+    {% if is_overview %}
+    <div class="site-container profile-tabs__chips" aria-label="Quick questions">
+        <button type="button" data-ask-prefill="Give me a 60-second overview of Pete Carter.">
+            &#9776; Summarize Pete
+        </button>
+        <button type="button" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
+            &#9737; Match to Role
+        </button>
+        <a href="{{ portfolio_url('interview-me') }}">&#127908; Interview Pete</a>
+    </div>
+    {% endif %}
 </nav>
