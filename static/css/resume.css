@@ -1322,3 +1322,41 @@ body.slate-light .resume-highlight {
     0%   { background: rgb(11 99 229 / 22%); box-shadow: 0 0 0 4px rgb(11 99 229 / 16%); }
     100% { background: transparent; box-shadow: none; }
 }
+
+/* =========================================================
+   ALIGN RESUME + EVIDENCE TYPOGRAPHY WITH THE OVERVIEW
+   (2026-07-08) These pages' heroes and section heads were much
+   heavier and bigger than the Overview's tidy section headings
+   (Source Serif, ~1.4rem, weight 650, relaxed tracking) — weight
+   850-880, up to 3.8rem, tight negative tracking — so the pages
+   read as a different design. Bring them onto the site's scale.
+   Light theme only; Dark Slate keeps its heavier display type.
+   ========================================================= */
+body.slate-light .resume-hero h1 {
+    font-size: clamp(1.9rem, 3vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.08;
+}
+/* Mixed-case section headings ("Experience Connected to Evidence",
+   "Education & Development") → the Overview's tidy serif scale. */
+body.slate-light .resume-section-heading h2,
+body.slate-light .resume-role-panel h3 {
+    font-size: clamp(1.3rem, 1.8vw, 1.55rem);
+    font-weight: 680;
+    letter-spacing: -0.008em;
+}
+/* Uppercase category labels ("SYSTEMS & DIGITAL ENGINEERING", "Core Skills
+   & Expertise") read as clean labels — smaller, lighter, POSITIVE tracking
+   (uppercase needs air). Extra class so it wins over the rule above. */
+body.slate-light .resume-section-heading h2.resume-strip-title {
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+}
+/* The blue positioning line under the resume name — dial the weight back
+   so it matches the site's lighter headings rather than shouting. */
+body.slate-light .resume-hero__name {
+    font-weight: 750;
+    letter-spacing: 0.06em;
+}

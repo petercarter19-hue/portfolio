@@ -102,6 +102,15 @@
             </article>
         </div>
 
+        {# Portfolio tab strip (2026-07-08): the Slate Board is a standalone
+           page with its own hero, so base.html doesn't give it the shared
+           profile band + tabs — which left no way to reach the other slate
+           pages without going Home. Include the tab strip here so Overview /
+           My Slate / Evidence / Projects / Resume are one click away. #}
+        <div class="bd-tabs">
+            {% include "partials/profile_tabs.html" %}
+        </div>
+
         <!-- ============ MY WHITEBOARD ============ -->
         {# Original single-whiteboard design (restored): a "Chalk it up"
            compose bar to enter information, then ONE physical whiteboard
