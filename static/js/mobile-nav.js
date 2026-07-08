@@ -46,6 +46,10 @@
     });
 
     bar.hidden = false;
+    // Flag the page so CSS can let the top header scroll away here (the
+    // bottom bar handles section nav). Pages WITHOUT a bottom bar keep the
+    // header pinned at the top instead — see the mobile header rules.
+    document.body.classList.add('has-mobile-tabbar');
 
     // Reveal on scroll-up, hide on scroll-down (and always show near the top
     // of the page). Uses a small threshold so tiny scrolls don't flicker.
