@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-ai-16"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-story-1"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -570,18 +570,429 @@
     </div>
 
     {# ==============================================================
-       3 - YOUR STORY - bright pink cloud field. The personal journey.
+       3 - YOUR STORY - bright pink cloud field, rebuilt as a full
+       chapter that mirrors Your Work: a 4-card showcase grid first,
+       then two horizontal hand-off stages (Slate Board -> Daily
+       Slate, then Life Outside Work -> Values). Content is sourced
+       from the real site: My Story, the Slate Board, and The Slate's
+       daily check-in feed.
        ============================================================== #}
-    {{ cine_section('your-story', 'cinematic-section--story cinematic-section--curved',
-        'Chapter 02 · Reflect',
-        'Your Story.',
-        'Document your journey. Capture the moments, milestones, and lessons that have shaped who you are.',
-        [
-            ('journal',    'Journal',    'Write and reflect on your experiences.'),
-            ('memories',   'Memories',   'Capture meaningful moments.'),
-            ('milestones', 'Milestones', 'Share key achievements.'),
-            ('values',     'Values',     'Define what drives you forward.')
-        ]) }}
+    <section class="cinematic-section cinematic-section--story cinematic-section--curved cinematic-section--story-main"
+             id="your-story"
+             aria-labelledby="your-story-title">
+        <div class="section-bg" data-parallax aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+        <div class="section-content">
+            <p class="section-eyebrow reveal">Chapter 02 &middot; Reflect</p>
+            <h2 class="section-title reveal" id="your-story-title">Your Story.</h2>
+            <p class="section-subtitle reveal">Document your journey. Capture the moments, milestones, and lessons that have shaped who you are.</p>
+
+            <div class="work-showcase-grid" aria-label="Your Story showcase cards">
+
+                {# --- 1 · Journey & Milestones ---------------------------------- #}
+                <article class="work-showcase-card reveal" style="--reveal-i: 0;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['journal']|safe }}</svg>
+                    </span>
+                    <h3>Journey &amp; Milestones</h3>
+                    <p>Document the path &mdash; the moments and lessons behind the career.</p>
+
+                    <ol class="timeline-preview" aria-label="Personal milestones">
+                        <li class="timeline-preview__item">
+                            <div class="timeline-preview__head">
+                                <span class="timeline-preview__date">2020</span>
+                                <span class="timeline-preview__chip">The Foundation</span>
+                            </div>
+                            <strong>B.S. Electrical Engineering</strong>
+                            <span class="timeline-preview__org">Where the story starts</span>
+                            <p>The degree that opened the door to systems work.</p>
+                        </li>
+                        <li class="timeline-preview__item">
+                            <div class="timeline-preview__head">
+                                <span class="timeline-preview__date">2021 &ndash; 2024</span>
+                                <span class="timeline-preview__chip">The Mission</span>
+                            </div>
+                            <strong>Serving the DoD Mission</strong>
+                            <span class="timeline-preview__org">Systems engineering for the USAF</span>
+                            <p>Learning how complex systems really get built and sustained.</p>
+                        </li>
+                        <li class="timeline-preview__item">
+                            <div class="timeline-preview__head">
+                                <span class="timeline-preview__date">2027</span>
+                                <span class="timeline-preview__chip">Next Chapter</span>
+                            </div>
+                            <strong>Ph.D. Systems Engineering</strong>
+                            <span class="timeline-preview__org">University of South Alabama &middot; Admitted</span>
+                            <p>The next milestone on the slate &mdash; classes begin January 2027.</p>
+                        </li>
+                    </ol>
+                    <a class="showcase-link" href="{{ portfolio_story_url }}">Read My Story <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                {# --- 2 · Slate Board ------------------------------------------- #}
+                <article class="work-showcase-card reveal" style="--reveal-i: 1;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['goals']|safe }}</svg>
+                    </span>
+                    <h3>Slate Board</h3>
+                    <p>Goals, visions, and wins &mdash; tracked on one living board.</p>
+
+                    <div class="skills-panel">
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">What We're Tracking</span>
+                            <div class="goal-mini" aria-label="Goals in progress">
+                                <div class="goal-mini__row">
+                                    <span class="goal-mini__name">Pass the PMP Certification</span>
+                                    <span class="goal-mini__pct">65%</span>
+                                    <span class="goal-mini__bar" aria-hidden="true"><span style="--p: 65%;"></span></span>
+                                </div>
+                                <div class="goal-mini__row">
+                                    <span class="goal-mini__name">Run 500 Miles in 2026</span>
+                                    <span class="goal-mini__pct">42%</span>
+                                    <span class="goal-mini__bar" aria-hidden="true"><span style="--p: 42%;"></span></span>
+                                </div>
+                                <div class="goal-mini__row">
+                                    <span class="goal-mini__name">Build a Portfolio Website</span>
+                                    <span class="goal-mini__pct">72%</span>
+                                    <span class="goal-mini__bar" aria-hidden="true"><span style="--p: 72%;"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">On the Whiteboard</span>
+                            <div class="showcase-tags showcase-tags--dense" aria-label="Whiteboard sections">
+                                <span>Short Term</span><span>Long Term</span><span>Projects</span><span>Work</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="{{ portfolio_url('slate-board') }}">See the Slate Board <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                {# --- 3 · Daily Slate ------------------------------------------- #}
+                <article class="work-showcase-card reveal" style="--reveal-i: 2;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['plans']|safe }}</svg>
+                    </span>
+                    <h3>Daily Slate</h3>
+                    <p>Small daily check-ins that quietly add up to momentum.</p>
+
+                    <div class="skills-panel">
+                        <div class="skills-panel__block">
+                            <div class="timeline-preview__head">
+                                <span class="showcase-label">Today's Check-In</span>
+                                <span class="timeline-preview__chip">12-day streak</span>
+                            </div>
+                            <div class="showcase-tags showcase-tags--dense" aria-label="Check-in categories">
+                                <span>Studied</span><span>Practiced</span><span>Worked Out</span><span>Read</span><span>Built</span>
+                            </div>
+                        </div>
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">Recent Activity</span>
+                            <div class="feed-mini" aria-label="Recent check-ins">
+                                <div class="feed-mini__row">
+                                    <strong>Logged a PMP study session</strong>
+                                    <small>You &middot; Just now</small>
+                                </div>
+                                <div class="feed-mini__row">
+                                    <strong>Morning run &mdash; streak alive</strong>
+                                    <small>You &middot; 6:05 AM</small>
+                                </div>
+                                <div class="feed-mini__row">
+                                    <strong>Shipped a portfolio update</strong>
+                                    <small>You &middot; Yesterday</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="{{ url_for('the_slate_daily') }}">Open the Daily Slate <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                {# --- 4 · Life & Values ----------------------------------------- #}
+                <article class="work-showcase-card reveal" style="--reveal-i: 3;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['values']|safe }}</svg>
+                    </span>
+                    <h3>Life &amp; Values</h3>
+                    <p>What drives the work &mdash; and the life outside it.</p>
+
+                    <div class="skills-panel">
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">Core Values</span>
+                            <div class="showcase-tags showcase-tags--dense" aria-label="Core values">
+                                <span>Family First</span><span>Health &amp; Fitness</span>
+                                <span>Lifelong Growth</span><span>Adventure</span>
+                            </div>
+                        </div>
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">Outside of Work</span>
+                            <div class="showcase-tags showcase-tags--dense" aria-label="Interests">
+                                <span>Trail Running</span><span>Traveling with My Wife</span>
+                                <span>Smart Home Projects</span><span>Dog Dad &mdash; Blazer &amp; Falcon</span>
+                            </div>
+                        </div>
+                        <div class="skills-panel__block">
+                            <span class="showcase-label">Home Base</span>
+                            <div class="showcase-tags showcase-tags--dense" aria-label="Home base">
+                                <span>Athens, Alabama</span><span>Lifelong Learner</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="{{ portfolio_story_url }}">Meet the Person <span aria-hidden="true">&rarr;</span></a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    {# ==============================================================
+       3B - SLATE BOARD / DAILY SLATE - same pink-cloud world as Your
+       Story, with the sticky horizontal handoff: the Slate Board
+       glides left while the Daily Slate arrives from the right.
+       ============================================================== #}
+    <section class="cinematic-section cinematic-section--story cinematic-section--work-ai cinematic-section--story-live"
+             id="story-live"
+             aria-labelledby="story-live-title"
+             data-cine-horizontal>
+        <div class="section-bg" aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+
+        <div class="work-ai-stage">
+            <div class="work-ai-copy reveal">
+                <p class="section-eyebrow">Your Story &middot; Goals + Momentum</p>
+                <h2 class="section-title" id="story-live-title">Set the Goal. Live the Progress.</h2>
+                <p class="section-subtitle">
+                    The Slate Board holds the goals and visions; the Daily Slate captures
+                    the small check-ins that quietly turn them into a story.
+                </p>
+            </div>
+
+            <div class="work-ai-window reveal" style="--reveal-i: 3;" aria-label="Slate Board and Daily Slate preview">
+                <div class="work-ai-track" data-work-ai-track>
+                    <article class="work-ai-panel work-ai-panel--board" aria-label="Slate Board preview">
+                        <div class="work-ai-panel__lead">
+                            <p class="work-ai-kicker">Slate Board</p>
+                            <h3>One Living Board for Goals, Visions, and Wins.</h3>
+                            <p>
+                                Short-term targets, long-term visions, projects, and personal goals &mdash;
+                                shared in public or kept private, always in one place.
+                            </p>
+                            <div class="work-ai-actions">
+                                <a class="cine-btn cine-btn--primary" href="{{ portfolio_url('slate-board') }}">
+                                    See Pete's Slate Board
+                                </a>
+                                <a class="cine-btn cine-btn--ghost" href="{{ url_for('the_slate') }}">
+                                    Explore The Slate
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="work-ai-demo-stack" aria-label="Example Slate Board entries">
+                            <div class="work-ai-example work-ai-example--primary">
+                                <div class="work-ai-question">
+                                    <span>Board entry</span>
+                                    <strong>Pass the PMP Certification</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Progress update</span>
+                                    <p>
+                                        Study blocks logged four of the last six days &mdash; practice-exam
+                                        scores trending steadily toward the pass line.
+                                    </p>
+                                </div>
+                                <div class="work-ai-proof-strip" aria-label="Goal status">
+                                    <span>65% complete</span>
+                                    <span>On track</span>
+                                    <span>Public entry</span>
+                                </div>
+                            </div>
+                            <div class="work-ai-example work-ai-example--alt">
+                                <div class="work-ai-question">
+                                    <span>Board entry</span>
+                                    <strong>Run 500 Miles in 2026</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Progress update</span>
+                                    <p>
+                                        212 miles in &mdash; early mornings, trail shoes, and a pace
+                                        that keeps the streak honest.
+                                    </p>
+                                </div>
+                                <div class="work-ai-proof-strip" aria-label="Goal status">
+                                    <span>42% complete</span>
+                                    <span>Health &amp; Fitness</span>
+                                    <span>Personal goal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="work-ai-panel work-ai-panel--daily" aria-label="Daily Slate preview">
+                        <div class="work-ai-panel__lead">
+                            <p class="work-ai-kicker">Daily Slate</p>
+                            <h3>Small Check-Ins. Real Momentum.</h3>
+                            <p>
+                                One tap logs the day &mdash; studied, practiced, built, or worked out &mdash;
+                                and the streak keeps the story honest.
+                            </p>
+                            <div class="work-ai-actions">
+                                <a class="cine-btn cine-btn--primary" href="{{ url_for('the_slate_daily') }}">
+                                    Open the Daily Slate
+                                </a>
+                                <a class="cine-btn cine-btn--ghost" href="{{ url_for('the_slate') }}">
+                                    See People &amp; Progress
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="work-ai-demo-stack" aria-label="Example Daily Slate check-ins">
+                            <div class="work-ai-example work-ai-example--primary">
+                                <div class="work-ai-question">
+                                    <span>Today's check-in</span>
+                                    <strong>Studied &middot; PMP practice questions</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Streak</span>
+                                    <p>
+                                        Twelve days of showing up. Small check-ins, logged in seconds,
+                                        quietly building the bigger story.
+                                    </p>
+                                </div>
+                                <div class="work-ai-score-row" aria-label="Check-in summary">
+                                    <span><strong>12</strong> Day streak</span>
+                                    <span>Studied</span>
+                                    <span>Worked Out</span>
+                                </div>
+                            </div>
+                            <div class="work-ai-example work-ai-example--alt">
+                                <div class="work-ai-question">
+                                    <span>Today's check-in</span>
+                                    <strong>Built &middot; New portfolio feature</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Momentum</span>
+                                    <p>
+                                        Shipped an improvement and logged it &mdash; progress becomes proof
+                                        the moment it hits the feed.
+                                    </p>
+                                </div>
+                                <div class="work-ai-score-row" aria-label="Check-in summary">
+                                    <span><strong>+1</strong> Public win</span>
+                                    <span>Built</span>
+                                    <span>Shared to the feed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ==============================================================
+       3C - LIFE / VALUES - the second Your Story proof chapter:
+       fun facts and interests slide out, the four life values arrive.
+       ============================================================== #}
+    <section class="cinematic-section cinematic-section--story cinematic-section--work-proof cinematic-section--story-depth"
+             id="story-depth"
+             aria-labelledby="story-depth-title"
+             data-work-proof>
+        <div class="section-bg" aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+
+        <div class="work-proof-stage">
+            <div class="work-proof-copy reveal">
+                <p class="section-eyebrow">Your Story &middot; Beyond the R&eacute;sum&eacute;</p>
+                <h2 class="section-title" id="story-depth-title">The Person Behind the Proof.</h2>
+                <p class="section-subtitle">
+                    The parts a r&eacute;sum&eacute; never shows &mdash; the life outside the work,
+                    and the values that set the direction.
+                </p>
+            </div>
+
+            <div class="work-proof-window reveal" style="--reveal-i: 3;" aria-label="Life outside work and values preview">
+                <div class="work-proof-track">
+                    <article class="work-proof-panel work-proof-panel--life" aria-label="Life outside work preview">
+                        <div class="work-proof-panel__lead">
+                            <p class="work-ai-kicker">Life Outside Work</p>
+                            <h3>Small Facts. Whole Person.</h3>
+                            <p>
+                                Fun facts and interests straight from the My Story page &mdash;
+                                the things that keep the engineering sustainable.
+                            </p>
+                        </div>
+
+                        <div class="work-skills-mini" aria-label="Fun facts and interests">
+                            <article class="work-skill-chip work-skill-chip--flip">
+                                <div class="work-skill-chip__inner">
+                                    <div class="work-skill-chip__face work-skill-chip__front">
+                                        <span>Dog Dad</span><strong>&times;2</strong>
+                                    </div>
+                                    <div class="work-skill-chip__face work-skill-chip__back">
+                                        <span>Blazer and Falcon &mdash; the two best teammates in Athens, Alabama.</span>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="work-skill-chip work-skill-chip--flip work-skill-chip--delay">
+                                <div class="work-skill-chip__inner">
+                                    <div class="work-skill-chip__face work-skill-chip__front">
+                                        <span>Trail Runner</span><strong>500</strong>
+                                    </div>
+                                    <div class="work-skill-chip__face work-skill-chip__back">
+                                        <span>Chasing 500 miles this year, one early morning at a time.</span>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="work-skill-chip"><span>Traveling with My Wife</span></article>
+                            <article class="work-skill-chip"><span>Smart Home Builder</span></article>
+                            <article class="work-skill-chip"><span>Athens, Alabama</span></article>
+                            <article class="work-skill-chip"><span>Lifelong Learner</span></article>
+                            <article class="work-skill-chip"><span>PMP In Progress</span></article>
+                            <article class="work-skill-chip"><span>Ph.D. Admitted &middot; 2027</span></article>
+                            <article class="work-skill-chip"><span>Family First</span></article>
+                            <article class="work-skill-chip"><span>Adventure Seeker</span></article>
+                        </div>
+                    </article>
+
+                    <article class="work-proof-panel work-proof-panel--values" aria-label="Values preview">
+                        <div class="work-proof-panel__lead">
+                            <p class="work-ai-kicker">What Drives Me</p>
+                            <h3>Values That Set the Direction.</h3>
+                            <p>
+                                Four commitments underneath every goal on the board &mdash;
+                                the reasons the streaks and milestones matter at all.
+                            </p>
+                        </div>
+
+                        <div class="work-timeline-mini work-timeline-mini--values" aria-label="Core life values">
+                            <article class="work-timeline-card">
+                                <span>Value 01</span>
+                                <h4>Family First</h4>
+                                <p>The reason behind all of it &mdash; family, home, and the life we're building together in Athens.</p>
+                                <div><strong>Blazer &amp; Falcon</strong><strong>Home base: AL</strong></div>
+                            </article>
+                            <article class="work-timeline-card">
+                                <span>Value 02</span>
+                                <h4>Health &amp; Fitness</h4>
+                                <p>Trail miles and training blocks keep the mind sharp enough to engineer well.</p>
+                                <div><strong>Run 500 Miles</strong><strong>Daily check-ins</strong></div>
+                            </article>
+                            <article class="work-timeline-card">
+                                <span>Value 03</span>
+                                <h4>Lifelong Growth</h4>
+                                <p>From a 2020 engineering degree to a Ph.D. seat waiting in 2027 &mdash; always the next rung.</p>
+                                <div><strong>PMP journey</strong><strong>Ph.D. Admitted</strong></div>
+                            </article>
+                            <article class="work-timeline-card">
+                                <span>Value 04</span>
+                                <h4>Adventure</h4>
+                                <p>New places and new problems &mdash; travel feeds the same curiosity engineering does.</p>
+                                <div><strong>Traveling</strong><strong>New challenges</strong></div>
+                            </article>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
 
     {# ==============================================================
        4 · YOUR FUTURE — golden valley sunrise. Intentional planning.
@@ -621,5 +1032,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-ai-16"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-story-1"></script>
 {% endblock %}
