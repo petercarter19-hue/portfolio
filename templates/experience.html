@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-ai-12"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-ai-14"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -139,16 +139,130 @@
     <div class="cinematic-work-chapter" aria-label="Your Work chapter">
         <div class="work-chapter-bg" aria-hidden="true"></div>
 
-    {{ cine_section('your-work', 'cinematic-section--work cinematic-section--work-main',
-        'Chapter 01 · Showcase',
-        'Your Work.',
-        'Build your professional presence. Showcase your experience, skills, projects, and results that matter.',
-        [
-            ('projects',   'Projects',           'Show your work and achievements.'),
-            ('skills',     'Skills & Expertise', 'Highlight your capabilities.'),
-            ('experience', 'Experience',         'Share your journey and impact.'),
-            ('results',    'Results',            'Prove the value you deliver.')
-        ]) }}
+    <section class="cinematic-section cinematic-section--work cinematic-section--work-main"
+             id="your-work"
+             aria-labelledby="your-work-title">
+        <div class="section-bg" data-parallax aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+        <div class="section-content">
+            <p class="section-eyebrow reveal">Chapter 01 &middot; Showcase</p>
+            <h2 class="section-title reveal" id="your-work-title">Your Work.</h2>
+            <p class="section-subtitle reveal">Build your professional presence. Showcase your experience, skills, projects, and results that matter.</p>
+
+            <div class="work-showcase-grid" aria-label="Your Work showcase cards">
+                <article class="work-showcase-card work-showcase-card--projects reveal" style="--reveal-i: 0;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['projects']|safe }}</svg>
+                    </span>
+                    <h3>Featured Projects</h3>
+                    <p>Showcase the projects that prove what you can do.</p>
+
+                    <div class="project-preview">
+                        <div class="project-preview__image" aria-hidden="true"></div>
+                        <div class="project-preview__body">
+                            <span>Featured</span>
+                            <strong>PeerSlate AI Portfolio Platform</strong>
+                            <small>Flask + approved evidence + AI assistant</small>
+                        </div>
+                    </div>
+                    <div class="showcase-tags" aria-label="Project technologies">
+                        <span>MBSE</span><span>Cameo</span><span>SysML</span><span>JIRA</span>
+                    </div>
+                    <div class="showcase-metrics" aria-label="Project outcomes">
+                        <span><strong>$36M</strong><small>Program Value</small></span>
+                        <span><strong>16 to 0</strong><small>MICAPs</small></span>
+                        <span><strong>70%</strong><small>Faster Repair/Test</small></span>
+                    </div>
+                    <a class="showcase-link" href="{{ portfolio_work_url }}">View All Projects <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                <article class="work-showcase-card work-showcase-card--skills reveal" style="--reveal-i: 1;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['skills']|safe }}</svg>
+                    </span>
+                    <h3>Skills Backed by Proof</h3>
+                    <p>Highlight your skills and the evidence that validates them.</p>
+
+                    <div class="showcase-block">
+                        <span class="showcase-label">Top Skills</span>
+                        <div class="showcase-tags showcase-tags--dense" aria-label="Top skills">
+                            <span>MBSE</span><span>Systems Engineering</span><span>Requirements</span>
+                            <span>Verification &amp; Validation</span><span>Modeling / SysML</span>
+                        </div>
+                    </div>
+                    <div class="evidence-preview" aria-label="Evidence preview">
+                        <span class="showcase-label">Evidence Preview</span>
+                        <div class="evidence-preview__row">
+                            <span class="evidence-thumb evidence-thumb--model" aria-hidden="true"></span>
+                            <strong>System Architecture Model</strong>
+                            <small>Cameo MBSE &middot; 24 Artifacts</small>
+                            <span class="evidence-eye" aria-hidden="true">o</span>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="{{ portfolio_skills_url }}">Explore Skills <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                <article class="work-showcase-card work-showcase-card--ai reveal" style="--reveal-i: 2;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['impact']|safe }}</svg>
+                    </span>
+                    <h3>AI Integration</h3>
+                    <p>Let visitors question the portfolio and practice the story behind the proof.</p>
+
+                    <div class="ai-preview" aria-label="AI integration preview">
+                        <div class="ai-preview__row">
+                            <span class="ai-preview__orb" aria-hidden="true">AI</span>
+                            <div>
+                                <strong>Ask Pete AI</strong>
+                                <small>Answers recruiter-style questions from approved portfolio sources.</small>
+                            </div>
+                        </div>
+                        <div class="ai-preview__row">
+                            <span class="ai-preview__orb" aria-hidden="true">STAR</span>
+                            <div>
+                                <strong>Interview Me</strong>
+                                <small>Turns verified experience into structured interview practice.</small>
+                            </div>
+                        </div>
+                        <div class="ai-preview__prompt">
+                            <span>Example prompt</span>
+                            <strong>Can you summarize Pete's systems engineering impact?</strong>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="#work-ai">Preview AI Tools <span aria-hidden="true">&rarr;</span></a>
+                </article>
+
+                <article class="work-showcase-card work-showcase-card--resume reveal" style="--reveal-i: 3;">
+                    <span class="work-showcase-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['journal']|safe }}</svg>
+                    </span>
+                    <h3>Resume Snapshot</h3>
+                    <p>A recruiter-friendly summary of your experience and strengths.</p>
+
+                    <div class="resume-preview" aria-label="Resume snapshot preview">
+                        <div class="resume-preview__head">
+                            <div>
+                                <strong>Pete Carter</strong>
+                                <small>Systems Engineer / Project-Focused Technical Leader</small>
+                            </div>
+                            <span>View Full Resume</span>
+                        </div>
+                        <p>Athens, AL &nbsp; | &nbsp; Systems engineering, MBSE, project execution, and AI-enabled portfolio work.</p>
+                        <div class="resume-preview__section">
+                            <span>Experience</span>
+                            <strong>Systems Engineer</strong>
+                            <small>Northrop Grumman &middot; current role</small>
+                            <p>Supports requirements development, traceability, integration, and verification readiness.</p>
+                        </div>
+                        <div class="showcase-tags showcase-tags--resume" aria-label="Core skills">
+                            <span>MBSE</span><span>SysML</span><span>Requirements</span><span>V&amp;V</span><span>Modeling</span><span>Leadership</span>
+                        </div>
+                    </div>
+                    <a class="showcase-link" href="{{ portfolio_resume_url }}">View Full Resume <span aria-hidden="true">&rarr;</span></a>
+                </article>
+            </div>
+        </div>
+    </section>
 
     {# ==============================================================
        2B - ASK PETE AI / INTERVIEW ME - same mountain-sunrise world
@@ -457,5 +571,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-ai-13"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-ai-14"></script>
 {% endblock %}
