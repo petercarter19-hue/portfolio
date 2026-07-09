@@ -1,0 +1,30 @@
+{# Shared friendly error page for the 404 and 500 handlers in app.py.
+   It reuses the platform-page card styles so it matches the site with
+   zero new CSS. app.py passes error_code, error_title, and error_message. #}
+{% extends "base.html" %}
+
+{% block title %}{{ error_title }} | {{ platform_brand_name }}{% endblock %}
+
+{% block content %}
+
+<section class="platform-page" aria-labelledby="error-page-title">
+    <div class="site-container platform-page__inner">
+        <div class="platform-page__card">
+            <p class="section-eyebrow">Error {{ error_code }}</p>
+            <h1 id="error-page-title">{{ error_title }}</h1>
+            <p class="platform-page__lead">{{ error_message }}</p>
+
+            <div class="platform-page__actions">
+                <a class="btn btn-primary" href="{{ portfolio_home_url }}">
+                    Visit Pete Carter's Profile
+                    <span aria-hidden="true">→</span>
+                </a>
+                <a class="btn btn-secondary" href="{{ peerslate_home_url }}">
+                    Back to {{ platform_brand_name }} Home
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

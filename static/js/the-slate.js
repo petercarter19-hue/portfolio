@@ -1,9 +1,8 @@
 // the-slate.js — interactivity for The Slate hub (2026-07-08).
-// Runs on all four tabs: Slate Feed (People), My Slate, Daily Slate,
-// Slate Paths. Browser-only; no secrets, no network calls. The composer
-// and check-in store per-browser in localStorage until PeerSlate
-// accounts bring real cross-visitor storage (same convention as the
-// old feed composer in slate-feed.js).
+// Runs on the hub tabs: Slate Feed (People), My Slate, and Daily Slate.
+// Browser-only; no secrets, no network calls. The composer and check-in
+// store per-browser in localStorage until PeerSlate accounts bring real
+// cross-visitor storage.
 
 (function () {
     'use strict';
@@ -40,7 +39,13 @@
         try {
             var raw = localStorage.getItem(DAILY_KEY);
             var cards = raw ? JSON.parse(raw) : [];
-            return Array.isArray(cards) ? cards : [];
+            if (!Array.isArray(cards)) { return []; }
+            // Drop malformed entries (schema drift / hand-edited storage):
+            // one bad element would otherwise throw inside the render loop
+            // and stop the rest of this file from wiring up.
+            return cards.filter(function (card) {
+                return card && typeof card === 'object' && typeof card.text === 'string';
+            });
         } catch (err) {
             return [];
         }

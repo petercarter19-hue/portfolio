@@ -244,6 +244,11 @@
         parallaxOn = false;
         window.removeEventListener('scroll', onScroll);
         window.removeEventListener('resize', onScroll);
+        // Stop the 5-second example-swap intervals too. Without this, a live
+        // "reduce motion" toggle left them running: every tick calls onScroll()
+        // -> applyParallax(), re-applying the exact styles cleared below.
+        scheduleExampleSwap('ask', false);
+        scheduleExampleSwap('interview', false);
         layers.forEach(function (bg) { bg.style.transform = ''; });
         horizontalSections.forEach(function (section) {
             section.style.removeProperty('--work-ai-stage-opacity');

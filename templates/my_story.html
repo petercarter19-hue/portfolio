@@ -114,8 +114,8 @@
     </section>
 
     <!-- ============================================
-         FUN FACTS: three facts from the pool below. One
-         card refreshes every five seconds, so all three
+         FUN FACTS: five facts from the pool below. One
+         card refreshes every five seconds, so the row
          cards change over a fifteen-second cycle on their
          own (no button). Placed right under the hero,
          above My Journey.
@@ -126,7 +126,7 @@
                 <h2 id="fun-facts-title">Things You Won't Find on My Résumé</h2>
             </div>
 
-            <!-- The script fills this grid with three rotating facts. -->
+            <!-- The script fills this grid with five rotating facts. -->
             <div class="fun-facts__grid" id="fun-facts-grid" aria-live="polite"></div>
         </div>
     </section>
@@ -234,7 +234,7 @@
                  (you click "Add a completed goal"), and each goal is
                  marked Public or Private — the Slate idea that
                  completed goals become proof on your timeline. Saved
-                 per-browser (the-story.js), same MVP convention as the
+                 per-browser (story.js), same MVP convention as the
                  rest of the Slate. Spans the full journey width. -->
             <section class="timeline-goals" aria-labelledby="timeline-goals-title">
                 <div class="timeline-goals__head">
@@ -493,7 +493,7 @@
 
 <!-- ======================================================
      FUN FACTS ROTATION
-     Picks three random facts on load, then refreshes one
+     Picks five random facts on load, then refreshes one
      card every five seconds, cycling through the pool on
      its own.
      ====================================================== -->
@@ -560,7 +560,7 @@
             return shuffleFacts(availableFacts.length ? availableFacts : FUN_FACTS)[0];
         }
 
-        // Swaps just one of the three visible cards for a new fact.
+        // Swaps just one of the five visible cards for a new fact.
         // nextSlot cycles 0 -> 1 -> 2 -> 0 so the cards update one at a
         // time (every ROTATE_MS), instead of all changing at once.
         function rotateOneFact() {
@@ -610,5 +610,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/story.js') }}?v=story-1"></script>
+<script src="{{ url_for('static', filename='js/story.js') }}?v=health-check-1"></script>
 {% endblock %}

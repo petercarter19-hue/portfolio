@@ -63,7 +63,6 @@ def shared_navigation_urls():
     # Flask's request.host can include a port (like "localhost:5000"),
     # so split it off and lowercase the rest for a clean comparison.
     clean_host = request.host.split(':', 1)[0].lower()
-    is_local = clean_host in {'127.0.0.1', 'localhost'}
     is_platform = is_platform_hostname(request.host)
 
     portfolio_base_url = '/petec'
@@ -84,7 +83,12 @@ def shared_navigation_urls():
         'platform_brand_name': 'PeerSlate',
         'is_platform_site': is_platform,
         'portfolio_url': portfolio_url,
-        'peerslate_home_url': url_for('home') if is_local or is_platform else 'https://peerslate.com/',
+        # This app serves the platform homepage itself wherever it runs
+        # (localhost, Azure, peerslate.com), so the brand/footer links always
+        # point at this deployment's own "/" instead of an external domain.
+        # (Previously any unrecognized host — like the Azure URL — sent
+        # visitors to https://peerslate.com/, which isn't Pete's live site.)
+        'peerslate_home_url': url_for('home'),
         'portfolio_home_url': portfolio_url(),
         'portfolio_work_url': portfolio_url('work'),
         'portfolio_skills_url': portfolio_url('skills'),
@@ -241,7 +245,7 @@ IMPORTANT RULES:
 - Be warm and helpful in tone.
 - Use plain text only. Do not use Markdown, hashtags, headings, bold text, bullets, numbered lists, or asterisks.
 - If asked something outside your approved topics, politely say you can't help with that and suggest the visitor use the Contact page to reach Pete directly.
-- For recruiter or resume questions, make the answer evidence-grounded. Give the answer first, then include a short source sentence such as "This is based on Pete's approved resume and career-history sources." Add a short limitation when the approved sources do not fully answer the question.
+- For recruiter or resume questions, make the answer evidence-grounded. Give the answer first, then include a short source sentence such as "This is based on Pete's resume and career-history sources." Add a short limitation when the sources do not fully answer the question.
 
 RESPONSE STYLE:
 - Write in complete, polished sentences suitable for a professional portfolio website.
@@ -251,10 +255,9 @@ RESPONSE STYLE:
 - Do not copy raw resume bullets or fragments from the knowledge base.
 - Do not end with salesy follow-up questions like "Would you like to know more?"
 - If the question asks for a count, give the count first, then briefly explain it.
-- Do not mention specific program names, customer names, contract numbers, internal system names, or employer-sensitive details, even if they appear in the knowledge base. Generalize them as "a major defense program," "a navigation-system redesign," or "approved career-history sources."
 
 APPROVED TOPICS:
-- Pete's job titles and general responsibilities
+- Pete's job titles, responsibilities, and the systems and programs in his knowledge base
 - Tools and technologies (Cameo, DOORS, Jira, Python, Flask, Claude API, etc.)
 - Education, certifications (PMP, Ph.D. program), and accomplishments
 - Career goals and target roles
@@ -264,9 +267,6 @@ APPROVED TOPICS:
 - Pete's public hobbies (smart home, technology)
 
 TOPICS TO NEVER DISCUSS:
-- Classified information of any kind
-- Specific program names, contract numbers, or customer names
-- Internal system names, network details, or security architecture
 - Security clearance details beyond "Pete holds an active U.S. Secret security clearance"
 - Colleagues' names or personal information about others
 - Pete's home address, phone number, or date of birth
@@ -701,7 +701,6 @@ def chat():
                         "Answer in polished plain English using only the most impactful details. "
                         "Use 1 to 3 short complete sentences. If the answer has two ideas, split them into two short paragraphs. "
                         "For recruiter or resume questions, end with one brief source and limitation sentence. "
-                        "Do not name specific programs, customers, contract numbers, or internal systems; generalize those details. "
                         "Use no Markdown, no bullets, "
                         "no numbered lists, and no follow-up sales question."
                     )
@@ -720,6 +719,73 @@ def chat():
         # return a friendly error message instead of crashing
         print(f"Claude API error: {e}")
         return jsonify({'error': 'Something went wrong. Please try again.'}), 500
+
+
+# -------------------------------------------------------
+# FRIENDLY ERROR PAGES
+# Without these, a bad URL shows Flask's bare white "Not Found"
+# page. These render a small branded page (templates/error.html)
+# that keeps the site header/footer and offers a way back home.
+# -------------------------------------------------------
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template(
+        'error.html',
+        error_code=404,
+        error_title='Page not found',
+        error_message="That address doesn't exist on this site. It may have moved during a redesign, or the link had a typo.",
+    ), 404
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template(
+        'error.html',
+        error_code=500,
+        error_title='Something went wrong',
+        error_message='The server hit an unexpected error building this page. Please try again in a moment.',
+    ), 500
+
+
+# -------------------------------------------------------
+# SEARCH-ENGINE BASICS
+# robots.txt tells crawlers they're welcome; sitemap.xml lists the
+# public pages so search engines find everything. Both are built
+# here (not static files) so the sitemap always uses the visitor's
+# own host and stays in sync with the routes.
+# -------------------------------------------------------
+
+@app.route('/robots.txt')
+def robots_txt():
+    lines = [
+        'User-agent: *',
+        'Allow: /',
+        f'Sitemap: {request.url_root.rstrip("/")}/sitemap.xml',
+    ]
+    return app.response_class('\n'.join(lines) + '\n', mimetype='text/plain')
+
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    # The canonical public pages worth indexing (redirect-only and
+    # API routes are deliberately left out).
+    public_paths = [
+        '/', '/petec', '/experience',
+        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume',
+        '/petec/slate-board', '/petec/interview-me', '/petec/about',
+        '/petec/hobbies', '/petec/contact',
+        '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
+        '/the-slate/pulse', '/the-slate/break',
+        '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
+    ]
+    base = request.url_root.rstrip('/')
+    urls = ''.join(f'<url><loc>{base}{path}</loc></url>' for path in public_paths)
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    )
+    return app.response_class(xml, mimetype='application/xml')
 
 
 # --- START THE SERVER ---
