@@ -8,7 +8,7 @@ import glob                                     # Lets us find all files matchin
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
-from flask import Flask, render_template, request, jsonify, url_for, redirect  # Added: request (reads incoming data), jsonify (sends JSON back)
+from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import anthropic                                # The Claude AI client library
@@ -333,6 +333,24 @@ def peerslate_home():
 @app.route('/experience')
 def experience():
     return render_template('experience.html')
+
+
+@app.route('/_internal/design-system')
+def design_system_preview():
+    """Render Foundation A without exposing an unfinished page publicly.
+
+    The preview is available automatically on local development hosts. A
+    deployed review environment can opt in explicitly with
+    ENABLE_DESIGN_SYSTEM_PREVIEW=1; production remains closed by default.
+    """
+    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
+    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
+    is_local = clean_host in {'127.0.0.1', 'localhost', '::1'}
+
+    if not (is_local or preview_enabled):
+        abort(404)
+
+    return render_template('design_system_preview.html')
 
 @app.route('/about')
 @app.route('/petec/about')

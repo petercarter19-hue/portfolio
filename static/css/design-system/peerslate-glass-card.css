@@ -1,0 +1,225 @@
+/* PeerSlateGlassCard: the first reusable Foundation A component. */
+
+.ps-glass-card {
+    --ps-card-background: var(--ps-glass-light-card-bg);
+    --ps-card-border: var(--ps-glass-border-light);
+    --ps-card-color: var(--ps-color-ink-950);
+    --ps-card-muted: var(--ps-color-text-muted-light);
+    --ps-card-radius: var(--ps-radius-card);
+    --ps-card-blur: var(--ps-glass-blur-card);
+    --ps-card-shadow: var(--ps-shadow-card);
+    --ps-card-padding: clamp(var(--ps-space-6), 3vw, var(--ps-space-8));
+    --ps-card-accent: var(--ps-color-accent-blue);
+
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    padding: var(--ps-card-padding);
+    overflow: hidden;
+    color: var(--ps-card-color);
+    background:
+        linear-gradient(145deg, rgb(255 255 255 / 18%), transparent 42%),
+        var(--ps-card-background);
+    border: 1px solid var(--ps-card-border);
+    border-radius: var(--ps-card-radius);
+    box-shadow: var(--ps-card-shadow);
+    -webkit-backdrop-filter: blur(var(--ps-card-blur)) saturate(var(--ps-glass-saturation));
+    backdrop-filter: blur(var(--ps-card-blur)) saturate(var(--ps-glass-saturation));
+    transition:
+        transform var(--ps-motion-micro) var(--ps-ease-out),
+        border-color var(--ps-motion-micro) var(--ps-ease-out),
+        box-shadow var(--ps-motion-micro) var(--ps-ease-out);
+}
+
+.ps-glass-card[data-tone="dark"] {
+    --ps-card-background: var(--ps-glass-dark-card-bg);
+    --ps-card-border: var(--ps-glass-border-dark);
+    --ps-card-color: var(--ps-color-text-on-dark);
+    --ps-card-muted: var(--ps-color-text-muted-dark);
+}
+
+.ps-glass-card::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--ps-card-accent);
+    opacity: 0.72;
+}
+
+.ps-glass-card.is-interactive {
+    cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ps-glass-card.is-interactive:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--ps-card-accent) 48%, var(--ps-card-border));
+    }
+}
+
+.ps-glass-card.is-interactive:focus-visible,
+.ps-glass-card:focus-within {
+    outline: 3px solid var(--ps-color-focus);
+    outline-offset: 4px;
+    box-shadow: var(--ps-card-shadow), var(--ps-shadow-focus);
+}
+
+.ps-glass-card__eyebrow {
+    margin: 0 0 var(--ps-space-3);
+    color: var(--ps-card-accent);
+    font-family: var(--ps-font-ui);
+    font-size: var(--ps-type-label);
+    font-weight: 800;
+    letter-spacing: var(--ps-tracking-label);
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.ps-glass-card__title {
+    margin: 0;
+    color: var(--ps-card-color);
+    font-family: var(--ps-font-ui);
+    font-size: var(--ps-type-heading-ui);
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    line-height: var(--ps-leading-heading);
+    text-wrap: balance;
+}
+
+.ps-glass-card__description {
+    max-width: 65ch;
+    margin: var(--ps-space-3) 0 0;
+    color: var(--ps-card-muted);
+    font-family: var(--ps-font-ui);
+    font-size: var(--ps-type-body);
+    line-height: var(--ps-leading-body);
+}
+
+.ps-glass-card__content {
+    margin-top: var(--ps-space-6);
+    color: var(--ps-card-color);
+    font-family: var(--ps-font-ui);
+}
+
+.ps-glass-card--hero {
+    --ps-card-background: var(--ps-glass-light-hero-bg);
+    --ps-card-radius: var(--ps-radius-hero);
+    --ps-card-blur: var(--ps-glass-blur-hero);
+    --ps-card-shadow: var(--ps-shadow-hero);
+    --ps-card-padding: clamp(var(--ps-space-8), 5vw, var(--ps-space-16));
+    --ps-card-accent: var(--ps-color-accent-pink);
+}
+
+.ps-glass-card--hero[data-tone="dark"] {
+    --ps-card-background: var(--ps-glass-dark-hero-bg);
+}
+
+.ps-glass-card--hero .ps-glass-card__title {
+    font-family: var(--ps-font-display);
+    font-size: var(--ps-type-title-card);
+    font-weight: 700;
+    letter-spacing: var(--ps-tracking-display);
+}
+
+.ps-glass-card--feature {
+    --ps-card-radius: var(--ps-radius-feature);
+    --ps-card-accent: var(--ps-color-accent-blue);
+}
+
+.ps-glass-card--feed {
+    --ps-card-background: rgb(255 255 255 / 72%);
+    --ps-card-radius: 1.375rem;
+    --ps-card-blur: 1rem;
+    --ps-card-accent: var(--ps-color-accent-cyan);
+}
+
+.ps-glass-card--ai {
+    --ps-card-accent: var(--ps-color-ai);
+    --ps-card-shadow: var(--ps-shadow-ai);
+}
+
+.ps-glass-card--ai::after {
+    content: "AI synthesis";
+    position: absolute;
+    top: var(--ps-space-4);
+    right: var(--ps-space-4);
+    padding: var(--ps-space-1) var(--ps-space-3);
+    color: var(--ps-card-color);
+    background: color-mix(in srgb, var(--ps-card-accent) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ps-card-accent) 42%, transparent);
+    border-radius: var(--ps-radius-pill);
+    font-family: var(--ps-font-ui);
+    font-size: var(--ps-type-label);
+    font-weight: 750;
+}
+
+.ps-glass-card--evidence {
+    --ps-card-accent: var(--ps-color-evidence);
+    --ps-card-shadow: var(--ps-shadow-evidence);
+}
+
+.ps-glass-card--evidence::before {
+    inset: 0 0 auto;
+    width: auto;
+    height: 3px;
+}
+
+.ps-glass-card--compact {
+    --ps-card-background: var(--ps-glass-light-control-bg);
+    --ps-card-radius: var(--ps-radius-compact);
+    --ps-card-blur: var(--ps-glass-blur-control);
+    --ps-card-shadow: var(--ps-shadow-control);
+    --ps-card-padding: var(--ps-space-4);
+    --ps-card-accent: var(--ps-color-accent-blue);
+}
+
+.ps-glass-card--compact[data-tone="dark"] {
+    --ps-card-background: var(--ps-glass-dark-control-bg);
+}
+
+.ps-glass-card--compact .ps-glass-card__description,
+.ps-glass-card--compact .ps-glass-card__content {
+    margin-top: var(--ps-space-2);
+}
+
+@media (max-width: 767px) {
+    .ps-glass-card {
+        --ps-card-padding: var(--ps-space-6);
+    }
+
+    .ps-glass-card--hero {
+        --ps-card-padding: var(--ps-space-8);
+    }
+
+    .ps-glass-card--ai::after {
+        position: static;
+        display: inline-flex;
+        margin-bottom: var(--ps-space-4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ps-glass-card {
+        transition: none;
+    }
+
+    .ps-glass-card.is-interactive:hover {
+        transform: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .ps-glass-card {
+        background: Canvas;
+        border-color: CanvasText;
+        color: CanvasText;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    .ps-glass-card::before {
+        background: Highlight;
+    }
+}
