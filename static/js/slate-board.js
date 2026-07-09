@@ -20,7 +20,12 @@
 
     function applyMode(mode) {
         board.dataset.boardMode = mode;
-        localStorage.setItem(MODE_KEY, mode);
+        // Guarded like saveEntries below: some browsers throw on any
+        // localStorage access, and an unhandled throw here (applyMode runs
+        // at init) would kill the whole file — compose wiring included.
+        try {
+            localStorage.setItem(MODE_KEY, mode);
+        } catch (e) { /* mode still applies this visit */ }
         modeButtons.forEach(function (btn) {
             var active = btn.dataset.boardMode === mode;
             btn.classList.toggle('is-active', active);
@@ -32,7 +37,10 @@
         btn.addEventListener('click', function () { applyMode(btn.dataset.boardMode); });
     });
 
-    var savedMode = localStorage.getItem(MODE_KEY);
+    var savedMode = null;
+    try {
+        savedMode = localStorage.getItem(MODE_KEY);
+    } catch (e) { /* storage blocked — fall through to the default */ }
     applyMode(savedMode === 'chalk' ? 'chalk' : 'white');
 
     // ---- 2. working "Chalk It Up" compose ----
@@ -75,6 +83,10 @@
     // (no card exists yet to link to) plus a tiny eraser button that
     // appears on hover. textContent keeps typed input inert.
     function inkEntry(entry) {
+        // Only accept well-formed entries with a known section key. Stored
+        // data can drift or be hand-edited, and an unexpected section value
+        // would otherwise be interpolated into the querySelector below.
+        if (!entry || typeof entry.text !== 'string' || !SECTION_COLORS[entry.section]) { return; }
         var list = document.querySelector('.wb-section[data-wb="' + entry.section + '"] .wb-list');
         if (!list) { return; }
 

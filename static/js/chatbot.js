@@ -48,10 +48,19 @@ function initializeChatbot() {
     // success. Turns HTTP error statuses into friendlyError messages so
     // callers always get a sentence they can display, not a raw status code.
     function requestChatReply(text) {
+        // Abort after 45s so a hung request can't leave the chat input
+        // disabled forever — the error path below re-enables it.
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = controller ? setTimeout(function () { controller.abort(); }, 45000) : null;
+
         return fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
+            body: JSON.stringify({ message: text }),
+            signal: controller ? controller.signal : undefined
+        })
+        .finally(function () {
+            if (timer) { clearTimeout(timer); }
         })
         .then(function(response) {
             return response.json()
@@ -129,7 +138,7 @@ function initializeChatbot() {
     // -------------------------------------------------------
 
     const pageAskAnchor = document.querySelector(
-        '.ps-askbar, .profile-tabs__ask, .resume-ai-panel, .story-hero__ai, .page-ai-after-hero, .ct-ai, .hero-ai-panel, .bd-assistant'
+        '.ps-askbar, .resume-ai-panel, .story-hero__ai, .page-ai-after-hero, .ct-ai, .hero-ai-panel, .bd-assistant'
     );
 
     if (toggle) {

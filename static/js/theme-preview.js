@@ -19,8 +19,26 @@
     const defaultTheme = 'slate-light';
     const storageKey = 'peerslateTheme';
     const themeButtons = document.querySelectorAll('[data-theme-option]');
-    const profileTabLinks = document.querySelectorAll('.profile-tab[href*="#"]');
-    const allProfileTabs = document.querySelectorAll('.profile-tab');
+
+    // Some browsers throw on ANY localStorage access (Chrome with site data
+    // blocked, some private modes). Without these guards a single throw here
+    // would kill this whole file — and the theme picker with it — site-wide.
+    function readSavedTheme() {
+        try {
+            return localStorage.getItem(storageKey);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function saveTheme(themeName) {
+        try {
+            localStorage.setItem(storageKey, themeName);
+        } catch (error) {
+            // Storage unavailable: the theme still applies for this visit,
+            // it just won't persist to the next one.
+        }
+    }
 
     function applyTheme(themeName) {
         const isHomepage = document.body.classList.contains('peerslate-home-page');
@@ -69,7 +87,7 @@
         document.body.dataset.slatePhoto = useStone ? 'on' : 'off';
         document.body.dataset.surfaceSlate = surfaceSlate ? 'on' : 'off';
 
-        localStorage.setItem(storageKey, themeName);
+        saveTheme(themeName);
 
         themeButtons.forEach(function (button) {
             const isActive = button.dataset.themeOption === themeName;
@@ -78,7 +96,7 @@
         });
     }
 
-    const savedTheme = localStorage.getItem(storageKey);
+    const savedTheme = readSavedTheme();
     const savedThemeExists = Array.prototype.some.call(
         themeButtons,
         function (button) { return button.dataset.themeOption === savedTheme; }
@@ -120,41 +138,4 @@
             }
         });
     }
-
-    profileTabLinks.forEach(function (link) {
-        link.addEventListener('click', function (event) {
-            const targetId = link.hash ? link.hash.slice(1) : '';
-            const target = targetId ? document.getElementById(targetId) : null;
-
-            if (!target) {
-                return;
-            }
-
-            event.preventDefault();
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-    });
-
-    function updateProfileTabFromHash() {
-        if (!window.location.hash) {
-            return;
-        }
-
-        const matchingTab = Array.prototype.find.call(
-            allProfileTabs,
-            function (tab) { return tab.hash === window.location.hash; }
-        );
-
-        if (!matchingTab) {
-            return;
-        }
-
-        allProfileTabs.forEach(function (tab) {
-            tab.removeAttribute('aria-current');
-        });
-        matchingTab.setAttribute('aria-current', 'page');
-    }
-
-    updateProfileTabFromHash();
-    window.addEventListener('hashchange', updateProfileTabFromHash);
 })();

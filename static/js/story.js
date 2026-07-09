@@ -36,7 +36,12 @@
         try {
             var raw = localStorage.getItem(STORAGE_KEY);
             var goals = raw ? JSON.parse(raw) : [];
-            return Array.isArray(goals) ? goals : [];
+            if (!Array.isArray(goals)) { return []; }
+            // Drop malformed entries (schema drift / hand-edited storage) so
+            // one bad element can't throw inside the render loop below.
+            return goals.filter(function (goal) {
+                return goal && typeof goal === 'object' && typeof goal.title === 'string';
+            });
         } catch (err) {
             return [];
         }

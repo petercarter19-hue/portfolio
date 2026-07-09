@@ -324,7 +324,9 @@
                                 and get a concise answer tied back to the portfolio.
                             </p>
                             <div class="work-ai-actions">
-                                <button class="cine-btn cine-btn--primary" type="button" data-open-chat data-chat-open>
+                                {# data-chat-open only: carrying data-open-chat too made BOTH chatbot.js
+                                   and mobile-nav.js handle one click (a latent double-toggle). #}
+                                <button class="cine-btn cine-btn--primary" type="button" data-chat-open>
                                     Try Ask Pete AI
                                 </button>
                                 <a class="cine-btn cine-btn--ghost" href="{{ portfolio_home_url }}#ask-pete">

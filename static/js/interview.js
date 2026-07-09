@@ -74,6 +74,11 @@
 
     function pickQuestion() {
         const candidates = pool().filter(function (q) { return q !== current; });
+        if (!candidates.length) {
+            // Pool has only the current question (or is empty): repeat it
+            // rather than returning undefined, which made Next silently no-op.
+            return current || pool()[0];
+        }
         return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
@@ -131,17 +136,27 @@
 
     // ---------- AI plumbing (same endpoint as Ask Pete AI) ----------
     function askCoach(message) {
+        // Abort after 45s so a hung request can't leave the buttons locked
+        // forever (the callers re-enable them in .finally / on error).
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = controller ? setTimeout(function () { controller.abort(); }, 45000) : null;
+
         return fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: message })
+            body: JSON.stringify({ message: message }),
+            signal: controller ? controller.signal : undefined
         }).then(function (response) {
-            return response.json().then(function (data) {
+            // A proxy/server error page isn't JSON — fall back to {} so the
+            // visitor sees the friendly message below, not a raw SyntaxError.
+            return response.json().catch(function () { return {}; }).then(function (data) {
                 if (!response.ok) {
                     throw new Error(data.error || 'The coach is unavailable right now.');
                 }
                 return data.response || data.error || 'The coach is unavailable right now.';
             });
+        }).finally(function () {
+            if (timer) { clearTimeout(timer); }
         });
     }
 

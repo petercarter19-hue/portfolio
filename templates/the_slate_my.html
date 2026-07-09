@@ -183,7 +183,10 @@
                                     <span class="ts-faces" aria-hidden="true"><i>V</i><i>M</i><i>S</i></span>
                                     <small>+6</small>
                                     <span class="ts-vis ts-vis--public">Public</span>
-                                    <a class="ts-goal__path" href="{{ url_for('the_slate_paths') }}">PMP Path &rarr;</a>
+                                    {# Paths merged into this page (2026-07-08): link to the My Paths
+                                       section below instead of the old Paths tab, whose URL now just
+                                       302-redirects straight back to this page. #}
+                                    <a class="ts-goal__path" href="#ts-mypaths">PMP Path &rarr;</a>
                                 </footer>
                             </article>
 
@@ -203,7 +206,7 @@
                                     <span class="ts-faces" aria-hidden="true"><i>A</i><i>S</i><i>K</i></span>
                                     <small>+7</small>
                                     <span class="ts-vis ts-vis--public">Public</span>
-                                    <a class="ts-goal__path" href="{{ url_for('the_slate_paths') }}">Path &rarr;</a>
+                                    <a class="ts-goal__path" href="#ts-mypaths">Path &rarr;</a>
                                 </footer>
                             </article>
 
