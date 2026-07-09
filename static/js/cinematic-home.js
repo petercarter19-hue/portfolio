@@ -59,10 +59,11 @@
     var layers = Array.prototype.slice.call(
         document.querySelectorAll('.cinematic-home [data-parallax]')
     ).filter(function (bg) {
-        // Your Work and Your Story are continuous chapters: their fixed
-        // backdrops stay still (a transformed fixed background detaches)
-        // while the foreground text and cards do the motion.
-        return !bg.closest('.cinematic-section--work, .cinematic-section--story');
+        // Your Work is one continuous stage: keep its mountain backdrop
+        // still (a transformed fixed background detaches) while the
+        // foreground text and cards do the motion. Every other scene —
+        // including Your Story — drifts normally.
+        return !bg.closest('.cinematic-section--work');
     });
     var horizontalSections = Array.prototype.slice.call(
         document.querySelectorAll('.cinematic-home [data-cine-horizontal]')
@@ -81,9 +82,6 @@
     };
     var parallaxOn = false;
     var ticking = false;
-    var verticalSnapLock = false;
-    var verticalSnapAnimation = null;
-    var VERTICAL_SNAP_DURATION_MS = 1750;
 
     function clamp01(value) {
         return Math.max(0, Math.min(1, value));
@@ -92,147 +90,6 @@
     function smoothStep(value) {
         value = clamp01(value);
         return value * value * (3 - 2 * value);
-    }
-
-    function animateVerticalSnap(targetY) {
-        if (verticalSnapAnimation) {
-            window.cancelAnimationFrame(verticalSnapAnimation);
-        }
-
-        var startY = window.scrollY;
-        var distance = targetY - startY;
-        var startTime = window.performance.now();
-
-        function step(now) {
-            var elapsed = now - startTime;
-            var progress = smoothStep(elapsed / VERTICAL_SNAP_DURATION_MS);
-
-            window.scrollTo(0, startY + distance * progress);
-
-            if (progress < 1) {
-                verticalSnapAnimation = window.requestAnimationFrame(step);
-                return;
-            }
-
-            verticalSnapAnimation = null;
-            verticalSnapLock = false;
-        }
-
-        verticalSnapLock = true;
-        verticalSnapAnimation = window.requestAnimationFrame(step);
-    }
-
-    function pageTop(el) {
-        return el ? el.getBoundingClientRect().top + window.scrollY : null;
-    }
-
-    function pushSnapPoint(points, id, y) {
-        if (typeof y !== 'number' || !isFinite(y)) { return; }
-        points.push({
-            id: id,
-            y: Math.max(0, Math.round(y))
-        });
-    }
-
-    function buildVerticalSnapPoints() {
-        var points = [];
-        var vh = window.innerHeight || 1;
-        var work = document.getElementById('your-work');
-        var ai = document.getElementById('work-ai');
-        var proof = document.getElementById('work-proof');
-        var story = document.getElementById('your-story');
-        var storyLive = document.getElementById('story-live');
-        var storyDepth = document.getElementById('story-depth');
-        var future = document.getElementById('your-future');
-        var together = document.getElementById('together');
-
-        pushSnapPoint(points, 'top', 0);
-        pushSnapPoint(points, 'work', pageTop(work));
-
-        if (ai) {
-            var aiTop = pageTop(ai);
-            var aiTravel = Math.max(1, ai.offsetHeight - vh);
-            pushSnapPoint(points, 'ask', aiTop);
-            pushSnapPoint(points, 'interview', aiTop + aiTravel * 0.16);
-        }
-
-        if (proof) {
-            var proofTop = pageTop(proof);
-            var proofTravel = Math.max(1, proof.offsetHeight - vh);
-            pushSnapPoint(points, 'skills', proofTop);
-            pushSnapPoint(points, 'timeline', proofTop + proofTravel * 0.16);
-        }
-
-        pushSnapPoint(points, 'story', pageTop(story));
-
-        // The story chapter mirrors the work chapter: each horizontal
-        // stage gets two stops — panel one, then the slid-in panel two.
-        if (storyLive) {
-            var liveTop = pageTop(storyLive);
-            var liveTravel = Math.max(1, storyLive.offsetHeight - vh);
-            pushSnapPoint(points, 'story-board', liveTop);
-            pushSnapPoint(points, 'story-daily', liveTop + liveTravel * 0.16);
-        }
-
-        if (storyDepth) {
-            var depthTop = pageTop(storyDepth);
-            var depthTravel = Math.max(1, storyDepth.offsetHeight - vh);
-            pushSnapPoint(points, 'story-life', depthTop);
-            pushSnapPoint(points, 'story-values', depthTop + depthTravel * 0.16);
-        }
-
-        pushSnapPoint(points, 'future', pageTop(future));
-        pushSnapPoint(points, 'together', pageTop(together));
-
-        return points.sort(function (a, b) { return a.y - b.y; });
-    }
-
-    function shouldSkipVerticalSnap(event) {
-        if (
-            reduceMotion.matches ||
-            window.innerWidth <= 760 ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.shiftKey ||
-            Math.abs(event.deltaY) < 8
-        ) {
-            return true;
-        }
-
-        if (
-            event.target.closest('input, textarea, select, button, [contenteditable="true"], #chat-panel')
-        ) {
-            return true;
-        }
-
-        return false;
-    }
-
-    function onVerticalSnapWheel(event) {
-        if (shouldSkipVerticalSnap(event) || verticalSnapLock) { return; }
-
-        var points = buildVerticalSnapPoints();
-        if (points.length < 2) { return; }
-
-        var y = window.scrollY;
-        var target = null;
-
-        if (event.deltaY > 0) {
-            target = points.find(function (point) { return point.y > y + 42; }) || points[points.length - 1];
-        } else {
-            for (var i = points.length - 1; i >= 0; i -= 1) {
-                if (points[i].y < y - 42) {
-                    target = points[i];
-                    break;
-                }
-            }
-            target = target || points[0];
-        }
-
-        if (!target || Math.abs(target.y - y) < 8) { return; }
-
-        event.preventDefault();
-        animateVerticalSnap(target.y);
     }
 
     function scheduleExampleSwap(kind, shouldRun) {
@@ -379,7 +236,6 @@
         parallaxOn = true;
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('resize', onScroll);
-        window.addEventListener('wheel', onVerticalSnapWheel, { passive: false });
         applyParallax();
     }
 
@@ -388,8 +244,6 @@
         parallaxOn = false;
         window.removeEventListener('scroll', onScroll);
         window.removeEventListener('resize', onScroll);
-        window.removeEventListener('wheel', onVerticalSnapWheel);
-        verticalSnapLock = false;
         layers.forEach(function (bg) { bg.style.transform = ''; });
         horizontalSections.forEach(function (section) {
             section.style.removeProperty('--work-ai-stage-opacity');
