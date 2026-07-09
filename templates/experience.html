@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-1"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-ai-11"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -111,9 +111,9 @@
         <div class="section-content">
             <p class="section-eyebrow cine-fade" style="--fade-i: 0;">Introducing PeerSlate</p>
             <h1 class="cinematic-hero__title">
-                <span class="cine-fade" style="--fade-i: 1;">Your work.</span>
-                <span class="cine-fade" style="--fade-i: 2;">Your story.</span>
-                <span class="cine-fade" style="--fade-i: 3;">Your future.</span>
+                <span class="cine-fade" style="--fade-i: 1;">Your Work.</span>
+                <span class="cine-fade" style="--fade-i: 2;">Your Story.</span>
+                <span class="cine-fade" style="--fade-i: 3;">Your Future.</span>
             </h1>
             <p class="section-subtitle cinematic-hero__lead cine-fade" style="--fade-i: 4;">
                 PeerSlate is your all-in-one platform to plan, build, connect,
@@ -136,9 +136,12 @@
     {# ==============================================================
        2 · YOUR WORK — bright mountain sunrise. Professional presence.
        ============================================================== #}
-    {{ cine_section('your-work', 'cinematic-section--work cinematic-section--curved',
+    <div class="cinematic-work-chapter" aria-label="Your Work chapter">
+        <div class="work-chapter-bg" aria-hidden="true"></div>
+
+    {{ cine_section('your-work', 'cinematic-section--work cinematic-section--work-main',
         'Chapter 01 · Showcase',
-        'Your work.',
+        'Your Work.',
         'Build your professional presence. Showcase your experience, skills, projects, and results that matter.',
         [
             ('projects',   'Projects',           'Show your work and achievements.'),
@@ -148,11 +151,266 @@
         ]) }}
 
     {# ==============================================================
+       2B - ASK PETE AI / INTERVIEW ME - same mountain-sunrise world
+       as Your Work, but with a sticky horizontal handoff: Ask Pete AI
+       glides left while Interview Me arrives from the right.
+       ============================================================== #}
+    <section class="cinematic-section cinematic-section--work cinematic-section--work-ai"
+             id="work-ai"
+             aria-labelledby="work-ai-title"
+             data-cine-horizontal>
+        <div class="section-bg" data-parallax aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+
+        <div class="work-ai-stage">
+            <div class="work-ai-copy reveal">
+                <p class="section-eyebrow">Your Work &middot; Ask + Practice</p>
+                <h2 class="section-title" id="work-ai-title">Ask the Work. Practice the Answer.</h2>
+                <p class="section-subtitle">
+                    After the portfolio shows the work, PeerSlate helps visitors question it,
+                    verify it, and practice the interview story behind it.
+                </p>
+            </div>
+
+            <div class="work-ai-window reveal" style="--reveal-i: 3;" aria-label="Ask Pete AI and Interview Me preview">
+                <div class="work-ai-track" data-work-ai-track>
+                    <article class="work-ai-panel work-ai-panel--ask" aria-label="Ask Pete AI preview">
+                        <div class="work-ai-panel__lead">
+                            <p class="work-ai-kicker">Ask Pete AI</p>
+                            <h3>Recruiter-Ready Answers, Grounded in Approved Evidence.</h3>
+                            <p>
+                                Visitors can ask about Pete's experience, skills, projects, or results
+                                and get a concise answer tied back to the portfolio.
+                            </p>
+                            <div class="work-ai-actions">
+                                <button class="cine-btn cine-btn--primary" type="button" data-open-chat data-chat-open>
+                                    Try Ask Pete AI
+                                </button>
+                                <a class="cine-btn cine-btn--ghost" href="{{ portfolio_home_url }}#ask-pete">
+                                    View on Slate
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="work-ai-demo-stack" aria-label="Example Ask Pete AI responses">
+                            <div class="work-ai-example work-ai-example--primary">
+                                <div class="work-ai-question">
+                                    <span>Visitor question</span>
+                                    <strong>Can you summarize Pete's systems engineering impact?</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Evidence-grounded answer</span>
+                                    <p>
+                                        Pete has delivered measurable sustainment and systems-engineering impact,
+                                        including reducing critical MICAPs from 16 to 0 and improving repair and
+                                        test turnaround by 70% through coordinated engineering, depot, and
+                                        supply-chain action.
+                                    </p>
+                                </div>
+                                <div class="work-ai-proof-strip" aria-label="Supporting evidence examples">
+                                    <span>16 to 0 MICAPs</span>
+                                    <span>70% repair/test improvement</span>
+                                    <span>C-130 sustainment</span>
+                                </div>
+                            </div>
+                            <div class="work-ai-example work-ai-example--alt">
+                                <div class="work-ai-question">
+                                    <span>Visitor question</span>
+                                    <strong>What proof supports Pete's MBSE and requirements experience?</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Evidence-grounded answer</span>
+                                    <p>
+                                        Pete built Cameo SysML models with logical and physical architecture,
+                                        imported requirements, profiles, tables, BDDs, IBDs, and activity diagrams,
+                                        while also linking requirements decomposition and traceability work in DOORS.
+                                    </p>
+                                </div>
+                                <div class="work-ai-proof-strip" aria-label="Supporting evidence examples">
+                                    <span>Cameo SysML model</span>
+                                    <span>DOORS traceability</span>
+                                    <span>MBSE architecture</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="work-ai-panel work-ai-panel--interview" aria-label="Interview Me preview">
+                        <div class="work-ai-panel__lead">
+                            <p class="work-ai-kicker">Interview Me</p>
+                            <h3>Turn the Same Proof Into a Practiced Interview Story.</h3>
+                            <p>
+                                The interview studio helps Pete rehearse answers with numbers, context,
+                                and a clear result before an employer asks the question live.
+                            </p>
+                            <div class="work-ai-actions">
+                                <a class="cine-btn cine-btn--primary" href="{{ portfolio_url('interview-me') }}">
+                                    Open Interview Me
+                                </a>
+                                <a class="cine-btn cine-btn--ghost" href="{{ portfolio_url('interview-me') }}">
+                                    Practice a STAR answer
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="work-ai-demo-stack work-ai-demo-stack--interview" aria-label="Example Interview Me coaching">
+                            <div class="work-ai-example work-ai-example--primary">
+                                <div class="work-ai-question">
+                                    <span>Practice question</span>
+                                    <strong>Tell me about a time you improved reliability for a complex system.</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Answer focus</span>
+                                    <p>
+                                        Lead with the result, explain the cross-functional coordination, then close
+                                        with the mission outcome: fewer constraints, faster repairs, and clearer
+                                        accountability.
+                                    </p>
+                                </div>
+                                <div class="work-ai-score-row" aria-label="Interview answer strengths">
+                                    <span><strong>92</strong> Strong answer</span>
+                                    <span>Clear result</span>
+                                    <span>Evidence-backed</span>
+                                </div>
+                            </div>
+                            <div class="work-ai-example work-ai-example--alt">
+                                <div class="work-ai-question">
+                                    <span>Practice question</span>
+                                    <strong>How would you explain your MBSE experience to a hiring manager?</strong>
+                                </div>
+                                <div class="work-ai-answer">
+                                    <span>Answer focus</span>
+                                    <p>
+                                        Connect the tool work to engineering judgment: requirements, architecture,
+                                        traceability, and model views that help teams understand system behavior
+                                        before decisions become expensive.
+                                    </p>
+                                </div>
+                                <div class="work-ai-score-row" aria-label="Interview answer strengths">
+                                    <span><strong>89</strong> Strong answer</span>
+                                    <span>Plain-English MBSE</span>
+                                    <span>Evidence-backed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ==============================================================
        3 · YOUR STORY — bright pink cloud field. The personal journey.
+       ============================================================== #}
+    {# ==============================================================
+       2C - SKILLS / TIMELINE - a second Your Work proof chapter.
+       It uses the Your Story clouds as the stationary backdrop, then
+       moves from skills evidence into Pete's experience timeline.
+       ============================================================== #}
+    <section class="cinematic-section cinematic-section--work cinematic-section--work-proof"
+             id="work-proof"
+             aria-labelledby="work-proof-title"
+             data-work-proof>
+        <div class="section-bg" data-parallax aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+
+        <div class="work-proof-stage">
+            <div class="work-proof-copy reveal">
+                <p class="section-eyebrow">Your Work &middot; Evidence</p>
+                <h2 class="section-title" id="work-proof-title">Skills Backed by Proof.</h2>
+                <p class="section-subtitle">
+                    The same work can be explored by capability, evidence, and career timeline,
+                    with small skill cards that reveal the proof behind Pete's experience.
+                </p>
+            </div>
+
+            <div class="work-proof-window reveal" style="--reveal-i: 3;" aria-label="Skills evidence and experience timeline preview">
+                <div class="work-proof-track">
+                    <article class="work-proof-panel work-proof-panel--skills" aria-label="Skills and Evidence preview">
+                        <div class="work-proof-panel__lead">
+                            <p class="work-ai-kicker">Skills &amp; Evidence</p>
+                            <h3>Small Signals. Real Proof.</h3>
+                            <p>
+                                Skills stay compact like the current PeerSlate homepage, while evidence
+                                quietly appears when a card flips over.
+                            </p>
+                        </div>
+
+                        <div class="work-skills-mini" aria-label="PeerSlate homepage skill examples">
+                            <article class="work-skill-chip work-skill-chip--flip">
+                                <div class="work-skill-chip__inner">
+                                    <div class="work-skill-chip__face work-skill-chip__front">
+                                        <span>Systems Engineering</span><strong>17</strong>
+                                    </div>
+                                    <div class="work-skill-chip__face work-skill-chip__back">
+                                        <span>Reduced MICAPs from 16 to 0 and improved repair/test turnaround by 70%.</span>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="work-skill-chip"><span>Project Management</span><strong>21</strong></article>
+                            <article class="work-skill-chip"><span>Cameo</span><strong>2</strong></article>
+                            <article class="work-skill-chip work-skill-chip--flip work-skill-chip--delay">
+                                <div class="work-skill-chip__inner">
+                                    <div class="work-skill-chip__face work-skill-chip__front">
+                                        <span>MBSE</span><strong>2</strong>
+                                    </div>
+                                    <div class="work-skill-chip__face work-skill-chip__back">
+                                        <span>Built Cameo SysML views with requirements, profiles, tables, BDDs, IBDs, and activity diagrams.</span>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="work-skill-chip"><span>AI</span><strong>1</strong></article>
+                            <article class="work-skill-chip"><span>Data Analytics</span><strong>2</strong></article>
+                            <article class="work-skill-chip"><span>Requirements Management</span><strong>11</strong></article>
+                            <article class="work-skill-chip"><span>Leadership</span><strong>21</strong></article>
+                            <article class="work-skill-chip"><span>Sustainment</span><strong>25</strong></article>
+                            <article class="work-skill-chip"><span>Integrated Logistics Support</span><strong>6</strong></article>
+                        </div>
+                    </article>
+
+                    <article class="work-proof-panel work-proof-panel--timeline" aria-label="Experience Timeline preview">
+                        <div class="work-proof-panel__lead">
+                            <p class="work-ai-kicker">Experience Timeline</p>
+                            <h3>The Career Arc, Made Scannable.</h3>
+                            <p>
+                                The timeline connects roles, measurable outcomes, and supporting evidence
+                                so the story feels concrete instead of generic.
+                            </p>
+                        </div>
+
+                        <div class="work-timeline-mini" aria-label="Pete Carter experience timeline">
+                            <article class="work-timeline-card">
+                                <span>2021 - 2024</span>
+                                <h4>Department of Defense</h4>
+                                <p>Systems Engineer supporting sustainment, modernization, contracting, and mission readiness.</p>
+                                <div><strong>16 to 0 MICAPs</strong><strong>70% faster repair/test flow</strong></div>
+                            </article>
+                            <article class="work-timeline-card">
+                                <span>2024 - 2025</span>
+                                <h4>L3Harris</h4>
+                                <p>Systems Effectiveness Engineer connecting sustainment, provisioning, MBSE, and CAM execution.</p>
+                                <div><strong>Cameo</strong><strong>MBSE</strong><strong>$9.1M CAM</strong></div>
+                            </article>
+                            <article class="work-timeline-card">
+                                <span>2025 - Present</span>
+                                <h4>Northrop Grumman</h4>
+                                <p>Systems Engineer focused on requirements, architecture, traceability, and technical execution.</p>
+                                <div><strong>DOORS</strong><strong>Requirements</strong><strong>Systems engineering</strong></div>
+                            </article>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    {# ==============================================================
+       3 - YOUR STORY - bright pink cloud field. The personal journey.
        ============================================================== #}
     {{ cine_section('your-story', 'cinematic-section--story cinematic-section--curved',
         'Chapter 02 · Reflect',
-        'Your story.',
+        'Your Story.',
         'Document your journey. Capture the moments, milestones, and lessons that have shaped who you are.',
         [
             ('journal',    'Journal',    'Write and reflect on your experiences.'),
@@ -166,7 +424,7 @@
        ============================================================== #}
     {{ cine_section('your-future', 'cinematic-section--future cinematic-section--curved',
         'Chapter 03 · Achieve',
-        'Your future.',
+        'Your Future.',
         'Plan intentionally. Set goals, track progress, and turn your vision into real-world achievement.',
         [
             ('goals',    'Goals',    'Define what you want to achieve.'),
@@ -181,7 +439,7 @@
        ============================================================== #}
     {% call cine_section('together', 'cinematic-section--together cinematic-section--curved cinematic-section--dark',
         'Chapter 04 · Connect',
-        'Let’s build this together.',
+        'Let’s Build This Together.',
         'Connect with like-minded people, collaborate on ideas, and create something extraordinary.',
         [
             ('community',   'Community',   'Connect with people who get it.'),
@@ -199,5 +457,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-1"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-ai-11"></script>
 {% endblock %}
