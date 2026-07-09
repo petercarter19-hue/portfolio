@@ -126,7 +126,10 @@ a {
 
 .ds-card-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* A card must keep roughly 320px of readable width before another
+       column is added. This avoids treating every 960px container as a
+       three-column desktop simply because three columns technically fit. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: var(--ps-space-6);
     align-items: start;
 }
@@ -259,15 +262,14 @@ a {
     font-size: var(--ps-type-label);
 }
 
-/* Large landscape tablets retain the full three-column desktop composition.
-   Only narrower portrait tablets reduce to two columns for readable cards. */
+/* Preview framing only. Component grids decide their own column count from
+   available readable width rather than from this viewport breakpoint. */
 @media (max-width: 959px) {
     .ds-hero,
     .ds-section {
         padding-inline: var(--ps-gutter-tablet);
     }
 
-    .ds-card-grid,
     .ds-token-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
