@@ -81,6 +81,8 @@
     var parallaxOn = false;
     var ticking = false;
     var verticalSnapLock = false;
+    var verticalSnapAnimation = null;
+    var VERTICAL_SNAP_DURATION_MS = 1750;
 
     function clamp01(value) {
         return Math.max(0, Math.min(1, value));
@@ -89,6 +91,34 @@
     function smoothStep(value) {
         value = clamp01(value);
         return value * value * (3 - 2 * value);
+    }
+
+    function animateVerticalSnap(targetY) {
+        if (verticalSnapAnimation) {
+            window.cancelAnimationFrame(verticalSnapAnimation);
+        }
+
+        var startY = window.scrollY;
+        var distance = targetY - startY;
+        var startTime = window.performance.now();
+
+        function step(now) {
+            var elapsed = now - startTime;
+            var progress = smoothStep(elapsed / VERTICAL_SNAP_DURATION_MS);
+
+            window.scrollTo(0, startY + distance * progress);
+
+            if (progress < 1) {
+                verticalSnapAnimation = window.requestAnimationFrame(step);
+                return;
+            }
+
+            verticalSnapAnimation = null;
+            verticalSnapLock = false;
+        }
+
+        verticalSnapLock = true;
+        verticalSnapAnimation = window.requestAnimationFrame(step);
     }
 
     function pageTop(el) {
@@ -182,15 +212,7 @@
         if (!target || Math.abs(target.y - y) < 8) { return; }
 
         event.preventDefault();
-        verticalSnapLock = true;
-        window.scrollTo({
-            top: target.y,
-            behavior: 'smooth'
-        });
-
-        window.setTimeout(function () {
-            verticalSnapLock = false;
-        }, 1150);
+        animateVerticalSnap(target.y);
     }
 
     function scheduleExampleSwap(kind, shouldRun) {
