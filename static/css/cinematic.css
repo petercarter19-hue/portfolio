@@ -137,12 +137,12 @@ body.cinematic-home-page .search-toggle {
     pointer-events: none;
 }
 
-/* Curved "cloud-like" divider: each scene after the hero rises into the
-   previous one as a soft dome, with a shadow that lifts it off the page. */
+/* Full-bleed scene divider: keep each resting section square so the
+   background fills all four viewport corners. */
 .cinematic-section--curved {
-    margin-top: calc(-1 * var(--cine-curve));
-    border-radius: 48% 48% 0 0 / var(--cine-curve) var(--cine-curve) 0 0;
-    box-shadow: 0 -26px 64px rgb(4 10 24 / 26%);
+    margin-top: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .cinematic-section .section-content {
@@ -481,9 +481,9 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 .cinematic-work-chapter {
     position: relative;
     z-index: 1;
-    margin-top: calc(-1 * var(--cine-curve));
-    border-radius: 48% 48% 0 0 / var(--cine-curve) var(--cine-curve) 0 0;
-    box-shadow: 0 -26px 64px rgb(4 10 24 / 26%);
+    margin-top: 0;
+    border-radius: 0;
+    box-shadow: none;
     overflow: visible;
 }
 
