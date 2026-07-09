@@ -1065,7 +1065,7 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 }
 
 .cinematic-section--work .section-bg {
-    background-image: url("../images/cinematic/work-mountain.jpg");
+    background-image: url("../images/cinematic/work-clouds.jpg");
     background-attachment: fixed;
     transform: none !important;
 }
@@ -1095,7 +1095,7 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
     margin-bottom: -100vh;
     margin-bottom: -100svh;
     pointer-events: none;
-    background-image: url("../images/cinematic/work-mountain.jpg");
+    background-image: url("../images/cinematic/work-clouds.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -2419,9 +2419,9 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
     }
 
     .cinematic-hero .section-bg { background-image: url("../images/cinematic/hero-aurora-m.jpg"); }
-    .work-chapter-bg { background-image: url("../images/cinematic/work-mountain-m.jpg"); }
+    .work-chapter-bg { background-image: url("../images/cinematic/work-clouds-m.jpg"); }
     .work-proof-bg { background-image: url("../images/cinematic/story-clouds-m.jpg"); }
-    .cinematic-section--work .section-bg { background-image: url("../images/cinematic/work-mountain-m.jpg"); }
+    .cinematic-section--work .section-bg { background-image: url("../images/cinematic/work-clouds-m.jpg"); }
     .cinematic-section--story .section-bg { background-image: url("../images/cinematic/story-sunset-bg-m.jpg"); }
     .cinematic-section--future .section-bg { background-image: url("../images/cinematic/future-valley-m.jpg"); }
     .cinematic-section--together .section-bg { background-image: url("../images/cinematic/together-sunset-m.jpg"); }
