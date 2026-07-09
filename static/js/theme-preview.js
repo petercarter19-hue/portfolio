@@ -25,32 +25,42 @@
     function applyTheme(themeName) {
         const isHomepage = document.body.classList.contains('peerslate-home-page');
 
+        // The cinematic /experience page is one fixed, self-contained design
+        // (everything is scoped under .cinematic-home-page). The theme picker
+        // must NEVER repaint it — every theme should look exactly like Light,
+        // including the frosted header — so we render it in the Light body
+        // state no matter which theme is chosen. We still save the choice
+        // below so the rest of the site honors the visitor's real theme.
+        const isCinematic = document.body.classList.contains('cinematic-home-page');
+
         // All three stone themes run the photo pipeline: gray-slate (Dark
         // Slate), stone-slate (Dark Slate Stone) and paper-slate (White Slate).
-        // Everything else is the flat Light look.
-        const useStone = themeName === 'gray-slate'
+        // Everything else is the flat Light look. The cinematic page opts out
+        // entirely (always Light).
+        const useStone = !isCinematic && (
+            themeName === 'gray-slate'
             || themeName === 'stone-slate'
-            || themeName === 'paper-slate';
+            || themeName === 'paper-slate');
 
         // "Surface slate": White Slate + Dark Slate Stone cut every card,
         // button and chip from the SAME fixed stone as the page, so nothing is
         // a flat panel. Plain Dark Slate keeps its flat cards. Never on the
-        // homepage (it has its own dark composition), which keeps the CSS
-        // scope to a plain body[data-surface-slate="on"].
-        const surfaceSlate = !isHomepage
+        // homepage or the cinematic page (both have their own composition).
+        const surfaceSlate = !isHomepage && !isCinematic
             && (themeName === 'stone-slate' || themeName === 'paper-slate');
 
         // The homepage has its own dark look gated on data-theme="gray-slate";
         // render Dark Slate Stone as gray-slate there so home styling applies
         // (the active-button highlight below still keys off the real themeName).
-        const renderedTheme = (isHomepage && themeName === 'stone-slate')
-            ? 'gray-slate'
-            : themeName;
+        // The cinematic page is pinned to the Light data-theme.
+        const renderedTheme = isCinematic
+            ? 'slate-light'
+            : ((isHomepage && themeName === 'stone-slate') ? 'gray-slate' : themeName);
         document.body.dataset.theme = renderedTheme;
 
-        // Light = the slate-light class (never on the homepage). Stone themes =
-        // the stone photo pipeline (data-slate / data-slate-photo).
-        if (!useStone && !isHomepage) {
+        // Light = the slate-light class (never on the homepage/cinematic page).
+        // Stone themes = the stone photo pipeline (data-slate / data-slate-photo).
+        if (!useStone && !isHomepage && !isCinematic) {
             document.body.classList.add('slate-light');
         } else {
             document.body.classList.remove('slate-light');
