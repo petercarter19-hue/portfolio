@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-story-2"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-story-3"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -152,165 +152,94 @@
             <h2 class="section-title reveal" id="your-work-title">Your Work.</h2>
             <p class="section-subtitle reveal">Build your professional presence. Showcase your experience, skills, projects, and results that matter.</p>
 
-            <div class="work-showcase-grid" aria-label="Your Work showcase cards">
+            <div class="story-card-grid" aria-label="Your Work cards">
 
-                {# --- 1 · Featured Projects ------------------------------------- #}
-                <article class="work-showcase-card work-showcase-card--projects reveal" style="--reveal-i: 0;">
-                    <span class="work-showcase-card__icon" aria-hidden="true">
+                {# --- 1 · Flagship Work (snow-peak photo) ---------------------- #}
+                <article class="story-card reveal" style="--reveal-i: 0; --card-img: url('{{ url_for('static', filename='images/cinematic/work-card-peak.jpg') }}');">
+                    <span class="story-card__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">{{ icons['projects']|safe }}</svg>
                     </span>
-                    <h3>Featured Projects</h3>
-                    <p>Showcase the projects that prove what you can do.</p>
-
-                    <div class="project-preview">
-                        <div class="project-preview__image" aria-hidden="true"></div>
-                        <div class="project-preview__body">
-                            <span>Featured</span>
-                            <strong>Systems Engineering &amp; Sustainment</strong>
-                            <small>MBSE-driven modernization program</small>
-                        </div>
-                    </div>
-                    <div class="showcase-tags" aria-label="Project technologies">
-                        <span>MBSE</span><span>Cameo</span><span>SysML</span><span>JIRA</span>
-                    </div>
-                    <div class="showcase-metrics" aria-label="Project outcomes">
-                        <span><strong>$36M</strong><small>Program Value</small></span>
-                        <span><strong>16 to 0</strong><small>MICAPs</small></span>
-                        <span><strong>70%</strong><small>Faster Repair/Test</small></span>
-                    </div>
-                    <a class="showcase-link" href="{{ portfolio_work_url }}">View All Projects <span aria-hidden="true">&rarr;</span></a>
+                    <h3 class="story-card__title">Flagship Work</h3>
+                    <p class="story-card__lead">The projects that rise above the rest.</p>
+                    <p class="story-card__desc">Featured systems-engineering and MBSE work &mdash; with outcomes you can measure.</p>
+                    <ul class="story-card__list">
+                        <li>Systems Engineering &amp; Sustainment</li>
+                        <li>MBSE / Cameo / SysML modeling</li>
+                        <li>$36M program value</li>
+                        <li>16 to 0 MICAPs &middot; 70% faster repair</li>
+                    </ul>
+                    <a class="story-card__foot" href="{{ portfolio_work_url }}">
+                        <span class="story-card__meta">Projects &middot; Outcomes &middot; Impact</span>
+                        <span class="story-card__go" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                    </a>
                 </article>
 
-                {# --- 2 · Skills Backed by Proof -------------------------------- #}
-                <article class="work-showcase-card work-showcase-card--skills reveal" style="--reveal-i: 1;">
-                    <span class="work-showcase-card__icon" aria-hidden="true">
+                {# --- 2 · Proven at the Peak (summit photo) -------------------- #}
+                <article class="story-card reveal" style="--reveal-i: 1; --card-img: url('{{ url_for('static', filename='images/cinematic/work-card-summit.jpg') }}');">
+                    <span class="story-card__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">{{ icons['skills']|safe }}</svg>
                     </span>
-                    <h3>Skills Backed by Proof</h3>
-                    <p>Highlight your skills and the evidence that validates them.</p>
-
-                    <div class="skills-panel">
-                        <div class="skills-panel__block">
-                            <span class="showcase-label">Top Skills</span>
-                            <div class="showcase-tags showcase-tags--dense" aria-label="Top skills">
-                                <span>MBSE</span><span>Systems Engineering</span><span>Requirements</span>
-                                <span>Verification &amp; Validation</span><span>Modeling (SysML)</span><span>Stakeholder Management</span>
-                            </div>
-                        </div>
-                        <div class="skills-panel__block">
-                            <span class="showcase-label">Evidence Preview</span>
-                            <div class="evidence-preview" aria-label="Evidence preview">
-                                <div class="evidence-preview__row">
-                                    <span class="evidence-thumb evidence-thumb--model" aria-hidden="true"></span>
-                                    <span class="evidence-preview__text">
-                                        <strong>System Architecture Model</strong>
-                                        <small>Cameo MBSE &middot; 24 Artifacts</small>
-                                    </span>
-                                    <span class="evidence-eye" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24">{{ icons['vision']|safe }}</svg>
-                                    </span>
-                                </div>
-                                <div class="evidence-preview__row">
-                                    <span class="evidence-thumb evidence-thumb--matrix" aria-hidden="true"></span>
-                                    <span class="evidence-preview__text">
-                                        <strong>Verification Matrix</strong>
-                                        <small>16 to 0 MICAPs</small>
-                                    </span>
-                                    <span class="evidence-eye" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24">{{ icons['vision']|safe }}</svg>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <a class="showcase-link" href="{{ portfolio_skills_url }}">Explore Skills <span aria-hidden="true">&rarr;</span></a>
+                    <h3 class="story-card__title">Proven at the Peak</h3>
+                    <p class="story-card__lead">Skills you can stand behind.</p>
+                    <p class="story-card__desc">The capabilities that hold up under pressure &mdash; and the evidence that backs them.</p>
+                    <ul class="story-card__list">
+                        <li>MBSE &amp; Systems Engineering</li>
+                        <li>Requirements &amp; Verification</li>
+                        <li>Cameo SysML &middot; DOORS traceability</li>
+                        <li>Leadership &amp; Sustainment</li>
+                    </ul>
+                    <a class="story-card__foot" href="{{ portfolio_skills_url }}">
+                        <span class="story-card__meta">Skills &middot; Evidence &middot; Proof</span>
+                        <span class="story-card__go" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                    </a>
                 </article>
 
-                {# --- 3 · Career Timeline --------------------------------------- #}
-                <article class="work-showcase-card work-showcase-card--timeline reveal" style="--reveal-i: 2;">
-                    <span class="work-showcase-card__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">{{ icons['progress']|safe }}</svg>
+                {# --- 3 · The Path So Far (winding-path photo) ----------------- #}
+                <article class="story-card reveal" style="--reveal-i: 2; --card-img: url('{{ url_for('static', filename='images/cinematic/work-card-path.jpg') }}');">
+                    <span class="story-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['route']|safe }}</svg>
                     </span>
-                    <h3>Career Timeline</h3>
-                    <p>See your journey, the roles you've held, and the impact you've made.</p>
-
-                    <ol class="timeline-preview" aria-label="Career timeline">
-                        <li class="timeline-preview__item">
-                            <div class="timeline-preview__head">
-                                <span class="timeline-preview__date">2025 &ndash; Present</span>
-                                <span class="timeline-preview__chip">MBSE + Requirements</span>
-                            </div>
-                            <strong>Systems Engineer</strong>
-                            <span class="timeline-preview__org">Northrop Grumman</span>
-                            <p>Requirements, architecture, and traceability across technical programs.</p>
-                        </li>
-                        <li class="timeline-preview__item">
-                            <div class="timeline-preview__head">
-                                <span class="timeline-preview__date">2024 &ndash; 2025</span>
-                                <span class="timeline-preview__chip">$9.1M CAM</span>
-                            </div>
-                            <strong>Systems Effectiveness Engineer</strong>
-                            <span class="timeline-preview__org">L3Harris</span>
-                            <p>Connected sustainment, provisioning, MBSE, and CAM execution.</p>
-                        </li>
-                        <li class="timeline-preview__item">
-                            <div class="timeline-preview__head">
-                                <span class="timeline-preview__date">2021 &ndash; 2024</span>
-                                <span class="timeline-preview__chip">16 to 0 MICAPs</span>
-                            </div>
-                            <strong>Systems Engineer</strong>
-                            <span class="timeline-preview__org">Department of Defense</span>
-                            <p>Drove sustainment, modernization, and mission-readiness gains.</p>
-                        </li>
-                    </ol>
-                    <a class="showcase-link" href="{{ portfolio_resume_url }}">View Full Timeline <span aria-hidden="true">&rarr;</span></a>
+                    <h3 class="story-card__title">The Path So Far</h3>
+                    <p class="story-card__lead">The route that built the work.</p>
+                    <p class="story-card__desc">Roles and milestones along the way &mdash; a career that keeps climbing.</p>
+                    <ul class="story-card__list">
+                        <li>Northrop Grumman &middot; 2025&ndash;Present</li>
+                        <li>L3Harris &middot; 2024&ndash;2025</li>
+                        <li>Department of Defense &middot; 2021&ndash;2024</li>
+                        <li>B.S. EE 2020 &middot; Ph.D. Admitted 2027</li>
+                    </ul>
+                    <a class="story-card__foot" href="{{ portfolio_resume_url }}">
+                        <span class="story-card__meta">Timeline &middot; Roles &middot; Milestones</span>
+                        <span class="story-card__go" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                    </a>
                 </article>
 
-                {# --- 4 · Résumé Snapshot --------------------------------------- #}
-                <article class="work-showcase-card work-showcase-card--resume reveal" style="--reveal-i: 3;">
-                    <span class="work-showcase-card__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">{{ icons['document']|safe }}</svg>
+                {# --- 4 · The Bigger Picture (family photo) -------------------- #}
+                <article class="story-card reveal" style="--reveal-i: 3; --card-img: url('{{ url_for('static', filename='images/cinematic/work-card-family.jpg') }}');">
+                    <span class="story-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">{{ icons['heart']|safe }}</svg>
                     </span>
-                    <h3>Résumé Snapshot</h3>
-                    <p>A recruiter-friendly summary of your experience and strengths.</p>
-
-                    <div class="resume-preview" aria-label="Resume snapshot preview">
-                        <div class="resume-preview__head">
-                            <div>
-                                <strong class="resume-preview__name">Pete Carter</strong>
-                                <small>Systems Engineer | MBSE Specialist</small>
-                            </div>
-                            <span class="resume-preview__pill">View Full Résumé</span>
-                        </div>
-                        <div class="resume-preview__meta">
-                            <span>Athens, AL</span>
-                            <span>Systems Engineering</span>
-                            <span>Open to opportunities</span>
-                        </div>
-                        <div class="resume-preview__section">
-                            <span class="showcase-label">Experience</span>
-                            <div class="resume-preview__role">
-                                <strong>Systems Engineer</strong>
-                                <span class="timeline-preview__chip">MBSE + DOORS</span>
-                            </div>
-                            <small>Northrop Grumman &middot; 2025 &ndash; Present</small>
-                            <p>Requirements, architecture, and traceability across technical programs.</p>
-                        </div>
-                        <div class="resume-preview__section">
-                            <span class="showcase-label">Education</span>
-                            <strong>B.S. Electrical Engineering</strong>
-                            <small>Undergraduate degree &middot; 2020</small>
-                            <strong>Ph.D. Systems Engineering (Admitted)</strong>
-                            <small>University of South Alabama &middot; 2027</small>
-                        </div>
-                        <div class="resume-preview__section">
-                            <span class="showcase-label">Core Skills</span>
-                            <div class="showcase-tags showcase-tags--resume" aria-label="Core skills">
-                                <span>MBSE</span><span>SysML</span><span>Requirements</span><span>V&amp;V</span><span>Modeling</span><span>Leadership</span>
-                            </div>
-                        </div>
-                    </div>
-                    <a class="showcase-link" href="{{ portfolio_resume_url }}">View Full Résumé <span aria-hidden="true">&rarr;</span></a>
+                    <h3 class="story-card__title">The Bigger Picture</h3>
+                    <p class="story-card__lead">Who the work is really for.</p>
+                    <p class="story-card__desc">A recruiter-ready snapshot of the engineer &mdash; and the drive behind it.</p>
+                    <ul class="story-card__list">
+                        <li>Systems Engineer | MBSE Specialist</li>
+                        <li>Athens, Alabama</li>
+                        <li>Open to opportunities</li>
+                        <li>Family First</li>
+                    </ul>
+                    <a class="story-card__foot" href="{{ portfolio_resume_url }}">
+                        <span class="story-card__meta">R&eacute;sum&eacute; &middot; Summary &middot; Strengths</span>
+                        <span class="story-card__go" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                    </a>
                 </article>
             </div>
         </div>
@@ -733,5 +662,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-story-2"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-story-3"></script>
 {% endblock %}
