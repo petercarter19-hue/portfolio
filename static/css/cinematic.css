@@ -289,23 +289,27 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
     min-width: 0;
     /* min-height (not a fixed height) so the denser résumé/timeline cards
        never clip; align-items:stretch on the grid equalizes all four to
-       the tallest card, matching the mockup's even-height row. */
+       the tallest card. Content now sits DIRECTLY on this one card (no
+       nested inner panels) so each card reads as one clean surface. */
     min-height: clamp(470px, 52vh, 560px);
-    padding: clamp(17px, 1.45vw, 26px);
+    padding: clamp(20px, 1.7vw, 30px);
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 0.95vh, 12px);
+    gap: clamp(11px, 1.25vh, 16px);
     text-align: left;
     color: #152242;
     border-radius: 26px;
-    background:
-        linear-gradient(145deg, rgb(255 255 255 / 58%), rgb(255 255 255 / 26%)),
-        color-mix(in srgb, var(--cine-accent) 7%, rgb(255 255 255 / 34%));
-    border: 1px solid rgb(255 255 255 / 58%);
-    box-shadow: 0 26px 78px rgb(19 35 72 / 22%),
-                inset 0 1px 0 rgb(255 255 255 / 70%);
-    -webkit-backdrop-filter: blur(22px) saturate(1.2);
-    backdrop-filter: blur(22px) saturate(1.2);
+    /* A near-solid frosted white so every card reads as ONE uniform light
+       surface top-to-bottom. (The old translucent fade let the warm sunset
+       bleed through the top and the dark page canvas show through the
+       bottom — making each card look two-tone.) Kept a whisper of
+       translucency + blur so it still feels like glass over the scene. */
+    background: linear-gradient(160deg, rgb(255 255 255 / 90%), rgb(255 255 255 / 85%));
+    border: 1px solid rgb(255 255 255 / 75%);
+    box-shadow: 0 26px 78px rgb(19 35 72 / 20%),
+                inset 0 1px 0 rgb(255 255 255 / 85%);
+    -webkit-backdrop-filter: blur(26px) saturate(1.25);
+    backdrop-filter: blur(26px) saturate(1.25);
     overflow: hidden;
     transition: transform 0.45s cubic-bezier(0.2, 0.6, 0.25, 1),
                 box-shadow 0.45s cubic-bezier(0.2, 0.6, 0.25, 1);
@@ -356,38 +360,36 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
     color: rgb(38 51 86 / 82%);
 }
 
-.project-preview,
-.skills-panel,
-.resume-preview {
-    border-radius: 16px;
-    background: rgb(255 255 255 / 46%);
-    border: 1px solid rgb(255 255 255 / 58%);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 58%);
-}
-
-/* Skills card: a single white panel holding Top Skills + Evidence Preview. */
+/* The inner content groups (featured project, skills, résumé) are now
+   transparent layout containers — NO nested card fill/border — so the
+   text sits directly on the one big glass card. Groups are separated by
+   thin hairlines instead of stacked boxes. */
 .skills-panel {
-    padding: 11px;
     display: grid;
-    gap: 12px;
+    gap: clamp(12px, 1.5vh, 18px);
     align-content: start;
 }
 
 .skills-panel__block {
     display: grid;
-    gap: 8px;
+    gap: 9px;
+}
+
+/* Hairline between Top Skills and Evidence Preview. */
+.skills-panel__block + .skills-panel__block {
+    padding-top: clamp(12px, 1.5vh, 18px);
+    border-top: 1px solid rgb(36 52 88 / 12%);
 }
 
 .project-preview {
-    padding: 8px;
     display: grid;
-    grid-template-columns: minmax(74px, 0.82fr) minmax(0, 1.18fr);
-    gap: 10px;
+    grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1.2fr);
+    gap: 12px;
     align-items: center;
 }
 
 .project-preview__image {
-    min-height: 72px;
+    min-height: 74px;
     border-radius: 12px;
     background:
         radial-gradient(circle at 52% 38%, rgb(255 255 255 / 82%) 0 5%, transparent 6%),
@@ -445,12 +447,14 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 }
 
 .showcase-tags span {
-    padding: 6px 9px;
+    padding: 6px 10px;
     border-radius: 999px;
-    background: rgb(255 255 255 / 48%);
-    border: 1px solid rgb(255 255 255 / 58%);
+    /* Subtle navy hairline so pills stay legible directly on the white
+       card now that there is no inner panel behind them. */
+    background: rgb(255 255 255 / 55%);
+    border: 1px solid rgb(36 52 88 / 12%);
     color: #27375f;
-    font-size: 0.62rem;
+    font-size: 0.64rem;
     font-weight: 800;
 }
 
@@ -458,23 +462,21 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 .showcase-tags--ai span,
 .showcase-tags--resume span {
     font-size: 0.62rem;
-    padding: 6px 8px;
+    padding: 6px 9px;
 }
 
-/* Outcomes sit inside ONE rounded container split by faint vertical
-   dividers (per the mockup) instead of three separate pills. */
+/* Outcomes are a simple three-up row split by faint vertical dividers,
+   separated from the tags above by a hairline — no boxed container. */
 .showcase-metrics {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-radius: 14px;
-    background: rgb(255 255 255 / 42%);
-    border: 1px solid rgb(255 255 255 / 56%);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 60%);
-    overflow: hidden;
+    margin-top: 2px;
+    padding-top: clamp(11px, 1.4vh, 16px);
+    border-top: 1px solid rgb(36 52 88 / 12%);
 }
 
 .showcase-metrics span {
-    padding: 10px 7px;
+    padding: 2px 7px;
     text-align: center;
     color: #27375f;
 }
@@ -499,24 +501,23 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
     color: rgb(37 50 84 / 72%);
 }
 
-.resume-preview {
-    padding: 10px;
-}
-
 .evidence-preview {
     display: grid;
-    gap: 7px;
+    gap: 10px;
 }
 
+/* Flat evidence rows: thumbnail + text + eye, split by a hairline, with
+   no boxed fill (the rows sit directly on the card). */
 .evidence-preview__row {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 26px;
-    gap: 9px;
+    grid-template-columns: 38px minmax(0, 1fr) 24px;
+    gap: 11px;
     align-items: center;
-    padding: 7px;
-    border-radius: 12px;
-    background: rgb(255 255 255 / 52%);
-    border: 1px solid rgb(255 255 255 / 46%);
+}
+
+.evidence-preview__row + .evidence-preview__row {
+    padding-top: 10px;
+    border-top: 1px solid rgb(36 52 88 / 10%);
 }
 
 .evidence-preview__text {
@@ -524,10 +525,10 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 }
 
 .evidence-thumb {
-    height: 34px;
+    height: 38px;
     border-radius: 9px;
     background: linear-gradient(135deg, rgb(113 137 202 / 35%), rgb(255 255 255 / 78%));
-    border: 1px solid rgb(255 255 255 / 60%);
+    border: 1px solid rgb(36 52 88 / 14%);
 }
 
 .evidence-thumb--model {
@@ -545,18 +546,16 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 }
 
 .evidence-eye {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    color: rgb(27 39 72 / 62%);
-    background: rgb(255 255 255 / 50%);
+    color: rgb(27 39 72 / 55%);
 }
 
 .evidence-eye svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.7;
@@ -602,7 +601,7 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 
 .resume-preview {
     display: grid;
-    gap: 7px;
+    gap: 10px;
     font-size: 0.62rem;
     color: rgb(37 50 84 / 74%);
 }
@@ -630,7 +629,7 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
 }
 
 .resume-preview__section {
-    padding-top: 7px;
+    padding-top: 11px;
     border-top: 1px solid rgb(36 52 88 / 12%);
 }
 
