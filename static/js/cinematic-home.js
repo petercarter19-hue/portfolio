@@ -59,9 +59,10 @@
     var layers = Array.prototype.slice.call(
         document.querySelectorAll('.cinematic-home [data-parallax]')
     ).filter(function (bg) {
-        // Your Work is one continuous stage: keep its mountain backdrop still
+        // Your Work and Your Story are continuous chapters: their fixed
+        // backdrops stay still (a transformed fixed background detaches)
         // while the foreground text and cards do the motion.
-        return !bg.closest('.cinematic-section--work');
+        return !bg.closest('.cinematic-section--work, .cinematic-section--story');
     });
     var horizontalSections = Array.prototype.slice.call(
         document.querySelectorAll('.cinematic-home [data-cine-horizontal]')
@@ -140,6 +141,8 @@
         var ai = document.getElementById('work-ai');
         var proof = document.getElementById('work-proof');
         var story = document.getElementById('your-story');
+        var storyLive = document.getElementById('story-live');
+        var storyDepth = document.getElementById('story-depth');
         var future = document.getElementById('your-future');
         var together = document.getElementById('together');
 
@@ -161,6 +164,23 @@
         }
 
         pushSnapPoint(points, 'story', pageTop(story));
+
+        // The story chapter mirrors the work chapter: each horizontal
+        // stage gets two stops — panel one, then the slid-in panel two.
+        if (storyLive) {
+            var liveTop = pageTop(storyLive);
+            var liveTravel = Math.max(1, storyLive.offsetHeight - vh);
+            pushSnapPoint(points, 'story-board', liveTop);
+            pushSnapPoint(points, 'story-daily', liveTop + liveTravel * 0.16);
+        }
+
+        if (storyDepth) {
+            var depthTop = pageTop(storyDepth);
+            var depthTravel = Math.max(1, storyDepth.offsetHeight - vh);
+            pushSnapPoint(points, 'story-life', depthTop);
+            pushSnapPoint(points, 'story-values', depthTop + depthTravel * 0.16);
+        }
+
         pushSnapPoint(points, 'future', pageTop(future));
         pushSnapPoint(points, 'together', pageTop(together));
 
@@ -234,6 +254,13 @@
     }
 
     function applyHorizontalStages(vh) {
+        // Two horizontal sections (work-ai + story-live) share the swap
+        // timers, so collect "should this cycle run?" across ALL of them
+        // before scheduling — otherwise the off-screen section's `false`
+        // would cancel the on-screen section's timer every frame.
+        var askRun = false;
+        var interviewRun = false;
+
         horizontalSections.forEach(function (section) {
             var rect = section.getBoundingClientRect();
             var travel = Math.max(1, rect.height - vh);
@@ -266,8 +293,8 @@
                 ? '0px'
                 : (-trackDistance).toFixed(1) + 'px';
 
-            scheduleExampleSwap('ask', arrival > 0.78 && inside < 0.36 && exit < 0.04);
-            scheduleExampleSwap('interview', slide > 0.9 && exit < 0.08);
+            askRun = askRun || (arrival > 0.78 && inside < 0.36 && exit < 0.04);
+            interviewRun = interviewRun || (slide > 0.9 && exit < 0.08);
 
             section.style.setProperty('--work-ai-stage-opacity', stageOpacity.toFixed(3));
             section.style.setProperty('--work-ai-window-opacity', windowOpacity.toFixed(3));
@@ -281,6 +308,9 @@
             section.style.setProperty('--work-ai-interview-primary-y', (-18 * interviewExample).toFixed(1) + 'px');
             section.style.setProperty('--work-ai-interview-alt-y', (22 * (1 - interviewExample)).toFixed(1) + 'px');
         });
+
+        scheduleExampleSwap('ask', askRun);
+        scheduleExampleSwap('interview', interviewRun);
     }
 
     function applyProofStages(vh) {
