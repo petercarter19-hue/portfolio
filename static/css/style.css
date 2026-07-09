@@ -82,57 +82,6 @@
    <body> when a visitor clicks a theme button in the site menu, which
    instantly swaps every color on the page to whichever block matches
    below (CSS variables cascade, so nothing else needs to change). */
-body[data-theme="command-gold"] {
-    --color-page: #030b16;
-    --color-page-deep: #020812;
-    --color-section: #06111f;
-    --color-card: #0a1624;
-    --color-card-elevated: #0d1a2a;
-    --color-card-hover: #102238;
-    --color-gold: #f3be4f;
-    --color-gold-bright: #ffd36a;
-    --color-gold-muted: #c9922e;
-    --color-gold-dark: #8a6323;
-    --color-blue: #4ea3ff;
-    --color-cyan: #50d6e8;
-    --color-text-primary: #f5f7fa;
-    --color-text-secondary: #c5cdd7;
-    --color-text-muted: #8996a8;
-    --color-text-dark: #091120;
-    --color-border: #26374a;
-    --color-border-soft: #18283a;
-    --color-border-gold: #9a712b;
-    --navy-900: #15172d;
-    --navy-800: #16213e;
-    --navy-700: #0f3460;
-    --surface: #f7f8fb;
-    --text-dark: #202635;
-    --text-muted: #5d6675;
-    --border-light: rgb(26 26 46 / 10%);
-
-    /* Platform-chrome variables (global header, profile shell, tabs,
-       metrics strip) mapped onto this theme's palette. These come after
-       the legacy names above on purpose: the platform chrome needs its
-       own --surface/--text-muted values, and the last declaration in a
-       block wins. */
-    --bg: #030b16;
-    --bg-elevated: #06111f;
-    --surface: #0a1624;
-    --surface-soft: #0d1a2a;
-    --text: #f5f7fa;
-    --text-muted: #8996a8;
-    --accent: #f3be4f;
-    --accent-hover: #ffd36a;
-    --accent-soft: rgb(243 190 79 / 14%);
-    --border: #26374a;
-    --shadow: 0 18px 45px rgb(0 0 0 / 24%);
-    --nav-bg: rgb(3 11 22 / 92%);
-    --tab-active: #f3be4f;
-    --button-primary-bg: #f3be4f;
-    --button-primary-text: #091120;
-    --button-secondary-bg: rgb(255 255 255 / 5%);
-    --button-secondary-text: #f5f7fa;
-}
 
 body[data-theme="modern-blue"] {
     --color-page: #050914;
@@ -180,116 +129,6 @@ body[data-theme="modern-blue"] {
     --button-primary-text: #06111f;
     --button-secondary-bg: rgb(255 255 255 / 5%);
     --button-secondary-text: #f8fafc;
-}
-
-/* Blueprint Light: a clean, professional light mode styled like an
-   engineering blueprint — pale blue page, navy text, teal/cyan primary
-   accents, and a single amber highlight reserved for the money metrics.
-   The blueprint palette is mapped onto the SAME variable names every other
-   theme uses (e.g. --color-gold becomes teal here), so the whole site
-   recolors instantly with no other changes. The structural fixes that a
-   light background needs (readable header, cards, chatbot, hero grid) live
-   in the LIGHT THEME COMPATIBILITY section lower down this file. */
-body[data-theme="blueprint-light"] {
-    --color-page: #f4f9fc;
-    --color-page-deep: #edf6fb;
-    --color-section: #f8fcff;
-    --color-card: #ffffff;
-    --color-card-elevated: #f8fcff;
-    --color-card-hover: #eef6fb;
-    /* --color-gold is the site's "primary accent" slot (buttons, links,
-       highlights). In Blueprint Light that primary becomes teal/cyan. */
-    --color-gold: #0796b8;
-    --color-gold-bright: #0ea5c6;
-    --color-gold-muted: #047fa0;
-    --color-gold-dark: #047fa0;
-    --color-blue: #1f6feb;
-    --color-cyan: #0ea5c6;
-    --color-text-primary: #08204a;
-    --color-text-secondary: #405875;
-    --color-text-muted: #6d7f96;
-    --color-text-dark: #ffffff;
-    --color-border: #cfe0eb;
-    --color-border-soft: #cfe0eb;
-    --color-border-gold: #7fb8cf;
-    --shadow-card: 0 18px 45px rgb(8 32 74 / 14%);
-    --shadow-gold: 0 0 18px rgb(7 150 184 / 16%);
-    --navy-900: #08204a;
-    --navy-800: #12305c;
-    --navy-700: #0796b8;
-    --surface: #f8fcff;
-    --text-dark: #08204a;
-    --text-muted: #6d7f96;
-    --border-light: rgb(8 32 74 / 12%);
-    /* Reserved highlight used ONLY for money/impact stats (e.g. $36M+). */
-    --accent-amber: #f59e0b;
-
-    /* Platform-chrome variables mapped onto this theme's palette. */
-    --bg: #f4f9fc;
-    --bg-elevated: #edf6fb;
-    --surface: #ffffff;
-    --surface-soft: #f8fcff;
-    --text: #08204a;
-    --text-muted: #6d7f96;
-    --accent: #0796b8;
-    --accent-hover: #0ea5c6;
-    --accent-soft: rgb(7 150 184 / 13%);
-    --border: #cfe0eb;
-    --shadow: 0 18px 42px rgb(8 32 74 / 12%);
-    --nav-bg: rgb(248 252 255 / 94%);
-    --tab-active: #0796b8;
-    --button-primary-bg: #0796b8;
-    --button-primary-text: #ffffff;
-    --button-secondary-bg: #ffffff;
-    --button-secondary-text: #08204a;
-}
-
-body[data-theme="secure-green"] {
-    --color-page: #050d0c;
-    --color-page-deep: #020706;
-    --color-section: #071412;
-    --color-card: #0b1715;
-    --color-card-elevated: #10211f;
-    --color-card-hover: #12302b;
-    --color-gold: #4ade80;
-    --color-gold-bright: #86efac;
-    --color-gold-muted: #22c55e;
-    --color-gold-dark: #166534;
-    --color-blue: #38bdf8;
-    --color-cyan: #6ee7f9;
-    --color-text-primary: #f4fdf8;
-    --color-text-secondary: #c8d8d0;
-    --color-text-muted: #8fa39a;
-    --color-text-dark: #04110c;
-    --color-border: #25443b;
-    --color-border-soft: #17332d;
-    --color-border-gold: #22c55e;
-    --navy-900: #061512;
-    --navy-800: #0b221d;
-    --navy-700: #166534;
-    --surface: #f4fdf8;
-    --text-dark: #04110c;
-    --text-muted: #5f756d;
-    --border-light: rgb(4 17 12 / 14%);
-
-    /* Platform-chrome variables mapped onto this theme's palette. */
-    --bg: #050d0c;
-    --bg-elevated: #071412;
-    --surface: #0b1715;
-    --surface-soft: #10211f;
-    --text: #f4fdf8;
-    --text-muted: #8fa39a;
-    --accent: #4ade80;
-    --accent-hover: #86efac;
-    --accent-soft: rgb(74 222 128 / 13%);
-    --border: #25443b;
-    --shadow: 0 18px 45px rgb(0 0 0 / 26%);
-    --nav-bg: rgb(5 13 12 / 92%);
-    --tab-active: #4ade80;
-    --button-primary-bg: #4ade80;
-    --button-primary-text: #04110c;
-    --button-secondary-bg: rgb(255 255 255 / 5%);
-    --button-secondary-text: #f4fdf8;
 }
 
 
@@ -378,91 +217,9 @@ button:focus-visible {
 }
 
 
-/* =========================================================
-   HEADER AND NAVIGATION
-   ========================================================= */
-
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    min-height: 68px;
-    background: rgb(3 11 22 / 88%);
-    border-bottom: 1px solid rgb(255 255 255 / 8%);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-}
-
-.navbar {
-    min-height: 68px;
-}
-
-.nav-container {
-    width: min(100% - 96px, var(--site-width));
-    min-height: 68px;
-    margin-inline: auto;
-    display: grid;
-    grid-template-columns: auto minmax(230px, 0.85fr) minmax(0, auto) minmax(38px, 0.85fr);
-    align-items: center;
-    gap: 24px;
-}
-
 /* ---------- Site menu (top-left dropdown) ----------
    Future home of the multi-tenant business menu. position: relative
    lets the dropdown anchor directly beneath the button. */
-.nav-menu {
-    position: relative;
-}
-
-.nav-menu-btn {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    color: #dfe4ea;
-    background: transparent;
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
-}
-
-.nav-menu-btn:hover,
-.nav-menu-btn:focus-visible,
-.nav-menu-btn[aria-expanded="true"] {
-    color: var(--color-gold);
-    border-color: var(--color-border-gold);
-    background: rgb(243 190 79 / 8%);
-}
-
-.nav-menu-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    z-index: 1100;
-    min-width: 190px;
-    padding: 6px;
-    background: linear-gradient(180deg, #0d1a2a, #0a1624);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    box-shadow: 0 18px 45px rgb(0 0 0 / 45%);
-}
-
-.nav-menu-dropdown a {
-    display: block;
-    padding: 10px 14px;
-    color: var(--color-text-secondary);
-    border-radius: 6px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    transition: color 160ms ease, background-color 160ms ease;
-}
-
-.nav-menu-dropdown a:hover,
-.nav-menu-dropdown a:focus-visible {
-    color: var(--color-gold-bright);
-    background: rgb(243 190 79 / 8%);
-}
 
 .theme-preview {
     margin-top: 6px;
@@ -498,150 +255,6 @@ button:focus-visible {
 .theme-preview button.is-active {
     color: var(--color-gold-bright);
     background: rgb(80 214 232 / 8%);
-}
-
-.nav-brand {
-    min-width: 0;
-}
-
-.nav-logo {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 24px;
-}
-
-.nav-logo--brand {
-    align-items: center;
-    gap: 10px;
-}
-
-.nav-brand-mark {
-    width: 40px;
-    height: 40px;
-    flex: 0 0 auto;
-    object-fit: cover;
-    border: 1px solid rgb(176 216 255 / 28%);
-    border-radius: 8px;
-    box-shadow: 0 10px 26px rgb(0 0 0 / 26%);
-}
-
-.nav-wordmark {
-    min-width: 0;
-    display: inline-flex;
-    align-items: baseline;
-    gap: 24px;
-}
-
-.nav-logo--brand .nav-wordmark {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-}
-
-.nav-name {
-    color: var(--color-text-primary);
-    font-size: 1.28rem;
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.nav-tagline {
-    color: var(--color-gold);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.24em;
-    line-height: 1;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.nav-logo--brand .nav-name {
-    letter-spacing: 0.01em;
-}
-
-.nav-logo--brand .nav-tagline {
-    color: rgb(176 216 255 / 82%);
-}
-
-.nav-right {
-    display: contents;                              /* Lets links occupy the center grid column and LinkedIn the right */
-}
-
-.nav-links {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 34px;
-    list-style: none;
-}
-
-.nav-links a {
-    position: relative;
-    padding: 23px 0 21px;
-    color: #d6dce4;
-    font-size: 0.93rem;
-    font-weight: 560;
-    white-space: nowrap;
-    transition: color 160ms ease;
-}
-
-.nav-links a::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: 15px;
-    left: 0;
-    height: 2px;
-    background: var(--color-gold);
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 160ms ease;
-}
-
-.nav-links a:hover,
-.nav-links a:focus-visible {
-    color: var(--color-text-primary);
-}
-
-.nav-links a:hover::after,
-.nav-links a:focus-visible::after {
-    transform: scaleX(1);
-}
-
-/* Active-page feedback: the link for the page you are on keeps the
-   same gold underline the hover effect uses, so it stays lit. */
-.nav-links a[aria-current="page"] {
-    color: var(--color-text-primary);
-}
-
-.nav-links a[aria-current="page"]::after {
-    transform: scaleX(1);
-}
-
-.nav-actions {
-    justify-self: end;
-    display: flex;
-    align-items: center;
-}
-
-/* LinkedIn logo in the header: the SVG carries LinkedIn's official
-   brand colors itself (#0A66C2 + white), so the anchor only handles
-   sizing and a subtle hover lift — no color overrides. */
-.nav-linkedin {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    transition: transform 160ms ease, filter 160ms ease;
-}
-
-.nav-linkedin:hover,
-.nav-linkedin:focus-visible {
-    transform: translateY(-1px);
-    filter: brightness(1.15);
 }
 
 
@@ -735,9 +348,6 @@ button:focus-visible {
 /* Restored circuit/chip artwork sitting behind the gradient tint and grid
    overlay below. Sits at z-index -3 so ::before/::after (both negative but
    less so) still paint on top of it for text readability. */
-.hero-circuit {
-    display: none;
-}
 
 .hero::before {
     content: "";
@@ -753,54 +363,12 @@ button:focus-visible {
     content: none;
 }
 
-.hero-grid {
-    min-height: 540px;
-    display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(560px, 1.1fr);
-    align-items: center;
-    gap: 46px;
-    padding-top: 48px;
-    padding-bottom: 36px;
-}
-
-.hero-copy {
-    max-width: 630px;
-    padding-top: 6px;
-}
-
-.hero-eyebrow,
 .section-eyebrow {
     color: var(--color-gold);
     font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-}
-
-.hero-eyebrow {
-    margin-bottom: 16px;
-}
-
-.hero-copy h1 {
-    max-width: 650px;                                /* Keeps the headline from stretching too wide */
-    margin-bottom: 22px;                             /* Space between the headline and the intro paragraph */
-    color: var(--color-text-primary);                /* Uses the main white text color from :root */
-    font-size: var(--font-display);                  /* Pulls from --font-display so one variable controls hero size */
-    font-weight: 820;                                /* Very bold headline weight for strong first impression */
-    letter-spacing: -0.052em;                        /* Tightens large letters so the headline feels polished */
-    line-height: 1.07;                               /* Keeps multi-line headline rows close together */
-}
-
-.hero-copy h1 span {
-    color: var(--color-gold);
-}
-
-.hero-description {
-    max-width: 560px;                                /* Keeps the paragraph readable instead of full-width */
-    margin-bottom: 27px;                             /* Space between paragraph and buttons */
-    color: var(--color-text-secondary);              /* Softer color than the headline so hierarchy is clear */
-    font-size: 1.02rem;                              /* Slightly smaller than before so the hero feels less oversized */
-    line-height: 1.7;                                /* Taller line spacing makes paragraph text easier to read */
 }
 
 .hero-ai-search {
@@ -996,310 +564,6 @@ button:focus-visible {
     white-space: pre-line;
 }
 
-.hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-
-/* =========================================================
-   CIRCULAR LIFECYCLE VISUAL
-   ========================================================= */
-
-.lifecycle-scroll {
-    width: 100%;
-}
-
-.lifecycle-visual {
-    position: relative;
-    width: 100%;                                      /* Absolute-positioned diagram cards need an explicit parent width */
-    max-width: 720px;                                /* Keeps the wide diagram inside the hero column */
-    aspect-ratio: 760 / 440;                         /* Matches the stage's reference canvas so height scales with width */
-    margin-inline: auto 0;
-    container-type: inline-size;                     /* Lets the stage read this box's width via cqw units */
-}
-
-.lifecycle-stage {
-    position: absolute;
-    inset: 0;
-    width: 760px;
-    height: 440px;
-    transform-origin: top left;
-    transform: scale(calc(100cqw / 760px));          /* Scales the whole fixed-layout diagram to fit the current width */
-}
-
-.lifecycle-arrows,
-.lifecycle-circuit,
-.lifecycle-center,
-.lifecycle-node {
-    position: absolute;
-}
-
-.lifecycle-arrows {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-}
-
-.cycle-arc {
-    fill: none;                                      /* SVG paths are strokes only; no filled shape inside */
-    stroke-linecap: round;                           /* Rounds the ends of arrow lines for a cleaner look */
-    stroke-width: 2.4;                               /* Thickness of the lifecycle connector arrows */
-}
-
-.cycle-arc--gold {
-    stroke: rgb(243 190 79 / 92%);                  /* Gold arrows show the main lifecycle direction */
-    filter: drop-shadow(0 0 10px rgb(243 190 79 / 30%)); /* Soft glow helps arrows stand out on the dark background */
-}
-
-.lifecycle-circuit {
-    inset: 16px 0 12px;
-    z-index: -1;
-    opacity: 0.42;
-    background:
-        radial-gradient(circle at 52% 50%, rgb(78 163 255 / 16%), transparent 27%),
-        repeating-radial-gradient(circle at 50% 50%, transparent 0 18px, rgb(255 255 255 / 8%) 19px 20px),
-        linear-gradient(90deg, transparent 0 42px, rgb(78 163 255 / 12%) 42px 43px, transparent 43px);
-    mask-image: radial-gradient(circle at 50% 50%, black 0 52%, transparent 78%);
-}
-
-.lifecycle-center {
-    top: 169px;
-    left: 50%;
-    width: 224px;
-    height: 140px;
-    transform: translateX(-50%);
-    display: grid;
-    place-items: center;
-    text-align: center;
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at center, rgb(13 39 72 / 70%), rgb(3 11 22 / 8%) 70%),
-        repeating-radial-gradient(circle at center, rgb(255 255 255 / 10%) 0 1px, transparent 1px 18px);
-}
-
-.lifecycle-center h2 {
-    max-width: 170px;
-    color: var(--color-text-primary);
-    font-size: 1rem;
-    font-weight: 820;
-    letter-spacing: 0.12em;
-    line-height: 1.5;
-    text-transform: uppercase;
-}
-
-.lifecycle-center p {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-}
-
-.lifecycle-node {
-    width: 220px;
-    min-height: 84px;
-    display: grid;
-    grid-template-columns: 42px 1fr;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 17px;
-    background: linear-gradient(180deg, rgb(15 27 45 / 96%), rgb(8 18 32 / 94%));
-    border: 1px solid rgb(146 167 190 / 52%);
-    border-radius: 9px;
-    box-shadow: 0 18px 50px rgb(0 0 0 / 24%);
-}
-
-.lifecycle-node--define {
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-color: var(--color-border-gold);
-    box-shadow: 0 0 22px rgb(243 190 79 / 16%), 0 18px 50px rgb(0 0 0 / 24%);
-}
-
-.lifecycle-node--requirements {
-    top: 117px;
-    right: 22px;
-    border-color: rgb(80 214 232 / 48%);
-}
-
-.lifecycle-node--architecture {
-    right: 20px;
-    bottom: 74px;
-}
-
-.lifecycle-node--implement {
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-/* The two left-side cards ("5. Verify & Validate", "6. Deploy & Sustain")
-   have two-line titles, so at 122px tall they left only a 33px slit
-   between them — the 5→6 connector arrow was buried under both cards.
-   Pushed 12px further apart (top card up, bottom card down) the gap is
-   ~56px, matching the right side, so the arrow arc fits in the open. */
-.lifecycle-node--verify {
-    bottom: 48px;
-    left: 20px;
-}
-
-.lifecycle-node--deploy {
-    top: 92px;
-    left: 20px;
-    border-color: rgb(80 214 232 / 48%);
-}
-
-.node-icon {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-}
-
-.node-icon svg {
-    width: 34px;
-    height: 34px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.node-icon--gold {
-    color: var(--color-gold);
-}
-
-.node-icon--blue {
-    color: var(--color-cyan);
-}
-
-.lifecycle-node h3 {
-    margin-bottom: 4px;
-    color: var(--color-text-primary);
-    font-size: 0.82rem;
-    font-weight: 850;
-    line-height: 1.2;
-    text-transform: uppercase;
-}
-
-.lifecycle-node p {
-    color: var(--color-text-secondary);
-    font-size: 0.79rem;
-    line-height: 1.45;
-}
-
-
-/* =========================================================
-   METRICS BAND
-   ========================================================= */
-
-.metrics-band {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    padding: 10px 0;
-    background: var(--color-page);
-    border-bottom: 1px solid rgb(255 255 255 / 6%);
-}
-
-.metrics-track-wrap {
-    overflow: hidden;                                      /* Cards are cut off cleanly at each end of the row, no visible frame around it */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
-}
-
-.metrics-track {
-    display: flex;                                         /* Places metric items in one horizontal row */
-    width: max-content;                                    /* Track becomes as wide as all metric cards combined */
-    animation: metrics-scroll 54s linear infinite;   /* Matches original px/sec speed now that each set holds 8 cards, not 5 */
-}
-
-.metrics-track:hover,
-.metrics-track:focus-within {
-    animation-play-state: paused;                   /* Lets a visitor pause the loop to read a card */
-}
-
-.metrics-set {
-    display: flex;                                         /* Keeps one repeated group of metrics in a row */
-    flex: 0 0 auto;                                        /* Prevents the repeated group from shrinking */
-}
-
-.metric-item {
-    position: relative;                                    /* Allows the divider line to be positioned inside each item */
-    flex: 0 0 auto;                                        /* Keeps each metric card at its fixed width */
-    width: 264px;                                    /* Fixed card width so items never stretch as the viewport shrinks */
-    min-height: 58px;                                      /* Keeps the homepage strip compact and away from the hero art */
-    display: flex;                                         /* Puts the icon and text side by side */
-    align-items: center;                                   /* Vertically centers icon and text */
-    gap: 12px;                                             /* Space between the icon and the metric text */
-    padding: 8px 18px;                                     /* Internal spacing; smaller vertical padding makes the bar thinner */
-}
-
-.metric-item::after {
-    content: "";                                          /* Required so the divider pseudo-element appears */
-    position: absolute;                                    /* Positions the divider relative to the metric item */
-    top: 18px;                                             /* Starts divider below the top edge */
-    right: 0;                                              /* Places divider at the right edge of each item */
-    bottom: 18px;                                          /* Ends divider above the bottom edge */
-    width: 1px;                                            /* Thin vertical divider line */
-    background: rgb(154 113 43 / 62%);                     /* Muted gold divider color */
-}
-
-@keyframes metrics-scroll {
-    from {
-        transform: translateX(0);
-    }
-    to {
-        transform: translateX(-50%);                /* Exactly one set-width, so the duplicate set lines up seamlessly */
-    }
-}
-
-.metric-icon {
-    width: 34px;                                          /* Smaller circle keeps the thinner metrics strip balanced */
-    height: 34px;                                         /* Matches width so the icon container stays circular */
-    flex: 0 0 34px;                                       /* Prevents the circle from shrinking in the scrolling row */
-    display: grid;                                        /* Grid makes centering the SVG icon easy */
-    place-items: center;                                  /* Centers the SVG icon both vertically and horizontally */
-    color: var(--color-gold);                             /* Icon uses the same gold as the border */
-    border: 2px solid var(--color-gold);                  /* Gold outline circle around each metric icon */
-    border-radius: 50%;                                   /* Turns the square box into a perfect circle */
-}
-
-.metric-icon svg {
-    width: 19px;                                          /* Smaller SVG fits the reduced icon circle */
-    height: 19px;                                         /* Matches width so icons keep their proportions */
-    fill: none;                                           /* Icons are line drawings, not filled shapes */
-    stroke: currentColor;                                 /* Uses the parent .metric-icon color */
-    stroke-width: 1.7;                                    /* Thickness of the icon line art */
-    stroke-linecap: round;                                /* Rounds line ends for a smoother icon */
-    stroke-linejoin: round;                               /* Rounds corners where icon lines meet */
-}
-
-.metric-item strong,
-.metric-item span {
-    display: block;                                       /* Puts the big metric and label on separate lines */
-}
-
-.metric-item strong {
-    color: var(--color-gold);                             /* Main metric number/value uses brand gold */
-    font-size: 1.06rem;                                   /* Slightly smaller so the thinner strip does not feel crowded */
-    font-weight: 850;                                     /* Heavy weight makes the metric easy to scan */
-    line-height: 1.1;                                     /* Tight line height keeps the metric compact */
-    white-space: nowrap;                                  /* Prevents values like "$36M+" from wrapping */
-}
-
-.metric-item span {
-    color: var(--color-text-secondary);                   /* Supporting label is softer than the main metric */
-    font-size: 0.76rem;                                   /* Smaller label helps reduce overall bar height */
-    line-height: 1.3;                                     /* Compact but still readable label spacing */
-}
-
 
 /* =========================================================
    FEATURED PROJECTS
@@ -1310,13 +574,6 @@ button:focus-visible {
     background:
         radial-gradient(circle at 30% 20%, rgb(17 66 112 / 12%), transparent 28%),
         var(--color-page);
-}
-
-.projects-layout {
-    display: grid;
-    grid-template-columns: 295px minmax(0, 1fr);
-    gap: 42px;
-    align-items: start;
 }
 
 .projects-copy {
@@ -1365,204 +622,6 @@ button:focus-visible {
     background: rgb(243 190 79 / 6%);
 }
 
-.project-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.project-card {
-    min-height: 345px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: linear-gradient(180deg, #0b1827, #081420);
-    border: 1px solid var(--color-border-soft);
-    border-radius: 9px;
-    box-shadow: 0 12px 34px rgb(0 0 0 / 18%);
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.project-card:hover {
-    transform: translateY(-4px);
-    border-color: #53687e;
-    box-shadow: var(--shadow-card);
-}
-
-.project-media {
-    aspect-ratio: 16 / 7.9;
-    padding: 12px;
-    background: radial-gradient(circle at 50% 0%, rgb(78 163 255 / 12%), transparent 44%), #07111d;
-    border-bottom: 1px solid var(--color-border-soft);
-}
-
-.mock-window {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid #24384d;
-    border-radius: 5px;
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 3%);
-}
-
-.mock-window--light {
-    display: grid;
-    grid-template-columns: 54px 1fr 88px;
-    gap: 8px;
-    padding: 10px;
-    background: #eef2f6;
-}
-
-.mock-sidebar {
-    border-radius: 4px;
-    background: linear-gradient(180deg, #101b2c, #0b1421);
-}
-
-.mock-canvas {
-    position: relative;
-    border-radius: 4px;
-    background: #d8dde3;
-}
-
-.mock-canvas span {
-    position: absolute;
-    width: 54px;
-    height: 24px;
-    border-radius: 3px;
-    background: #f6f8fa;
-    border: 1px solid #aeb8c4;
-}
-
-.mock-canvas span:nth-child(1) { top: 16px; left: 50%; transform: translateX(-50%); }
-.mock-canvas span:nth-child(2) { top: 56px; left: 24px; }
-.mock-canvas span:nth-child(3) { top: 56px; right: 24px; }
-.mock-canvas span:nth-child(4) { bottom: 18px; left: 58px; }
-.mock-canvas span:nth-child(5) { bottom: 18px; right: 58px; }
-
-.mock-panel {
-    padding: 10px;
-    border-radius: 4px;
-    background: #f7f9fb;
-}
-
-.mock-panel i,
-.mock-review-copy i,
-.mock-review-lines i {
-    display: block;
-    height: 8px;
-    margin-bottom: 8px;
-    border-radius: 99px;
-    background: rgb(78 163 255 / 30%);
-}
-
-.mock-window--dark {
-    display: grid;
-    grid-template-columns: 1.2fr 72px 1fr;
-    align-items: center;
-    gap: 18px;
-    padding: 17px;
-    background: linear-gradient(180deg, #0d1827, #081220);
-}
-
-.mock-score {
-    width: 62px;
-    height: 62px;
-    display: grid;
-    place-items: center;
-    color: #b9ffcf;
-    border: 4px solid #5ed38b;
-    border-radius: 50%;
-    font-size: 1.35rem;
-    font-weight: 800;
-}
-
-.mock-review-lines i {
-    background: rgb(94 211 139 / 24%);
-}
-
-.mock-window--dashboard {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 9px;
-    padding: 14px;
-    background: linear-gradient(180deg, #0d1827, #081220);
-}
-
-.dashboard-tile {
-    padding: 10px;
-    border-radius: 5px;
-    background: rgb(255 255 255 / 4%);
-    border: 1px solid rgb(255 255 255 / 6%);
-}
-
-.dashboard-tile small {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--color-text-muted);
-    font-size: 0.58rem;
-}
-
-.dashboard-tile strong {
-    color: var(--color-text-primary);
-    font-size: 0.95rem;
-}
-
-.project-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 18px 20px 19px;
-}
-
-.project-status {
-    margin-bottom: 10px;
-    font-size: 0.69rem;
-    font-weight: 850;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.status-progress {
-    color: var(--color-gold);
-}
-
-.status-progress::before,
-.status-planned::before {
-    content: "";
-    width: 7px;
-    height: 7px;
-    display: inline-block;
-    margin-right: 6px;
-    border-radius: 50%;
-    vertical-align: 1px;
-}
-
-.status-progress::before {
-    background: var(--color-gold);
-}
-
-.status-planned {
-    color: var(--color-blue);
-}
-
-.status-planned::before {
-    background: var(--color-blue);
-}
-
-.project-card h3 {
-    margin-bottom: 8px;
-    color: var(--color-text-primary);
-    font-size: 1.03rem;
-    font-weight: 760;
-    line-height: 1.32;
-}
-
-.project-card p {
-    margin-bottom: 16px;
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.62;
-}
 
 .project-tags {
     display: flex;
@@ -1581,14 +640,6 @@ button:focus-visible {
     border: 1px solid var(--color-border-soft);
     border-radius: 5px;
     font-size: 0.72rem;
-}
-
-.project-link {
-    align-self: flex-end;
-    margin-top: 13px;
-    color: var(--color-gold);
-    font-size: 1.12rem;
-    line-height: 1;
 }
 
 
@@ -1790,613 +841,11 @@ button:focus-visible {
 }
 
 
-/* =========================================================
-   PEERSLATE PLATFORM HOMEPAGE
-   ========================================================= */
-
-.peerslate-page {
-    position: relative;
-    isolation: isolate;
-}
-
-.peerslate-hero {
-    position: relative;
-    overflow: hidden;
-    padding: 88px 0;
-}
-
-.peerslate-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-        radial-gradient(circle at 74% 30%, rgb(80 214 232 / 14%), transparent 32%),
-        radial-gradient(circle at 20% 12%, rgb(243 190 79 / 10%), transparent 28%);
-}
-
-.peerslate-hero::after {
-    content: "";
-    position: absolute;
-    top: 72px;
-    right: max(24px, calc((100vw - var(--site-width)) / 2));
-    z-index: -1;
-    width: 360px;
-    height: 360px;
-    background: url("../images/peerslate-mark.png") center / cover no-repeat;
-    border-radius: 8px;
-    opacity: 0.1;
-    filter: saturate(1.05);
-}
-
-.peerslate-hero__grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.65fr);
-    gap: 64px;
-    align-items: center;
-}
-
-.peerslate-brand-lockup {
-    width: min(100%, 430px);
-    margin-bottom: 24px;
-}
-
-/* The lockup is a transparent PNG (no boxed background), so it sits
-   directly on the page's slate — drop-shadow follows the letterforms
-   instead of drawing a rectangle around them. */
-.peerslate-brand-lockup img {
-    display: block;
-    width: 100%;
-    height: auto;
-    filter:
-        drop-shadow(0 2px 3px rgb(0 0 0 / 45%))
-        drop-shadow(0 14px 28px rgb(0 0 0 / 35%));
-}
-
-.peerslate-hero__copy h1 {
-    max-width: 760px;
-    margin: 12px 0 18px;
-    color: var(--color-text-primary);
-    font-size: 5.2rem;
-    font-weight: 900;
-    letter-spacing: 0;
-    line-height: 0.95;
-}
-
-.peerslate-hero__lead {
-    max-width: 680px;
-    color: var(--color-text-secondary);
-    font-size: 1.12rem;
-    line-height: 1.65;
-}
-
-.peerslate-hero__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 28px;
-}
-
-.peerslate-demo-card,
-.peerslate-card,
-.peerslate-final-card {
-    background: linear-gradient(180deg, rgb(11 24 39 / 96%), rgb(8 20 32 / 96%));
-    border: 1px solid var(--color-border-soft);
-    border-radius: 14px;
-    box-shadow: var(--shadow-card);
-}
-
-.peerslate-demo-card {
-    padding: 22px;
-    border-color: rgb(80 214 232 / 30%);
-}
-
-.peerslate-demo-card__brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--color-border-soft);
-}
-
-.peerslate-demo-card__brand img {
-    width: 48px;
-    height: 48px;
-    flex: 0 0 auto;
-    object-fit: cover;
-    border: 1px solid rgb(176 216 255 / 24%);
-    border-radius: 8px;
-}
-
-.peerslate-demo-card__brand strong {
-    display: block;
-    margin-top: 5px;
-    color: var(--color-text-primary);
-    font-size: 0.95rem;
-    line-height: 1.25;
-}
-
-.peerslate-demo-card__label {
-    margin: 0;
-    color: var(--color-cyan);
-    font-size: 0.76rem;
-    font-weight: 850;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-
-.peerslate-profile-preview {
-    display: grid;
-    gap: 12px;
-}
-
-.peerslate-profile-preview div {
-    padding: 14px;
-    background: rgb(255 255 255 / 3%);
-    border: 1px solid var(--color-border-soft);
-    border-radius: 10px;
-}
-
-.peerslate-profile-preview span {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--color-gold);
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.peerslate-profile-preview strong {
-    color: var(--color-text-primary);
-    font-size: 0.95rem;
-    line-height: 1.35;
-}
-
-.peerslate-section {
-    padding: 70px 0;
-}
-
-.peerslate-two-column,
-.peerslate-feature-layout {
-    display: grid;
-    grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
-    gap: 60px;
-    align-items: start;
-}
-
-.peerslate-section h2 {
-    max-width: 720px;
-    color: var(--color-text-primary);
-    font-size: 3rem;
-    font-weight: 880;
-    letter-spacing: 0;
-    line-height: 1;
-}
-
-.peerslate-copy-stack p {
-    margin-bottom: 16px;
-    color: var(--color-text-secondary);
-    font-size: 1.02rem;
-    line-height: 1.65;
-}
-
-.peerslate-section--cards {
-    background: rgb(255 255 255 / 2%);
-    border-top: 1px solid var(--color-border-soft);
-    border-bottom: 1px solid var(--color-border-soft);
-}
-
-.peerslate-section-heading {
-    max-width: 780px;
-    margin-bottom: 24px;
-}
-
-.peerslate-card-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.peerslate-card {
-    min-height: 230px;
-    padding: 20px;
-}
-
-.peerslate-card span {
-    color: var(--color-cyan);
-    font-size: 0.78rem;
-    font-weight: 900;
-    letter-spacing: 0.14em;
-}
-
-.peerslate-card h3,
-.peerslate-feature-list h3 {
-    margin: 12px 0 8px;
-    color: var(--color-text-primary);
-    font-size: 1.08rem;
-    font-weight: 850;
-}
-
-.peerslate-card p,
-.peerslate-feature-list p,
-.peerslate-final-card p {
-    color: var(--color-text-secondary);
-    font-size: 0.94rem;
-    line-height: 1.55;
-}
-
-.peerslate-feature-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.peerslate-feature-list div {
-    padding: 18px;
-    background: rgb(255 255 255 / 3%);
-    border: 1px solid var(--color-border-soft);
-    border-radius: 12px;
-}
-
-.peerslate-section--final {
-    padding-top: 20px;
-}
-
-.peerslate-final-card {
-    padding: 44px;
-    text-align: center;
-    border-color: rgb(243 190 79 / 30%);
-}
-
-.peerslate-final-card h2,
-.peerslate-final-card p {
-    margin-inline: auto;
-}
-
-.peerslate-final-card p {
-    max-width: 760px;
-    margin-top: 14px;
-}
-
-.peerslate-final-card .peerslate-hero__actions {
-    justify-content: center;
-}
-
-
-/* =========================================================
-   LIGHT THEME COMPATIBILITY
-   ========================================================= */
-
-
-/* ---------------------------------------------------------
-   BLUEPRINT LIGHT theme structural overrides.
-   Blueprint palette: navy text, teal/cyan accents, soft
-   blue-gray borders, and navy-tinted shadows. These handle the
-   parts of the page that use hard-coded dark colors instead of
-   theme variables, so a light background stays readable and
-   dimensional.
-   --------------------------------------------------------- */
-
-/* Airy blueprint page background: faint 48px grid + a soft teal
-   radial glow over a very light blue gradient (not flat white). */
-body[data-theme="blueprint-light"] {
-    background:
-        radial-gradient(circle at 70% 20%, rgb(7 150 184 / 10%), transparent 34%),
-        linear-gradient(rgb(31 111 235 / 4.5%) 1px, transparent 1px),
-        linear-gradient(90deg, rgb(31 111 235 / 4.5%) 1px, transparent 1px),
-        linear-gradient(180deg, #f4f9fc 0%, #f8fcff 48%, #edf6fb 100%);
-    background-size: auto, 48px 48px, 48px 48px, auto;
-}
-
-body[data-theme="blueprint-light"] .site-header {
-    background: rgb(255 255 255 / 82%);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .nav-menu-btn,
-body[data-theme="blueprint-light"] .nav-linkedin {
-    color: var(--color-text-secondary);
-    background: rgb(255 255 255 / 72%);
-    border-color: var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .nav-menu-btn:hover,
-body[data-theme="blueprint-light"] .nav-menu-btn:focus-visible,
-body[data-theme="blueprint-light"] .nav-menu-btn[aria-expanded="true"],
-body[data-theme="blueprint-light"] .nav-linkedin:hover,
-body[data-theme="blueprint-light"] .nav-linkedin:focus-visible {
-    color: var(--color-gold-muted);
-    background: rgb(7 150 184 / 8%);
-    border-color: var(--color-border-gold);
-}
-
-body[data-theme="blueprint-light"] .nav-menu-dropdown {
-    background: linear-gradient(180deg, #ffffff, #f4f9fc);
-    box-shadow: 0 18px 45px rgb(8 32 74 / 12%);
-}
-
-body[data-theme="blueprint-light"] .nav-name,
-body[data-theme="blueprint-light"] .nav-links a {
-    color: var(--color-text-secondary);
-}
-
-body[data-theme="blueprint-light"] .nav-name {
-    color: var(--color-text-primary);
-}
-
-/* Blueprint spec: the "SYSTEMS ENGINEER" label reads in the teal primary. */
-body[data-theme="blueprint-light"] .nav-tagline {
-    color: var(--color-gold-muted);
-}
-
-body[data-theme="blueprint-light"] .main-content::before,
-body[data-theme="blueprint-light"] .hero-circuit,
-body[data-theme="blueprint-light"] .story-hero-circuit {
-    opacity: 0.06;
-    filter: saturate(1.05) brightness(0.96) contrast(0.98);
-}
-
-/* Light blueprint hero: pale 48px grid + a soft teal glow over a light-blue
-   gradient, and NO dark scrim — so the navy headline reads clearly, matching
-   the reference mockup. This replaces the dark circuit-banner background the
-   other (dark) themes use. */
-body[data-theme="blueprint-light"] .hero,
-body[data-theme="blueprint-light"] .my-story-page,
-body[data-theme="blueprint-light"] .work-page,
-body[data-theme="blueprint-light"] .resume-page {
-    background:
-        radial-gradient(circle at 72% 18%, rgb(7 150 184 / 10%), transparent 34%),
-        linear-gradient(rgb(31 111 235 / 4.5%) 1px, transparent 1px),
-        linear-gradient(90deg, rgb(31 111 235 / 4.5%) 1px, transparent 1px),
-        linear-gradient(180deg, #f4f9fc 0%, #eef6fb 100%);
-    background-size: auto, 48px 48px, 48px 48px, auto;
-}
-
-/* The My Story page wraps EVERY section in the dark banner above; once
-   .my-story-page is light, the hero just sits transparently on top of it so
-   the grid runs unbroken down the whole page (Fun Facts, Journey, etc.). */
-body[data-theme="blueprint-light"] .story-hero {
-    background: transparent;
-}
-
-/* Remove the dark tint overlays the dark themes paint over the hero/pages. */
-body[data-theme="blueprint-light"] .hero::before,
-body[data-theme="blueprint-light"] .story-hero::before,
-body[data-theme="blueprint-light"] .my-story-page::before,
-body[data-theme="blueprint-light"] .work-page::before,
-body[data-theme="blueprint-light"] .resume-page::before,
-body[data-theme="blueprint-light"] .hero::after,
-body[data-theme="blueprint-light"] .story-hero::after {
-    content: none;
-}
-
-/* Fun Facts cards use a hard-coded dark gradient in the base CSS; lighten
-   them (the class is .fun-fact-card, distinct from the .fun-fact list above). */
-body[data-theme="blueprint-light"] .fun-fact-card {
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .fun-fact-card__icon {
-    border-color: rgb(7 150 184 / 45%);
-}
-
-body[data-theme="blueprint-light"] .drive-card:hover,
-body[data-theme="blueprint-light"] .story-card:hover,
-body[data-theme="blueprint-light"] .fun-fact-card:hover {
-    border-color: var(--color-border-gold);
-}
-
-/* Remaining surfaces with hard-coded dark backgrounds in the base CSS. */
-body[data-theme="blueprint-light"] .work-hero-panel,
-body[data-theme="blueprint-light"] .drive-card {
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-}
-
-/* Lifecycle diagram arrows: teal instead of gold in light mode (per the
-   blueprint spec). The stroke handles the curved lines; the #arrow-gold
-   rule recolors the SVG arrowhead marker, whose fill="#F3BE4F" attribute
-   is overridden by CSS (CSS beats SVG presentation attributes). */
-body[data-theme="blueprint-light"] .cycle-arc--gold {
-    stroke: rgb(7 150 184 / 88%);
-    filter: drop-shadow(0 0 8px rgb(7 150 184 / 20%));
-}
-
-body[data-theme="blueprint-light"] #arrow-gold path {
-    fill: #0796b8;
-}
-
-/* Light Slate went green (2026-07-06) — its lifecycle arrows follow the
-   accent instead of staying gold, same pattern as blueprint above. */
-body[data-theme="light-slate"] .cycle-arc--gold {
-    stroke: rgb(46 125 82 / 88%);
-    filter: drop-shadow(0 0 8px rgb(46 125 82 / 20%));
-}
-
-body[data-theme="light-slate"] #arrow-gold path {
-    fill: #2e7d52;
-}
-
 /* Mockup themes: royal-blue arrows. */
-body[data-theme="modern-blue"] .cycle-arc--gold,
-body[data-theme="paper-slate"] .cycle-arc--gold {
-    stroke: rgb(47 111 224 / 88%);
-    filter: drop-shadow(0 0 8px rgb(47 111 224 / 18%));
-}
 
 body[data-theme="modern-blue"] #arrow-gold path,
 body[data-theme="paper-slate"] #arrow-gold path {
     fill: #2f6fe0;
-}
-
-/* My Journey band: swap the hard-coded dark navy gradient for a white
-   framed panel so the heading and timeline read on the light page. */
-body[data-theme="blueprint-light"] .story-journey__layout {
-    background:
-        radial-gradient(circle at 18% 24%, rgb(7 150 184 / 7%), transparent 34%),
-        linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-    box-shadow: var(--shadow-card);
-}
-
-/* Journey timeline milestone circles: white with a teal ring. The --light
-   icon variant is near-white for dark themes, so recolor it navy here. */
-body[data-theme="blueprint-light"] .timeline-item__icon {
-    background: #ffffff;
-    border-color: rgb(7 150 184 / 40%);
-}
-
-body[data-theme="blueprint-light"] .timeline-item__icon--light {
-    color: #405875;
-}
-
-body[data-theme="blueprint-light"] .hero-ai-search__box,
-body[data-theme="blueprint-light"] .hero-ai-answer,
-body[data-theme="blueprint-light"] .lifecycle-center,
-body[data-theme="blueprint-light"] .lifecycle-node,
-body[data-theme="blueprint-light"] .metric-card,
-body[data-theme="blueprint-light"] .story-card,
-body[data-theme="blueprint-light"] .story-timeline__item,
-body[data-theme="blueprint-light"] .story-drive-card,
-body[data-theme="blueprint-light"] .fun-fact,
-body[data-theme="blueprint-light"] .work-proof-card,
-body[data-theme="blueprint-light"] .work-project-panel,
-body[data-theme="blueprint-light"] .work-project-tab,
-body[data-theme="blueprint-light"] .project-card,
-body[data-theme="blueprint-light"] .resume-recruiter-panel,
-body[data-theme="blueprint-light"] .resume-metric-card,
-body[data-theme="blueprint-light"] .resume-skill-button,
-body[data-theme="blueprint-light"] .resume-role-card,
-body[data-theme="blueprint-light"] .resume-role-panel,
-body[data-theme="blueprint-light"] .resume-impact-card,
-body[data-theme="blueprint-light"] .resume-impact-panel,
-body[data-theme="blueprint-light"] .resume-project-card,
-body[data-theme="blueprint-light"] .resume-education-card,
-body[data-theme="blueprint-light"] .peerslate-demo-card,
-body[data-theme="blueprint-light"] .peerslate-card,
-body[data-theme="blueprint-light"] .peerslate-final-card,
-body[data-theme="blueprint-light"] .peerslate-feature-list div,
-body[data-theme="blueprint-light"] .peerslate-profile-preview div {
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-    box-shadow: 0 14px 34px rgb(8 32 74 / 8%);
-}
-
-/* Featured product look for the Ask Pete AI box: white, teal left rule. */
-body[data-theme="blueprint-light"] .hero-ai-search__box {
-    background: #ffffff;
-    border-color: rgb(7 150 184 / 28%);
-    border-left: 3px solid var(--color-gold);
-    box-shadow:
-        0 12px 28px rgb(8 32 74 / 8%),
-        0 0 0 1px rgb(255 255 255 / 70%);
-}
-
-body[data-theme="blueprint-light"] .hero-ai-answer {
-    color: var(--color-text-secondary);
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: rgb(7 150 184 / 24%);
-    border-left-color: var(--color-cyan);
-    box-shadow: 0 12px 28px rgb(8 32 74 / 8%);
-}
-
-body[data-theme="blueprint-light"] .hero-ai-answer::before {
-    border-color: rgb(7 150 184 / 24%);
-}
-
-body[data-theme="blueprint-light"] .hero-ai-answer__close {
-    color: var(--color-text-muted);
-    background: #eef6fb;
-    border-color: var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .hero-ai-answer__close:hover,
-body[data-theme="blueprint-light"] .hero-ai-answer__close:focus-visible {
-    color: var(--color-gold-muted);
-    background: rgb(7 150 184 / 8%);
-    border-color: rgb(7 150 184 / 28%);
-}
-
-body[data-theme="blueprint-light"] .hero-ai-search__input,
-body[data-theme="blueprint-light"] #chat-input {
-    color: var(--color-text-primary);
-}
-
-body[data-theme="blueprint-light"] .btn-secondary,
-body[data-theme="blueprint-light"] .project-tags span,
-body[data-theme="blueprint-light"] .resume-filter-btn,
-body[data-theme="blueprint-light"] .theme-preview button {
-    color: var(--color-text-secondary);
-    background: rgb(255 255 255 / 62%);
-    border-color: var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .project-media,
-body[data-theme="blueprint-light"] .mock-window,
-body[data-theme="blueprint-light"] .mock-window--dashboard {
-    background: linear-gradient(180deg, #eef6fb, #dcebf5);
-}
-
-body[data-theme="blueprint-light"] #chat-toggle {
-    color: var(--color-gold-muted);
-    background: #ffffff;
-    border-color: rgb(7 150 184 / 36%);
-    box-shadow: 0 12px 28px rgb(8 32 74 / 12%);
-}
-
-body[data-theme="blueprint-light"] #chat-panel {
-    background: #ffffff;
-    border-color: var(--color-border);
-    box-shadow: 0 22px 70px rgb(8 32 74 / 18%);
-}
-
-body[data-theme="blueprint-light"] #chat-header {
-    background: linear-gradient(180deg, #f8fcff, #eef6fb);
-    border-bottom: 1px solid var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .bot-message,
-body[data-theme="blueprint-light"] .suggestion-btn,
-body[data-theme="blueprint-light"] #chat-input-area,
-body[data-theme="blueprint-light"] #chat-disclaimer {
-    background: #f4fafe;
-    border-color: var(--color-border);
-}
-
-/* Chat input hardcodes a dark navy background in chatbot.css. */
-body[data-theme="blueprint-light"] #chat-input {
-    background: #ffffff;
-    border-color: var(--color-border);
-}
-
-/* Send button: solid teal gradient with white text (the dark theme's faint
-   gold-tint version washes out on a light panel). */
-body[data-theme="blueprint-light"] #chat-send {
-    color: #ffffff;
-    background: linear-gradient(135deg, #0ea5c6, #047fa0);
-    border-color: rgb(7 150 184 / 35%);
-}
-
-body[data-theme="blueprint-light"] #chat-send:hover {
-    color: #ffffff;
-    background: linear-gradient(135deg, #22b8d8, #058bb0);
-}
-
-body[data-theme="blueprint-light"] .footer {
-    background: #e6eff7;
-    color: rgb(8 32 74 / 62%);
-}
-
-/* Signature blueprint accent: money/impact numbers ($36M+, $900M, $19.2M)
-   glow amber. The .metric-money class is added in metrics_strip.html and
-   is inert on every other theme. */
-body[data-theme="blueprint-light"] .metric-money {
-    color: var(--accent-amber);
 }
 
 
@@ -2464,49 +913,8 @@ body[data-theme="blueprint-light"] .metric-money {
    lifecycle diagram stack to one column, work page panels stack. */
 @media (max-width: 1180px) {
     .site-container,
-    .nav-container,
     .footer-container {
         width: min(100% - 56px, var(--site-width));
-    }
-
-    .nav-container {
-        grid-template-columns: auto auto minmax(0, 1fr) auto;   /* menu | brand | links | LinkedIn */
-    }
-
-    .nav-links {
-        gap: 24px;
-    }
-
-    .hero-grid {
-        grid-template-columns: 1fr;
-        gap: 34px;
-        padding-top: 52px;
-    }
-
-    .hero-copy {
-        max-width: 760px;
-        margin-inline: auto;
-        text-align: center;
-    }
-
-    .hero-copy h1,
-    .hero-description {
-        max-width: none;
-        margin-inline: auto;
-    }
-
-    .hero-actions {
-        justify-content: center;
-    }
-
-    .lifecycle-visual {
-        max-width: 780px;
-        width: 100%;
-        margin-inline: auto;
-    }
-
-    .projects-layout {
-        grid-template-columns: 1fr;
     }
 
     .projects-copy {
@@ -2528,97 +936,10 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 }
 
-/* Tablets: the header's brand text and LinkedIn icon shrink a step
-   so everything keeps fitting on one row. */
-@media (max-width: 1040px) {
-    .nav-container {
-        gap: 14px;
-    }
-
-    .nav-wordmark {
-        gap: 12px;
-    }
-
-    .nav-logo--brand .nav-wordmark {
-        gap: 4px;
-    }
-
-    .nav-brand-mark {
-        width: 36px;
-        height: 36px;
-    }
-
-    .nav-name {
-        font-size: 1.08rem;
-    }
-
-    .nav-tagline {
-        font-size: 0.58rem;
-        letter-spacing: 0.16em;
-    }
-
-    .nav-links {
-        gap: 16px;
-    }
-
-    .nav-links a {
-        font-size: 0.82rem;
-    }
-
-    .nav-linkedin {
-        width: 34px;
-        height: 34px;
-    }
-}
 
 /* Small tablets: header shrinks again, and the /work page's hero and
    proof-grid columns collapse to one column. */
 @media (max-width: 860px) {
-    .nav-container {
-        width: min(100% - 32px, var(--site-width));
-        grid-template-columns: auto minmax(150px, 0.8fr) minmax(0, auto) minmax(34px, 0.4fr);
-        gap: 10px;
-    }
-
-    .nav-menu-btn {
-        width: 32px;
-        height: 32px;
-    }
-
-    .nav-logo {
-        gap: 8px;
-    }
-
-    .nav-wordmark {
-        gap: 8px;
-    }
-
-    .nav-brand-mark {
-        width: 32px;
-        height: 32px;
-    }
-
-    .nav-name {
-        font-size: 0.95rem;
-    }
-
-    .nav-tagline {
-        font-size: 0.48rem;
-        letter-spacing: 0.12em;
-    }
-
-    .nav-links {
-        gap: 10px;
-    }
-
-    .nav-links a {
-        font-size: 0.74rem;
-    }
-
-    .nav-linkedin {
-        width: 30px;
-        height: 30px;
-    }
 
     .work-hero,
     .work-proof-grid {
@@ -2626,181 +947,11 @@ body[data-theme="blueprint-light"] .metric-money {
     }
 }
 
-/* Phones: the header fully stacks (menu, brand, links, LinkedIn each
-   get their own row) and the homepage's 3 project cards become 2-wide. */
-@media (max-width: 780px) {
-    .site-header {
-        position: relative;
-    }
-
-    .nav-container {
-        min-height: auto;
-        padding: 14px 0;
-        grid-template-columns: 1fr;
-        justify-items: center;
-        gap: 14px;
-    }
-
-    /* On the stacked phone header, the site menu pins to the top-left
-       corner instead of joining the centered column. The header is
-       position: relative here, so absolute coordinates are relative
-       to the header itself. */
-    .nav-menu {
-        position: absolute;
-        top: 14px;
-        left: 16px;
-    }
-
-    .nav-logo {
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .nav-logo--brand {
-        flex-direction: row;
-        gap: 9px;
-    }
-
-    .nav-wordmark {
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .nav-logo--brand .nav-wordmark {
-        align-items: flex-start;
-    }
-
-    .nav-right {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 13px;
-    }
-
-    /* Pins the LinkedIn icon to the top-right corner, mirroring how
-       .nav-menu (the hamburger button) pins to the top-left above.
-       Taking it out of .nav-right's centered column like this is what
-       keeps it from stacking underneath the nav links. */
-    .nav-actions {
-        position: absolute;
-        top: 14px;
-        right: 16px;
-    }
-
-    .nav-links {
-        width: 100%;
-        max-width: 440px;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 8px 20px;
-    }
-
-    .nav-links a {
-        padding: 4px 0;
-    }
-
-    .nav-links a::after {
-        bottom: -2px;
-    }
-
-    /* Same scale the My Story hero uses at this width, so the homepage
-       keeps the compact desktop feel instead of blowing up on tablets. */
-    .hero-copy h1 {
-        max-width: 680px;
-        font-size: clamp(1.6rem, 5vw, 2.3rem);
-    }
-
-    .hero-copy {
-        width: 100%;
-        max-width: 680px;
-        margin-inline: 0;
-        text-align: left;
-    }
-
-    .hero-copy h1,
-    .hero-description {
-        margin-inline: 0;
-    }
-
-    .hero-actions {
-        justify-content: flex-start;
-    }
-
-    .project-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-/* At tablet widths the circular lifecycle takes over the page.
-   Use the same readable stacked bars as the phone layout sooner. */
-@media (max-width: 980px) {
-    .lifecycle-visual {
-        aspect-ratio: auto;
-    }
-
-    .lifecycle-stage {
-        position: static;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        width: auto;
-        height: auto;
-        transform: none;
-    }
-
-    .lifecycle-arrows,
-    .lifecycle-circuit,
-    .lifecycle-center,
-    .lifecycle-node {
-        position: static;
-        transform: none;
-    }
-
-    .lifecycle-arrows,
-    .lifecycle-circuit {
-        display: none;
-    }
-
-    .lifecycle-center {
-        grid-column: 1 / -1;
-        width: auto;
-        height: auto;
-        padding: 16px;
-        border: 1px solid var(--color-border-soft);
-        border-radius: 10px;
-        background: linear-gradient(180deg, #0b1827, #081420);
-    }
-
-    .lifecycle-center h2 {
-        max-width: none;
-    }
-
-    .lifecycle-node {
-        width: 100%;
-        min-height: 76px;
-        padding: 13px 15px;
-    }
-}
-
-/* Narrow phones: the lifecycle's 2-column grid (set at 980px above)
-   drops to a single column of stacked stage cards. */
-@media (max-width: 700px) {
-    .lifecycle-stage {
-        grid-template-columns: 1fr;
-    }
-
-    .lifecycle-node {
-        min-height: auto;
-    }
-}
 
 /* Smallest phones: page edge padding tightens further, and the hero
    headline/description shrink one more step. */
 @media (max-width: 620px) {
     .site-container,
-    .nav-container,
     .footer-container {
         width: min(100% - 32px, var(--site-width));
     }
@@ -2813,24 +964,7 @@ body[data-theme="blueprint-light"] .metric-money {
 
     /* Phone nav links restored now that the site has real pages to visit.
        They wrap into centered rows below Pete's name. */
-    .nav-links {
-        width: 100%;
-        max-width: 330px;
-        justify-content: center;
-        gap: 6px 14px;
-    }
 
-    .nav-links a {
-        font-size: 0.86rem;
-    }
-
-    .hero-grid {
-        gap: 28px;
-        padding-top: 34px;
-        padding-bottom: 34px;
-    }
-
-    .hero-eyebrow,
     .section-eyebrow {
         font-size: 0.68rem;
         line-height: 1.7;
@@ -2838,24 +972,6 @@ body[data-theme="blueprint-light"] .metric-money {
 
     /* 6.4vw lands at 24px on a 375px phone — the exact size the My Story
        hero headline renders at, so both pages feel like the same site. */
-    .hero-copy h1 {
-        max-width: 20em;
-        margin-bottom: 18px;
-        font-size: clamp(1.5rem, 6.4vw, 2.05rem);
-        line-height: 1.1;
-    }
-
-    .hero-description {
-        max-width: 34rem;
-        margin-bottom: 20px;
-        font-size: 1rem;
-        line-height: 1.62;
-    }
-
-    .hero-actions {
-        align-items: flex-start;
-        flex-direction: column;
-    }
 
     .btn {
         width: 100%;
@@ -2864,13 +980,6 @@ body[data-theme="blueprint-light"] .metric-money {
     /* Keep the hero's Interactive Resume button compact like desktop
        instead of a full-width bar (part of keeping the desktop essence
        on phones — matches how My Story handles its hero). */
-    .hero-actions .btn {
-        width: auto;
-    }
-
-    .project-grid {
-        grid-template-columns: 1fr;
-    }
 
     .work-page {
         padding: 34px 0 48px;
@@ -3765,10 +1874,6 @@ body[data-theme="blueprint-light"] .metric-money {
 }
 
 .interest-item {
-    align-items: center;
-}
-
-.interest-item {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -4106,34 +2211,6 @@ body[data-theme="blueprint-light"] .metric-money {
 }
 
 
-/* Tablets and below: the PeerSlate marketing homepage's two-column
-   sections (hero, problem statement, features) stack to one column. */
-@media (max-width: 1020px) {
-    .peerslate-hero__grid,
-    .peerslate-two-column,
-    .peerslate-feature-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .peerslate-hero::after {
-        width: 300px;
-        height: 300px;
-        opacity: 0.07;
-    }
-
-    .peerslate-brand-lockup {
-        width: min(100%, 380px);
-    }
-
-    .peerslate-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .peerslate-hero__copy h1 {
-        font-size: 4rem;
-    }
-}
-
 /* A second, separate 620px phone breakpoint: this one shrinks the
    shared "Ask Pete AI" search box (used on the homepage and other
    pages via portfolio_ai_search.html) and the lifecycle center card. */
@@ -4172,60 +2249,6 @@ body[data-theme="blueprint-light"] .metric-money {
         margin: 20px 0 24px;
     }
 
-    .lifecycle-center {
-        padding: 15px;
-    }
-
-    .lifecycle-center p {
-        font-size: 0.82rem;
-    }
-
-    .lifecycle-node {
-        align-items: center;
-        padding: 12px 13px;
-    }
-
-    .lifecycle-node h3 {
-        font-size: 0.9rem;
-    }
-
-    .lifecycle-node p {
-        font-size: 0.78rem;
-    }
-
-    .peerslate-hero {
-        padding: 58px 0;
-    }
-
-    .peerslate-hero::after {
-        display: none;
-    }
-
-    .peerslate-brand-lockup {
-        width: min(100%, 330px);
-        margin-bottom: 18px;
-    }
-
-    .peerslate-card-grid,
-    .peerslate-feature-list {
-        grid-template-columns: 1fr;
-    }
-
-    .peerslate-hero__copy h1 {
-        font-size: 3rem;
-    }
-
-    .peerslate-section h2 {
-        font-size: 2.1rem;
-    }
-
-    .peerslate-hero__actions {
-        flex-direction: column;
-    }
-
-    .peerslate-final-card {
-        padding: 28px 20px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4271,176 +2294,6 @@ body[data-theme="blueprint-light"] .metric-money {
     --button-secondary-text: #f5f2ea;
 }
 
-/* Light Slate, refreshed 2026-07-06 per Pete: whiter page, a tasteful
-   deep-green accent scheme in place of the old warm gold, and the stone
-   texture turned UP so the whiter page still reads as slate. */
-body[data-theme="light-slate"] {
-    --bg: #f7f7f4;
-    --bg-elevated: #f0f0eb;
-    --surface: #ffffff;
-    --surface-soft: #f4f6f2;
-    --text: #1e2a24;
-    --text-muted: #5b6b60;
-    --accent: #2e7d52;
-    --accent-hover: #389463;
-    --accent-soft: rgb(46 125 82 / 12%);
-    --border: #d7dcd4;
-    --shadow: 0 18px 42px rgb(44 58 50 / 14%);
-    --nav-bg: rgb(250 250 248 / 94%);
-    --tab-active: #2e7d52;
-    --button-primary-bg: #2e7d52;
-    --button-primary-text: #f3faf5;
-    --button-secondary-bg: #ffffff;
-    --button-secondary-text: #1e2a24;
-    --color-page: #f7f7f4;
-    --color-page-deep: #ecece6;
-    --color-section: #f9f9f6;
-    --color-card: #ffffff;
-    --color-card-elevated: #f3f5f1;
-    --color-card-hover: #ecf2ed;
-    --color-gold: #2e7d52;
-    --color-gold-bright: #3a9663;
-    --color-gold-muted: #256844;
-    --color-gold-dark: #1b4d33;
-    --color-blue: #4f6d5d;
-    --color-cyan: #47846a;
-    --color-text-primary: #1e2a24;
-    --color-text-secondary: #435248;
-    --color-text-muted: #6b7a70;
-    --color-text-dark: #10231a;
-    --color-border: #d7dcd4;
-    --color-border-soft: #e3e7e0;
-    --color-border-gold: #7fae95;
-    --shadow-card: var(--shadow);
-    --shadow-gold: 0 8px 24px rgb(46 125 82 / 18%);
-
-    /* Real-photo slab treatment — near-white stone, thinner washes so
-       more of the real rock grain shows through every surface. */
-    --slate-photo: var(--site-slate-bg-light);
-    --slate-header-flat: rgb(243 244 240);
-    --slate-tint-band: rgb(245 246 242 / 50%);
-    --slate-tint-tabs: rgb(251 251 248 / 74%);
-    --slate-tint-header: rgb(247 248 244 / 84%);
-    --slate-tint-card: rgb(253 254 252 / 36%);
-    --slate-tint-chip: rgb(249 250 247 / 40%);
-    --slate-tint-input: rgb(251 252 249 / 86%);
-    --slate-screen: rgb(232 234 229);
-    --slate-edge-lit: rgb(255 255 255 / 85%);
-    /* Light stone slabs: bright top edge, whisper-soft green-gray shade. */
-    --slab-hi: rgb(255 255 255 / 65%);
-    --slab-lo: rgb(48 62 53 / 12%);
-    --slab-hi-chip: rgb(255 255 255 / 70%);
-    --slab-lo-chip: rgb(48 62 53 / 10%);
-    /* NOTE: light-theme overrides for the shared slate variables
-       (--slate-type-shadow, --pop-shadow, --gilt-shadow, ...) do NOT
-       live here — they must sit AFTER the body[data-slate-photo="on"]
-       block or its later dark values win the cascade at equal
-       specificity. See the light-theme override block near the end of
-       this file (search "Bars: soft light shadows"). */
-    --slab-card-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(48 62 53 / 12%),
-        0 12px 24px rgb(48 62 53 / 16%),
-        0 28px 54px rgb(48 62 53 / 17%);
-    --slab-chip-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(48 62 53 / 12%),
-        0 10px 20px rgb(48 62 53 / 16%);
-    /* Small controls + raised bars use light-ink shadows too, instead of
-       inheriting the heavy black stacks tuned for the dark themes. */
-    --slab-control-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(48 62 53 / 16%),
-        0 2px 3px rgb(48 62 53 / 14%),
-        0 8px 16px rgb(48 62 53 / 15%);
-    --slab-bar-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(48 62 53 / 18%),
-        0 2px 4px rgb(48 62 53 / 10%),
-        0 12px 22px rgb(48 62 53 / 14%),
-        0 24px 42px rgb(48 62 53 / 12%);
-}
-
-body[data-theme="light-blue-slate"] {
-    --bg: #edf5fb;
-    --bg-elevated: #e3eef7;
-    --surface: #ffffff;
-    --surface-soft: #f4f9fd;
-    --text: #08204a;
-    --text-muted: #4b6380;
-    --accent: #246fbd;
-    --accent-hover: #2f83dc;
-    --accent-soft: rgb(37 105 184 / 13%);
-    --border: #c9dceb;
-    --shadow: 0 18px 42px rgb(16 54 92 / 14%);
-    --nav-bg: rgb(246 250 253 / 94%);
-    --tab-active: #2569b8;
-    --button-primary-bg: #e5b95c;
-    --button-primary-text: #0d1b2c;
-    --button-secondary-bg: #ffffff;
-    --button-secondary-text: #08204a;
-    --color-page: #edf5fb;
-    --color-page-deep: #dfeaf4;
-    --color-section: #f6fbff;
-    --color-card: #ffffff;
-    --color-card-elevated: #f4f9fd;
-    --color-card-hover: #edf6fd;
-    --color-gold: #2569b8;
-    --color-gold-bright: #2f7dd8;
-    --color-gold-muted: #1f5d9f;
-    --color-gold-dark: #174675;
-    --color-blue: #2569b8;
-    --color-cyan: #5aa6d8;
-    --color-text-primary: #08204a;
-    --color-text-secondary: #334c6d;
-    --color-text-muted: #657d99;
-    --color-text-dark: #0d1b2c;
-    --color-border: #c9dceb;
-    --color-border-soft: #d8e6f1;
-    --color-border-gold: #88b4dd;
-    --shadow-card: var(--shadow);
-    --shadow-gold: 0 8px 24px rgb(37 105 184 / 18%);
-
-    /* Real-photo slab treatment — pale blue stone. */
-    --slate-photo: var(--site-slate-bg-lightblue);
-    --slate-header-flat: rgb(234 243 251);
-    --slate-tint-band: rgb(232 242 251 / 58%);
-    --slate-tint-tabs: rgb(246 250 254 / 80%);
-    --slate-tint-header: rgb(240 247 253 / 88%);
-    --slate-tint-card: rgb(250 253 255 / 44%);
-    --slate-tint-chip: rgb(244 249 254 / 48%);
-    --slate-tint-input: rgb(248 251 254 / 88%);
-    --slate-screen: rgb(226 234 242);
-    --slate-edge-lit: rgb(255 255 255 / 82%);
-    --slab-hi: rgb(255 255 255 / 68%);
-    --slab-lo: rgb(24 52 88 / 12%);
-    --slab-hi-chip: rgb(255 255 255 / 72%);
-    --slab-lo-chip: rgb(24 52 88 / 10%);
-    /* NOTE: shared slate variable overrides live in the light-theme
-       block near the end of the file (must come after the
-       body[data-slate-photo="on"] block to win the cascade). */
-    --slab-card-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(24 52 88 / 12%),
-        0 12px 24px rgb(24 52 88 / 17%),
-        0 28px 54px rgb(24 52 88 / 18%);
-    --slab-chip-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 2px 4px rgb(24 52 88 / 12%),
-        0 10px 20px rgb(24 52 88 / 17%);
-    /* Light-ink shadows for small controls and raised bars. */
-    --slab-control-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(24 52 88 / 16%),
-        0 2px 3px rgb(24 52 88 / 14%),
-        0 8px 16px rgb(24 52 88 / 15%);
-    --slab-bar-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 88%),
-        inset 0 -1px 1px rgb(24 52 88 / 18%),
-        0 2px 4px rgb(24 52 88 / 10%),
-        0 12px 22px rgb(24 52 88 / 14%),
-        0 24px 42px rgb(24 52 88 / 12%);
-}
 
 /* Dark Slate (gray-slate) + Dark Slate Stone (stone-slate) share ONE dark
    palette. stone-slate is a gray-slate twin; the only difference is that
@@ -4512,63 +2365,6 @@ body[data-theme="stone-slate"] {
     --slate-edge-lit: rgb(255 255 255 / 22%);
 }
 
-body[data-theme="sage-slate"] {
-    --bg: #0e1915;
-    --bg-elevated: #13221d;
-    --surface: #1a2d26;
-    --surface-soft: #22382f;
-    /* Headline/bold white carries a soft green undertone so bright text
-       sits naturally on the sage stone instead of reading warm ivory. */
-    --text: #eaf2e6;
-    --text-muted: #c8d5c7;
-    --accent: #d6a54d;
-    --accent-hover: #ecc56f;
-    --accent-soft: rgb(214 165 77 / 14%);
-    /* Neutral hairline (no gold borders on slate — see gray-slate note). */
-    --border: rgb(212 226 211 / 13%);
-    --shadow: 0 18px 48px rgb(0 0 0 / 34%);
-    --nav-bg: rgb(12 22 18 / 93%);
-    --tab-active: #d6a54d;
-    --button-primary-bg: #d6a54d;
-    --button-primary-text: #101810;
-    --button-secondary-bg: rgb(255 255 255 / 5%);
-    --button-secondary-text: #eaf2e6;
-    --color-page: #0e1915;
-    --color-page-deep: #07100d;
-    --color-section: #13221d;
-    --color-card: #1a2d26;
-    --color-card-elevated: #22382f;
-    --color-card-hover: #2a4439;
-    --color-gold: #d6a54d;
-    --color-gold-bright: #ecc56f;
-    --color-gold-muted: #b78734;
-    --color-gold-dark: #76571e;
-    --color-blue: #9bb8a9;
-    --color-cyan: #9fd1bd;
-    --color-text-primary: #eaf2e6;
-    --color-text-secondary: #d9dfd2;
-    --color-text-muted: #aab9aa;
-    --color-text-dark: #101810;
-    --color-border: rgb(212 226 211 / 14%);
-    --color-border-soft: rgb(212 226 211 / 9%);
-    --color-border-gold: #9a7839;
-    --shadow-card: var(--shadow);
-    --shadow-gold: 0 12px 30px rgb(214 165 77 / 18%);
-
-    /* Real-photo slab treatment: sage stone photo + green-tinted washes. */
-    --slate-photo: var(--site-slate-bg-sage);
-    --slate-header-flat: rgb(14 23 18);
-    --slate-tint-band: rgb(18 30 24 / 60%);
-    /* Darker bar washes so the tab strip / header contrast the page. */
-    --slate-tint-tabs: rgb(9 16 12 / 74%);
-    --slate-tint-header: rgb(8 13 10 / 86%);
-    --slate-tint-card: rgb(15 25 20 / 49%);
-    --slate-tint-chip: rgb(17 29 23 / 48%);
-    --slate-tint-input: rgb(13 22 18 / 86%);
-    --slate-screen: rgb(16 23 19);
-    --slate-edge-lit: rgb(232 240 228 / 20%);
-}
-
 /* =========================================================
    MOCKUP TYPE SYSTEM (2026-07-06, from static/Mockup/*.png)
    Every heading on the site is set in Source Serif 4 — page
@@ -4591,12 +2387,6 @@ h3 {
     letter-spacing: normal;
 }
 
-/* Micro-label headings stay engineered sans: the lifecycle's uppercase
-   stage titles + medallion lockup read wrong in a bookish serif. */
-.lifecycle-node h3,
-.lifecycle-center h2 {
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
 
 /* MODERN BLUE — rebuilt 2026-07-06 as THE mockup theme: cool paper
    page, white cards with hairline borders and whisper shadows, royal
@@ -4736,9 +2526,6 @@ body[data-theme="paper-slate"] {
     --slate-line: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
-body[data-theme="light-slate"],
-body[data-theme="light-blue-slate"],
-body[data-theme="blueprint-light"],
 body[data-theme="modern-blue"],
 body[data-theme="paper-slate"] {
     --slate-grain: 0.22;
@@ -4820,25 +2607,6 @@ body[data-slate="on"]::before {
 body[data-theme="gray-slate"] .platform-brand__logo img,
 body[data-theme="stone-slate"] .platform-brand__logo img {
     filter: drop-shadow(0 2px 5px rgb(0 0 0 / 45%));
-}
-
-.brand-mark {
-    width: 27px;
-    height: 27px;
-    fill: var(--text);
-}
-
-.brand-word {
-    color: var(--text);
-    font-family: var(--font-serif);
-    font-size: 1.42rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-}
-
-.brand-word em {
-    font-style: normal;
 }
 
 /* Theme dropdown (mockup): a quiet bordered pill that opens a panel of
@@ -5046,10 +2814,6 @@ body[data-theme="stone-slate"] .platform-brand__logo img {
     --swatch: linear-gradient(135deg, #e7ebf1, #0b63e5);
 }
 
-.theme-option--blue {
-    --swatch: linear-gradient(135deg, #f4f9fd, #2569b8);
-}
-
 .theme-option--gray {
     --swatch: linear-gradient(135deg, #283236, #d7a84f);
 }
@@ -5060,26 +2824,7 @@ body[data-theme="stone-slate"] .platform-brand__logo img {
     --swatch: linear-gradient(135deg, #4a565b 20%, #2c363a 60%, #d7a84f);
 }
 
-.theme-option--sage {
-    --swatch: linear-gradient(135deg, #20372f, #d6a54d);
-}
-
 /* Dots for the four original (pre-slate) site themes. */
-.theme-option--gold {
-    --swatch: linear-gradient(135deg, #0a1624, #f3be4f);
-}
-
-.theme-option--modern {
-    --swatch: linear-gradient(135deg, #ffffff, #2f6fe0);
-}
-
-.theme-option--blueprint {
-    --swatch: linear-gradient(135deg, #f4f9fc, #0796b8);
-}
-
-.theme-option--green {
-    --swatch: linear-gradient(135deg, #0b1715, #4ade80);
-}
 
 .theme-option.is-active {
     outline: 2px solid var(--accent);
@@ -5112,17 +2857,6 @@ body[data-theme="stone-slate"] .platform-brand__logo img {
 .theme-option:focus-visible .theme-tooltip {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
-}
-
-.nav-linkedin {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: rgb(255 255 255 / 6%);
-    transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease;
 }
 
 .sign-in-btn {
@@ -5733,62 +3467,9 @@ body[data-slate="on"] .hero::before {
         radial-gradient(circle at 78% 14%, var(--accent-soft), transparent 28%);
 }
 
-/* The metrics strip LAYOUT stays shared (all eight themes use the same
-   5-column grid HTML), but it draws with each theme's own --surface /
-   --border / --accent variables, so it always matches the active theme.
-   Only the extra stone-noise texture is slate-exclusive (added below). */
-.metrics-band {
-    padding: 0;
-    background: transparent;
-}
-
-.metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0;
-    padding: 16px 20px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-}
-
-body[data-slate="on"] .metrics-strip {
-    background-image: var(--slate-noise);
-}
-
-.metrics-strip .metric-item {
-    min-width: 0;
-    width: auto;
-    padding: 0 18px;
-    border-right: 1px solid var(--border);
-}
-
-.metrics-strip .metric-item:last-child {
-    border-right: 0;
-}
-
-.metrics-strip .metric-icon {
-    color: var(--accent);
-    background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
-    border-color: var(--border);
-}
-
-.metrics-strip .metric-icon svg {
-    width: 20px;
-    height: 20px;
-}
-
-body[data-slate="on"] .metrics-strip .metric-money,
-body[data-slate="on"] .metrics-strip .metric-item strong {
-    color: var(--accent);
-}
 
 /* Slate-only card surface (stone gradient + texture). Original themes keep
    their own card styling from the sections far above. */
-body[data-slate="on"] .project-card,
-body[data-slate="on"] .lifecycle-node,
-body[data-slate="on"] .lifecycle-center,
 body[data-slate="on"] .hero-ai-search__box,
 body[data-slate="on"] .work-project-panel,
 body[data-slate="on"] .work-project-tab,
@@ -5809,8 +3490,6 @@ body[data-slate="on"] .fun-fact-card {
     box-shadow: var(--shadow);
 }
 
-body[data-theme="light-slate"] .hero::before,
-body[data-theme="light-blue-slate"] .hero::before,
 body[data-theme="modern-blue"] .hero::before,
 body[data-theme="paper-slate"] .hero::before {
     background:
@@ -5818,14 +3497,6 @@ body[data-theme="paper-slate"] .hero::before {
         radial-gradient(circle at 78% 14%, var(--accent-soft), transparent 28%);
 }
 
-body[data-theme="light-slate"] .hero,
-body[data-theme="light-blue-slate"] .hero,
-body[data-theme="light-slate"] .my-story-page,
-body[data-theme="light-blue-slate"] .my-story-page,
-body[data-theme="light-slate"] .work-page,
-body[data-theme="light-blue-slate"] .work-page,
-body[data-theme="light-slate"] .resume-page,
-body[data-theme="light-blue-slate"] .resume-page,
 body[data-theme="modern-blue"] .hero,
 body[data-theme="modern-blue"] .my-story-page,
 body[data-theme="modern-blue"] .work-page,
@@ -5837,10 +3508,6 @@ body[data-theme="paper-slate"] .resume-page {
     color: var(--text);
 }
 
-body[data-theme="light-slate"] .platform-nav__links a,
-body[data-theme="light-blue-slate"] .platform-nav__links a,
-body[data-theme="light-slate"] .profile-tab,
-body[data-theme="light-blue-slate"] .profile-tab,
 body[data-theme="modern-blue"] .platform-nav__links a,
 body[data-theme="modern-blue"] .profile-tab,
 body[data-theme="paper-slate"] .platform-nav__links a,
@@ -5848,16 +3515,14 @@ body[data-theme="paper-slate"] .profile-tab {
     color: var(--text);
 }
 
-body[data-theme="light-slate"] .btn-secondary,
-body[data-theme="light-blue-slate"] .btn-secondary,
 body[data-theme="modern-blue"] .btn-secondary,
 body[data-theme="paper-slate"] .btn-secondary {
     background: #ffffff;
 }
 
 /* =========================================================
-   SLATE SLAB SURFACES — GRAY SLATE & SAGE SLATE
-   These two themes use the real stone photographs in
+   SLATE SLAB SURFACES — STONE PHOTO THEMES
+   These themes use the real stone photographs in
    static/images/slate-backgrounds/ two ways, copying the mockups:
      1. The page itself is one fixed, darkened photo.
      2. Every bar, card, button, and chip is its OWN slab of stone:
@@ -5866,10 +3531,8 @@ body[data-theme="paper-slate"] .btn-secondary {
         each piece looks raised off the page — touchable, like the
         mockups.
    Everything here keys off body[data-slate-photo="on"], which
-   theme-preview.js sets ONLY for gray-slate and sage-slate. The two
-   light slate themes still use the procedural noise above (their real
-   photos come in a later pass), and the four original themes are
-   completely unaffected.
+   theme-preview.js sets for the stone themes (gray-slate,
+   stone-slate, paper-slate). Flat themes are completely unaffected.
    ========================================================= */
 
 body[data-slate-photo="on"] {
@@ -6009,27 +3672,6 @@ body[data-theme="stone-slate"] {
         var(--site-slate-bg-gray);
 }
 
-body[data-theme="sage-slate"] {
-    background-image:
-        linear-gradient(180deg, rgb(8 15 12 / 45%), rgb(8 15 12 / 68%)),
-        var(--site-slate-bg-sage);
-}
-
-/* Light themes: the same fixed stone photo, but washed LIGHT (not
-   darkened) so the page stays bright and airy like the light mockups. */
-body[data-theme="light-slate"] {
-    /* Whiter, thinner wash (2026-07-06): lets more of the real stone
-       grain read through the brighter page. */
-    background-image:
-        linear-gradient(180deg, rgb(251 251 248 / 34%), rgb(243 244 239 / 22%)),
-        var(--site-slate-bg-light);
-}
-
-body[data-theme="light-blue-slate"] {
-    background-image:
-        linear-gradient(180deg, rgb(244 249 253 / 44%), rgb(231 240 250 / 34%)),
-        var(--site-slate-bg-lightblue);
-}
 
 /* Mockup themes: Modern Blue buries the stone under a heavy white veil
    (flat mockup paper); White Slate lets noticeably more stone through. */
@@ -6099,12 +3741,6 @@ body[data-slate-photo="on"] .projects-section {
     background: none;
 }
 
-/* The metrics band drew a full-width hairline under itself, which read
-   as a seam splitting the page background in two. The raised strip's own
-   border + drop shadow do that job now. */
-body[data-slate-photo="on"] .metrics-band {
-    border-bottom: 0;
-}
 
 /* ---------- Top platform header: the darkest cut of the page stone ----
    Per the mockups the header keeps the slate texture — it samples the
@@ -6185,8 +3821,6 @@ body[data-slate-photo="on"] .platform-brand__logo img {
 /* Light themes keep the natural colored logo too (Pete's call) — a soft
    ink drop-shadow gives the silver chrome enough definition on light
    stone without darkening its color. */
-body[data-theme="light-slate"] .platform-brand__logo img,
-body[data-theme="light-blue-slate"] .platform-brand__logo img,
 body[data-theme="modern-blue"] .platform-brand__logo img,
 body[data-theme="paper-slate"] .platform-brand__logo img {
     filter: drop-shadow(0 1px 1px rgb(6 26 58 / 22%));
@@ -6201,13 +3835,10 @@ body[data-slate-photo="on"] .profile-avatar {
 }
 
 body[data-slate-photo="on"] .profile-identity h1,
-body[data-slate-photo="on"] .hero-copy h1,
 body[data-slate-photo="on"] .projects-copy h2,
 body[data-slate-photo="on"] .work-hero h1,
 body[data-slate-photo="on"] .resume-hero h1,
-body[data-slate-photo="on"] .story-hero__content h1,
-body[data-slate-photo="on"] .project-card h3,
-body[data-slate-photo="on"] .lifecycle-node h3 {
+body[data-slate-photo="on"] .story-hero__content h1 {
     text-shadow: var(--slate-type-shadow);
 }
 
@@ -6219,20 +3850,16 @@ body[data-slate="on"] .profile-identity h1 {
     letter-spacing: -0.03em;
 }
 
-body[data-slate="on"] .hero-copy h1,
 body[data-slate="on"] .story-hero__content h1,
 body[data-slate="on"] .projects-copy h2 {
     font-weight: 800;
     letter-spacing: -0.025em;
 }
 
-body[data-slate-photo="on"] .hero-copy h1 span,
 body[data-slate-photo="on"] .story-hero__content h1 span,
 body[data-slate-photo="on"] .profile-status,
 body[data-slate-photo="on"] .profile-title,
-body[data-slate-photo="on"] .hero-eyebrow,
-body[data-slate-photo="on"] .section-eyebrow,
-body[data-slate-photo="on"] .metric-value {
+body[data-slate-photo="on"] .section-eyebrow {
     text-shadow: var(--slate-accent-text-shadow);
 }
 
@@ -6241,9 +3868,7 @@ body[data-slate-photo="on"] .metric-value {
    base — lifted off the stone by real drop shadows. text-shadow must be
    cleared because the letters are gradient-filled (transparent color),
    and a text-shadow would smear through them. */
-body[data-slate-photo="on"] .hero-copy h1 span,
-body[data-slate-photo="on"] .story-hero__content h1 span,
-body[data-slate-photo="on"] .board-hero__copy h1 span {
+body[data-slate-photo="on"] .story-hero__content h1 span {
     background: linear-gradient(180deg, var(--gilt-top) 0%, var(--accent) 54%, var(--gilt-deep) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -6286,51 +3911,9 @@ body[data-slate-photo="on"] .hero-ai-search__box {
     background-size: auto, auto, 820px auto;
 }
 
-/* Metrics strip: one long raised slab, like the mockup's impact bar —
-   the same darker bar wash as the tab strip, lit top edge, and the deep
-   bar shadow stack so it visibly stands off the page. */
-body[data-slate-photo="on"] .metrics-strip {
-    background:
-        linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 46%, rgb(0 0 0 / 22%)),
-        linear-gradient(var(--slate-tint-tabs), var(--slate-tint-tabs)),
-        var(--slate-photo);
-    background-size: auto, auto, cover;
-    background-position: 0 0, 0 0, center 45%;
-    border: 1px solid var(--border);
-    border-top-color: var(--slate-edge-lit);
-    box-shadow: var(--slab-bar-shadow);
-}
-
-/* Impact bar contents, matching the mockups: every icon sits in its own
-   raised circular badge (lit top edge + drop shadow), vertically centered
-   against its number/label pair. */
-body[data-slate="on"] .metrics-strip .metric-item {
-    align-items: center;
-}
-
-body[data-slate="on"] .metrics-strip .metric-icon {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    color: var(--text);
-    background: linear-gradient(180deg,
-        color-mix(in srgb, var(--surface-soft) 96%, transparent),
-        color-mix(in srgb, var(--surface) 92%, transparent));
-    border: 1px solid var(--border);
-    border-top-color: var(--slate-edge-lit);
-    box-shadow: var(--slab-chip-shadow);
-}
-
-body[data-slate="on"] .metrics-strip .metric-icon svg {
-    width: 21px;
-    height: 21px;
-    filter: drop-shadow(0 1px 1px rgb(0 0 0 / 30%));
-}
 
 /* ---------- Card slabs ----------
    Every card-sized surface gets its own raised piece of stone. */
-body[data-slate-photo="on"] .project-card,
-body[data-slate-photo="on"] .lifecycle-node,
 body[data-slate-photo="on"] .hero-ai-search__box,
 body[data-slate-photo="on"] .hero-ai-answer,
 body[data-slate-photo="on"] .work-hero-panel,
@@ -6350,13 +3933,8 @@ body[data-slate-photo="on"] .drive-card,
 body[data-slate-photo="on"] .fun-fact-card,
 body[data-slate-photo="on"] .story-journey__layout,
 body[data-slate-photo="on"] .platform-page__card,
-body[data-slate-photo="on"] .board-hero-panel,
 body[data-slate-photo="on"] .board-compose,
 body[data-slate-photo="on"] .goal-card,
-body[data-slate-photo="on"] .board-momentum,
-body[data-slate-photo="on"] .badge-card,
-body[data-slate-photo="on"] .board-entry,
-body[data-slate-photo="on"] .feed-card,
 body[data-slate-photo="on"] .iv-card,
 body[data-slate-photo="on"] .iv-benefit,
 body[data-slate-photo="on"] .iv-confidence {
@@ -6377,12 +3955,10 @@ body[data-slate-photo="on"] .resume-credential-list li,
 body[data-slate-photo="on"] .resume-inline-button,
 body[data-slate-photo="on"] .work-ask-btn,
 body[data-slate-photo="on"] .btn-secondary,
-body[data-slate-photo="on"] .nav-linkedin,
 body[data-slate-photo="on"] .platform-page__points li,
 body[data-slate-photo="on"] .project-tags span,
 body[data-slate-photo="on"] .resume-role-tags span,
 body[data-slate-photo="on"] .resume-chip-row span,
-body[data-slate-photo="on"] .dashboard-tile,
 body[data-slate-photo="on"] .timeline-item__icon {
     background: var(--slab-control);
     background-size: var(--slab-control-size);
@@ -6415,9 +3991,7 @@ body[data-slate-photo="on"] .btn-secondary:focus-visible,
 body[data-slate-photo="on"] .work-ask-btn:hover,
 body[data-slate-photo="on"] .work-ask-btn:focus-visible,
 body[data-slate-photo="on"] .profile-tabs__linkedin:hover,
-body[data-slate-photo="on"] .profile-tabs__linkedin:focus-visible,
-body[data-slate-photo="on"] .nav-linkedin:hover,
-body[data-slate-photo="on"] .nav-linkedin:focus-visible {
+body[data-slate-photo="on"] .profile-tabs__linkedin:focus-visible {
     background: var(--slab-control);
     background-size: var(--slab-control-size);
     border-color: var(--accent);
@@ -6437,7 +4011,6 @@ body[data-slate-photo="on"] .resume-metric-card.is-selected {
 
 /* The shared card "pop out" hover sets a blue-gray border — use the
    theme accent instead. */
-body[data-slate-photo="on"] .project-card:hover,
 body[data-slate-photo="on"] .drive-card:hover,
 body[data-slate-photo="on"] .story-card:hover,
 body[data-slate-photo="on"] .fun-fact-card:hover {
@@ -6497,44 +4070,10 @@ body[data-slate-photo="on"] .resume-ai-panel {
 /* ---------- Last blue remnants ----------
    Surfaces that still carried the old navy/circuit palette. */
 
-body[data-slate-photo="on"] .project-media {
-    background: linear-gradient(180deg, rgb(0 0 0 / 26%), rgb(0 0 0 / 42%));
-    border-bottom-color: var(--border);
-}
-
 body[data-slate-photo="on"] .timeline-item__icon {
     color: var(--accent);
 }
 
-/* The app-screenshot "mock windows" inside the featured project cards
-   still carried the old navy/blue palette. Recolor their frames, panels
-   and accent lines to neutral slate/steel so nothing reads blue. The
-   original four themes keep their navy screenshots untouched. */
-body[data-slate-photo="on"] .mock-window {
-    border-color: var(--border);
-}
-
-body[data-slate-photo="on"] .mock-sidebar {
-    background: linear-gradient(180deg, rgb(0 0 0 / 55%), rgb(0 0 0 / 34%));
-}
-
-body[data-slate-photo="on"] .mock-window--dark,
-body[data-slate-photo="on"] .mock-window--dashboard {
-    background: var(--slate-screen);
-}
-
-body[data-slate-photo="on"] .mock-panel i,
-body[data-slate-photo="on"] .mock-review-copy i,
-body[data-slate-photo="on"] .mock-review-lines i {
-    background: rgb(200 208 214 / 30%);
-}
-
-/* The "92" score ring: swap the hard green for the theme's soft
-   steel/cyan secondary accent. */
-body[data-slate-photo="on"] .mock-score {
-    color: var(--color-cyan);
-    border-color: var(--color-cyan);
-}
 
 /* ---------- Ask Pete AI answer dropdown ----------
    On these two themes the hero paints no background (the fixed stone
@@ -6605,13 +4144,6 @@ body[data-slate="on"] .resume-skill-popover::before {
    border-right separators, so the old gold divider is simply hidden
    there; View All links become raised slate chips like the mockups'
    secondary controls. */
-body[data-slate="on"] .metric-item::after {
-    background: var(--border);
-}
-
-body[data-slate="on"] .metrics-strip .metric-item::after {
-    display: none;
-}
 
 body[data-slate-photo="on"] .view-all-link {
     color: var(--text);
@@ -6633,8 +4165,6 @@ body[data-slate-photo="on"] .view-all-link:focus-visible {
    pieces cut one continuous cover-crop of the photo instead (same
    approach as the metrics strip). */
 body[data-slate-photo="on"] .board-compose,
-body[data-slate-photo="on"] .board-momentum,
-body[data-slate-photo="on"] .board-entry,
 body[data-slate-photo="on"] .iv-modebar {
     background:
         linear-gradient(158deg, var(--slab-hi) 0%, transparent 38%, var(--slab-lo) 100%),
@@ -6656,60 +4186,6 @@ body[data-slate="on"] .value-chip__icon {
     box-shadow: var(--slab-chip-shadow);
 }
 
-/* Lifecycle diagram: concentric "sonar rings" radiate out from the
-   center circle in neutral stone tones (the mockups show these rings
-   etched around the medallion), and the center disc itself is a raised
-   stone medallion — its own cut of the photo, ring engraving on top,
-   embossed edges, seated on a deep shadow. */
-body[data-slate-photo="on"] .lifecycle-circuit {
-    opacity: 0.55;
-    background: repeating-radial-gradient(circle at 50% 50%, transparent 0 22px, rgb(255 255 255 / 7%) 23px 24px);
-}
-
-body[data-slate-photo="on"] .lifecycle-center {
-    background:
-        repeating-radial-gradient(circle at center, rgb(255 255 255 / 9%) 0 1px, transparent 1px 16px),
-        radial-gradient(circle at 34% 28%, rgb(255 255 255 / 13%), transparent 55%),
-        linear-gradient(color-mix(in srgb, var(--slate-tint-card) 100%, transparent), color-mix(in srgb, var(--slate-tint-card) 100%, transparent)),
-        var(--slate-photo);
-    background-size: auto, auto, auto, 560px auto;
-    background-position: center;
-    border: 1px solid var(--slate-edge-lit);
-    box-shadow:
-        inset 0 2px 4px rgb(255 255 255 / 14%),
-        inset 0 -5px 12px rgb(0 0 0 / 40%),
-        var(--pop-shadow);
-}
-
-/* Lifecycle "pop" pass (Pete, 2026-07-06): the six stage cards ride the
-   same deep shadow as the medallion so the whole figure lifts off the
-   page, stage icons cast their own small shadow, and the medallion
-   title takes the raised engraved lettering. */
-body[data-slate-photo="on"] .lifecycle-node {
-    box-shadow: var(--slab-card-shadow), var(--pop-shadow);
-}
-
-body[data-slate-photo="on"] .node-icon svg {
-    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 38%));
-}
-
-body[data-slate-photo="on"] .lifecycle-center h2 {
-    text-shadow: var(--slate-type-shadow);
-}
-
-/* Metric icon badges use a brushed-steel rim instead of gold, echoing
-   the mockup's metallic secondary accent (the dollar/percent VALUES
-   next to each icon stay gold — only the icon circle itself changes). */
-body[data-slate-photo="on"] .metrics-strip .metric-icon {
-    color: rgb(224 228 231 / 92%);
-    background:
-        radial-gradient(circle at 35% 28%, rgb(255 255 255 / 22%), transparent 55%),
-        rgb(255 255 255 / 6%);
-    border-color: rgb(255 255 255 / 42%);
-    box-shadow:
-        inset 0 1px 2px rgb(255 255 255 / 30%),
-        inset 0 -2px 4px rgb(0 0 0 / 40%);
-}
 
 /* =========================================================
    LIGHT PHOTO-SLATE ADJUSTMENTS — LIGHT SLATE & LIGHT BLUE SLATE
@@ -6723,8 +4199,6 @@ body[data-slate-photo="on"] .metrics-strip .metric-icon {
    ========================================================= */
 
 /* Soft light vignette instead of the dark one. */
-body[data-theme="light-slate"]::before,
-body[data-theme="light-blue-slate"]::before,
 body[data-theme="modern-blue"]::before,
 body[data-theme="paper-slate"]::before {
     background:
@@ -6733,16 +4207,12 @@ body[data-theme="paper-slate"]::before {
         linear-gradient(180deg, transparent, rgb(90 96 110 / 6%));
 }
 
-body[data-theme="light-slate"]::after,
-body[data-theme="light-blue-slate"]::after,
 body[data-theme="modern-blue"]::after,
 body[data-theme="paper-slate"]::after {
     opacity: 0.12;
     mix-blend-mode: multiply;
 }
 
-body[data-theme="light-slate"],
-body[data-theme="light-blue-slate"],
 body[data-theme="modern-blue"],
 body[data-theme="paper-slate"] {
     --slab-bar-shadow:
@@ -6780,44 +4250,6 @@ body[data-theme="paper-slate"] {
         0 8px 16px rgb(40 45 60 / 10%);
 }
 
-body[data-theme="light-slate"] {
-    --slate-linkedin-bg: rgb(30 42 36);
-    --slate-linkedin-mark: rgb(255 255 255);
-    /* Lifecycle pop + gilded keywords in light ink (these must live in
-       this late block — earlier per-theme declarations lose to the
-       body[data-slate-photo="on"] dark defaults). */
-    --pop-shadow: 0 22px 44px rgb(48 62 53 / 20%);
-    --gilt-shadow:
-        drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
-        drop-shadow(0 2px 3px rgb(48 62 53 / 32%));
-    /* Texture pop for the whiter page: bolder veins (green-tinted via
-       the accent) than the other light theme. (--slate-grain is NOT set
-       here: photo-slate themes override the ::before grain layer, so a
-       grain value would be a silent no-op — the extra texture comes
-       from the thinner tints/wash in the theme block instead.) */
-    --slate-vein-strong: color-mix(in srgb, var(--text) 13%, transparent);
-    --slate-vein-soft: color-mix(in srgb, var(--accent) 18%, transparent);
-    /* Slab edge tints must also live in this late block (cascade). */
-    --slab-hi: rgb(255 255 255 / 65%);
-    --slab-lo: rgb(48 62 53 / 12%);
-    --slab-hi-chip: rgb(255 255 255 / 70%);
-    --slab-lo-chip: rgb(48 62 53 / 10%);
-}
-
-body[data-theme="light-blue-slate"] {
-    --slate-linkedin-bg: rgb(6 72 138);
-    --slate-linkedin-mark: rgb(255 255 255);
-    --pop-shadow: 0 22px 44px rgb(24 52 88 / 20%);
-    --gilt-shadow:
-        drop-shadow(0 1px 0 rgb(255 255 255 / 55%))
-        drop-shadow(0 2px 3px rgb(24 52 88 / 32%));
-    /* Slab edge tints must live in this late block (cascade). */
-    --slab-hi: rgb(255 255 255 / 68%);
-    --slab-lo: rgb(24 52 88 / 12%);
-    --slab-hi-chip: rgb(255 255 255 / 72%);
-    --slab-lo-chip: rgb(24 52 88 / 10%);
-}
-
 /* The two mockup themes share cool-ink slab edges and soft pop/gilt —
    the mockup's shadows are whisper-quiet, so type shadows go too. */
 body[data-theme="modern-blue"],
@@ -6837,16 +4269,12 @@ body[data-theme="paper-slate"] {
 }
 
 /* Bars: soft light shadows in place of heavy black. */
-body[data-theme="light-slate"] .global-header,
-body[data-theme="light-blue-slate"] .global-header,
 body[data-theme="modern-blue"] .global-header,
 body[data-theme="paper-slate"] .global-header {
     box-shadow: 0 6px 18px rgb(40 45 60 / 12%);
     border-bottom: 1px solid var(--border);
 }
 
-body[data-theme="light-slate"] .profile-header,
-body[data-theme="light-blue-slate"] .profile-header,
 body[data-theme="modern-blue"] .profile-header,
 body[data-theme="paper-slate"] .profile-header {
     box-shadow:
@@ -6854,74 +4282,14 @@ body[data-theme="paper-slate"] .profile-header {
         0 12px 26px rgb(40 45 60 / 13%);
 }
 
-body[data-theme="light-slate"] .profile-tabs,
-body[data-theme="light-blue-slate"] .profile-tabs,
 body[data-theme="modern-blue"] .profile-tabs,
 body[data-theme="paper-slate"] .profile-tabs {
     box-shadow: var(--slab-bar-shadow);
 }
 
-/* Metric-icon badge: an accent-colored ring with a light fill instead of
-   the dark theme's brushed-steel-on-dark rim. */
-body[data-theme="light-slate"] .metrics-strip .metric-icon,
-body[data-theme="light-blue-slate"] .metrics-strip .metric-icon,
-body[data-theme="modern-blue"] .metrics-strip .metric-icon,
-body[data-theme="paper-slate"] .metrics-strip .metric-icon {
-    color: var(--accent);
-    background: rgb(255 255 255 / 72%);
-    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-    box-shadow:
-        inset 0 1px 1px rgb(255 255 255 / 85%),
-        0 2px 4px rgb(40 45 60 / 12%);
-}
-
-/* Lifecycle center: a white stone medallion with faint dark rings and a
-   soft raised shadow (the dark theme etches white rings on dark stone). */
-body[data-theme="light-slate"] .lifecycle-circuit,
-body[data-theme="light-blue-slate"] .lifecycle-circuit,
-body[data-theme="modern-blue"] .lifecycle-circuit,
-body[data-theme="paper-slate"] .lifecycle-circuit {
-    background: repeating-radial-gradient(circle at 50% 50%, transparent 0 22px, rgb(40 45 60 / 6%) 23px 24px);
-}
-
-body[data-theme="light-slate"] .lifecycle-center,
-body[data-theme="light-blue-slate"] .lifecycle-center,
-body[data-theme="modern-blue"] .lifecycle-center,
-body[data-theme="paper-slate"] .lifecycle-center {
-    background:
-        repeating-radial-gradient(circle at center, rgb(40 45 60 / 5%) 0 1px, transparent 1px 16px),
-        radial-gradient(circle at 34% 28%, rgb(255 255 255 / 75%), transparent 60%),
-        linear-gradient(var(--slate-tint-card), var(--slate-tint-card)),
-        var(--slate-photo);
-    background-size: auto, auto, auto, 560px auto;
-    background-position: center;
-    border: 1px solid var(--slate-edge-lit);
-    box-shadow:
-        inset 0 2px 4px rgb(255 255 255 / 85%),
-        inset 0 -5px 12px rgb(40 45 60 / 10%),
-        0 16px 30px rgb(40 45 60 / 15%);
-}
 
 /* Card hover: the dark theme brightens; brightening a near-white card
    just washes it out, so lean on an accent border + faint lift instead. */
-body[data-theme="light-slate"] .resume-skill-button:hover,
-body[data-theme="light-slate"] .resume-skill-button:focus-visible,
-body[data-theme="light-slate"] .resume-skill-card.is-popover-open .resume-skill-button,
-body[data-theme="light-slate"] .work-project-tab:hover,
-body[data-theme="light-slate"] .work-project-tab.is-active,
-body[data-theme="light-slate"] .resume-ai-suggestion:hover,
-body[data-theme="light-slate"] .btn-secondary:hover,
-body[data-theme="light-slate"] .resume-metric-card:hover,
-body[data-theme="light-slate"] .resume-metric-card.is-selected,
-body[data-theme="light-blue-slate"] .resume-skill-button:hover,
-body[data-theme="light-blue-slate"] .resume-skill-button:focus-visible,
-body[data-theme="light-blue-slate"] .resume-skill-card.is-popover-open .resume-skill-button,
-body[data-theme="light-blue-slate"] .work-project-tab:hover,
-body[data-theme="light-blue-slate"] .work-project-tab.is-active,
-body[data-theme="light-blue-slate"] .resume-ai-suggestion:hover,
-body[data-theme="light-blue-slate"] .btn-secondary:hover,
-body[data-theme="light-blue-slate"] .resume-metric-card:hover,
-body[data-theme="light-blue-slate"] .resume-metric-card.is-selected,
 body[data-theme="modern-blue"] .resume-skill-button:focus-visible,
 body[data-theme="modern-blue"] .resume-skill-card.is-popover-open .resume-skill-button,
 body[data-theme="modern-blue"] .work-project-tab:hover,
@@ -6943,32 +4311,18 @@ body[data-theme="paper-slate"] .resume-metric-card.is-selected {
 }
 
 /* Project-media backdrop + chat panel internals: light on light. */
-body[data-theme="light-slate"] .project-media,
-body[data-theme="light-blue-slate"] .project-media,
-body[data-theme="modern-blue"] .project-media,
-body[data-theme="paper-slate"] .project-media {
-    background: linear-gradient(180deg, rgb(255 255 255 / 40%), rgb(40 45 60 / 8%));
-}
 
-body[data-theme="light-slate"] #chat-header,
-body[data-theme="light-blue-slate"] #chat-header,
 body[data-theme="modern-blue"] #chat-header,
 body[data-theme="paper-slate"] #chat-header {
     background: linear-gradient(180deg, rgb(255 255 255 / 35%), rgb(40 45 60 / 9%));
 }
 
-body[data-theme="light-slate"] #chat-input,
-body[data-theme="light-blue-slate"] #chat-input,
 body[data-theme="modern-blue"] #chat-input,
 body[data-theme="paper-slate"] #chat-input {
     color: var(--text);
     background: rgb(255 255 255 / 72%);
 }
 
-body[data-theme="light-slate"] #chat-input-area,
-body[data-theme="light-blue-slate"] #chat-input-area,
-body[data-theme="light-slate"] #chat-disclaimer,
-body[data-theme="light-blue-slate"] #chat-disclaimer,
 body[data-theme="modern-blue"] #chat-input-area,
 body[data-theme="modern-blue"] #chat-disclaimer,
 body[data-theme="paper-slate"] #chat-input-area,
@@ -6976,8 +4330,6 @@ body[data-theme="paper-slate"] #chat-disclaimer {
     background: rgb(255 255 255 / 22%);
 }
 
-body[data-theme="light-slate"] #chat-panel,
-body[data-theme="light-blue-slate"] #chat-panel,
 body[data-theme="modern-blue"] #chat-panel,
 body[data-theme="paper-slate"] #chat-panel {
     box-shadow: var(--slab-card-shadow), 0 0 30px rgb(40 45 60 / 14%);
@@ -7027,48 +4379,8 @@ body[data-theme="paper-slate"] #chat-panel {
     padding: clamp(34px, 5vw, 58px) 0 72px;
 }
 
-.board-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-    gap: 36px;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.board-hero__copy h1 {
-    max-width: 620px;
-    margin: 10px 0 16px;
-    color: var(--text);
-    font-size: clamp(1.9rem, 3.4vw, 2.7rem);
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    line-height: 1.08;
-}
-
-/* Non-slate themes show the keyword in plain accent; the slate themes'
-   gilded-keyword rule (see GILDED KEYWORDS) upgrades it to metal. */
-.board-hero__copy h1 span {
-    color: var(--accent);
-}
-
-.board-hero__lead {
-    max-width: 560px;
-    color: var(--text-muted);
-    font-size: 1.02rem;
-    line-height: 1.6;
-}
 
 /* Four quick stats — 2x2 at every width (groups-of-4 rule). */
-.board-hero-panel {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    padding: 20px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
 
 .board-stat {
     padding: 10px 6px;
@@ -7152,27 +4464,6 @@ body[data-theme="paper-slate"] #chat-panel {
     font-size: 0.8rem;
 }
 
-/* ---------- Shared section headings ---------- */
-.board-section {
-    margin-top: 48px;
-}
-
-.board-section__head {
-    margin-bottom: 20px;
-}
-
-.board-section__head h2 {
-    color: var(--text);
-    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-}
-
-.board-section__head p {
-    margin-top: 5px;
-    color: var(--text-muted);
-    font-size: 0.95rem;
-}
 
 /* ---------- Goal cards with progress rings ---------- */
 .board-goals__grid {
@@ -7244,32 +4535,6 @@ body[data-theme="paper-slate"] #chat-panel {
     background: var(--ring, var(--accent));
 }
 
-.goal-chip {
-    display: inline-flex;
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-
-.goal-chip--career {
-    color: var(--accent);
-    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.goal-chip--personal {
-    /* Mixed toward the text ink so this tiny uppercase label passes AA
-       contrast on the light themes (raw --color-cyan measured ~2.7-4.4:1
-       there); on dark themes the mix stays light and readable. */
-    color: color-mix(in srgb, var(--color-cyan) 55%, var(--text) 45%);
-    border-color: color-mix(in srgb, var(--color-cyan) 45%, transparent);
-}
-
 .goal-card h3 {
     color: var(--text);
     font-size: 1rem;
@@ -7317,32 +4582,6 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 /* ---------- Momentum chart ---------- */
-.board-momentum {
-    padding: 22px 24px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
-
-.board-momentum__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 16px;
-    margin-bottom: 20px;
-}
-
-.board-momentum__head h2 {
-    color: var(--text);
-    font-size: 1.25rem;
-    font-weight: 800;
-}
-
-.board-momentum__head p {
-    color: var(--text-muted);
-    font-size: 0.88rem;
-}
 
 .momentum-chart {
     display: grid;
@@ -7382,12 +4621,6 @@ body[data-theme="paper-slate"] #chat-panel {
     font-weight: 750;
 }
 
-.board-momentum__foot {
-    margin-top: 16px;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-}
-
 /* ---------- Badge trophy shelf ---------- */
 .board-badges__grid {
     display: grid;
@@ -7395,125 +4628,11 @@ body[data-theme="paper-slate"] #chat-panel {
     gap: 18px;
 }
 
-.badge-card {
-    display: grid;
-    justify-items: center;
-    gap: 8px;
-    padding: 20px 14px 16px;
-    text-align: center;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
-
-/* Earned badges get a small accent medallion — awards are the one
-   place the accent is allowed to be the surface, by design. */
-.badge-medal {
-    width: 64px;
-    height: 64px;
-    display: grid;
-    place-items: center;
-    color: var(--accent);
-    background:
-        radial-gradient(circle at 32% 26%, rgb(255 255 255 / 22%), transparent 55%),
-        linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, var(--surface)), color-mix(in srgb, var(--accent) 9%, var(--surface)));
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-    border-radius: 50%;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 25%),
-        0 2px 4px rgb(0 0 0 / 22%),
-        0 10px 18px rgb(0 0 0 / 16%);
-}
-
-.badge-medal svg {
-    width: 26px;
-    height: 26px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.badge-card h3 {
-    color: var(--text);
-    font-size: 0.86rem;
-    font-weight: 800;
-    line-height: 1.25;
-}
-
-.badge-state {
-    color: var(--text-muted);
-    font-size: 0.68rem;
-    font-weight: 750;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.badge-state--earned {
-    color: var(--accent);
-}
-
-/* Not-yet-earned badges: dimmed with a dashed ring — visibly waiting. */
-.badge-card--locked {
-    opacity: 0.62;
-}
-
-.badge-card--locked .badge-medal {
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--text) 8%, transparent);
-    border: 1px dashed var(--border);
-    box-shadow: none;
-}
 
 /* ---------- Entry list (draft / private / public) ---------- */
 .board-entries {
     display: grid;
     gap: 14px;
-}
-
-.board-entry {
-    padding: 18px 20px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
-
-.board-entry__top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.entry-flag {
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.62rem;
-    font-weight: 850;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-
-.entry-flag--public {
-    color: var(--accent);
-    background: var(--accent-soft);
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.entry-flag--private {
-    /* Same AA-contrast mix as .goal-chip--personal above. */
-    color: color-mix(in srgb, var(--color-cyan) 55%, var(--text) 45%);
-    background: color-mix(in srgb, var(--color-cyan) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-cyan) 40%, transparent);
-}
-
-.entry-flag--draft {
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--text) 7%, transparent);
-    border: 1px dashed var(--border);
 }
 
 .entry-type {
@@ -7528,20 +4647,6 @@ body[data-theme="paper-slate"] #chat-panel {
     margin-left: auto;
     color: var(--text-muted);
     font-size: 0.78rem;
-}
-
-.board-entry > p {
-    max-width: 72ch;
-    color: var(--text);
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
-
-.board-entry__foot {
-    margin-top: 10px;
-    color: var(--text-muted);
-    font-size: 0.76rem;
-    letter-spacing: 0.04em;
 }
 
 /* ---------- The Whiteboard ----------
@@ -7683,25 +4788,6 @@ body[data-theme="paper-slate"] #chat-panel {
 .wb-ink--orange { color: #d2691e; }
 .wb-ink--red { color: #b83a33; }
 
-/* Sticky notes: one per section, pinned at the bottom (mockup 3). */
-.wb-note {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 10px 13px;
-    border-radius: 3px;
-    font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
-    font-size: 0.94rem;
-    line-height: 1.3;
-    transform: rotate(-1.2deg);
-    box-shadow:
-        0 2px 4px rgb(0 0 0 / 16%),
-        0 9px 14px rgb(0 0 0 / 12%);
-}
-
-.wb-note--blue { color: #1d4e89; background: #dcebfa; }
-.wb-note--green { color: #1c6b42; background: #d9f0e0; transform: rotate(1.1deg); }
-.wb-note--violet { color: #5b3591; background: #e7ddf7; }
-.wb-note--orange { color: #a34c08; background: #fde8d3; transform: rotate(1.4deg); }
 
 /* Marker tray on the frame's bottom rail. */
 .whiteboard__tray {
@@ -7764,112 +4850,23 @@ body[data-theme="paper-slate"] #chat-panel {
     }
 
     /* Bubbles and badges lift when touched. */
-    .goal-card,
-    .badge-card,
-    .feed-card {
+    .goal-card {
         transition: transform 180ms ease, box-shadow 180ms ease;
     }
 
-    .goal-card:hover,
-    .badge-card:hover,
-    .feed-card:hover {
+    .goal-card:hover {
         transform: translateY(-3px);
     }
 }
 
-/* ---------- Home page: From the Slate Boards feed ---------- */
-.peerslate-feed__heading {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 18px;
-}
-
-/* Fixed three cards — a window into the feed, never a scroll trap. */
-.peerslate-feed__grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 28px;
-}
-
-.feed-card {
-    padding: 18px 20px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
-
-.feed-card__head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.feed-card__head img {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    object-fit: cover;
-    border: 2px solid rgb(255 255 255 / 35%);
-    border-radius: 50%;
-}
-
-.feed-card__head strong {
-    display: block;
-    color: var(--text);
-    font-size: 0.88rem;
-    line-height: 1.2;
-}
-
-.feed-card__head span {
-    color: var(--text-muted);
-    font-size: 0.74rem;
-}
-
-.feed-card__type {
-    margin-left: auto;
-    padding: 3px 9px;
-    border-radius: 999px;
-    color: var(--accent);
-    background: var(--accent-soft);
-    font-size: 0.6rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.feed-card > p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.55;
-}
 
 /* ---------- Board + feed responsive ---------- */
 @media (max-width: 1180px) {
-    .board-hero {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-
-    .board-hero-panel {
-        max-width: 560px;
-    }
 
     /* Groups of 4 collapse to 2x2, never 3+1. */
     .board-goals__grid,
     .board-badges__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 1020px) {
-    .peerslate-feed__grid {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -7913,9 +4910,6 @@ body[data-theme="paper-slate"] #chat-panel {
         order: 3;
     }
 
-    .board-entry__top {
-        flex-wrap: wrap;
-    }
 }
 
 /* =========================================================
@@ -8451,45 +5445,6 @@ body[data-theme="paper-slate"] #chat-panel {
 }
 
 /* ---------- Suggested questions + mock interview ---------- */
-.iv-suggested {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.iv-suggested__item {
-    display: grid;
-    gap: 8px;
-    align-content: start;
-    padding: 12px 13px;
-    text-align: left;
-    color: var(--text);
-    background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: border-color 160ms ease, transform 160ms ease;
-}
-
-.iv-suggested__item:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
-
-.iv-suggested__item span {
-    font-size: 0.84rem;
-    font-weight: 650;
-    line-height: 1.4;
-}
-
-.iv-suggested__item em {
-    color: var(--accent);
-    font-size: 0.64rem;
-    font-style: normal;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
 
 .iv-mock {
     display: grid;
@@ -8703,10 +5658,6 @@ body[data-theme="paper-slate"] #chat-panel {
         grid-template-columns: 1fr;
     }
 
-    .iv-suggested {
-        grid-template-columns: 1fr;
-    }
-
     .iv-feedback__body {
         grid-template-columns: 1fr;
         justify-items: center;
@@ -8895,165 +5846,6 @@ body[data-theme="paper-slate"] #chat-panel {
     gap: 14px;
 }
 
-.ps-preview-card {
-    padding: 22px 24px;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-}
-
-.ps-preview-card__head {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.ps-preview-card__head img {
-    width: 74px;
-    height: 74px;
-    object-fit: cover;
-    border: 2px solid var(--border);
-    border-radius: 50%;
-}
-
-.ps-preview-card__head h2 {
-    color: var(--text);
-    font-size: 1.35rem;
-    font-weight: 650;
-}
-
-.ps-preview-card__title {
-    margin-top: 2px;
-    color: var(--accent);
-    font-family: var(--font-serif);
-    font-size: 0.98rem;
-    font-weight: 600;
-}
-
-.ps-preview-card__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 14px;
-    margin-top: 5px;
-    color: var(--text-muted);
-    font-size: 0.76rem;
-}
-
-.ps-preview-card__bio {
-    margin-top: 14px;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.55;
-}
-
-.ps-preview-card__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 12px;
-}
-
-.ps-preview-card__chips span {
-    padding: 4px 11px;
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--surface-soft) 80%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 650;
-}
-
-.ps-preview-card__stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    text-align: center;
-}
-
-.ps-preview-card__stats div + div {
-    border-left: 1px solid var(--border);
-}
-
-.ps-preview-card__stats strong {
-    display: block;
-    color: var(--text);
-    font-family: var(--font-serif);
-    font-size: 1.15rem;
-    font-weight: 700;
-}
-
-.ps-preview-card__stats span {
-    display: block;
-    margin-top: 2px;
-    color: var(--text-muted);
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-/* ---------- Dark "Ask this Slate" pill ---------- */
-.ps-askpill {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 52px;
-    padding: 0 8px 0 18px;
-    color: rgb(255 255 255 / 60%);
-    background: var(--askbar-bg);
-    border-radius: 999px;
-    box-shadow: 0 14px 30px rgb(10 16 30 / 30%);
-    transition: transform 160ms ease;
-}
-
-.ps-askpill:hover {
-    transform: translateY(-1px);
-}
-
-.ps-askpill__spark {
-    color: #8db1f4;
-    font-size: 1.05rem;
-}
-
-.ps-askpill__ghost {
-    flex: 1;
-    font-size: 0.92rem;
-}
-
-.ps-askpill__go {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    color: #ffffff;
-    background: var(--accent);
-    border-radius: 50%;
-    font-size: 1rem;
-}
-
-.ps-askpill__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 9px;
-}
-
-.ps-askpill__chips a {
-    padding: 8px 13px;
-    color: var(--text);
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 650;
-    transition: border-color 160ms ease;
-}
-
-.ps-askpill__chips a:hover {
-    border-color: var(--accent);
-}
 
 /* ---------- HOME: feature cards ---------- */
 .ps-features {
@@ -9203,27 +5995,6 @@ body[data-theme="paper-slate"] #chat-panel {
     gap: 16px;
 }
 
-.ps-feed-card {
-    padding: 18px 20px;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
-}
-
-.ps-feed-card__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.ps-feed-card__top time {
-    color: var(--text-muted);
-    font-size: 0.74rem;
-}
-
 .ps-flag {
     display: inline-flex;
     align-items: center;
@@ -9249,27 +6020,6 @@ body[data-theme="paper-slate"] #chat-panel {
 .ps-flag--violet { color: color-mix(in srgb, #7c4fd8 70%, var(--text) 30%); }
 .ps-flag--gray { color: var(--text-muted); }
 
-.ps-feed-card h3 {
-    color: var(--text);
-    font-size: 1.06rem;
-    font-weight: 650;
-    line-height: 1.3;
-}
-
-.ps-feed-card > p {
-    margin-top: 8px;
-    color: var(--text-muted);
-    font-size: 0.86rem;
-    line-height: 1.55;
-}
-
-.ps-feed-card__foot {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 14px;
-}
-
 .ps-mini-chip {
     padding: 3px 9px;
     color: color-mix(in srgb, #2f6fe0 70%, var(--text) 30%);
@@ -9282,31 +6032,6 @@ body[data-theme="paper-slate"] #chat-panel {
 .ps-mini-chip--violet {
     color: color-mix(in srgb, #7c4fd8 70%, var(--text) 30%);
     background: color-mix(in srgb, #7c4fd8 12%, transparent);
-}
-
-.ps-feed-card__note {
-    color: var(--text-muted);
-    font-size: 0.74rem;
-}
-
-.ps-feed-card__note--green {
-    color: color-mix(in srgb, #1d9a5f 70%, var(--text) 30%);
-    font-weight: 650;
-}
-
-.ps-feed-card__bookmark {
-    margin-left: auto;
-    color: var(--text-muted);
-}
-
-.ps-feed-card__bookmark svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 /* ---------- HOME: real example band ---------- */
@@ -9384,14 +6109,6 @@ body[data-theme="paper-slate"] #chat-panel {
         grid-template-columns: 1fr;
     }
 
-    .ps-preview-card__stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px 0;
-    }
-
-    .ps-preview-card__stats div:nth-child(3) {
-        border-left: 0;
-    }
 }
 
 /* =========================================================
@@ -9467,17 +6184,6 @@ body[data-theme="paper-slate"] #chat-panel {
 .peerslate-home-page .platform-nav__inner {
     min-height: 80px;
     gap: 30px;
-}
-
-.peerslate-home-page .brand-mark {
-    fill: var(--home-text);
-}
-
-.peerslate-home-page .brand-word {
-    color: var(--home-text);
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.58rem;
-    font-weight: 700;
 }
 
 .peerslate-home-page .platform-nav__links {
@@ -10232,25 +6938,6 @@ body.peerslate-home-page {
     margin-bottom: 0.95rem;
 }
 
-.peerslate-home-page .ps-feed-card {
-    min-height: 176px;
-    padding: 1.2rem 1.25rem;
-    background: var(--home-surface);
-    border-color: var(--home-border-soft);
-    border-radius: 0.85rem;
-    box-shadow: var(--home-shadow-sm);
-    backdrop-filter: blur(12px);
-}
-
-.peerslate-home-page .ps-feed-card__top {
-    margin-bottom: 0.72rem;
-}
-
-.peerslate-home-page .ps-feed-card__top time,
-.peerslate-home-page .ps-feed-card__note {
-    color: var(--home-soft);
-}
-
 .peerslate-home-page .ps-flag {
     font-size: 0.72rem;
 }
@@ -10258,27 +6945,6 @@ body.peerslate-home-page {
 .peerslate-home-page .ps-flag--blue { color: var(--home-blue); }
 .peerslate-home-page .ps-flag--green { color: var(--home-teal); }
 .peerslate-home-page .ps-flag--violet { color: #8b5cf6; }
-
-.peerslate-home-page .ps-feed-card h3 {
-    color: var(--home-text);
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    font-size: 1.04rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-}
-
-.peerslate-home-page .ps-feed-card > p {
-    margin-top: 0.5rem;
-    color: var(--home-muted);
-    font-size: 0.88rem;
-    line-height: 1.55;
-}
-
-.peerslate-home-page .ps-feed-card__foot {
-    flex-wrap: wrap;
-    margin-top: 0.8rem;
-}
 
 .peerslate-home-page .ps-mini-chip {
     color: var(--home-teal);
@@ -10290,15 +6956,6 @@ body.peerslate-home-page {
 .peerslate-home-page .ps-mini-chip--violet {
     color: #6d28d9;
     background: #ede9fe;
-}
-
-.peerslate-home-page .ps-feed-card__note--green {
-    color: var(--home-teal);
-}
-
-.peerslate-home-page .ps-feed-card__note--team {
-    margin-left: auto;
-    color: var(--home-text);
 }
 
 .peerslate-home-page .ps-avatar-stack {
@@ -10553,8 +7210,6 @@ body.peerslate-home-page[data-theme="gray-slate"] .global-header {
     background: rgb(12 18 26 / 90%);
     border-bottom-color: var(--home-border);
 }
-body.peerslate-home-page[data-theme="gray-slate"] .brand-word { color: var(--home-text); }
-body.peerslate-home-page[data-theme="gray-slate"] .brand-mark { fill: var(--home-text); }
 body.peerslate-home-page[data-theme="gray-slate"] .platform-nav__links a { color: var(--home-text); }
 body.peerslate-home-page[data-theme="gray-slate"] .theme-menu__btn {
     color: var(--home-text);
@@ -10587,10 +7242,6 @@ body.peerslate-home-page[data-theme="gray-slate"] .ps-feature {
     border-color: var(--home-border);
 }
 body.peerslate-home-page[data-theme="gray-slate"] .ps-step__icon {
-    background: var(--home-surface-solid);
-    border-color: var(--home-border);
-}
-body.peerslate-home-page[data-theme="gray-slate"] .ps-feed-card {
     background: var(--home-surface-solid);
     border-color: var(--home-border);
 }
@@ -11811,31 +8462,7 @@ body[data-slate="on"] .bd-assistant__form .hero-ai-search__box {
         gap: 10px;
     }
 
-    /* Hero CTAs size to their labels on the slate shell instead of
-       stretching edge to edge. */
-    body[data-slate="on"] .hero-actions .btn {
-        width: auto;
-    }
 
-    .metrics-strip {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-
-    .metrics-strip .metric-item {
-        padding: 0;
-        border-right: 0;
-    }
-
-    body[data-slate="on"] .metrics-strip .metric-icon {
-        width: 38px;
-        height: 38px;
-    }
-
-    body[data-slate="on"] .metrics-strip .metric-icon svg {
-        width: 18px;
-        height: 18px;
-    }
 }
 
 @media (max-width: 620px) {
@@ -11863,10 +8490,6 @@ body[data-slate="on"] .bd-assistant__form .hero-ai-search__box {
 
     .profile-identity h1 {
         font-size: 1.5rem;
-    }
-
-    .metrics-strip {
-        grid-template-columns: 1fr;
     }
 
     .portfolio-shell #chat-toggle {
@@ -11930,13 +8553,6 @@ body.slate-light .global-header {
         backdrop-filter: blur(26px) saturate(1.5);
         -webkit-backdrop-filter: blur(26px) saturate(1.5);
     }
-}
-
-body.slate-light .brand-mark { fill: var(--text); }
-
-body.slate-light .brand-word {
-    color: var(--text);
-    filter: none;
 }
 
 body.slate-light .platform-nav__links a { color: var(--text); }
@@ -13137,7 +9753,8 @@ body[data-theme="gray-slate"] .sf-filter select {
    - .sf-layout (slate feed): 3 rails cannot fit in 744px; its
      2-column tablet form is already a desktop-style layout.
    - Old-design selectors (.hero-grid, .lifecycle-*, .nav-container
-     etc.) — dead markup, their tablet rules never fire.
+     etc.) — dead markup; those rules were removed entirely in the
+     2026-07-09 dead-CSS purge.
    ========================================================= */
 
 @media (min-width: 744px) {
@@ -13796,246 +10413,6 @@ body[data-theme="gray-slate"] .sf-filter select {
 
 
 /* =========================================================
-   PEOPLE VIEW (/slate-feed/people) — People cards + right rail.
-   Cards reuse the .sf-item shell; the leading tinted icon, chip
-   label, and per-type footers give each its People flavor.
-   ========================================================= */
-
-.sf-people__icon {
-    display: grid;
-    place-items: center;
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-}
-
-.sf-people__icon svg {
-    width: 22px;
-    height: 22px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* The chip sits where the author name usually goes. */
-.sf-people .sf-item__who { display: flex; align-items: center; }
-
-.sf-people .sf-item__copy h2 { margin-top: 2px; }
-
-.sf-people__quote {
-    margin: 12px 0 0;
-    padding: 10px 14px;
-    border-left: 3px solid var(--accent);
-    background: var(--surface-soft);
-    border-radius: 0 10px 10px 0;
-    color: var(--text);
-    font-size: 0.92rem;
-    font-style: italic;
-    line-height: 1.5;
-}
-
-.sf-people__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 10px;
-}
-
-.sf-people__tags span {
-    padding: 4px 11px;
-    border-radius: 99px;
-    background: var(--surface-soft);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-}
-
-.sf-people__person {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-top: 12px;
-}
-
-.sf-people__person .sf-avatar { flex: 0 0 40px; width: 40px; height: 40px; }
-
-.sf-people__person strong { display: block; color: var(--text); font-size: 0.9rem; font-weight: 700; }
-.sf-people__person small { color: var(--text-muted); font-size: 0.8rem; }
-
-/* Footers: progress / goal / reward share the left side, action on right. */
-.sf-people__progress,
-.sf-people__goal,
-.sf-people__reward {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    flex-wrap: wrap;
-}
-
-.sf-people__progress { flex: 1 1 200px; }
-.sf-people__progress-label { color: var(--text-muted); font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
-.sf-people__progress .sf-bar { flex: 1 1 90px; }
-
-.sf-people__goal-line { color: var(--text-muted); font-size: 0.82rem; font-weight: 600; }
-
-.sf-people__action {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-left: auto;
-    color: var(--accent);
-    font-size: 0.86rem;
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.sf-people__action svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.sf-people__action:hover { text-decoration: underline; }
-
-/* ---- right rail: Nearby Happenings ---- */
-.sf-nearby { padding: 18px 20px; }
-
-.sf-nearby__list { margin: 8px 0 0; padding: 0; list-style: none; }
-
-.sf-nearby__list li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 0;
-}
-
-.sf-nearby__list li + li { border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
-
-.sf-nearby__date {
-    flex: 0 0 42px;
-    display: grid;
-    justify-items: center;
-    padding: 5px 0;
-    border-radius: 10px;
-    background: var(--surface-soft);
-    border: 1px solid var(--border);
-}
-
-.sf-nearby__date b { color: var(--accent); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; }
-.sf-nearby__date strong { color: var(--text); font-size: 1.05rem; font-weight: 800; line-height: 1; }
-
-.sf-nearby__body { min-width: 0; flex: 1; }
-.sf-nearby__body strong { display: block; color: var(--text); font-size: 0.86rem; font-weight: 650; line-height: 1.3; }
-.sf-nearby__body small { color: var(--text-muted); font-size: 0.78rem; }
-
-.sf-nearby__extra {
-    flex: 0 0 auto;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-/* ---- right rail: Recommended Connections ---- */
-.sf-connections { padding: 18px 20px; }
-.sf-connections__list { margin: 8px 0 0; padding: 0; list-style: none; }
-
-.sf-connections__list li {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 11px 0;
-}
-
-.sf-connections__list li + li { border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
-
-.sf-connections__avatar {
-    display: grid;
-    place-items: center;
-    flex: 0 0 38px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: #dbe7fb;
-    color: #274f9e;
-    font-size: 0.9rem;
-    font-weight: 800;
-}
-
-.sf-connections__body { min-width: 0; flex: 1; display: grid; }
-.sf-connections__body strong { color: var(--text); font-size: 0.86rem; font-weight: 700; }
-.sf-connections__body small { color: var(--text-muted); font-size: 0.78rem; }
-.sf-connections__mutual { color: var(--accent) !important; font-weight: 600; }
-
-.sf-connections__btn {
-    flex: 0 0 auto;
-    padding: 6px 14px;
-    border: 1px solid var(--accent);
-    border-radius: 99px;
-    background: none;
-    color: var(--accent);
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: default;
-}
-
-/* ---- right rail: Weekly Momentum ---- */
-.sf-momentum { padding: 18px 20px; }
-
-.sf-momentum__points {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin: 12px 0 0;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-.sf-momentum__points strong {
-    color: #16a34a;
-    font-family: var(--font-serif);
-    font-size: 1.7rem;
-    font-weight: 700;
-}
-
-.sf-momentum__trend { margin-left: auto; color: #16a34a; font-size: 0.8rem; font-weight: 700; }
-
-.sf-momentum__stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 14px;
-    text-align: center;
-}
-
-.sf-momentum__stats span { display: grid; gap: 2px; }
-.sf-momentum__stats strong { color: var(--text); font-size: 1.05rem; font-weight: 800; }
-.sf-momentum__stats small { color: var(--text-muted); font-size: 0.72rem; }
-
-.sf-momentum__note {
-    margin: 14px 0 0;
-    color: #16a34a;
-    font-size: 0.82rem;
-    font-weight: 600;
-}
-
-/* People card footers stack cleanly on phones. */
-@media (max-width: 743px) {
-    .sf-people__action { margin-left: 0; }
-    .sf-people .sf-item__foot { flex-direction: column; align-items: flex-start; gap: 10px; }
-}
-
-/* =========================================================
    LIGHT-THEME CONVERSION — MY SLATE (story) & PROJECTS (work)
    (added 2026-07-07)
    These two pages (.my-story-page and .work-page) were built in the
@@ -14171,8 +10548,6 @@ body.slate-light .ps-metric,
 body.slate-light .ps-role,
 body.slate-light .ps-project,
 body.slate-light .ps-feature,
-body.slate-light .ps-preview-card,
-body.slate-light .ps-feed-card,
 body.slate-light .story-card,
 body.slate-light .drive-card,
 body.slate-light .fun-fact-card,
@@ -14191,14 +10566,12 @@ body.slate-light .resume-recruiter-panel,
 body.slate-light .resume-ai-panel,
 body.slate-light .work-project-panel,
 body.slate-light .work-proof-card,
-body.slate-light .project-card,
 body.slate-light .iv-card,
 body.slate-light .iv-benefit,
 body.slate-light .iv-confidence,
 body.slate-light .bd-stat,
 body.slate-light .bd-entry,
 body.slate-light .goal-card,
-body.slate-light .badge-card,
 body.slate-light .ct-card {
     border: 1px solid #cbdcf8;
     box-shadow:
@@ -17794,24 +14167,15 @@ body[data-surface-slate="on"] .profile-about,
 body[data-surface-slate="on"] .ps-role,
 body[data-surface-slate="on"] .ps-project,
 body[data-surface-slate="on"] .ps-feature,
-body[data-surface-slate="on"] .ps-feed-card,
-body[data-surface-slate="on"] .ps-preview-card,
-body[data-surface-slate="on"] .feed-card,
-body[data-surface-slate="on"] .metrics-strip,
 body[data-surface-slate="on"] .bd-entry,
 body[data-surface-slate="on"] .bd-stat,
 body[data-surface-slate="on"] .board-compose,
-body[data-surface-slate="on"] .board-entry,
-body[data-surface-slate="on"] .board-hero-panel,
-body[data-surface-slate="on"] .board-momentum,
 body[data-surface-slate="on"] .goal-card,
-body[data-surface-slate="on"] .badge-card,
 body[data-surface-slate="on"] .iv-card,
 body[data-surface-slate="on"] .iv-benefit,
 body[data-surface-slate="on"] .iv-confidence,
 body[data-surface-slate="on"] .iv-modebar,
 body[data-surface-slate="on"] .iq-item,
-body[data-surface-slate="on"] .iv-suggested__item,
 body[data-surface-slate="on"] .platform-page__points li {
     background:
         linear-gradient(158deg, var(--slab-hi) 0%, transparent 44%, var(--slab-lo) 100%),
@@ -17828,9 +14192,6 @@ body[data-surface-slate="on"] .platform-page__points li {
 /* ---- Chips & small pills: the same stone, lighter wash ---- */
 body[data-surface-slate="on"] .ps-skills a,
 body[data-surface-slate="on"] .ps-role__tags span,
-body[data-surface-slate="on"] .ps-preview-card__chips span,
-body[data-surface-slate="on"] .ps-askpill__chips a,
-body[data-surface-slate="on"] .goal-chip,
 body[data-surface-slate="on"] .iv-chip,
 body[data-surface-slate="on"] .iv-evidence__list li {
     background:
