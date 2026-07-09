@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-story-3"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=cinematic-connect-1"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -131,9 +131,55 @@
             </div>
         </div>
         {# Gentle invitation to scroll — fades once you leave the hero. #}
-        <a class="scroll-cue cine-fade" style="--fade-i: 6;" href="#your-work" aria-label="Scroll to explore">
+        <a class="scroll-cue cine-fade" style="--fade-i: 6;" href="#connected-experiences" aria-label="Scroll to explore">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.6l6 6 6-6"/></svg>
         </a>
+    </section>
+
+    {# ==============================================================
+       1B · THE CONNECTED EXPERIENCES — an extension of the hero.
+       Same aurora sky as the opening frame (no scene change), carried
+       downward into a grid of four rendered experience cards. Native
+       smooth scroll (scroll cue above) glides from the opening frame
+       straight into these cards. Each card links to the real feature.
+       ============================================================== #}
+    <section class="cinematic-section cinematic-section--connect"
+             id="connected-experiences"
+             aria-labelledby="connected-experiences-title">
+        <div class="section-bg" aria-hidden="true"></div>
+        <div class="section-veil" aria-hidden="true"></div>
+        <div class="section-content">
+            <p class="section-eyebrow reveal">The PeerSlate Experience</p>
+            <h2 class="section-title reveal" id="connected-experiences-title">
+                The Connected Experiences Behind <span class="connect-accent">Your Story.</span>
+            </h2>
+            <p class="section-subtitle reveal">
+                Four powerful ways PeerSlate helps you capture, reflect, and grow &mdash; at every step.
+            </p>
+
+            <div class="connect-card-grid" aria-label="PeerSlate experience cards">
+                <a class="connect-card reveal" style="--reveal-i: 0;" href="{{ portfolio_home_url }}#ask-pete">
+                    <img src="{{ url_for('static', filename='images/cinematic/connect-ask.jpg') }}"
+                         alt="Ask Pete AI &mdash; grounded career answers about Pete's background, skills, and projects, backed by approved evidence."
+                         width="880" height="1100" loading="lazy" decoding="async">
+                </a>
+                <a class="connect-card reveal" style="--reveal-i: 1;" href="{{ portfolio_url('interview-me') }}">
+                    <img src="{{ url_for('static', filename='images/cinematic/connect-interview.jpg') }}"
+                         alt="Interview Me &mdash; practice with AI, or have AI interview you, to build confidence with scenario-based questions."
+                         width="880" height="1100" loading="lazy" decoding="async">
+                </a>
+                <a class="connect-card reveal" style="--reveal-i: 2;" href="{{ url_for('the_slate') }}">
+                    <img src="{{ url_for('static', filename='images/cinematic/connect-feed.jpg') }}"
+                         alt="Slate Feed &mdash; stay connected to the right people, opportunities, and momentum."
+                         width="880" height="1100" loading="lazy" decoding="async">
+                </a>
+                <a class="connect-card reveal" style="--reveal-i: 3;" href="{{ portfolio_resume_url }}">
+                    <img src="{{ url_for('static', filename='images/cinematic/connect-resume.jpg') }}"
+                         alt="Interactive Résumé &mdash; a recruiter-friendly view of Pete's story; click any skill to see the proof behind it."
+                         width="880" height="1100" loading="lazy" decoding="async">
+                </a>
+            </div>
+        </div>
     </section>
 
     {# ==============================================================
@@ -662,5 +708,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-story-3"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=cinematic-connect-1"></script>
 {% endblock %}

@@ -1057,6 +1057,92 @@ body.cinematic-home-page[data-slate-photo="on"] .section-eyebrow {
     to   { transform: scale(1.09) translateY(0.8%); }
 }
 
+/* — 1B · THE CONNECTED EXPERIENCES: four rendered cards floating on
+   the hero's aurora sky. It reuses the hero backdrop so the opening
+   reads as one continuous scene; a darker veil in the lower half lets
+   each card's near-black surround melt into the night rather than
+   showing as a hard box. */
+.cinematic-section--connect {
+    --cine-ink: #f4f8ff;
+    --cine-ink-soft: rgb(230 238 255 / 84%);
+    --cine-accent: #ff9ecb;      /* pink, to echo the rendered cards */
+}
+
+.cinematic-section--connect .section-bg {
+    background-image: url("../images/cinematic/hero-aurora.jpg");
+    background-position: center 30%;
+}
+
+/* No dome here — this scene flows straight out of the hero, so drop
+   the curved-divider top padding and just breathe. */
+.cinematic-section--connect .section-content {
+    padding-top: clamp(72px, 11vh, 160px);
+    padding-bottom: clamp(72px, 10vh, 150px);
+}
+
+.cinematic-section--connect .section-veil {
+    background:
+        radial-gradient(135% 80% at 50% 80%,
+            rgb(3 6 18 / 74%) 0%,
+            rgb(3 6 18 / 46%) 46%,
+            rgb(3 6 18 / 14%) 78%,
+            rgb(3 6 18 / 0%) 100%),
+        linear-gradient(180deg,
+            rgb(2 6 16 / 52%) 0%,
+            rgb(2 6 16 / 16%) 20%,
+            rgb(3 7 18 / 28%) 60%,
+            rgb(4 8 20 / 60%) 100%);
+}
+
+.cinematic-section--connect .section-title,
+.cinematic-section--connect .section-subtitle {
+    text-shadow: 0 2px 30px rgb(2 8 20 / 60%);
+}
+
+/* Pink gradient lettering on "Your Story." — text-shadow must stay
+   off (the fill is transparent; a shadow would smear through it,
+   same as the hero's last headline line). */
+.cinematic-section--connect .connect-accent {
+    background: linear-gradient(100deg, #ff9ecb 8%, #d78bff 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
+}
+
+/* Four rendered cards across (2×2 tablet, stacked phone — see §7). */
+.connect-card-grid {
+    width: 100%;
+    margin-top: clamp(40px, 6vh, 88px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(14px, 1.4vw, 30px);
+    align-items: start;
+}
+
+.connect-card {
+    display: block;
+    border-radius: var(--cine-radius);
+    /* the render carries its own pink glow; a soft cast just lifts the
+       tile off the sky. drop-shadow respects the rounded corners. */
+    filter: drop-shadow(0 24px 54px rgb(2 5 18 / 60%));
+    transition: transform 0.45s cubic-bezier(0.2, 0.6, 0.25, 1),
+                filter 0.45s cubic-bezier(0.2, 0.6, 0.25, 1);
+}
+
+.connect-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--cine-radius);
+}
+
+.connect-card:hover {
+    transform: translateY(-8px);
+    filter: drop-shadow(0 34px 74px rgb(2 5 18 / 68%));
+}
+
 /* — 2 · YOUR WORK: bright mountain sunrise — */
 .cinematic-section--work {
     --cine-ink: #17264a;
@@ -2041,7 +2127,7 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
 }
 
 .cinematic-section--future .section-bg {
-    background-image: url("../images/cinematic/future-valley.jpg");
+    background-image: url("../images/cinematic/future-path.jpg");
 }
 
 .cinematic-section--future .section-veil {
@@ -2076,14 +2162,18 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
 }
 
 .cinematic-section--together .section-bg {
-    background-image: url("../images/cinematic/together-sunset.jpg");
+    background-image: url("../images/cinematic/together-summit.jpg");
 }
 
+/* The summit sky is bright blue, so darken the top and bottom more
+   than the old purple sunset needed — the white heading and the dark
+   glass cards both have to hold up over open daylight. */
 .cinematic-section--together .section-veil {
     background: linear-gradient(180deg,
-        rgb(18 10 44 / 42%) 0%,
-        rgb(18 10 44 / 0%) 38%,
-        rgb(8 5 24 / 52%) 100%);
+        rgb(10 8 30 / 62%) 0%,
+        rgb(12 10 34 / 22%) 34%,
+        rgb(10 8 28 / 30%) 60%,
+        rgb(6 5 22 / 66%) 100%);
 }
 
 
@@ -2152,7 +2242,8 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
     }
 
     .work-showcase-grid,
-    .story-card-grid {
+    .story-card-grid,
+    .connect-card-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -2232,7 +2323,8 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
     }
 
     .work-showcase-grid,
-    .story-card-grid {
+    .story-card-grid,
+    .connect-card-grid {
         grid-template-columns: minmax(0, 1fr);
         gap: 16px;
         margin-top: 34px;
@@ -2423,8 +2515,8 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
     .work-proof-bg { background-image: url("../images/cinematic/story-clouds-m.jpg"); }
     .cinematic-section--work .section-bg { background-image: url("../images/cinematic/work-clouds-m.jpg"); }
     .cinematic-section--story .section-bg { background-image: url("../images/cinematic/story-sunset-bg-m.jpg"); }
-    .cinematic-section--future .section-bg { background-image: url("../images/cinematic/future-valley-m.jpg"); }
-    .cinematic-section--together .section-bg { background-image: url("../images/cinematic/together-sunset-m.jpg"); }
+    .cinematic-section--future .section-bg { background-image: url("../images/cinematic/future-path-m.jpg"); }
+    .cinematic-section--together .section-bg { background-image: url("../images/cinematic/together-summit-m.jpg"); }
 }
 
 
