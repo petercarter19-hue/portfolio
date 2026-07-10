@@ -60,6 +60,15 @@ Feedback: the résumé body sections (Overview, Experience, Education, Skills & 
 - Result at 1440x900: page height 6478px to 5329px (-18%); ledger frame 5014px to 3945px (-21%). Content unchanged - only spacing, type scale, and card composition.
 - Validation: 5/5 unit tests pass; desktop and mobile screenshots refreshed below.
 
+## Refinement pass 2 — Ledger-to-Constellation transition and Constellation (2026-07-10)
+
+- The Career Constellation now materializes during vertical scroll: an IntersectionObserver reveals the scene with a transform/opacity entrance. The hidden pre-state only applies when JavaScript runs, and reduced-motion users always see the scene immediately.
+- Added a bidirectional selected state: the Constellation node for the active Ledger chapter carries a white halo ring, updated on every chapter change (tab click, arrow keys, outcome-metric jumps, node clicks). The default chapter is synced on load.
+- Improved connection clarity where node copy crosses the glowing career path with a soft dark text-shadow in the night-side region.
+- Finished the chapter transition with a glowing cyan terminus dot on the descent line.
+- Node-to-Ledger navigation, keyboard operation, the mobile structured vertical story, and reduced-motion behavior verified in-browser: 9/9 scripted interaction checks pass (initial node sync, tab/panel/node sync, Arrow/Home roving focus, scroll reveal, node-to-chapter focus return, single-open evidence, reduced-motion visibility, mobile constellation structure).
+- Validation: 5/5 unit tests pass; `node --check` clean; desktop and mobile screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.

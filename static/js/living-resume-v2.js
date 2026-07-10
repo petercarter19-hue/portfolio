@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tabs = [...page.querySelectorAll('[data-ledger-event]')];
     const panels = [...page.querySelectorAll('[data-ledger-panel]')];
+    const constellationNodes = [...page.querySelectorAll('.lr-constellation-node[data-event-id]')];
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const resumeNavLinks = [...page.querySelectorAll('[data-resume-nav]')];
     const resumeSections = [...page.querySelectorAll('[data-resume-section], [data-resume-section-target]')];
@@ -95,6 +96,10 @@ document.addEventListener('DOMContentLoaded', () => {
             panel.classList.toggle('is-active', isSelected);
         });
 
+        constellationNodes.forEach((node) => {
+            node.classList.toggle('is-current', node.dataset.eventId === eventId);
+        });
+
         if (options.focusTab && selectedTab) {
             selectedTab.focus({ preventScroll: true });
         }
@@ -134,11 +139,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const initialTab = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true');
+    if (initialTab) selectEvent(initialTab.dataset.ledgerEvent);
+
     page.querySelectorAll('[data-constellation-target]').forEach((button) => {
         button.addEventListener('click', () => {
             scrollToLedger(button.dataset.constellationTarget);
         });
     });
+
+    const constellation = page.querySelector('.lr-constellation');
+    if (constellation && 'IntersectionObserver' in window) {
+        page.classList.add('lr-js-reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-revealed');
+                revealObserver.unobserve(entry.target);
+            });
+        }, { rootMargin: '0px 0px -12% 0px' });
+        revealObserver.observe(constellation);
+    }
 
     page.querySelectorAll('[data-metric-event]').forEach((button) => {
         button.addEventListener('click', () => {

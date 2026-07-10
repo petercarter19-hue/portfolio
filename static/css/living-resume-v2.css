@@ -1062,9 +1062,36 @@
 }
 
 .lr-chapter-transition span {
+    position: relative;
     width: 1px;
-    height: 4rem;
+    height: 4.5rem;
     background: linear-gradient(var(--lr-blue), var(--lr-cyan));
+}
+
+.lr-chapter-transition span::after {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--lr-cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 0.75rem rgb(46 200 211 / 65%);
+    content: "";
+    transform: translate(-50%, -0.15rem);
+}
+
+.lr-js-reveal .lr-constellation {
+    opacity: 0;
+    transform: translateY(2.25rem);
+}
+
+.lr-js-reveal .lr-constellation.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 700ms ease,
+        transform 700ms cubic-bezier(0.22, 0.8, 0.25, 1);
 }
 
 .lr-constellation {
@@ -1324,6 +1351,12 @@
     color: #72e1e9;
 }
 
+.lr-constellation-node:nth-child(-n + 3) .lr-constellation-node__copy {
+    text-shadow:
+        0 1px 10px rgb(4 23 46 / 85%),
+        0 0 2px rgb(4 23 46 / 60%);
+}
+
 .lr-constellation__nodes {
     position: absolute;
     inset: 0;
@@ -1400,6 +1433,15 @@
 
 .lr-constellation-node button:hover .lr-constellation-node__marker {
     transform: scale(1.1);
+}
+
+.lr-constellation-node.is-current .lr-constellation-node__marker {
+    border-color: #ffffff;
+    box-shadow:
+        0 0 0 0.28rem rgb(255 255 255 / 62%),
+        0 0 0 0.62rem rgb(46 200 211 / 22%),
+        0 0 2rem rgb(46 200 211 / 72%);
+    transform: scale(1.08);
 }
 
 .lr-constellation-node__copy {
@@ -2239,6 +2281,11 @@
         animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
+    }
+
+    .lr-js-reveal .lr-constellation {
+        opacity: 1;
+        transform: none;
     }
 }
 
