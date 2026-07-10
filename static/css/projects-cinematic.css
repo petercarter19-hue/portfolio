@@ -1,0 +1,309 @@
+/* =====================================================================
+   PROJECTS — the build log (2026-07-10)
+   The shipped Interactive Resume leads as a cinematic case with a real
+   screenshot in glass; the three planned concepts follow as jewel-edged
+   bench cards. All over the shared summit sky.
+   ===================================================================== */
+
+.projects-film {
+    --pjf-ink: #0a1b36;
+    --pjf-ink-soft: #43546c;
+    --pjf-serif: "Source Serif 4", Georgia, serif;
+    --pjf-content: 74rem;
+    min-width: 0;
+    padding-bottom: 6rem;
+    color: var(--pjf-ink);
+}
+
+/* --- opening ---------------------------------------------------------- */
+.pjf-open {
+    display: grid;
+    justify-items: center;
+    padding: clamp(3rem, 9vh, 5.5rem) 1.5rem 1.5rem;
+    text-align: center;
+}
+
+.pjf-open h1 {
+    margin: 0.75rem 0 0;
+    font-family: var(--pjf-serif);
+    font-size: clamp(2.8rem, 6vw, 4.6rem);
+    font-weight: 700;
+    line-height: 0.98;
+}
+
+.pjf-open h1 span {
+    color: #1d55ba;
+}
+
+.pjf-open__lead {
+    max-width: 44rem;
+    margin: 1.2rem 0 0;
+    color: var(--pjf-ink-soft);
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+.pjf-focus {
+    display: inline-block;
+    max-width: 46rem;
+    margin: 1.6rem 0 0;
+    padding: 0.8rem 1.2rem;
+    color: #23385a;
+    background: linear-gradient(135deg, rgb(255 255 255 / 62%), rgb(241 248 255 / 48%));
+    border: 1px solid rgb(255 255 255 / 80%);
+    border-radius: 999px;
+    box-shadow: 0 0.9rem 2.4rem rgb(17 44 78 / 12%);
+    backdrop-filter: blur(12px) saturate(1.2);
+    font-size: 0.85rem;
+}
+
+.pjf-focus strong {
+    margin-right: 0.5rem;
+    color: #b07c15;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.pjf-ai {
+    width: min(calc(100% - 3rem), 56rem);
+    margin: 0.75rem auto 0;
+}
+
+/* --- featured case ------------------------------------------------------ */
+.pjf-feature {
+    display: grid;
+    width: min(calc(100% - 3rem), var(--pjf-content));
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2rem;
+    align-items: center;
+    margin: clamp(2.5rem, 7vh, 4.5rem) auto 0;
+    padding: 2.25rem 2.5rem;
+    background: linear-gradient(135deg, rgb(255 255 255 / 64%), rgb(241 248 255 / 50%));
+    border: 1px solid rgb(255 255 255 / 82%);
+    border-radius: 1.5rem;
+    box-shadow:
+        0 1.75rem 4.5rem rgb(17 44 78 / 16%),
+        inset 0 0 0 0.3rem rgb(255 255 255 / 30%);
+    backdrop-filter: blur(15px) saturate(1.2);
+}
+
+.pjf-status {
+    display: inline-block;
+    margin: 0 0 0.6rem;
+    padding: 0.3rem 0.7rem;
+    color: #17335e;
+    background: rgb(255 255 255 / 70%);
+    border: 1px solid #9dbfe9;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.pjf-status--live {
+    color: #0c5c37;
+    border-color: #7cc7a2;
+    background: rgb(236 252 244 / 82%);
+}
+
+.pjf-feature__copy h2 {
+    margin: 0.35rem 0 0;
+    font-family: var(--pjf-serif);
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    line-height: 1.08;
+}
+
+.pjf-feature__lead {
+    margin: 0.7rem 0 0;
+    color: var(--pjf-ink-soft);
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
+.pjf-feature__cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.2rem;
+}
+
+.pjf-feature__cols h3,
+.pjf-card h4 {
+    margin: 0 0 0.45rem;
+    color: #1d55ba;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.pjf-next-title {
+    margin-top: 1rem !important;
+}
+
+.pjf-feature__cols ul,
+.pjf-card ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #33475f;
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.pjf-feature__cols li + li,
+.pjf-card li + li {
+    margin-top: 0.4rem;
+}
+
+.pjf-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.pjf-tags span {
+    padding: 0.24rem 0.6rem;
+    color: #174b93;
+    background: rgb(255 255 255 / 68%);
+    border: 1px solid #9dbfe9;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 600;
+}
+
+.pjf-feature__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+}
+
+.pjf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.1rem;
+    color: #ffffff;
+    background: #0c2d64;
+    border: 1px solid #274f8d;
+    border-radius: 0.6rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.pjf-btn:hover,
+.pjf-btn:focus-visible {
+    background: #1d55ba;
+}
+
+.pjf-btn--ghost {
+    color: #17335e;
+    background: rgb(255 255 255 / 66%);
+    border-color: #9dbfe9;
+}
+
+.pjf-btn--ghost:hover,
+.pjf-btn--ghost:focus-visible {
+    color: #ffffff;
+    background: #1d55ba;
+}
+
+.pjf-feature__shot {
+    display: block;
+    padding: 0.7rem;
+    background: linear-gradient(135deg, rgb(255 255 255 / 78%), rgb(241 248 255 / 62%));
+    border: 1px solid rgb(255 255 255 / 88%);
+    border-radius: 1.1rem;
+    box-shadow: 0 1.5rem 4rem rgb(17 44 78 / 22%);
+    transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.pjf-feature__shot img {
+    display: block;
+    width: 100%;
+    border-radius: 0.7rem;
+}
+
+.pjf-feature__shot:hover,
+.pjf-feature__shot:focus-visible {
+    box-shadow: 0 1.9rem 4.8rem rgb(17 44 78 / 30%);
+    transform: translateY(-4px);
+}
+
+/* --- bench cards ---------------------------------------------------------- */
+.pjf-bench {
+    width: min(calc(100% - 3rem), var(--pjf-content));
+    margin: 0 auto;
+    padding-top: clamp(3rem, 9vh, 5rem);
+}
+
+.pjf-bench__head h2 {
+    margin: 0.4rem 0 0;
+    font-family: var(--pjf-serif);
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.pjf-bench__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.6rem;
+}
+
+.pjf-card {
+    padding: 1.5rem 1.6rem 1.6rem;
+    background: linear-gradient(135deg, rgb(255 255 255 / 60%), rgb(241 248 255 / 46%));
+    border: 1px solid rgb(255 255 255 / 80%);
+    border-top: 3px solid var(--orb, #3f6fe0);
+    border-radius: 1.1rem;
+    box-shadow: 0 1.3rem 3.4rem rgb(17 44 78 / 13%);
+    backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.pjf-card h3 {
+    margin: 0.4rem 0 0;
+    font-family: var(--pjf-serif);
+    font-size: 1.35rem;
+    line-height: 1.12;
+}
+
+.pjf-card__lead {
+    margin: 0.55rem 0 0.9rem;
+    color: var(--pjf-ink-soft);
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+.pjf-card h4 {
+    margin-top: 0.9rem;
+}
+
+/* --- responsive ------------------------------------------------------------- */
+@media (max-width: 64rem) {
+    .pjf-feature {
+        grid-template-columns: 1fr;
+    }
+
+    .pjf-feature__shot {
+        order: -1;
+    }
+
+    .pjf-bench__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 48rem) {
+    .pjf-feature {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .pjf-feature__cols {
+        grid-template-columns: 1fr;
+    }
+}

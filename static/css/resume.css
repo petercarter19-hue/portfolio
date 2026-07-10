@@ -1024,58 +1024,11 @@
    blue-gray borders, teal accents, navy-tinted shadows.
    ========================================================= */
 
-body[data-theme="blueprint-light"] .resume-ai-panel,
-body[data-theme="blueprint-light"] .resume-metric-card,
-body[data-theme="blueprint-light"] .resume-role-panel,
-body[data-theme="blueprint-light"] .resume-role-card {
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-}
-
-body[data-theme="blueprint-light"] .resume-ai-suggestion {
-    background: #ffffff;
-    border-color: var(--color-border);
-}
 
 /* Hover tint: teal wash instead of the dark theme's gold wash. */
-body[data-theme="blueprint-light"] .resume-ai-suggestion:hover,
-body[data-theme="blueprint-light"] .resume-ai-suggestion:focus-visible {
-    color: var(--color-gold-muted);
-    background: rgb(7 150 184 / 8%);
-}
 
-body[data-theme="blueprint-light"] .resume-skill-button {
-    background: linear-gradient(180deg, #ffffff, #f6fbfe);
-    border-color: var(--color-border);
-    box-shadow: 0 10px 26px rgb(8 32 74 / 10%);
-}
-
-body[data-theme="blueprint-light"] .resume-skill-button:hover,
-body[data-theme="blueprint-light"] .resume-skill-button:focus-visible,
-body[data-theme="blueprint-light"] .resume-skill-card.is-popover-open .resume-skill-button {
-    background: linear-gradient(180deg, #ffffff, #eef8fc);
-    box-shadow: 0 0 22px rgb(7 150 184 / 18%);
-}
-
-body[data-theme="blueprint-light"] .resume-skill-popover {
-    background: #ffffff;
-    border-color: rgb(7 150 184 / 45%);
-    box-shadow: 0 20px 46px rgb(8 32 74 / 20%);
-}
 
 /* Popover pointer "tail": match the new white box and teal border. */
-body[data-theme="blueprint-light"] .resume-skill-popover::before {
-    background: #ffffff;
-    border-top-color: rgb(7 150 184 / 45%);
-    border-left-color: rgb(7 150 184 / 45%);
-}
-
-body[data-theme="blueprint-light"] .resume-inline-button,
-body[data-theme="blueprint-light"] .resume-credential-list li,
-body[data-theme="blueprint-light"] .resume-progression-strip {
-    background: rgb(255 255 255 / 72%);
-    border-color: var(--color-border);
-}
 
 
 /* =========================================================
