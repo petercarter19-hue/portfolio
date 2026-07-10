@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeSections = [...page.querySelectorAll('[data-resume-section], [data-resume-section-target]')];
     const resumeDock = page.querySelector('.lr-resume-dock');
     const resumeRail = page.querySelector('.lr-ledger__rail');
-    const ledgerBody = page.querySelector('.lr-ledger__body');
+    const ledgerBody = page.querySelector('.lr-resume-layout');
 
     function setCurrentResumeSection(sectionId) {
         resumeNavLinks.forEach((link) => {
@@ -212,6 +212,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.key !== 'Escape') return;
         skillDetails.forEach((detail) => {
             detail.open = false;
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        skillDetails.forEach((detail) => {
+            if (detail.open && !detail.contains(event.target)) {
+                detail.open = false;
+            }
         });
     });
 });

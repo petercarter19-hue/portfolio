@@ -81,6 +81,15 @@ Pete approved a structural evolution beyond the original mockups: separate the r
 - All tiles and cards are translucent (frame, rail, detail, outcome tiles, impact strip, credential cards, evidence rows) with backdrop blur, so the sky shines through while palette colors stay intact.
 - Existing behavior preserved: tablist keyboard interaction, chapter/node syncing, dock handoff, mobile structured fallback, PDF path, and both public routes. 5/5 unit tests and 9/9 scripted browser interaction checks pass; screenshots refreshed.
 
+## Refinement pass 4 — Identity split, persistent rail, opaque bubbles (2026-07-10, per Pete's direction)
+
+- The portfolio profile band (avatar, "Open to conversations" chip, name/title block) no longer renders on the Living Résumé page — the base template's new `profile_band` block lets this page suppress it while every other portfolio page keeps it, and the profile tab strip stays for navigation. This removes the doubled Pete Carter identity that production visitors saw on `/petec/resume`.
+- The Living Résumé identity is now two side-by-side glass cards under the header: a condensed who-card (portrait, name, positioning, summary) and a reach-card (location, email, LinkedIn, career-ribbon quote), stacking on smaller screens.
+- The outer ledger frame layer is gone. The section rail is its own floating card that stays sticky beside the entire résumé, and the chapter detail (Overview) is its own bubble — the first in a single right-hand column where Experience, Education, Skills & Evidence, Development, and Documents all share the same width, keeping the sky gaps and scroll reveals between them.
+- All content cards are now near-opaque glass matching the identity and timeline treatment.
+- Skill evidence popovers dismiss automatically on any outside click, in addition to Escape and single-open behavior.
+- Validation: 5/5 unit tests, 9/9 browser interaction checks, 5/5 zoom/touch/overflow/focus checks, `node --check` clean; screenshots refreshed from `/petec/resume` (the production route, with the tab strip).
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.
