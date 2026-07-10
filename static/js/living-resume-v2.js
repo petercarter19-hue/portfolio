@@ -61,6 +61,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // The rail glides to the vertical center of the viewport while the
+    // sections scroll past, then releases with the last section. Sticky
+    // handles the motion; this just keeps the centered offset current.
+    function updateRailCenter() {
+        if (!resumeRail) return;
+        const headerClearance = 76;
+        const centered = (window.innerHeight - resumeRail.offsetHeight) / 2;
+        resumeRail.style.setProperty('--lr-rail-top', `${Math.max(headerClearance, Math.round(centered))}px`);
+    }
+
+    window.addEventListener('resize', updateRailCenter);
+    updateRailCenter();
+
     resumeNavLinks.forEach((link) => {
         link.addEventListener('click', (event) => {
             const target = page.querySelector(link.hash);
@@ -208,17 +221,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const skillFlips = [...page.querySelectorAll('[data-skill-flip]')];
+
+    function setFlipped(card, flipped) {
+        card.classList.toggle('is-flipped', flipped);
+        card.setAttribute('aria-expanded', String(flipped));
+        const front = card.querySelector('.lr-skill-flip__front');
+        const back = card.querySelector('.lr-skill-flip__back');
+        if (front) front.setAttribute('aria-hidden', String(flipped));
+        if (back) back.setAttribute('aria-hidden', String(!flipped));
+    }
+
+    skillFlips.forEach((card) => {
+        card.addEventListener('click', () => {
+            const flip = !card.classList.contains('is-flipped');
+            skillFlips.forEach((other) => {
+                if (other !== card) setFlipped(other, false);
+            });
+            setFlipped(card, flip);
+        });
+    });
+
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
         skillDetails.forEach((detail) => {
             detail.open = false;
         });
+        skillFlips.forEach((card) => setFlipped(card, false));
     });
 
     document.addEventListener('click', (event) => {
         skillDetails.forEach((detail) => {
             if (detail.open && !detail.contains(event.target)) {
                 detail.open = false;
+            }
+        });
+        skillFlips.forEach((card) => {
+            if (card.classList.contains('is-flipped') && !card.contains(event.target)) {
+                setFlipped(card, false);
             }
         });
     });

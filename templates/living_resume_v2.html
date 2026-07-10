@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-4">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -59,7 +59,6 @@
         <a href="#resume-education" data-resume-nav>Education</a>
         <a href="#resume-skills" data-resume-nav>Skills &amp; Evidence</a>
         <a href="#resume-development" data-resume-nav>Development</a>
-        <a href="#resume-documents" data-resume-nav>Documents</a>
     </nav>
 
     <header class="lr-identity" aria-labelledby="ledger-title">
@@ -98,7 +97,7 @@
                 {% for event in ledger_events %}
                 {% set is_selected = event.id == living_resume.default_event_id %}
                 <button
-                    class="lr-timeline__event{% if is_selected %} is-selected{% endif %}"
+                    class="lr-timeline__event is-{{ event.kind|lower }}{% if is_selected %} is-selected{% endif %}"
                     type="button"
                     role="tab"
                     id="timeline-tab-{{ event.id }}"
@@ -125,9 +124,9 @@
                 <a href="#resume-education" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-graduation"></use></svg>Education</a>
                 <a href="#resume-skills" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>Skills &amp; Evidence</a>
                 <a href="#resume-development" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-compass"></use></svg>Development</a>
-                <a href="#resume-documents" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>Documents</a>
             </nav>
             <p>Last updated<br><strong>{{ living_resume.last_updated }}</strong></p>
+            <a class="lr-rail-pdf" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>Résumé PDF</a>
         </aside>
 
         <div class="lr-resume-flow">
@@ -298,11 +297,21 @@
                             <small>{{ role.dates }}</small>
                             <h3>{{ role.employer }}</h3>
                             <p>{{ role.title }}</p>
+                            {% if role.related_skill_ids %}
+                            <div class="lr-role-skills" aria-label="Skills used in this role">
+                                {% for skill_id in role.related_skill_ids[:6] %}
+                                {% set role_skill = skill_lookup.get(skill_id) %}
+                                {% if role_skill %}
+                                <span>{{ role_skill.display_name }}</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </header>
                         <div>
                             <p>{{ role.summary }}</p>
                             <ul>
-                                {% for item in role.accomplishments[:4] %}
+                                {% for item in role.accomplishments[:7] %}
                                 <li>{{ item.text }}</li>
                                 {% endfor %}
                             </ul>
@@ -333,19 +342,25 @@
                 <header class="lr-vertical-section__header">
                     <span>04 / Skills &amp; Evidence</span>
                     <h2 id="resume-skills-title">Claims stay connected to proof.</h2>
-                    <p>Open any skill to inspect evidence from the approved résumé source set.</p>
+                    <p>Flip any skill to see the résumé evidence behind it.</p>
                 </header>
-                <div class="lr-evidence-index">
+                <div class="lr-skill-flip-grid">
                     {% for skill in featured_resume_skills %}
-                    <details data-skill-evidence>
-                        <summary>{{ skill.display_name }}</summary>
-                        <p>{{ skill.front_summary }}</p>
-                        <ul>
-                            {% for evidence in skill.evidence_items[:3] %}
-                            <li>{{ evidence.text }} <small>{{ evidence.employer }}</small></li>
-                            {% endfor %}
-                        </ul>
-                    </details>
+                    <button class="lr-skill-flip" type="button" data-skill-flip aria-expanded="false">
+                        <span class="lr-skill-flip__inner">
+                            <span class="lr-skill-flip__front">
+                                <strong>{{ skill.display_name }}</strong>
+                                <small>{{ skill.evidence_items|length }} proof point{{ '' if skill.evidence_items|length == 1 else 's' }}</small>
+                            </span>
+                            <span class="lr-skill-flip__back" aria-hidden="true">
+                                <ul>
+                                    {% for evidence in skill.evidence_items[:2] %}
+                                    <li>{{ evidence.text }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </span>
+                        </span>
+                    </button>
                     {% endfor %}
                 </div>
             </section>
@@ -367,15 +382,6 @@
                 </div>
             </section>
 
-            <section class="lr-vertical-section lr-document-section lr-bubble" id="resume-documents" data-reveal data-resume-section aria-labelledby="resume-documents-title">
-                <header class="lr-vertical-section__header">
-                    <span>06 / Documents</span>
-                    <h2 id="resume-documents-title">The conventional résumé is still here.</h2>
-                    <p>Open the approved PDF source without leaving the Living Résumé story.</p>
-                </header>
-                <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">Open résumé PDF</a>
-                <button type="button" data-chat-open data-ask-resume data-ask="Give me a recruiter-focused tour of Pete Carter's approved public résumé evidence.">Ask Pete AI for a guided tour</button>
-            </section>
         </div>
     </div>
 
@@ -502,5 +508,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-3"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-4"></script>
 {% endblock %}

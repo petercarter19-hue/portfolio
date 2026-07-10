@@ -90,6 +90,19 @@ Pete approved a structural evolution beyond the original mockups: separate the r
 - Skill evidence popovers dismiss automatically on any outside click, in addition to Escape and single-open behavior.
 - Validation: 5/5 unit tests, 9/9 browser interaction checks, 5/5 zoom/touch/overflow/focus checks, `node --check` clean; screenshots refreshed from `/petec/resume` (the production route, with the tab strip).
 
+## Refinement pass 5 — Slim chrome, colorful timeline, centered rail, flip skills (2026-07-10, per Pete's direction)
+
+- Site header is slimmer on this page only (52px bar, smaller logo/Sign-In/theme controls); other pages keep the standard header.
+- Identity cards sit higher; the reach card now centers the contact rows beside a square career-ribbon quote tile.
+- The timeline lost its glass card and sits directly on the sky, with kind-colored markers (indigo education, blue experience, amber credentials, cyan future), larger labels, and darker secondary text with a soft light halo for contrast.
+- The section rail now glides to the vertical center of the viewport while the reader scrolls and releases with the bottom of Development, leading straight into the Constellation. A quiet Résumé PDF button in the rail preserves the ATS/download path.
+- Section bubbles are more see-through again (66/54% glass with blur) per Pete's request to see the sky through them.
+- Experience is ordered most-recent-first (Northrop Grumman, L3Harris, DoD/USAF), shows up to seven accomplishment bullets per role, and adds per-role skill chips drawn from the shared skill data.
+- The Education heading sits on one line.
+- Skills & Evidence is a compact grid of 18 flip cards (three even rows): front shows the skill and proof-point count, clicking flips to up to two evidence bullets; one card flips at a time, outside click or Escape restores, reduced-motion gets an instant swap. Life Cycle Management, EVMS, and Provisioning were promoted to featured to complete the grid.
+- The Documents section is removed per Pete; its PDF link lives in the rail (tests updated accordingly).
+- Validation: 5/5 unit tests, 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks, flip/rail-centering/release verified in-browser; screenshots refreshed (desktop-development view added).
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.
