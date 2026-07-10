@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-5">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -72,22 +72,27 @@
             <div class="lr-ledger__intro">
                 <h1 id="ledger-title">{{ resume.profile.name }}</h1>
                 <p class="lr-ledger__role">{{ resume.profile.positioning.split('|')[0]|trim }} &amp; Technical Leader</p>
-                <p>{{ resume.profile.summary }}</p>
+                <p class="lr-ledger__summary">{{ resume.profile.summary }}</p>
+                <address class="lr-ledger__contact">
+                    <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
+                    <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>{{ resume.profile.email }}</a>
+                    <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn profile</a>
+                </address>
             </div>
         </div>
 
-        <div class="lr-identity__reach">
-            <address class="lr-ledger__contact">
-                <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
-                <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>{{ resume.profile.email }}</a>
-                <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn profile</a>
-            </address>
-
-            <blockquote class="lr-ledger__quote">
-                <span aria-hidden="true">“</span>
-                {{ living_resume.quote }}
-                <small>The career ribbon</small>
-            </blockquote>
+        <div class="lr-identity__ai resume-ai-panel">
+            <p class="lr-identity__ai-eyebrow"><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>Ask Pete AI</p>
+            <p class="lr-identity__ai-lead">Every answer is grounded in Pete's approved résumé evidence.</p>
+            <div class="lr-identity__ai-actions">
+                <button type="button" data-chat-open data-ask-resume data-ask="Give me a recruiter-focused tour of Pete Carter's approved public résumé evidence, leading with the strongest outcomes.">Recruiter view</button>
+                <button type="button" data-chat-open data-ask-resume data-ask="Walk me through Pete Carter's career story from the earliest chapter to today.">Career tour</button>
+                <button type="button" data-chat-open data-ask-resume data-ask="What are Pete Carter's strongest, best-evidenced skills, and where is the proof for each?">Top skills</button>
+            </div>
+            <button class="lr-identity__ai-ask" type="button" data-chat-open data-ask-resume data-ask="I'd like to ask a question about Pete Carter's experience and evidence.">
+                <span>Ask anything about this résumé…</span>
+                <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+            </button>
         </div>
     </header>
 
@@ -151,15 +156,8 @@
                                     <span>{{ event.display_period }}</span>
                                     <small>Selected chapter</small>
                                 </div>
-                                <p class="lr-panel__subtitle">{{ event.subtitle }}</p>
                             </div>
-                            <button
-                                class="lr-panel-ai"
-                                type="button"
-                                data-chat-open
-                                data-ask-resume
-                                data-ask="Summarize Pete's approved public evidence for {{ event.title }} - {{ event.subtitle }} and suggest the best follow-up question."
-                            >Ask Pete AI</button>
+                            <p class="lr-panel__role">{{ event.subtitle }}</p>
                         </header>
 
                         {% if event.skills %}
@@ -170,7 +168,7 @@
                             </div>
                             <div class="lr-skill-list">
                                 {% for skill in event.skills %}
-                                <details class="lr-skill" data-skill-evidence{% if is_selected and loop.first %} open{% endif %}>
+                                <details class="lr-skill" data-skill-evidence>
                                     <summary>{{ skill.display_name }}</summary>
                                     <div>
                                         <strong>{{ skill.display_name }}</strong>
@@ -192,29 +190,27 @@
 
                         <section class="lr-outcome-section" aria-labelledby="outcomes-title-{{ event.id }}">
                             <h3 id="outcomes-title-{{ event.id }}">Key outcomes</h3>
-                            {% if event.metrics %}
+                            {% if event.outcomes %}
                             <div class="lr-outcome-grid">
-                                {% set outcome_icons = ['users', 'repeat', 'file', 'chart', 'wrench'] %}
-                                {% for metric in event.metrics %}
+                                {% set outcome_icons = ['users', 'repeat', 'file', 'chart', 'wrench', 'shield', 'box', 'bolt'] %}
+                                {% for outcome in event.outcomes %}
                                 <button
-                                    class="lr-outcome"
+                                    class="lr-outcome{% if not outcome.value %} lr-outcome--text{% endif %}"
                                     type="button"
                                     data-metric-event="{{ event.id }}"
-                                    data-evidence-target="{{ metric.highlight_evidence_id }}"
+                                    data-evidence-target="{{ outcome.evidence_id }}"
                                 >
-                                    <svg class="lr-outcome__icon" aria-hidden="true"><use href="#lr-icon-{{ outcome_icons[loop.index0] }}"></use></svg>
-                                    <strong>{{ metric.value }}</strong>
-                                    <span>{{ metric.label }}</span>
-                                    <small>{{ metric.context }}</small>
+                                    <svg class="lr-outcome__icon" aria-hidden="true"><use href="#lr-icon-{{ outcome_icons[loop.index0 % 8] }}"></use></svg>
+                                    {% if outcome.value %}
+                                    <strong>{{ outcome.value }}</strong>
+                                    <span>{{ outcome.label }}</span>
+                                    <small>{{ outcome.context }}</small>
+                                    {% else %}
+                                    <p class="lr-outcome__text">{{ outcome.text }}</p>
+                                    {% endif %}
                                 </button>
                                 {% endfor %}
                             </div>
-                            {% elif event.accomplishments %}
-                            <ol class="lr-accomplishment-preview">
-                                {% for item in event.accomplishments[:5] %}
-                                <li>{{ item.text }}</li>
-                                {% endfor %}
-                            </ol>
                             {% else %}
                             <div class="lr-education-summary">
                                 <span>{{ event.status }}</span>
@@ -508,5 +504,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-4"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-5"></script>
 {% endblock %}
