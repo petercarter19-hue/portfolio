@@ -36,7 +36,7 @@
             /* Touch devices (iPads, tablets): swap the viewport tag so the
                browser itself renders the page 1280px wide and shrinks it to
                the screen — pixel-perfect desktop, handled natively. */
-            if (navigator.maxTouchPoints > 1) {
+            if (navigator.maxTouchPoints > 1 && window.location.pathname !== '/_internal/living-resume-v2') {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
                         .setAttribute('content', 'width=' + DESKTOP_WIDTH);

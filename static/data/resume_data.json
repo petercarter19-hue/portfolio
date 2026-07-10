@@ -27,6 +27,158 @@
       }
     ]
   },
+  "living_resume": {
+    "quote": "Every chapter changed what came next.",
+    "constellation_title": "See how the work became the story.",
+    "constellation_subtitle": "And where the story is going next.",
+    "constellation_evolution": "From sustainment leadership in the Air Force to reliability, ILS, MBSE, and CAM outcomes in industry.",
+    "constellation_focus_from": "Mission execution",
+    "constellation_focus_to": "Lifecycle excellence",
+    "constellation_skill_ids": [
+      "systems-engineering",
+      "mbse",
+      "cameo",
+      "doors",
+      "control-account-management"
+    ],
+    "constellation_evidence_metric_ids": ["modernization", "cam"],
+    "last_updated": "July 2026",
+    "default_event_id": "role-dod",
+    "career_highlight_metric_ids": ["modernization", "missing-parts", "cam"],
+    "career_highlight_skill_ids": ["cameo", "doors"],
+    "events": [
+      {
+        "id": "education-as",
+        "source": "education",
+        "source_id": "education-as",
+        "kind": "Education",
+        "marker": "AS",
+        "short_label": "A.S. Science",
+        "display_period": "Completed",
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 7.5,
+        "constellation_y": 95,
+        "label_position": "above"
+      },
+      {
+        "id": "education-bs",
+        "source": "education",
+        "source_id": "education-bs",
+        "kind": "Education",
+        "marker": "BS",
+        "short_label": "B.S. EE",
+        "display_period": "Completed",
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 20,
+        "constellation_y": 79,
+        "label_position": "above"
+      },
+      {
+        "id": "role-dod",
+        "source": "role",
+        "source_id": "dod",
+        "kind": "Experience",
+        "marker": "AF",
+        "short_label": "U.S. Air Force",
+        "display_period": "2021-2024",
+        "featured_metric_ids": ["engineers-led", "redesigns", "contract", "issue-time", "repair-test"],
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 34,
+        "constellation_y": 60,
+        "constellation_label": "Department of Defense / U.S. Air Force",
+        "constellation_points": [
+          "$36M contract oversight and 30+ engineers led",
+          "Nine redesign efforts valued at $19.2M"
+        ],
+        "label_position": "above"
+      },
+      {
+        "id": "role-l3harris",
+        "source": "role",
+        "source_id": "l3harris",
+        "kind": "Experience",
+        "marker": "L3",
+        "short_label": "L3Harris",
+        "display_period": "2024-2025",
+        "featured_metric_ids": ["cam"],
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 63,
+        "constellation_y": 62,
+        "constellation_label": "L3Harris Technologies",
+        "constellation_points": [
+          "ILS strategies supporting 12 IPS elements",
+          "Reliability execution and failure analysis"
+        ],
+        "label_position": "above"
+      },
+      {
+        "id": "role-northrop",
+        "source": "role",
+        "source_id": "northrop",
+        "kind": "Experience",
+        "marker": "NG",
+        "short_label": "Northrop Grumman",
+        "display_period": "2025-Present",
+        "featured_metric_ids": [],
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 82,
+        "constellation_y": 60,
+        "constellation_points": [
+          "$9.1M sustainment effort managed as CAM",
+          "Configuration, accounting, and data integrity"
+        ],
+        "label_position": "above"
+      },
+      {
+        "id": "education-ms",
+        "source": "education",
+        "source_id": "education-ms",
+        "kind": "Education",
+        "marker": "MS",
+        "short_label": "M.S. Engineering Management",
+        "display_period": "4.0 GPA",
+        "featured_metric_ids": ["gpa"],
+        "show_in_ledger": false,
+        "show_in_constellation": true,
+        "constellation_x": 68,
+        "constellation_y": 20,
+        "label_position": "above"
+      },
+      {
+        "id": "education-pmp",
+        "source": "education",
+        "source_id": "education-pmp",
+        "kind": "Credential",
+        "marker": "PMP",
+        "short_label": "PMP",
+        "display_period": "Certified",
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 84,
+        "constellation_y": 12,
+        "label_position": "above"
+      },
+      {
+        "id": "education-phd",
+        "source": "education",
+        "source_id": "education-phd",
+        "kind": "Future",
+        "marker": "PhD",
+        "short_label": "Systems Engineering Ph.D.",
+        "display_period": "Expected 2027 start",
+        "show_in_ledger": true,
+        "show_in_constellation": true,
+        "constellation_x": 95.2,
+        "constellation_y": 4,
+        "label_position": "below"
+      }
+    ]
+  },
   "skill_categories": [
     {
       "id": "featured",
@@ -222,6 +374,39 @@
       "related_case_study_id": null,
       "highlight_evidence_id": "education-ms",
       "recruiter_track_ids": ["program-leadership", "ai-automation"]
+    },
+    {
+      "id": "engineers-led",
+      "value": "30+",
+      "label": "Engineers led",
+      "context": "Led an engineering flight and projects function supporting more than 30 engineers.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["project-management"],
+      "related_case_study_id": null,
+      "highlight_evidence_id": "dod-redesigns",
+      "recruiter_track_ids": ["program-leadership"]
+    },
+    {
+      "id": "redesigns",
+      "value": "9 / $19.2M",
+      "label": "Redesign efforts",
+      "context": "Led nine redesign efforts valued at $19.2M.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["project-management", "systems-engineering"],
+      "related_case_study_id": null,
+      "highlight_evidence_id": "dod-redesigns",
+      "recruiter_track_ids": ["program-leadership"]
+    },
+    {
+      "id": "issue-time",
+      "value": "35%",
+      "label": "Faster issue-to-action",
+      "context": "Reduced issue-to-action time by 35% across 54 avionics systems.",
+      "related_role_ids": ["dod"],
+      "related_skill_ids": ["process-improvement", "data-analytics"],
+      "related_case_study_id": null,
+      "highlight_evidence_id": "dod-issue-time",
+      "recruiter_track_ids": ["systems-engineering", "sustainment-ram"]
     }
   ],
   "skills": [

@@ -667,19 +667,123 @@ def resume():
 
 @app.route('/_internal/living-resume-v2')
 def living_resume_v2():
-    """Local-first PS-FEAT-001 review route; existing resume routes stay unchanged."""
+    """Local-first PS-FEAT-001 review route; production resume stays unchanged."""
     preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
     clean_host = request.host.split(':', 1)[0].lower().strip('[]')
     if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
         abort(404)
 
-    fixture_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'living_resume_fixtures.json')
-    with open(fixture_path, 'r', encoding='utf-8') as fixture_file:
-        fixtures = json.load(fixture_file)
+    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
+    with open(resume_path, 'r', encoding='utf-8') as resume_file:
+        resume_data = json.load(resume_file)
 
-    requested_profile = request.args.get('profile', fixtures[0]['id'])
-    profile = next((item for item in fixtures if item['id'] == requested_profile), fixtures[0])
-    return render_template('living_resume_v2.html', profile=profile, profiles=fixtures)
+    role_by_id = {item['id']: item for item in resume_data['career_roles']}
+    education_by_id = {item['id']: item for item in resume_data['education']}
+    metric_by_id = {item['id']: item for item in resume_data['metrics']}
+    skill_by_id = {
+        item['id']: item
+        for item in resume_data['skills']
+        if item.get('public_display')
+    }
+
+    events = []
+    for event_config in resume_data['living_resume']['events']:
+        event = dict(event_config)
+        is_role = event['source'] == 'role'
+        record = role_by_id[event['source_id']] if is_role else education_by_id[event['source_id']]
+
+        if is_role:
+            event.update({
+                'title': record['employer'],
+                'subtitle': record['title'],
+                'summary': record['summary'],
+                'accomplishments': record['accomplishments'],
+                'responsibilities': record['responsibilities'],
+                'focus_tags': record['focus_tags'],
+                'skills': [
+                    skill_by_id[skill_id]
+                    for skill_id in record['related_skill_ids']
+                    if skill_id in skill_by_id
+                ][:5],
+            })
+        else:
+            event.update({
+                'title': record['credential'],
+                'subtitle': record['institution'],
+                'summary': record['detail'],
+                'status': record['status'],
+                'accomplishments': [],
+                'responsibilities': [],
+                'focus_tags': [],
+                'skills': [
+                    skill_by_id[skill_id]
+                    for skill_id in event.get('featured_skill_ids', [])
+                    if skill_id in skill_by_id
+                ],
+            })
+
+        event['metrics'] = [
+            metric_by_id[metric_id]
+            for metric_id in event.get('featured_metric_ids', [])
+            if metric_id in metric_by_id
+        ]
+        events.append(event)
+
+    ledger_events = [event for event in events if event.get('show_in_ledger')]
+    constellation_events = [event for event in events if event.get('show_in_constellation')]
+    living_resume = resume_data['living_resume']
+    career_highlight_metrics = [
+        metric_by_id[metric_id]
+        for metric_id in living_resume['career_highlight_metric_ids']
+        if metric_id in metric_by_id
+    ]
+    career_highlight_skills = [
+        skill_by_id[skill_id]
+        for skill_id in living_resume['career_highlight_skill_ids']
+        if skill_id in skill_by_id
+    ]
+    constellation_skills = [
+        skill_by_id[skill_id]
+        for skill_id in living_resume['constellation_skill_ids']
+        if skill_id in skill_by_id
+    ]
+    constellation_evidence_metrics = [
+        metric_by_id[metric_id]
+        for metric_id in living_resume['constellation_evidence_metric_ids']
+        if metric_id in metric_by_id
+    ]
+    degree_ids = {
+        event['source_id']
+        for event in living_resume['events']
+        if event['source'] == 'education' and event['kind'] == 'Education'
+    }
+    resume_degrees = [
+        item for item in resume_data['education'] if item['id'] in degree_ids
+    ]
+    resume_development = [
+        item for item in resume_data['education'] if item['id'] not in degree_ids
+    ]
+    featured_resume_skills = [
+        item
+        for item in resume_data['skills']
+        if item.get('featured') and item.get('public_display')
+    ]
+
+    return render_template(
+        'living_resume_v2.html',
+        resume=resume_data,
+        living_resume=living_resume,
+        ledger_events=ledger_events,
+        constellation_events=constellation_events,
+        career_highlight_metrics=career_highlight_metrics,
+        career_highlight_skills=career_highlight_skills,
+        constellation_skills=constellation_skills,
+        constellation_evidence_metrics=constellation_evidence_metrics,
+        resume_experience=resume_data['career_roles'],
+        resume_degrees=resume_degrees,
+        resume_development=resume_development,
+        featured_resume_skills=featured_resume_skills,
+    )
 
 
 # -------------------------------------------------------
