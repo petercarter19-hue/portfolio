@@ -47,6 +47,40 @@
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-constellation-390x844.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-education-390x844.png`
 
+## Refinement pass 1 — Ledger vertical rhythm (2026-07-10)
+
+Feedback: the résumé body sections (Overview, Experience, Education, Skills & Evidence, Development, Documents) carried too much empty vertical space, and the left section rail showed a large blank gap between its links and the last-updated note.
+
+- Tightened `.lr-vertical-section` padding from 5rem to 2.75/3rem and section-header margins; reduced section headings from 2.6rem to 2rem so they sit on one or two lines instead of three.
+- Reduced experience-row padding (2.5rem to 1.5rem), list spacing, credential-card padding, evidence-index padding, and the Documents/page tail paddings (6rem/10rem to 3rem/5rem).
+- Rebuilt the rail/detail seam as two separate rounded cards with a small gutter: the rail no longer stretches to a forced 37rem with `space-between`, so the last-updated note tucks directly beneath the section links.
+- Dropped the ledger-panel forced min-height from 37rem to 24rem so short chapters (education) no longer trail dead space, while chapter switches remain visually stable.
+- Restructured the Key Outcomes cards to match the approved mockup: the metric value now sits beside the icon with the label under it and context text full width, which shortens the cards.
+- Applied matching mobile reductions (section padding 4rem to 2.5rem, tighter headers and rows).
+- Result at 1440x900: page height 6478px to 5329px (-18%); ledger frame 5014px to 3945px (-21%). Content unchanged - only spacing, type scale, and card composition.
+- Validation: 5/5 unit tests pass; desktop and mobile screenshots refreshed below.
+
+## Refinement pass 2 — Ledger-to-Constellation transition and Constellation (2026-07-10)
+
+- The Career Constellation now materializes during vertical scroll: an IntersectionObserver reveals the scene with a transform/opacity entrance. The hidden pre-state only applies when JavaScript runs, and reduced-motion users always see the scene immediately.
+- Added a bidirectional selected state: the Constellation node for the active Ledger chapter carries a white halo ring, updated on every chapter change (tab click, arrow keys, outcome-metric jumps, node clicks). The default chapter is synced on load.
+- Improved connection clarity where node copy crosses the glowing career path with a soft dark text-shadow in the night-side region.
+- Finished the chapter transition with a glowing cyan terminus dot on the descent line.
+- Node-to-Ledger navigation, keyboard operation, the mobile structured vertical story, and reduced-motion behavior verified in-browser: 9/9 scripted interaction checks pass (initial node sync, tab/panel/node sync, Arrow/Home roving focus, scroll reveal, node-to-chapter focus return, single-open evidence, reduced-motion visibility, mobile constellation structure).
+- Validation: 5/5 unit tests pass; `node --check` clean; desktop and mobile screenshots refreshed.
+
+## Refinement pass 3 — Sky-glass restructure (2026-07-10, per Pete's direction)
+
+Pete approved a structural evolution beyond the original mockups: separate the résumé into floating glass pieces over the Experience page's summit-sky backdrop, with Experience-page-style breathing room between sections.
+
+- Page backdrop is now `static/images/cinematic/together-summit.jpg` (the blue-sky scene from the bottom of the Experience page; mobile uses the `-m` variant), fixed behind the story with a soft light veil.
+- The identity card (portrait, name, positioning, contact, career-ribbon quote) is detached from the Ledger frame and floats alone directly under the site header, removing the doubled identity-above-timeline feel.
+- The chapter timeline is its own detached glass strip below the identity card.
+- The Ledger frame now holds only the section rail and the selectable chapter detail (Overview).
+- Experience, Education, Skills & Evidence, Development, and Documents are standalone glass bubbles with about a third of a viewport of sky between them (`min(28vh, 17rem)`, scaled down on smaller screens), each revealing gently on scroll like the Experience page but less dramatic. The reveal is JavaScript-gated and disabled under reduced motion.
+- All tiles and cards are translucent (frame, rail, detail, outcome tiles, impact strip, credential cards, evidence rows) with backdrop blur, so the sky shines through while palette colors stay intact.
+- Existing behavior preserved: tablist keyboard interaction, chapter/node syncing, dock handoff, mobile structured fallback, PDF path, and both public routes. 5/5 unit tests and 9/9 scripted browser interaction checks pass; screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.
