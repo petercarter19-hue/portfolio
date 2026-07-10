@@ -665,6 +665,23 @@ def resume():
     return render_template('resume.html', resume=resume_data)
 
 
+@app.route('/_internal/living-resume-v2')
+def living_resume_v2():
+    """Local-first PS-FEAT-001 review route; existing resume routes stay unchanged."""
+    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
+    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
+    if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
+        abort(404)
+
+    fixture_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'living_resume_fixtures.json')
+    with open(fixture_path, 'r', encoding='utf-8') as fixture_file:
+        fixtures = json.load(fixture_file)
+
+    requested_profile = request.args.get('profile', fixtures[0]['id'])
+    profile = next((item for item in fixtures if item['id'] == requested_profile), fixtures[0])
+    return render_template('living_resume_v2.html', profile=profile, profiles=fixtures)
+
+
 # -------------------------------------------------------
 # MVP 1 — AI CHAT ROUTE
 # This is the new endpoint the chatbot calls.
