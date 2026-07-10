@@ -745,6 +745,19 @@ def _render_living_resume(is_internal_preview=False):
 
     ledger_events = [event for event in events if event.get('show_in_ledger')]
     constellation_events = [event for event in events if event.get('show_in_constellation')]
+
+    # Give each timeline node a distinct jewel color (and remember the
+    # role colors/icons so the experience cards can echo them). The
+    # palette cycles, so any profile length still renders a pleasant
+    # left-to-right spectrum.
+    orb_palette = ['#7c5cff', '#3f6fe0', '#2aa8e6', '#2fc38d', '#2456c9', '#e0a52e', '#2bc0c6']
+    role_orb = {}
+    for index, event in enumerate(ledger_events):
+        color = orb_palette[index % len(orb_palette)]
+        event['orb_color'] = color
+        if event['source'] == 'role':
+            role_orb[event['source_id']] = (color, event.get('icon', 'briefcase'))
+
     living_resume = resume_data['living_resume']
     career_highlight_metrics = [
         metric_by_id[metric_id]
@@ -788,6 +801,12 @@ def _render_living_resume(is_internal_preview=False):
         if item.get('featured') and item.get('public_display')
     ]
 
+    resume_experience = list(reversed(resume_data['career_roles']))
+    for role in resume_experience:
+        color, icon = role_orb.get(role['id'], ('#2456c9', 'briefcase'))
+        role['orb_color'] = color
+        role['orb_icon'] = icon
+
     return render_template(
         'living_resume_v2.html',
         resume=resume_data,
@@ -799,7 +818,7 @@ def _render_living_resume(is_internal_preview=False):
         constellation_skills=constellation_skills,
         constellation_evidence_metrics=constellation_evidence_metrics,
         constellation_outcome_metrics=constellation_outcome_metrics,
-        resume_experience=list(reversed(resume_data['career_roles'])),
+        resume_experience=resume_experience,
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,

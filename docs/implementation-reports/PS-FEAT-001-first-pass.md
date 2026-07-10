@@ -119,6 +119,14 @@ Pete approved a structural evolution beyond the original mockups: separate the r
 - The vertical gap between the résumé sections (Overview → Experience → Education → Skills → Development) is cut by roughly a third via a single `--lr-gap` custom property (`min(10vh, 6rem)` desktop, scaled at each breakpoint), so scrolling between sections feels tighter without losing the floating-card rhythm.
 - Validation: 5/5 unit tests, 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks; page height at 1440 dropped from ~6,443px to ~5,876px purely from spacing; screenshots refreshed.
 
+## Refinement pass 8 — Glass-orb timeline and badged experience cards (2026-07-10, per Pete's reference images)
+
+- The timeline markers are now glossy 3D glass orbs. Each node carries a distinct jewel color from a cycling palette (`orb_palette` in app.py; violet → blue → cyan → green → navy → amber → teal for Pete's seven), set inline as `--orb`. The orb is that color under a bright top specular highlight and a deeper bottom shade, with a soft same-color halo behind it, riding a gradient tube line that blends the same spectrum. Matches the approved reference bar.
+- Each experience card gains a glossy hexagon glass badge (drop-shadow follows the clip so the glow stays on-shape) in the role's timeline color, plus a slim left rail with a jewel dot. Card content restructured to badge | eyebrow/title/subtitle/chips | summary+bullets, matching the approved job-card mockup, on the same transparent glass card. Roles keep their real icon (plane / building / arrow) and the card sizes to content with no forced dead space.
+- Fixed a regression from pass 7: the experience section had lost its `scroll-margin-top` when it became `.lr-experience-section`, so anchor jumps landed under the sticky index — restored.
+- Colors and icons flow from the shared data, so any profile's timeline and cards render the same treatment.
+- Validation: 5/5 unit tests, 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks; screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.

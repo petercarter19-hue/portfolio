@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-6">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-9">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -110,6 +110,7 @@
                     aria-selected="{{ 'true' if is_selected else 'false' }}"
                     data-ledger-event="{{ event.id }}"
                     tabindex="{{ '0' if is_selected else '-1' }}"
+                    style="--orb: {{ event.orb_color }};"
                 >
                     <span class="lr-timeline__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
                     <strong>{{ event.short_label }}</strong>
@@ -288,7 +289,8 @@
                 </header>
                 <div class="lr-experience-list">
                     {% for role in resume_experience %}
-                    <article class="lr-experience-row lr-bubble">
+                    <article class="lr-experience-row lr-bubble" style="--orb: {{ role.orb_color }};">
+                        <span class="lr-experience-row__badge" aria-hidden="true"><svg><use href="#lr-icon-{{ role.orb_icon }}"></use></svg></span>
                         <header>
                             <small>{{ role.dates }}</small>
                             <h3>{{ role.employer }}</h3>
@@ -504,5 +506,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-6"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-9"></script>
 {% endblock %}
