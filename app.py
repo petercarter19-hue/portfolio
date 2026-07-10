@@ -727,6 +727,10 @@ def living_resume_v2():
             for metric_id in event.get('featured_metric_ids', [])
             if metric_id in metric_by_id
         ]
+        event['timeline_detail'] = (
+            event.get('timeline_detail')
+            or (record['institution'] if event['kind'] in {'Education', 'Future'} else event['display_period'])
+        )
         events.append(event)
 
     ledger_events = [event for event in events if event.get('show_in_ledger')]
@@ -750,6 +754,11 @@ def living_resume_v2():
     constellation_evidence_metrics = [
         metric_by_id[metric_id]
         for metric_id in living_resume['constellation_evidence_metric_ids']
+        if metric_id in metric_by_id
+    ]
+    constellation_outcome_metrics = [
+        metric_by_id[metric_id]
+        for metric_id in living_resume['constellation_outcome_metric_ids']
         if metric_id in metric_by_id
     ]
     degree_ids = {
@@ -779,6 +788,7 @@ def living_resume_v2():
         career_highlight_skills=career_highlight_skills,
         constellation_skills=constellation_skills,
         constellation_evidence_metrics=constellation_evidence_metrics,
+        constellation_outcome_metrics=constellation_outcome_metrics,
         resume_experience=resume_data['career_roles'],
         resume_degrees=resume_degrees,
         resume_development=resume_development,

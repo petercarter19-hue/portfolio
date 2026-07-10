@@ -4,6 +4,8 @@
     "page_title": "Career Command Center",
     "positioning": "Systems Engineer | Technical Leader | MBSE, Sustainment, and Requirements",
     "location": "Athens, Alabama | Huntsville Area",
+    "email": "petercarter19@gmail.com",
+    "email_url": "mailto:petercarter19@gmail.com",
     "summary": "Systems engineer with public resume evidence across requirements, MBSE, sustainment, contracting, project execution, and policy-compliant AI process improvement.",
     "pdf_path": "files/pete-carter-resume.pdf",
     "contact_url": "/contact",
@@ -42,6 +44,23 @@
       "control-account-management"
     ],
     "constellation_evidence_metric_ids": ["modernization", "cam"],
+    "constellation_outcome_metric_ids": [
+      "contract",
+      "engineers-led",
+      "redesigns",
+      "modernization",
+      "repair-test",
+      "missing-parts",
+      "issue-time",
+      "cam"
+    ],
+    "traits": [
+      {"label": "Leader", "detail": "People first", "icon": "users"},
+      {"label": "Engineer", "detail": "Systems thinker", "icon": "settings"},
+      {"label": "Problem Solver", "detail": "Data-driven", "icon": "lightbulb"},
+      {"label": "Communicator", "detail": "Clear and concise", "icon": "message"},
+      {"label": "Learner", "detail": "Always advancing", "icon": "book"}
+    ],
     "last_updated": "July 2026",
     "default_event_id": "role-dod",
     "career_highlight_metric_ids": ["modernization", "missing-parts", "cam"],
@@ -53,6 +72,7 @@
         "source_id": "education-as",
         "kind": "Education",
         "marker": "AS",
+        "icon": "graduation",
         "short_label": "A.S. Science",
         "display_period": "Completed",
         "show_in_ledger": true,
@@ -67,6 +87,7 @@
         "source_id": "education-bs",
         "kind": "Education",
         "marker": "BS",
+        "icon": "book",
         "short_label": "B.S. EE",
         "display_period": "Completed",
         "show_in_ledger": true,
@@ -81,6 +102,7 @@
         "source_id": "dod",
         "kind": "Experience",
         "marker": "AF",
+        "icon": "plane",
         "short_label": "U.S. Air Force",
         "display_period": "2021-2024",
         "featured_metric_ids": ["engineers-led", "redesigns", "contract", "issue-time", "repair-test"],
@@ -91,7 +113,11 @@
         "constellation_label": "Department of Defense / U.S. Air Force",
         "constellation_points": [
           "$36M contract oversight and 30+ engineers led",
-          "Nine redesign efforts valued at $19.2M"
+          "Nine redesign efforts valued at $19.2M",
+          "$4.6M navigation modernization",
+          "70% repair/test improvement",
+          "52% missing-part reduction",
+          "35% faster issue-to-action across 54 systems"
         ],
         "label_position": "above"
       },
@@ -101,6 +127,7 @@
         "source_id": "l3harris",
         "kind": "Experience",
         "marker": "L3",
+        "icon": "building",
         "short_label": "L3Harris",
         "display_period": "2024-2025",
         "featured_metric_ids": ["cam"],
@@ -111,7 +138,9 @@
         "constellation_label": "L3Harris Technologies",
         "constellation_points": [
           "ILS strategies supporting 12 IPS elements",
-          "Reliability execution and failure analysis"
+          "Reliability execution and failure analysis",
+          "$9.1M sustainment effort managed as CAM",
+          "Cameo MBSE model and lifecycle integration"
         ],
         "label_position": "above"
       },
@@ -121,6 +150,7 @@
         "source_id": "northrop",
         "kind": "Experience",
         "marker": "NG",
+        "icon": "direction",
         "short_label": "Northrop Grumman",
         "display_period": "2025-Present",
         "featured_metric_ids": [],
@@ -129,8 +159,10 @@
         "constellation_x": 82,
         "constellation_y": 60,
         "constellation_points": [
-          "$9.1M sustainment effort managed as CAM",
-          "Configuration, accounting, and data integrity"
+          "Defines, decomposes, and validates system requirements",
+          "DOORS decomposition and bidirectional traceability",
+          "Synchronizes requirements with MBSE architecture",
+          "Supports systems engineering, integration, and test"
         ],
         "label_position": "above"
       },
@@ -140,6 +172,7 @@
         "source_id": "education-ms",
         "kind": "Education",
         "marker": "MS",
+        "icon": "graduation",
         "short_label": "M.S. Engineering Management",
         "display_period": "4.0 GPA",
         "featured_metric_ids": ["gpa"],
@@ -155,6 +188,7 @@
         "source_id": "education-pmp",
         "kind": "Credential",
         "marker": "PMP",
+        "icon": "award",
         "short_label": "PMP",
         "display_period": "Certified",
         "show_in_ledger": true,
@@ -169,6 +203,7 @@
         "source_id": "education-phd",
         "kind": "Future",
         "marker": "PhD",
+        "icon": "sparkles",
         "short_label": "Systems Engineering Ph.D.",
         "display_period": "Expected 2027 start",
         "show_in_ledger": true,

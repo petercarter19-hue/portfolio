@@ -1,6 +1,6 @@
 # PS-FEAT-001 approved visual implementation
 
-- **Branch / base commit:** `codex/ps-feat-001-living-resume`; latest committed base is `5c978b4 PS-FEAT-001: document first pass`.
+- **Branch / base commit:** `codex/ps-feat-001-living-resume`; latest committed base is `bec2d86 PS-FEAT-001: implement approved living resume`.
 - **Preview route:** `/_internal/living-resume-v2`, local-only unless `ENABLE_DESIGN_SYSTEM_PREVIEW=1`.
 - **Approved references used:** `static/images/mockups/resume1.png` and `static/images/mockups/reume2.png` only.
 - **Production safety:** `/resume`, `/petec/resume`, the public PDF, and their templates remain behaviorally unchanged.
@@ -18,6 +18,9 @@
 - Expanded the Ledger into one long, continuous résumé with Overview, Experience, Education, Skills & Evidence, Development, and Documents sections. Every rail item is an in-page anchor; none opens a separate résumé page.
 - Made the left section rail sticky throughout the full résumé. A compact persistent index takes over when the reader reaches the Constellation, with synchronized current-section highlighting.
 - Made Ask Pete AI continuously available through a job-specific upper-right Ledger button and the always-visible floating launcher. Both open the existing grounded assistant.
+- Added a route-local SVG icon system for contact details, section navigation, timeline milestones, outcome cards, Constellation nodes, metrics, and traits.
+- Increased visual fidelity with the Ledger's layered glass frame and luminous career ribbon plus the Constellation's glowing dual paths, central junction, dotted evolution connector, future arrow, selected skill state, and icon-led outcomes rail.
+- Expanded visible role evidence while correcting `$9.1M` CAM attribution to L3Harris, in line with Pete's approved source data.
 
 ## Validation
 
@@ -33,8 +36,11 @@
 ## Screenshots
 
 - `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-ledger-1440x900.png`
+- `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-overview-1440x900.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-constellation-1440x900.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-experience-1440x900.png`
+- `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-education-1440x900.png`
+- `docs/implementation-reports/screenshots/PS-FEAT-001/desktop-skills-1440x900.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-ledger-390x844.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-constellation-390x844.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-education-390x844.png`
@@ -42,9 +48,10 @@
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.
-- Constellation markers use compact chapter initials rather than the mockup's bespoke illustrated pictograms so the same dynamic event model remains readable and operable.
+- The implementation uses a consistent route-local pictogram set rather than reproducing the mockup's bespoke Air Force, L3Harris, and Northrop brand artwork.
 - Real role titles and evidence vary in length, so label widths and connector curves adapt instead of using fixed screenshot coordinates.
 - The PeerSlate navigation and Ask Pete AI control remain visible around the experience because this is the real application route.
 - The Ledger and Constellation are intentionally taller than a single viewport. Content is not compressed to reproduce the 1672x941 mockup boundary.
+- Pearlescent texture, sparkle density, and exact ornamental details are simplified so the design remains performant and responsive.
 
 These differences preserve real application functionality, accessibility, dynamic data, and responsive behavior; the approved hierarchy, composition, spacing, typography, palette, and continuous Ledger-to-Constellation architecture are substantially matched.

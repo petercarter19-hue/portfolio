@@ -55,6 +55,20 @@ class LivingResumePreviewTests(unittest.TestCase):
             self.assertIn(f'id="{section_id}"'.encode(), response.data)
             self.assertIn(f'href="#{section_id}"'.encode(), response.data)
 
+        ordered_sections = [
+            response.data.index(f'id="{section_id}"'.encode())
+            for section_id in (
+                'resume-overview',
+                'resume-experience',
+                'resume-education',
+                'resume-skills',
+                'resume-development',
+                'resume-documents',
+            )
+        ]
+        self.assertEqual(ordered_sections, sorted(ordered_sections))
+        self.assertGreater(response.data.index(b'id="constellation"'), ordered_sections[-1])
+
         self.assertIn(b'class="lr-panel-ai"', response.data)
         self.assertGreaterEqual(response.data.count(b'data-chat-open'), 3)
         self.assertIn('.living-resume-v2-page #chat-toggle', css)
