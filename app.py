@@ -652,27 +652,8 @@ def hobbies():
 def contact():
     return render_template('contact.html')
 
-@app.route('/resume')
-@app.route('/petec/resume')
-def resume():
-    # Resume content lives in JSON so Pete can update words and metrics
-    # later without digging through a large HTML template.
-    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
-
-    with open(resume_path, 'r', encoding='utf-8') as f:
-        resume_data = json.load(f)
-
-    return render_template('resume.html', resume=resume_data)
-
-
-@app.route('/_internal/living-resume-v2')
-def living_resume_v2():
-    """Local-first PS-FEAT-001 review route; production resume stays unchanged."""
-    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
-    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
-    if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
-        abort(404)
-
+def _render_living_resume(is_internal_preview=False):
+    """Build the public résumé and gated preview from one shared data model."""
     resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
     with open(resume_path, 'r', encoding='utf-8') as resume_file:
         resume_data = json.load(resume_file)
@@ -793,7 +774,25 @@ def living_resume_v2():
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
+        is_internal_preview=is_internal_preview,
     )
+
+
+@app.route('/resume')
+@app.route('/petec/resume')
+def resume():
+    return _render_living_resume()
+
+
+@app.route('/_internal/living-resume-v2')
+def living_resume_v2():
+    """Local-first review route for the same public Living Résumé render."""
+    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
+    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
+    if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
+        abort(404)
+
+    return _render_living_resume(is_internal_preview=True)
 
 
 # -------------------------------------------------------

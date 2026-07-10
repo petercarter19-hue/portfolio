@@ -3,7 +3,7 @@
 - **Branch / base commit:** `codex/ps-feat-001-living-resume`; latest committed base is `bec2d86 PS-FEAT-001: implement approved living resume`.
 - **Preview route:** `/_internal/living-resume-v2`, local-only unless `ENABLE_DESIGN_SYSTEM_PREVIEW=1`.
 - **Approved references used:** `static/images/mockups/resume1.png` and `static/images/mockups/reume2.png` only.
-- **Production safety:** `/resume`, `/petec/resume`, the public PDF, and their templates remain behaviorally unchanged.
+- **Public promotion:** `/resume` and `/petec/resume` now render the approved Living Résumé; the public PDF remains available from the Documents section. The internal route remains gated and no-indexed.
 
 ## Implemented
 
@@ -21,6 +21,7 @@
 - Added a route-local SVG icon system for contact details, section navigation, timeline milestones, outcome cards, Constellation nodes, metrics, and traits.
 - Increased visual fidelity with the Ledger's layered glass frame and luminous career ribbon plus the Constellation's glowing dual paths, central junction, dotted evolution connector, future arrow, selected skill state, and icon-led outcomes rail.
 - Expanded visible role evidence while correcting `$9.1M` CAM attribution to L3Harris, in line with Pete's approved source data.
+- Promoted the shared Living Résumé renderer to both public résumé URLs while keeping preview-only labels and robots metadata exclusive to the gated internal route.
 
 ## Validation
 
@@ -29,6 +30,7 @@
 - Bundled Node `--check static/js/living-resume-v2.js` - passed.
 - `git diff --check` - passed.
 - Route smoke test - HTTP 200 for `/resume`, `/petec/resume`, and `/_internal/living-resume-v2`.
+- Public-route checks confirm the Living Résumé title and sections render without the internal preview label or `noindex,nofollow` metadata.
 - Browser interaction checks passed for tab selection, Arrow navigation, skill evidence, exact metric-to-evidence focus, and Constellation-to-Ledger navigation.
 - Browser layout checks passed at 1440x900 and 390x844 with no page-level horizontal overflow, clipped Constellation labels, or desktop node-copy collisions.
 - Browser scroll checks passed for all in-page jumps, sticky desktop/mobile section indexes, dock handoff at the Constellation, synchronized active states, and persistent AI visibility/opening from the middle of the page.
