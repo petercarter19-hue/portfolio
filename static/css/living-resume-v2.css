@@ -62,6 +62,7 @@
 }
 
 .lr-page {
+    --lr-gap: min(10vh, 6rem);
     min-width: 0;
     padding: 2rem 0 5rem;
     color: var(--lr-ink);
@@ -1009,7 +1010,7 @@
 }
 
 .lr-bubble {
-    margin: min(15vh, 9rem) 0 0;
+    margin: var(--lr-gap) 0 0;
     background: linear-gradient(135deg, rgb(255 255 255 / 50%), rgb(241 248 255 / 40%));
     border: 2px solid rgb(255 255 255 / 72%);
     border-radius: 1.5rem;
@@ -1022,6 +1023,18 @@
 
 .lr-resume-flow > .lr-bubble:first-child {
     margin-top: 0;
+}
+
+/* Experience is a group of individual job cards under a thin intro
+   card, with a slim strip of sky between each — not one big bubble. */
+.lr-experience-section {
+    margin-top: var(--lr-gap);
+}
+
+.lr-experience-intro {
+    max-width: none;
+    margin: 0 0 0.6rem;
+    padding: 1.1rem 1.75rem 1.2rem;
 }
 
 .lr-ledger {
@@ -1072,15 +1085,16 @@
 }
 
 .lr-experience-list {
-    border-top: 1px solid #cfdceb;
+    display: grid;
+    gap: 0.6rem;
 }
 
 .lr-experience-row {
     display: grid;
     grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.3fr);
     gap: 2rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid #cfdceb;
+    margin: 0;
+    padding: 1.5rem 1.75rem;
 }
 
 .lr-experience-row small,
@@ -1991,15 +2005,15 @@
 }
 
 @media (max-width: 64rem) {
+    .lr-page {
+        --lr-gap: min(16vh, 8.5rem);
+    }
+
     .lr-resume-layout,
     .lr-identity,
     .lr-timeline-shell,
     .lr-preview-label {
         width: calc(100% - 2.5rem);
-    }
-
-    .lr-bubble {
-        margin-top: min(24vh, 13rem);
     }
 
     .lr-identity {
@@ -2207,13 +2221,13 @@
             url("../images/cinematic/together-summit-m.jpg") center top / cover no-repeat;
     }
 
+    .lr-page {
+        --lr-gap: min(12vh, 6rem);
+    }
+
     .lr-timeline-shell,
     .lr-resume-layout {
         margin-top: 1.75rem;
-    }
-
-    .lr-bubble {
-        margin-top: min(18vh, 9rem);
     }
 
     .lr-resume-dock {
@@ -2411,7 +2425,7 @@
     .lr-experience-row {
         grid-template-columns: 1fr;
         gap: 1rem;
-        padding: 1.4rem 0;
+        padding: 1.3rem 1.15rem;
     }
 
     .lr-skill-flip-grid {

@@ -113,6 +113,12 @@ Pete approved a structural evolution beyond the original mockups: separate the r
 - The default-open first skill popover was removed so the panel loads clean over its outcomes.
 - Validation: 5/5 unit tests (updated for the removed panel button), 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks; launcher hide/reveal confirmed in-browser; screenshots refreshed.
 
+## Refinement pass 7 — Per-job experience cards, tighter section rhythm (2026-07-10, per Pete's direction)
+
+- The Experience section is no longer one bubble. It is a thin intro card ("The work, in full context.") followed by one rounded glass card per job, sitting close together with a slim strip of sky between each. This is generic: N jobs render as N cards, so it holds for any profile's history.
+- The vertical gap between the résumé sections (Overview → Experience → Education → Skills → Development) is cut by roughly a third via a single `--lr-gap` custom property (`min(10vh, 6rem)` desktop, scaled at each breakpoint), so scrolling between sections feels tighter without losing the floating-card rhythm.
+- Validation: 5/5 unit tests, 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks; page height at 1440 dropped from ~6,443px to ~5,876px purely from spacing; screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.

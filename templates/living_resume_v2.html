@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-6">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -280,15 +280,15 @@
                 </div>
             </section>
 
-            <section class="lr-vertical-section lr-bubble" id="resume-experience" data-resume-section data-reveal aria-labelledby="resume-experience-title">
-                <header class="lr-vertical-section__header">
+            <section class="lr-experience-section" id="resume-experience" data-resume-section data-reveal aria-labelledby="resume-experience-title">
+                <header class="lr-vertical-section__header lr-bubble lr-experience-intro">
                     <span>02 / Experience</span>
                     <h2 id="resume-experience-title">The work, in full context.</h2>
                     <p>Every role remains on this page, with the public evidence that supports it.</p>
                 </header>
                 <div class="lr-experience-list">
                     {% for role in resume_experience %}
-                    <article class="lr-experience-row">
+                    <article class="lr-experience-row lr-bubble">
                         <header>
                             <small>{{ role.dates }}</small>
                             <h3>{{ role.employer }}</h3>
@@ -504,5 +504,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-5"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-6"></script>
 {% endblock %}
