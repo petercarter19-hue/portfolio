@@ -383,18 +383,24 @@
 
 .lr-timeline::before {
     position: absolute;
-    top: 2.35rem;
+    top: 2.15rem;
     right: 4.5%;
     left: 4.5%;
-    height: 8px;
+    height: 0.55rem;
     background:
-        linear-gradient(180deg, rgb(255 255 255 / 92%) 0 24%, transparent 24% 38%, rgb(37 104 232 / 78%) 38% 62%, transparent 62% 76%, rgb(255 255 255 / 86%) 76%),
-        linear-gradient(90deg, #6a76f0, #2568e8 55%, #2ec8d3);
-    border: 1px solid rgb(116 164 247 / 56%);
+        linear-gradient(180deg, rgb(255 255 255 / 75%) 0%, rgb(255 255 255 / 0%) 55%),
+        linear-gradient(90deg,
+            #7c5cff 0%,
+            #3f6fe0 17%,
+            #2aa8e6 33%,
+            #2fc38d 50%,
+            #2456c9 67%,
+            #e0a52e 83%,
+            #2bc0c6 100%);
     border-radius: 999px;
     box-shadow:
-        0 0 0.35rem rgb(66 135 255 / 46%),
-        0 0 1rem rgb(46 200 211 / 24%);
+        inset 0 -0.1rem 0.2rem rgb(9 30 66 / 22%),
+        0 0.2rem 0.5rem rgb(20 50 110 / 22%);
     content: "";
 }
 
@@ -414,47 +420,47 @@
     cursor: pointer;
 }
 
+/* Glossy glass orbs: the flat --orb color under a bright top specular
+   highlight and a deeper bottom shade reads as a lit 3D marble, with a
+   soft same-color halo behind it. */
 .lr-timeline__marker {
+    position: relative;
     display: grid;
-    width: 4.25rem;
-    height: 4.25rem;
+    width: 4.5rem;
+    height: 4.5rem;
     place-items: center;
     color: #ffffff;
-    background: var(--lr-blue);
-    border: 2px solid rgb(255 255 255 / 92%);
+    background:
+        radial-gradient(circle at 50% 26%, rgb(255 255 255 / 78%) 0%, rgb(255 255 255 / 0%) 42%),
+        radial-gradient(circle at 50% 116%, rgb(4 18 42 / 42%) 0%, rgb(4 18 42 / 0%) 55%),
+        var(--orb, #3f6fe0);
     border-radius: 50%;
     box-shadow:
-        0 0 0 0.32rem rgb(255 255 255 / 55%),
-        0 0.5rem 1.4rem rgb(15 55 110 / 30%),
-        inset 0 0 1rem rgb(255 255 255 / 14%);
+        0 0 0 0.28rem rgb(255 255 255 / 62%),
+        0 0.6rem 1.5rem rgb(15 45 100 / 32%),
+        inset 0 0.2rem 0.55rem rgb(255 255 255 / 62%),
+        inset 0 -0.35rem 0.7rem rgb(4 18 42 / 32%);
     transition:
         transform 160ms ease-out,
-        background-color 160ms ease-out,
-        color 160ms ease-out,
         box-shadow 160ms ease-out;
 }
 
-.lr-timeline__event.is-education .lr-timeline__marker {
-    background: linear-gradient(150deg, #6a76f0, var(--lr-indigo));
-}
-
-.lr-timeline__event.is-experience .lr-timeline__marker {
-    background: linear-gradient(150deg, #3f8bf5, #1d55ba);
-}
-
-.lr-timeline__event.is-credential .lr-timeline__marker {
-    color: #4c3404;
-    background: linear-gradient(150deg, #f2c465, var(--lr-amber));
-}
-
-.lr-timeline__event.is-future .lr-timeline__marker {
-    background: linear-gradient(150deg, #35d3de, #0d94b4);
+.lr-timeline__marker::before {
+    position: absolute;
+    inset: -0.55rem;
+    z-index: -1;
+    border-radius: 50%;
+    background: var(--orb);
+    opacity: 0.3;
+    filter: blur(0.5rem);
+    content: "";
 }
 
 .lr-timeline__marker svg {
-    width: 2.15rem !important;
-    height: 2.15rem !important;
-    stroke-width: 1.65 !important;
+    width: 2.1rem !important;
+    height: 2.1rem !important;
+    stroke-width: 1.75 !important;
+    filter: drop-shadow(0 1px 1px rgb(4 18 42 / 45%));
 }
 
 .lr-timeline__event strong,
@@ -487,30 +493,32 @@
 
 .lr-timeline__event.is-selected .lr-timeline__marker,
 .lr-timeline__event[aria-selected="true"] .lr-timeline__marker {
-    border-color: #ffffff;
     box-shadow:
-        0 0 0 0.24rem #ffffff,
-        0 0 0 0.48rem #8cb8ff,
-        0 0 0 0.78rem rgb(37 104 232 / 18%),
-        0 0.65rem 1.8rem rgb(37 104 232 / 36%),
-        inset 0 0 1.2rem rgb(255 255 255 / 13%);
-    transform: scale(1.14);
+        0 0 0 0.26rem #ffffff,
+        0 0 0 0.5rem var(--orb),
+        0 0.7rem 1.8rem rgb(15 45 100 / 42%),
+        inset 0 0.2rem 0.55rem rgb(255 255 255 / 62%),
+        inset 0 -0.35rem 0.7rem rgb(4 18 42 / 32%);
+    transform: scale(1.1);
 }
 
 .lr-timeline__event[aria-selected="true"]::after {
     position: absolute;
-    top: 8.65rem;
+    top: 8.9rem;
     width: 0;
     height: 0;
-    border-top: 0.5rem solid var(--lr-blue);
+    border-top: 0.5rem solid var(--orb);
     border-right: 0.42rem solid transparent;
     border-left: 0.42rem solid transparent;
     content: "";
 }
 
-.lr-timeline__event[aria-selected="true"] strong,
+.lr-timeline__event[aria-selected="true"] strong {
+    color: var(--lr-ink);
+}
+
 .lr-timeline__event[aria-selected="true"] small {
-    color: var(--lr-blue);
+    color: #23385a;
 }
 
 .lr-ledger__rail {
@@ -619,7 +627,8 @@
 }
 
 .lr-overview-section,
-.lr-vertical-section {
+.lr-vertical-section,
+.lr-experience-section {
     scroll-margin-top: 8.5rem;
 }
 
@@ -1090,11 +1099,67 @@
 }
 
 .lr-experience-row {
+    --orb: #2456c9;
+    position: relative;
     display: grid;
-    grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.3fr);
-    gap: 2rem;
+    grid-template-columns: 3.7rem minmax(10rem, 0.68fr) minmax(0, 1.32fr);
+    align-items: start;
+    gap: 0 1.5rem;
     margin: 0;
-    padding: 1.5rem 1.75rem;
+    padding: 1.6rem 1.85rem 1.6rem 2.5rem;
+}
+
+/* Left rail: a slim connector line with a jewel dot echoing the role's
+   timeline orb color. */
+.lr-experience-row::before {
+    position: absolute;
+    top: 2rem;
+    bottom: 1.7rem;
+    left: 1.3rem;
+    width: 2px;
+    background: linear-gradient(rgb(120 150 200 / 42%), rgb(120 150 200 / 6%));
+    content: "";
+}
+
+.lr-experience-row::after {
+    position: absolute;
+    top: 1.75rem;
+    left: 1.02rem;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 50%;
+    background: var(--orb);
+    box-shadow:
+        0 0 0 0.2rem rgb(255 255 255 / 72%),
+        0 0 0.45rem var(--orb);
+    content: "";
+}
+
+/* Glossy hexagon glass badge (bottom mockup), lit like the timeline
+   orbs. drop-shadow follows the clipped hexagon so the glow stays on
+   shape. */
+.lr-experience-row__badge {
+    display: grid;
+    width: 3.7rem;
+    height: 3.7rem;
+    margin-top: 0.15rem;
+    place-items: center;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 50% 24%, rgb(255 255 255 / 72%) 0%, rgb(255 255 255 / 0%) 44%),
+        radial-gradient(circle at 50% 118%, rgb(4 18 42 / 34%) 0%, rgb(4 18 42 / 0%) 55%),
+        var(--orb);
+    clip-path: polygon(50% 1%, 93% 25%, 93% 75%, 50% 99%, 7% 75%, 7% 25%);
+    filter:
+        drop-shadow(0 0.35rem 0.55rem rgb(15 45 100 / 32%))
+        drop-shadow(0 0 0.35rem color-mix(in srgb, var(--orb) 55%, transparent));
+}
+
+.lr-experience-row__badge svg {
+    width: 1.65rem !important;
+    height: 1.65rem !important;
+    stroke-width: 1.8 !important;
+    filter: drop-shadow(0 1px 1px rgb(4 18 42 / 45%));
 }
 
 .lr-experience-row small,
@@ -2423,9 +2488,34 @@
     }
 
     .lr-experience-row {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+        grid-template-columns: 3rem minmax(0, 1fr);
+        gap: 0.5rem 1rem;
         padding: 1.3rem 1.15rem;
+    }
+
+    .lr-experience-row::before,
+    .lr-experience-row::after {
+        display: none;
+    }
+
+    .lr-experience-row__badge {
+        width: 3rem;
+        height: 3rem;
+        grid-row: 1 / 3;
+    }
+
+    .lr-experience-row__badge svg {
+        width: 1.35rem !important;
+        height: 1.35rem !important;
+    }
+
+    .lr-experience-row header {
+        grid-column: 2;
+    }
+
+    .lr-experience-row > div {
+        grid-column: 1 / -1;
+        margin-top: 0.4rem;
     }
 
     .lr-skill-flip-grid {
