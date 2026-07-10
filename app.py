@@ -770,10 +770,11 @@ def _render_living_resume(is_internal_preview=False):
         constellation_skills=constellation_skills,
         constellation_evidence_metrics=constellation_evidence_metrics,
         constellation_outcome_metrics=constellation_outcome_metrics,
-        resume_experience=resume_data['career_roles'],
+        resume_experience=list(reversed(resume_data['career_roles'])),
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
+        skill_lookup=skill_by_id,
         is_internal_preview=is_internal_preview,
     )
 

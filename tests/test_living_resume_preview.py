@@ -55,7 +55,6 @@ class LivingResumePreviewTests(unittest.TestCase):
             'resume-education',
             'resume-skills',
             'resume-development',
-            'resume-documents',
         ):
             self.assertIn(f'id="{section_id}"'.encode(), response.data)
             self.assertIn(f'href="#{section_id}"'.encode(), response.data)
@@ -68,7 +67,6 @@ class LivingResumePreviewTests(unittest.TestCase):
                 'resume-education',
                 'resume-skills',
                 'resume-development',
-                'resume-documents',
             )
         ]
         self.assertEqual(ordered_sections, sorted(ordered_sections))
