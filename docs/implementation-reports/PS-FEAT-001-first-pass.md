@@ -69,6 +69,18 @@ Feedback: the résumé body sections (Overview, Experience, Education, Skills & 
 - Node-to-Ledger navigation, keyboard operation, the mobile structured vertical story, and reduced-motion behavior verified in-browser: 9/9 scripted interaction checks pass (initial node sync, tab/panel/node sync, Arrow/Home roving focus, scroll reveal, node-to-chapter focus return, single-open evidence, reduced-motion visibility, mobile constellation structure).
 - Validation: 5/5 unit tests pass; `node --check` clean; desktop and mobile screenshots refreshed.
 
+## Refinement pass 3 — Sky-glass restructure (2026-07-10, per Pete's direction)
+
+Pete approved a structural evolution beyond the original mockups: separate the résumé into floating glass pieces over the Experience page's summit-sky backdrop, with Experience-page-style breathing room between sections.
+
+- Page backdrop is now `static/images/cinematic/together-summit.jpg` (the blue-sky scene from the bottom of the Experience page; mobile uses the `-m` variant), fixed behind the story with a soft light veil.
+- The identity card (portrait, name, positioning, contact, career-ribbon quote) is detached from the Ledger frame and floats alone directly under the site header, removing the doubled identity-above-timeline feel.
+- The chapter timeline is its own detached glass strip below the identity card.
+- The Ledger frame now holds only the section rail and the selectable chapter detail (Overview).
+- Experience, Education, Skills & Evidence, Development, and Documents are standalone glass bubbles with about a third of a viewport of sky between them (`min(28vh, 17rem)`, scaled down on smaller screens), each revealing gently on scroll like the Experience page but less dramatic. The reveal is JavaScript-gated and disabled under reduced motion.
+- All tiles and cards are translucent (frame, rail, detail, outcome tiles, impact strip, credential cards, evidence rows) with backdrop blur, so the sky shines through while palette colors stay intact.
+- Existing behavior preserved: tablist keyboard interaction, chapter/node syncing, dock handoff, mobile structured fallback, PDF path, and both public routes. 5/5 unit tests and 9/9 scripted browser interaction checks pass; screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.

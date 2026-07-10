@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=approved-3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=skyglass-1">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -59,57 +59,61 @@
         <a href="#resume-documents" data-resume-nav>Documents</a>
     </nav>
 
-    <section class="lr-ledger" id="ledger" aria-labelledby="ledger-title">
-        <div class="lr-ledger__frame">
-            <header class="lr-ledger__identity">
-                <img
-                    class="lr-ledger__portrait"
-                    src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                    alt="Pete and Danielle Carter holding a SOLD sign in front of their home"
-                >
+    <header class="lr-identity" aria-labelledby="ledger-title">
+        <div class="lr-ledger__identity">
+            <img
+                class="lr-ledger__portrait"
+                src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
+                alt="Pete and Danielle Carter holding a SOLD sign in front of their home"
+            >
 
-                <div class="lr-ledger__intro">
-                    <h1 id="ledger-title">{{ resume.profile.name }}</h1>
-                    <p class="lr-ledger__role">{{ resume.profile.positioning.split('|')[0]|trim }} &amp; Technical Leader</p>
-                    <p>{{ resume.profile.summary }}</p>
-                </div>
-
-                <address class="lr-ledger__contact">
-                    <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
-                    <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>{{ resume.profile.email }}</a>
-                    <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn profile</a>
-                </address>
-
-                <blockquote class="lr-ledger__quote">
-                    <span aria-hidden="true">“</span>
-                    {{ living_resume.quote }}
-                    <small>The career ribbon</small>
-                </blockquote>
-            </header>
-
-            <div class="lr-timeline-region" id="ledger-timeline">
-                <div class="lr-timeline" role="tablist" aria-label="Pete Carter career timeline">
-                    {% for event in ledger_events %}
-                    {% set is_selected = event.id == living_resume.default_event_id %}
-                    <button
-                        class="lr-timeline__event{% if is_selected %} is-selected{% endif %}"
-                        type="button"
-                        role="tab"
-                        id="timeline-tab-{{ event.id }}"
-                        aria-controls="ledger-panel-{{ event.id }}"
-                        aria-selected="{{ 'true' if is_selected else 'false' }}"
-                        data-ledger-event="{{ event.id }}"
-                        tabindex="{{ '0' if is_selected else '-1' }}"
-                    >
-                        <span class="lr-timeline__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
-                        <strong>{{ event.short_label }}</strong>
-                        <small>{{ event.timeline_detail }}</small>
-                        <span class="lr-timeline__kind">{{ event.kind }}</span>
-                    </button>
-                    {% endfor %}
-                </div>
+            <div class="lr-ledger__intro">
+                <h1 id="ledger-title">{{ resume.profile.name }}</h1>
+                <p class="lr-ledger__role">{{ resume.profile.positioning.split('|')[0]|trim }} &amp; Technical Leader</p>
+                <p>{{ resume.profile.summary }}</p>
             </div>
 
+            <address class="lr-ledger__contact">
+                <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
+                <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>{{ resume.profile.email }}</a>
+                <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn profile</a>
+            </address>
+
+            <blockquote class="lr-ledger__quote">
+                <span aria-hidden="true">“</span>
+                {{ living_resume.quote }}
+                <small>The career ribbon</small>
+            </blockquote>
+        </div>
+    </header>
+
+    <section class="lr-timeline-shell" aria-label="Career timeline">
+        <div class="lr-timeline-region" id="ledger-timeline">
+            <div class="lr-timeline" role="tablist" aria-label="Pete Carter career timeline">
+                {% for event in ledger_events %}
+                {% set is_selected = event.id == living_resume.default_event_id %}
+                <button
+                    class="lr-timeline__event{% if is_selected %} is-selected{% endif %}"
+                    type="button"
+                    role="tab"
+                    id="timeline-tab-{{ event.id }}"
+                    aria-controls="ledger-panel-{{ event.id }}"
+                    aria-selected="{{ 'true' if is_selected else 'false' }}"
+                    data-ledger-event="{{ event.id }}"
+                    tabindex="{{ '0' if is_selected else '-1' }}"
+                >
+                    <span class="lr-timeline__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
+                    <strong>{{ event.short_label }}</strong>
+                    <small>{{ event.timeline_detail }}</small>
+                    <span class="lr-timeline__kind">{{ event.kind }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="lr-ledger" id="ledger" aria-label="Living résumé chapters">
+        <div class="lr-ledger__frame">
             <div class="lr-ledger__body">
                 <aside class="lr-ledger__rail" aria-label="Living résumé sections">
                     <nav>
@@ -273,106 +277,106 @@
                     </article>
                     {% endfor %}
                     </div>
-
-                    <section class="lr-vertical-section" id="resume-experience" data-resume-section aria-labelledby="resume-experience-title">
-                        <header class="lr-vertical-section__header">
-                            <span>02 / Experience</span>
-                            <h2 id="resume-experience-title">The work, in full context.</h2>
-                            <p>Every role remains on this page, with the public evidence that supports it.</p>
-                        </header>
-                        <div class="lr-experience-list">
-                            {% for role in resume_experience %}
-                            <article class="lr-experience-row">
-                                <header>
-                                    <small>{{ role.dates }}</small>
-                                    <h3>{{ role.employer }}</h3>
-                                    <p>{{ role.title }}</p>
-                                </header>
-                                <div>
-                                    <p>{{ role.summary }}</p>
-                                    <ul>
-                                        {% for item in role.accomplishments[:4] %}
-                                        <li>{{ item.text }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </article>
-                            {% endfor %}
-                        </div>
-                    </section>
-
-                    <section class="lr-vertical-section" id="resume-education" data-resume-section aria-labelledby="resume-education-title">
-                        <header class="lr-vertical-section__header">
-                            <span>03 / Education</span>
-                            <h2 id="resume-education-title">Education that changed the trajectory.</h2>
-                        </header>
-                        <div class="lr-credential-list">
-                            {% for item in resume_degrees %}
-                            <article>
-                                <small>{{ item.status }}</small>
-                                <h3>{{ item.credential }}</h3>
-                                <strong>{{ item.institution }}</strong>
-                                <p>{{ item.detail }}</p>
-                            </article>
-                            {% endfor %}
-                        </div>
-                    </section>
-
-                    <section class="lr-vertical-section" id="resume-skills" data-resume-section aria-labelledby="resume-skills-title">
-                        <header class="lr-vertical-section__header">
-                            <span>04 / Skills &amp; Evidence</span>
-                            <h2 id="resume-skills-title">Claims stay connected to proof.</h2>
-                            <p>Open any skill to inspect evidence from the approved résumé source set.</p>
-                        </header>
-                        <div class="lr-evidence-index">
-                            {% for skill in featured_resume_skills %}
-                            <details data-skill-evidence>
-                                <summary>{{ skill.display_name }}</summary>
-                                <p>{{ skill.front_summary }}</p>
-                                <ul>
-                                    {% for evidence in skill.evidence_items[:3] %}
-                                    <li>{{ evidence.text }} <small>{{ evidence.employer }}</small></li>
-                                    {% endfor %}
-                                </ul>
-                            </details>
-                            {% endfor %}
-                        </div>
-                    </section>
-
-                    <section class="lr-vertical-section" id="resume-development" data-resume-section aria-labelledby="resume-development-title">
-                        <header class="lr-vertical-section__header">
-                            <span>05 / Development</span>
-                            <h2 id="resume-development-title">Credentials earned. Next chapters in motion.</h2>
-                        </header>
-                        <div class="lr-credential-list">
-                            {% for item in resume_development %}
-                            <article>
-                                <small>{{ item.status }}</small>
-                                <h3>{{ item.credential }}</h3>
-                                <strong>{{ item.institution }}</strong>
-                                <p>{{ item.detail }}</p>
-                            </article>
-                            {% endfor %}
-                        </div>
-                    </section>
-
-                    <section class="lr-vertical-section lr-document-section" id="resume-documents" data-resume-section aria-labelledby="resume-documents-title">
-                        <header class="lr-vertical-section__header">
-                            <span>06 / Documents</span>
-                            <h2 id="resume-documents-title">The conventional résumé is still here.</h2>
-                            <p>Open the approved PDF source without leaving the Living Résumé story.</p>
-                        </header>
-                        <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">Open résumé PDF</a>
-                        <button type="button" data-chat-open data-ask-resume data-ask="Give me a recruiter-focused tour of Pete Carter's approved public résumé evidence.">Ask Pete AI for a guided tour</button>
-                    </section>
                 </div>
             </div>
         </div>
     </section>
 
+    <section class="lr-vertical-section lr-bubble" id="resume-experience" data-resume-section data-reveal aria-labelledby="resume-experience-title">
+        <header class="lr-vertical-section__header">
+            <span>02 / Experience</span>
+            <h2 id="resume-experience-title">The work, in full context.</h2>
+            <p>Every role remains on this page, with the public evidence that supports it.</p>
+        </header>
+        <div class="lr-experience-list">
+            {% for role in resume_experience %}
+            <article class="lr-experience-row">
+                <header>
+                    <small>{{ role.dates }}</small>
+                    <h3>{{ role.employer }}</h3>
+                    <p>{{ role.title }}</p>
+                </header>
+                <div>
+                    <p>{{ role.summary }}</p>
+                    <ul>
+                        {% for item in role.accomplishments[:4] %}
+                        <li>{{ item.text }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="lr-vertical-section lr-bubble" id="resume-education" data-reveal data-resume-section aria-labelledby="resume-education-title">
+        <header class="lr-vertical-section__header">
+            <span>03 / Education</span>
+            <h2 id="resume-education-title">Education that changed the trajectory.</h2>
+        </header>
+        <div class="lr-credential-list">
+            {% for item in resume_degrees %}
+            <article>
+                <small>{{ item.status }}</small>
+                <h3>{{ item.credential }}</h3>
+                <strong>{{ item.institution }}</strong>
+                <p>{{ item.detail }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="lr-vertical-section lr-bubble" id="resume-skills" data-reveal data-resume-section aria-labelledby="resume-skills-title">
+        <header class="lr-vertical-section__header">
+            <span>04 / Skills &amp; Evidence</span>
+            <h2 id="resume-skills-title">Claims stay connected to proof.</h2>
+            <p>Open any skill to inspect evidence from the approved résumé source set.</p>
+        </header>
+        <div class="lr-evidence-index">
+            {% for skill in featured_resume_skills %}
+            <details data-skill-evidence>
+                <summary>{{ skill.display_name }}</summary>
+                <p>{{ skill.front_summary }}</p>
+                <ul>
+                    {% for evidence in skill.evidence_items[:3] %}
+                    <li>{{ evidence.text }} <small>{{ evidence.employer }}</small></li>
+                    {% endfor %}
+                </ul>
+            </details>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="lr-vertical-section lr-bubble" id="resume-development" data-reveal data-resume-section aria-labelledby="resume-development-title">
+        <header class="lr-vertical-section__header">
+            <span>05 / Development</span>
+            <h2 id="resume-development-title">Credentials earned. Next chapters in motion.</h2>
+        </header>
+        <div class="lr-credential-list">
+            {% for item in resume_development %}
+            <article>
+                <small>{{ item.status }}</small>
+                <h3>{{ item.credential }}</h3>
+                <strong>{{ item.institution }}</strong>
+                <p>{{ item.detail }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="lr-vertical-section lr-document-section lr-bubble" id="resume-documents" data-reveal data-resume-section aria-labelledby="resume-documents-title">
+        <header class="lr-vertical-section__header">
+            <span>06 / Documents</span>
+            <h2 id="resume-documents-title">The conventional résumé is still here.</h2>
+            <p>Open the approved PDF source without leaving the Living Résumé story.</p>
+        </header>
+        <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">Open résumé PDF</a>
+        <button type="button" data-chat-open data-ask-resume data-ask="Give me a recruiter-focused tour of Pete Carter's approved public résumé evidence.">Ask Pete AI for a guided tour</button>
+    </section>
+
     <div class="lr-chapter-transition" aria-hidden="true"><span></span></div>
 
-    <section class="lr-constellation" id="constellation" aria-labelledby="constellation-title" data-resume-section-target="resume-development">
+    <section class="lr-constellation" id="constellation" data-reveal aria-labelledby="constellation-title" data-resume-section-target="resume-development">
         <div class="lr-constellation__scene">
             <header class="lr-constellation__intro">
                 <p>The Career Constellation</p>
@@ -493,5 +497,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=approved-2"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=skyglass-1"></script>
 {% endblock %}

@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const constellation = page.querySelector('.lr-constellation');
-    if (constellation && 'IntersectionObserver' in window) {
+    const revealTargets = [...page.querySelectorAll('[data-reveal]')];
+    if (revealTargets.length && 'IntersectionObserver' in window) {
         page.classList.add('lr-js-reveal');
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
@@ -157,8 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 entry.target.classList.add('is-revealed');
                 revealObserver.unobserve(entry.target);
             });
-        }, { rootMargin: '0px 0px -12% 0px' });
-        revealObserver.observe(constellation);
+        }, { rootMargin: '0px 0px -10% 0px' });
+        revealTargets.forEach((target) => revealObserver.observe(target));
     }
 
     page.querySelectorAll('[data-metric-event]').forEach((button) => {
