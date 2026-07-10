@@ -380,6 +380,16 @@ def slate_board():
     return render_template('slate_board.html')
 
 
+@app.route('/_internal/slate-board-v2')
+def slate_board_v2():
+    """Local-first Board v2 review route; existing Board pages stay unchanged."""
+    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
+    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
+    if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
+        abort(404)
+    return render_template('slate_board_v2.html')
+
+
 @app.route('/interview-me')
 @app.route('/petec/interview-me')
 def interview_me():
