@@ -47,6 +47,19 @@
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-constellation-390x844.png`
 - `docs/implementation-reports/screenshots/PS-FEAT-001/mobile-education-390x844.png`
 
+## Refinement pass 1 — Ledger vertical rhythm (2026-07-10)
+
+Feedback: the résumé body sections (Overview, Experience, Education, Skills & Evidence, Development, Documents) carried too much empty vertical space, and the left section rail showed a large blank gap between its links and the last-updated note.
+
+- Tightened `.lr-vertical-section` padding from 5rem to 2.75/3rem and section-header margins; reduced section headings from 2.6rem to 2rem so they sit on one or two lines instead of three.
+- Reduced experience-row padding (2.5rem to 1.5rem), list spacing, credential-card padding, evidence-index padding, and the Documents/page tail paddings (6rem/10rem to 3rem/5rem).
+- Rebuilt the rail/detail seam as two separate rounded cards with a small gutter: the rail no longer stretches to a forced 37rem with `space-between`, so the last-updated note tucks directly beneath the section links.
+- Dropped the ledger-panel forced min-height from 37rem to 24rem so short chapters (education) no longer trail dead space, while chapter switches remain visually stable.
+- Restructured the Key Outcomes cards to match the approved mockup: the metric value now sits beside the icon with the label under it and context text full width, which shortens the cards.
+- Applied matching mobile reductions (section padding 4rem to 2.5rem, tighter headers and rows).
+- Result at 1440x900: page height 6478px to 5329px (-18%); ledger frame 5014px to 3945px (-21%). Content unchanged - only spacing, type scale, and card composition.
+- Validation: 5/5 unit tests pass; desktop and mobile screenshots refreshed below.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.
