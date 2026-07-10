@@ -250,6 +250,7 @@
 .lr-ledger__contact span,
 .lr-ledger__contact a {
     display: flex;
+    min-height: 1.6rem;
     align-items: center;
     gap: 0.75rem;
 }
@@ -856,7 +857,10 @@
 }
 
 .lr-full-record > summary {
+    display: inline-flex;
     width: fit-content;
+    min-height: 1.65rem;
+    align-items: center;
     margin-top: 0.75rem;
     color: var(--lr-blue);
     cursor: pointer;
