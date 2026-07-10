@@ -103,6 +103,16 @@ Pete approved a structural evolution beyond the original mockups: separate the r
 - The Documents section is removed per Pete; its PDF link lives in the rail (tests updated accordingly).
 - Validation: 5/5 unit tests, 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks, flip/rail-centering/release verified in-browser; screenshots refreshed (desktop-development view added).
 
+## Refinement pass 6 — Merged identity+AI card, richer panels (2026-07-10, per Pete's direction)
+
+- The two identity cards are now one card: left holds the portrait, name, positioning, a smaller summary, and the contact row; right is an "Ask Pete AI" panel — a recruiter-view / career-tour / top-skills pill row plus a longer "Ask anything" bar. The career-ribbon quote is removed.
+- The floating Ask Pete AI launcher is hidden while the identity card is on screen and fades in only after the reader scrolls past it. This reuses the existing chatbot.js anchor behavior by tagging the identity AI panel `.resume-ai-panel` and dropping the override that pinned the launcher visible.
+- Each chapter panel drops its own Ask Pete AI button and moves the role title (e.g. "Lead Systems Engineer / Systems Engineer") to the right of the header. The panel and its Key Outcome cards are taller for a more spacious read.
+- Every experience chapter now renders exactly five Key Outcome cards: metrics first, then filled from accomplishment bullets (skipping ones a metric already cites) so L3Harris and Northrop read as full as DoD. Core-skill chips expanded from five to eight per chapter.
+- All glass cards (bubbles, rail, outcome cards, skill cards, identity) are more see-through; the gap between sections was tightened (`min(15vh, 9rem)`); the Skills & Evidence flip-card font is larger.
+- The default-open first skill popover was removed so the panel loads clean over its outcomes.
+- Validation: 5/5 unit tests (updated for the removed panel button), 9/9 interaction checks, 5/5 zoom/touch/overflow/focus checks; launcher hide/reveal confirmed in-browser; screenshots refreshed.
+
 ## Remaining visual differences
 
 - The approved placeholder identity is replaced by Pete's real name, photo, contact links, employers, dates, evidence, metrics, and education data.

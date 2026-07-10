@@ -685,7 +685,7 @@ def _render_living_resume(is_internal_preview=False):
                     skill_by_id[skill_id]
                     for skill_id in record['related_skill_ids']
                     if skill_id in skill_by_id
-                ][:5],
+                ][:8],
             })
         else:
             event.update({
@@ -708,6 +708,35 @@ def _render_living_resume(is_internal_preview=False):
             for metric_id in event.get('featured_metric_ids', [])
             if metric_id in metric_by_id
         ]
+
+        # Every experience chapter shows exactly five "key outcome" cards:
+        # start with the featured metrics, then fill from accomplishment
+        # bullets (skipping ones a metric already represents) so shorter
+        # roles read as full as the flagship one. Education/credential
+        # chapters carry no bullets, so they fall back to their summary.
+        outcomes = []
+        used_evidence = set()
+        for metric in event['metrics']:
+            evidence_id = metric.get('highlight_evidence_id')
+            outcomes.append({
+                'value': metric['value'],
+                'label': metric['label'],
+                'context': metric.get('context'),
+                'evidence_id': evidence_id,
+            })
+            if evidence_id:
+                used_evidence.add(evidence_id)
+        for accomplishment in event['accomplishments']:
+            if len(outcomes) >= 5:
+                break
+            if accomplishment.get('id') in used_evidence:
+                continue
+            outcomes.append({
+                'text': accomplishment['text'],
+                'evidence_id': accomplishment.get('id'),
+            })
+        event['outcomes'] = outcomes[:5]
+
         event['timeline_detail'] = (
             event.get('timeline_detail')
             or (record['institution'] if event['kind'] in {'Education', 'Future'} else event['display_period'])
