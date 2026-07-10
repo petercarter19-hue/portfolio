@@ -1,0 +1,17 @@
+{# Foundation A: reusable PeerSlateGlassCard.
+   Non-interactive cards stay out of the tab order. Set interactive=true only
+   when the whole card represents an action; ordinary links inside a card
+   remain independently keyboard accessible. #}
+{% macro peerslate_glass_card(variant='default', tone='light', eyebrow='', title='', description='', interactive=false, aria_label='') -%}
+<article
+    class="ps-glass-card ps-glass-card--{{ variant }}{% if interactive %} is-interactive{% endif %}"
+    data-tone="{{ tone }}"
+    {% if interactive %}tabindex="0"{% endif %}
+    {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+>
+    {% if eyebrow %}<p class="ps-glass-card__eyebrow">{{ eyebrow }}</p>{% endif %}
+    {% if title %}<h3 class="ps-glass-card__title">{{ title }}</h3>{% endif %}
+    {% if description %}<p class="ps-glass-card__description">{{ description }}</p>{% endif %}
+    {% if caller is defined %}<div class="ps-glass-card__content">{{ caller() }}</div>{% endif %}
+</article>
+{%- endmacro %}

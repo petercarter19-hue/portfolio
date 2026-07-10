@@ -1,0 +1,306 @@
+/* Isolated internal preview page. This file is never loaded by live pages. */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    color-scheme: light;
+}
+
+body {
+    min-width: 320px;
+    margin: 0;
+    color: var(--ps-color-ink-950);
+    background: var(--ps-color-surface-light);
+    font-family: var(--ps-font-ui);
+    line-height: var(--ps-leading-body);
+}
+
+a {
+    color: inherit;
+}
+
+.ds-skip-link {
+    position: fixed;
+    z-index: var(--ps-z-skip-link);
+    top: var(--ps-space-3);
+    left: var(--ps-space-3);
+    transform: translateY(-180%);
+    padding: var(--ps-space-3) var(--ps-space-4);
+    color: white;
+    background: var(--ps-color-ink-950);
+    border-radius: var(--ps-radius-control);
+    transition: transform var(--ps-motion-micro) var(--ps-ease-out);
+}
+
+.ds-skip-link:focus {
+    transform: translateY(0);
+}
+
+.ds-preview {
+    overflow: clip;
+}
+
+.ds-hero {
+    position: relative;
+    isolation: isolate;
+    min-height: 62svh;
+    display: grid;
+    align-items: center;
+    padding: var(--ps-space-20) var(--ps-gutter-desktop);
+    color: var(--ps-color-text-on-dark);
+    background:
+        radial-gradient(circle at 78% 22%, rgb(80 214 232 / 28%), transparent 30%),
+        radial-gradient(circle at 28% 20%, rgb(240 90 174 / 30%), transparent 34%),
+        radial-gradient(circle at 58% 78%, rgb(168 107 234 / 28%), transparent 36%),
+        linear-gradient(145deg, #060b18, #10264e 58%, #261b4d);
+}
+
+.ds-hero__inner,
+.ds-section__inner {
+    width: min(100%, var(--ps-content-max));
+    margin-inline: auto;
+}
+
+.ds-kicker {
+    margin: 0;
+    color: var(--ps-color-accent-cyan);
+    font-size: var(--ps-type-label);
+    font-weight: 800;
+    letter-spacing: var(--ps-tracking-label);
+    text-transform: uppercase;
+}
+
+.ds-hero h1 {
+    max-width: 13ch;
+    margin: var(--ps-space-4) 0 0;
+    font-family: var(--ps-font-display);
+    font-size: var(--ps-type-display-hero);
+    letter-spacing: var(--ps-tracking-display);
+    line-height: var(--ps-leading-display);
+    text-wrap: balance;
+}
+
+.ds-hero__lead {
+    max-width: var(--ps-reading-max);
+    margin: var(--ps-space-6) 0 0;
+    color: var(--ps-color-text-muted-dark);
+    font-size: var(--ps-type-body-lg);
+}
+
+.ds-section {
+    padding: var(--ps-space-20) var(--ps-gutter-desktop);
+}
+
+.ds-section--warm {
+    background: var(--ps-color-surface-warm);
+}
+
+.ds-section--dark {
+    color: var(--ps-color-text-on-dark);
+    background:
+        radial-gradient(circle at 10% 30%, rgb(78 163 255 / 18%), transparent 30%),
+        radial-gradient(circle at 90% 70%, rgb(168 107 234 / 20%), transparent 34%),
+        var(--ps-color-night-950);
+}
+
+.ds-section h2 {
+    margin: 0;
+    font-family: var(--ps-font-display);
+    font-size: var(--ps-type-display-section);
+    line-height: var(--ps-leading-display);
+}
+
+.ds-section__intro {
+    max-width: var(--ps-reading-max);
+    margin: var(--ps-space-4) 0 var(--ps-space-12);
+    color: var(--ps-color-text-muted-light);
+}
+
+.ds-section--dark .ds-section__intro {
+    color: var(--ps-color-text-muted-dark);
+}
+
+.ds-card-grid {
+    display: grid;
+    /* A card must keep roughly 320px of readable width before another
+       column is added. This avoids treating every 960px container as a
+       three-column desktop simply because three columns technically fit. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--ps-space-6);
+    align-items: start;
+}
+
+.ds-card-grid .ps-glass-card--hero {
+    grid-column: span 2;
+}
+
+.ds-chip-row,
+.ds-evidence-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ps-space-2);
+}
+
+.ds-chip,
+.ds-source {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: var(--ps-space-2) var(--ps-space-3);
+    color: currentColor;
+    background: rgb(255 255 255 / 18%);
+    border: 1px solid currentColor;
+    border-radius: var(--ps-radius-pill);
+    font-size: var(--ps-type-label);
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.ds-source {
+    color: var(--ps-color-ink-950);
+    background: rgb(243 190 79 / 22%);
+    border-color: rgb(113 73 8 / 32%);
+}
+
+.ds-chip:focus-visible,
+.ds-source:focus-visible {
+    outline: 3px solid var(--ps-color-focus);
+    outline-offset: 3px;
+}
+
+.ds-feed-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ps-space-4);
+    color: var(--ps-color-text-muted-light);
+    font-size: var(--ps-type-label);
+}
+
+.ds-token-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ps-space-4);
+}
+
+.ds-swatch {
+    min-height: 9rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--ps-space-4);
+    color: var(--swatch-text, white);
+    background: var(--swatch);
+    border: 1px solid rgb(6 26 58 / 14%);
+    border-radius: var(--ps-radius-compact);
+}
+
+.ds-swatch strong,
+.ds-swatch code {
+    display: block;
+}
+
+.ds-swatch code {
+    margin-top: var(--ps-space-1);
+    font-size: var(--ps-type-label);
+}
+
+.ds-type-list {
+    display: grid;
+    gap: var(--ps-space-8);
+}
+
+.ds-type-sample {
+    margin: 0;
+}
+
+.ds-type-sample--hero,
+.ds-type-sample--section,
+.ds-type-sample--card {
+    font-family: var(--ps-font-display);
+    letter-spacing: var(--ps-tracking-display);
+    line-height: var(--ps-leading-display);
+}
+
+.ds-type-sample--hero { font-size: var(--ps-type-display-hero); }
+.ds-type-sample--section { font-size: var(--ps-type-display-section); }
+.ds-type-sample--card { font-size: var(--ps-type-title-card); }
+.ds-type-sample--ui { font-size: var(--ps-type-heading-ui); font-weight: 750; }
+.ds-type-sample--body-lg { max-width: 65ch; font-size: var(--ps-type-body-lg); }
+.ds-type-sample--body { max-width: 65ch; font-size: var(--ps-type-body); }
+.ds-type-sample--label { font-size: var(--ps-type-label); font-weight: 800; letter-spacing: var(--ps-tracking-label); text-transform: uppercase; }
+
+.ds-space-list {
+    display: grid;
+    gap: var(--ps-space-3);
+}
+
+.ds-space-row {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--ps-space-4);
+    font-size: var(--ps-type-label);
+}
+
+.ds-space-row i {
+    display: block;
+    width: min(var(--space), 100%);
+    height: var(--ps-space-3);
+    background: linear-gradient(90deg, var(--ps-color-accent-pink), var(--ps-color-accent-violet), var(--ps-color-accent-blue));
+    border-radius: var(--ps-radius-pill);
+}
+
+.ds-footer {
+    padding: var(--ps-space-8) var(--ps-gutter-desktop);
+    color: var(--ps-color-text-muted-dark);
+    background: var(--ps-color-night-950);
+    text-align: center;
+    font-size: var(--ps-type-label);
+}
+
+/* Preview framing only. Component grids decide their own column count from
+   available readable width rather than from this viewport breakpoint. */
+@media (max-width: 959px) {
+    .ds-hero,
+    .ds-section {
+        padding-inline: var(--ps-gutter-tablet);
+    }
+
+    .ds-token-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .ds-hero,
+    .ds-section {
+        padding: var(--ps-space-16) var(--ps-gutter-mobile);
+    }
+
+    .ds-card-grid,
+    .ds-token-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ds-card-grid .ps-glass-card--hero {
+        grid-column: auto;
+    }
+
+    .ds-space-row {
+        grid-template-columns: 4rem minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .ds-skip-link {
+        transition: none;
+    }
+}

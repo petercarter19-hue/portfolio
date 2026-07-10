@@ -1,0 +1,67 @@
+{# Foundation B uses one macro twice so both directions have exactly the
+   same product content and layout. Direction-specific text is confined to
+   the comparison label above the shared composition. #}
+{% from "partials/peerslate_glass_card.html" import peerslate_glass_card %}
+
+{% macro brand_direction_demo(direction, label, summary, font_label) -%}
+<section class="brand-direction brand-direction--{{ direction }}" id="brand-{{ direction }}" aria-labelledby="brand-{{ direction }}-title">
+    <header class="brand-direction__head">
+        <div>
+            <p class="brand-direction__label">Direction {{ 'A' if direction == 'current' else 'B' }}</p>
+            <h3 class="brand-direction__title" id="brand-{{ direction }}-title">{{ label }}</h3>
+            <p class="brand-direction__summary">{{ summary }}</p>
+        </div>
+        <span class="brand-direction__font">Editorial: {{ font_label }}</span>
+    </header>
+
+    <div class="brand-demo">
+        <div class="brand-demo__light" aria-label="Light environment">
+            <nav class="brand-demo__nav" aria-label="PeerSlate preview navigation">
+                <a class="brand-demo__wordmark" href="#brand-comparison-title">PeerSlate</a>
+                <a class="brand-demo__navlink" href="#brand-comparison-title" aria-current="page">Overview</a>
+                <a class="brand-demo__navlink" href="#brand-comparison-title">Slate Feed</a>
+                <a class="brand-demo__navlink" href="#brand-comparison-title">My Slate</a>
+                <button class="brand-demo__navcontrol" type="button">Ask AI</button>
+            </nav>
+
+            <div class="brand-demo__hero">
+                {% call peerslate_glass_card('hero', 'light', 'PeerSlate', 'Your Work. Your Story. Your Future.', 'Turn real work, evidence, and progress into a professional story people can inspect and trust.') %}
+                    <div class="brand-demo__actions">
+                        <a class="brand-demo__button brand-demo__button--primary" href="#brand-comparison-title">Start your Slate</a>
+                        <a class="brand-demo__button brand-demo__button--secondary" href="#brand-comparison-title">Explore the evidence</a>
+                    </div>
+                    <div class="brand-demo__states" aria-label="Visibility and evidence controls">
+                        <button class="brand-demo__state" type="button" aria-pressed="true"><span class="brand-demo__state-dot" aria-hidden="true"></span>Published</button>
+                        <button class="brand-demo__state" type="button" aria-pressed="false">Private draft</button>
+                        <span class="brand-demo__state">Evidence-backed</span>
+                    </div>
+                {% endcall %}
+            </div>
+
+            <div class="brand-demo__cards">
+                {% call peerslate_glass_card('feed', 'light', 'Slate Feed', 'Anna completed a systems-model review.', 'Progress surfaces because it connects to goals you are actively pursuing.') %}
+                    <div class="brand-demo__feed-meta"><span>People &amp; Progress</span><time>2h ago</time></div>
+                {% endcall %}
+
+                {% call peerslate_glass_card('ai', 'light', 'Ask AI', 'What should I do next?', 'Finish the outcome statement for your current project, then connect it to the approved review record.') %}
+                    <div class="brand-demo__feed-meta"><span>Grounded in approved Slate evidence</span></div>
+                {% endcall %}
+
+                {% call peerslate_glass_card('evidence', 'light', 'Evidence', 'Reduced MICAPs from 16 to 0', 'A measurable outcome connected to inspectable, approved career evidence.') %}
+                    <div class="brand-demo__evidence-row"><a class="brand-demo__evidence-chip" href="#brand-comparison-title">Outcome record</a><span>Evidence-backed</span></div>
+                {% endcall %}
+            </div>
+        </div>
+
+        <div class="brand-demo__cinematic" aria-label="Cinematic background environment">
+            <p class="brand-demo__cinematic-label">Cinematic environment</p>
+            {% call peerslate_glass_card('hero', 'dark', 'PeerSlate', 'Your Work. Your Story. Your Future.', 'Turn real work, evidence, and progress into a professional story people can inspect and trust.') %}
+                <div class="brand-demo__actions">
+                    <a class="brand-demo__button brand-demo__button--primary" href="#brand-comparison-title">Start your Slate</a>
+                    <a class="brand-demo__button brand-demo__button--secondary" href="#brand-comparison-title">Explore the evidence</a>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{%- endmacro %}

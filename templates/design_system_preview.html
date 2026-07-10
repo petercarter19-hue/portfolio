@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>PeerSlate Foundations A + B · Internal Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system/peerslate-glass-card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system/preview.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system/brand-comparison.css') }}">
+</head>
+<body>
+    {% from "partials/peerslate_glass_card.html" import peerslate_glass_card %}
+    {% from "partials/brand_direction_demo.html" import brand_direction_demo %}
+    <a class="ds-skip-link" href="#preview-content">Skip to preview content</a>
+
+    <main class="ds-preview" id="preview-content">
+        <header class="ds-hero">
+            <div class="ds-hero__inner">
+                <p class="ds-kicker">Internal design-system preview · Foundations A + B</p>
+                <h1>One material language for every PeerSlate room.</h1>
+                <p class="ds-hero__lead">Semantic tokens and the first reusable glass surface, shown in isolation before any existing page is migrated.</p>
+            </div>
+        </header>
+
+        <section class="brand-comparison" aria-labelledby="brand-comparison-title">
+            <div class="brand-comparison__inner">
+                <header class="brand-comparison__head">
+                    <p class="ds-kicker">Foundation B</p>
+                    <h2 id="brand-comparison-title">Brand direction comparison</h2>
+                    <p>The product composition, wording, component variants, and responsive rules are identical. Only editorial typography and semantic brand color assignments change.</p>
+                </header>
+
+                {{ brand_direction_demo(
+                    'current',
+                    'Current Foundation',
+                    'Playfair Display with the existing pink-led aurora hierarchy and Inter product UI.',
+                    'Playfair Display'
+                ) }}
+
+                {{ brand_direction_demo(
+                    'proposed',
+                    'Proposed PeerSlate Direction',
+                    'Newsreader with Product Indigo, Story Rose, AI Cyan, Evidence Amber, Midnight Ink, and Cloud White.',
+                    'Newsreader'
+                ) }}
+            </div>
+        </section>
+
+        <section class="ds-section ds-section--dark" aria-labelledby="dark-cards-title">
+            <div class="ds-section__inner">
+                <h2 id="dark-cards-title">Dark-environment cards</h2>
+                <p class="ds-section__intro">Cinematic variants retain atmosphere while protecting readable text and clear focus.</p>
+                <div class="ds-card-grid">
+                    {% call peerslate_glass_card('hero', 'dark', 'Hero', 'Your Work. Made Inspectable.', 'A dominant experience panel for a flagship product demonstration.', true, 'Interactive hero card example') %}
+                        <div class="ds-chip-row">
+                            <a class="ds-chip" href="#light-cards-title">Explore the evidence</a>
+                            <a class="ds-chip" href="#tokens-title">View tokens</a>
+                        </div>
+                    {% endcall %}
+
+                    {% call peerslate_glass_card('feature', 'dark', 'Feature', 'Interview Me', 'Practice an answer, inspect the coaching, and try again with evidence in view.') %}
+                        <div class="ds-chip-row"><span class="ds-chip">Question</span><span class="ds-chip">Coaching</span><span class="ds-chip">Retake</span></div>
+                    {% endcall %}
+
+                    {% call peerslate_glass_card('ai', 'dark', 'Ask Pete AI', 'Grounded answers, not guesses.', 'AI synthesis is visually identified and remains connected to approved portfolio evidence.') %}
+                        <p>Direct answer first. Supporting sources remain close enough to inspect without leaving the experience.</p>
+                    {% endcall %}
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-section ds-section--warm" aria-labelledby="light-cards-title">
+            <div class="ds-section__inner">
+                <h2 id="light-cards-title">Light-environment cards</h2>
+                <p class="ds-section__intro">Product-oriented variants prioritize clarity, evidence, and calm density.</p>
+                <div class="ds-card-grid">
+                    {% call peerslate_glass_card('default', 'light', 'Default', 'A dependable shared surface', 'The baseline card for content that does not require a more specific product role.') %}
+                        <p>Consistent padding, border, shadow, radius, and typography.</p>
+                    {% endcall %}
+
+                    {% call peerslate_glass_card('feed', 'light', 'Feed', 'Anna completed a systems-model review.', 'Progress surfaced because it connects to your current goals.') %}
+                        <div class="ds-feed-meta"><span>People &amp; Progress</span><time>2h ago</time></div>
+                    {% endcall %}
+
+                    {% call peerslate_glass_card('evidence', 'light', 'Evidence-backed', 'Reduced MICAPs from 16 to 0', 'The claim leads directly to approved, inspectable source material.') %}
+                        <div class="ds-evidence-row"><a class="ds-source" href="#tokens-title">Outcome record</a><a class="ds-source" href="#tokens-title">Career evidence</a></div>
+                    {% endcall %}
+
+                    {% call peerslate_glass_card('compact', 'light', 'Compact', 'Next best action', 'Add one outcome to your current project.', true, 'Interactive compact card example') %}{% endcall %}
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-section" aria-labelledby="tokens-title">
+            <div class="ds-section__inner">
+                <h2 id="tokens-title">Semantic colors</h2>
+                <p class="ds-section__intro">Signature colors guide attention; neutral surfaces carry most product content.</p>
+                <div class="ds-token-grid">
+                    <div class="ds-swatch" style="--swatch:#061a3a"><strong>Ink 950</strong><code>#061A3A</code></div>
+                    <div class="ds-swatch" style="--swatch:#060b18"><strong>Night 950</strong><code>#060B18</code></div>
+                    <div class="ds-swatch" style="--swatch:#f7faff;--swatch-text:#061a3a"><strong>Surface light</strong><code>#F7FAFF</code></div>
+                    <div class="ds-swatch" style="--swatch:#fff8ef;--swatch-text:#061a3a"><strong>Surface warm</strong><code>#FFF8EF</code></div>
+                    <div class="ds-swatch" style="--swatch:#f05aae;--swatch-text:#061a3a"><strong>Accent pink</strong><code>#F05AAE</code></div>
+                    <div class="ds-swatch" style="--swatch:#a86bea;--swatch-text:#061a3a"><strong>Accent violet</strong><code>#A86BEA</code></div>
+                    <div class="ds-swatch" style="--swatch:#4ea3ff;--swatch-text:#061a3a"><strong>Accent blue</strong><code>#4EA3FF</code></div>
+                    <div class="ds-swatch" style="--swatch:#50d6e8;--swatch-text:#061a3a"><strong>Accent cyan</strong><code>#50D6E8</code></div>
+                    <div class="ds-swatch" style="--swatch:#f3be4f;--swatch-text:#061a3a"><strong>Accent gold</strong><code>#F3BE4F</code></div>
+                    <div class="ds-swatch" style="--swatch:#24a36a;--swatch-text:#061a3a"><strong>Success</strong><code>#24A36A</code></div>
+                    <div class="ds-swatch" style="--swatch:#d48727;--swatch-text:#061a3a"><strong>Warning</strong><code>#D48727</code></div>
+                    <div class="ds-swatch" style="--swatch:#c9405b"><strong>Danger</strong><code>#C9405B</code></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-section ds-section--warm" aria-labelledby="type-title">
+            <div class="ds-section__inner">
+                <h2 id="type-title">Typography scale</h2>
+                <p class="ds-section__intro">Playfair carries cinematic emotion. Inter carries every product interaction and reading task.</p>
+                <div class="ds-type-list">
+                    <p class="ds-type-sample ds-type-sample--hero">Display hero</p>
+                    <p class="ds-type-sample ds-type-sample--section">Display section</p>
+                    <p class="ds-type-sample ds-type-sample--card">Card title</p>
+                    <p class="ds-type-sample ds-type-sample--ui">Product UI heading</p>
+                    <p class="ds-type-sample ds-type-sample--body-lg">Large body copy introduces a product experience without competing with the product itself.</p>
+                    <p class="ds-type-sample ds-type-sample--body">Default body copy remains comfortable for evidence, explanations, and longer product content.</p>
+                    <p class="ds-type-sample ds-type-sample--label">Label and metadata</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-section" aria-labelledby="spacing-title">
+            <div class="ds-section__inner">
+                <h2 id="spacing-title">Spacing scale</h2>
+                <p class="ds-section__intro">A 4px base creates consistent component rhythm without forcing every layout into the same density.</p>
+                <div class="ds-space-list">
+                    {% for label, value in [('4 px','4px'),('8 px','8px'),('12 px','12px'),('16 px','16px'),('24 px','24px'),('32 px','32px'),('48 px','48px'),('64 px','64px'),('80 px','80px'),('96 px','96px'),('128 px','128px'),('160 px','160px')] %}
+                    <div class="ds-space-row"><span>{{ label }}</span><i style="--space:{{ value }}"></i></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="ds-footer">Internal preview only · Existing PeerSlate pages are unchanged · No direction has been selected</footer>
+</body>
+</html>

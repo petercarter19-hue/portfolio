@@ -1,0 +1,135 @@
+/* PeerSlate Foundation A: semantic design tokens.
+   These use a new --ps-* namespace so the isolated foundation cannot
+   accidentally restyle the existing website while pages are migrated. */
+
+:root {
+    /* Color: foundations from the PeerSlate Design Bible v0.2. */
+    --ps-color-ink-950: #061a3a;
+    --ps-color-night-950: #060b18;
+    --ps-color-surface-light: #f7faff;
+    --ps-color-surface-warm: #fff8ef;
+    --ps-color-text-on-dark: #f2f7ff;
+    --ps-color-text-muted-dark: #8996a8;
+    --ps-color-text-muted-light: #52647a;
+    --ps-color-accent-pink: #f05aae;
+    --ps-color-accent-violet: #a86bea;
+    --ps-color-accent-blue: #4ea3ff;
+    --ps-color-accent-cyan: #50d6e8;
+    --ps-color-accent-gold: #f3be4f;
+    --ps-color-success: #24a36a;
+    --ps-color-warning: #d48727;
+    --ps-color-danger: #c9405b;
+    --ps-color-focus: #79c4ff;
+    --ps-color-border-light: rgb(6 26 58 / 18%);
+    --ps-color-border-dark: rgb(255 255 255 / 30%);
+
+    /* Semantic aliases used by components rather than raw palette names. */
+    --ps-color-page: var(--ps-color-surface-light);
+    --ps-color-text: var(--ps-color-ink-950);
+    --ps-color-text-muted: var(--ps-color-text-muted-light);
+    --ps-color-action: var(--ps-color-accent-blue);
+    --ps-color-ai: var(--ps-color-accent-violet);
+    --ps-color-evidence: var(--ps-color-accent-gold);
+
+    /* Typography: Playfair for cinematic display, Inter for product UI. */
+    --ps-font-display: "Playfair Display", Georgia, serif;
+    --ps-font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --ps-type-display-hero: clamp(2.8rem, 6.4vw, 5.75rem);
+    --ps-type-display-section: clamp(2.25rem, 5vw, 4.5rem);
+    --ps-type-title-card: clamp(1.5rem, 2vw, 2.25rem);
+    --ps-type-heading-ui: clamp(1.125rem, 1.5vw, 1.5rem);
+    --ps-type-body-lg: clamp(1.05rem, 1.25vw, 1.25rem);
+    --ps-type-body: 1rem;
+    --ps-type-label: 0.75rem;
+    --ps-leading-display: 1.04;
+    --ps-leading-heading: 1.2;
+    --ps-leading-body: 1.6;
+    --ps-tracking-display: -0.018em;
+    --ps-tracking-label: 0.12em;
+
+    /* Spacing: a 4px base with the preferred Design Bible steps. */
+    --ps-space-1: 0.25rem;
+    --ps-space-2: 0.5rem;
+    --ps-space-3: 0.75rem;
+    --ps-space-4: 1rem;
+    --ps-space-6: 1.5rem;
+    --ps-space-8: 2rem;
+    --ps-space-12: 3rem;
+    --ps-space-16: 4rem;
+    --ps-space-20: 5rem;
+    --ps-space-24: 6rem;
+    --ps-space-32: 8rem;
+    --ps-space-40: 10rem;
+
+    /* Layout. */
+    --ps-content-max: 85rem;
+    --ps-reading-max: 45rem;
+    --ps-stage-max: 100rem;
+    --ps-gutter-desktop: clamp(3rem, 4vw, 4rem);
+    --ps-gutter-tablet: 2rem;
+    --ps-gutter-mobile: 1.25rem;
+
+    /* Radius hierarchy. */
+    --ps-radius-control: 0.875rem;
+    --ps-radius-compact: 1rem;
+    --ps-radius-card: 1.5rem;
+    --ps-radius-feature: 1.625rem;
+    --ps-radius-hero: 2rem;
+    --ps-radius-pill: 999px;
+
+    /* Shadows: quiet depth, not decorative glow. */
+    --ps-shadow-control: 0 8px 24px rgb(7 16 36 / 10%);
+    --ps-shadow-card: 0 18px 45px rgb(0 0 0 / 14%);
+    --ps-shadow-hero: 0 24px 70px rgb(7 16 36 / 16%);
+    --ps-shadow-focus: 0 0 0 4px rgb(121 196 255 / 34%);
+    --ps-shadow-ai: 0 20px 54px rgb(98 55 160 / 18%);
+    --ps-shadow-evidence: 0 18px 46px rgb(113 73 8 / 14%);
+
+    /* Glass: explicit opacity, blur, border, and saturation tiers. */
+    --ps-glass-light-hero-bg: rgb(255 255 255 / 44%);
+    --ps-glass-dark-hero-bg: rgb(255 255 255 / 14%);
+    --ps-glass-light-card-bg: rgb(255 255 255 / 54%);
+    --ps-glass-dark-card-bg: rgb(255 255 255 / 18%);
+    --ps-glass-light-control-bg: rgb(255 255 255 / 78%);
+    --ps-glass-dark-control-bg: rgb(9 18 38 / 68%);
+    --ps-glass-border-light: rgb(6 26 58 / 16%);
+    --ps-glass-border-dark: rgb(255 255 255 / 30%);
+    --ps-glass-blur-control: 0.75rem;
+    --ps-glass-blur-card: 1.125rem;
+    --ps-glass-blur-hero: 1.625rem;
+    --ps-glass-saturation: 1.24;
+
+    /* Motion. */
+    --ps-motion-micro: 160ms;
+    --ps-motion-component: 360ms;
+    --ps-motion-chapter: 800ms;
+    --ps-motion-stagger: 80ms;
+    --ps-ease-out: ease-out;
+    --ps-ease-standard: cubic-bezier(.22, .8, .25, 1);
+
+    /* Layering. */
+    --ps-z-base: 0;
+    --ps-z-raised: 10;
+    --ps-z-sticky: 100;
+    --ps-z-popover: 300;
+    --ps-z-overlay: 500;
+    --ps-z-modal: 700;
+    --ps-z-toast: 900;
+    --ps-z-skip-link: 1000;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --ps-type-display-hero: clamp(2.8rem, 12vw, 4rem);
+        --ps-type-display-section: clamp(2.25rem, 9vw, 3.25rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --ps-motion-micro: 1ms;
+        --ps-motion-component: 1ms;
+        --ps-motion-chapter: 1ms;
+        --ps-motion-stagger: 0ms;
+    }
+}

@@ -1,85 +1,125 @@
-# Pete & Danielle Carter — Portfolio Project Memory
+# PeerSlate Repository Instructions
 
-## Who I'm working with
-- **Pete Carter** — building his first website, beginner coder on Mac (MacBook Pro 14" M5)
-- Email: petercarter19@gmail.com
-- GitHub username: petercarter19-hue
-- GitHub repo: https://github.com/petercarter19-hue/portfolio.git
-- Location: Athens, AL
+## Project purpose
 
-## The Project
-**Personal Portfolio Website** — a Python Flask web app with AI features powered by the Claude API.
+PeerSlate is a multi-user, evidence-backed professional story and growth platform. It is not a Pete-only portfolio. Pete's content is fixture/demo data only.
 
-Two goals:
-1. Demonstrate real, hireable tech skills
-2. Create a live public-facing site to share with employers
+## Source of truth
 
-## Pete's Credentials (to feature on the site)
-- PMP certification
-- PhD
-- MBSE certification
-- Work experience & career history
-- Smart home & hobbies
+Before changing résumé or Slate Board code, read these repository documents in this order:
 
-## Planned Pages
-1. **Home / About** — bio, intro
-2. **Work Experience & Career**
-3. **Skills & Certifications** (PMP, PhD, MBSE)
-4. **Hobbies Showcase** — smart home projects
-5. **Contact Form**
-6. **Private Admin/Assistant Dashboard** — login required
+1. `docs/peerslate/PeerSlate_Design_Bible_v0.3.md`
+2. `docs/peerslate/PS-FEAT-001_Living_Resume_Voice_Blueprint.md`
+3. `docs/peerslate/PeerSlate_Product_Backlog.md`
+4. `docs/peerslate/PS-EXP-002_Slate_Focus_Stage_Experiment.md`
 
-## AI Features Planned
-1. **Visitor Chatbot** — floating widget on all pages, visitors ask questions about Pete, answers from his resume/bio, streams responses
-2. **AI Writing Tool** — takes bullet points, returns polished professional paragraphs (behind the scenes)
+If any source document is missing, stop and report the missing path. Do not reconstruct requirements from memory.
 
-## Tech Stack
-- **Backend**: Python + Flask
-- **AI**: Anthropic Claude API
-- **Frontend**: HTML/CSS/JavaScript (templates via Flask/Jinja2)
-- **Version Control**: GitHub
+## Approved design foundation
 
-## VS Code Setup (completed 2026-06-25)
-- VS Code installed ✅
-- Portfolio folder opened and trusted ✅
-- Extensions installed: Live Server, Prettier, Auto Rename Tag, GitHub Pull Requests, PowerShell, Claude, and others ✅
-- venv (Python virtual environment) created inside /Users/petercarter/portfolio ✅
+- Foundation C is approved.
+- Newsreader is for cinematic/editorial headings.
+- Inter is for navigation, controls, forms, metadata, and product content.
+- Light-first, cinematic, premium glass UI.
+- Product Indigo `#4F5BD5`
+- Connection Azure `#4EA3FF`
+- AI Cyan `#2EC8D3`
+- Evidence Amber `#D7A33E`
+- Midnight Ink `#0A1B36`
+- Cloud White `#F6F8FC`
+- Pink, rose, magenta, and coral are not semantic UI accents.
+- Use generous vertical spacing and progressive disclosure. Do not force the experience above the fold.
+- One dominant product object per opening viewport.
+- Never use the retired résumé example. Never use the MICAP example in redesigned résumé fixtures or visible copy.
 
-## Current State of Project
-- Portfolio folder: /Users/petercarter/portfolio
-- Flask app is running from app.py with routes for home, about, work, skills, hobbies, and contact
-- Site runs at http://127.0.0.1:5000 with 6 routes (home, about, work, skills, hobbies, contact)
-- Chatbot MVP 1 is active: static/js/chatbot.js sends visitor questions to the Flask /api/chat route, and app.py calls the Anthropic Claude API
-- Chatbot answers are intentionally short: 1 to 3 concise, polished sentences with the most impactful information first
-- Chatbot answers should use plain text only: no Markdown, hashtags, bold markers, bullet lists, numbered lists, or salesy follow-up questions
-- Chatbot responses can use a second short paragraph when an answer has more than one idea
-- app.py includes clean_chatbot_reply() to remove display-only Markdown symbols before sending responses back to the browser
-- app.py keeps knowledge files separated and uses build_knowledge_context() to send Claude only the most relevant knowledge files for each question
-- Suggested chatbot questions now disappear after any visitor question, whether the user clicks a suggestion or types a custom question
-- Knowledge base complete: docs/knowledge/ folder with 6 files
-- chatbot.css uses white-space: pre-line so paragraph breaks from AI responses display inside chat bubbles
-- .env file with ANTHROPIC_API_KEY exists on this Mac and must never be displayed, edited, or committed
+## Multi-user and trust rules
 
-## Immediate Next Steps
-1. Continue testing MVP 1 chatbot answer quality with real recruiter-style questions
-2. Consider creating a curated chatbot-specific knowledge file so responses rely on polished source material instead of long resume-style files
-3. Add server-side logging of conversations
-4. Build admin dashboard to view chat logs
-5. Eventually: smarter retrieval, security hardening, and public deployment
+- Components must work for students, early-career users, career changers, freelancers, mid-career users, and senior users.
+- Never hardcode Pete's employers, dates, role count, metrics, education, or skills into reusable components.
+- Every profile-owned record must preserve tenant ownership.
+- Default new Board content and voice-created drafts to private.
+- AI output is a proposal, not an automatic edit.
+- Voice flow is transcript → structured proposal → source/visibility review → explicit approval → save. Publishing is a separate explicit action.
+- Never imply production privacy, matching, verification, or AI behavior unless the backend enforces it.
 
-## Recent Session Updates
-- Top navigation now stays sticky while scrolling on desktop/tablet screens, but scrolls away normally on phone screens.
-- Mobile/tablet nav spacing was tightened so "Pete Carter" sits closer to the navigation links.
-- Chatbot suggestion buttons now disappear after the first submitted question.
-- Chatbot prompt was improved for grammar, concise answers, plain text, short paragraphs, and stronger professional tone.
-- Chatbot output cleanup was added on the server side to remove Markdown artifacts before responses reach the browser.
-- Chatbot context selection was improved so Claude receives focused knowledge files based on the visitor's question instead of the entire knowledge base every time.
+## Living Résumé direction — PS-FEAT-001
 
-## Notes
-- Pete is a complete beginner on Mac, limited PC experience too
-- Prefers step-by-step, detailed explanations — no assumptions
-- Using Cowork (Claude desktop app) to get help
-- The venv folder must be activated before running Flask: `source venv/bin/activate`
-- When code changes are made, explain the filename, actual line numbers, what the code was before, what it is now, and why the change works
-- Add helpful comments directly in edited files when the change teaches an important concept or prevents future confusion
-- Before editing files Pete may have open in VS Code, remind him to press Cmd+S
+- The Living Résumé Ledger appears first.
+- Its chronological timeline is integrated into the résumé and acts as its navigation and structural spine.
+- Selecting a timeline chapter updates detail inside the same dominant résumé frame.
+- The Career Constellation materializes below the Ledger during vertical scroll.
+- Skills stay compact and reveal only two or three strongest approved proof points.
+- Ledger and Constellation render from the same structured data.
+- Keep a traditional ATS-friendly PDF/download path.
+- Build with generic data/view models and multiple fixture profiles.
+
+## Slate Board direction
+
+- The whiteboard remains the dominant product experience.
+- Preserve its playful, hand-placed quality; do not turn it into a conventional dashboard or card grid.
+- Four primary scrollable sections for the first implementation:
+  - Short Term
+  - Projects
+  - Long Term
+  - Work
+- Sticky notes are the primary board objects.
+- Add/Edit supports:
+  - To Do, Short Term, Long Term, Project, Work, or Custom
+  - sticky-note color
+  - cursive or standard handwriting
+  - dates
+  - privacy/audience
+- Keep visible controls concise:
+  - Add to Board
+  - AI Help
+  - Connections
+  - quiet More/Board Settings
+- Item controls appear contextually, not permanently.
+- First interaction fixture: “Study for the PMP certification.”
+- Add-to-Board states:
+  1. Capture
+  2. Details and privacy
+  3. Note added
+  4. AI guidance
+  5. People matching
+- Similar-user matching is opt-in and visibility-aware. Never auto-connect users.
+- AI may propose milestones, questions, reminders, websites, and videos, but does not save automatically.
+- Supporting experiences continue vertically below the opening board. Do not pack everything into one screen.
+- PS-EXP-002 Focus Stage remains separate, optional, feature-flagged, and off by default. It must never replace the Board.
+
+## Navigation
+
+Do not add another permanent navigation layer inside Slate Board. Global site navigation, public/member Slate navigation, and contextual Board controls must remain distinct. Do not finalize or replace production navigation without an approved route map.
+
+## Safe implementation workflow
+
+- Never work directly on production or the default branch.
+- Preserve current pages and behavior.
+- Use alternate routes and/or disabled feature flags for redesigned pages.
+- Do not deploy.
+- Do not merge.
+- Do not perform database migrations unless the user separately approves a reviewed migration plan.
+- Do not add production dependencies without reporting why they are needed.
+- Prefer small, reviewable commits.
+- Before edits, record the current branch, commit, dirty files, test commands, routes, templates, CSS/JS entry points, data sources, and existing feature flags.
+- If the working tree is dirty or the correct Foundation C base is ambiguous, stop and report rather than guessing.
+
+## Quality requirements
+
+- WCAG 2.2 AA target.
+- Keyboard access, visible focus, 200% zoom, high contrast, and reduced motion.
+- Slate Board requires an accessible structured/list alternative.
+- Mobile uses readable document flow; never shrink a desktop visualization until it is unreadable.
+- Prefer transforms and opacity for motion.
+- Run the existing test/lint/format commands discovered in the repository.
+- Add focused tests for new routes, rendering states, and interactions.
+- Capture desktop and mobile screenshots for review.
+- Report changed files, commits, commands run, failures, assumptions, and remaining work.
+
+## Communication
+
+Explain architecture and tradeoffs in plain English. Separate:
+- what is implemented,
+- what is fixture-only,
+- what requires backend/schema work,
+- what is intentionally deferred.
