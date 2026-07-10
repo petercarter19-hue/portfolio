@@ -69,13 +69,37 @@
     margin-top: 2.75rem;
 }
 
-.lr-identity .lr-ledger__identity {
+.lr-identity {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(21rem, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.lr-identity__who,
+.lr-identity__reach {
     border-radius: 1.5rem;
     border: 2px solid rgb(255 255 255 / 82%);
+    background: linear-gradient(105deg, rgb(255 255 255 / 88%) 0%, rgb(248 251 255 / 82%) 66%, rgb(238 246 255 / 78%) 100%);
     box-shadow:
         0 1.5rem 4rem rgb(17 44 78 / 18%),
         inset 0 0 0 0.35rem rgb(255 255 255 / 55%);
     backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.lr-identity__who {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.75rem;
+    padding: 1.75rem 2.25rem;
+}
+
+.lr-identity__reach {
+    display: grid;
+    align-content: center;
+    gap: 1rem;
+    padding: 1.5rem 1.75rem;
 }
 
 .lr-timeline-shell .lr-timeline-region {
@@ -154,46 +178,17 @@
     text-transform: uppercase;
 }
 
-.lr-ledger {
-    width: min(calc(100% - 4rem), var(--lr-content));
-    margin: 0 auto;
-}
-
-.lr-ledger__frame {
-    position: relative;
-    overflow: visible;
-    background: linear-gradient(135deg, rgb(255 255 255 / 74%), rgb(239 247 255 / 64%));
-    border: 2px solid rgb(255 255 255 / 80%);
-    border-radius: 1.75rem;
-    box-shadow:
-        0 2rem 5rem rgb(17 44 78 / 16%),
-        0 0 1.8rem rgb(68 154 255 / 11%),
-        inset 0 0 0 0.45rem rgb(255 255 255 / 40%),
-        inset 0 0 2.5rem rgb(104 173 242 / 9%);
-    backdrop-filter: blur(18px) saturate(1.2);
-}
-
-.lr-ledger__frame::before {
-    position: absolute;
-    z-index: 30;
-    inset: 0.55rem;
-    border: 1px solid rgb(255 255 255 / 92%);
-    border-radius: 1.2rem;
-    box-shadow:
-        inset 0 0 0 1px rgb(105 168 232 / 22%),
-        0 0 1.4rem rgb(255 255 255 / 72%);
-    content: "";
-    pointer-events: none;
-}
-
-.lr-ledger__identity {
+.lr-resume-layout {
     display: grid;
-    grid-template-columns: 8.5rem minmax(0, 1fr) minmax(13rem, 17rem) minmax(12rem, 15rem);
-    align-items: center;
-    gap: 2rem;
-    min-height: 13rem;
-    padding: 2rem 3rem;
-    background: linear-gradient(105deg, rgb(255 255 255 / 78%) 0%, rgb(248 251 255 / 70%) 66%, rgb(238 246 255 / 66%) 100%);
+    width: min(calc(100% - 4rem), var(--lr-content));
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem;
+    margin: 2.75rem auto 0;
+}
+
+.lr-resume-flow {
+    min-width: 0;
 }
 
 .lr-ledger__portrait {
@@ -240,9 +235,7 @@
 .lr-ledger__contact {
     display: grid;
     gap: 0.8rem;
-    padding-left: 1.5rem;
     color: #30445e;
-    border-left: 1px solid var(--lr-line);
     font-size: 0.84rem;
     font-style: normal;
 }
@@ -429,15 +422,6 @@
     color: var(--lr-blue);
 }
 
-.lr-ledger__body {
-    display: grid;
-    grid-template-columns: 13.5rem minmax(0, 1fr);
-    gap: 0 0.85rem;
-    padding: 1rem;
-    background: transparent;
-    border-radius: 1.75rem;
-}
-
 .lr-ledger__rail {
     position: sticky;
     top: 5.5rem;
@@ -446,9 +430,11 @@
     flex-direction: column;
     align-self: start;
     padding: 1rem 0.75rem 0.75rem;
-    background: rgb(243 247 252 / 66%);
-    border: 1px solid rgb(255 255 255 / 85%);
-    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgb(255 255 255 / 88%), rgb(241 248 255 / 80%));
+    border: 2px solid rgb(255 255 255 / 82%);
+    border-radius: 1rem;
+    box-shadow: 0 1.25rem 3rem rgb(17 44 78 / 14%);
+    backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .lr-ledger__rail nav {
@@ -508,14 +494,11 @@
 
 .lr-ledger__detail {
     min-width: 0;
-    background: rgb(255 255 255 / 62%);
-    border: 1px solid rgb(255 255 255 / 85%);
-    border-radius: 0.75rem;
 }
 
 .lr-ledger-panel {
     min-height: 24rem;
-    padding: 1.35rem 1.75rem 1.5rem;
+    padding: 1.5rem 1.9rem 1.6rem;
 }
 
 .lr-overview-section,
@@ -913,10 +896,9 @@
 }
 
 .lr-bubble {
-    width: min(calc(100% - 4rem), var(--lr-content));
-    margin: min(28vh, 17rem) auto 0;
-    background: linear-gradient(135deg, rgb(255 255 255 / 72%), rgb(241 248 255 / 62%));
-    border: 2px solid rgb(255 255 255 / 80%);
+    margin: min(28vh, 17rem) 0 0;
+    background: linear-gradient(135deg, rgb(255 255 255 / 88%), rgb(241 248 255 / 80%));
+    border: 2px solid rgb(255 255 255 / 82%);
     border-radius: 1.5rem;
     box-shadow:
         0 1.75rem 4.5rem rgb(17 44 78 / 15%),
@@ -925,8 +907,11 @@
     backdrop-filter: blur(18px) saturate(1.2);
 }
 
+.lr-resume-flow > .lr-bubble:first-child {
+    margin-top: 0;
+}
+
 .lr-ledger {
-    margin-top: 2.75rem;
     scroll-margin-top: 6.25rem;
 }
 
@@ -1836,16 +1821,13 @@
 }
 
 @media (max-width: 75rem) {
-    .lr-ledger__identity {
-        grid-template-columns: 7rem minmax(0, 1fr) minmax(13rem, 16rem);
+    .lr-identity__who {
+        grid-template-columns: 7rem minmax(0, 1fr);
+        padding: 1.5rem 1.75rem;
     }
 
     .lr-ledger__portrait {
         width: 6.5rem;
-    }
-
-    .lr-ledger__quote {
-        grid-column: 2 / -1;
     }
 
     .lr-outcome-grid {
@@ -1858,10 +1840,9 @@
 }
 
 @media (max-width: 64rem) {
-    .lr-ledger,
+    .lr-resume-layout,
     .lr-identity,
     .lr-timeline-shell,
-    .lr-bubble,
     .lr-preview-label {
         width: calc(100% - 2.5rem);
     }
@@ -1870,26 +1851,14 @@
         margin-top: min(24vh, 13rem);
     }
 
-    .lr-ledger__identity {
+    .lr-identity {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .lr-identity__who {
         grid-template-columns: 6rem minmax(0, 1fr);
-        padding: 2rem;
-    }
-
-    .lr-ledger__contact,
-    .lr-ledger__quote {
-        grid-column: 1 / -1;
-    }
-
-    .lr-ledger__contact {
-        display: flex;
-        flex-wrap: wrap;
-        padding: 1rem 0 0;
-        border-top: 1px solid var(--lr-line);
-        border-left: 0;
-    }
-
-    .lr-ledger__quote {
-        margin-left: 7rem;
+        padding: 1.75rem 2rem;
     }
 
     .lr-timeline-region {
@@ -1900,8 +1869,9 @@
         min-width: 62rem;
     }
 
-    .lr-ledger__body {
+    .lr-resume-layout {
         grid-template-columns: 11.5rem minmax(0, 1fr);
+        gap: 1rem;
     }
 
     .lr-ledger__rail a {
@@ -2079,7 +2049,7 @@
     }
 
     .lr-timeline-shell,
-    .lr-ledger {
+    .lr-resume-layout {
         margin-top: 1.75rem;
     }
 
@@ -2098,24 +2068,28 @@
         font-size: 0.65rem;
     }
 
-    .lr-ledger,
+    .lr-resume-layout,
     .lr-identity,
     .lr-timeline-shell,
-    .lr-bubble,
     .lr-preview-label,
     .lr-constellation {
         width: calc(100% - 1.5rem);
     }
 
-    .lr-ledger__frame,
-    .lr-identity .lr-ledger__identity,
+    .lr-identity__who,
+    .lr-identity__reach,
     .lr-timeline-shell .lr-timeline-region,
     .lr-bubble,
     .lr-constellation__scene {
         border-radius: 1rem;
     }
 
-    .lr-ledger__identity {
+    .lr-resume-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .lr-identity__who {
         grid-template-columns: 4.75rem minmax(0, 1fr);
         padding: 1.5rem 1.15rem;
         gap: 1rem;
@@ -2205,13 +2179,6 @@
         display: none;
     }
 
-    .lr-ledger__body {
-        grid-template-columns: 1fr;
-        min-width: 0;
-        max-width: 100%;
-        padding: 0;
-    }
-
     .lr-ledger__rail {
         top: 5.85rem;
         z-index: 25;
@@ -2219,9 +2186,10 @@
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
+        margin-bottom: 1rem;
         border: 0;
         border-bottom: 1px solid var(--lr-line);
-        border-radius: 1rem 1rem 0 0;
+        border-radius: 1rem;
         background: rgb(243 247 252 / 97%);
         box-shadow: 0 0.65rem 1rem rgb(12 45 100 / 8%);
     }
@@ -2246,9 +2214,6 @@
     .lr-ledger__detail {
         min-width: 0;
         max-width: 100%;
-        overflow: hidden;
-        border: 0;
-        border-radius: 0;
     }
 
     .lr-ledger-panel {
@@ -2376,8 +2341,10 @@
 }
 
 @media (forced-colors: active) {
-    .lr-ledger__frame,
-    .lr-ledger__detail,
+    .lr-identity__who,
+    .lr-identity__reach,
+    .lr-timeline-region,
+    .lr-bubble,
     .lr-ledger__rail,
     .lr-outcome,
     .lr-additional-impact,

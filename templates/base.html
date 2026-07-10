@@ -212,7 +212,12 @@
        Slate Board and Interview Me, which the mockups treat as
        standalone top-level pages with their own heroes. #}
     {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me', '/slate-board', '/interview-me'] %}
+        {# Pages with their own identity hero (the Living Résumé) empty this
+           block so the profile band doesn't double Pete's name/photo; every
+           other portfolio page keeps the band by default. #}
+        {% block profile_band %}
         {% include "partials/profile_shell.html" %}
+        {% endblock %}
         {# Pages can inject content (e.g. the overview's metric cards + ask
            bar) between the profile band and the tab strip. Other pages leave
            this empty, so their tabs sit directly under the band. #}
