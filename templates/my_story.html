@@ -1,490 +1,321 @@
 {# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
 {% extends "base.html" %}
 
-{# Browser-tab title for this page. #}
 {% block title %}Pete Carter | My Story{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/story-cinematic.css') }}?v=sky-1">
+{% endblock %}
 
 {% block content %}
 
 <!-- =====================================================
-     MY STORY PAGE
-     Personal-professional narrative page built from the
-     approved mockup: hero with portrait, positioning
-     statement, journey timeline, values, info cards, and
-     rotating fun facts.
+     MY STORY — the personal film (2026-07-10 rebuild).
+     Same facts as before, told as a cinematic scroll: a
+     full-sky opening, the life chapters that came before
+     engineering, the numbers that shaped them, life outside
+     the work, values, the professional cut, and the
+     completed-goals slate. All narrative content is drawn
+     from the previous page and the approved knowledge base.
      ===================================================== -->
-<div class="my-story-page" id="story">
+<div class="story-film" id="story">
 
-    <!-- ============================================
-         HERO: intro copy on the left, circular
-         portrait with decorative rings on the right.
-         ============================================ -->
-    <section class="story-hero" aria-labelledby="story-title">
-        <div class="story-hero-circuit" aria-hidden="true"></div>
+    <!-- ACT 0 · OPENING TITLE ============================ -->
+    <section class="sf-open" aria-labelledby="story-title">
+        <div class="sky-haze sf-open__inner">
+            <p class="section-eyebrow">My Story</p>
+            <h1 id="story-title">The engineer<br><span>behind the work.</span></h1>
+            <p class="sf-open__tagline">Engineer. Leader. Problem Solver. Lifelong Learner.</p>
+            <p class="sf-open__lead">
+                Driven by curiosity and purpose, I thrive on turning complex
+                challenges into practical, mission-impacting solutions.
+                The résumé tells you what I've done &mdash; this page is the
+                person who did it.
+            </p>
 
-        <div class="site-container story-hero__grid">
+            <ul class="sf-orbs" aria-label="Personal values">
+                <li style="--orb: #7c5cff;"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M22 12h-4"/></svg>Mission Focused</li>
+                <li style="--orb: #2aa8e6;"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19"/><path d="M15.5 14.7c2 .2 3.5 1.6 4 4.3"/></svg>People Centered</li>
+                <li style="--orb: #2fc38d;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.7 1.3 1.5 1.5 2.5h5c.2-1 .7-1.8 1.5-2.5A6 6 0 0 0 12 3z"/></svg>Solutions Driven</li>
+                <li style="--orb: #e0a52e;"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14v-3M11 14V8M15 14v-4"/><path d="M8 21h8"/></svg>Impact Oriented</li>
+            </ul>
 
-            <div class="story-hero__content">
-                <div class="story-hero__headline">
-                    <p class="section-eyebrow">MY STORY</p>
-
-                    <h1 id="story-title">
-                        The Engineer<br>
-                        <span>Behind the Work</span>
-                    </h1>
-
-                    <p class="story-hero__tagline">
-                        Engineer. Leader. Problem Solver. Lifelong Learner.
-                    </p>
-
-                    <p class="story-hero__intro">
-                        Driven by curiosity and purpose, I thrive on turning complex
-                        challenges into practical, mission-impacting solutions.
-                    </p>
-                </div>
-
-                <!-- Four compact value chips with circular icons. Each <svg>
-                     is a hand-drawn line icon (no image files), paired with
-                     a short two-word label. Kept to exactly four so the
-                     layout rule (4-across or 2x2, never 3+1) always holds. -->
-                <ul class="story-values-row" aria-label="Personal values">
-                    <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="8"/>
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M12 2v4M22 12h-4"/>
-                            </svg>
-                        </span>
-                        <span class="value-chip__label">Mission<br>Focused</span>
-                    </li>
-                    <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="9" cy="8" r="3.2"/>
-                                <circle cx="16.5" cy="9.5" r="2.4"/>
-                                <path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19"/>
-                                <path d="M15.5 14.7c2 .2 3.5 1.6 4 4.3"/>
-                            </svg>
-                        </span>
-                        <span class="value-chip__label">People<br>Centered</span>
-                    </li>
-                    <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M9 18h6M10 21h4"/>
-                                <path d="M12 3a6 6 0 0 0-4 10.5c.8.7 1.3 1.5 1.5 2.5h5c.2-1 .7-1.8 1.5-2.5A6 6 0 0 0 12 3z"/>
-                            </svg>
-                        </span>
-                        <span class="value-chip__label">Solutions<br>Driven</span>
-                    </li>
-                    <li class="value-chip">
-                        <span class="value-chip__icon value-chip__icon--gold" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <rect x="3" y="4" width="18" height="14" rx="2"/>
-                                <path d="M7 14v-3M11 14V8M15 14v-4"/>
-                                <path d="M8 21h8"/>
-                            </svg>
-                        </span>
-                        <span class="value-chip__label">Impact<br>Oriented</span>
-                    </li>
-                </ul>
-
-                <!-- Ask Pete AI, embedded directly in the hero column like
-                     the homepage does, instead of as a separate section
-                     below the whole hero (see .story-hero__ai in style.css). -->
-                <div class="story-hero__ai" aria-label="Ask Pete AI">
-                    {% include "partials/portfolio_ai_search.html" %}
-                </div>
+            <div class="sf-open__portrait" data-reveal>
+                <img
+                    src="{{ url_for('static', filename='images/hero-collage.png') }}"
+                    alt="Photo collage of Pete Carter's life, family, education, and milestones"
+                >
             </div>
-
-            <!-- Photo collage blends into the dark page background instead
-                 of sitting inside a circular frame — see .portrait-frame's
-                 mask-image in style.css. -->
-            <div class="story-hero__portrait" aria-hidden="false">
-                <div class="portrait-frame">
-                    <img
-                        src="{{ url_for('static', filename='images/hero-collage.png') }}"
-                        alt="Photo collage of Pete Carter's life, family, education, and milestones"
-                    >
-                </div>
-            </div>
-
         </div>
     </section>
 
-    <!-- ============================================
-         FUN FACTS: five facts from the pool below. One
-         card refreshes every five seconds, so the row
-         cards change over a fifteen-second cycle on their
-         own (no button). Placed right under the hero,
-         above My Journey.
-         ============================================ -->
-    <section class="fun-facts" aria-labelledby="fun-facts-title">
-        <div class="site-container">
-            <div class="fun-facts__header">
-                <h2 id="fun-facts-title">Things You Won't Find on My Résumé</h2>
-            </div>
+    <!-- ACT 1 · THE LONG WAY HERE ======================== -->
+    <section class="sf-chapters" aria-labelledby="chapters-title">
+        <header class="sky-haze sf-act-head" data-reveal>
+            <p class="section-eyebrow">The Long Way Here</p>
+            <h2 id="chapters-title">A path built on curiosity and grit.</h2>
+            <p>
+                From earning my engineering degree as a non-traditional student to
+                leading high-impact programs in the Air Force and industry, my path
+                has been anything but conventional. Every step shaped how I approach
+                problems &mdash; bringing structure to chaos, aligning people toward a
+                common goal, and delivering results that matter.
+            </p>
+        </header>
 
-            <!-- The script fills this grid with five rotating facts. -->
-            <div class="fun-facts__grid" id="fun-facts-grid" aria-live="polite"></div>
+        <ol class="sf-chapter-list">
+            <li class="sf-chapter" data-reveal style="--orb: #7c5cff;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M7 10.5V16c0 1.6 2.2 3 5 3s5-1.4 5-3v-5.5"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>The twenties</small>
+                    <h3>Pizza, payroll, and people.</h3>
+                    <p>
+                        Before engineering there were years managing Domino's Pizza
+                        stores &mdash; schedules, budgets, and teams under pressure.
+                        It's where leading people started, long before anyone
+                        called it leadership.
+                    </p>
+                </div>
+            </li>
+
+            <li class="sf-chapter" data-reveal style="--orb: #3f6fe0;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9c-1.2-2.8.6-6 3.8-6 1.9 0 3.4 1 4.2 2.5C11.8 7 13.3 6 15.2 6c3.2 0 5 3.2 3.8 6-2 4.5-9 9-9 9z"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>The detour that mattered</small>
+                    <h3>Running a healthcare company.</h3>
+                    <p>
+                        Managing a healthcare business taught the stakes of getting
+                        operations right when people depend on you &mdash; and left a
+                        question that wouldn't go away: what else could I be capable of?
+                    </p>
+                </div>
+            </li>
+
+            <li class="sf-chapter" data-reveal style="--orb: #2aa8e6;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>Back to school at 36</small>
+                    <h3>The bet on myself.</h3>
+                    <p>
+                        I went back to school at 36 because I wanted goals I had once
+                        considered out of reach. Dalton State first, then a B.S. in
+                        Electrical Engineering at Kennesaw State &mdash; earned as a
+                        non-traditional student while life kept moving.
+                    </p>
+                </div>
+            </li>
+
+            <li class="sf-chapter" data-reveal style="--orb: #2fc38d;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m16 19-4-7-8-1-2-2 8-1 4-7 2 1-1 6 6-1 2 2-8 3 3 6Z"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>2021 &ndash; 2024 · Robins AFB</small>
+                    <h3>A pandemic hire who learned fast.</h3>
+                    <p>
+                        I joined the Air Force's 407th Supply Chain Management Squadron
+                        as a DoD civilian engineer in the middle of COVID &mdash; learning a
+                        complex engineering job largely over telework, then growing into
+                        Lead Systems Engineer for navigation-system sustainment and
+                        mission-critical special projects.
+                    </p>
+                </div>
+            </li>
+
+            <li class="sf-chapter" data-reveal style="--orb: #2456c9;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-4v17M12 9h8v12M2 21h20"/><path d="M7 11h2M7 15h2M15 12h2M15 16h2"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>2024 &ndash; today · Industry</small>
+                    <h3>L3Harris, then Northrop Grumman.</h3>
+                    <p>
+                        Systems effectiveness at L3Harris; systems engineering,
+                        integration, and test at Northrop Grumman in Huntsville.
+                        Along the way: a master's in engineering management with a
+                        4.0, and a PMP. The relationships built doing that work are
+                        among the accomplishments I value most.
+                    </p>
+                </div>
+            </li>
+
+            <li class="sf-chapter" data-reveal style="--orb: #2bc0c6;">
+                <span class="sf-chapter__orb" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/></svg></span>
+                <div class="sf-chapter__card">
+                    <small>January 2027</small>
+                    <h3>The next chapter is already inked.</h3>
+                    <p>
+                        Admitted to the Systems Engineering Ph.D. program at the
+                        University of South Alabama. Still curious. Still climbing.
+                    </p>
+                </div>
+            </li>
+        </ol>
+
+        <a class="sf-timeline-link" href="{{ portfolio_resume_url }}" data-reveal>
+            See the full professional timeline on the Living Résumé
+            <span aria-hidden="true">→</span>
+        </a>
+    </section>
+
+    <!-- ACT 2 · THE NUMBERS THAT SHAPED ME =============== -->
+    <section class="sf-numbers" aria-label="Life in numbers">
+        <div class="sf-numbers__grid">
+            <div class="sf-number" data-reveal>
+                <strong>36</strong>
+                <span>the age I went back to school for engineering</span>
+            </div>
+            <div class="sf-number" data-reveal>
+                <strong>10</strong>
+                <span>states I've lived in</span>
+            </div>
+            <div class="sf-number" data-reveal>
+                <strong>10</strong>
+                <span>countries traveled (and counting)</span>
+            </div>
+            <div class="sf-number" data-reveal>
+                <strong>100</strong>
+                <span>miles run in 10 days</span>
+            </div>
         </div>
     </section>
 
-    <!-- ============================================
-         MY JOURNEY: narrative + four-milestone timeline.
-         Dates below are verified against the résumé and
-         knowledge base — do not change them casually.
-         ============================================ -->
-    <section class="story-journey" aria-labelledby="journey-title">
-        <div class="site-container story-journey__layout">
+    <!-- ACT 3 · LIFE OUTSIDE THE WORK ==================== -->
+    <section class="sf-life" aria-labelledby="life-title">
+        <header class="sky-haze sf-act-head" data-reveal>
+            <p class="section-eyebrow">Outside of Work</p>
+            <h2 id="life-title">Life beyond the work.</h2>
+        </header>
 
-            <!-- Heading lives inside the left column, matching the mockup -->
-            <div class="story-journey__narrative">
-                <p class="section-eyebrow">MY JOURNEY</p>
-                <h2 id="journey-title">A Path Built on<br>Curiosity and Grit</h2>
+        <ul class="sf-life-grid">
+            <li class="sf-life-card" data-reveal style="--orb: #e0a52e;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5C6 5 4.5 6.5 4.5 9v3c0 1.5-1 2-1.5 3 1 .5 2.5.5 3.5-.5"/><path d="M16 5c2 0 3.5 1.5 3.5 4v3c0 1.5 1 2 1.5 3-1 .5-2.5.5-3.5-.5"/><path d="M8 5c1-1.5 2.5-2 4-2s3 .5 4 2c1 1.7 1 4.5 0 7-.8 2-2 3.5-4 3.5S8.8 14 8 12c-1-2.5-1-5.3 0-7z"/><path d="M10 9h.01M14 9h.01"/><path d="M12 11.5l-1 1h2z"/></svg></span>
+                <h3>Dogs</h3>
+                <p>Proud dog dad to Blazer and Falcon</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #2fc38d;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="14.5" cy="4.5" r="1.8"/><path d="M9 20l2.5-5 2-2-1-4"/><path d="M12.5 9L9 8l-2.5 2.5"/><path d="M12.5 9l2.5 3 3.5 1"/><path d="M13.5 13l2 3 .5 4"/></svg></span>
+                <h3>Running &amp; Fitness</h3>
+                <p>Distance runner who trains hard every week</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #2aa8e6;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20L9 7l4 8"/><path d="M11 12l4-7 6 15z"/><path d="M3 20h18"/></svg></span>
+                <h3>Hiking</h3>
+                <p>Avid hiker always chasing a new trail</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #3f6fe0;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5c2 2 2 11 0 13M18.5 5.5c-2 2-2 11 0 13"/></svg></span>
+                <h3>Sports Nut</h3>
+                <p>Baseball first, but I'll watch it all</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #7c5cff;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></span>
+                <h3>Tech Geek</h3>
+                <p>Smart home, 3D printing, and every new gadget</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #2bc0c6;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17"/><path d="M12 3c2.5 2.4 4 5.4 4 9s-1.5 6.6-4 9c-2.5-2.4-4-5.4-4-9s1.5-6.6 4-9z"/></svg></span>
+                <h3>Travel</h3>
+                <p>Ten countries and counting &mdash; travel fuels me</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #d7a33e;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-9-9c-1.2-2.8.6-6 3.8-6 1.9 0 3.4 1 4.2 2.5C11.8 6 13.3 5 15.2 5c3.2 0 5 3.2 3.8 6-2 4.5-9 9-9 9z" transform="translate(0 -1)"/></svg></span>
+                <h3>My Wife</h3>
+                <p>Married to my best friend</p>
+            </li>
+            <li class="sf-life-card" data-reveal style="--orb: #e0a52e;">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19"/><path d="M15.5 14.7c2 .2 3.5 1.6 4 4.3"/></svg></span>
+                <h3>Time with Family</h3>
+                <p>Making time for what matters most</p>
+            </li>
+        </ul>
+    </section>
 
-                <p>
-                    From earning my engineering degree as a non-traditional student to
-                    leading high-impact programs in the Air Force and industry, my path
-                    has been anything but conventional. Every step has shaped how I
-                    approach problems - bringing structure to chaos, aligning people
-                    toward a common goal, and delivering results that matter.
-                </p>
+    <!-- ACT 4 · THINGS YOU WON'T FIND ON MY RÉSUMÉ ======= -->
+    <section class="fun-facts sf-facts" aria-labelledby="fun-facts-title">
+        <header class="sky-haze sf-act-head" data-reveal>
+            <p class="section-eyebrow">Off the Record</p>
+            <h2 id="fun-facts-title">Things you won't find on my résumé.</h2>
+        </header>
+        <div class="fun-facts__grid" id="fun-facts-grid" aria-live="polite"></div>
+    </section>
 
-                <a class="view-all-link" href="{{ portfolio_resume_url }}#resume-career-section">
-                    View Full Timeline
-                    <span aria-hidden="true">→</span>
-                </a>
-            </div>
+    <!-- ACT 5 · WHAT DRIVES ME =========================== -->
+    <section class="sf-drives" aria-labelledby="drives-title">
+        <header class="sky-haze sf-act-head" data-reveal>
+            <p class="section-eyebrow">What Drives Me</p>
+            <h2 id="drives-title">Values that guide everything I do.</h2>
+        </header>
+        <div class="story-drives__grid" data-reveal>
+            {# Life-related values, shared with the Overview page. #}
+            {% include "partials/life_values.html" %}
+        </div>
+    </section>
 
-            <ol class="story-timeline">
-                <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M2 9l10-5 10 5-10 5z"/>
-                            <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/>
-                            <path d="M22 9v5"/>
-                        </svg>
-                    </span>
-                    <p class="timeline-item__date">2016 - 2020</p>
-                    <h3>Earned EE Degree</h3>
-                    <p class="timeline-item__text">
-                        Pursued a B.S. in Electrical Engineering at Kennesaw State
-                        full-time while working and growing personally.
-                    </p>
-                </li>
+    <!-- ACT 6 · ALWAYS BUILDING (the professional cut) === -->
+    <section class="sf-building" aria-labelledby="building-title">
+        <div class="sf-building__card" data-reveal>
+            <p class="section-eyebrow">Learning &amp; Growth</p>
+            <h2 id="building-title">Always building.</h2>
+            <ul>
+                <li>Systems Engineering Ph.D. program admission (starts January 2027)</li>
+                <li>PMP Certified</li>
+                <li>AI &amp; Automation Enthusiast</li>
+                <li>MBSE Practitioner (Cameo Systems Modeler)</li>
+                <li>Constantly Exploring What's Next</li>
+            </ul>
+            <a class="view-all-link" href="{{ portfolio_resume_url }}">
+                View Resume Evidence
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
 
-                <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--light" aria-hidden="true">
-                        <!-- Simplified winged emblem for the Air Force chapter -->
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 12C9 9.5 5.5 8.5 2.5 9L12 16l9.5-7c-3-.5-6.5.5-9.5 3z"/>
-                            <path d="M12 16v3.5"/>
-                        </svg>
-                    </span>
-                    <p class="timeline-item__date">2021 - 2024</p>
-                    <h3>U.S. Air Force</h3>
-                    <p class="timeline-item__text">
-                        Systems Engineer leading navigation-system sustainment and
-                        mission-critical special projects at Robins AFB.
-                    </p>
-                </li>
+        <div class="sf-ai" aria-label="Ask Pete AI" data-reveal>
+            {% include "partials/portfolio_ai_search.html" %}
+        </div>
+    </section>
 
-                <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
-                        <!-- Office building -->
-                        <svg viewBox="0 0 24 24">
-                            <path d="M4 20h16"/>
-                            <rect x="6" y="4" width="12" height="16"/>
-                            <path d="M9.5 8h1.5M13 8h1.5M9.5 11.5h1.5M13 11.5h1.5M9.5 15h1.5M13 15h1.5"/>
-                            <path d="M11 20v-2.5h2V20"/>
-                        </svg>
-                    </span>
-                    <p class="timeline-item__date">2024 - 2025</p>
-                    <h3>L3Harris</h3>
-                    <p class="timeline-item__text">
-                        Systems Effectiveness Engineer driving RAM, reliability, MBSE,
-                        and sustainment excellence.
-                    </p>
-                </li>
+    <!-- ACT 7 · COMPLETED GOALS (the Slate) ============== -->
+    <section class="timeline-goals sf-goals" aria-labelledby="timeline-goals-title" data-reveal>
+        <div class="timeline-goals__head">
+            <h3 id="timeline-goals-title">Completed Goals</h3>
+            <p>Add a goal you've finished to your timeline &mdash; you choose whether it's public or private.</p>
+        </div>
 
-                <li class="timeline-item">
-                    <span class="timeline-item__icon timeline-item__icon--cyan" aria-hidden="true">
-                        <!-- Rocket -->
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 3c2.6 2 4 5 4 8.2 0 1.9-.5 3.7-1.4 5.3H9.4A10.6 10.6 0 0 1 8 11.2C8 8 9.4 5 12 3z"/>
-                            <circle cx="12" cy="9.5" r="1.6"/>
-                            <path d="M8.6 13.5L6.5 17l3-.8M15.4 13.5L17.5 17l-3-.8"/>
-                            <path d="M12 17v2.5"/>
-                        </svg>
-                    </span>
-                    <p class="timeline-item__date">2025 - Present</p>
-                    <h3>Northrop Grumman</h3>
-                    <p class="timeline-item__text">
-                        Systems Engineer supporting advanced defense programs in a
-                        dynamic environment.
-                    </p>
-                </li>
-            </ol>
+        <div class="timeline-goals__list" data-goals-list aria-live="polite"></div>
 
-            <!-- ============================================
-                 COMPLETED GOALS: the visitor can add their own
-                 finished goals onto this timeline. Adding is opt-in
-                 (you click "Add a completed goal"), and each goal is
-                 marked Public or Private — the Slate idea that
-                 completed goals become proof on your timeline. Saved
-                 per-browser (story.js), same MVP convention as the
-                 rest of the Slate. Spans the full journey width. -->
-            <section class="timeline-goals" aria-labelledby="timeline-goals-title">
-                <div class="timeline-goals__head">
-                    <h3 id="timeline-goals-title">Completed Goals</h3>
-                    <p>Add a goal you've finished to your timeline &mdash; you choose whether it's public or private.</p>
-                </div>
+        <div class="timeline-goals__add" data-goals-add>
+            <button type="button" class="timeline-goals__toggle" data-goals-toggle>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Add a completed goal
+            </button>
 
-                <div class="timeline-goals__list" data-goals-list aria-live="polite"></div>
+            <form class="timeline-goals__form" data-goals-form hidden>
+                <label class="sf-hidden-label" for="timeline-goal-input">What goal did you complete?</label>
+                <input
+                    id="timeline-goal-input"
+                    type="text"
+                    maxlength="90"
+                    placeholder="What goal did you complete? (e.g. Ran my first half marathon)"
+                    data-goals-input
+                >
 
-                <div class="timeline-goals__add" data-goals-add>
-                    <button type="button" class="timeline-goals__toggle" data-goals-toggle>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                        Add a completed goal
+                <div class="timeline-goals__vis" role="group" aria-label="Who can see this goal">
+                    <button type="button" class="timeline-goals__visopt is-active" data-vis="Public" aria-pressed="true">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+                        Public
                     </button>
-
-                    <form class="timeline-goals__form" data-goals-form hidden>
-                        <label class="sf-hidden-label" for="timeline-goal-input">What goal did you complete?</label>
-                        <input
-                            id="timeline-goal-input"
-                            type="text"
-                            maxlength="90"
-                            placeholder="What goal did you complete? (e.g. Ran my first half marathon)"
-                            data-goals-input
-                        >
-
-                        <div class="timeline-goals__vis" role="group" aria-label="Who can see this goal">
-                            <button type="button" class="timeline-goals__visopt is-active" data-vis="Public" aria-pressed="true">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
-                                Public
-                            </button>
-                            <button type="button" class="timeline-goals__visopt" data-vis="Private" aria-pressed="false">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-                                Private
-                            </button>
-                        </div>
-
-                        <div class="timeline-goals__actions">
-                            <button type="submit" class="timeline-goals__save" disabled>Add to timeline</button>
-                            <button type="button" class="timeline-goals__cancel" data-goals-cancel>Cancel</button>
-                        </div>
-
-                        <p class="timeline-goals__hint">
-                            Public goals can appear on your Slate Feed and connect you with people chasing the same thing. Private goals stay on your Slate.
-                        </p>
-                    </form>
+                    <button type="button" class="timeline-goals__visopt" data-vis="Private" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                        Private
+                    </button>
                 </div>
-            </section>
 
-        </div>
-    </section>
+                <div class="timeline-goals__actions">
+                    <button type="submit" class="timeline-goals__save" disabled>Add to timeline</button>
+                    <button type="button" class="timeline-goals__cancel" data-goals-cancel>Cancel</button>
+                </div>
 
-
-    <!-- ============================================
-         VALUES: four equal cards.
-         ============================================ -->
-    <section class="story-drives" aria-labelledby="drives-title">
-        <div class="site-container story-drives__layout">
-
-            <!-- Heading sits beside the cards on desktop, matching the mockup -->
-            <div class="story-drives__heading">
-                <p class="section-eyebrow">WHAT DRIVES ME</p>
-                <h2 id="drives-title">Values That Guide<br>Everything I Do</h2>
-            </div>
-
-            <div class="story-drives__grid">
-                {# Life-related values, shared with the Overview page. #}
-                {% include "partials/life_values.html" %}
-            </div>
-
-        </div>
-    </section>
-
-
-    <!-- ============================================
-         LOWER INFORMATION CARDS: learning, life
-         outside engineering, and connect.
-         ============================================ -->
-    <section class="story-cards" aria-label="More about Pete">
-        <div class="site-container story-cards__grid">
-
-            <!-- CARD 1: LEARNING & GROWTH -->
-            <article class="story-card">
-                <p class="section-eyebrow">LEARNING &amp; GROWTH</p>
-                <h2>Always Building</h2>
-
-                <!-- PhD wording verified: admitted to the program, starts January 2027.
-                     Do not describe Pete as a current PhD student before then. -->
-                <ul class="story-card__list">
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v5"/></svg>
-                        </span>
-                        <span>Systems Engineering Ph.D. program admission (starts January 2027)</span>
-                    </li>
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.5 4.5 2.5L15 13.5"/></svg>
-                        </span>
-                        <span>PMP Certified</span>
-                    </li>
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>
-                        </span>
-                        <span>AI &amp; Automation Enthusiast</span>
-                    </li>
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>
-                        </span>
-                        <span>MBSE Practitioner (Cameo Systems Modeler)</span>
-                    </li>
-                    <li>
-                        <span class="story-card__list-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
-                        </span>
-                        <span>Constantly Exploring What's Next</span>
-                    </li>
-                </ul>
-
-                <a class="story-card__link" href="{{ portfolio_resume_url }}#skills">
-                    View Resume Evidence
-                    <span aria-hidden="true">→</span>
-                </a>
-            </article>
-
-            <!-- CARD 2: OUTSIDE OF WORK -->
-            <article class="story-card story-card--interests">
-                <p class="section-eyebrow">OUTSIDE OF WORK</p>
-                <h2>Life Beyond the Work</h2>
-
-                <!-- Eight interests in a 4x2 grid (2x2 on smaller screens —
-                     never a 3+1 wrap; see .interest-grid in style.css). -->
-                <ul class="interest-grid">
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Dog: head with floppy ears -->
-                            <svg viewBox="0 0 24 24">
-                                <path d="M8 5C6 5 4.5 6.5 4.5 9v3c0 1.5-1 2-1.5 3 1 .5 2.5.5 3.5-.5"/>
-                                <path d="M16 5c2 0 3.5 1.5 3.5 4v3c0 1.5 1 2 1.5 3-1 .5-2.5.5-3.5-.5"/>
-                                <path d="M8 5c1-1.5 2.5-2 4-2s3 .5 4 2c1 1.7 1 4.5 0 7-.8 2-2 3.5-4 3.5S8.8 14 8 12c-1-2.5-1-5.3 0-7z"/>
-                                <path d="M10 9h.01M14 9h.01"/>
-                                <path d="M12 11.5l-1 1h2z"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Dogs</h3>
-                            <p>Proud dog dad to Blazer and Falcon</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Runner: figure in motion -->
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="14.5" cy="4.5" r="1.8"/>
-                                <path d="M9 20l2.5-5 2-2-1-4"/>
-                                <path d="M12.5 9L9 8l-2.5 2.5"/>
-                                <path d="M12.5 9l2.5 3 3.5 1"/>
-                                <path d="M13.5 13l2 3 .5 4"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Running &amp; Fitness</h3>
-                            <p>Distance runner who trains hard every week</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Mountains: hiking trails -->
-                            <svg viewBox="0 0 24 24">
-                                <path d="M3 20L9 7l4 8"/>
-                                <path d="M11 12l4-7 6 15z"/>
-                                <path d="M3 20h18"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Hiking</h3>
-                            <p>Avid hiker always chasing a new trail</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Baseball: ball with stitching -->
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="9"/>
-                                <path d="M5.5 5.5c2 2 2 11 0 13M18.5 5.5c-2 2-2 11 0 13"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Sports Nut</h3>
-                            <p>Baseball first, but I'll watch it all</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Chip: technology -->
-                            <svg viewBox="0 0 24 24">
-                                <rect x="7" y="7" width="10" height="10" rx="2"/>
-                                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Tech Geek</h3>
-                            <p>Smart home, 3D printing, and every new gadget</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Globe: travel -->
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="9"/>
-                                <path d="M3.5 9h17M3.5 15h17"/>
-                                <path d="M12 3c2.5 2.4 4 5.4 4 9s-1.5 6.6-4 9c-2.5-2.4-4-5.4-4-9s1.5-6.6 4-9z"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Travel</h3>
-                            <p>Ten countries and counting — travel fuels me</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- Heart: my wife -->
-                            <svg viewBox="0 0 24 24">
-                                <path d="M12 20s-7-4.5-9-9c-1.2-2.8.6-6 3.8-6 1.9 0 3.4 1 4.2 2.5C11.8 6 13.3 5 15.2 5c3.2 0 5 3.2 3.8 6-2 4.5-9 9-9 9z" transform="translate(0 -1)"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>My Wife</h3>
-                            <p>Married to my best friend</p>
-                        </div>
-                    </li>
-                    <li class="interest-item">
-                        <span class="interest-item__icon" aria-hidden="true">
-                            <!-- People: family time -->
-                            <svg viewBox="0 0 24 24">
-                                <circle cx="9" cy="8" r="3.2"/>
-                                <circle cx="16.5" cy="9.5" r="2.4"/>
-                                <path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6S13.9 16 14.5 19"/>
-                                <path d="M15.5 14.7c2 .2 3.5 1.6 4 4.3"/>
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>Time with Family</h3>
-                            <p>Making time for what matters most</p>
-                        </div>
-                    </li>
-                </ul>
-            </article>
-
+                <p class="timeline-goals__hint">
+                    Public goals can appear on your Slate Feed and connect you with people chasing the same thing. Private goals stay on your Slate.
+                </p>
+            </form>
         </div>
     </section>
 
@@ -520,13 +351,10 @@
         let rotationTimer;
 
         // Randomizes the order of a list without repeating any item.
-        // Math.random() - 0.5 gives each comparison a 50/50 result, which
-        // is a quick (if not perfectly even) way to shuffle a short array.
         function shuffleFacts(facts) {
             return [...facts].sort(() => Math.random() - 0.5);
         }
 
-        // Builds one fact card's HTML from scratch (icon + text).
         function buildFactCard(fact) {
             const card = document.createElement('article');
             card.className = 'fun-fact-card';
@@ -552,17 +380,11 @@
             grid.replaceChildren(...visibleFacts.map(buildFactCard));
         }
 
-        // Picks a fact that isn't already showing in one of the 3 cards,
-        // so the same line never appears twice on screen at once. Falls
-        // back to the full pool only if every other fact is already shown.
         function pickReplacement() {
             const availableFacts = FUN_FACTS.filter(fact => !visibleFacts.includes(fact));
             return shuffleFacts(availableFacts.length ? availableFacts : FUN_FACTS)[0];
         }
 
-        // Swaps just one of the five visible cards for a new fact.
-        // nextSlot cycles 0 -> 1 -> 2 -> 0 so the cards update one at a
-        // time (every ROTATE_MS), instead of all changing at once.
         function rotateOneFact() {
             const cards = [...grid.querySelectorAll('.fun-fact-card')];
             const slot = nextSlot % VISIBLE_COUNT;
@@ -576,8 +398,6 @@
             visibleFacts[slot] = replacement;
             card.classList.add('is-updating');
 
-            // Short delay lets the CSS fade-out finish before the old card
-            // is swapped for the new one, so the change doesn't look abrupt.
             window.setTimeout(() => {
                 const updatedCard = buildFactCard(replacement);
                 updatedCard.classList.add('is-updating');
@@ -591,7 +411,6 @@
             nextSlot = (nextSlot + 1) % VISIBLE_COUNT;
         }
 
-        // Starts the 5-second timer that swaps one card at a time.
         function startRotation() {
             window.clearInterval(rotationTimer);
             rotationTimer = window.setInterval(rotateOneFact, ROTATE_MS);
@@ -611,4 +430,5 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/story.js') }}?v=health-check-1"></script>
+<script src="{{ url_for('static', filename='js/sky-reveal.js') }}?v=sky-1"></script>
 {% endblock %}

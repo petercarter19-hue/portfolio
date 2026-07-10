@@ -3,205 +3,175 @@
 
 {% block title %}Projects | Pete Carter{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects-cinematic.css') }}?v=sky-1">
+{% endblock %}
+
 {% block content %}
 
-<section class="work-page" id="projects" aria-labelledby="work-title">
-    <div class="site-container">
-        <div class="work-hero">
-            <div>
-                <p class="section-eyebrow">Projects</p>
-                <h1 id="work-title">Practical Builds With Engineering Purpose</h1>
-                <p>
-                    A concise look at portfolio projects that connect systems thinking,
-                    software development, automation, and AI-enabled engineering.
-                </p>
-            </div>
+<!-- =====================================================
+     PROJECTS — the build log (2026-07-10 rebuild).
+     Same four projects and copy as before: the shipped
+     Interactive Resume leads as a cinematic case with a
+     real screenshot, and the three planned concepts follow
+     as "on the bench" glass cards.
+     ===================================================== -->
+<div class="projects-film" id="projects">
 
-            <div class="work-hero-panel" aria-label="Project focus">
-                <strong>Current Focus</strong>
-                <span>Interactive resume, verified AI assistant, requirements tools, and smart engineering dashboards.</span>
-            </div>
-        </div>
+    <section class="sky-haze pjf-open" aria-labelledby="work-title">
+        <p class="section-eyebrow">Projects</p>
+        <h1 id="work-title">Practical builds with<br><span>engineering purpose.</span></h1>
+        <p class="pjf-open__lead">
+            A concise look at portfolio projects that connect systems thinking,
+            software development, automation, and AI-enabled engineering.
+        </p>
+        <p class="pjf-focus" data-reveal>
+            <strong>Current Focus</strong>
+            Interactive resume, verified AI assistant, requirements tools, and smart engineering dashboards.
+        </p>
+    </section>
 
-        <div class="page-ai-after-hero" aria-label="Ask Pete AI">
-            {% include "partials/portfolio_ai_search.html" %}
-        </div>
+    <div class="pjf-ai page-ai-after-hero" aria-label="Ask Pete AI" data-reveal>
+        {% include "partials/portfolio_ai_search.html" %}
+    </div>
 
-        <!-- Four project tabs. work.js listens for clicks here and shows the
-             matching .work-project-panel below by comparing each button's
-             data-work-project to a panel's data-work-panel — same id links
-             a tab to its content, so the ids on both sides must match. -->
-        <div class="work-project-selector" role="group" aria-label="Select project">
-            <button class="work-project-tab is-active" type="button" data-work-project="interactive-resume" aria-pressed="true">
-                <span>MVP Live / In Development</span>
-                Interactive Resume
-            </button>
-            <button class="work-project-tab" type="button" data-work-project="traceability" aria-pressed="false">
-                <span>Planned Engineering Application</span>
-                Traceability Platform
-            </button>
-            <button class="work-project-tab" type="button" data-work-project="requirements-ai" aria-pressed="false">
-                <span>Prototype Concept</span>
-                AI Requirements Reviewer
-            </button>
-            <button class="work-project-tab" type="button" data-work-project="home-dashboard" aria-pressed="false">
-                <span>Planned Private Integration</span>
-                Home Operations Dashboard
-            </button>
-        </div>
+    <!-- FEATURED BUILD ==================================== -->
+    <section class="pjf-feature" aria-labelledby="pjf-feature-title" data-reveal>
+        <div class="pjf-feature__copy">
+            <p class="pjf-status pjf-status--live">MVP Live / In Development</p>
+            <p class="section-eyebrow">Featured Build</p>
+            <h2 id="pjf-feature-title">Interactive Resume and Verified Career Assistant</h2>
+            <p class="pjf-feature__lead">
+                A Flask portfolio feature that turns approved public resume data into a
+                recruiter-focused, evidence-linked career dashboard with AI-assisted questions.
+            </p>
 
-        <!-- Only one panel shows at a time (whichever tab above is active).
-             The first one, Interactive Resume, is the only real/finished
-             project — the other three are concept write-ups for planned
-             builds, not live features yet. -->
-        <div class="work-project-panels">
-            <article class="work-project-panel is-active" data-work-panel="interactive-resume" tabindex="-1">
-                <div class="work-project-main">
-                    <p class="section-eyebrow">Featured Build</p>
-                    <h2>Interactive Resume and Verified Career Assistant</h2>
-                    <p>
-                        A Flask portfolio feature that turns approved public resume data into a
-                        recruiter-focused, evidence-linked career dashboard with AI-assisted questions.
-                    </p>
-
-                    <div class="work-proof-grid">
-                        <section>
-                            <h3>What It Shows</h3>
-                            <ul>
-                                <li>Structured resume data connected to recruiter filters, skills, roles, and metrics.</li>
-                                <li>Interactive evidence cards that keep claims tied to visible supporting details.</li>
-                            </ul>
-                        </section>
-                        <section>
-                            <h3>What It Uses</h3>
-                            <div class="project-tags">
-                                <span>Python</span>
-                                <span>Flask</span>
-                                <span>Jinja</span>
-                                <span>JavaScript</span>
-                                <span>JSON</span>
-                            </div>
-                        </section>
+            <div class="pjf-feature__cols">
+                <section>
+                    <h3>What It Shows</h3>
+                    <ul>
+                        <li>Structured resume data connected to recruiter filters, skills, roles, and metrics.</li>
+                        <li>Interactive evidence cards that keep claims tied to visible supporting details.</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>What It Uses</h3>
+                    <div class="pjf-tags">
+                        <span>Python</span>
+                        <span>Flask</span>
+                        <span>Jinja</span>
+                        <span>JavaScript</span>
+                        <span>JSON</span>
                     </div>
-                </div>
-
-                <aside class="work-project-side">
-                    <h3>Next Refinements</h3>
+                    <h3 class="pjf-next-title">Next Refinements</h3>
                     <ul>
                         <li>Replace the draft PDF with the final employer-facing resume.</li>
                         <li>Add deeper project case studies as each build matures.</li>
                     </ul>
-                    <!-- data-ask-resume + data-ask is the same pattern used on
-                         the resume page: chatbot.js reads data-ask as the
-                         question text and opens the floating chat panel
-                         with it already sent, instead of the visitor typing. -->
-                    <button
-                        class="view-all-link work-ask-btn"
-                        type="button"
-                        data-ask-resume
-                        data-ask="Summarize Pete's interactive resume project using approved portfolio information. Focus on what it demonstrates to recruiters."
-                    >
-                        Ask Pete AI
-                        <span aria-hidden="true">-></span>
-                    </button>
-                </aside>
-            </article>
+                </section>
+            </div>
 
-            <article class="work-project-panel" data-work-panel="traceability" tabindex="-1">
-                <div class="work-project-main">
-                    <p class="section-eyebrow">Engineering Tool Concept</p>
-                    <h2>Requirements Traceability Platform</h2>
-                    <p>
-                        A planned web application for linking requirements, verification methods,
-                        test cases, and evidence with clear bidirectional traceability.
-                    </p>
+            <div class="pjf-feature__actions">
+                <a class="pjf-btn" href="{{ portfolio_resume_url }}">
+                    Open the live build
+                    <span aria-hidden="true">→</span>
+                </a>
+                <button
+                    class="pjf-btn pjf-btn--ghost"
+                    type="button"
+                    data-ask-resume
+                    data-ask="Summarize Pete's interactive resume project using approved portfolio information. Focus on what it demonstrates to recruiters."
+                >
+                    Ask Pete AI
+                </button>
+            </div>
+        </div>
 
-                    <div class="work-proof-grid">
-                        <section>
-                            <h3>What It Shows</h3>
-                            <ul>
-                                <li>Requirements discipline, verification thinking, and traceability structure.</li>
-                                <li>Ability to turn systems-engineering workflow into usable software.</li>
-                            </ul>
-                        </section>
-                        <section>
-                            <h3>Likely Stack</h3>
-                            <div class="project-tags">
-                                <span>Python</span>
-                                <span>Flask</span>
-                                <span>PostgreSQL</span>
-                                <span>D3.js</span>
-                            </div>
-                        </section>
-                    </div>
+        <a class="pjf-feature__shot" href="{{ portfolio_resume_url }}" aria-label="Open the live Living Résumé">
+            <img
+                src="{{ url_for('static', filename='images/projects/living-resume-build.jpg') }}"
+                alt="Screenshot of the Living Résumé build: glass chapter panel with key outcome cards over a summit sky"
+                loading="lazy"
+            >
+        </a>
+    </section>
+
+    <!-- ON THE BENCH ====================================== -->
+    <section class="pjf-bench" aria-labelledby="pjf-bench-title">
+        <header class="sky-haze pjf-bench__head" data-reveal>
+            <p class="section-eyebrow">On the Bench</p>
+            <h2 id="pjf-bench-title">Three builds taking shape.</h2>
+        </header>
+
+        <div class="pjf-bench__grid">
+            <article class="pjf-card" data-reveal style="--orb: #3f6fe0;">
+                <p class="pjf-status">Planned Engineering Application</p>
+                <h3>Requirements Traceability Platform</h3>
+                <p class="pjf-card__lead">
+                    A planned web application for linking requirements, verification methods,
+                    test cases, and evidence with clear bidirectional traceability.
+                </p>
+                <h4>What It Shows</h4>
+                <ul>
+                    <li>Requirements discipline, verification thinking, and traceability structure.</li>
+                    <li>Ability to turn systems-engineering workflow into usable software.</li>
+                </ul>
+                <h4>Likely Stack</h4>
+                <div class="pjf-tags">
+                    <span>Python</span>
+                    <span>Flask</span>
+                    <span>PostgreSQL</span>
+                    <span>D3.js</span>
                 </div>
             </article>
 
-            <article class="work-project-panel" data-work-panel="requirements-ai" tabindex="-1">
-                <div class="work-project-main">
-                    <p class="section-eyebrow">AI Engineering Tool Concept</p>
-                    <h2>AI-Assisted Requirements Reviewer</h2>
-                    <p>
-                        An LLM-powered tool concept for reviewing requirements for clarity,
-                        completeness, consistency, and verifiability with source-cited feedback.
-                    </p>
-
-                    <div class="work-proof-grid">
-                        <section>
-                            <h3>What It Shows</h3>
-                            <ul>
-                                <li>Policy-aware AI thinking applied to engineering quality problems.</li>
-                                <li>Practical focus on traceable feedback instead of generic chatbot output.</li>
-                            </ul>
-                        </section>
-                        <section>
-                            <h3>Likely Stack</h3>
-                            <div class="project-tags">
-                                <span>Python</span>
-                                <span>OpenAI API</span>
-                                <span>LangChain</span>
-                                <span>FAISS</span>
-                            </div>
-                        </section>
-                    </div>
+            <article class="pjf-card" data-reveal style="--orb: #2aa8e6;">
+                <p class="pjf-status">Prototype Concept</p>
+                <h3>AI-Assisted Requirements Reviewer</h3>
+                <p class="pjf-card__lead">
+                    An LLM-powered tool concept for reviewing requirements for clarity,
+                    completeness, consistency, and verifiability with source-cited feedback.
+                </p>
+                <h4>What It Shows</h4>
+                <ul>
+                    <li>Policy-aware AI thinking applied to engineering quality problems.</li>
+                    <li>Practical focus on traceable feedback instead of generic chatbot output.</li>
+                </ul>
+                <h4>Likely Stack</h4>
+                <div class="pjf-tags">
+                    <span>Python</span>
+                    <span>OpenAI API</span>
+                    <span>LangChain</span>
+                    <span>FAISS</span>
                 </div>
             </article>
 
-            <article class="work-project-panel" data-work-panel="home-dashboard" tabindex="-1">
-                <div class="work-project-main">
-                    <p class="section-eyebrow">Personal Automation Concept</p>
-                    <h2>Engineering Home Operations Dashboard</h2>
-                    <p>
-                        A planned secure dashboard for bringing Home Assistant data into a
-                        clean operational view with status, automation, and alerting patterns.
-                    </p>
-
-                    <div class="work-proof-grid">
-                        <section>
-                            <h3>What It Shows</h3>
-                            <ul>
-                                <li>Interest in automation, reliable status visibility, and practical system integration.</li>
-                                <li>Ability to think about user workflows, security boundaries, and maintainable interfaces.</li>
-                            </ul>
-                        </section>
-                        <section>
-                            <h3>Likely Stack</h3>
-                            <div class="project-tags">
-                                <span>Home Assistant</span>
-                                <span>REST API</span>
-                                <span>WebSocket</span>
-                                <span>Docker</span>
-                            </div>
-                        </section>
-                    </div>
+            <article class="pjf-card" data-reveal style="--orb: #2fc38d;">
+                <p class="pjf-status">Planned Private Integration</p>
+                <h3>Engineering Home Operations Dashboard</h3>
+                <p class="pjf-card__lead">
+                    A planned secure dashboard for bringing Home Assistant data into a
+                    clean operational view with status, automation, and alerting patterns.
+                </p>
+                <h4>What It Shows</h4>
+                <ul>
+                    <li>Interest in automation, reliable status visibility, and practical system integration.</li>
+                    <li>Ability to think about user workflows, security boundaries, and maintainable interfaces.</li>
+                </ul>
+                <h4>Likely Stack</h4>
+                <div class="pjf-tags">
+                    <span>Home Assistant</span>
+                    <span>REST API</span>
+                    <span>WebSocket</span>
+                    <span>Docker</span>
                 </div>
             </article>
         </div>
-    </div>
-</section>
+    </section>
 
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/work.js') }}?v=work-projects-1"></script>
+<script src="{{ url_for('static', filename='js/sky-reveal.js') }}?v=sky-1"></script>
 {% endblock %}

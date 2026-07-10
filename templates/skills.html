@@ -10,104 +10,131 @@
     name="description"
     content="Pete Carter's systems engineering skills — MBSE, requirements, digital engineering, automation, and AI-enabled tools — each backed by resume evidence."
 >
-{# Reuses the resume stylesheet so skill cards and popovers look identical
-   here and on the resume page. #}
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/resume.css') }}?v=align-1"
->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skills-cinematic.css') }}?v=sky-1">
 {% endblock %}
 
 {% block content %}
-{# id="resume-page" lets the existing resume.js power the evidence popovers
-   on this page too — that script only runs when it finds this id. #}
-<div class="resume-page skills-page" id="resume-page">
+<!-- =====================================================
+     SKILLS — the proof constellation (2026-07-10 rebuild).
+     Every public skill becomes a glossy glass orb, sized by
+     how much résumé evidence stands behind it. Selecting an
+     orb opens that skill's evidence panel in place. Same
+     data as before (resume_data.json), new presentation.
+     ===================================================== -->
+<div class="skills-film" id="skills">
 
-    <section class="resume-hero skills-hero" aria-labelledby="skills-title">
-        <div class="site-container">
-            <p class="section-eyebrow">Skills &amp; Expertise</p>
-            <h1 id="skills-title">Skills Backed by Evidence</h1>
-            <p class="skills-hero__lead">
-                Every skill below is tied to specific accomplishments from Pete's
-                approved career history — nothing is listed without proof behind it.
-            </p>
-        </div>
+    <section class="sky-haze skf-open" aria-labelledby="skills-title">
+        <p class="section-eyebrow">Skills &amp; Expertise</p>
+        <h1 id="skills-title">Skills backed<br><span>by evidence.</span></h1>
+        <p class="skf-open__lead">
+            Every skill below is tied to specific accomplishments from Pete's
+            approved career history &mdash; nothing is listed without proof behind
+            it. The bigger the orb, the more evidence stands behind the claim.
+            Select any skill to read it.
+        </p>
     </section>
 
-    {# One section per category, in the order the categories appear in
-       resume_data.json. "Featured" and "All Skills" are meta-categories
-       used elsewhere, so they are skipped here. The namespace flag makes
-       sure the "click for evidence" hint appears exactly once, under the
-       first category that actually renders. #}
-    {% set ns = namespace(hint_shown=false) %}
+    {% set palette = ['#7c5cff', '#3f6fe0', '#2aa8e6', '#2fc38d', '#2456c9', '#e0a52e', '#2bc0c6'] %}
+    {% set ns = namespace(orb_index=0) %}
     {% for category in resume.skill_categories %}
     {% if category.id not in ['featured', 'all'] %}
     {% set category_skills = public_skills|selectattr("category_id", "equalto", category.id)|list %}
     {% if category_skills %}
-    <section class="resume-section resume-skills" aria-label="{{ category.label }}">
-        <div class="site-container">
-            <div class="resume-section-heading resume-section-heading--compact">
-                <h2 class="resume-strip-title">{{ category.label }}</h2>
-                {% if not ns.hint_shown %}
-                <p class="resume-skill-hint">Click any skill to see the resume evidence behind it.</p>
-                {% set ns.hint_shown = true %}
-                {% endif %}
-            </div>
+    <section class="skf-act" aria-label="{{ category.label }}">
+        <header class="sky-haze skf-act__head" data-reveal>
+            <p class="section-eyebrow">{{ category.label }}</p>
+        </header>
 
-            <div class="resume-skill-grid">
-                {% for skill in category_skills %}
-                <article
-                    class="resume-skill-card"
-                    data-skill-card
-                    data-skill-id="{{ skill.id }}"
-                    data-category-id="{{ skill.category_id }}"
-                >
-                    <button
-                        class="resume-skill-button"
-                        type="button"
-                        data-skill-popover-trigger
-                        aria-expanded="false"
-                        aria-controls="skill-popover-{{ skill.id }}"
-                        aria-label="{{ skill.display_name }}. View supporting resume evidence."
-                    >
-                        <strong>{{ skill.display_name }}</strong>
-                    </button>
-                    <div
-                        class="resume-skill-popover"
-                        id="skill-popover-{{ skill.id }}"
-                        data-skill-popover
-                        role="tooltip"
-                        hidden
-                    >
-                        <span class="resume-skill-kicker">Resume evidence</span>
-                        <strong>{{ skill.display_name }}</strong>
-                        <ul>
-                            {% for evidence in skill.evidence_items[:2] %}
-                            <li>{{ evidence.text }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </article>
-                {% endfor %}
+        <div class="skf-cluster" data-skill-cluster data-reveal>
+            {% for skill in category_skills %}
+            {% set evidence_count = skill.evidence_items|length %}
+            <button
+                class="skf-orb skf-orb--{{ [evidence_count, 3]|min }}"
+                type="button"
+                style="--orb: {{ palette[ns.orb_index % 7] }};"
+                data-skill-orb
+                aria-expanded="false"
+                aria-controls="skf-panel-{{ skill.id }}"
+            >
+                <span class="skf-orb__ball" aria-hidden="true">{{ evidence_count }}</span>
+                <span class="skf-orb__name">{{ skill.display_name }}</span>
+            </button>
+            {% set ns.orb_index = ns.orb_index + 1 %}
+            {% endfor %}
+        </div>
+
+        {% for skill in category_skills %}
+        <div class="skf-panel" id="skf-panel-{{ skill.id }}" data-skill-panel hidden>
+            <div class="skf-panel__inner">
+                <p class="skf-panel__kicker">Résumé evidence</p>
+                <h3>{{ skill.display_name }}</h3>
+                {% if skill.front_summary %}
+                <p class="skf-panel__summary">{{ skill.front_summary }}</p>
+                {% endif %}
+                <ul>
+                    {% for evidence in skill.evidence_items[:3] %}
+                    <li>
+                        {{ evidence.text }}
+                        {% if evidence.employer %}<small>{{ evidence.employer }}</small>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
+        {% endfor %}
     </section>
     {% endif %}
     {% endif %}
     {% endfor %}
 
-    <section class="resume-section skills-cta" aria-label="See the full resume">
-        <div class="site-container">
-            <a class="btn btn-primary" href="{{ portfolio_resume_url }}">
-                View the Full Interactive Resume
-                <span aria-hidden="true">→</span>
-            </a>
-        </div>
+    <section class="skf-cta" aria-label="See the full resume" data-reveal>
+        <a class="skf-cta__btn" href="{{ portfolio_resume_url }}">
+            View the Full Interactive Resume
+            <span aria-hidden="true">→</span>
+        </a>
     </section>
 
 </div>
+
+<script>
+    // Orb → evidence panel: one panel open per cluster; Escape or an
+    // outside click closes. Buttons carry aria-expanded/-controls.
+    (function () {
+        var orbs = Array.prototype.slice.call(document.querySelectorAll('[data-skill-orb]'));
+
+        function closeAll(except) {
+            orbs.forEach(function (orb) {
+                if (orb === except) { return; }
+                orb.setAttribute('aria-expanded', 'false');
+                var panel = document.getElementById(orb.getAttribute('aria-controls'));
+                if (panel) { panel.hidden = true; }
+            });
+        }
+
+        orbs.forEach(function (orb) {
+            orb.addEventListener('click', function () {
+                var panel = document.getElementById(orb.getAttribute('aria-controls'));
+                if (!panel) { return; }
+                var open = panel.hidden;
+                closeAll(orb);
+                panel.hidden = !open;
+                orb.setAttribute('aria-expanded', String(open));
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') { closeAll(null); }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('[data-skill-orb], [data-skill-panel]')) {
+                closeAll(null);
+            }
+        });
+    })();
+</script>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/resume.js') }}?v=resume-redesign-5"></script>
+<script src="{{ url_for('static', filename='js/sky-reveal.js') }}?v=sky-1"></script>
 {% endblock %}
