@@ -83,3 +83,19 @@ Two goals:
 - When code changes are made, explain the filename, actual line numbers, what the code was before, what it is now, and why the change works
 - Add helpful comments directly in edited files when the change teaches an important concept or prevents future confusion
 - Before editing files Pete may have open in VS Code, remind him to press Cmd+S
+
+## PeerSlate Sources of Truth
+
+Before visual or component work, read `docs/design/PEERSLATE_DESIGN_BIBLE.md`.
+Before beginning a new product feature, read `docs/product/PRODUCT_BACKLOG.md`.
+Before designing or implementing a feature, read its applicable `PS-FEAT-*` specification. Read `docs/product/features/PS-FEAT-001_LIVING_RESUME_VOICE.md` before any resume, timeline, evidence-flip, onboarding, or voice-builder work.
+
+Mandatory PeerSlate rules:
+
+- Pete's Slate is User 001 and demo data, not product logic.
+- Never hardcode Pete-specific employers, dates, metrics, skills, education, role counts, or evidence into reusable components.
+- Resume Ledger and Career Constellation must render from the same structured multi-tenant data.
+- AI-extracted and voice-created changes remain drafts until the member reviews and approves them. Publication is a separate explicit action.
+- Every skill, claim, metric, and evidence item must retain source, profile ownership, and visibility metadata.
+- Voice must produce an editable transcript and structured change preview.
+- Never use another member's data or private or unapproved evidence.
