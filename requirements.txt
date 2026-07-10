@@ -25,3 +25,5 @@ gunicorn==23.0.0       # The production web server Azure runs the app under.
                        # Azure's build system injected this invisibly before;
                        # pinning it here makes the dependency explicit and the
                        # app portable to any other host.
+mssql-python
+python-dotenv
