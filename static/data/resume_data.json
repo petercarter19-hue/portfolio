@@ -1,11 +1,14 @@
 {
   "profile": {
+    "slug": "petec",
     "name": "Pete Carter",
     "page_title": "Career Command Center",
     "positioning": "Systems Engineer | Technical Leader | MBSE, Sustainment, and Requirements",
     "location": "Athens, Alabama | Huntsville Area",
     "email": "petercarter19@gmail.com",
     "email_url": "mailto:petercarter19@gmail.com",
+    "image_path": "images/profile-pete-danielle.png",
+    "image_alt": "Pete and Danielle Carter holding a SOLD sign in front of their home",
     "summary": "Systems engineer with public resume evidence across requirements, MBSE, sustainment, contracting, project execution, and policy-compliant AI process improvement.",
     "pdf_path": "files/pete-carter-resume.pdf",
     "contact_url": "/contact",
@@ -31,6 +34,7 @@
   },
   "living_resume": {
     "quote": "Every chapter changed what came next.",
+    "constellation_quote": "I connect people, processes, and systems to deliver measurable results that strengthen missions and build the future.",
     "constellation_title": "See how the work became the story.",
     "constellation_subtitle": "And where the story is going next.",
     "constellation_evolution": "From sustainment leadership in the Air Force to reliability, ILS, MBSE, and CAM outcomes in industry.",
@@ -65,6 +69,23 @@
     "default_event_id": "role-dod",
     "career_highlight_metric_ids": ["modernization", "missing-parts", "cam"],
     "career_highlight_skill_ids": ["cameo", "doors"],
+    "resume2_skill_categories": [
+      {
+        "id": "systems-engineering",
+        "label": "Systems Engineering",
+        "source_category_ids": ["systems-digital"]
+      },
+      {
+        "id": "program-lifecycle",
+        "label": "Program & Lifecycle Management",
+        "source_category_ids": ["program-contract", "sustainment-logistics"]
+      },
+      {
+        "id": "digital-data-ai",
+        "label": "Digital, Data & AI",
+        "source_category_ids": ["tools-data", "ai-process", "web-development"]
+      }
+    ],
     "events": [
       {
         "id": "education-as",

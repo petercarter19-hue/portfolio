@@ -26,7 +26,7 @@
             <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
                 Slate Board
             </a>
-            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
+            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path == '/resume' or request.path.endswith('/resume') or request.path.endswith('/resume2') %}aria-current="page"{% endif %}>
                 Resume
             </a>
         </div>

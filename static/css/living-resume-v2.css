@@ -69,6 +69,45 @@
     font-family: var(--lr-ui);
 }
 
+.resume-version-switch {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    width: fit-content;
+    margin: 0 auto 1rem;
+    padding: 0.25rem;
+    border: 1px solid rgb(255 255 255 / 72%);
+    border-radius: 999px;
+    background: rgb(246 248 252 / 78%);
+    box-shadow: 0 0.6rem 1.8rem rgb(10 27 54 / 12%);
+    backdrop-filter: blur(14px) saturate(1.15);
+}
+
+.resume-version-switch a {
+    display: inline-flex;
+    min-width: 5.9rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    color: var(--lr-ink);
+    font: 700 0.82rem/1 var(--lr-ui);
+    text-decoration: none;
+}
+
+.resume-version-switch a[aria-current="page"] {
+    color: #fff;
+    background: var(--lr-indigo);
+    box-shadow: 0 0.35rem 1rem rgb(79 91 213 / 26%);
+}
+
+.resume-version-switch a:hover,
+.resume-version-switch a:focus-visible {
+    outline: 3px solid rgb(78 163 255 / 42%);
+    outline-offset: 2px;
+}
+
 /* The Experience page's summit sky, fixed behind the whole résumé story. */
 .lr-page::before {
     position: fixed;
@@ -76,7 +115,7 @@
     inset: 0;
     background:
         linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-        url("../images/cinematic/together-summit.jpg") center top / cover no-repeat;
+        url("../images/background-templates/mountains.png") center top / cover no-repeat;
     content: "";
 }
 
@@ -2283,7 +2322,7 @@
     .lr-page::before {
         background:
             linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-            url("../images/cinematic/together-summit-m.jpg") center top / cover no-repeat;
+            url("../images/background-templates/mountains.png") center top / cover no-repeat;
     }
 
     .lr-page {

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('living-resume-page');
     if (!page) return;
 
+    const isResume2 = page.classList.contains('resume-v2');
     const tabs = [...page.querySelectorAll('[data-ledger-event]')];
     const panels = [...page.querySelectorAll('[data-ledger-panel]')];
     const constellationNodes = [...page.querySelectorAll('.lr-constellation-node[data-event-id]')];
@@ -11,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeDock = page.querySelector('.lr-resume-dock');
     const resumeRail = page.querySelector('.lr-ledger__rail');
     const ledgerBody = page.querySelector('.lr-resume-layout');
+    const constellation = page.querySelector('.lr-constellation');
+    const ledgerStatus = page.querySelector('[data-ledger-status]');
 
     function setCurrentResumeSection(sectionId) {
         resumeNavLinks.forEach((link) => {
@@ -42,7 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyBounds = ledgerBody.getBoundingClientRect();
         const readerHasReachedResume = bodyBounds.top <= readingLine;
         const railIsVisible = railBounds.bottom > readingLine && railBounds.top < window.innerHeight;
-        const showDock = readerHasReachedResume && !railIsVisible;
+        const constellationHasReachedReader = Boolean(
+            isResume2
+            && constellation
+            && constellation.getBoundingClientRect().top <= readingLine
+        );
+        const showDock = readerHasReachedResume && !railIsVisible && !constellationHasReachedReader;
 
         resumeDock.classList.toggle('is-visible', showDock);
         resumeDock.setAttribute('aria-hidden', String(!showDock));
@@ -107,6 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const isSelected = panel.dataset.ledgerPanel === eventId;
             panel.hidden = !isSelected;
             panel.classList.toggle('is-active', isSelected);
+            if (isSelected && ledgerStatus) {
+                const heading = panel.querySelector('h2');
+                ledgerStatus.textContent = heading
+                    ? `Showing ${heading.textContent.trim()} chapter.`
+                    : 'Showing selected resume chapter.';
+            }
         });
 
         constellationNodes.forEach((node) => {
@@ -161,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    page.querySelectorAll('[data-chapter-jump]').forEach((button) => {
+        button.addEventListener('click', () => {
+            scrollToLedger(button.dataset.chapterJump);
+        });
+    });
+
     const revealTargets = [...page.querySelectorAll('[data-reveal]')];
     if (revealTargets.length && 'IntersectionObserver' in window) {
         page.classList.add('lr-js-reveal');
@@ -171,7 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 revealObserver.unobserve(entry.target);
             });
         }, { rootMargin: '0px 0px -10% 0px' });
-        revealTargets.forEach((target) => revealObserver.observe(target));
+        revealTargets.forEach((target) => {
+            target.addEventListener('focusin', () => target.classList.add('is-revealed'));
+            revealObserver.observe(target);
+        });
     }
 
     page.querySelectorAll('[data-metric-event]').forEach((button) => {
@@ -220,6 +243,95 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    const categoryTabs = [...page.querySelectorAll('[data-r2-category]')];
+    const skillGroups = [...page.querySelectorAll('[data-r2-skill-group]')];
+    const evidencePanels = [...page.querySelectorAll('[data-r2-evidence-panel]')];
+    const skillButtons = [...page.querySelectorAll('[data-r2-skill]')];
+    const skillStatus = page.querySelector('[data-r2-skill-status]');
+
+    function selectResume2Skill(skillId) {
+        skillButtons.forEach((button) => {
+            button.setAttribute('aria-pressed', String(button.dataset.r2Skill === skillId));
+        });
+
+        evidencePanels.forEach((panel) => {
+            const isSelected = panel.dataset.r2EvidencePanel === skillId;
+            panel.hidden = !isSelected;
+            if (isSelected && skillStatus) {
+                const heading = panel.querySelector('h3');
+                skillStatus.textContent = heading
+                    ? `Showing evidence for ${heading.textContent.trim()}.`
+                    : 'Showing selected skill evidence.';
+            }
+        });
+    }
+
+    function selectResume2Category(categoryId, options = {}) {
+        let selectedTab = null;
+        categoryTabs.forEach((tab) => {
+            const isSelected = tab.dataset.r2Category === categoryId;
+            tab.setAttribute('aria-selected', String(isSelected));
+            tab.tabIndex = isSelected ? 0 : -1;
+            if (isSelected) selectedTab = tab;
+        });
+
+        let activeGroup = null;
+        skillGroups.forEach((group) => {
+            const isSelected = group.dataset.r2SkillGroup === categoryId;
+            group.hidden = !isSelected;
+            if (isSelected) activeGroup = group;
+        });
+
+        const firstSkill = activeGroup?.querySelector('[data-r2-skill]');
+        if (firstSkill) selectResume2Skill(firstSkill.dataset.r2Skill);
+        if (options.focus && selectedTab) selectedTab.focus({ preventScroll: true });
+    }
+
+    categoryTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => selectResume2Category(tab.dataset.r2Category));
+        tab.addEventListener('keydown', (event) => {
+            const targetIndexes = {
+                ArrowRight: (index + 1) % categoryTabs.length,
+                ArrowDown: (index + 1) % categoryTabs.length,
+                ArrowLeft: (index - 1 + categoryTabs.length) % categoryTabs.length,
+                ArrowUp: (index - 1 + categoryTabs.length) % categoryTabs.length,
+                Home: 0,
+                End: categoryTabs.length - 1,
+            };
+            if (!(event.key in targetIndexes)) return;
+            event.preventDefault();
+            const nextTab = categoryTabs[targetIndexes[event.key]];
+            selectResume2Category(nextTab.dataset.r2Category, { focus: true });
+        });
+    });
+
+    skillButtons.forEach((button) => {
+        button.addEventListener('click', () => selectResume2Skill(button.dataset.r2Skill));
+    });
+
+    const shareButton = page.querySelector('[data-share-resume]');
+    const shareStatus = page.querySelector('[data-share-status]');
+    if (shareButton) {
+        shareButton.addEventListener('click', async () => {
+            const shareData = { title: document.title, url: window.location.href };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    if (shareStatus) shareStatus.textContent = 'Share options opened.';
+                } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(shareData.url);
+                    if (shareStatus) shareStatus.textContent = 'Resume link copied.';
+                } else if (shareStatus) {
+                    shareStatus.textContent = 'Copy the page URL to share this resume.';
+                }
+            } catch (error) {
+                if (error?.name !== 'AbortError' && shareStatus) {
+                    shareStatus.textContent = 'Sharing is unavailable. Copy the page URL instead.';
+                }
+            }
+        });
+    }
 
     const skillFlips = [...page.querySelectorAll('[data-skill-flip]')];
 

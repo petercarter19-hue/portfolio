@@ -1,0 +1,117 @@
+    <section class="lr-constellation" id="constellation" data-reveal aria-labelledby="constellation-title" data-resume-section-target="resume-development">
+        <div class="lr-constellation__scene">
+            <header class="lr-constellation__intro">
+                <p>The Career Constellation</p>
+                <h2 id="constellation-title">{{ living_resume.constellation_title }}</h2>
+                <em>{{ living_resume.constellation_subtitle }}</em>
+                <span></span>
+                <p>{{ resume.profile.summary }}</p>
+            </header>
+
+            <div class="lr-constellation__legend" aria-label="Timeline categories">
+                <span><i class="is-education" aria-hidden="true"></i>Education</span>
+                <span><i class="is-experience" aria-hidden="true"></i>Experience</span>
+                <span><i class="is-credential" aria-hidden="true"></i>Credentials</span>
+                <span><i class="is-future" aria-hidden="true"></i>Future</span>
+            </div>
+
+            <aside class="lr-constellation__evolution" aria-label="Career evolution">
+                <small><svg aria-hidden="true"><use href="#lr-icon-repeat"></use></svg>The evolution</small>
+                <p>{{ living_resume.constellation_evolution }}</p>
+                <span>Focus shift</span>
+                <strong>{{ living_resume.constellation_focus_from }} <i aria-hidden="true">-&gt;</i> {{ living_resume.constellation_focus_to }}</strong>
+            </aside>
+
+            <div class="lr-constellation__canvas">
+                <svg class="lr-constellation__line" viewBox="0 0 1200 560" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <marker id="lr-future-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                            <path d="M 0 0 L 10 5 L 0 10 z"></path>
+                        </marker>
+                    </defs>
+                    <path class="lr-constellation__glow" d="M20 540 C110 470 160 440 216 442 C285 395 350 350 408 336 C510 320 560 320 600 330 C675 350 720 350 756 347 C835 360 920 350 984 336 C1070 318 1135 270 1200 220"></path>
+                    <path d="M20 540 C110 470 160 440 216 442 C285 395 350 350 408 336 C510 320 560 320 600 330 C675 350 720 350 756 347 C835 360 920 350 984 336 C1070 318 1135 270 1200 220"></path>
+                    <path class="lr-constellation__glow lr-constellation__branch" d="M600 330 C670 190 740 130 816 112 C885 100 950 90 1008 67 C1065 55 1110 40 1152 22"></path>
+                    <path class="lr-constellation__branch" d="M600 330 C670 190 740 130 816 112 C885 100 950 90 1008 67 C1065 55 1110 40 1152 22"></path>
+                    <path class="lr-constellation__future-tail" d="M1152 22 C1170 17 1182 10 1194 2" marker-end="url(#lr-future-arrow)"></path>
+                </svg>
+
+                <span class="lr-constellation__junction" aria-hidden="true"><i></i></span>
+
+                <ol class="lr-constellation__nodes">
+                    {% for event in constellation_events %}
+                    <li
+                        class="lr-constellation-node is-{{ event.kind|lower }} label-{{ event.label_position }}"
+                        data-event-id="{{ event.id }}"
+                        style="--node-x: {{ event.constellation_x }}%; --node-y: {{ event.constellation_y }}%;"
+                    >
+                        {% if event.show_in_ledger %}
+                        <button type="button" data-constellation-target="{{ event.id }}">
+                        {% else %}
+                        <div class="lr-constellation-node__static">
+                        {% endif %}
+                            <span class="lr-constellation-node__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
+                            <span class="lr-constellation-node__copy">
+                                <small>{{ event.display_period }}</small>
+                                <strong>{{ event.constellation_label|default(event.short_label) }}</strong>
+                                <span>{{ event.subtitle }}</span>
+                                {% if event.constellation_points %}
+                                <ul>
+                                    {% for item in event.constellation_points %}
+                                    <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% elif event.accomplishments %}
+                                <ul>
+                                    {% for item in event.accomplishments[:2] %}
+                                    <li>{{ item.text }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p>{{ event.summary }}</p>
+                                {% endif %}
+                            </span>
+                        {% if event.show_in_ledger %}
+                        </button>
+                        {% else %}
+                        </div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+
+            <div class="lr-constellation__skills" aria-label="Skills connecting the career chapters">
+                {% for skill in constellation_skills %}
+                <span>{{ skill.display_name }}</span>
+                {% endfor %}
+            </div>
+
+            <aside class="lr-constellation__evidence" aria-label="Project management evidence">
+                <h3>Project Management</h3>
+                {% for metric in constellation_evidence_metrics %}
+                <span><strong>{{ metric.value }}</strong>{{ metric.label }}</span>
+                {% endfor %}
+            </aside>
+
+            <section class="lr-constellation__outcomes" aria-labelledby="constellation-outcomes-title">
+                <h3 id="constellation-outcomes-title">Outcomes that matter</h3>
+                <div>
+                    {% set rail_icons = ['file', 'users', 'repeat', 'direction', 'chart', 'box', 'bolt', 'shield'] %}
+                    {% for metric in constellation_outcome_metrics %}
+                    <span><svg aria-hidden="true"><use href="#lr-icon-{{ rail_icons[loop.index0] }}"></use></svg><strong>{{ metric.value }}</strong>{{ metric.label }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <footer class="lr-constellation__footer">
+                <blockquote>“{{ living_resume.constellation_quote }}”</blockquote>
+                <div>
+                    {% for item in living_resume.traits %}
+                    <span><svg aria-hidden="true"><use href="#lr-icon-{{ item.icon }}"></use></svg><strong>{{ item.label }}</strong><small>{{ item.detail }}</small></span>
+                    {% endfor %}
+                </div>
+            </footer>
+            <span class="lr-constellation__compass" aria-hidden="true"><svg><use href="#lr-icon-sparkles"></use></svg></span>
+        </div>
+    </section>

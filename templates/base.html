@@ -36,8 +36,10 @@
             /* Touch devices (iPads, tablets): swap the viewport tag so the
                browser itself renders the page 1280px wide and shrinks it to
                the screen — pixel-perfect desktop, handled natively. */
-            var nativeResponsivePaths = ['/resume', '/petec/resume', '/_internal/living-resume-v2'];
-            if (navigator.maxTouchPoints > 1 && nativeResponsivePaths.indexOf(window.location.pathname) === -1) {
+            var nativeResponsivePath = window.location.pathname === '/resume'
+                || window.location.pathname === '/_internal/living-resume-v2'
+                || /\/resume2?$/.test(window.location.pathname);
+            if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
                         .setAttribute('content', 'width=' + DESKTOP_WIDTH);
@@ -87,7 +89,7 @@
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-1"
+        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-2-mtn"
     >
     <link
         rel="stylesheet"

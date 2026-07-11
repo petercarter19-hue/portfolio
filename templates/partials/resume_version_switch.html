@@ -1,0 +1,10 @@
+<nav class="resume-version-switch" aria-label="Resume version">
+    <a
+        href="{{ url_for('profile_resume', profile_slug=profile_slug) }}"
+        {% if resume_version == 1 %}aria-current="page"{% endif %}
+    >Resume 1</a>
+    <a
+        href="{{ url_for('profile_resume2', profile_slug=profile_slug) }}"
+        {% if resume_version == 2 %}aria-current="page"{% endif %}
+    >Resume 2</a>
+</nav>

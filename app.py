@@ -652,11 +652,43 @@ def hobbies():
 def contact():
     return render_template('contact.html')
 
-def _render_living_resume(is_internal_preview=False):
-    """Build the public résumé and gated preview from one shared data model."""
-    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
+RESUME_PROFILE_FILES = {
+    # Fixture registry only. Reusable components read all profile-owned
+    # content from the selected structured data source.
+    'petec': 'resume_data.json',
+}
+
+
+def _load_resume_profile(profile_slug):
+    """Load one allowlisted public profile without cross-tenant fallback."""
+    data_filename = RESUME_PROFILE_FILES.get(profile_slug)
+    if data_filename is None:
+        abort(404)
+
+    resume_path = os.path.join(
+        os.path.dirname(__file__),
+        'static',
+        'data',
+        data_filename,
+    )
     with open(resume_path, 'r', encoding='utf-8') as resume_file:
         resume_data = json.load(resume_file)
+
+    data_slug = resume_data.get('profile', {}).get('slug')
+    if data_slug and data_slug != profile_slug:
+        abort(404)
+
+    return resume_data
+
+
+def _render_living_resume(
+    profile_slug='petec',
+    template_name='living_resume_v2.html',
+    resume_version=1,
+    is_internal_preview=False,
+):
+    """Build either résumé composition from one shared structured model."""
+    resume_data = _load_resume_profile(profile_slug)
 
     role_by_id = {item['id']: item for item in resume_data['career_roles']}
     education_by_id = {item['id']: item for item in resume_data['education']}
@@ -807,8 +839,44 @@ def _render_living_resume(is_internal_preview=False):
         role['orb_color'] = color
         role['orb_icon'] = icon
 
+    # Resume 2 keeps the same records but presents a concise, non-retired
+    # public proof set. Resume 1 remains unchanged for side-by-side review.
+    resume2_experience = []
+    for role in resume_experience:
+        resume2_role = dict(role)
+        resume2_role['resume2_accomplishments'] = [
+            item
+            for item in role['accomplishments']
+            if 'micap' not in item['text'].lower()
+        ][:4]
+        resume2_experience.append(resume2_role)
+
+    resume2_skill_groups = []
+    for group_config in living_resume.get('resume2_skill_categories', []):
+        group_skills = []
+        for skill in skill_by_id.values():
+            if skill.get('category_id') not in group_config['source_category_ids']:
+                continue
+            resume2_skill = dict(skill)
+            resume2_skill['resume2_evidence_items'] = [
+                item
+                for item in skill.get('evidence_items', [])
+                if 'micap' not in item['text'].lower()
+            ]
+            if resume2_skill['resume2_evidence_items']:
+                group_skills.append(resume2_skill)
+        if group_skills:
+            resume2_skill_groups.append({
+                'id': group_config['id'],
+                'label': group_config['label'],
+                'skills': group_skills,
+            })
+
+    profile_name = resume_data['profile']['name'].strip()
+    profile_first_name = profile_name.split()[0] if profile_name else 'Profile'
+
     return render_template(
-        'living_resume_v2.html',
+        template_name,
         resume=resume_data,
         living_resume=living_resume,
         ledger_events=ledger_events,
@@ -819,18 +887,37 @@ def _render_living_resume(is_internal_preview=False):
         constellation_evidence_metrics=constellation_evidence_metrics,
         constellation_outcome_metrics=constellation_outcome_metrics,
         resume_experience=resume_experience,
+        resume2_experience=resume2_experience,
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
+        resume2_skill_groups=resume2_skill_groups,
         skill_lookup=skill_by_id,
+        profile_slug=profile_slug,
+        profile_first_name=profile_first_name,
+        resume_version=resume_version,
         is_internal_preview=is_internal_preview,
     )
 
 
 @app.route('/resume')
-@app.route('/petec/resume')
 def resume():
-    return _render_living_resume()
+    """Keep the existing unscoped fixture alias for old bookmarks."""
+    return _render_living_resume('petec')
+
+
+@app.route('/<profile_slug>/resume')
+def profile_resume(profile_slug):
+    return _render_living_resume(profile_slug)
+
+
+@app.route('/<profile_slug>/resume2')
+def profile_resume2(profile_slug):
+    return _render_living_resume(
+        profile_slug,
+        template_name='resume2.html',
+        resume_version=2,
+    )
 
 
 @app.route('/_internal/living-resume-v2')
@@ -841,7 +928,7 @@ def living_resume_v2():
     if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
         abort(404)
 
-    return _render_living_resume(is_internal_preview=True)
+    return _render_living_resume('petec', is_internal_preview=True)
 
 
 # -------------------------------------------------------
