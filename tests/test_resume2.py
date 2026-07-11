@@ -5,23 +5,32 @@ from pathlib import Path
 from app import app
 
 
-class ResumeSwitchParser(HTMLParser):
+class ResumeHeaderTabsParser(HTMLParser):
     def __init__(self):
         super().__init__()
-        self.in_switch = False
+        self.in_resume_tabs = False
+        self.current_link = None
         self.links = []
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
         classes = attributes.get('class', '').split()
-        if tag == 'nav' and 'resume-version-switch' in classes:
-            self.in_switch = True
-        elif self.in_switch and tag == 'a':
-            self.links.append(attributes)
+        if tag == 'nav' and 'profile-tabs--resume' in classes:
+            self.in_resume_tabs = True
+        elif self.in_resume_tabs and tag == 'a':
+            self.current_link = {'attributes': attributes, 'text': ''}
+
+    def handle_data(self, data):
+        if self.current_link is not None:
+            self.current_link['text'] += data
 
     def handle_endtag(self, tag):
-        if self.in_switch and tag == 'nav':
-            self.in_switch = False
+        if self.current_link is not None and tag == 'a':
+            self.current_link['text'] = self.current_link['text'].strip()
+            self.links.append(self.current_link)
+            self.current_link = None
+        elif self.in_resume_tabs and tag == 'nav':
+            self.in_resume_tabs = False
 
 
 def constellation_fragment(response_data):
@@ -46,26 +55,44 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn(b'class="lr-page resume-v2"', resume2.data)
         self.assertIn(b'css/resume2.css', resume2.data)
 
-    def test_version_switch_has_one_current_link_on_each_page(self):
+    def test_resume_header_tabs_include_both_versions_with_one_current_link(self):
         for path, active_href in (
             ('/petec/resume', '/petec/resume'),
             ('/petec/resume2', '/petec/resume2'),
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, base_url='http://localhost')
-                parser = ResumeSwitchParser()
-                parser.feed(response.get_data(as_text=True))
+                response_text = response.get_data(as_text=True)
+                parser = ResumeHeaderTabsParser()
+                parser.feed(response_text)
 
-                self.assertEqual(len(parser.links), 2)
+                self.assertEqual(len(parser.links), 7)
                 self.assertEqual(
-                    {link['href'] for link in parser.links},
-                    {'/petec/resume', '/petec/resume2'},
+                    [link['text'] for link in parser.links],
+                    [
+                        'Overview',
+                        'My Story',
+                        'Evidence',
+                        'Projects',
+                        'Slate Board',
+                        'Resume 1',
+                        'Resume 2',
+                    ],
                 )
                 current_links = [
-                    link for link in parser.links if link.get('aria-current') == 'page'
+                    link
+                    for link in parser.links
+                    if link['attributes'].get('aria-current') == 'page'
                 ]
                 self.assertEqual(len(current_links), 1)
-                self.assertEqual(current_links[0]['href'], active_href)
+                self.assertEqual(current_links[0]['attributes']['href'], active_href)
+
+                header_start = response_text.index('<header class="global-header">')
+                header_end = response_text.index('</header>', header_start)
+                tabs_start = response_text.index('profile-tabs--resume')
+                self.assertLess(header_start, tabs_start)
+                self.assertLess(tabs_start, header_end)
+                self.assertNotIn('resume-version-switch', response_text)
 
     def test_profile_slug_routes_do_not_fall_back_to_pete(self):
         adapter = app.url_map.bind('localhost')
@@ -121,6 +148,30 @@ class Resume2Tests(unittest.TestCase):
             asset = asset_dir / filename
             self.assertTrue(asset.is_file())
             self.assertLess(asset.stat().st_size, source.stat().st_size)
+
+    def test_vertical_composition_preserves_semantic_section_order(self):
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+        response_text = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="r2-vertical-composition"', response_text)
+        self.assertIn('css/resume2.css?v=resume2-polish-2', response_text)
+
+        section_positions = [
+            response_text.index(f'id="{section_id}"')
+            for section_id in (
+                'resume-experience',
+                'resume-education',
+                'resume-skills',
+                'resume-development',
+            )
+        ]
+        constellation_position = response_text.index(
+            '<!-- shared-career-constellation:start -->'
+        )
+
+        self.assertEqual(section_positions, sorted(section_positions))
+        self.assertLess(section_positions[-1], constellation_position)
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-compare-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-header-1">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page{% endblock %}
@@ -26,8 +26,6 @@
     {% if is_internal_preview %}
     <p class="lr-preview-label">PS-FEAT-001 · Internal preview · Approved public résumé data</p>
     {% endif %}
-    {% include "partials/resume_version_switch.html" %}
-
     <nav class="lr-resume-dock" aria-label="Persistent résumé section index" aria-hidden="true" inert>
         <a class="is-current" href="#resume-overview" data-resume-nav>Overview</a>
         <a href="#resume-experience" data-resume-nav>Experience</a>

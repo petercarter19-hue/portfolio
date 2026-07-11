@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/story-acts.css') }}?v=story-acts-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/story-acts.css') }}?v=story-acts-3">
 {% endblock %}
 
 {% block body_class %} story-acts-page{% endblock %}
@@ -75,6 +75,15 @@
         {% endfor %}
     </ul>
     {% endif %}
+    {% if card.signal %}
+    <aside class="sc-signal sc-signal--{{ card.signal.variant }}" aria-label="{{ card.signal.title }}">
+        <p>{{ card.signal.eyebrow }}</p>
+        <strong>{{ card.signal.title }}</strong>
+        <ol>
+            {% for step in card.signal.steps %}<li>{{ step }}</li>{% endfor %}
+        </ol>
+    </aside>
+    {% endif %}
 
     {% elif card.type == 'dark' %}
     {% if card.eyebrow %}<p class="sc-eyebrow">{{ card.eyebrow }}</p>{% endif %}
@@ -93,6 +102,15 @@
     </ul>
     {% endif %}
     {% if card.attribution %}<p class="sc-attrib">{{ card.attribution }}</p>{% endif %}
+    {% if card.signal %}
+    <aside class="sc-signal sc-signal--{{ card.signal.variant }}" aria-label="{{ card.signal.title }}">
+        <p>{{ card.signal.eyebrow }}</p>
+        <strong>{{ card.signal.title }}</strong>
+        <ol>
+            {% for step in card.signal.steps %}<li>{{ step }}</li>{% endfor %}
+        </ol>
+    </aside>
+    {% endif %}
     {% if card.link %}
     <a class="sc-link" href="{{ card.link.href }}">{{ card.link.label }} <span aria-hidden="true">→</span></a>
     {% endif %}
@@ -176,21 +194,45 @@
         <div class="story-canvas">
             <header class="story-act__head sa-reveal" style="--sc-i: 0;">
                 <p class="story-act__eyebrow"><span aria-hidden="true">{{ act.number }}</span> {{ act.eyebrow }}</p>
+                {% if loop.first %}
+                <h1 id="{{ act.id }}-title">{{ act.title }}</h1>
+                {% else %}
                 <h2 id="{{ act.id }}-title">{{ act.title }}</h2>
+                {% endif %}
                 <p class="story-act__intro">{{ act.intro }}</p>
             </header>
-            {% for card in act.cards %}
-            {{ story_card(card, act, story.owner_first_name, loop.index) }}
-            {% endfor %}
+            <div class="story-collage">
+                {% if act.timeline %}
+                <svg class="story-chapter-path" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M 18 254 C 150 190, 234 314, 352 278 S 558 206, 676 300 S 858 414, 982 318"/>
+                </svg>
+                {% endif %}
+                {% for card in act.cards %}
+                {{ story_card(card, act, story.owner_first_name, loop.index) }}
+                {% endfor %}
+            </div>
         </div>
     </section>
     {% endfor %}
+
+    {% if story.closing_values %}
+    <aside class="story-values" aria-label="Values that guide {{ story.owner_first_name }}">
+        <ul>
+            {% for value in story.closing_values %}
+            <li><span aria-hidden="true">{{ value.mark }}</span>{{ value.label }}</li>
+            {% endfor %}
+        </ul>
+        {% if story.closing_cta %}
+        <a href="{{ story.closing_cta.href }}">{{ story.closing_cta.label }} <span aria-hidden="true">&rarr;</span></a>
+        {% endif %}
+    </aside>
+    {% endif %}
 
     {# Completed goals — carried over intact; story.js owns this feature. #}
     <section class="timeline-goals sf-goals story-goals" aria-labelledby="timeline-goals-title">
         <div class="timeline-goals__head">
             <h3 id="timeline-goals-title">Completed Goals</h3>
-            <p>Add a goal you've finished to your timeline &mdash; you choose whether it's public or private.</p>
+            <p>Add a goal you've finished to this browser's timeline &mdash; you choose its saved visibility label.</p>
         </div>
 
         <div class="timeline-goals__list" data-goals-list aria-live="polite"></div>
@@ -228,7 +270,7 @@
                 </div>
 
                 <p class="timeline-goals__hint">
-                    Public goals can appear on your Slate Feed and connect you with people chasing the same thing. Private goals stay on your Slate.
+                    Goals are stored only in this browser for now. The visibility label is preserved, but nothing is published or shared automatically.
                 </p>
             </form>
         </div>
@@ -238,6 +280,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/story-acts.js') }}?v=story-acts-1"></script>
+<script src="{{ url_for('static', filename='js/story-acts.js') }}?v=story-acts-3"></script>
 <script src="{{ url_for('static', filename='js/story.js') }}?v=health-check-1"></script>
 {% endblock %}

@@ -13,7 +13,8 @@ body.story-acts-page .site-sky {
 }
 
 body.story-acts-page .main-content {
-    overflow: clip;
+    overflow-x: clip;
+    overflow-y: visible;
     background: transparent;
 }
 
@@ -34,22 +35,15 @@ body.story-acts-page .main-content {
     font-family: var(--st-ui);
 }
 
-/* ---- Acts: full-viewport scenes ---------------------------------------- */
+/* ---- Acts: four compact editorial scenes ------------------------------- */
 
 .story-act {
     position: relative;
     isolation: isolate;
-    display: flex;
-    align-items: center;
-    min-height: 100vh;
-    min-height: 100svh;
-    min-height: 100dvh;
-    padding-block: clamp(3.5rem, 6vh, 6rem);
-    scroll-margin-top: 4.5rem;
-}
-
-.story-act:first-of-type {
-    min-height: calc(100svh - 8rem);
+    min-height: 0;
+    padding: 0;
+    scroll-margin-top: 4.25rem;
+    border-top: 2px solid rgb(255 255 255 / 88%);
 }
 
 .story-act::before {
@@ -85,79 +79,93 @@ body.story-acts-page .main-content {
 
 .story-act--night::before {
     background:
-        radial-gradient(circle at 70% 18%, rgb(79 91 213 / 26%), transparent 46%),
-        linear-gradient(180deg, #16305e 0%, #0a1b36 45%, var(--st-night) 100%);
+        radial-gradient(circle at 74% 10%, rgb(78 163 255 / 17%), transparent 43%),
+        linear-gradient(180deg, #edf4fb 0%, #dceaf7 100%);
 }
 
-/* A quiet CSS starfield for the closing act. */
+/* A quiet texture behind the closing collage; the star field lives on the
+   closing card so Act Four stays light like the reference composition. */
 .story-act--night::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-image:
-        radial-gradient(1.5px 1.5px at 12% 22%, rgb(255 255 255 / 85%), transparent),
-        radial-gradient(1px 1px at 28% 8%, rgb(255 255 255 / 70%), transparent),
-        radial-gradient(1.5px 1.5px at 41% 30%, rgb(255 255 255 / 60%), transparent),
-        radial-gradient(1px 1px at 56% 12%, rgb(255 255 255 / 80%), transparent),
-        radial-gradient(2px 2px at 68% 26%, rgb(255 255 255 / 75%), transparent),
-        radial-gradient(1px 1px at 79% 7%, rgb(255 255 255 / 65%), transparent),
-        radial-gradient(1.5px 1.5px at 90% 20%, rgb(255 255 255 / 85%), transparent),
-        radial-gradient(1px 1px at 8% 44%, rgb(255 255 255 / 55%), transparent),
-        radial-gradient(1px 1px at 35% 52%, rgb(255 255 255 / 45%), transparent),
-        radial-gradient(1.5px 1.5px at 62% 47%, rgb(255 255 255 / 50%), transparent),
-        radial-gradient(1px 1px at 84% 55%, rgb(255 255 255 / 40%), transparent);
+    background-image: radial-gradient(circle at 82% 78%, rgb(79 91 213 / 10%), transparent 34%);
     background-repeat: no-repeat;
     pointer-events: none;
 }
 
-/* Soft transition band between acts so scenes hand off, not collide. */
+/* Keep the reference's crisp white dividers between acts. */
 .story-act + .story-act::before {
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 5rem);
-    mask-image: linear-gradient(180deg, transparent 0, #000 5rem);
+    -webkit-mask-image: none;
+    mask-image: none;
 }
 
-/* ---- The canvas: hidden 12-column grid --------------------------------- */
+/* ---- The canvas: black editorial rail + authored scrapbook ------------- */
 
 .story-canvas {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-auto-rows: minmax(3.25rem, auto);
-    grid-auto-flow: dense;
-    gap: clamp(0.8rem, 1.4vw, 1.5rem);
+    grid-template-columns: clamp(10.75rem, 15vw, 14.75rem) minmax(0, 1fr);
     position: relative;
     width: 100%;
     max-width: none;
-    padding-inline: clamp(1rem, 3vw, 3rem);
+    padding: 0;
 }
 
-/* Reserve a right gutter for the fixed progress rail so cards never
-   slide underneath it. */
-@media (min-width: 48rem) {
-    .story-canvas {
-        padding-right: clamp(4.5rem, 7vw, 8.5rem);
-    }
+.story-collage {
+    display: grid;
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: minmax(3.1rem, auto);
+    grid-auto-flow: dense;
+    gap: clamp(0.55rem, 0.9vw, 1rem);
+    position: relative;
+    min-width: 0;
+    padding: clamp(0.8rem, 1.5vw, 1.4rem);
+    padding-right: clamp(1rem, 2vw, 2rem);
 }
 
-/* ---- Act headers: editorial, placed per act for asymmetry -------------- */
+#act-now .story-collage { min-height: clamp(40rem, 49vw, 48rem); }
+#act-becoming .story-collage { min-height: clamp(41rem, 48vw, 47rem); }
+#act-life .story-collage { min-height: clamp(43rem, 52vw, 51rem); }
+#act-next .story-collage { min-height: clamp(31rem, 36vw, 36rem); }
+
+/* ---- Act headers: persistent editorial rail ---------------------------- */
 
 .story-act__head {
-    grid-column: 1 / span 4;
-    grid-row: 1 / span 2;
-    align-self: start;
-    max-width: 34rem;
+    display: flex;
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    align-self: stretch;
+    max-width: none;
+    padding: clamp(2rem, 3.5vw, 3.75rem) clamp(1.2rem, 2vw, 2rem);
+    color: #f4f7fb;
+    background:
+        linear-gradient(180deg, rgb(3 10 16 / 97%), rgb(4 12 20 / 94%)),
+        #050d14;
+    border-right: 1px solid rgb(78 163 255 / 18%);
+    box-shadow: 0.75rem 0 2.4rem rgb(1 8 14 / 17%);
+    z-index: 6;
 }
 
-#act-becoming .story-act__head { grid-column: 1 / span 5; }
-#act-life .story-act__head { grid-column: 1 / span 4; grid-row: 1 / span 2; }
-#act-next .story-act__head { grid-column: 1 / span 5; grid-row: 1 / span 1; }
+.story-act__head::after {
+    content: "";
+    order: 3;
+    width: 2rem;
+    height: 2px;
+    margin-top: 1.2rem;
+    background: var(--st-azure);
+    box-shadow: 0 0 1rem rgb(78 163 255 / 45%);
+}
 
 .story-act__eyebrow {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     margin: 0;
-    color: #315fb8;
+    color: var(--st-azure);
     font-size: 0.78rem;
     font-weight: 850;
     letter-spacing: 0.16em;
@@ -165,35 +173,38 @@ body.story-acts-page .main-content {
 }
 
 .story-act__eyebrow > span {
-    color: var(--st-azure);
+    display: none;
     font-family: var(--st-display);
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0;
 }
 
-.story-act h2 {
+.story-act :is(h1, h2) {
+    order: 1;
     margin: 0.5rem 0 0;
-    color: var(--st-ink);
+    color: #f4f7fb;
     font-family: var(--st-display);
-    font-size: clamp(2.6rem, 4vw, 4.5rem);
+    font-size: clamp(2.45rem, 3.4vw, 3.75rem);
     font-weight: 650;
     letter-spacing: -0.02em;
-    line-height: 0.98;
+    line-height: 1;
     max-width: none;
 }
 
 .story-act__intro {
-    max-width: 44ch;
-    margin: 0.9rem 0 0;
-    color: var(--st-muted);
-    font-size: clamp(0.98rem, 1.05vw, 1.1rem);
-    line-height: 1.6;
+    order: 4;
+    max-width: 22ch;
+    margin: 1.25rem 0 0;
+    color: #c2ced9;
+    font-size: clamp(0.9rem, 1vw, 1.02rem);
+    line-height: 1.55;
 }
 
-.story-act--night .story-act__eyebrow { color: #9fc4ef; }
-.story-act--night .story-act__eyebrow > span { color: var(--st-cyan); }
-.story-act--night h2 { color: #f2f7ff; text-shadow: 0 2px 24px rgb(6 11 24 / 60%); }
+.story-act__eyebrow { order: 0; }
+
+.story-act--night .story-act__eyebrow { color: var(--st-cyan); }
+.story-act--night :is(h1, h2) { color: #f2f7ff; }
 .story-act--night .story-act__intro { color: #c3d0df; }
 
 /* Light glass goes cleaner and more opaque over the night scene. */
@@ -214,34 +225,38 @@ body.story-acts-page .main-content {
     transform: translate(var(--d-x, 0), var(--d-y, 0)) rotate(var(--d-rot, 0deg));
 }
 
+.story-collage > .st-card {
+    align-self: stretch;
+}
+
 /* ---- Surfaces ----------------------------------------------------------- */
 
 .sc-glass,
 .sc-ai {
-    padding: clamp(1.25rem, 1.6vw, 1.75rem);
-    background: rgb(246 248 252 / 70%);
-    border: 1px solid rgb(255 255 255 / 58%);
-    border-radius: 1.5rem;
-    box-shadow: 0 1.25rem 3.5rem rgb(10 38 78 / 14%);
+    padding: clamp(1rem, 1.35vw, 1.45rem);
+    background: rgb(246 248 252 / 82%);
+    border: 1px solid rgb(255 255 255 / 82%);
+    border-radius: 0.9rem;
+    box-shadow: 0 1rem 2.4rem rgb(10 38 78 / 16%);
     backdrop-filter: blur(18px) saturate(125%);
 }
 
 .sc-dark,
 .sc-var-dark,
 .sc-closing {
-    padding: clamp(1.5rem, 2vw, 2.25rem);
+    padding: clamp(1.15rem, 1.55vw, 1.7rem);
     color: #f2f7ff;
     background: linear-gradient(150deg, rgb(10 27 54 / 90%), rgb(6 11 24 / 84%));
     border: 1px solid rgb(78 163 255 / 28%);
-    border-radius: 1.5rem;
-    box-shadow: 0 1.5rem 4rem rgb(4 12 28 / 35%);
+    border-radius: 0.9rem;
+    box-shadow: 0 1.2rem 3rem rgb(4 12 28 / 32%);
 }
 
 .sc-paper {
-    padding: clamp(1.25rem, 1.6vw, 1.6rem);
+    padding: clamp(1rem, 1.35vw, 1.4rem);
     background: linear-gradient(160deg, #fffdf8, #fff8ef);
     border: 1px solid rgb(215 163 62 / 22%);
-    border-radius: 0.9rem;
+    border-radius: 0.55rem;
     box-shadow: 0 0.9rem 2.25rem rgb(74 55 15 / 12%);
 }
 
@@ -249,11 +264,11 @@ body.story-acts-page .main-content {
     display: grid;
     align-content: center;
     gap: 0.35rem;
-    padding: 1.25rem;
+    padding: 1rem;
     text-align: left;
     background: rgb(246 248 252 / 74%);
     border: 1px solid rgb(255 255 255 / 60%);
-    border-radius: 1.25rem;
+    border-radius: 0.85rem;
     box-shadow: 0 1rem 2.5rem rgb(10 38 78 / 12%);
     backdrop-filter: blur(14px) saturate(120%);
 }
@@ -280,8 +295,8 @@ body.story-acts-page .main-content {
     overflow: hidden;
     margin: 0;
     border: 1px solid rgb(255 255 255 / 70%);
-    border-radius: 1.25rem;
-    box-shadow: 0 1.5rem 4rem rgb(10 38 78 / 22%);
+    border-radius: 0.8rem;
+    box-shadow: 0 1.25rem 3rem rgb(10 38 78 / 24%);
 }
 
 .sc-figure img {
@@ -324,6 +339,54 @@ body.story-acts-page .main-content {
 }
 
 .sc-anchor.sc-image { min-height: 22rem; }
+
+/* Scrapbook language from the reference: selected real photos become
+   physical-looking prints without changing their semantic image markup. */
+.sc-image.sc-var-polaroid .sc-figure {
+    overflow: visible;
+    background: #fffdf9;
+    border: 0;
+    border-radius: 0.2rem;
+    box-shadow: 0 1rem 2.2rem rgb(10 27 54 / 22%);
+}
+
+.sc-image.sc-var-polaroid .sc-figure picture {
+    position: absolute;
+    inset: 0.5rem 0.5rem 2.65rem;
+    overflow: hidden;
+    border-radius: 0.12rem;
+}
+
+.sc-image.sc-var-polaroid .sc-figure img {
+    position: absolute;
+}
+
+.sc-image.sc-var-polaroid .sc-figure figcaption {
+    padding: 0.7rem 0.85rem 0.55rem;
+    color: #243550;
+    background: #fffdf9;
+    font-family: var(--st-hand);
+    font-size: clamp(1rem, 1.3vw, 1.35rem);
+    font-weight: 600;
+    line-height: 1;
+    text-shadow: none;
+}
+
+.sc-image.sc-var-film .sc-figure {
+    border: 0.4rem solid #f8f5ed;
+    border-bottom-width: 1.8rem;
+    border-radius: 0.3rem;
+    box-shadow: 0 1rem 2.2rem rgb(10 27 54 / 19%);
+}
+
+#act-now-now-portrait .sc-figure img { object-position: 50% 28%; }
+#act-now-now-danielle .sc-figure img { object-position: 50% 32%; }
+#act-now-now-home .sc-figure img { object-position: center; }
+#act-life-life-race .sc-figure img { object-position: 50% 22%; }
+#act-next-next-bridge .sc-figure img { object-position: center; }
+
+#act-life .sc-anchor.sc-image { min-height: 14rem; }
+#act-now-now-purpose .sc-title { font-size: clamp(1.25rem, 1.55vw, 1.75rem); }
 
 /* ---- Shared content pieces ---------------------------------------------- */
 
@@ -488,24 +551,105 @@ body.story-acts-page .main-content {
 
 /* ---- Chapters (Act Two) -------------------------------------------------- */
 
+.story-chapter-path {
+    position: absolute;
+    inset: 0.75rem;
+    z-index: 1;
+    width: calc(100% - 1.5rem);
+    height: calc(100% - 1.5rem);
+    overflow: visible;
+    pointer-events: none;
+}
+
+.story-chapter-path path {
+    fill: none;
+    stroke: rgb(255 255 255 / 82%);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-dasharray: 3 8;
+    filter: drop-shadow(0 2px 2px rgb(10 27 54 / 28%));
+}
+
 .sc-chapter {
-    align-self: start;
-    padding: clamp(1.4rem, 1.8vw, 1.9rem);
-    background: rgb(255 253 248 / 82%);
-    border: 1px solid rgb(255 255 255 / 66%);
-    border-radius: 1.25rem;
-    box-shadow: 0 1.25rem 3rem rgb(74 55 15 / 12%);
+    padding: clamp(1.05rem, 1.35vw, 1.45rem);
+    background: rgb(255 253 248 / 88%);
+    border: 1px solid rgb(255 255 255 / 78%);
+    border-radius: 0.8rem;
+    box-shadow: 0 1.15rem 2.65rem rgb(74 55 15 / 16%);
     backdrop-filter: blur(14px) saturate(118%);
 }
 
-.sc-chapter.sc-var-dark {
-    background: linear-gradient(150deg, rgb(10 27 54 / 92%), rgb(6 11 24 / 86%));
+.sc-chapter.sc-var-ember {
+    color: #fff8ef;
+    background:
+        linear-gradient(145deg, rgb(100 31 13 / 86%), rgb(181 69 27 / 76%)),
+        linear-gradient(35deg, #54200f, #d38246);
+}
+
+.sc-chapter.sc-var-clinical {
+    background:
+        linear-gradient(90deg, rgb(255 253 248 / 95%) 0 56%, rgb(207 221 226 / 88%) 56% 100%),
+        #f6f4ed;
+}
+
+.sc-chapter.sc-var-summit {
+    background:
+        linear-gradient(90deg, rgb(255 240 214 / 92%) 0 42%, rgb(18 42 67 / 18%) 66%, rgb(4 16 31 / 42%) 100%),
+        url("../images/cinematic/future-path.jpg") center / cover no-repeat;
+}
+
+.sc-chapter.sc-var-workbench {
+    background:
+        linear-gradient(135deg, rgb(248 246 239 / 96%) 0 54%, rgb(19 39 59 / 14%) 54%),
+        repeating-linear-gradient(0deg, transparent 0 16px, rgb(49 95 145 / 6%) 16px 17px),
+        #eef2f4;
+}
+
+.sc-chapter.sc-var-air {
+    background:
+        linear-gradient(105deg, rgb(255 253 248 / 96%) 0 55%, rgb(255 253 248 / 42%) 78%),
+        url("../images/background-templates/mountains.png") 72% center / cover no-repeat;
+}
+
+.sc-chapter.sc-var-systems,
+.sc-chapter.sc-var-code {
+    color: #f2f7ff;
+    background:
+        radial-gradient(circle at 88% 12%, rgb(46 200 211 / 23%), transparent 30%),
+        repeating-linear-gradient(90deg, transparent 0 28px, rgb(78 163 255 / 5%) 28px 29px),
+        linear-gradient(150deg, rgb(10 27 54 / 96%), rgb(6 11 24 / 92%));
     border: 1px solid rgb(78 163 255 / 28%);
     box-shadow: 0 1.5rem 4rem rgb(4 12 28 / 35%);
     backdrop-filter: none;
 }
 
-.sc-chapter.sc-var-dark .sc-title { color: #f2f7ff; }
+.sc-chapter.sc-var-code {
+    background:
+        linear-gradient(90deg, rgb(6 17 33 / 94%), rgb(9 34 56 / 90%)),
+        repeating-linear-gradient(0deg, transparent 0 15px, rgb(46 200 211 / 12%) 15px 16px);
+}
+
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) :is(.sc-title, .sc-body),
+.sc-chapter.sc-var-summit .sc-title {
+    color: #f2f7ff;
+}
+
+.sc-chapter.sc-var-summit .sc-title {
+    max-width: 8ch;
+    color: var(--st-ink);
+    font-size: clamp(2rem, 3.7vw, 4.5rem);
+}
+
+.sc-chapter.sc-var-summit .sc-body { max-width: 31ch; color: #25374c; }
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-eyebrow { color: #8de0e6; }
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-body { color: #d5e0ea; }
+
+.sc-chapter.is-open {
+    align-self: start;
+    z-index: 30;
+    height: auto;
+    box-shadow: 0 1.5rem 4rem rgb(4 12 28 / 38%);
+}
 
 .sc-node {
     position: absolute;
@@ -547,13 +691,16 @@ body.story-acts-page .main-content {
     background: #1d58b4;
 }
 
-.sc-var-dark .sc-expand-toggle {
+.sc-var-dark .sc-expand-toggle,
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle {
     color: #9fd7ff;
     border-color: rgb(159 215 255 / 40%);
 }
 
 .sc-var-dark .sc-expand-toggle:hover,
-.sc-var-dark .sc-expand-toggle:focus-visible {
+.sc-var-dark .sc-expand-toggle:focus-visible,
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle:hover,
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle:focus-visible {
     color: var(--st-night);
     background: #9fd7ff;
 }
@@ -584,7 +731,8 @@ body.story-acts-page .main-content {
     line-height: 1.6;
 }
 
-.sc-var-dark .sc-expand p {
+.sc-var-dark .sc-expand p,
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand p {
     color: #c3d0df;
 }
 
@@ -595,7 +743,8 @@ body.story-acts-page .main-content {
     border-radius: 0.5rem;
 }
 
-.sc-var-dark .sc-meaning {
+.sc-var-dark .sc-meaning,
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-meaning {
     background: rgb(215 163 62 / 16%);
     color: #ecd9ac;
 }
@@ -625,7 +774,9 @@ body.story-acts-page .main-content {
     display: grid;
     align-content: center;
     min-height: 20rem;
-    background: linear-gradient(150deg, rgb(10 27 54 / 72%), rgb(6 11 24 / 60%));
+    background:
+        linear-gradient(150deg, rgb(10 27 54 / 58%), rgb(6 11 24 / 78%)),
+        url("../images/cinematic/hero-aurora.jpg") center / cover no-repeat;
     backdrop-filter: blur(10px);
 }
 
@@ -650,6 +801,145 @@ body.story-acts-page .main-content {
     margin-top: 1.4rem;
     color: #7fd4dc;
     font-size: clamp(1.7rem, 2vw, 2.2rem);
+}
+
+#act-next .sc-glass,
+#act-next .sc-ai {
+    height: 100%;
+}
+
+#act-next .sc-glass,
+#act-next .sc-paper {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+
+#act-next .sc-list {
+    gap: 0.85rem;
+}
+
+#act-next .sc-list strong {
+    font-size: 0.8rem;
+}
+
+#act-next .sc-list span {
+    font-size: 0.76rem;
+}
+
+#act-next .sc-title {
+    font-size: clamp(1.2rem, 1.55vw, 1.7rem);
+}
+
+#act-next .sc-hand {
+    font-size: clamp(1.2rem, 1.5vw, 1.65rem);
+}
+
+/* Compact trajectory modules turn the lower part of Act Four into useful
+   supporting information. They stay deliberately secondary to each card's
+   main subject and render from the story data rather than profile-specific
+   markup. */
+.sc-signal {
+    position: relative;
+    overflow: hidden;
+    margin-top: auto;
+    padding: 0.95rem 0.8rem 0.8rem;
+    background:
+        radial-gradient(circle at 82% 12%, rgb(78 163 255 / 22%), transparent 35%),
+        linear-gradient(145deg, rgb(10 27 54 / 96%), rgb(20 58 108 / 92%));
+    border: 1px solid rgb(78 163 255 / 30%);
+    border-radius: 0.75rem;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
+}
+
+.sc-signal::after {
+    position: absolute;
+    right: -1.25rem;
+    bottom: -1.65rem;
+    width: 4.5rem;
+    height: 4.5rem;
+    border: 1px solid rgb(46 200 211 / 28%);
+    border-radius: 50%;
+    content: "";
+}
+
+.sc-signal > p {
+    margin: 0;
+    color: #7fd4dc;
+    font-size: 0.61rem;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.sc-signal > strong {
+    display: block;
+    margin-top: 0.28rem;
+    color: #fff;
+    font-family: var(--st-display);
+    font-size: 0.94rem;
+    line-height: 1.12;
+}
+
+.sc-signal ol {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.38rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sc-signal ol::before {
+    position: absolute;
+    top: 0.35rem;
+    bottom: 0.35rem;
+    left: 0.27rem;
+    width: 1px;
+    background: linear-gradient(180deg, #4ea3ff, #2ec8d3, #d7a33e);
+    content: "";
+}
+
+.sc-signal li {
+    position: relative;
+    z-index: 1;
+    min-height: 0.8rem;
+    padding-left: 1.05rem;
+    color: #dbe9f8;
+    font-size: 0.58rem;
+    font-weight: 750;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.sc-signal li::before {
+    position: absolute;
+    top: 50%;
+    left: 0.27rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: #2ec8d3;
+    border: 2px solid #173f82;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgb(46 200 211 / 20%);
+    content: "";
+    transform: translate(-50%, -50%);
+}
+
+.sc-signal--orbit li:nth-child(2)::before {
+    background: #d7a33e;
+    box-shadow: 0 0 0 3px rgb(215 163 62 / 18%);
+}
+
+.sc-signal--path ol::before {
+    background: linear-gradient(180deg, #2ec8d3, #4ea3ff, #d7a33e);
+}
+
+.sc-signal--waypoint {
+    background:
+        radial-gradient(circle at 76% 5%, rgb(215 163 62 / 25%), transparent 38%),
+        linear-gradient(145deg, #163f82, #0a1b36);
 }
 
 /* ---- AI invitation (Act Four) --------------------------------------------- */
@@ -706,8 +996,10 @@ body.story-acts-page .main-content {
 
 .sc-ai .hero-ai-search__box {
     min-height: 3.25rem;
+    background: rgb(255 255 255 / 94%);
     border-radius: 999px;
     border-color: rgb(46 200 211 / 45%);
+    box-shadow: 0 0.65rem 1.5rem rgb(10 38 78 / 11%);
 }
 
 .sc-ai .hero-ai-search__box::before {
@@ -716,6 +1008,11 @@ body.story-acts-page .main-content {
 
 .sc-ai .hero-ai-search__input {
     padding-left: 1.1rem;
+    color: var(--st-ink);
+}
+
+.sc-ai .hero-ai-search__input::placeholder {
+    color: #66768b;
 }
 
 .sc-ai .hero-ai-search__button {
@@ -730,6 +1027,7 @@ body.story-acts-page .main-content {
 /* ---- Story progress rail -------------------------------------------------- */
 
 .story-rail {
+    display: none;
     position: fixed;
     top: 50%;
     right: clamp(0.5rem, 1.25vw, 1.5rem);
@@ -811,6 +1109,69 @@ body.sa-js .sa-reveal.is-in {
     transform: translate(var(--d-x, 0), var(--d-y, 0)) rotate(var(--d-rot, 0deg));
 }
 
+/* ---- Closing values strip ----------------------------------------------- */
+
+.story-values {
+    display: flex;
+    min-height: 5.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1rem clamp(1.25rem, 3vw, 3rem);
+    color: #1d58b4;
+    background: rgb(255 255 255 / 96%);
+    border-top: 1px solid rgb(78 163 255 / 18%);
+    border-bottom: 1px solid rgb(10 27 54 / 8%);
+    box-shadow: 0 -0.5rem 1.8rem rgb(10 38 78 / 8%);
+}
+
+.story-values ul {
+    display: flex;
+    flex: 1;
+    justify-content: space-around;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.story-values li,
+.story-values a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.65rem;
+    color: #1d58b4;
+    font-family: var(--st-hand);
+    font-size: clamp(1.1rem, 1.45vw, 1.45rem);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.story-values li + li {
+    padding-left: clamp(0.65rem, 1.6vw, 1.75rem);
+    border-left: 1px solid rgb(10 27 54 / 12%);
+}
+
+.story-values li > span,
+.story-values a > span {
+    color: #276fc7;
+    font-family: var(--st-ui);
+    font-size: 1.5rem;
+}
+
+.story-values a {
+    padding-left: clamp(1rem, 2vw, 2rem);
+    border-left: 1px solid rgb(10 27 54 / 12%);
+}
+
+.story-values a:hover,
+.story-values a:focus-visible {
+    color: var(--st-indigo);
+    text-decoration: underline;
+}
+
 /* ---- Completed goals: keep the shared component, give it a stage ---------- */
 
 .story-goals {
@@ -839,10 +1200,34 @@ body.sa-js .sa-reveal.is-in {
    Responsive composition
    ========================================================================== */
 
-/* Tablet: 8-column recomposition via --t-* placements. */
-@media (min-width: 48rem) and (max-width: 79.9rem) {
+/* Tablet: a dark chapter banner followed by the authored 8-column collage. */
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+    .story-rail {
+        display: block;
+        position: relative;
+        top: auto;
+        right: auto;
+        z-index: 8;
+        transform: none;
+    }
+
+    .story-rail ol {
+        display: flex;
+        justify-content: center;
+        gap: 0.35rem;
+        border-radius: 0;
+    }
+
     .story-canvas {
+        display: block;
+    }
+
+    .story-collage {
+        display: grid;
         grid-template-columns: repeat(8, minmax(0, 1fr));
+        grid-auto-rows: minmax(3.25rem, auto);
+        min-height: 0 !important;
+        padding: 1.25rem 1.25rem 2.25rem;
     }
 
     .st-card {
@@ -860,11 +1245,32 @@ body.sa-js .sa-reveal.is-in {
     }
 
     .story-act__head {
-        grid-column: 1 / span 8 !important;
-        grid-row: auto !important;
+        min-height: 15rem;
+        padding: 2rem clamp(1.5rem, 5vw, 3rem);
+        border-right: 0;
+        border-bottom: 1px solid rgb(78 163 255 / 18%);
     }
 
+    .story-act__intro { max-width: 48ch; }
+
+    .story-chapter-path { display: none; }
+
     .sc-anchor.sc-image { min-height: 24rem; }
+
+    .story-values {
+        flex-wrap: wrap;
+    }
+
+    .story-values ul {
+        flex-basis: 100%;
+    }
+
+    .story-values a {
+        width: 100%;
+        justify-content: center;
+        padding-left: 0;
+        border-left: 0;
+    }
 }
 
 /* Mobile: deliberate editorial flow, no authored grid. */
@@ -872,18 +1278,20 @@ body.sa-js .sa-reveal.is-in {
     .story-act {
         display: block;
         min-height: 0;
-        padding-block: 3.25rem;
-    }
-
-    .story-act:first-of-type {
-        min-height: 0;
+        padding: 0;
+        scroll-margin-top: 6rem;
     }
 
     .story-canvas {
+        display: block;
+    }
+
+    .story-collage {
         display: flex;
         flex-direction: column;
         gap: 0.9rem;
-        padding-inline: 1rem;
+        min-height: 0 !important;
+        padding: 1rem 1rem 2rem;
     }
 
     .st-card {
@@ -902,8 +1310,16 @@ body.sa-js .sa-reveal.is-in {
 
     .story-act__head {
         max-width: none;
-        margin-bottom: 0.5rem;
+        min-height: 15.5rem;
+        padding: 2.25rem 1.25rem;
+        border-right: 0;
+        border-bottom: 1px solid rgb(78 163 255 / 18%);
     }
+
+    .story-act :is(h1, h2) { font-size: clamp(2.5rem, 13vw, 3.4rem); }
+    .story-act__intro { max-width: 37ch; }
+
+    .story-chapter-path { display: none; }
 
     .sc-image {
         min-height: 0;
@@ -922,6 +1338,23 @@ body.sa-js .sa-reveal.is-in {
 
     .sc-anchor.sc-image { min-height: 0; }
 
+    .sc-image.sc-var-polaroid .sc-figure {
+        display: block;
+        padding: 0.5rem 0.5rem 2.8rem;
+    }
+
+    .sc-image.sc-var-polaroid .sc-figure picture {
+        position: relative;
+        inset: auto;
+        display: block;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .sc-image.sc-var-polaroid .sc-figure img {
+        position: static;
+    }
+
     /* Small companion cards may share a row in pairs. */
     .sc-small.sc-stat,
     .sc-small.sc-paper {
@@ -929,16 +1362,24 @@ body.sa-js .sa-reveal.is-in {
     }
 
     .story-rail {
+        display: block;
+        position: relative;
         top: auto;
-        right: 50%;
-        bottom: calc(4.6rem + env(safe-area-inset-bottom));
-        transform: translateX(50%);
+        right: auto;
+        bottom: auto;
+        z-index: 8;
+        transform: none;
+        background: #f6f8fc;
     }
 
     .story-rail ol {
         display: flex;
+        justify-content: center;
         gap: 0.2rem;
         padding: 0.3rem;
+        border: 0;
+        border-radius: 0;
+        box-shadow: 0 0.6rem 1.5rem rgb(10 38 78 / 10%);
     }
 
     .story-rail a {
@@ -960,12 +1401,41 @@ body.sa-js .sa-reveal.is-in {
     .story-goals {
         width: min(100% - 2rem, 42rem);
     }
+
+    .story-values {
+        display: grid;
+        gap: 0.35rem;
+        padding: 1rem;
+    }
+
+    .story-values ul {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+    }
+
+    .story-values li,
+    .story-values li + li {
+        justify-content: flex-start;
+        padding: 0 0.45rem;
+        border: 0;
+        white-space: normal;
+    }
+
+    .story-values a {
+        justify-content: center;
+        padding: 0.75rem 0 0;
+        border-top: 1px solid rgb(10 27 54 / 12%);
+        border-left: 0;
+        text-align: center;
+        white-space: normal;
+    }
 }
 
 /* Very large screens: let the canvas breathe but keep line lengths sane. */
 @media (min-width: 120rem) {
-    .story-canvas {
-        padding-inline: clamp(3rem, 5vw, 6rem);
+    .story-collage {
+        padding-inline: clamp(2rem, 3vw, 4rem);
     }
 }
 
@@ -974,7 +1444,7 @@ body.sa-js .sa-reveal.is-in {
 @media (prefers-reduced-motion: reduce) {
     body.sa-js .sa-reveal {
         opacity: 1;
-        transform: translate(var(--d-x, 0), var(--d-y, 0)) rotate(var(--d-rot, 0deg));
+        transform: none;
         transition: none;
     }
 
@@ -1006,6 +1476,7 @@ body.sa-js .sa-reveal.is-in {
     .sc-chapter,
     .sc-closing,
     .story-rail ol,
+    .story-values,
     .story-goals {
         border: 2px solid CanvasText;
         background: Canvas;

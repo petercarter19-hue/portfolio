@@ -4,6 +4,16 @@
   "owner_first_name": "Pete",
   "page_title": "Pete Carter | My Story",
   "meta_description": "The person behind the work: Pete Carter's story in four acts - who he is now, how he became this person, the life around the work, and what he is still becoming.",
+  "closing_values": [
+    { "mark": "✦", "label": "Curious by nature" },
+    { "mark": "♡", "label": "People first" },
+    { "mark": "△", "label": "Purpose driven" },
+    { "mark": "↗", "label": "Always learning" }
+  ],
+  "closing_cta": {
+    "label": "Let's connect and build something great.",
+    "href": "/petec/contact"
+  },
   "acts": [
     {
       "id": "act-now",
@@ -26,7 +36,7 @@
           },
           "caption": "Pete Carter · Huntsville, Alabama",
           "layout": {
-            "desktop": { "col": "5 / span 4", "row": "1 / span 6", "z": 2 },
+            "desktop": { "col": "4 / span 5", "row": "1 / span 6", "z": 2 },
             "tablet": { "col": "1 / span 4", "row": "1 / span 5" }
           }
         },
@@ -37,7 +47,7 @@
           "hand": "The person behind the work.",
           "attribution": "— Pete",
           "layout": {
-            "desktop": { "col": "8 / span 2", "row": "1 / span 2", "rot": "1deg", "x": "-1.5rem", "y": "0.75rem", "z": 3 },
+            "desktop": { "col": "3 / span 3", "row": "1 / span 2", "rot": "-1deg", "x": "-0.75rem", "y": "0.65rem", "z": 4 },
             "tablet": { "col": "5 / span 4", "row": "1 / span 2", "rot": "0.75deg" }
           }
         },
@@ -52,7 +62,7 @@
             { "label": "Exploring", "text": "Research, teaching, and what's next" }
           ],
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "1 / span 3", "z": 2 },
+            "desktop": { "col": "1 / span 3", "row": "1 / span 3", "z": 2 },
             "tablet": { "col": "5 / span 4", "row": "3 / span 3" }
           }
         },
@@ -67,7 +77,7 @@
           },
           "caption": "Danielle & me — married to my best friend.",
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "4 / span 4", "rot": "0.75deg" },
+            "desktop": { "col": "10 / span 3", "row": "1 / span 3", "rot": "1deg", "z": 3 },
             "tablet": { "col": "5 / span 4", "row": "6 / span 4" }
           }
         },
@@ -76,10 +86,21 @@
           "type": "dark",
           "importance": "medium",
           "title": "Engineer. Leader. Lifelong learner.",
-          "body": "Built on curiosity. Driven by people. Grounded in purpose. Everything else is just details.",
+          "body": "That's me.",
           "layout": {
-            "desktop": { "col": "1 / span 4", "row": "3 / span 2", "rot": "-0.5deg" },
+            "desktop": { "col": "1 / span 3", "row": "4 / span 3", "rot": "-0.5deg" },
             "tablet": { "col": "1 / span 4", "row": "6 / span 2" }
+          }
+        },
+        {
+          "id": "now-purpose",
+          "type": "dark",
+          "importance": "medium",
+          "title": "Built on curiosity. Driven by people. Grounded in purpose.",
+          "body": "Everything else is just details.",
+          "layout": {
+            "desktop": { "col": "8 / span 4", "row": "6 / span 2", "rot": "0.35deg", "z": 3 },
+            "tablet": { "col": "5 / span 4", "row": "10 / span 2" }
           }
         },
         {
@@ -92,7 +113,7 @@
           "stat_ghost": "36",
           "link": { "label": "See the story", "href": "#act-becoming" },
           "layout": {
-            "desktop": { "col": "2 / span 3", "row": "5 / span 3", "rot": "-0.75deg", "y": "0.5rem" },
+            "desktop": { "col": "3 / span 3", "row": "6 / span 3", "rot": "-0.75deg", "x": "-0.6rem", "y": "0.3rem", "z": 4 },
             "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
           }
         },
@@ -101,13 +122,13 @@
           "type": "image",
           "importance": "small",
           "image": {
-            "src": "images/story/dogs-couch-m.jpg",
+            "src": "images/story/dogs-couch.jpg",
             "mobile": "images/story/dogs-couch-m.jpg",
             "alt": "Blazer and Falcon, two dogs asleep on a gray couch"
           },
           "caption": "My two co-pilots.",
           "layout": {
-            "desktop": { "col": "5 / span 2", "row": "7 / span 3", "rot": "-1deg", "y": "-0.75rem", "z": 3 },
+            "desktop": { "col": "6 / span 3", "row": "7 / span 2", "rot": "-1deg", "y": "-0.65rem", "z": 4 },
             "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
           }
         },
@@ -117,19 +138,33 @@
           "importance": "small",
           "stat": { "value": "10", "label": "countries and counting", "context": "and ten states called home along the way" },
           "layout": {
-            "desktop": { "col": "7 / span 2", "row": "7 / span 2", "y": "0.5rem" },
+            "desktop": { "col": "9 / span 2", "row": "2 / span 2", "x": "-0.45rem", "z": 4 },
             "tablet": { "col": "5 / span 2", "row": "10 / span 2" }
           }
         },
         {
           "id": "now-home",
-          "type": "paper",
+          "type": "image",
           "importance": "small",
-          "hand": "Home base: Athens, Alabama.",
-          "attribution": "Huntsville area · Rocket City adjacent",
+          "image": {
+            "src": "images/profile-pete-danielle.png",
+            "mobile": "images/profile-pete-danielle.png",
+            "alt": "Pete and Danielle smiling together outside their home"
+          },
+          "caption": "Our home base · Athens, Alabama",
           "layout": {
-            "desktop": { "col": "9 / span 2", "row": "8 / span 2", "rot": "0.75deg" },
-            "tablet": { "col": "7 / span 2", "row": "10 / span 2", "rot": "0.5deg" }
+            "desktop": { "col": "9 / span 4", "row": "4 / span 3", "rot": "0.5deg", "z": 2 },
+            "tablet": { "col": "5 / span 4", "row": "12 / span 3", "rot": "0.5deg" }
+          }
+        },
+        {
+          "id": "now-mile-stat",
+          "type": "stat",
+          "importance": "small",
+          "stat": { "value": "100+", "label": "miles", "context": "one challenge, ten days, one unforgettable finish" },
+          "layout": {
+            "desktop": { "col": "10 / span 3", "row": "7 / span 2", "rot": "0.5deg" },
+            "tablet": { "col": "1 / span 4", "row": "14 / span 2" }
           }
         }
       ]
@@ -142,10 +177,12 @@
       "nav_label": "How I became this person",
       "intro": "The chapters that shaped me — career pivots, risk, service, and the moments that changed everything.",
       "atmosphere": "warm",
+      "timeline": true,
       "cards": [
         {
           "id": "ch-pizza",
           "type": "chapter",
+          "variant": "ember",
           "importance": "medium",
           "node": "1",
           "era": "The twenties",
@@ -159,13 +196,14 @@
             "ask": "What did managing pizza stores teach Pete about leadership?"
           },
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "3 / span 3", "rot": "-0.75deg" },
+            "desktop": { "col": "1 / span 3", "row": "1 / span 3", "rot": "-0.75deg", "z": 3 },
             "tablet": { "col": "1 / span 4", "row": "3 / span 3" }
           }
         },
         {
           "id": "ch-healthcare",
           "type": "chapter",
+          "variant": "clinical",
           "importance": "medium",
           "node": "2",
           "era": "The detour that mattered",
@@ -179,14 +217,14 @@
             "ask": "How did running a healthcare company shape Pete's path?"
           },
           "layout": {
-            "desktop": { "col": "4 / span 3", "row": "4 / span 3", "y": "1rem" },
+            "desktop": { "col": "4 / span 3", "row": "1 / span 3", "y": "0.7rem", "z": 2 },
             "tablet": { "col": "5 / span 4", "row": "4 / span 3" }
           }
         },
         {
           "id": "ch-36",
           "type": "chapter",
-          "variant": "dark",
+          "variant": "summit",
           "importance": "anchor",
           "node": "3",
           "era": "Back to school at 36",
@@ -201,13 +239,14 @@
             "ask": "Why did Pete go back to school at 36?"
           },
           "layout": {
-            "desktop": { "col": "7 / span 4", "row": "2 / span 4", "z": 2 },
+            "desktop": { "col": "7 / span 6", "row": "1 / span 4", "z": 2 },
             "tablet": { "col": "1 / span 8", "row": "7 / span 4" }
           }
         },
         {
           "id": "ch-pandemic",
           "type": "chapter",
+          "variant": "workbench",
           "importance": "medium",
           "node": "4",
           "era": "2021 · Engineering during a pandemic",
@@ -221,13 +260,14 @@
             "ask": "What was it like starting a DoD engineering job during COVID?"
           },
           "layout": {
-            "desktop": { "col": "2 / span 3", "row": "7 / span 3", "rot": "0.5deg" },
+            "desktop": { "col": "1 / span 4", "row": "4 / span 3", "rot": "0.5deg", "z": 2 },
             "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
           }
         },
         {
           "id": "ch-airforce",
           "type": "chapter",
+          "variant": "air",
           "importance": "medium",
           "node": "5",
           "era": "2021–2024 · Robins AFB",
@@ -241,13 +281,14 @@
             "ask": "What did Pete work on with the Air Force?"
           },
           "layout": {
-            "desktop": { "col": "5 / span 3", "row": "8 / span 3", "y": "1rem" },
+            "desktop": { "col": "5 / span 4", "row": "4 / span 3", "y": "1rem", "z": 3 },
             "tablet": { "col": "5 / span 4", "row": "12 / span 3" }
           }
         },
         {
           "id": "ch-industry",
           "type": "chapter",
+          "variant": "systems",
           "importance": "medium",
           "node": "6",
           "era": "2024 – today · Huntsville",
@@ -262,14 +303,14 @@
             "ask": "What does Pete do at Northrop Grumman?"
           },
           "layout": {
-            "desktop": { "col": "8 / span 3", "row": "7 / span 3", "rot": "-0.5deg" },
+            "desktop": { "col": "4 / span 4", "row": "7 / span 3", "rot": "-0.5deg", "z": 2 },
             "tablet": { "col": "1 / span 4", "row": "15 / span 3" }
           }
         },
         {
           "id": "ch-phd",
           "type": "chapter",
-          "variant": "dark",
+          "variant": "code",
           "importance": "medium",
           "node": "7",
           "era": "January 2027",
@@ -283,7 +324,7 @@
             "ask": "What will Pete research in his Ph.D.?"
           },
           "layout": {
-            "desktop": { "col": "6 / span 3", "row": "11 / span 3", "rot": "0.4deg" },
+            "desktop": { "col": "8 / span 5", "row": "7 / span 3", "rot": "0.4deg", "z": 3 },
             "tablet": { "col": "5 / span 4", "row": "16 / span 3" }
           }
         }
@@ -301,6 +342,7 @@
         {
           "id": "life-race",
           "type": "image",
+          "variant": "feature",
           "importance": "anchor",
           "image": {
             "src": "images/story/pete-race-10k.jpg",
@@ -310,13 +352,14 @@
           "eyebrow": "100 miles. 10 days. One goal.",
           "caption": "Pushed my body. Proved something to my mind.",
           "layout": {
-            "desktop": { "col": "1 / span 4", "row": "3 / span 5", "z": 2 },
+            "desktop": { "col": "1 / span 3", "row": "1 / span 5", "z": 2 },
             "tablet": { "col": "1 / span 4", "row": "3 / span 5" }
           }
         },
         {
           "id": "life-bali",
           "type": "image",
+          "variant": "polaroid",
           "importance": "anchor",
           "image": {
             "src": "images/story/pete-danielle-bali-gates.jpg",
@@ -326,13 +369,14 @@
           "eyebrow": "Places that changed me",
           "caption": "Ten countries and counting…",
           "layout": {
-            "desktop": { "col": "5 / span 3", "row": "2 / span 6", "rot": "0.6deg" },
+            "desktop": { "col": "4 / span 4", "row": "1 / span 3", "rot": "0.6deg" },
             "tablet": { "col": "5 / span 4", "row": "1 / span 6" }
           }
         },
         {
           "id": "life-hawaii",
           "type": "image",
+          "variant": "landscape",
           "importance": "medium",
           "image": {
             "src": "images/story/pete-hawaii-overlook.jpg",
@@ -341,37 +385,39 @@
           },
           "caption": "Always get outside.",
           "layout": {
-            "desktop": { "col": "8 / span 5", "row": "1 / span 3" },
+            "desktop": { "col": "8 / span 3", "row": "1 / span 3" },
             "tablet": { "col": "1 / span 8", "row": "8 / span 3" }
           }
         },
         {
           "id": "life-ski",
           "type": "image",
+          "variant": "polaroid",
           "importance": "small",
           "image": {
-            "src": "images/story/pete-danielle-ski-lift-m.jpg",
+            "src": "images/story/pete-danielle-ski-lift.jpg",
             "mobile": "images/story/pete-danielle-ski-lift-m.jpg",
             "alt": "Pete and Danielle in helmets and goggles on a ski lift"
           },
           "caption": "Adventure partner for life.",
           "layout": {
-            "desktop": { "col": "8 / span 2", "row": "4 / span 3", "rot": "-0.9deg", "y": "0.5rem" },
+            "desktop": { "col": "4 / span 3", "row": "4 / span 3", "rot": "-0.9deg", "y": "0.5rem" },
             "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
           }
         },
         {
           "id": "life-monkey",
           "type": "image",
+          "variant": "polaroid",
           "importance": "small",
           "image": {
-            "src": "images/story/pete-danielle-monkey-forest-m.jpg",
+            "src": "images/story/pete-danielle-monkey-forest.jpg",
             "mobile": "images/story/pete-danielle-monkey-forest-m.jpg",
             "alt": "A monkey photobombing Pete and Danielle's selfie in Ubud's Monkey Forest"
           },
           "caption": "Ubud's Monkey Forest. He took the wheel.",
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "4 / span 3", "rot": "1.1deg", "x": "-0.75rem" },
+            "desktop": { "col": "7 / span 3", "row": "4 / span 3", "rot": "1.1deg", "x": "-0.35rem" },
             "tablet": { "col": "5 / span 4", "row": "11 / span 3" }
           }
         },
@@ -382,13 +428,14 @@
           "eyebrow": "Little things that make life rich",
           "checklist": ["Good coffee", "Deep talks", "Old tech", "New ideas", "Sunrises"],
           "layout": {
-            "desktop": { "col": "5 / span 2", "row": "8 / span 3", "rot": "-0.75deg" },
+            "desktop": { "col": "11 / span 2", "row": "1 / span 3", "rot": "-0.75deg", "z": 3 },
             "tablet": { "col": "1 / span 3", "row": "14 / span 3" }
           }
         },
         {
           "id": "life-skydive",
           "type": "image",
+          "variant": "film",
           "importance": "small",
           "image": {
             "src": "images/story/pete-skydive.jpg",
@@ -397,28 +444,30 @@
           },
           "caption": "Ran a 10K that morning. Jumped out of a plane that afternoon.",
           "layout": {
-            "desktop": { "col": "7 / span 3", "row": "8 / span 2", "rot": "0.75deg" },
+            "desktop": { "col": "8 / span 3", "row": "7 / span 3", "rot": "0.75deg" },
             "tablet": { "col": "4 / span 5", "row": "14 / span 2" }
           }
         },
         {
           "id": "life-zipline",
           "type": "image",
+          "variant": "polaroid",
           "importance": "small",
           "image": {
-            "src": "images/story/pete-zipline-m.jpg",
+            "src": "images/story/pete-zipline.jpg",
             "mobile": "images/story/pete-zipline-m.jpg",
             "alt": "Pete ziplining over a rainforest canopy"
           },
           "caption": "Send it.",
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "7 / span 3", "y": "0.75rem" },
+            "desktop": { "col": "10 / span 3", "row": "4 / span 3", "y": "0.75rem", "rot": "-0.4deg" },
             "tablet": { "col": "4 / span 5", "row": "16 / span 3" }
           }
         },
         {
           "id": "life-hike",
           "type": "image",
+          "variant": "landscape",
           "importance": "medium",
           "image": {
             "src": "images/story/pete-misty-hike.jpg",
@@ -427,7 +476,7 @@
           },
           "caption": "The long way up is the point.",
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "8 / span 4", "rot": "-0.5deg" },
+            "desktop": { "col": "1 / span 4", "row": "6 / span 4", "rot": "-0.5deg" },
             "tablet": { "col": "1 / span 4", "row": "17 / span 4" }
           }
         },
@@ -438,7 +487,7 @@
           "hand": "Home lab. Playground. Stress relief.",
           "attribution": "Where ideas turn into experiments.",
           "layout": {
-            "desktop": { "col": "4 / span 3", "row": "11 / span 2", "rot": "0.9deg" },
+            "desktop": { "col": "5 / span 3", "row": "7 / span 2", "rot": "0.9deg", "z": 3 },
             "tablet": { "col": "5 / span 4", "row": "20 / span 2" }
           }
         },
@@ -449,7 +498,7 @@
           "hand": "I cry watching TV shows and movies.",
           "attribution": "No shame.",
           "layout": {
-            "desktop": { "col": "7 / span 2", "row": "10 / span 2", "rot": "-1.1deg" },
+            "desktop": { "col": "11 / span 2", "row": "7 / span 2", "rot": "-1.1deg", "z": 3 },
             "tablet": { "col": "1 / span 4", "row": "21 / span 2", "rot": "-0.75deg" }
           }
         },
@@ -459,7 +508,7 @@
           "importance": "small",
           "stat": { "value": "⚾", "label": "Baseball first", "context": "but I'll watch it all" },
           "layout": {
-            "desktop": { "col": "9 / span 2", "row": "10 / span 2", "y": "0.5rem" },
+            "desktop": { "col": "11 / span 2", "row": "9 / span 2", "y": "0.5rem" },
             "tablet": { "col": "5 / span 2", "row": "22 / span 2" }
           }
         }
@@ -482,7 +531,7 @@
           "body": "I'm still becoming who I'm meant to be.",
           "sign_off": "Onward.",
           "layout": {
-            "desktop": { "col": "6 / span 7", "row": "1 / span 4", "z": 2 },
+            "desktop": { "col": "1 / span 3", "row": "1 / span 5", "z": 2 },
             "tablet": { "col": "1 / span 8", "row": "1 / span 4" }
           }
         },
@@ -496,8 +545,14 @@
             { "label": "MBSE", "text": "Cameo Systems Modeler in daily practice" },
             { "label": "Mentoring", "text": "helping others grow their potential" }
           ],
+          "signal": {
+            "variant": "orbit",
+            "eyebrow": "Focus loop",
+            "title": "Build with purpose",
+            "steps": ["Model", "Build", "Mentor"]
+          },
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "2 / span 3" },
+            "desktop": { "col": "4 / span 2", "row": "1 / span 5" },
             "tablet": { "col": "1 / span 4", "row": "5 / span 3" }
           }
         },
@@ -511,8 +566,14 @@
             { "label": "AI & ML foundations", "text": "deepening the technical core" },
             { "label": "Human-centered AI", "text": "technology with purpose" }
           ],
+          "signal": {
+            "variant": "path",
+            "eyebrow": "Learning rhythm",
+            "title": "Questions become practice",
+            "steps": ["Question", "Research", "Apply"]
+          },
           "layout": {
-            "desktop": { "col": "2 / span 3", "row": "5 / span 3", "rot": "-0.5deg", "y": "0.75rem" },
+            "desktop": { "col": "6 / span 2", "row": "1 / span 5", "rot": "-0.35deg", "y": "0.4rem" },
             "tablet": { "col": "5 / span 4", "row": "5 / span 3" }
           }
         },
@@ -524,14 +585,21 @@
           "title": "Systems Engineering Ph.D.",
           "body": "University of South Alabama · January 2027. Build. Teach. Contribute.",
           "hand": "Leave things better than I found them.",
+          "signal": {
+            "variant": "waypoint",
+            "eyebrow": "Next waypoint",
+            "title": "The path keeps moving",
+            "steps": ["Now", "Jan 2027", "Beyond"]
+          },
           "layout": {
-            "desktop": { "col": "6 / span 3", "row": "5 / span 3", "rot": "0.6deg" },
+            "desktop": { "col": "8 / span 2", "row": "1 / span 5", "rot": "0.35deg" },
             "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
           }
         },
         {
           "id": "next-bridge",
           "type": "image",
+          "variant": "polaroid",
           "importance": "medium",
           "image": {
             "src": "images/story/pete-garden-bridge.jpg",
@@ -540,7 +608,7 @@
           },
           "caption": "Still smiling. Still climbing.",
           "layout": {
-            "desktop": { "col": "9 / span 4", "row": "5 / span 4", "rot": "-0.4deg" },
+            "desktop": { "col": "2 / span 2", "row": "4 / span 2", "rot": "-1.2deg", "x": "0.5rem", "y": "1rem", "z": 4 },
             "tablet": { "col": "5 / span 4", "row": "8 / span 4" }
           }
         },
@@ -557,7 +625,7 @@
             "What are you building right now?"
           ],
           "layout": {
-            "desktop": { "col": "1 / span 8", "row": "8 / span 3" },
+            "desktop": { "col": "10 / span 3", "row": "1 / span 5" },
             "tablet": { "col": "1 / span 8", "row": "12 / span 3" }
           }
         }
