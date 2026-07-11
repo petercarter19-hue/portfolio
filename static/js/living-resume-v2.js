@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('living-resume-page');
     if (!page) return;
 
-    const isResume2 = page.classList.contains('resume-v2');
+    const isStagedResume = page.classList.contains('resume-v2')
+        || page.classList.contains('resume-v3');
     const tabs = [...page.querySelectorAll('[data-ledger-event]')];
     const panels = [...page.querySelectorAll('[data-ledger-panel]')];
     const constellationNodes = [...page.querySelectorAll('.lr-constellation-node[data-event-id]')];
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const readerHasReachedResume = bodyBounds.top <= readingLine;
         const railIsVisible = railBounds.bottom > readingLine && railBounds.top < window.innerHeight;
         const constellationHasReachedReader = Boolean(
-            isResume2
+            isStagedResume
             && constellation
             && constellation.getBoundingClientRect().top <= readingLine
         );

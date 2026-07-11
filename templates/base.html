@@ -38,7 +38,7 @@
                the screen — pixel-perfect desktop, handled natively. */
             var nativeResponsivePath = window.location.pathname === '/resume'
                 || window.location.pathname === '/_internal/living-resume-v2'
-                || /\/resume2?$/.test(window.location.pathname);
+                || /\/resume(?:2|3)?$/.test(window.location.pathname);
             if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
@@ -101,7 +101,7 @@
 
 <body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
-    {% set is_resume_page = request.path == '/resume' or request.path.endswith('/resume') or request.path.endswith('/resume2') %}
+    {% set is_resume_page = request.path == '/resume' or request.path.endswith('/resume') or request.path.endswith('/resume2') or request.path.endswith('/resume3') %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -188,7 +188,7 @@
             </div>
         </nav>
 
-        {# Resume 1 and Resume 2 share one compact, always-available profile
+        {# All resume versions share one compact, always-available profile
            navigation rail. Keeping it inside the sticky global header makes
            the two navigation levels read as one connected piece of chrome. #}
         {% if is_resume_page %}

@@ -783,6 +783,23 @@ def _render_living_resume(
     ledger_events = [event for event in events if event.get('show_in_ledger')]
     constellation_events = [event for event in events if event.get('show_in_constellation')]
 
+    featured_ledger_event = next(
+        (
+            event
+            for event in ledger_events
+            if event['id'] == resume_data['living_resume']['default_event_id']
+        ),
+        ledger_events[0] if ledger_events else None,
+    )
+    resume3_stage_events = []
+    if featured_ledger_event:
+        featured_index = ledger_events.index(featured_ledger_event)
+        following_events = (
+            ledger_events[featured_index + 1:]
+            + ledger_events[:featured_index]
+        )
+        resume3_stage_events = following_events[:3]
+
     # Give each timeline node a distinct jewel color (and remember the
     # role colors/icons so the experience cards can echo them). The
     # palette cycles, so any profile length still renders a pleasant
@@ -844,37 +861,45 @@ def _render_living_resume(
         role['orb_color'] = color
         role['orb_icon'] = icon
 
-    # Resume 2 keeps the same records but presents a non-retired public
-    # proof set. Resume 1 remains unchanged for side-by-side review.
+    # Alternate resume compositions keep the same records but present a
+    # non-retired public proof set. Resume 1 remains unchanged for review.
     # The full filtered list ships to the template: collapsed cards show
     # a short preview slice, and the expanded chapter view shows all of
     # them (DoD has 13, L3Harris 9, Northrop 5 after filtering).
-    resume2_experience = []
+    public_resume_experience = []
     for role in resume_experience:
-        resume2_role = dict(role)
-        resume2_role['resume2_accomplishments'] = [
+        public_role = dict(role)
+        public_role['public_accomplishments'] = [
             item
             for item in role['accomplishments']
             if 'micap' not in item['text'].lower()
         ]
-        resume2_experience.append(resume2_role)
+        # Preserve the Resume 2 template contract while exposing a generic
+        # public proof set to new compositions.
+        public_role['resume2_accomplishments'] = (
+            public_role['public_accomplishments']
+        )
+        public_resume_experience.append(public_role)
 
-    resume2_skill_groups = []
+    public_skill_groups = []
     for group_config in living_resume.get('resume2_skill_categories', []):
         group_skills = []
         for skill in skill_by_id.values():
             if skill.get('category_id') not in group_config['source_category_ids']:
                 continue
-            resume2_skill = dict(skill)
-            resume2_skill['resume2_evidence_items'] = [
+            public_skill = dict(skill)
+            public_skill['public_evidence_items'] = [
                 item
                 for item in skill.get('evidence_items', [])
                 if 'micap' not in item['text'].lower()
             ]
-            if resume2_skill['resume2_evidence_items']:
-                group_skills.append(resume2_skill)
+            public_skill['resume2_evidence_items'] = (
+                public_skill['public_evidence_items']
+            )
+            if public_skill['public_evidence_items']:
+                group_skills.append(public_skill)
         if group_skills:
-            resume2_skill_groups.append({
+            public_skill_groups.append({
                 'id': group_config['id'],
                 'label': group_config['label'],
                 'skills': group_skills,
@@ -888,6 +913,8 @@ def _render_living_resume(
         resume=resume_data,
         living_resume=living_resume,
         ledger_events=ledger_events,
+        featured_ledger_event=featured_ledger_event,
+        resume3_stage_events=resume3_stage_events,
         constellation_events=constellation_events,
         career_highlight_metrics=career_highlight_metrics,
         career_highlight_skills=career_highlight_skills,
@@ -895,11 +922,13 @@ def _render_living_resume(
         constellation_evidence_metrics=constellation_evidence_metrics,
         constellation_outcome_metrics=constellation_outcome_metrics,
         resume_experience=resume_experience,
-        resume2_experience=resume2_experience,
+        resume2_experience=public_resume_experience,
+        resume3_experience=public_resume_experience,
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
-        resume2_skill_groups=resume2_skill_groups,
+        resume2_skill_groups=public_skill_groups,
+        resume3_skill_groups=public_skill_groups,
         skill_lookup=skill_by_id,
         profile_slug=profile_slug,
         profile_first_name=profile_first_name,
@@ -925,6 +954,15 @@ def profile_resume2(profile_slug):
         profile_slug,
         template_name='resume2.html',
         resume_version=2,
+    )
+
+
+@app.route('/<profile_slug>/resume3')
+def profile_resume3(profile_slug):
+    return _render_living_resume(
+        profile_slug,
+        template_name='resume3.html',
+        resume_version=3,
     )
 
 

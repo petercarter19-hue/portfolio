@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resume.profile.name }} | Resume 3{% endblock %}
+
+{% block meta_description %}Explore {{ resume.profile.name }}'s cinematic Resume 3, Living Resume Ledger, experience chapters, evidence, and Career Constellation.{% endblock %}
+
+{% block extra_head %}
+<script>
+    document.querySelector('meta[name="viewport"]')
+        .setAttribute('content', 'width=device-width, initial-scale=1.0');
+</script>
+<link
+    rel="preload"
+    as="image"
+    href="{{ url_for('static', filename='images/Mockups/resume2/resume2-blue-mountain-background.avif') }}"
+    type="image/avif"
+>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-header-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume3.css') }}?v=resume3-1">
+{% endblock %}
+
+{% block body_class %} living-resume-v2-page resume-v3-page{% endblock %}
+
+{% block profile_band %}{% endblock %}
+
+{% block content %}
+<div class="lr-page resume-v3" id="living-resume-page">
+    {% include "partials/living_resume_icon_sprite.html" %}
+
+    <div class="r3-page-shell">
+        <div class="r3-layout lr-resume-layout">
+            <aside class="r3-sidebar" aria-label="Profile and resume navigation">
+                <section class="r3-profile-card" aria-labelledby="r3-profile-name">
+                    <div class="r3-profile-card__identity">
+                        <img
+                            class="r3-profile-card__portrait"
+                            src="{{ url_for('static', filename=resume.profile.image_path) }}"
+                            alt="{{ resume.profile.image_alt }}"
+                        >
+                        <div>
+                            <p>Evidence-backed profile</p>
+                            <h2 id="r3-profile-name">{{ resume.profile.name }}</h2>
+                            <strong>{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' & ') }}</strong>
+                        </div>
+                    </div>
+
+                    <address class="r3-profile-card__contact">
+                        <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
+                        <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>Contact</a>
+                    </address>
+
+                    <div class="r3-profile-card__actions" aria-label="Profile actions">
+                        <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn</a>
+                        <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>Resume PDF</a>
+                        <button type="button" data-share-resume><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>Share Slate</button>
+                    </div>
+                    <p class="r3-share-status" data-share-status aria-live="polite"></p>
+                </section>
+
+                <aside class="lr-ledger__rail r3-ledger-nav-card" aria-label="Living resume sections">
+                    <p class="r3-nav-kicker">Living resume</p>
+                    <nav>
+                        <a class="is-current" href="#resume-overview" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg><span><strong>Ledger</strong><small>Your work, in full context</small></span></a>
+                        <a href="#resume-experience" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg><span><strong>Experience</strong><small>Impact across chapters</small></span></a>
+                        <a href="#resume-education" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-graduation"></use></svg><span><strong>Education</strong><small>The foundation</small></span></a>
+                        <a href="#resume-skills" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg><span><strong>Skills &amp; Evidence</strong><small>Claims connected to proof</small></span></a>
+                        <a href="#resume-development" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-compass"></use></svg><span><strong>Development</strong><small>Growth and learning</small></span></a>
+                        <a href="#constellation" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-sparkles"></use></svg><span><strong>Career Constellation</strong><small>The connected path</small></span></a>
+                    </nav>
+                    <p class="r3-nav-updated">Last updated<br><strong>{{ living_resume.last_updated }}</strong></p>
+                </aside>
+            </aside>
+
+            <main class="r3-main lr-resume-flow">
+                <header class="r3-intro" id="resume-overview" data-resume-section>
+                    <p>Living Resume Ledger</p>
+                    <h1>The work,<br><span>in full context.</span></h1>
+                    <div>
+                        <p>A progression of impact across organizations, missions, and measurable outcomes.</p>
+                        <span aria-hidden="true"></span>
+                    </div>
+                </header>
+
+                <section class="lr-timeline-shell r3-timeline-shell" aria-label="Career timeline">
+                    <div class="lr-timeline-region" id="ledger-timeline">
+                        <div class="lr-timeline" role="tablist" aria-label="{{ resume.profile.name }} career timeline">
+                            {% for event in ledger_events %}
+                            {% set is_selected = event.id == living_resume.default_event_id %}
+                            <button
+                                class="lr-timeline__event is-{{ event.kind|lower }}{% if is_selected %} is-selected{% endif %}"
+                                type="button"
+                                role="tab"
+                                id="timeline-tab-{{ event.id }}"
+                                aria-controls="ledger-panel-{{ event.id }}"
+                                aria-selected="{{ 'true' if is_selected else 'false' }}"
+                                data-ledger-event="{{ event.id }}"
+                                tabindex="{{ '0' if is_selected else '-1' }}"
+                                style="--orb: {{ event.orb_color }};"
+                            >
+                                <span class="lr-timeline__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
+                                <strong>{{ event.short_label }}</strong>
+                                <small>{{ event.timeline_detail }}</small>
+                                <span class="lr-timeline__kind">{{ event.kind }}</span>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="r3-ledger" id="ledger" aria-label="Living resume chapters">
+                    <p class="r3-visually-hidden" data-ledger-status role="status" aria-live="polite" aria-atomic="true"></p>
+                    {% for event in ledger_events %}
+                    {% set is_selected = event.id == living_resume.default_event_id %}
+                    <article
+                        class="r3-stage-card r3-ledger-panel{% if is_selected %} is-active{% endif %}"
+                        id="ledger-panel-{{ event.id }}"
+                        role="tabpanel"
+                        aria-labelledby="timeline-tab-{{ event.id }}"
+                        data-ledger-panel="{{ event.id }}"
+                        {% if is_selected %}data-featured-event="{{ event.id }}"{% endif %}
+                        tabindex="0"
+                        style="--r3-orb: {{ event.orb_color }};"
+                        {% if not is_selected %}hidden{% endif %}
+                    >
+                        <div class="r3-ledger-panel__art" aria-hidden="true">
+                            <svg><use href="#lr-icon-{{ event.icon }}"></use></svg>
+                        </div>
+                        <header class="r3-ledger-panel__header">
+                            <p>Featured chapter</p>
+                            <h2>{{ event.short_label }}</h2>
+                            <strong>{{ event.subtitle }}</strong>
+                            <span>{{ event.display_period }} <i aria-hidden="true">&middot;</i> {{ event.kind }}</span>
+                        </header>
+
+                        <p class="r3-ledger-panel__summary">{{ event.summary }}</p>
+
+                        {% if event.outcomes %}
+                        <section class="r3-outcomes" aria-labelledby="r3-outcomes-{{ event.id }}">
+                            <h3 id="r3-outcomes-{{ event.id }}">Selected outcomes</h3>
+                            <div>
+                                {% for outcome in event.outcomes %}
+                                <button
+                                    type="button"
+                                    data-metric-event="{{ event.id }}"
+                                    data-evidence-target="{{ outcome.evidence_id }}"
+                                >
+                                    {% if outcome.value %}
+                                    <strong>{{ outcome.value }}</strong>
+                                    <span>{{ outcome.label }}</span>
+                                    {% else %}
+                                    <strong aria-hidden="true">&#10003;</strong>
+                                    <span>{{ outcome.text }}</span>
+                                    {% endif %}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </section>
+                        {% endif %}
+
+                        {% if event.accomplishments %}
+                        <details class="lr-full-record r3-full-record">
+                            <summary>View full chapter</summary>
+                            <div class="lr-full-record__content">
+                                <h3>Selected accomplishments</h3>
+                                <ul>
+                                    {% for item in event.accomplishments %}
+                                    {% if 'micap' not in item.text|lower %}<li id="{{ item.id }}" data-evidence-id="{{ item.id }}">{{ item.text }}</li>{% endif %}
+                                    {% endfor %}
+                                </ul>
+                                <button type="button" data-chat-open data-ask-resume data-ask="Summarize {{ resume.profile.name }}'s approved evidence for {{ event.title }}.">Ask {{ profile_first_name }} AI about this chapter</button>
+                            </div>
+                        </details>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                </section>
+
+                <section class="r3-section r3-experience" id="resume-experience" data-resume-section aria-labelledby="r3-experience-title">
+                    <header class="r3-section-heading">
+                        <p>Experience chapters</p>
+                        <h2 id="r3-experience-title">The path continues.</h2>
+                        <span>Each chapter keeps its full context. Scroll to move through the next defining experiences.</span>
+                    </header>
+
+                    <div class="r3-experience-stack">
+                        {% for event in resume3_stage_events %}
+                        <article
+                            class="r3-stage-card r3-experience-card"
+                            id="r3-experience-{{ event.id }}"
+                            data-r3-experience-card="{{ event.id }}"
+                            data-reveal
+                            style="--r3-orb: {{ event.orb_color }};"
+                        >
+                            <div class="r3-experience-card__art" aria-hidden="true">
+                                <svg><use href="#lr-icon-{{ event.icon }}"></use></svg>
+                            </div>
+                            <header class="r3-experience-card__header">
+                                <span class="r3-chapter-number">{{ '%02d'|format(loop.index) }}</span>
+                                <span class="r3-chapter-icon" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
+                                <p>{{ event.kind }} chapter</p>
+                                <h3>{{ event.title }}</h3>
+                                <strong>{{ event.subtitle }}</strong>
+                                <small>{{ event.display_period }}</small>
+                            </header>
+
+                            <div class="r3-experience-card__body">
+                                <p>{{ event.summary }}</p>
+                                {% if event.accomplishments %}
+                                <ul>
+                                    {% for item in event.accomplishments[:5] %}
+                                    {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
+                                    {% endfor %}
+                                </ul>
+                                {% elif event.skills %}
+                                <ul>
+                                    {% for skill in event.skills[:3] %}<li>{{ skill.display_name }} connected to approved profile evidence.</li>{% endfor %}
+                                </ul>
+                                {% else %}
+                                <p class="r3-experience-card__status">{{ event.status }}</p>
+                                {% endif %}
+
+                                {% if event.accomplishments|length > 5 or event.responsibilities %}
+                                <details>
+                                    <summary>View complete chapter</summary>
+                                    {% if event.accomplishments|length > 5 %}
+                                    <ul>
+                                        {% for item in event.accomplishments[5:] %}
+                                        {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                    {% if event.responsibilities %}
+                                    <h4>Scope &amp; responsibilities</h4>
+                                    <ul>{% for item in event.responsibilities %}<li>{{ item }}</li>{% endfor %}</ul>
+                                    {% endif %}
+                                </details>
+                                {% endif %}
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="r3-section" id="resume-education" data-resume-section aria-labelledby="r3-education-title">
+                    <header class="r3-section-heading">
+                        <p>Education</p>
+                        <h2 id="r3-education-title">The foundation.</h2>
+                        <span>Learning milestones connected to the same structured career record.</span>
+                    </header>
+                    <div class="r3-support-grid r3-education-grid">
+                        {% for item in resume_degrees %}
+                        <article>
+                            <span aria-hidden="true"><svg><use href="#lr-icon-graduation"></use></svg></span>
+                            <small>{{ item.status }}</small>
+                            <h3>{{ item.credential }}</h3>
+                            <strong>{{ item.institution }}</strong>
+                            <p>{{ item.detail }}</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="r3-section" id="resume-skills" data-resume-section aria-labelledby="r3-skills-title">
+                    <header class="r3-section-heading">
+                        <p>Skills &amp; Evidence</p>
+                        <h2 id="r3-skills-title">Claims connected to proof.</h2>
+                        <span>Open a skill to inspect its strongest approved proof points.</span>
+                    </header>
+                    <div class="r3-skill-groups">
+                        {% for group in resume3_skill_groups %}
+                        <section aria-labelledby="r3-skill-group-{{ group.id }}">
+                            <h3 id="r3-skill-group-{{ group.id }}">{{ group.label }}</h3>
+                            <div>
+                                {% for skill in group.skills %}
+                                <details>
+                                    <summary><span>{{ skill.display_name }}</span><small>{{ skill.public_evidence_items|length }} proof point{{ '' if skill.public_evidence_items|length == 1 else 's' }}</small></summary>
+                                    <p>{{ skill.front_summary }}</p>
+                                    <ul>{% for evidence in skill.public_evidence_items[:3] %}<li>{{ evidence.text }}</li>{% endfor %}</ul>
+                                </details>
+                                {% endfor %}
+                            </div>
+                        </section>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="r3-section" id="resume-development" data-resume-section aria-labelledby="r3-development-title">
+                    <header class="r3-section-heading">
+                        <p>Development</p>
+                        <h2 id="r3-development-title">Growth is the next mission.</h2>
+                        <span>Forward-looking credentials and learning already present in the approved profile.</span>
+                    </header>
+                    <div class="r3-support-grid r3-development-grid">
+                        {% for item in resume_development %}
+                        <article>
+                            <span aria-hidden="true"><svg><use href="#lr-icon-{{ ['award', 'sparkles', 'compass'][loop.index0 % 3] }}"></use></svg></span>
+                            <small>{{ item.status }}</small>
+                            <h3>{{ item.credential }}</h3>
+                            <strong>{{ item.institution }}</strong>
+                            <p>{{ item.detail }}</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="lr-chapter-transition" aria-hidden="true"><span></span></div>
+    <!-- shared-career-constellation:start -->
+    {% set constellation_resume_section_target = 'constellation' %}
+    {% include "partials/career_constellation.html" %}
+    <!-- shared-career-constellation:end -->
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume3-1"></script>
+{% endblock %}

@@ -55,10 +55,11 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn(b'class="lr-page resume-v2"', resume2.data)
         self.assertIn(b'css/resume2.css', resume2.data)
 
-    def test_resume_header_tabs_include_both_versions_with_one_current_link(self):
+    def test_resume_header_tabs_include_all_versions_with_one_current_link(self):
         for path, active_href in (
             ('/petec/resume', '/petec/resume'),
             ('/petec/resume2', '/petec/resume2'),
+            ('/petec/resume3', '/petec/resume3'),
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, base_url='http://localhost')
@@ -66,7 +67,7 @@ class Resume2Tests(unittest.TestCase):
                 parser = ResumeHeaderTabsParser()
                 parser.feed(response_text)
 
-                self.assertEqual(len(parser.links), 7)
+                self.assertEqual(len(parser.links), 8)
                 self.assertEqual(
                     [link['text'] for link in parser.links],
                     [
@@ -77,6 +78,7 @@ class Resume2Tests(unittest.TestCase):
                         'Slate Board',
                         'Resume 1',
                         'Resume 2',
+                        'Resume 3',
                     ],
                 )
                 current_links = [
@@ -106,6 +108,10 @@ class Resume2Tests(unittest.TestCase):
         )
         self.assertEqual(
             self.client.get('/another-profile/resume2').status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get('/another-profile/resume3').status_code,
             404,
         )
 
