@@ -123,3 +123,5 @@ Explain architecture and tradeoffs in plain English. Separate:
 - what is fixture-only,
 - what requires backend/schema work,
 - what is intentionally deferred.
+
+## Imported Claude Cowork project instructions

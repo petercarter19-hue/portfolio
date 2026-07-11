@@ -8527,8 +8527,20 @@ body.slate-light {
        serif), NOT the homepage's Playfair — Playfair read far too thick /
        high-contrast on "Pete Carter" and the section headings. */
     --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
-    background: #fdfdfe;
+    /* Site-wide mountains sky (2026-07, Pete): every slate-light page —
+       i.e. the whole standard site except Experience, home, and PeerSlate,
+       which keep their own scenery — shares one fixed blue-sky vista behind
+       the glass surfaces. A soft light veil keeps text/cards readable. */
+    background:
+        linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
+        url("../images/background-templates/mountains.png") center top / cover no-repeat fixed;
     color: var(--text);
+}
+
+/* The stone-vein texture layer is meant for the slate photo themes; on the
+   mountains sky it reads as dirt over the clouds, so hide it here. */
+body.slate-light[data-slate-photo="on"]::after {
+    display: none;
 }
 
 body.slate-light .main-content {
