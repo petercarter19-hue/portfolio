@@ -308,11 +308,12 @@ def is_platform_hostname(hostname):
     clean_host = hostname.split(':', 1)[0].lower()
     return clean_host in {'peerslate.com', 'www.peerslate.com'}
 
-# The root URL ("/") is the separate PeerSlate marketing homepage,
-# not Pete's personal portfolio - see templates/peerslate.html.
+# The root URL ("/") is the cinematic Experience page (2026-07-10):
+# it won the side-by-side comparison against the old marketing homepage.
+# The previous marketing page remains reachable at /peerslate.
 @app.route('/')
 def home():
-    return render_template('peerslate.html')
+    return render_template('experience.html')
 
 # Three URLs, one page: /petec is the current address, while /portfolio
 # and /pete are kept working as older addresses so no existing link breaks.
