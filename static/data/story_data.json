@@ -1,0 +1,567 @@
+{
+  "_note": "My Story page data. Four acts, each with authored cards. Content and layout are separated: 'layout' carries per-breakpoint grid placement consumed as CSS custom properties. Reusable templates read this file; no profile facts live in template logic.",
+  "profile_slug": "petec",
+  "owner_first_name": "Pete",
+  "page_title": "Pete Carter | My Story",
+  "meta_description": "The person behind the work: Pete Carter's story in four acts - who he is now, how he became this person, the life around the work, and what he is still becoming.",
+  "acts": [
+    {
+      "id": "act-now",
+      "number": "01",
+      "eyebrow": "Act One",
+      "title": "This is me now.",
+      "nav_label": "This is me now",
+      "intro": "An immediate introduction to who I am today — what I'm learning, building, exploring, and the life I'm living right now.",
+      "atmosphere": "day",
+      "cards": [
+        {
+          "id": "now-portrait",
+          "type": "image",
+          "importance": "anchor",
+          "image": {
+            "src": "images/story/pete-headshot.jpg",
+            "mobile": "images/story/pete-headshot-m.jpg",
+            "alt": "Studio portrait of Pete Carter smiling in a navy suit and glasses",
+            "priority": true
+          },
+          "caption": "Pete Carter · Huntsville, Alabama",
+          "layout": {
+            "desktop": { "col": "5 / span 4", "row": "1 / span 6", "z": 2 },
+            "tablet": { "col": "1 / span 4", "row": "1 / span 5" }
+          }
+        },
+        {
+          "id": "now-note",
+          "type": "paper",
+          "importance": "small",
+          "hand": "The person behind the work.",
+          "attribution": "— Pete",
+          "layout": {
+            "desktop": { "col": "8 / span 2", "row": "1 / span 2", "rot": "1deg", "x": "-1.5rem", "y": "0.75rem", "z": 3 },
+            "tablet": { "col": "5 / span 4", "row": "1 / span 2", "rot": "0.75deg" }
+          }
+        },
+        {
+          "id": "now-currently",
+          "type": "glass",
+          "importance": "medium",
+          "eyebrow": "Currently",
+          "list": [
+            { "label": "Learning", "text": "AI and automation for systems engineering" },
+            { "label": "Building", "text": "Systems that make a mission-level impact" },
+            { "label": "Exploring", "text": "Research, teaching, and what's next" }
+          ],
+          "layout": {
+            "desktop": { "col": "10 / span 3", "row": "1 / span 3", "z": 2 },
+            "tablet": { "col": "5 / span 4", "row": "3 / span 3" }
+          }
+        },
+        {
+          "id": "now-danielle",
+          "type": "image",
+          "importance": "medium",
+          "image": {
+            "src": "images/story/pete-danielle-dinner.jpg",
+            "mobile": "images/story/pete-danielle-dinner-m.jpg",
+            "alt": "Pete and Danielle smiling together at a restaurant"
+          },
+          "caption": "Danielle & me — married to my best friend.",
+          "layout": {
+            "desktop": { "col": "10 / span 3", "row": "4 / span 4", "rot": "0.75deg" },
+            "tablet": { "col": "5 / span 4", "row": "6 / span 4" }
+          }
+        },
+        {
+          "id": "now-identity",
+          "type": "dark",
+          "importance": "medium",
+          "title": "Engineer. Leader. Lifelong learner.",
+          "body": "Built on curiosity. Driven by people. Grounded in purpose. Everything else is just details.",
+          "layout": {
+            "desktop": { "col": "1 / span 4", "row": "3 / span 2", "rot": "-0.5deg" },
+            "tablet": { "col": "1 / span 4", "row": "6 / span 2" }
+          }
+        },
+        {
+          "id": "now-turning",
+          "type": "paper",
+          "importance": "medium",
+          "eyebrow": "The turning point",
+          "title": "I went back at 36.",
+          "body": "The best decision of my life.",
+          "stat_ghost": "36",
+          "link": { "label": "See the story", "href": "#act-becoming" },
+          "layout": {
+            "desktop": { "col": "2 / span 3", "row": "5 / span 3", "rot": "-0.75deg", "y": "0.5rem" },
+            "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
+          }
+        },
+        {
+          "id": "now-dogs",
+          "type": "image",
+          "importance": "small",
+          "image": {
+            "src": "images/story/dogs-couch-m.jpg",
+            "mobile": "images/story/dogs-couch-m.jpg",
+            "alt": "Blazer and Falcon, two dogs asleep on a gray couch"
+          },
+          "caption": "My two co-pilots.",
+          "layout": {
+            "desktop": { "col": "5 / span 2", "row": "7 / span 3", "rot": "-1deg", "y": "-0.75rem", "z": 3 },
+            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+          }
+        },
+        {
+          "id": "now-travel-stat",
+          "type": "stat",
+          "importance": "small",
+          "stat": { "value": "10", "label": "countries and counting", "context": "and ten states called home along the way" },
+          "layout": {
+            "desktop": { "col": "7 / span 2", "row": "7 / span 2", "y": "0.5rem" },
+            "tablet": { "col": "5 / span 2", "row": "10 / span 2" }
+          }
+        },
+        {
+          "id": "now-home",
+          "type": "paper",
+          "importance": "small",
+          "hand": "Home base: Athens, Alabama.",
+          "attribution": "Huntsville area · Rocket City adjacent",
+          "layout": {
+            "desktop": { "col": "9 / span 2", "row": "8 / span 2", "rot": "0.75deg" },
+            "tablet": { "col": "7 / span 2", "row": "10 / span 2", "rot": "0.5deg" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "act-becoming",
+      "number": "02",
+      "eyebrow": "Act Two",
+      "title": "How I became this person.",
+      "nav_label": "How I became this person",
+      "intro": "The chapters that shaped me — career pivots, risk, service, and the moments that changed everything.",
+      "atmosphere": "warm",
+      "cards": [
+        {
+          "id": "ch-pizza",
+          "type": "chapter",
+          "importance": "medium",
+          "node": "1",
+          "era": "The twenties",
+          "title": "Pizza, payroll & people.",
+          "body": "My first lessons in leadership weren't in a textbook.",
+          "expand": {
+            "paragraphs": [
+              "Before engineering there were years managing Domino's Pizza stores — schedules, budgets, and teams under pressure. It's where leading people started, long before anyone called it leadership."
+            ],
+            "meaning": "It taught me that operations are people first. Every system I've built since starts with the humans inside it.",
+            "ask": "What did managing pizza stores teach Pete about leadership?"
+          },
+          "layout": {
+            "desktop": { "col": "1 / span 3", "row": "3 / span 3", "rot": "-0.75deg" },
+            "tablet": { "col": "1 / span 4", "row": "3 / span 3" }
+          }
+        },
+        {
+          "id": "ch-healthcare",
+          "type": "chapter",
+          "importance": "medium",
+          "node": "2",
+          "era": "The detour that mattered",
+          "title": "Running a healthcare company.",
+          "body": "I helped run a business where getting operations right meant everything to the people depending on us.",
+          "expand": {
+            "paragraphs": [
+              "Managing a healthcare business taught the stakes of getting operations right when people depend on you — and left a question that wouldn't go away: what else could I be capable of?"
+            ],
+            "meaning": "That question is the reason everything after this chapter happened.",
+            "ask": "How did running a healthcare company shape Pete's path?"
+          },
+          "layout": {
+            "desktop": { "col": "4 / span 3", "row": "4 / span 3", "y": "1rem" },
+            "tablet": { "col": "5 / span 4", "row": "4 / span 3" }
+          }
+        },
+        {
+          "id": "ch-36",
+          "type": "chapter",
+          "variant": "dark",
+          "importance": "anchor",
+          "node": "3",
+          "era": "Back to school at 36",
+          "title": "The bet on myself.",
+          "body": "I walked away from certainty to build a future I believed in.",
+          "stat_ghost": "36",
+          "expand": {
+            "paragraphs": [
+              "I went back to school at 36 because I wanted goals I had once considered out of reach. Dalton State first, then a B.S. in Electrical Engineering at Kennesaw State — earned as a non-traditional student while life kept moving."
+            ],
+            "meaning": "It rewired what I believe is possible — for me, and for anyone willing to start over on purpose.",
+            "ask": "Why did Pete go back to school at 36?"
+          },
+          "layout": {
+            "desktop": { "col": "7 / span 4", "row": "2 / span 4", "z": 2 },
+            "tablet": { "col": "1 / span 8", "row": "7 / span 4" }
+          }
+        },
+        {
+          "id": "ch-pandemic",
+          "type": "chapter",
+          "importance": "medium",
+          "node": "4",
+          "era": "2021 · Engineering during a pandemic",
+          "title": "A pandemic hire who learned fast.",
+          "body": "Online classes. Late nights. Zero excuses.",
+          "expand": {
+            "paragraphs": [
+              "I joined the Air Force's 407th Supply Chain Management Squadron as a DoD civilian engineer in the middle of COVID — learning a complex engineering job largely over telework."
+            ],
+            "meaning": "Disruption is a teacher. I learned to build trust and competence without a hallway to walk down.",
+            "ask": "What was it like starting a DoD engineering job during COVID?"
+          },
+          "layout": {
+            "desktop": { "col": "2 / span 3", "row": "7 / span 3", "rot": "0.5deg" },
+            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+          }
+        },
+        {
+          "id": "ch-airforce",
+          "type": "chapter",
+          "importance": "medium",
+          "node": "5",
+          "era": "2021–2024 · Robins AFB",
+          "title": "United States Air Force.",
+          "body": "Service. Systems. Responsibility. A different kind of mission.",
+          "expand": {
+            "paragraphs": [
+              "I grew into Lead Systems Engineer for navigation-system sustainment and mission-critical special projects in the 407th Supply Chain Management Squadron — work where the mission outranks everything, including your comfort zone."
+            ],
+            "meaning": "Serving the mission changed how I define impact: it's measured in readiness, not resumes.",
+            "ask": "What did Pete work on with the Air Force?"
+          },
+          "layout": {
+            "desktop": { "col": "5 / span 3", "row": "8 / span 3", "y": "1rem" },
+            "tablet": { "col": "5 / span 4", "row": "12 / span 3" }
+          }
+        },
+        {
+          "id": "ch-industry",
+          "type": "chapter",
+          "importance": "medium",
+          "node": "6",
+          "era": "2024 – today · Huntsville",
+          "title": "L3Harris, then Northrop Grumman.",
+          "body": "Systems effectiveness, then systems engineering, integration, and test — plus a 4.0 master's and a PMP along the way.",
+          "expand": {
+            "paragraphs": [
+              "Systems effectiveness at L3Harris; systems engineering, integration, and test at Northrop Grumman in Huntsville. Along the way: a master's in engineering management with a 4.0, and a PMP.",
+              "The relationships built doing that work are among the accomplishments I value most."
+            ],
+            "meaning": "Every environment — government, industry, school — sharpened a different edge of the same craft.",
+            "ask": "What does Pete do at Northrop Grumman?"
+          },
+          "layout": {
+            "desktop": { "col": "8 / span 3", "row": "7 / span 3", "rot": "-0.5deg" },
+            "tablet": { "col": "1 / span 4", "row": "15 / span 3" }
+          }
+        },
+        {
+          "id": "ch-phd",
+          "type": "chapter",
+          "variant": "dark",
+          "importance": "medium",
+          "node": "7",
+          "era": "January 2027",
+          "title": "Ph.D. in Systems Engineering.",
+          "body": "Still learning. Still building. The next chapter is already in motion.",
+          "expand": {
+            "paragraphs": [
+              "Admitted to the Systems Engineering Ph.D. program at the University of South Alabama. Still curious. Still climbing."
+            ],
+            "meaning": "The bet I made at 36 never stopped paying out — so I keep placing it.",
+            "ask": "What will Pete research in his Ph.D.?"
+          },
+          "layout": {
+            "desktop": { "col": "6 / span 3", "row": "11 / span 3", "rot": "0.4deg" },
+            "tablet": { "col": "5 / span 4", "row": "16 / span 3" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "act-life",
+      "number": "03",
+      "eyebrow": "Act Three",
+      "title": "The life around the work.",
+      "nav_label": "The life around the work",
+      "intro": "The moments, people, places, and passions that fuel me outside of work — and make me who I am.",
+      "atmosphere": "bright",
+      "cards": [
+        {
+          "id": "life-race",
+          "type": "image",
+          "importance": "anchor",
+          "image": {
+            "src": "images/story/pete-race-10k.jpg",
+            "mobile": "images/story/pete-race-10k-m.jpg",
+            "alt": "Pete running a 10K race wearing bib number 4465"
+          },
+          "eyebrow": "100 miles. 10 days. One goal.",
+          "caption": "Pushed my body. Proved something to my mind.",
+          "layout": {
+            "desktop": { "col": "1 / span 4", "row": "3 / span 5", "z": 2 },
+            "tablet": { "col": "1 / span 4", "row": "3 / span 5" }
+          }
+        },
+        {
+          "id": "life-bali",
+          "type": "image",
+          "importance": "anchor",
+          "image": {
+            "src": "images/story/pete-danielle-bali-gates.jpg",
+            "mobile": "images/story/pete-danielle-bali-gates-m.jpg",
+            "alt": "Pete and Danielle holding hands with arms raised between the Gates of Heaven in Bali"
+          },
+          "eyebrow": "Places that changed me",
+          "caption": "Ten countries and counting…",
+          "layout": {
+            "desktop": { "col": "5 / span 3", "row": "2 / span 6", "rot": "0.6deg" },
+            "tablet": { "col": "5 / span 4", "row": "1 / span 6" }
+          }
+        },
+        {
+          "id": "life-hawaii",
+          "type": "image",
+          "importance": "medium",
+          "image": {
+            "src": "images/story/pete-hawaii-overlook.jpg",
+            "mobile": "images/story/pete-hawaii-overlook-m.jpg",
+            "alt": "Pete above a turquoise bay on the Crouching Lion hike in Hawaii"
+          },
+          "caption": "Always get outside.",
+          "layout": {
+            "desktop": { "col": "8 / span 5", "row": "1 / span 3" },
+            "tablet": { "col": "1 / span 8", "row": "8 / span 3" }
+          }
+        },
+        {
+          "id": "life-ski",
+          "type": "image",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-danielle-ski-lift-m.jpg",
+            "mobile": "images/story/pete-danielle-ski-lift-m.jpg",
+            "alt": "Pete and Danielle in helmets and goggles on a ski lift"
+          },
+          "caption": "Adventure partner for life.",
+          "layout": {
+            "desktop": { "col": "8 / span 2", "row": "4 / span 3", "rot": "-0.9deg", "y": "0.5rem" },
+            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+          }
+        },
+        {
+          "id": "life-monkey",
+          "type": "image",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-danielle-monkey-forest-m.jpg",
+            "mobile": "images/story/pete-danielle-monkey-forest-m.jpg",
+            "alt": "A monkey photobombing Pete and Danielle's selfie in Ubud's Monkey Forest"
+          },
+          "caption": "Ubud's Monkey Forest. He took the wheel.",
+          "layout": {
+            "desktop": { "col": "10 / span 3", "row": "4 / span 3", "rot": "1.1deg", "x": "-0.75rem" },
+            "tablet": { "col": "5 / span 4", "row": "11 / span 3" }
+          }
+        },
+        {
+          "id": "life-little-things",
+          "type": "paper",
+          "importance": "small",
+          "eyebrow": "Little things that make life rich",
+          "checklist": ["Good coffee", "Deep talks", "Old tech", "New ideas", "Sunrises"],
+          "layout": {
+            "desktop": { "col": "5 / span 2", "row": "8 / span 3", "rot": "-0.75deg" },
+            "tablet": { "col": "1 / span 3", "row": "14 / span 3" }
+          }
+        },
+        {
+          "id": "life-skydive",
+          "type": "image",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-skydive.jpg",
+            "mobile": "images/story/pete-skydive-m.jpg",
+            "alt": "Pete mid-freefall during a tandem skydive"
+          },
+          "caption": "Ran a 10K that morning. Jumped out of a plane that afternoon.",
+          "layout": {
+            "desktop": { "col": "7 / span 3", "row": "8 / span 2", "rot": "0.75deg" },
+            "tablet": { "col": "4 / span 5", "row": "14 / span 2" }
+          }
+        },
+        {
+          "id": "life-zipline",
+          "type": "image",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-zipline-m.jpg",
+            "mobile": "images/story/pete-zipline-m.jpg",
+            "alt": "Pete ziplining over a rainforest canopy"
+          },
+          "caption": "Send it.",
+          "layout": {
+            "desktop": { "col": "10 / span 3", "row": "7 / span 3", "y": "0.75rem" },
+            "tablet": { "col": "4 / span 5", "row": "16 / span 3" }
+          }
+        },
+        {
+          "id": "life-hike",
+          "type": "image",
+          "importance": "medium",
+          "image": {
+            "src": "images/story/pete-misty-hike.jpg",
+            "mobile": "images/story/pete-misty-hike-m.jpg",
+            "alt": "Pete on a misty mountain trail with a hiking pack"
+          },
+          "caption": "The long way up is the point.",
+          "layout": {
+            "desktop": { "col": "1 / span 3", "row": "8 / span 4", "rot": "-0.5deg" },
+            "tablet": { "col": "1 / span 4", "row": "17 / span 4" }
+          }
+        },
+        {
+          "id": "life-lab",
+          "type": "paper",
+          "importance": "small",
+          "hand": "Home lab. Playground. Stress relief.",
+          "attribution": "Where ideas turn into experiments.",
+          "layout": {
+            "desktop": { "col": "4 / span 3", "row": "11 / span 2", "rot": "0.9deg" },
+            "tablet": { "col": "5 / span 4", "row": "20 / span 2" }
+          }
+        },
+        {
+          "id": "life-cry",
+          "type": "paper",
+          "importance": "small",
+          "hand": "I cry watching TV shows and movies.",
+          "attribution": "No shame.",
+          "layout": {
+            "desktop": { "col": "7 / span 2", "row": "10 / span 2", "rot": "-1.1deg" },
+            "tablet": { "col": "1 / span 4", "row": "21 / span 2", "rot": "-0.75deg" }
+          }
+        },
+        {
+          "id": "life-baseball",
+          "type": "stat",
+          "importance": "small",
+          "stat": { "value": "⚾", "label": "Baseball first", "context": "but I'll watch it all" },
+          "layout": {
+            "desktop": { "col": "9 / span 2", "row": "10 / span 2", "y": "0.5rem" },
+            "tablet": { "col": "5 / span 2", "row": "22 / span 2" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "act-next",
+      "number": "04",
+      "eyebrow": "Act Four",
+      "title": "Still becoming.",
+      "nav_label": "Still becoming",
+      "intro": "Where I'm headed, what I'm focused on now, and the questions I'm chasing next.",
+      "atmosphere": "night",
+      "cards": [
+        {
+          "id": "next-closing",
+          "type": "closing",
+          "importance": "anchor",
+          "title": "The story isn't finished.",
+          "body": "I'm still becoming who I'm meant to be.",
+          "sign_off": "Onward.",
+          "layout": {
+            "desktop": { "col": "6 / span 7", "row": "1 / span 4", "z": 2 },
+            "tablet": { "col": "1 / span 8", "row": "1 / span 4" }
+          }
+        },
+        {
+          "id": "next-focus",
+          "type": "glass",
+          "importance": "medium",
+          "eyebrow": "What I'm focused on",
+          "list": [
+            { "label": "AI & automation", "text": "applied to real systems engineering work" },
+            { "label": "MBSE", "text": "Cameo Systems Modeler in daily practice" },
+            { "label": "Mentoring", "text": "helping others grow their potential" }
+          ],
+          "layout": {
+            "desktop": { "col": "1 / span 3", "row": "2 / span 3" },
+            "tablet": { "col": "1 / span 4", "row": "5 / span 3" }
+          }
+        },
+        {
+          "id": "next-learning",
+          "type": "glass",
+          "importance": "medium",
+          "eyebrow": "What I'm learning",
+          "list": [
+            { "label": "Research methods", "text": "asking better questions, on purpose" },
+            { "label": "AI & ML foundations", "text": "deepening the technical core" },
+            { "label": "Human-centered AI", "text": "technology with purpose" }
+          ],
+          "layout": {
+            "desktop": { "col": "2 / span 3", "row": "5 / span 3", "rot": "-0.5deg", "y": "0.75rem" },
+            "tablet": { "col": "5 / span 4", "row": "5 / span 3" }
+          }
+        },
+        {
+          "id": "next-toward",
+          "type": "paper",
+          "importance": "medium",
+          "eyebrow": "Working toward",
+          "title": "Systems Engineering Ph.D.",
+          "body": "University of South Alabama · January 2027. Build. Teach. Contribute.",
+          "hand": "Leave things better than I found them.",
+          "layout": {
+            "desktop": { "col": "6 / span 3", "row": "5 / span 3", "rot": "0.6deg" },
+            "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
+          }
+        },
+        {
+          "id": "next-bridge",
+          "type": "image",
+          "importance": "medium",
+          "image": {
+            "src": "images/story/pete-garden-bridge.jpg",
+            "mobile": "images/story/pete-garden-bridge-m.jpg",
+            "alt": "Pete smiling on a green garden bridge with mountains behind"
+          },
+          "caption": "Still smiling. Still climbing.",
+          "layout": {
+            "desktop": { "col": "9 / span 4", "row": "5 / span 4", "rot": "-0.4deg" },
+            "tablet": { "col": "5 / span 4", "row": "8 / span 4" }
+          }
+        },
+        {
+          "id": "next-ai",
+          "type": "ai",
+          "importance": "medium",
+          "eyebrow": "Ask me anything about my story",
+          "body": "I'm an open book. Every answer is grounded in my approved public story and résumé evidence.",
+          "questions": [
+            "Why did you go back to school at 36?",
+            "What was the Air Force chapter like?",
+            "How did running 100 miles in 10 days change you?",
+            "What are you building right now?"
+          ],
+          "layout": {
+            "desktop": { "col": "1 / span 8", "row": "8 / span 3" },
+            "tablet": { "col": "1 / span 8", "row": "12 / span 3" }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -361,10 +361,14 @@ def about():
 @app.route('/my-story')
 @app.route('/petec/my-story')
 def my_story():
-    # The My Story page replaced "About" in the navigation.
-    # The URL uses a hyphen (/my-story) because URLs can't have spaces,
-    # while the Python function name uses an underscore (my_story).
-    return render_template('my_story.html')
+    # The four-act cinematic story page renders entirely from structured
+    # fixture data so the same templates work for any profile's story.
+    story_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'story_data.json')
+
+    with open(story_path, 'r', encoding='utf-8') as f:
+        story = json.load(f)
+
+    return render_template('my_story.html', story=story)
 
 @app.route('/work')
 @app.route('/petec/work')
