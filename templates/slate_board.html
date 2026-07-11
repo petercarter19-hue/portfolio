@@ -30,7 +30,11 @@
 
 {% block content %}
 
-<section class="board-page" aria-labelledby="board-title">
+<section
+    class="board-page"
+    aria-labelledby="board-title"
+    data-board-api="{{ 'true' if database_ui_enabled else 'false' }}"
+>
     <div class="site-container">
 
         <!-- ============ HERO ============ -->
@@ -152,9 +156,13 @@
                     <span class="board-compose__count" id="board-compose-count" aria-live="polite">0 / 90</span>
                     <button class="ps-btn ps-btn--primary board-compose__btn" type="button" id="board-compose-add" disabled>Chalk It Up</button>
                 </div>
-                <p class="board-compose__note">
+                <p class="board-compose__note" id="board-compose-status" aria-live="polite">
+                    {% if database_ui_enabled %}
+                    New entries are saved privately to your authenticated PeerSlate Slate Board.
+                    {% else %}
                     Your entries ink onto the board below and stay saved in this browser.
-                    With PeerSlate accounts they'll publish to your site and the Slate Feed too.
+                    Database storage remains off until PeerSlate authentication is enabled.
+                    {% endif %}
                 </p>
             </div>
 

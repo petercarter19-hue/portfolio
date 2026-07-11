@@ -9,6 +9,27 @@ from mssql_python import connect    # Connects Python to Azure SQL
 load_dotenv()    # Loads the protected connection string from .env
 
 
+def normalize_connection_string(connection_string):
+    """Remove Azure portal options that mssql-python does not accept."""
+
+    connection_string = connection_string.replace(
+        ".database.windows.net.database.windows.net",
+        ".database.windows.net",
+    )
+
+    supported_parts = []
+
+    for part in connection_string.split(";"):
+        keyword = part.partition("=")[0].strip().lower()
+
+        if keyword == "connection timeout":
+            continue
+
+        supported_parts.append(part)
+
+    return ";".join(supported_parts)
+
+
 def get_connection():
     """Open and return an Azure SQL connection."""
 
@@ -19,7 +40,10 @@ def get_connection():
             "AZURE_SQL_CONNECTIONSTRING is missing. Check the root .env file."
         )
 
-    connection = connect(connection_string)    # Opens the Azure SQL connection
+    connection = connect(
+        normalize_connection_string(connection_string),
+        timeout=60,
+    )    # Opens the Azure SQL connection and allows a paused database time to resume
     connection.setautocommit(True)    # Commits stored-procedure actions automatically
 
     return connection
