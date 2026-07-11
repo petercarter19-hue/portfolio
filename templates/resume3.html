@@ -178,69 +178,110 @@
                     {% endfor %}
                 </section>
 
-                <section class="r3-section r3-experience" id="resume-experience" data-resume-section aria-labelledby="r3-experience-title">
-                    <header class="r3-section-heading">
-                        <p>Experience chapters</p>
-                        <h2 id="r3-experience-title">The path continues.</h2>
-                        <span>Each chapter keeps its full context. Scroll to move through the next defining experiences.</span>
-                    </header>
+                <section
+                    class="r3-section r3-experience r3-experience-journey"
+                    id="resume-experience"
+                    data-resume-section
+                    data-r3-carousel-stage
+                    aria-labelledby="r3-experience-title"
+                    tabindex="0"
+                    style="--r3-stage-count: {{ resume3_stage_events|length }};"
+                >
+                    <div class="r3-experience__sticky">
+                        <header class="r3-section-heading r3-carousel-heading">
+                            <p>Experience chapters</p>
+                            <h2 id="r3-experience-title">The path continues.</h2>
+                            <span>Scroll down to move through each chapter from right to left. Scroll back up to return through the story.</span>
+                        </header>
 
-                    <div class="r3-experience-stack">
-                        {% for event in resume3_stage_events %}
-                        <article
-                            class="r3-stage-card r3-experience-card"
-                            id="r3-experience-{{ event.id }}"
-                            data-r3-experience-card="{{ event.id }}"
-                            data-reveal
-                            style="--r3-orb: {{ event.orb_color }};"
-                        >
-                            <div class="r3-experience-card__art" aria-hidden="true">
-                                <svg><use href="#lr-icon-{{ event.icon }}"></use></svg>
-                            </div>
-                            <header class="r3-experience-card__header">
-                                <span class="r3-chapter-number">{{ '%02d'|format(loop.index) }}</span>
-                                <span class="r3-chapter-icon" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
-                                <p>{{ event.kind }} chapter</p>
-                                <h3>{{ event.title }}</h3>
-                                <strong>{{ event.subtitle }}</strong>
-                                <small>{{ event.display_period }}</small>
-                            </header>
+                        <div class="r3-carousel" role="region" aria-roledescription="carousel" aria-labelledby="r3-experience-title">
+                            <button class="r3-carousel__arrow r3-carousel__arrow--previous" type="button" data-r3-carousel-previous aria-label="Show previous experience chapter">
+                                <span aria-hidden="true">&larr;</span>
+                            </button>
 
-                            <div class="r3-experience-card__body">
-                                <p>{{ event.summary }}</p>
-                                {% if event.accomplishments %}
-                                <ul>
-                                    {% for item in event.accomplishments[:5] %}
-                                    {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
+                            <div class="r3-carousel__viewport" data-r3-carousel-viewport>
+                                <div class="r3-carousel__track" data-r3-carousel-track>
+                                    {% for event in resume3_stage_events %}
+                                    <article
+                                        class="r3-carousel-card"
+                                        id="r3-experience-{{ event.id }}"
+                                        data-r3-experience-card="{{ event.id }}"
+                                        data-r3-carousel-card
+                                        role="group"
+                                        aria-roledescription="slide"
+                                        aria-label="Chapter {{ loop.index }} of {{ resume3_stage_events|length }}: {{ event.title }}"
+                                        style="--r3-orb: {{ event.orb_color }};"
+                                    >
+                                        <div class="r3-carousel-card__art" aria-hidden="true">
+                                            <svg><use href="#lr-icon-{{ event.icon }}"></use></svg>
+                                        </div>
+                                        <header class="r3-carousel-card__header">
+                                            <span class="r3-chapter-number">{{ '%02d'|format(loop.index) }}</span>
+                                            <span class="r3-chapter-icon" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
+                                            <p>{{ event.kind }} chapter</p>
+                                            <h3>{{ event.title }}</h3>
+                                            <strong>{{ event.subtitle }}</strong>
+                                            <small>{{ event.display_period }}</small>
+                                        </header>
+
+                                        <div class="r3-carousel-card__body">
+                                            <p>{{ event.summary }}</p>
+                                            {% if event.accomplishments %}
+                                            <ul>
+                                                {% for item in event.accomplishments[:6] %}
+                                                {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
+                                                {% endfor %}
+                                            </ul>
+                                            {% elif event.skills %}
+                                            <ul>
+                                                {% for skill in event.skills[:3] %}<li>{{ skill.display_name }} connected to approved profile evidence.</li>{% endfor %}
+                                            </ul>
+                                            {% else %}
+                                            <p class="r3-experience-card__status">{{ event.status }}</p>
+                                            {% endif %}
+
+                                            {% if event.accomplishments|length > 6 or event.responsibilities %}
+                                            <details>
+                                                <summary>View complete chapter</summary>
+                                                {% if event.accomplishments|length > 6 %}
+                                                <ul>
+                                                    {% for item in event.accomplishments[6:] %}
+                                                    {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                                {% endif %}
+                                                {% if event.responsibilities %}
+                                                <h4>Scope &amp; responsibilities</h4>
+                                                <ul>{% for item in event.responsibilities %}<li>{{ item }}</li>{% endfor %}</ul>
+                                                {% endif %}
+                                            </details>
+                                            {% endif %}
+                                        </div>
+                                    </article>
                                     {% endfor %}
-                                </ul>
-                                {% elif event.skills %}
-                                <ul>
-                                    {% for skill in event.skills[:3] %}<li>{{ skill.display_name }} connected to approved profile evidence.</li>{% endfor %}
-                                </ul>
-                                {% else %}
-                                <p class="r3-experience-card__status">{{ event.status }}</p>
-                                {% endif %}
-
-                                {% if event.accomplishments|length > 5 or event.responsibilities %}
-                                <details>
-                                    <summary>View complete chapter</summary>
-                                    {% if event.accomplishments|length > 5 %}
-                                    <ul>
-                                        {% for item in event.accomplishments[5:] %}
-                                        {% if 'micap' not in item.text|lower %}<li>{{ item.text }}</li>{% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                    {% endif %}
-                                    {% if event.responsibilities %}
-                                    <h4>Scope &amp; responsibilities</h4>
-                                    <ul>{% for item in event.responsibilities %}<li>{{ item }}</li>{% endfor %}</ul>
-                                    {% endif %}
-                                </details>
-                                {% endif %}
+                                </div>
                             </div>
-                        </article>
-                        {% endfor %}
+
+                            <button class="r3-carousel__arrow r3-carousel__arrow--next" type="button" data-r3-carousel-next aria-label="Show next experience chapter">
+                                <span aria-hidden="true">&rarr;</span>
+                            </button>
+                        </div>
+
+                        <div class="r3-carousel__footer">
+                            <div class="r3-carousel__pagination" role="tablist" aria-label="Experience chapter navigation">
+                                {% for event in resume3_stage_events %}
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    data-r3-carousel-page="{{ loop.index0 }}"
+                                    aria-label="Show {{ event.title }} chapter"
+                                    aria-selected="{{ 'true' if loop.first else 'false' }}"
+                                    tabindex="{{ '0' if loop.first else '-1' }}"
+                                ><span class="r3-visually-hidden">{{ event.title }}</span></button>
+                                {% endfor %}
+                            </div>
+                            <p data-r3-carousel-status aria-live="polite" aria-atomic="true">Showing chapter 1 of {{ resume3_stage_events|length }}.</p>
+                        </div>
                     </div>
                 </section>
 
@@ -319,4 +360,5 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume3-1"></script>
+<script src="{{ url_for('static', filename='js/resume3.js') }}?v=resume3-carousel-4"></script>
 {% endblock %}

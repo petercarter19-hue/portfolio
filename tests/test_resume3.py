@@ -32,7 +32,7 @@ class Resume3Tests(unittest.TestCase):
             404,
         )
 
-    def test_resume3_uses_shared_timeline_data_and_next_three_chapters(self):
+    def test_resume3_uses_shared_timeline_data_and_variable_chapter_stage(self):
         response = self.get_resume3()
         response_text = response.get_data(as_text=True)
         data = json.loads(
@@ -54,13 +54,22 @@ class Resume3Tests(unittest.TestCase):
 
         default_event_id = data['living_resume']['default_event_id']
         default_index = expected_event_ids.index(default_event_id)
-        following_ids = (
+        following_events = (
             expected_event_ids[default_index + 1:]
             + expected_event_ids[:default_index]
-        )[:3]
+        )
+        event_by_id = {
+            event['id']: event
+            for event in data['living_resume']['events']
+        }
+        expected_stage_ids = [
+            event_id
+            for event_id in following_events
+            if event_by_id[event_id]['kind'] in {'Experience', 'Credential'}
+        ]
         self.assertEqual(
             re.findall(r'data-r3-experience-card="([^"]+)"', response_text),
-            following_ids,
+            expected_stage_ids,
         )
         self.assertIn(
             f'data-featured-event="{default_event_id}"',
@@ -88,6 +97,11 @@ class Resume3Tests(unittest.TestCase):
         self.assertIn('aria-live="polite"', response_text)
         self.assertIn('href="#resume-experience"', response_text)
         self.assertIn('id="resume-experience"', response_text)
+        self.assertIn('data-r3-carousel-stage', response_text)
+        self.assertIn('aria-roledescription="carousel"', response_text)
+        self.assertIn('data-r3-carousel-status', response_text)
+        self.assertIn('data-r3-carousel-previous', response_text)
+        self.assertIn('data-r3-carousel-next', response_text)
 
         for event_id in expected_event_ids:
             self.assertIn(f'id="timeline-tab-{event_id}"', response_text)
@@ -130,6 +144,8 @@ class Resume3Tests(unittest.TestCase):
         self.assertIn('@media (prefers-reduced-motion: reduce)', css)
         self.assertIn('@media (max-width:', css)
         self.assertIn('.r3-stage-card', css)
+        self.assertIn('.r3-carousel-card', css)
+        self.assertIn('position: sticky', css)
 
         asset_dir = self.project_root / 'static/images/Mockups/resume2'
         for filename in (
@@ -154,6 +170,24 @@ class Resume3Tests(unittest.TestCase):
         )
         self.assertIn('<!-- shared-career-constellation:start -->', response_text)
         self.assertIn('id="constellation"', response_text)
+
+    def test_resume3_replaces_the_vertical_stack_with_the_scroll_stage(self):
+        response_text = self.get_resume3().get_data(as_text=True)
+        template = (self.project_root / 'templates/resume3.html').read_text(
+            encoding='utf-8'
+        )
+        script = (self.project_root / 'static/js/resume3.js').read_text(
+            encoding='utf-8'
+        )
+
+        self.assertNotIn('r3-experience-stack', response_text)
+        self.assertIn('js/resume3.js', response_text)
+        self.assertIn('data-r3-carousel-track', template)
+        self.assertIn('data-r3-carousel-page', template)
+        self.assertIn('window.scrollTo', script)
+        self.assertIn('requestAnimationFrame', script)
+        self.assertIn('prefers-reduced-motion', script)
+        self.assertIn("window.innerWidth <= 768", script)
 
 
 if __name__ == '__main__':

@@ -798,7 +798,15 @@ def _render_living_resume(
             ledger_events[featured_index + 1:]
             + ledger_events[:featured_index]
         )
-        resume3_stage_events = following_events[:3]
+        # The horizontal chapter stage grows or shrinks with the member's
+        # eligible career chapters. Roles and credentials are the chapters that
+        # continue naturally after the featured Ledger chapter; future and
+        # education events remain available in their dedicated sections.
+        resume3_stage_events = [
+            event
+            for event in following_events
+            if event['kind'] in {'Experience', 'Credential'}
+        ]
 
     # Give each timeline node a distinct jewel color (and remember the
     # role colors/icons so the experience cards can echo them). The

@@ -471,7 +471,7 @@
 }
 
 .r3-ledger-panel__art,
-.r3-experience-card__art {
+.r3-carousel-card__art {
     position: absolute;
     z-index: -1;
     right: clamp(2rem, 5vw, 6rem);
@@ -489,7 +489,7 @@
 }
 
 .r3-ledger-panel__art svg,
-.r3-experience-card__art svg {
+.r3-carousel-card__art svg {
     width: 58% !important;
     height: 58% !important;
     stroke-width: 1.1 !important;
@@ -713,149 +713,272 @@
     text-shadow: 0 1px 0 rgb(255 255 255 / 50%);
 }
 
-.r3-experience-stack {
-    display: grid;
-    gap: clamp(5rem, 9vw, 9rem);
+.r3-experience-journey {
+    min-height: 100svh;
+    padding-top: clamp(3rem, 6vw, 6rem);
 }
 
-.r3-experience-card {
+.r3-experience__sticky {
+    position: sticky;
+    top: 7.35rem;
     display: grid;
-    grid-template-columns: minmax(15rem, 0.76fr) minmax(0, 1.24fr);
-    align-content: center;
-    gap: clamp(1.5rem, 3.5vw, 4.25rem);
-    padding: clamp(2rem, 3.5vw, 4.25rem);
-    scroll-margin-top: 8rem;
+    height: calc(100svh - 7.35rem);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0.85rem;
 }
 
-.r3-experience-card:nth-child(even)::before {
+.r3-carousel-heading {
+    max-width: 56rem;
+    margin: 0;
+}
+
+.r3-carousel {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: clamp(2.5rem, 4vw, 4rem) minmax(0, 1fr) clamp(2.5rem, 4vw, 4rem);
+    align-items: center;
+    gap: clamp(0.35rem, 1vw, 1rem);
+}
+
+.r3-carousel__viewport {
+    min-width: 0;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scroll-snap-type: x mandatory;
+}
+
+.r3-experience-journey.is-enhanced .r3-carousel__viewport {
+    overflow: hidden;
+    scroll-snap-type: none;
+}
+
+.r3-carousel__track {
+    display: flex;
+    width: max-content;
+    min-height: 100%;
+    align-items: center;
+    gap: clamp(0.6rem, 1.5vw, 1.5rem);
+    padding-block: 0.35rem;
+    transition: transform 80ms linear;
+    will-change: transform;
+}
+
+.r3-carousel-card {
+    --r3-card-scale: 1;
+    --r3-card-opacity: 1;
+    position: relative;
+    display: grid;
+    width: clamp(29rem, 43vw, 39rem);
+    height: min(40rem, calc(100svh - 17rem));
+    min-height: 25rem;
+    flex: 0 0 auto;
+    grid-template-columns: minmax(12rem, 0.76fr) minmax(0, 1.24fr);
+    align-content: stretch;
+    gap: clamp(1rem, 2.5vw, 3rem);
+    overflow: hidden;
+    padding: clamp(1.35rem, 2.6vw, 2.75rem);
+    border: 1px solid rgb(210 239 255 / 78%);
+    border-radius: clamp(1.5rem, 2vw, 2rem);
+    color: #f6fbff;
     background:
-        linear-gradient(100deg, rgb(244 251 255 / 93%) 0%, rgb(230 245 255 / 84%) 56%, rgb(184 220 249 / 62%) 100%),
+        linear-gradient(112deg, rgb(3 20 54 / 97%) 0%, rgb(8 54 109 / 92%) 54%, rgb(22 111 182 / 66%) 100%),
         url("../images/cinematic/work-clouds.jpg") center / cover no-repeat;
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 14%),
+        0 1.5rem 3.8rem rgb(3 25 72 / 43%),
+        0 0 2.6rem color-mix(in srgb, var(--r3-orb) 24%, transparent);
+    isolation: isolate;
+    opacity: var(--r3-card-opacity);
+    scroll-snap-align: center;
+    transform: scale(var(--r3-card-scale));
+    transform-origin: center;
+    transition:
+        opacity 180ms ease-out,
+        transform 180ms ease-out,
+        filter 180ms ease-out;
 }
 
-.r3-experience-card__art {
-    top: auto;
-    right: clamp(1.5rem, 4vw, 5rem);
-    bottom: clamp(1.5rem, 4vw, 4rem);
-    width: clamp(13rem, 23vw, 25rem);
-    opacity: 0.2;
+.r3-carousel-card.is-before {
+    transform-origin: right center;
 }
 
-.r3-experience-card__header,
-.r3-experience-card__body {
+.r3-carousel-card.is-after {
+    transform-origin: left center;
+}
+
+.r3-carousel-card::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border: 1px solid rgb(255 255 255 / 34%);
+    border-radius: inherit;
+    box-shadow:
+        inset 0 0 3rem rgb(137 214 255 / 12%),
+        0 0 1.25rem rgb(255 255 255 / 25%);
+    content: "";
+}
+
+.r3-carousel-card::after {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 22%, rgb(1 15 47 / 52%) 100%);
+    content: "";
+}
+
+.r3-experience-journey.is-enhanced .r3-carousel-card:not(.is-active) {
+    filter: saturate(0.88) brightness(0.78);
+    pointer-events: none;
+}
+
+.r3-carousel-card__art {
+    position: absolute;
+    z-index: -1;
+    right: clamp(-1rem, 1vw, 1rem);
+    bottom: clamp(-2rem, -1vw, -0.5rem);
+    display: grid;
+    width: clamp(11rem, 19vw, 20rem);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 26%);
+    border-radius: 50%;
+    color: color-mix(in srgb, var(--r3-orb) 45%, #dff5ff);
+    background: radial-gradient(circle, rgb(143 219 255 / 19%), transparent 66%);
+    opacity: 0.43;
+    transform: rotate(-13deg);
+}
+
+.r3-carousel-card__art svg {
+    width: 56% !important;
+    height: 56% !important;
+    stroke-width: 1.05 !important;
+}
+
+.r3-carousel-card__header,
+.r3-carousel-card__body {
     position: relative;
     z-index: 1;
+    min-width: 0;
 }
 
-.r3-experience-card__header {
+.r3-carousel-card__header {
     align-self: start;
 }
 
 .r3-chapter-number {
     display: inline-flex;
-    min-width: 2.4rem;
-    min-height: 2.4rem;
+    min-width: 2.35rem;
+    min-height: 2.35rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgb(79 91 213 / 24%);
+    border: 1px solid rgb(255 255 255 / 35%);
     border-radius: 50%;
-    color: var(--r3-indigo);
-    background: rgb(255 255 255 / 62%);
-    font-size: 0.68rem;
+    color: #e9f6ff;
+    background: rgb(255 255 255 / 9%);
+    font-size: 0.67rem;
     font-weight: 850;
 }
 
 .r3-chapter-icon {
     display: grid;
-    width: 3.8rem;
-    height: 3.8rem;
+    width: 3.45rem;
+    height: 3.45rem;
     place-items: center;
-    margin-top: 1.5rem;
-    border: 1px solid rgb(255 255 255 / 72%);
-    border-radius: 1.15rem;
+    margin-top: 1.2rem;
+    border: 1px solid rgb(255 255 255 / 42%);
+    border-radius: 1.05rem;
     color: #fff;
     background: var(--r3-orb);
-    box-shadow: 0 0.8rem 1.7rem color-mix(in srgb, var(--r3-orb) 34%, transparent);
+    box-shadow: 0 0.8rem 1.7rem color-mix(in srgb, var(--r3-orb) 42%, transparent);
 }
 
 .r3-chapter-icon svg {
-    width: 1.7rem !important;
-    height: 1.7rem !important;
+    width: 1.55rem !important;
+    height: 1.55rem !important;
 }
 
-.r3-experience-card__header p,
-.r3-experience-card__header h3,
-.r3-experience-card__header strong,
-.r3-experience-card__header small {
+.r3-carousel-card__header p,
+.r3-carousel-card__header h3,
+.r3-carousel-card__header strong,
+.r3-carousel-card__header small {
     display: block;
     margin: 0;
 }
 
-.r3-experience-card__header p {
-    margin-top: 1.3rem;
-    color: var(--r3-indigo);
-    font-size: 0.68rem;
+.r3-carousel-card__header p {
+    margin-top: 1.1rem;
+    color: #89d9ff;
+    font-size: 0.64rem;
     font-weight: 850;
     letter-spacing: 0.15em;
     text-transform: uppercase;
 }
 
-.r3-experience-card__header h3 {
+.r3-carousel-card__header h3 {
     margin-top: 0.45rem;
+    color: #fff;
     font-family: var(--r3-display);
-    font-size: clamp(2.3rem, 4vw, 4.6rem);
+    font-size: clamp(2rem, 3.4vw, 4rem);
     font-weight: 600;
     letter-spacing: -0.035em;
-    line-height: 0.95;
+    line-height: 0.94;
+    text-shadow: 0 0.25rem 1rem rgb(0 13 44 / 38%);
 }
 
-.r3-experience-card__header strong {
-    margin-top: 0.8rem;
-    color: #184675;
-    font-size: clamp(0.92rem, 1vw, 1.08rem);
-    line-height: 1.45;
+.r3-carousel-card__header strong {
+    margin-top: 0.75rem;
+    color: #e2f2ff;
+    font-size: clamp(0.85rem, 1vw, 1.02rem);
+    line-height: 1.42;
 }
 
-.r3-experience-card__header small {
+.r3-carousel-card__header small {
     margin-top: 0.5rem;
-    color: #59718c;
-    font-size: 0.76rem;
+    color: #a7d9f3;
+    font-size: 0.74rem;
     font-weight: 750;
 }
 
-.r3-experience-card__body {
+.r3-carousel-card__body {
     align-self: center;
-    padding: clamp(1rem, 2.2vw, 2.5rem);
-    border-left: 1px solid rgb(89 139 200 / 28%);
+    max-height: 100%;
+    overflow-y: auto;
+    padding: clamp(0.65rem, 1.5vw, 1.5rem);
+    border-left: 1px solid rgb(202 238 255 / 32%);
+    scrollbar-color: rgb(140 217 255 / 62%) transparent;
+    scrollbar-width: thin;
 }
 
-.r3-experience-card__body > p {
+.r3-carousel-card__body > p {
     margin: 0;
-    color: #2d4b6c;
-    font-size: clamp(0.9rem, 1vw, 1.03rem);
-    line-height: 1.64;
+    color: #e6f5ff;
+    font-size: clamp(0.82rem, 0.9vw, 0.97rem);
+    line-height: 1.55;
 }
 
-.r3-experience-card__body > ul,
-.r3-experience-card__body details ul {
+.r3-carousel-card__body > ul,
+.r3-carousel-card__body details ul {
     display: grid;
-    gap: 0.75rem;
-    margin: 1.3rem 0 0;
+    gap: 0.68rem;
+    margin: 1.1rem 0 0;
     padding: 0;
     list-style: none;
 }
 
-.r3-experience-card__body li {
+.r3-carousel-card__body li {
     position: relative;
-    padding-left: 1.55rem;
-    color: #284665;
-    font-size: clamp(0.82rem, 0.9vw, 0.96rem);
-    line-height: 1.5;
+    padding-left: 1.45rem;
+    color: #f0f8ff;
+    font-size: clamp(0.76rem, 0.82vw, 0.89rem);
+    line-height: 1.45;
 }
 
-.r3-experience-card__body li::before {
+.r3-carousel-card__body li::before {
     position: absolute;
-    top: 0.16rem;
+    top: 0.12rem;
     left: 0;
     display: grid;
     width: 1rem;
@@ -863,35 +986,139 @@
     place-items: center;
     border-radius: 50%;
     color: #fff;
-    background: var(--r3-orb);
+    background: #2577ff;
+    box-shadow: 0 0 0.7rem rgb(62 161 255 / 54%);
     font-size: 0.62rem;
     content: "\2713";
 }
 
-.r3-experience-card__body details {
-    margin-top: 1.2rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid rgb(89 139 200 / 24%);
+.r3-carousel-card__body details {
+    margin-top: 1.1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgb(202 238 255 / 24%);
 }
 
-.r3-experience-card__body summary {
-    min-height: 2.75rem;
-    color: #1456ac;
-    font-size: 0.76rem;
+.r3-carousel-card__body summary {
+    min-height: 2.6rem;
+    color: #91dfff;
+    font-size: 0.74rem;
     font-weight: 800;
     cursor: pointer;
 }
 
-.r3-experience-card__body h4 {
-    margin: 1.2rem 0 0;
-    color: #173f6a;
+.r3-carousel-card__body h4 {
+    margin: 1rem 0 0;
+    color: #dff3ff;
     font-size: 0.8rem;
 }
 
 .r3-experience-card__status {
-    margin-top: 1.1rem !important;
-    color: var(--r3-indigo) !important;
+    margin-top: 1rem !important;
+    color: #93dfff !important;
     font-weight: 800;
+}
+
+.r3-carousel__arrow {
+    display: grid;
+    width: clamp(2.5rem, 4vw, 3.5rem);
+    height: clamp(2.5rem, 4vw, 3.5rem);
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 74%);
+    border-radius: 50%;
+    color: var(--r3-blue);
+    background: rgb(248 253 255 / 82%);
+    box-shadow: 0 0.7rem 1.8rem rgb(15 72 151 / 18%);
+    font: inherit;
+    font-size: 1.75rem;
+    cursor: pointer;
+}
+
+.r3-carousel__arrow:hover:not(:disabled) {
+    color: #fff;
+    background: var(--r3-indigo);
+    transform: translateY(-2px);
+}
+
+.r3-carousel__arrow:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.r3-carousel__footer {
+    display: grid;
+    justify-items: center;
+    gap: 0.65rem;
+}
+
+.r3-carousel__pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.r3-carousel__pagination button {
+    width: 2.2rem;
+    height: 0.34rem;
+    padding: 0;
+    border: 0;
+    border-radius: 99rem;
+    background: rgb(239 250 255 / 58%);
+    box-shadow: 0 0.2rem 0.6rem rgb(8 47 103 / 22%);
+    cursor: pointer;
+}
+
+.r3-carousel__pagination button[aria-selected="true"] {
+    width: 3.6rem;
+    background: linear-gradient(90deg, #2568e8, #5caeff);
+}
+
+.r3-carousel__footer p {
+    margin: 0;
+    color: #e4f5ff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgb(5 34 73 / 64%);
+}
+
+.r3-experience-journey.is-static {
+    min-height: 0 !important;
+}
+
+.r3-experience-journey.is-static .r3-experience__sticky {
+    position: static;
+    height: auto;
+}
+
+.r3-experience-journey.is-static .r3-carousel {
+    display: block;
+}
+
+.r3-experience-journey.is-static .r3-carousel__arrow {
+    display: none;
+}
+
+.r3-experience-journey.is-static .r3-carousel__viewport {
+    height: auto;
+    overflow: visible;
+}
+
+.r3-experience-journey.is-static .r3-carousel__track {
+    display: grid;
+    width: 100%;
+    min-height: 0;
+    gap: 1rem;
+    padding: 0 !important;
+    transform: none !important;
+}
+
+.r3-experience-journey.is-static .r3-carousel-card {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: minmax(12rem, 0.76fr) minmax(0, 1.24fr);
+    opacity: 1 !important;
+    transform: none !important;
 }
 
 .r3-support-grid {
@@ -1129,8 +1356,7 @@
         min-height: 3rem;
     }
 
-    .r3-ledger-panel,
-    .r3-experience-card {
+    .r3-ledger-panel {
         padding: 2.25rem;
     }
 }
@@ -1268,16 +1494,14 @@
             url("../images/cinematic/work-clouds-m.jpg") center / cover no-repeat;
     }
 
-    .r3-ledger-panel,
-    .r3-experience-card {
+    .r3-ledger-panel {
         display: grid;
         grid-template-columns: 1fr;
         gap: 1.25rem;
         padding: 1.35rem;
     }
 
-    .r3-ledger-panel__art,
-    .r3-experience-card__art {
+    .r3-ledger-panel__art {
         right: -2rem;
         top: 3rem;
         bottom: auto;
@@ -1285,8 +1509,7 @@
         opacity: 0.13;
     }
 
-    .r3-ledger-panel__header h2,
-    .r3-experience-card__header h3 {
+    .r3-ledger-panel__header h2 {
         max-width: 11ch;
         font-size: clamp(2.35rem, 12vw, 3.5rem);
     }
@@ -1322,14 +1545,70 @@
         font-size: clamp(2.65rem, 13vw, 3.8rem);
     }
 
-    .r3-experience-stack {
-        gap: 4.5rem;
+    .r3-experience-journey {
+        min-height: 0;
+        padding-top: 5.5rem;
     }
 
-    .r3-experience-card__body {
+    .r3-experience__sticky {
+        position: static;
+        height: auto;
+    }
+
+    .r3-carousel {
+        display: block;
+    }
+
+    .r3-carousel__arrow {
+        display: none;
+    }
+
+    .r3-carousel__viewport {
+        height: auto;
+        overflow: visible;
+    }
+
+    .r3-carousel__track {
+        display: grid;
+        width: 100%;
+        min-height: 0;
+        gap: 1rem;
+        padding: 0 !important;
+        transform: none !important;
+    }
+
+    .r3-carousel-card {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        grid-template-columns: 1fr;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .r3-experience-journey.is-static .r3-carousel-card {
+        grid-template-columns: 1fr;
+        padding: 1.35rem;
+    }
+
+    .r3-experience-journey.is-static .r3-carousel-card__body {
+        max-height: none;
         padding: 1.1rem 0 0;
-        border-top: 1px solid rgb(89 139 200 / 28%);
+        border-top: 1px solid rgb(202 238 255 / 28%);
         border-left: 0;
+    }
+
+    .r3-experience-journey.is-static .r3-carousel-card__art {
+        right: -2rem;
+        top: 3rem;
+        bottom: auto;
+        width: 11rem;
+        opacity: 0.18;
+    }
+
+    .r3-experience-journey.is-static .r3-carousel-card__header h3 {
+        max-width: 11ch;
+        font-size: clamp(2.35rem, 12vw, 3.5rem);
     }
 
     .r3-support-grid,
@@ -1386,6 +1665,7 @@
     .r3-profile-card,
     .resume-v3 .r3-ledger-nav-card,
     .r3-stage-card,
+    .r3-carousel-card,
     .r3-support-grid article,
     .r3-skill-groups > section,
     .r3-intro {
@@ -1399,13 +1679,17 @@
 @media (forced-colors: active) {
     .resume-v3,
     .resume-v3::before,
-    .r3-stage-card::before {
+    .r3-stage-card::before,
+    .r3-carousel-card,
+    .r3-carousel-card::before,
+    .r3-carousel-card::after {
         background: Canvas;
     }
 
     .r3-profile-card,
     .resume-v3 .r3-ledger-nav-card,
     .r3-stage-card,
+    .r3-carousel-card,
     .r3-support-grid article,
     .r3-skill-groups > section,
     .r3-intro {
@@ -1416,7 +1700,7 @@
     }
 
     .r3-ledger-panel__art,
-    .r3-experience-card__art {
+    .r3-carousel-card__art {
         display: none;
     }
 }
