@@ -99,7 +99,12 @@
         /* ----- Chapter "Ask AI" buttons hand their context to the chat */
         root.querySelectorAll('[data-story-ask]').forEach((button) => {
             button.addEventListener('click', () => {
-                if (typeof window.askPeteAI === 'function') {
+                // data-chat-open already opens the panel and records this
+                // button as the focus-return target; sending the message
+                // directly (instead of askPeteAI) keeps that target intact.
+                if (typeof window.sendChatMessage === 'function') {
+                    window.sendChatMessage(button.dataset.storyAsk);
+                } else if (typeof window.askPeteAI === 'function') {
                     window.askPeteAI(button.dataset.storyAsk);
                 }
             });

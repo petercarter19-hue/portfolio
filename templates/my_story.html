@@ -162,6 +162,7 @@
         <button type="button" class="sc-ai-chip" data-story-suggestion>{{ question }}</button>
         {% endfor %}
     </div>
+    {% set ai_owner_name = owner %}
     {% include "partials/portfolio_ai_search.html" %}
     {% endif %}
 </article>

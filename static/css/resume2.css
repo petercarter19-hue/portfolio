@@ -1033,7 +1033,7 @@
     width: fit-content;
     margin-top: 1rem;
     padding: 0.32rem 0.75rem;
-    color: color-mix(in srgb, var(--edu-accent, #4f5bd5) 62%, #0a1b36);
+    color: color-mix(in srgb, var(--edu-accent, #4f5bd5) 40%, #0a1b36);
     background: color-mix(in srgb, var(--edu-accent, #4f5bd5) 13%, white);
     border-radius: 999px;
     font-size: 0.7rem;
@@ -1375,7 +1375,7 @@
     }
 }
 
-.resume2-story :is(a, button, summary):focus-visible,
+.resume2-story :is(a, button, summary, input):focus-visible,
 .resume-v2 .lr-constellation :is(a, button, summary):focus-visible {
     outline: 3px solid #0b6dd7;
     outline-offset: 3px;

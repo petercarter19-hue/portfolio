@@ -88,7 +88,10 @@ def shared_navigation_urls():
         # point at this deployment's own "/" instead of an external domain.
         # (Previously any unrecognized host — like the Azure URL — sent
         # visitors to https://peerslate.com/, which isn't Pete's live site.)
-        'peerslate_home_url': url_for('home'),
+        # The marketing/"How PeerSlate Works" page moved off the root when
+        # the Experience page became the homepage; keep this pointing at
+        # the page that actually hosts the #how-it-works anchor.
+        'peerslate_home_url': url_for('peerslate_home'),
         'portfolio_home_url': portfolio_url(),
         'portfolio_work_url': portfolio_url('work'),
         'portfolio_skills_url': portfolio_url('skills'),
@@ -216,6 +219,11 @@ def build_knowledge_context(user_message):
 
     if any(word in question for word in ['recruiter', 'hire', 'candidate', 'fit', 'target', 'industry', 'clearance', 'available']):
         selected_files.append('recruiter_faq.md')
+
+    # Personal-story questions (the My Story page invites these) route to
+    # the approved story chapter file so answers stay grounded.
+    if any(word in question for word in ['story', 'chapter', 'pizza', 'domino', 'healthcare', '36', 'back to school', 'pandemic', 'covid', 'run', 'running', '100 miles', 'skydiv', 'travel', 'countries', 'dog', 'blazer', 'falcon', 'danielle', 'family', 'hobby', 'hobbies', 'life', 'personal', 'hiking', 'baseball']):
+        selected_files.append('personal_story.md')
 
     # Keep source order stable and remove duplicates.
     selected_files = list(dict.fromkeys(selected_files))

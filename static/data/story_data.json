@@ -5,10 +5,22 @@
   "page_title": "Pete Carter | My Story",
   "meta_description": "The person behind the work: Pete Carter's story in four acts - who he is now, how he became this person, the life around the work, and what he is still becoming.",
   "closing_values": [
-    { "mark": "✦", "label": "Curious by nature" },
-    { "mark": "♡", "label": "People first" },
-    { "mark": "△", "label": "Purpose driven" },
-    { "mark": "↗", "label": "Always learning" }
+    {
+      "mark": "✦",
+      "label": "Curious by nature"
+    },
+    {
+      "mark": "♡",
+      "label": "People first"
+    },
+    {
+      "mark": "△",
+      "label": "Purpose driven"
+    },
+    {
+      "mark": "↗",
+      "label": "Always learning"
+    }
   ],
   "closing_cta": {
     "label": "Let's connect and build something great.",
@@ -34,10 +46,17 @@
             "alt": "Studio portrait of Pete Carter smiling in a navy suit and glasses",
             "priority": true
           },
-          "caption": "Pete Carter · Huntsville, Alabama",
+          "caption": "Pete Carter · Athens, Alabama",
           "layout": {
-            "desktop": { "col": "4 / span 5", "row": "1 / span 6", "z": 2 },
-            "tablet": { "col": "1 / span 4", "row": "1 / span 5" }
+            "desktop": {
+              "col": "4 / span 5",
+              "row": "1 / span 6",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "1 / span 5"
+            }
           }
         },
         {
@@ -47,8 +66,19 @@
           "hand": "The person behind the work.",
           "attribution": "— Pete",
           "layout": {
-            "desktop": { "col": "3 / span 3", "row": "1 / span 2", "rot": "-1deg", "x": "-0.75rem", "y": "0.65rem", "z": 4 },
-            "tablet": { "col": "5 / span 4", "row": "1 / span 2", "rot": "0.75deg" }
+            "desktop": {
+              "col": "3 / span 3",
+              "row": "1 / span 2",
+              "rot": "-1deg",
+              "x": "-0.75rem",
+              "y": "0.65rem",
+              "z": 4
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "1 / span 2",
+              "rot": "0.75deg"
+            }
           }
         },
         {
@@ -57,13 +87,29 @@
           "importance": "medium",
           "eyebrow": "Currently",
           "list": [
-            { "label": "Learning", "text": "AI and automation for systems engineering" },
-            { "label": "Building", "text": "Systems that make a mission-level impact" },
-            { "label": "Exploring", "text": "Research, teaching, and what's next" }
+            {
+              "label": "Learning",
+              "text": "AI and automation for systems engineering"
+            },
+            {
+              "label": "Building",
+              "text": "Systems that make a mission-level impact"
+            },
+            {
+              "label": "Exploring",
+              "text": "Research, teaching, and what's next"
+            }
           ],
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "1 / span 3", "z": 2 },
-            "tablet": { "col": "5 / span 4", "row": "3 / span 3" }
+            "desktop": {
+              "col": "1 / span 3",
+              "row": "1 / span 3",
+              "z": 2
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "3 / span 3"
+            }
           }
         },
         {
@@ -77,8 +123,16 @@
           },
           "caption": "Danielle & me — married to my best friend.",
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "1 / span 3", "rot": "1deg", "z": 3 },
-            "tablet": { "col": "5 / span 4", "row": "6 / span 4" }
+            "desktop": {
+              "col": "10 / span 3",
+              "row": "1 / span 3",
+              "rot": "1deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "6 / span 4"
+            }
           }
         },
         {
@@ -88,8 +142,15 @@
           "title": "Engineer. Leader. Lifelong learner.",
           "body": "That's me.",
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "4 / span 3", "rot": "-0.5deg" },
-            "tablet": { "col": "1 / span 4", "row": "6 / span 2" }
+            "desktop": {
+              "col": "1 / span 3",
+              "row": "4 / span 3",
+              "rot": "-0.5deg"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "6 / span 2"
+            }
           }
         },
         {
@@ -99,8 +160,16 @@
           "title": "Built on curiosity. Driven by people. Grounded in purpose.",
           "body": "Everything else is just details.",
           "layout": {
-            "desktop": { "col": "8 / span 4", "row": "6 / span 2", "rot": "0.35deg", "z": 3 },
-            "tablet": { "col": "5 / span 4", "row": "10 / span 2" }
+            "desktop": {
+              "col": "8 / span 4",
+              "row": "6 / span 2",
+              "rot": "0.35deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "10 / span 2"
+            }
           }
         },
         {
@@ -111,10 +180,23 @@
           "title": "I went back at 36.",
           "body": "The best decision of my life.",
           "stat_ghost": "36",
-          "link": { "label": "See the story", "href": "#act-becoming" },
+          "link": {
+            "label": "See the story",
+            "href": "#act-becoming"
+          },
           "layout": {
-            "desktop": { "col": "3 / span 3", "row": "6 / span 3", "rot": "-0.75deg", "x": "-0.6rem", "y": "0.3rem", "z": 4 },
-            "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
+            "desktop": {
+              "col": "3 / span 3",
+              "row": "6 / span 3",
+              "rot": "-0.75deg",
+              "x": "-0.6rem",
+              "y": "0.3rem",
+              "z": 4
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "8 / span 3"
+            }
           }
         },
         {
@@ -128,18 +210,39 @@
           },
           "caption": "My two co-pilots.",
           "layout": {
-            "desktop": { "col": "6 / span 3", "row": "7 / span 2", "rot": "-1deg", "y": "-0.65rem", "z": 4 },
-            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+            "desktop": {
+              "col": "6 / span 3",
+              "row": "7 / span 2",
+              "rot": "-1deg",
+              "y": "-0.65rem",
+              "z": 4
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "11 / span 3"
+            }
           }
         },
         {
           "id": "now-travel-stat",
           "type": "stat",
           "importance": "small",
-          "stat": { "value": "10", "label": "countries and counting", "context": "and ten states called home along the way" },
+          "stat": {
+            "value": "10",
+            "label": "countries and counting",
+            "context": "and ten states called home along the way"
+          },
           "layout": {
-            "desktop": { "col": "9 / span 2", "row": "2 / span 2", "x": "-0.45rem", "z": 4 },
-            "tablet": { "col": "5 / span 2", "row": "10 / span 2" }
+            "desktop": {
+              "col": "9 / span 2",
+              "row": "2 / span 2",
+              "x": "-0.45rem",
+              "z": 4
+            },
+            "tablet": {
+              "col": "5 / span 2",
+              "row": "10 / span 2"
+            }
           }
         },
         {
@@ -153,18 +256,38 @@
           },
           "caption": "Our home base · Athens, Alabama",
           "layout": {
-            "desktop": { "col": "9 / span 4", "row": "4 / span 3", "rot": "0.5deg", "z": 2 },
-            "tablet": { "col": "5 / span 4", "row": "12 / span 3", "rot": "0.5deg" }
+            "desktop": {
+              "col": "9 / span 4",
+              "row": "4 / span 3",
+              "rot": "0.5deg",
+              "z": 2
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "12 / span 3",
+              "rot": "0.5deg"
+            }
           }
         },
         {
           "id": "now-mile-stat",
           "type": "stat",
           "importance": "small",
-          "stat": { "value": "100+", "label": "miles", "context": "one challenge, ten days, one unforgettable finish" },
+          "stat": {
+            "value": "100+",
+            "label": "miles",
+            "context": "one challenge, ten days, one unforgettable finish"
+          },
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "7 / span 2", "rot": "0.5deg" },
-            "tablet": { "col": "1 / span 4", "row": "14 / span 2" }
+            "desktop": {
+              "col": "10 / span 3",
+              "row": "7 / span 2",
+              "rot": "0.5deg"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "14 / span 2"
+            }
           }
         }
       ]
@@ -196,8 +319,16 @@
             "ask": "What did managing pizza stores teach Pete about leadership?"
           },
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "1 / span 3", "rot": "-0.75deg", "z": 3 },
-            "tablet": { "col": "1 / span 4", "row": "3 / span 3" }
+            "desktop": {
+              "col": "1 / span 3",
+              "row": "1 / span 3",
+              "rot": "-0.75deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "3 / span 3"
+            }
           }
         },
         {
@@ -217,8 +348,16 @@
             "ask": "How did running a healthcare company shape Pete's path?"
           },
           "layout": {
-            "desktop": { "col": "4 / span 3", "row": "1 / span 3", "y": "0.7rem", "z": 2 },
-            "tablet": { "col": "5 / span 4", "row": "4 / span 3" }
+            "desktop": {
+              "col": "4 / span 3",
+              "row": "1 / span 3",
+              "y": "0.7rem",
+              "z": 2
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "4 / span 3"
+            }
           }
         },
         {
@@ -239,8 +378,15 @@
             "ask": "Why did Pete go back to school at 36?"
           },
           "layout": {
-            "desktop": { "col": "7 / span 6", "row": "1 / span 4", "z": 2 },
-            "tablet": { "col": "1 / span 8", "row": "7 / span 4" }
+            "desktop": {
+              "col": "7 / span 6",
+              "row": "1 / span 4",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 8",
+              "row": "7 / span 4"
+            }
           }
         },
         {
@@ -251,7 +397,7 @@
           "node": "4",
           "era": "2021 · Engineering during a pandemic",
           "title": "A pandemic hire who learned fast.",
-          "body": "Online classes. Late nights. Zero excuses.",
+          "body": "Remote onboarding. Late nights. Zero excuses.",
           "expand": {
             "paragraphs": [
               "I joined the Air Force's 407th Supply Chain Management Squadron as a DoD civilian engineer in the middle of COVID — learning a complex engineering job largely over telework."
@@ -260,8 +406,16 @@
             "ask": "What was it like starting a DoD engineering job during COVID?"
           },
           "layout": {
-            "desktop": { "col": "1 / span 4", "row": "4 / span 3", "rot": "0.5deg", "z": 2 },
-            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+            "desktop": {
+              "col": "1 / span 4",
+              "row": "4 / span 3",
+              "rot": "0.5deg",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "11 / span 3"
+            }
           }
         },
         {
@@ -281,8 +435,16 @@
             "ask": "What did Pete work on with the Air Force?"
           },
           "layout": {
-            "desktop": { "col": "5 / span 4", "row": "4 / span 3", "y": "1rem", "z": 3 },
-            "tablet": { "col": "5 / span 4", "row": "12 / span 3" }
+            "desktop": {
+              "col": "5 / span 4",
+              "row": "4 / span 3",
+              "y": "1rem",
+              "z": 3
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "12 / span 3"
+            }
           }
         },
         {
@@ -291,7 +453,7 @@
           "variant": "systems",
           "importance": "medium",
           "node": "6",
-          "era": "2024 – today · Huntsville",
+          "era": "2024 – today · Industry",
           "title": "L3Harris, then Northrop Grumman.",
           "body": "Systems effectiveness, then systems engineering, integration, and test — plus a 4.0 master's and a PMP along the way.",
           "expand": {
@@ -303,8 +465,16 @@
             "ask": "What does Pete do at Northrop Grumman?"
           },
           "layout": {
-            "desktop": { "col": "4 / span 4", "row": "7 / span 3", "rot": "-0.5deg", "z": 2 },
-            "tablet": { "col": "1 / span 4", "row": "15 / span 3" }
+            "desktop": {
+              "col": "4 / span 4",
+              "row": "7 / span 3",
+              "rot": "-0.5deg",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "15 / span 3"
+            }
           }
         },
         {
@@ -324,8 +494,16 @@
             "ask": "What will Pete research in his Ph.D.?"
           },
           "layout": {
-            "desktop": { "col": "8 / span 5", "row": "7 / span 3", "rot": "0.4deg", "z": 3 },
-            "tablet": { "col": "5 / span 4", "row": "16 / span 3" }
+            "desktop": {
+              "col": "8 / span 5",
+              "row": "7 / span 3",
+              "rot": "0.4deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "16 / span 3"
+            }
           }
         }
       ]
@@ -352,8 +530,15 @@
           "eyebrow": "100 miles. 10 days. One goal.",
           "caption": "Pushed my body. Proved something to my mind.",
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "1 / span 5", "z": 2 },
-            "tablet": { "col": "1 / span 4", "row": "3 / span 5" }
+            "desktop": {
+              "col": "1 / span 3",
+              "row": "1 / span 5",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "3 / span 5"
+            }
           }
         },
         {
@@ -369,8 +554,15 @@
           "eyebrow": "Places that changed me",
           "caption": "Ten countries and counting…",
           "layout": {
-            "desktop": { "col": "4 / span 4", "row": "1 / span 3", "rot": "0.6deg" },
-            "tablet": { "col": "5 / span 4", "row": "1 / span 6" }
+            "desktop": {
+              "col": "4 / span 4",
+              "row": "1 / span 3",
+              "rot": "0.6deg"
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "1 / span 6"
+            }
           }
         },
         {
@@ -385,8 +577,14 @@
           },
           "caption": "Always get outside.",
           "layout": {
-            "desktop": { "col": "8 / span 3", "row": "1 / span 3" },
-            "tablet": { "col": "1 / span 8", "row": "8 / span 3" }
+            "desktop": {
+              "col": "8 / span 3",
+              "row": "1 / span 3"
+            },
+            "tablet": {
+              "col": "1 / span 8",
+              "row": "8 / span 3"
+            }
           }
         },
         {
@@ -401,8 +599,16 @@
           },
           "caption": "Adventure partner for life.",
           "layout": {
-            "desktop": { "col": "4 / span 3", "row": "4 / span 3", "rot": "-0.9deg", "y": "0.5rem" },
-            "tablet": { "col": "1 / span 4", "row": "11 / span 3" }
+            "desktop": {
+              "col": "4 / span 3",
+              "row": "4 / span 3",
+              "rot": "-0.9deg",
+              "y": "0.5rem"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "11 / span 3"
+            }
           }
         },
         {
@@ -417,8 +623,16 @@
           },
           "caption": "Ubud's Monkey Forest. He took the wheel.",
           "layout": {
-            "desktop": { "col": "7 / span 3", "row": "4 / span 3", "rot": "1.1deg", "x": "-0.35rem" },
-            "tablet": { "col": "5 / span 4", "row": "11 / span 3" }
+            "desktop": {
+              "col": "7 / span 3",
+              "row": "4 / span 3",
+              "rot": "1.1deg",
+              "x": "-0.35rem"
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "11 / span 3"
+            }
           }
         },
         {
@@ -426,10 +640,24 @@
           "type": "paper",
           "importance": "small",
           "eyebrow": "Little things that make life rich",
-          "checklist": ["Good coffee", "Deep talks", "Old tech", "New ideas", "Sunrises"],
+          "checklist": [
+            "Good coffee",
+            "Deep talks",
+            "Old tech",
+            "New ideas",
+            "Sunrises"
+          ],
           "layout": {
-            "desktop": { "col": "11 / span 2", "row": "1 / span 3", "rot": "-0.75deg", "z": 3 },
-            "tablet": { "col": "1 / span 3", "row": "14 / span 3" }
+            "desktop": {
+              "col": "11 / span 2",
+              "row": "1 / span 3",
+              "rot": "-0.75deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "1 / span 3",
+              "row": "14 / span 3"
+            }
           }
         },
         {
@@ -444,8 +672,15 @@
           },
           "caption": "Ran a 10K that morning. Jumped out of a plane that afternoon.",
           "layout": {
-            "desktop": { "col": "8 / span 3", "row": "7 / span 3", "rot": "0.75deg" },
-            "tablet": { "col": "4 / span 5", "row": "14 / span 2" }
+            "desktop": {
+              "col": "8 / span 3",
+              "row": "7 / span 3",
+              "rot": "0.75deg"
+            },
+            "tablet": {
+              "col": "4 / span 5",
+              "row": "14 / span 2"
+            }
           }
         },
         {
@@ -460,8 +695,16 @@
           },
           "caption": "Send it.",
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "4 / span 3", "y": "0.75rem", "rot": "-0.4deg" },
-            "tablet": { "col": "4 / span 5", "row": "16 / span 3" }
+            "desktop": {
+              "col": "10 / span 3",
+              "row": "4 / span 3",
+              "y": "0.75rem",
+              "rot": "-0.4deg"
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "16 / span 3"
+            }
           }
         },
         {
@@ -476,8 +719,15 @@
           },
           "caption": "The long way up is the point.",
           "layout": {
-            "desktop": { "col": "1 / span 4", "row": "6 / span 4", "rot": "-0.5deg" },
-            "tablet": { "col": "1 / span 4", "row": "17 / span 4" }
+            "desktop": {
+              "col": "1 / span 4",
+              "row": "6 / span 4",
+              "rot": "-0.5deg"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "17 / span 4"
+            }
           }
         },
         {
@@ -487,8 +737,16 @@
           "hand": "Home lab. Playground. Stress relief.",
           "attribution": "Where ideas turn into experiments.",
           "layout": {
-            "desktop": { "col": "5 / span 3", "row": "7 / span 2", "rot": "0.9deg", "z": 3 },
-            "tablet": { "col": "5 / span 4", "row": "20 / span 2" }
+            "desktop": {
+              "col": "5 / span 3",
+              "row": "7 / span 2",
+              "rot": "0.9deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "20 / span 2"
+            }
           }
         },
         {
@@ -498,18 +756,38 @@
           "hand": "I cry watching TV shows and movies.",
           "attribution": "No shame.",
           "layout": {
-            "desktop": { "col": "11 / span 2", "row": "7 / span 2", "rot": "-1.1deg", "z": 3 },
-            "tablet": { "col": "1 / span 4", "row": "21 / span 2", "rot": "-0.75deg" }
+            "desktop": {
+              "col": "11 / span 2",
+              "row": "7 / span 2",
+              "rot": "-1.1deg",
+              "z": 3
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "21 / span 2",
+              "rot": "-0.75deg"
+            }
           }
         },
         {
           "id": "life-baseball",
           "type": "stat",
           "importance": "small",
-          "stat": { "value": "⚾", "label": "Baseball first", "context": "but I'll watch it all" },
+          "stat": {
+            "value": "⚾",
+            "label": "Baseball first",
+            "context": "but I'll watch it all"
+          },
           "layout": {
-            "desktop": { "col": "11 / span 2", "row": "9 / span 2", "y": "0.5rem" },
-            "tablet": { "col": "5 / span 2", "row": "22 / span 2" }
+            "desktop": {
+              "col": "11 / span 2",
+              "row": "9 / span 2",
+              "y": "0.5rem"
+            },
+            "tablet": {
+              "col": "5 / span 2",
+              "row": "22 / span 2"
+            }
           }
         }
       ]
@@ -531,8 +809,15 @@
           "body": "I'm still becoming who I'm meant to be.",
           "sign_off": "Onward.",
           "layout": {
-            "desktop": { "col": "1 / span 3", "row": "1 / span 5", "z": 2 },
-            "tablet": { "col": "1 / span 8", "row": "1 / span 4" }
+            "desktop": {
+              "col": "1 / span 3",
+              "row": "1 / span 5",
+              "z": 2
+            },
+            "tablet": {
+              "col": "1 / span 8",
+              "row": "1 / span 4"
+            }
           }
         },
         {
@@ -541,19 +826,38 @@
           "importance": "medium",
           "eyebrow": "What I'm focused on",
           "list": [
-            { "label": "AI & automation", "text": "applied to real systems engineering work" },
-            { "label": "MBSE", "text": "Cameo Systems Modeler in daily practice" },
-            { "label": "Mentoring", "text": "helping others grow their potential" }
+            {
+              "label": "AI & automation",
+              "text": "applied to real systems engineering work"
+            },
+            {
+              "label": "MBSE",
+              "text": "Cameo Systems Modeler in daily practice"
+            },
+            {
+              "label": "Mentoring",
+              "text": "helping others grow their potential"
+            }
           ],
           "signal": {
             "variant": "orbit",
             "eyebrow": "Focus loop",
             "title": "Build with purpose",
-            "steps": ["Model", "Build", "Mentor"]
+            "steps": [
+              "Model",
+              "Build",
+              "Mentor"
+            ]
           },
           "layout": {
-            "desktop": { "col": "4 / span 2", "row": "1 / span 5" },
-            "tablet": { "col": "1 / span 4", "row": "5 / span 3" }
+            "desktop": {
+              "col": "4 / span 2",
+              "row": "1 / span 5"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "5 / span 3"
+            }
           }
         },
         {
@@ -562,19 +866,40 @@
           "importance": "medium",
           "eyebrow": "What I'm learning",
           "list": [
-            { "label": "Research methods", "text": "asking better questions, on purpose" },
-            { "label": "AI & ML foundations", "text": "deepening the technical core" },
-            { "label": "Human-centered AI", "text": "technology with purpose" }
+            {
+              "label": "Research methods",
+              "text": "asking better questions, on purpose"
+            },
+            {
+              "label": "AI & ML foundations",
+              "text": "deepening the technical core"
+            },
+            {
+              "label": "Human-centered AI",
+              "text": "technology with purpose"
+            }
           ],
           "signal": {
             "variant": "path",
             "eyebrow": "Learning rhythm",
             "title": "Questions become practice",
-            "steps": ["Question", "Research", "Apply"]
+            "steps": [
+              "Question",
+              "Research",
+              "Apply"
+            ]
           },
           "layout": {
-            "desktop": { "col": "6 / span 2", "row": "1 / span 5", "rot": "-0.35deg", "y": "0.4rem" },
-            "tablet": { "col": "5 / span 4", "row": "5 / span 3" }
+            "desktop": {
+              "col": "6 / span 2",
+              "row": "1 / span 5",
+              "rot": "-0.35deg",
+              "y": "0.4rem"
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "5 / span 3"
+            }
           }
         },
         {
@@ -589,11 +914,22 @@
             "variant": "waypoint",
             "eyebrow": "Next waypoint",
             "title": "The path keeps moving",
-            "steps": ["Now", "Jan 2027", "Beyond"]
+            "steps": [
+              "Now",
+              "Jan 2027",
+              "Beyond"
+            ]
           },
           "layout": {
-            "desktop": { "col": "8 / span 2", "row": "1 / span 5", "rot": "0.35deg" },
-            "tablet": { "col": "1 / span 4", "row": "8 / span 3" }
+            "desktop": {
+              "col": "8 / span 2",
+              "row": "1 / span 5",
+              "rot": "0.35deg"
+            },
+            "tablet": {
+              "col": "1 / span 4",
+              "row": "8 / span 3"
+            }
           }
         },
         {
@@ -608,8 +944,18 @@
           },
           "caption": "Still smiling. Still climbing.",
           "layout": {
-            "desktop": { "col": "2 / span 2", "row": "4 / span 2", "rot": "-1.2deg", "x": "0.5rem", "y": "1rem", "z": 4 },
-            "tablet": { "col": "5 / span 4", "row": "8 / span 4" }
+            "desktop": {
+              "col": "2 / span 2",
+              "row": "4 / span 2",
+              "rot": "-1.2deg",
+              "x": "0.5rem",
+              "y": "1rem",
+              "z": 4
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "8 / span 4"
+            }
           }
         },
         {
@@ -625,8 +971,14 @@
             "What are you building right now?"
           ],
           "layout": {
-            "desktop": { "col": "10 / span 3", "row": "1 / span 5" },
-            "tablet": { "col": "1 / span 8", "row": "12 / span 3" }
+            "desktop": {
+              "col": "10 / span 3",
+              "row": "1 / span 5"
+            },
+            "tablet": {
+              "col": "1 / span 8",
+              "row": "12 / span 3"
+            }
           }
         }
       ]
