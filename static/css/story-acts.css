@@ -41,6 +41,7 @@ body.story-acts-page .main-content {
     isolation: isolate;
     display: flex;
     align-items: center;
+    min-height: 100vh;
     min-height: 100svh;
     min-height: 100dvh;
     padding-block: clamp(3.5rem, 6vh, 6rem);
@@ -63,8 +64,8 @@ body.story-acts-page .main-content {
 /* Act atmospheres. Light-first; the night treatment closes the story. */
 .story-act--day::before {
     background:
-        linear-gradient(180deg, rgb(246 248 252 / 55%) 0%, rgb(246 248 252 / 20%) 40%, rgb(219 236 251 / 65%) 100%),
-        url("../images/cinematic/story-clouds.jpg") center / cover no-repeat,
+        linear-gradient(180deg, rgb(246 248 252 / 62%) 0%, rgb(246 248 252 / 26%) 45%, rgb(219 236 251 / 68%) 100%),
+        url("../images/background-templates/mountains.png") center top / cover no-repeat,
         #dceefe;
 }
 
@@ -112,6 +113,7 @@ body.story-acts-page .main-content {
 
 /* Soft transition band between acts so scenes hand off, not collide. */
 .story-act + .story-act::before {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 5rem);
     mask-image: linear-gradient(180deg, transparent 0, #000 5rem);
 }
 
@@ -127,6 +129,14 @@ body.story-acts-page .main-content {
     width: 100%;
     max-width: none;
     padding-inline: clamp(1rem, 3vw, 3rem);
+}
+
+/* Reserve a right gutter for the fixed progress rail so cards never
+   slide underneath it. */
+@media (min-width: 48rem) {
+    .story-canvas {
+        padding-right: clamp(4.5rem, 7vw, 8.5rem);
+    }
 }
 
 /* ---- Act headers: editorial, placed per act for asymmetry -------------- */
@@ -185,6 +195,13 @@ body.story-acts-page .main-content {
 .story-act--night .story-act__eyebrow > span { color: var(--st-cyan); }
 .story-act--night h2 { color: #f2f7ff; text-shadow: 0 2px 24px rgb(6 11 24 / 60%); }
 .story-act--night .story-act__intro { color: #c3d0df; }
+
+/* Light glass goes cleaner and more opaque over the night scene. */
+.story-act--night .sc-glass,
+.story-act--night .sc-ai,
+.story-act--night .sc-stat {
+    background: rgb(246 248 252 / 88%);
+}
 
 /* ---- Card base ---------------------------------------------------------- */
 
@@ -472,6 +489,7 @@ body.story-acts-page .main-content {
 /* ---- Chapters (Act Two) -------------------------------------------------- */
 
 .sc-chapter {
+    align-self: start;
     padding: clamp(1.4rem, 1.8vw, 1.9rem);
     background: rgb(255 253 248 / 82%);
     border: 1px solid rgb(255 255 255 / 66%);
@@ -758,8 +776,7 @@ body.story-acts-page .main-content {
 }
 
 .story-rail a:hover .story-rail__label,
-.story-rail a:focus-visible .story-rail__label,
-.story-rail a[aria-current="true"] .story-rail__label {
+.story-rail a:focus-visible .story-rail__label {
     position: static;
     width: auto;
     height: auto;
@@ -925,8 +942,8 @@ body.sa-js .sa-reveal.is-in {
     }
 
     .story-rail a {
-        min-width: 2.4rem;
-        min-height: 2.4rem;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
         padding: 0.3rem 0.45rem;
         font-size: 0.72rem;
     }

@@ -739,6 +739,12 @@
     overflow: hidden;
 }
 
+/* The open chapter shows the full record instead of its preview —
+   never both. */
+.r2-exp-stage.is-expanded .r2-experience-card.is-open .r2-exp-card__preview {
+    display: none;
+}
+
 .r2-exp-card__preview {
     max-height: 60rem;
     transition: opacity 260ms ease, max-height 420ms cubic-bezier(.22,.8,.25,1);
@@ -990,6 +996,9 @@
 }
 
 .r2-education-grid article.is-primary {
+    display: grid;
+    align-content: center;
+    justify-items: start;
     grid-row: span 2;
     min-height: 26rem;
     padding: clamp(2rem, 3vw, 3.25rem);
