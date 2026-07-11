@@ -26,7 +26,11 @@
 
 {% block content %}
 
-<section class="sf-page ts-page" aria-labelledby="ts-title">
+<section
+    class="sf-page ts-page"
+    aria-labelledby="ts-title"
+    data-database-ui="{{ 'true' if database_ui_enabled else 'false' }}"
+>
     <div class="site-container">
 
         {% set ts_active = 'feed' %}

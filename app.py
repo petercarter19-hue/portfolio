@@ -13,6 +13,8 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
+from db import get_connection, fetch_all_result_sets
+from peerslate_api import peerslate_api
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -29,6 +31,21 @@ if not ANTHROPIC_API_KEY:
 
 # Create the Flask app
 app = Flask(__name__)
+app.config.update(
+    PEERSLATE_ALLOW_DEV_IDENTITY=(
+        os.environ.get('PEERSLATE_ALLOW_DEV_IDENTITY', 'false').lower() == 'true'
+    ),
+    PEERSLATE_DEV_USER_KEY=os.environ.get('PEERSLATE_DEV_USER_KEY'),
+    PEERSLATE_ENABLE_DB_TEST_ROUTES=(
+        os.environ.get('PEERSLATE_ENABLE_DB_TEST_ROUTES', 'false').lower() == 'true'
+    ),
+    PEERSLATE_DATABASE_UI_ENABLED=(
+        os.environ.get('PEERSLATE_DATABASE_UI_ENABLED', 'false').lower() == 'true'
+    ),
+    PEERSLATE_TRUST_EASYAUTH_HEADERS=(
+        os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
+    ),
+)
 
 # MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
 # For production with multiple workers/instances, configure Redis-backed storage.
@@ -41,6 +58,7 @@ limiter = Limiter(
 # Create the Anthropic client.
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+app.register_blueprint(peerslate_api)
 
 
 # -------------------------------------------------------
@@ -377,7 +395,10 @@ def slate_board():
     # wins/thoughts. MVP is a fully designed static preview: the entries,
     # goal percentages, and badges live in the template as sample content.
     # A future pass adds real storage plus the draft/private/public flow.
-    return render_template('slate_board.html')
+    return render_template(
+        'slate_board.html',
+        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+    )
 
 
 @app.route('/interview-me')
@@ -429,7 +450,10 @@ def skills():
 def the_slate():
     # Tab 1 — Slate Feed, with the People layer active (the layer that
     # best shows the PeerSlate idea: people connected by public goals).
-    return render_template('the_slate_feed.html')
+    return render_template(
+        'the_slate_feed.html',
+        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+    )
 
 
 @app.route('/the-slate/my-slate')
@@ -444,7 +468,10 @@ def the_slate_daily():
     # Tab 3 — Daily Slate: the daily return hook ("What did you move
     # forward today?"). The composer posts a real card (the-slate.js,
     # stored per-browser) so the page demonstrates the loop end-to-end.
-    return render_template('the_slate_daily.html')
+    return render_template(
+        'the_slate_daily.html',
+        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+    )
 
 
 @app.route('/the-slate/paths')
@@ -545,7 +572,10 @@ def slate_feed_break():
     # The Break view — the "step back and recharge" tab: an encouragement
     # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
     # the platform human, not just a metrics grind. Static preview for now.
-    return render_template('slate_break.html')
+    return render_template(
+        'slate_break.html',
+        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+    )
 
 
 # Old /slate-feed addresses: everything moved into The Slate on
@@ -804,6 +834,87 @@ def sitemap_xml():
         f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
     )
     return app.response_class(xml, mimetype='application/xml')
+
+
+# -------------------------------------------------------
+# TEMPORARY LOCAL DATABASE TEST ROUTES
+# These prove the Flask-to-Azure-SQL connection and dashboard
+# stored procedure. Remove or restrict them before deployment.
+# -------------------------------------------------------
+
+@app.route('/api/db-test')
+def db_test():
+    """Confirm that PeerSlate can connect to Azure SQL."""
+
+    if not app.config['PEERSLATE_ENABLE_DB_TEST_ROUTES']:
+        abort(404)
+
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT
+                    DB_NAME() AS database_name,
+                    (SELECT COUNT(*) FROM dbo.content_items) AS content_item_count;
+                """
+            )
+            row = cursor.fetchone()
+
+        return jsonify(
+            {
+                'success': True,
+                'message': 'PeerSlate connected to Azure SQL successfully.',
+                'database_name': row[0],
+                'content_item_count': row[1],
+            }
+        )
+
+    except Exception as error:
+        app.logger.exception('Azure SQL connection test failed.')
+        return jsonify(
+            {
+                'success': False,
+                'message': 'PeerSlate could not connect to Azure SQL.',
+                'error': str(error),
+            }
+        ), 500
+
+
+@app.route('/api/dashboard/test')
+def dashboard_test():
+    """Load the PeerSlate dashboard for the temporary test user."""
+
+    if not app.config['PEERSLATE_ENABLE_DB_TEST_ROUTES']:
+        abort(404)
+
+    try:
+        with get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                'EXEC dbo.usp_GetPeerSlateUserDashboard @UserKey = ?;',
+                ('test-user-1',),
+            )
+            dashboard_sections = fetch_all_result_sets(cursor)
+
+        return jsonify(
+            {
+                'success': True,
+                'user_key': 'test-user-1',
+                'section_count': len(dashboard_sections),
+                'dashboard_sections': dashboard_sections,
+            }
+        )
+
+    except Exception as error:
+        app.logger.exception('PeerSlate dashboard database test failed.')
+        return jsonify(
+            {
+                'success': False,
+                'message': 'The PeerSlate dashboard could not be loaded.',
+                'error': str(error),
+            }
+        ), 500
 
 
 # --- START THE SERVER ---
