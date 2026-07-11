@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-compare-1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-3">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page{% endblock %}
@@ -68,20 +68,20 @@
         </div>
 
         <aside class="r2-quote-card" aria-label="Career perspective">
-            <span aria-hidden="true">“</span>
+            <span class="r2-quote-mark" aria-hidden="true">“</span>
             <blockquote>{{ living_resume.quote }}</blockquote>
-            <small>The career ribbon</small>
+            <small>— {{ resume.profile.name }}</small>
         </aside>
 
-        <aside class="r2-ai-card resume-ai-panel" aria-label="Ask {{ profile_first_name }} AI">
-            <p><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>Ask {{ profile_first_name }} AI</p>
-            <span>Grounded in approved public résumé evidence.</span>
-            <button
-                type="button"
-                data-chat-open
-                data-ask-resume
-                data-ask="Give me a recruiter-focused tour of {{ resume.profile.name }}'s approved public résumé evidence."
-            >Start a guided tour</button>
+        <aside class="r2-ai-card resume-ai-panel" aria-labelledby="r2-ai-title">
+            <p class="r2-ai-kicker" id="r2-ai-title"><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>Ask {{ profile_first_name }} AI</p>
+            <span class="r2-ai-sub">The fastest way to explore this résumé. Every answer is grounded in approved public evidence.</span>
+            <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
+                {% for question in resume.suggested_ai_questions.default %}
+                <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
+                {% endfor %}
+            </div>
+            {% include "partials/portfolio_ai_search.html" %}
         </aside>
     </header>
 
@@ -220,26 +220,77 @@
                 </div>
             </section>
 
-            <section class="r2-section r2-experience" id="resume-experience" data-reveal data-resume-section aria-labelledby="resume-experience-title">
-                <header class="r2-section-heading">
-                    <span>02 / The work, in full context</span>
-                    <h2 id="resume-experience-title">Experience</h2>
-                    <p>A progression of impact across organizations, missions, and technical systems.</p>
-                </header>
-                <div class="r2-experience-grid">
+            <section class="r2-section r2-experience" id="resume-experience" data-reveal data-resume-section aria-labelledby="resume-experience-title" data-r2-exp>
+                <div class="r2-exp-intro-card">
+                    <header class="r2-section-heading">
+                        <span>02 / The work, in full context</span>
+                        <h2 id="resume-experience-title">Experience</h2>
+                        <p>A progression of impact across organizations, missions, and technical systems. Open any chapter to read the full record — the others step aside, never away.</p>
+                    </header>
+                </div>
+                <p class="r2-visually-hidden" data-r2-exp-status role="status" aria-live="polite" aria-atomic="true"></p>
+                <div class="r2-exp-stage" data-r2-exp-stage>
                     {% for role in resume2_experience %}
-                    <article class="r2-experience-card{% if loop.first %} is-featured{% endif %}" style="--orb: {{ role.orb_color }};">
-                        <span class="r2-card-icon" aria-hidden="true"><svg><use href="#lr-icon-{{ role.orb_icon }}"></use></svg></span>
-                        <small>{{ role.dates }}</small>
-                        <h3>{{ role.employer }}</h3>
-                        <p class="r2-card-role">{{ role.title }}</p>
-                        <p>{{ role.summary }}</p>
-                        <ul>
-                            {% for item in role.resume2_accomplishments[:3] %}
-                            <li>{{ item.text }}</li>
-                            {% endfor %}
-                        </ul>
-                        <button type="button" data-chapter-jump="role-{{ role.id }}">View chapter <span aria-hidden="true">→</span></button>
+                    <article
+                        class="r2-experience-card"
+                        id="r2-exp-card-{{ role.id }}"
+                        data-r2-exp-card="{{ role.id }}"
+                        data-r2-exp-name="{{ role.employer }}"
+                        style="--orb: {{ role.orb_color }};"
+                    >
+                        <div class="r2-exp-card__head">
+                            <span class="r2-card-icon" aria-hidden="true"><svg><use href="#lr-icon-{{ role.orb_icon }}"></use></svg></span>
+                            <small>{{ role.dates }}</small>
+                            <h3>{{ role.employer }}</h3>
+                            <p class="r2-card-role">{{ role.title }}</p>
+                        </div>
+                        <div class="r2-exp-card__preview">
+                            <p>{{ role.summary }}</p>
+                            <ul>
+                                {% for item in role.resume2_accomplishments[:3] %}
+                                <li>{{ item.text }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="r2-exp-card__full" id="r2-exp-full-{{ role.id }}" hidden>
+                            <p class="r2-exp-summary">{{ role.summary }}</p>
+                            {% if role.current_role_public_note %}
+                            <p class="r2-exp-note">{{ role.current_role_public_note }}</p>
+                            {% endif %}
+                            <h4>The full record</h4>
+                            <ul class="r2-exp-bullets">
+                                {% for item in role.resume2_accomplishments %}
+                                <li>{{ item.text }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% if role.responsibilities %}
+                            <h4>Scope &amp; responsibilities</h4>
+                            <ul class="r2-exp-bullets r2-exp-bullets--scope">
+                                {% for item in role.responsibilities %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                            {% if role.methods or role.tools %}
+                            <div class="r2-exp-tags" aria-label="Methods and tools">
+                                {% for tag in (role.methods or [])[:5] %}<span>{{ tag }}</span>{% endfor %}
+                                {% for tag in (role.tools or [])[:5] %}<span>{{ tag }}</span>{% endfor %}
+                            </div>
+                            {% endif %}
+                            <button class="r2-exp-ask" type="button" data-chat-open data-ask-resume data-ask="Summarize {{ resume.profile.name }}'s approved evidence from {{ role.employer }}.">
+                                <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                                Ask {{ profile_first_name }} AI about {{ role.employer }}
+                            </button>
+                        </div>
+                        <button
+                            class="r2-exp-toggle"
+                            type="button"
+                            data-r2-exp-toggle
+                            aria-expanded="false"
+                            aria-controls="r2-exp-full-{{ role.id }}"
+                        >
+                            <span data-r2-exp-label>View chapter</span> <span class="r2-exp-toggle__arrow" aria-hidden="true">→</span>
+                        </button>
                     </article>
                     {% endfor %}
                 </div>
@@ -252,9 +303,11 @@
                     <p>Learning milestones that changed the trajectory.</p>
                 </header>
                 <div class="r2-education-grid">
+                    {% set edu_accents = ['#4f5bd5', '#4ea3ff', '#2ec8d3', '#d7a33e'] %}
                     {% for item in resume_degrees %}
-                    <article class="{% if loop.first %}is-primary{% endif %}">
-                        <small>{{ item.status }}</small>
+                    <article class="r2-education-card{% if loop.first %} is-primary{% endif %}" style="--edu-accent: {{ edu_accents[loop.index0 % 4] }};">
+                        <span class="r2-edu-icon" aria-hidden="true"><svg><use href="#lr-icon-graduation"></use></svg></span>
+                        <small class="r2-edu-status">{{ item.status }}</small>
                         <h3>{{ item.credential }}</h3>
                         <strong>{{ item.institution }}</strong>
                         <p>{{ item.detail }}</p>
@@ -366,5 +419,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume-compare-1"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume2-exp-1"></script>
 {% endblock %}

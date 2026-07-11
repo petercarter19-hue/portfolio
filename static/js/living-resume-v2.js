@@ -375,3 +375,121 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+/* ==========================================================================
+   Resume 2 additions (2026-07-10): expandable Experience chapters, the
+   inline Ask AI suggestion chips, and the full-screen constellation stage.
+   Kept in a separate listener so the original module above stays intact.
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const page = document.getElementById('living-resume-page');
+    if (!page || !page.classList.contains('resume-v2')) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    /* ----- Experience: one open chapter, the others step aside ----- */
+    const expSection = page.querySelector('[data-r2-exp]');
+    if (expSection) {
+        const stage = expSection.querySelector('[data-r2-exp-stage]');
+        const cards = Array.from(expSection.querySelectorAll('[data-r2-exp-card]'));
+        const status = expSection.querySelector('[data-r2-exp-status]');
+
+        function announce(text) {
+            if (status) status.textContent = text;
+        }
+
+        function setCardState(card, state) {
+            // state: 'open' | 'aside' | 'rest'
+            const toggle = card.querySelector('[data-r2-exp-toggle]');
+            const label = card.querySelector('[data-r2-exp-label]');
+            const full = card.querySelector('.r2-exp-card__full');
+            card.classList.toggle('is-open', state === 'open');
+            card.classList.toggle('is-aside', state === 'aside');
+            if (full) full.hidden = state !== 'open';
+            if (toggle) toggle.setAttribute('aria-expanded', String(state === 'open'));
+            if (label) label.textContent = state === 'open' ? 'Close chapter' : 'View chapter';
+        }
+
+        function openChapter(card) {
+            stage.classList.add('is-expanded');
+            cards.forEach((other) => setCardState(other, other === card ? 'open' : 'aside'));
+            announce('Showing the full ' + (card.dataset.r2ExpName || 'chapter') + ' record.');
+            if (!reducedMotion.matches) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function closeAll() {
+            stage.classList.remove('is-expanded');
+            cards.forEach((card) => setCardState(card, 'rest'));
+            announce('All chapters restored.');
+        }
+
+        cards.forEach((card) => {
+            const toggle = card.querySelector('[data-r2-exp-toggle]');
+            if (toggle) {
+                toggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (card.classList.contains('is-open')) {
+                        closeAll();
+                        toggle.focus();
+                    } else {
+                        openChapter(card);
+                    }
+                });
+            }
+            // A slimmed-aside card is one big target: clicking anywhere on
+            // it swaps the open chapter (the toggle stays the accessible
+            // control; this is a pointer convenience).
+            card.addEventListener('click', (event) => {
+                if (!card.classList.contains('is-aside')) return;
+                if (event.target.closest('a, button')) return;
+                openChapter(card);
+            });
+        });
+
+        expSection.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const open = cards.find((card) => card.classList.contains('is-open'));
+            if (!open) return;
+            closeAll();
+            const toggle = open.querySelector('[data-r2-exp-toggle]');
+            if (toggle) toggle.focus();
+        });
+    }
+
+    /* ----- Ask AI suggestion chips fill the inline search and submit ----- */
+    const aiCard = page.querySelector('.r2-ai-card');
+    if (aiCard) {
+        const form = aiCard.querySelector('[data-hero-ai-search]');
+        const input = form ? form.querySelector('.hero-ai-search__input') : null;
+        aiCard.querySelectorAll('[data-r2-ai-suggestion]').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                if (!form || !input) return;
+                input.value = chip.textContent.trim();
+                input.focus();
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            });
+        });
+    }
+
+    /* ----- Constellation grows to a full-screen stage on approach ----- */
+    const constellation = page.querySelector('.lr-constellation');
+    if (constellation && 'IntersectionObserver' in window) {
+        const stageObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    constellation.classList.add('is-fullstage');
+                    stageObserver.disconnect();
+                }
+            });
+        }, { rootMargin: '0px 0px -30% 0px' });
+        stageObserver.observe(constellation);
+    } else if (constellation) {
+        constellation.classList.add('is-fullstage');
+    }
+});

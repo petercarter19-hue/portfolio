@@ -72,8 +72,8 @@
 
 .r2-identity-stage {
     display: grid;
-    width: min(94vw, 100rem);
-    grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 0.58fr);
+    width: min(96vw, 114rem);
+    grid-template-columns: minmax(0, 1.6fr) minmax(24rem, 0.72fr);
     grid-template-areas:
         "identity quote"
         "identity ai";
@@ -98,10 +98,10 @@
 .r2-identity-card {
     grid-area: identity;
     display: grid;
-    min-height: 24rem;
-    grid-template-columns: clamp(7.5rem, 11vw, 10.5rem) minmax(0, 1fr);
+    min-height: 26rem;
+    grid-template-columns: clamp(11rem, 15vw, 16.5rem) minmax(0, 1fr);
     align-items: center;
-    gap: clamp(1.5rem, 3vw, 3.25rem);
+    gap: clamp(1.75rem, 3.2vw, 3.5rem);
     padding: clamp(2rem, 4vw, 4rem);
     border-radius: 2rem;
 }
@@ -241,83 +241,158 @@
 .r2-quote-card {
     grid-area: quote;
     position: relative;
-    min-height: 11rem;
-    padding: 1.7rem 1.8rem;
+    overflow: hidden;
+    min-height: 12rem;
+    padding: 1.9rem 2rem 1.7rem;
+    background: linear-gradient(140deg, rgb(255 255 255 / 88%), rgb(255 248 239 / 72%));
     border-radius: 1.5rem 1.5rem 0.75rem 1.5rem;
     transform: translate(-1rem, 0.75rem);
 }
 
-.r2-quote-card > span {
+.r2-quote-card::after {
     position: absolute;
-    top: 0.55rem;
-    left: 1.2rem;
-    color: var(--r2-indigo);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0.3rem;
+    background: linear-gradient(90deg, var(--r2-amber), rgb(215 163 62 / 0%) 72%);
+    content: "";
+}
+
+.r2-quote-mark {
+    position: absolute;
+    top: 0.35rem;
+    left: 1.1rem;
+    color: var(--r2-amber);
     font-family: var(--r2-display);
-    font-size: 3.5rem;
+    font-size: 4.75rem;
     line-height: 1;
+    opacity: 0.85;
 }
 
 .r2-quote-card blockquote {
-    margin: 1.6rem 0 0;
+    margin: 2.1rem 0 0;
     color: #163f8e;
     font-family: var(--r2-display);
-    font-size: clamp(1.45rem, 2vw, 2rem);
+    font-size: clamp(1.6rem, 2.1vw, 2.35rem);
     font-weight: 600;
+    letter-spacing: -0.015em;
     line-height: 1.12;
 }
 
 .r2-quote-card small {
     display: block;
-    margin-top: 1rem;
-    color: #315fb8;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    margin-top: 1.1rem;
+    color: #8a6323;
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
 }
 
 .r2-ai-card {
     grid-area: ai;
     display: grid;
-    align-content: center;
-    gap: 0.65rem;
-    min-height: 9.5rem;
-    padding: 1.35rem 1.5rem;
+    align-content: start;
+    gap: 0.85rem;
+    padding: 1.6rem 1.75rem 1.75rem;
     border-radius: 0.75rem 1.5rem 1.5rem;
     transform: translateX(0.75rem);
 }
 
-.r2-ai-card p {
+.r2-ai-kicker {
     display: flex;
     align-items: center;
     gap: 0.55rem;
     margin: 0;
     color: #167582;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 850;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
-.r2-ai-card > span {
+.r2-ai-sub {
     color: var(--r2-muted);
-    font-size: 0.84rem;
-    line-height: 1.45;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
-.r2-ai-card button {
+.r2-ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.r2-ai-chip {
     min-height: 2.75rem;
-    padding: 0.65rem 1rem;
-    color: #fff;
-    background: #167b87;
-    border: 0;
+    padding: 0.55rem 0.95rem;
+    color: #10606b;
+    text-align: left;
+    background: rgb(46 200 211 / 12%);
+    border: 1px solid rgb(22 123 135 / 32%);
     border-radius: 999px;
     cursor: pointer;
-    font: 750 0.82rem/1 var(--r2-ui);
+    font: 650 0.8rem/1.25 var(--r2-ui);
+    transition: background 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.r2-ai-chip:hover,
+.r2-ai-chip:focus-visible {
+    color: #fff;
+    background: #167b87;
+    border-color: #167b87;
+}
+
+/* The shared Ask AI form, recut for this card: pill input bar with a
+   teal submit, matching the card's existing color language. */
+.r2-ai-card .hero-ai-search {
+    max-width: none;
+}
+
+.r2-ai-card .hero-ai-search__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.r2-ai-card .hero-ai-search__box {
+    min-height: 3.25rem;
+    padding: 4px;
+    background: linear-gradient(180deg, rgb(9 32 48 / 96%), rgb(7 26 40 / 96%));
+    border: 1px solid rgb(46 200 211 / 45%);
+    border-radius: 999px;
+    box-shadow: 0 0 22px rgb(46 200 211 / 12%);
+}
+
+.r2-ai-card .hero-ai-search__box::before {
+    border-radius: 999px;
+}
+
+.r2-ai-card .hero-ai-search__input {
+    padding-left: 1.1rem;
+}
+
+.r2-ai-card .hero-ai-search__button {
+    background: linear-gradient(180deg, #2ec8d3, #167b87);
+    border-radius: 999px;
+    color: #04222a;
+    font-weight: 850;
+}
+
+.r2-ai-card .hero-ai-search__status {
+    color: var(--r2-muted);
+    font-size: 0.76rem;
+}
+
+.r2-ai-card .hero-ai-answer {
+    border-left-color: #167b87;
 }
 
 .resume2-story .r2-timeline-shell {
-    width: min(94vw, 100rem);
+    width: min(96vw, 114rem);
     margin-top: clamp(3rem, 6vw, 6rem);
 }
 
@@ -349,9 +424,9 @@
 }
 
 .resume2-story .r2-ledger-layout {
-    width: min(94vw, 100rem);
-    grid-template-columns: 12.5rem minmax(0, 1fr);
-    gap: 1.35rem;
+    width: min(96vw, 114rem);
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    gap: 1.5rem;
     margin-top: 2.5rem;
 }
 
@@ -369,12 +444,12 @@
 }
 
 .r2-ledger .lr-ledger__detail {
-    min-height: 39rem;
+    min-height: 46rem;
 }
 
 .r2-ledger-panel {
-    min-height: 39rem;
-    padding: clamp(2rem, 3.5vw, 3.5rem);
+    min-height: 46rem;
+    padding: clamp(2.5rem, 3.8vw, 4.5rem);
 }
 
 .r2-panel-header {
@@ -396,30 +471,30 @@
 }
 
 .r2-panel-header h2 {
-    font-size: clamp(2.7rem, 4.2vw, 4.65rem);
+    font-size: clamp(3.1rem, 4.6vw, 5.5rem);
     line-height: 0.98;
 }
 
 .r2-panel-header span {
     display: block;
-    margin-top: 0.65rem;
+    margin-top: 0.7rem;
     color: #335c91;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     font-weight: 750;
 }
 
 .r2-panel-header > strong {
     color: #204d87;
-    font-size: clamp(1rem, 1.2vw, 1.2rem);
+    font-size: clamp(1.05rem, 1.3vw, 1.35rem);
     line-height: 1.35;
     text-align: right;
 }
 
 .r2-panel-summary {
-    max-width: 78ch;
-    margin: 1.35rem 0 0;
+    max-width: 84ch;
+    margin: 1.5rem 0 0;
     color: var(--r2-muted);
-    font-size: 1rem;
+    font-size: clamp(1.05rem, 1.15vw, 1.22rem);
     line-height: 1.62;
 }
 
@@ -447,10 +522,10 @@
 .r2-metric-card {
     display: grid;
     min-width: 0;
-    min-height: 12rem;
+    min-height: 13.5rem;
     align-content: start;
-    gap: 0.45rem;
-    padding: 1.1rem;
+    gap: 0.55rem;
+    padding: 1.35rem;
     color: var(--r2-ink);
     text-align: left;
     background: rgb(255 255 255 / 78%);
@@ -461,7 +536,7 @@
 
 .r2-metric-card svg {
     color: var(--r2-amber);
-    font-size: 1.45rem;
+    font-size: 1.6rem;
 }
 
 .r2-metric-card:nth-child(even) svg {
@@ -471,25 +546,25 @@
 .r2-metric-card strong {
     color: #173f82;
     font-family: var(--r2-display);
-    font-size: clamp(1.8rem, 2.35vw, 2.75rem);
+    font-size: clamp(2.1rem, 2.7vw, 3.3rem);
     line-height: 1;
 }
 
 .r2-metric-card span {
     color: #1e3552;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     font-weight: 800;
     line-height: 1.3;
 }
 
 .r2-metric-card small {
     color: var(--r2-muted);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     line-height: 1.45;
 }
 
 .r2-metric-card--text {
-    min-height: 9rem;
+    min-height: 10rem;
 }
 
 .r2-evidence-highlights > div {
@@ -508,13 +583,13 @@
 .r2-evidence-highlights summary,
 .r2-full-record > summary {
     display: flex;
-    min-height: 2.75rem;
+    min-height: 2.9rem;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 0.9rem;
+    padding: 0.8rem 0.95rem;
     color: #204d87;
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     font-weight: 800;
 }
 
@@ -522,12 +597,17 @@
     margin: 0;
     padding: 0.1rem 1rem 1rem 2rem;
     color: var(--r2-muted);
-    font-size: 0.78rem;
-    line-height: 1.5;
+    font-size: 0.88rem;
+    line-height: 1.55;
 }
 
 .r2-full-record {
     margin-top: 1.25rem;
+}
+
+.r2-full-record .lr-full-record__content li {
+    font-size: 0.95rem;
+    line-height: 1.6;
 }
 
 .r2-education-summary {
@@ -564,45 +644,196 @@
     line-height: 1.6;
 }
 
+/* Experience floats directly on the sky: the section wrapper loses its
+   glass shell, the intro heading becomes its own compact card, and each
+   role is a standalone card in an expandable stage. */
 .r2-experience {
-    width: 102%;
+    width: 104%;
     margin-left: -2%;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
-.r2-experience-grid {
-    display: grid;
-    grid-template-columns: 1.08fr 1fr 1fr;
-    align-items: start;
-    gap: 1rem;
-    margin-top: 2rem;
+.r2-exp-intro-card {
+    display: inline-block;
+    max-width: 48rem;
+    padding: clamp(1.75rem, 3vw, 2.75rem) clamp(2rem, 3.4vw, 3.25rem);
+    border: 1px solid rgb(255 255 255 / 82%);
+    background: linear-gradient(135deg, rgb(255 255 255 / 86%), rgb(244 249 255 / 74%));
+    border-radius: 1.5rem 1.5rem 1.5rem 0.75rem;
+    box-shadow:
+        0 1.75rem 5rem rgb(10 38 78 / 16%),
+        inset 0 1px 0 rgb(255 255 255 / 92%);
+    backdrop-filter: blur(22px) saturate(1.18);
+}
+
+.r2-exp-stage {
+    display: flex;
+    align-items: stretch;
+    gap: 1.25rem;
+    margin-top: 2.25rem;
 }
 
 .r2-experience-card {
     position: relative;
     display: flex;
+    overflow: hidden;
     min-width: 0;
-    min-height: 31rem;
+    min-height: 33rem;
+    flex: 1 1 0;
     flex-direction: column;
-    padding: 1.5rem;
-    background: rgb(255 255 255 / 82%);
-    border: 1px solid rgb(70 116 172 / 20%);
-    border-radius: 1.25rem;
-    box-shadow: 0 1rem 2.5rem rgb(24 64 115 / 10%);
-    transition: transform 260ms cubic-bezier(.22,.8,.25,1), box-shadow 260ms ease;
+    padding: clamp(1.5rem, 2vw, 2rem);
+    border: 1px solid rgb(255 255 255 / 82%);
+    background: linear-gradient(135deg, rgb(255 255 255 / 88%), rgb(244 249 255 / 76%));
+    border-radius: 1.5rem;
+    box-shadow:
+        0 1.5rem 4rem rgb(10 38 78 / 14%),
+        inset 0 1px 0 rgb(255 255 255 / 92%);
+    backdrop-filter: blur(22px) saturate(1.18);
+    transition:
+        flex-grow 420ms cubic-bezier(.22,.8,.25,1),
+        transform 260ms cubic-bezier(.22,.8,.25,1),
+        box-shadow 260ms ease;
 }
 
-.r2-experience-card:nth-child(2) {
+.r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(2) {
     transform: translateY(1.4rem);
 }
 
-.r2-experience-card:nth-child(3) {
+.r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(3) {
     transform: translateY(0.55rem);
 }
 
-.r2-experience-card:hover,
-.r2-experience-card:focus-within {
-    box-shadow: 0 1.5rem 3rem rgb(24 64 115 / 16%);
+.r2-exp-stage:not(.is-expanded) .r2-experience-card:hover,
+.r2-exp-stage:not(.is-expanded) .r2-experience-card:focus-within {
+    box-shadow: 0 1.75rem 4.5rem rgb(24 64 115 / 20%);
     transform: translateY(-0.25rem);
+}
+
+/* Expanded state: the open chapter takes the stage; the others step
+   aside into slim, still-clickable spines. */
+.r2-exp-stage.is-expanded .r2-experience-card.is-open {
+    flex-grow: 3.4;
+}
+
+.r2-exp-stage.is-expanded .r2-experience-card.is-aside {
+    flex-grow: 0.62;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgb(255 255 255 / 68%), rgb(244 249 255 / 54%));
+}
+
+.r2-exp-stage.is-expanded .r2-experience-card.is-aside:hover,
+.r2-exp-stage.is-expanded .r2-experience-card.is-aside:focus-within {
+    border-color: rgb(78 163 255 / 65%);
+    box-shadow: 0 1.75rem 4.5rem rgb(24 64 115 / 22%);
+}
+
+.r2-exp-stage.is-expanded .r2-experience-card.is-aside .r2-exp-card__preview {
+    max-height: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.r2-exp-card__preview {
+    max-height: 60rem;
+    transition: opacity 260ms ease, max-height 420ms cubic-bezier(.22,.8,.25,1);
+}
+
+.r2-exp-card__full {
+    animation: r2-exp-reveal 360ms cubic-bezier(.22,.8,.25,1);
+}
+
+@keyframes r2-exp-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.r2-exp-card__full h4 {
+    margin: 1.6rem 0 0.75rem;
+    color: #315fb8;
+    font-size: 0.8rem;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.r2-exp-summary {
+    margin: 0.9rem 0 0;
+    font-size: 1rem !important;
+}
+
+.r2-exp-note {
+    margin: 0.75rem 0 0;
+    padding: 0.6rem 0.9rem;
+    color: #6a5518;
+    background: rgb(215 163 62 / 12%);
+    border-left: 3px solid var(--r2-amber);
+    border-radius: 0.5rem;
+    font-size: 0.85rem !important;
+}
+
+.r2-exp-bullets {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+@media (min-width: 64rem) {
+    .r2-exp-stage.is-expanded .is-open .r2-exp-bullets {
+        column-count: 2;
+        column-gap: 2.25rem;
+    }
+
+    .r2-exp-stage.is-expanded .is-open .r2-exp-bullets li {
+        break-inside: avoid;
+    }
+}
+
+.r2-exp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 1.4rem;
+}
+
+.r2-exp-tags span {
+    padding: 0.35rem 0.75rem;
+    color: #24405f;
+    background: rgb(79 91 213 / 10%);
+    border: 1px solid rgb(79 91 213 / 24%);
+    border-radius: 999px;
+    font: 650 0.74rem/1.2 var(--r2-ui);
+}
+
+.r2-exp-ask {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 1.5rem;
+    padding: 0.65rem 1.1rem;
+    color: #fff;
+    background: #167b87;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font: 750 0.82rem/1 var(--r2-ui);
+}
+
+.r2-exp-ask:hover,
+.r2-exp-ask:focus-visible {
+    background: #105e67;
 }
 
 .r2-card-icon {
@@ -617,7 +848,7 @@
     box-shadow: 0 0.6rem 1.4rem rgb(23 64 116 / 20%);
 }
 
-.r2-experience-card > small,
+.r2-exp-card__head small,
 .r2-education-grid article > small,
 .r2-development-row article > small {
     display: block;
@@ -645,7 +876,7 @@
     font-weight: 750;
 }
 
-.r2-experience-card > p,
+.r2-experience-card p,
 .r2-experience-card li,
 .r2-education-grid p,
 .r2-development-row p,
@@ -665,8 +896,12 @@
     margin-top: 0.45rem;
 }
 
-.r2-experience-card > button {
+.r2-exp-toggle {
+    display: inline-flex;
     min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     margin-top: auto;
     color: #1d58b4;
     background: transparent;
@@ -674,6 +909,26 @@
     border-radius: 999px;
     cursor: pointer;
     font: 800 0.82rem/1 var(--r2-ui);
+    transition: background 160ms ease-out, color 160ms ease-out;
+}
+
+.r2-exp-toggle:hover,
+.r2-exp-toggle:focus-visible {
+    color: #fff;
+    background: #1d58b4;
+}
+
+.r2-exp-toggle__arrow {
+    display: inline-block;
+    transition: transform 300ms cubic-bezier(.22,.8,.25,1);
+}
+
+.r2-experience-card.is-open .r2-exp-toggle__arrow {
+    transform: rotate(90deg);
+}
+
+.r2-experience-card.is-open .r2-exp-toggle {
+    margin-top: 1.75rem;
 }
 
 .r2-education {
@@ -689,18 +944,63 @@
 }
 
 .r2-education-grid article {
-    min-height: 12rem;
-    padding: 1.5rem;
-    background: rgb(255 255 255 / 78%);
-    border: 1px solid rgb(67 114 170 / 20%);
+    position: relative;
+    overflow: hidden;
+    min-height: 13rem;
+    padding: 1.75rem 1.5rem 1.5rem;
+    background:
+        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #4f5bd5) 9%, transparent), transparent 42%),
+        rgb(255 255 255 / 80%);
+    border: 1px solid color-mix(in srgb, var(--edu-accent, #4f5bd5) 30%, rgb(255 255 255 / 82%));
     border-radius: 1.2rem;
+}
+
+.r2-education-grid article::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 0.3rem;
+    background: linear-gradient(90deg, var(--edu-accent, #4f5bd5), color-mix(in srgb, var(--edu-accent, #4f5bd5) 25%, transparent));
+    content: "";
+}
+
+.r2-edu-icon {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    color: var(--edu-accent, #4f5bd5);
+    background: color-mix(in srgb, var(--edu-accent, #4f5bd5) 13%, white);
+    border: 1px solid color-mix(in srgb, var(--edu-accent, #4f5bd5) 35%, white);
+    border-radius: 0.9rem;
+}
+
+.r2-education-grid .r2-edu-status {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 1rem;
+    padding: 0.32rem 0.75rem;
+    color: color-mix(in srgb, var(--edu-accent, #4f5bd5) 62%, #0a1b36);
+    background: color-mix(in srgb, var(--edu-accent, #4f5bd5) 13%, white);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
 }
 
 .r2-education-grid article.is-primary {
     grid-row: span 2;
-    min-height: 25rem;
-    padding: clamp(1.75rem, 3vw, 3rem);
-    background: linear-gradient(150deg, rgb(255 255 255 / 90%), rgb(227 243 255 / 76%));
+    min-height: 26rem;
+    padding: clamp(2rem, 3vw, 3.25rem);
+    background:
+        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #4f5bd5) 12%, transparent), transparent 48%),
+        linear-gradient(150deg, rgb(255 255 255 / 92%), rgb(240 246 255 / 80%));
+}
+
+.r2-education-grid article.is-primary .r2-edu-icon {
+    width: 3.5rem;
+    height: 3.5rem;
 }
 
 .r2-education-grid strong,
@@ -862,7 +1162,35 @@
     border-radius: 0.9rem;
 }
 
-.resume2-story :is(a, button, summary):focus-visible {
+/* "See how the work became the story" — on Resume 2 the constellation
+   grows into a full-screen stage as it enters the viewport. Only the
+   outer frame changes; the constellation's internals are untouched. */
+.resume-v2 .lr-constellation {
+    transition: width 750ms cubic-bezier(.22, .8, .25, 1);
+}
+
+.resume-v2 .lr-constellation.is-fullstage {
+    width: 100%;
+}
+
+.resume-v2 .lr-constellation__scene {
+    transition: border-radius 750ms cubic-bezier(.22, .8, .25, 1);
+}
+
+.resume-v2 .lr-constellation.is-fullstage .lr-constellation__scene {
+    border-radius: 0;
+    border-right: 0;
+    border-left: 0;
+}
+
+@media (min-width: 64rem) {
+    .resume-v2 .lr-constellation__scene {
+        min-height: max(58rem, 100svh);
+    }
+}
+
+.resume2-story :is(a, button, summary):focus-visible,
+.resume-v2 .lr-constellation :is(a, button, summary):focus-visible {
     outline: 3px solid #0b6dd7;
     outline-offset: 3px;
 }
@@ -877,8 +1205,14 @@
     .r2-quote-card,
     .r2-ai-card,
     .r2-ledger,
-    .r2-section {
+    .r2-section,
+    .r2-exp-intro-card,
+    .r2-experience-card {
         background: rgb(246 248 252 / 96%);
+    }
+
+    .r2-experience {
+        background: none;
     }
 }
 
@@ -951,17 +1285,17 @@
         text-align: left;
     }
 
-    .r2-experience-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .r2-exp-stage {
+        flex-direction: column;
     }
 
-    .r2-experience-card:nth-child(n) {
+    .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(n) {
+        min-height: 0;
         transform: none;
     }
 
-    .r2-experience-card:last-child {
-        grid-column: 1 / -1;
-        min-height: 24rem;
+    .r2-experience-card {
+        min-height: 0;
     }
 
     .r2-skill-explorer {
@@ -1183,11 +1517,20 @@
         font-size: clamp(2.45rem, 11vw, 3.5rem);
     }
 
-    .r2-experience-grid,
     .r2-education-grid,
     .r2-skill-explorer,
     .r2-development-row {
         grid-template-columns: 1fr;
+    }
+
+    .r2-exp-stage {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .r2-exp-intro-card {
+        display: block;
+        padding: 1.5rem 1.35rem;
     }
 
     .r2-experience-card,
@@ -1249,8 +1592,13 @@
     }
 
     .r2-experience-card:nth-child(n),
+    .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(n),
     .r2-development-row article:nth-child(n) {
         transform: none;
+    }
+
+    .r2-exp-card__full {
+        animation: none;
     }
 }
 
@@ -1260,6 +1608,7 @@
     .r2-ai-card,
     .r2-ledger,
     .r2-section,
+    .r2-exp-intro-card,
     .r2-experience-card,
     .r2-education-grid article,
     .r2-development-row article,
@@ -1272,8 +1621,14 @@
         backdrop-filter: none;
     }
 
+    .r2-experience {
+        border: 0;
+        background: none;
+    }
+
     .r2-action--primary,
-    .r2-ai-card button,
+    .r2-ai-chip:hover,
+    .r2-exp-ask,
     .r2-category-list button[aria-selected="true"],
     .r2-category-list button[aria-pressed="true"],
     .r2-skill-lists button[aria-pressed="true"] {

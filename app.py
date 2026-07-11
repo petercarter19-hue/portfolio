@@ -840,8 +840,11 @@ def _render_living_resume(
         role['orb_color'] = color
         role['orb_icon'] = icon
 
-    # Resume 2 keeps the same records but presents a concise, non-retired
-    # public proof set. Resume 1 remains unchanged for side-by-side review.
+    # Resume 2 keeps the same records but presents a non-retired public
+    # proof set. Resume 1 remains unchanged for side-by-side review.
+    # The full filtered list ships to the template: collapsed cards show
+    # a short preview slice, and the expanded chapter view shows all of
+    # them (DoD has 13, L3Harris 9, Northrop 5 after filtering).
     resume2_experience = []
     for role in resume_experience:
         resume2_role = dict(role)
@@ -849,7 +852,7 @@ def _render_living_resume(
             item
             for item in role['accomplishments']
             if 'micap' not in item['text'].lower()
-        ][:4]
+        ]
         resume2_experience.append(resume2_role)
 
     resume2_skill_groups = []
