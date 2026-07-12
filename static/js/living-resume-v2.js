@@ -344,13 +344,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (back) back.setAttribute('aria-hidden', String(!flipped));
     }
 
+    function toggleFlip(card) {
+        const flip = !card.classList.contains('is-flipped');
+        skillFlips.forEach((other) => {
+            if (other !== card) setFlipped(other, false);
+        });
+        setFlipped(card, flip);
+    }
+
     skillFlips.forEach((card) => {
-        card.addEventListener('click', () => {
-            const flip = !card.classList.contains('is-flipped');
-            skillFlips.forEach((other) => {
-                if (other !== card) setFlipped(other, false);
-            });
-            setFlipped(card, flip);
+        card.addEventListener('click', () => toggleFlip(card));
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            toggleFlip(card);
         });
     });
 

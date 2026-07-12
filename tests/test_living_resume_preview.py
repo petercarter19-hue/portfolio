@@ -24,16 +24,16 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_public_resume_routes_render_living_resume_without_preview_labels(self):
-        response = self.client.get('/resume', base_url='http://localhost')
-        alias_response = self.client.get('/petec/resume', base_url='http://localhost')
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+        legacy_response = self.client.get('/petec/resume', base_url='http://localhost')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(alias_response.status_code, 200)
+        self.assertEqual(legacy_response.status_code, 302)
+        self.assertTrue(legacy_response.location.endswith('/petec/resume2'))
         self.assertIn(b'Living R\xc3\xa9sum\xc3\xa9', response.data)
         self.assertIn(b'See how the work became the story.', response.data)
         self.assertNotIn(b'Internal preview', response.data)
         self.assertNotIn(b'noindex,nofollow', response.data)
-        self.assertIn(b'See how the work became the story.', alias_response.data)
 
     def test_preview_defines_reduced_motion_fallbacks(self):
         project_root = Path(__file__).resolve().parents[1]
@@ -72,7 +72,7 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertEqual(ordered_sections, sorted(ordered_sections))
         self.assertGreater(response.data.index(b'id="constellation"'), ordered_sections[-1])
 
-        self.assertIn(b'lr-identity__ai resume-ai-panel', response.data)
+        self.assertIn(b'r2-ai-card resume-ai-panel', response.data)
         self.assertGreaterEqual(response.data.count(b'data-chat-open'), 3)
         self.assertIn('.living-resume-v2-page #chat-toggle', css)
         self.assertIn('updatePersistentNavigation', javascript)

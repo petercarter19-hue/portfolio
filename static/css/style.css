@@ -2435,6 +2435,10 @@ body[data-theme="modern-blue"] {
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 28px;
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: clamp(12px, 1vw, 20px);
 }
 
 .platform-brand {
@@ -2442,6 +2446,7 @@ body[data-theme="modern-blue"] {
     align-items: center;
     gap: 18px;
     min-width: 0;
+    justify-self: start;
 }
 
 /* Mockup brand lockup: inline stacked-diamond mark + serif wordmark,
@@ -2537,6 +2542,7 @@ body[data-theme="modern-blue"] {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    justify-self: end;
     gap: 12px;
 }
 

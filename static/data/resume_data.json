@@ -86,6 +86,28 @@
         "source_category_ids": ["tools-data", "ai-process", "web-development"]
       }
     ],
+    "resume2_featured_skill_ids": [
+      "systems-engineering",
+      "sysml-modeling",
+      "cameo",
+      "mbse",
+      "requirements-management",
+      "doors",
+      "life-cycle-management",
+      "control-account-management",
+      "evms",
+      "contracting",
+      "project-management",
+      "sustainment",
+      "integrated-logistics-support",
+      "provisioning",
+      "ai",
+      "process-improvement",
+      "ms-excel",
+      "data-analytics",
+      "jira",
+      "webpage-development"
+    ],
     "events": [
       {
         "id": "education-as",
@@ -1438,30 +1460,35 @@
       "accomplishments": [
         {
           "id": "l3-ils",
+          "short_label": "12 IPS elements coordinated",
           "text": "Served as ILS Manager coordinating the 12 IPS elements to support availability, readiness, supportability, and lifecycle cost objectives.",
           "related_metric_ids": [],
           "related_skill_ids": ["integrated-logistics-support", "sustainment"]
         },
         {
           "id": "l3-provisioning",
+          "short_label": "Navy provisioning defined",
           "text": "Defined logistics provisioning data for a major Navy program, establishing part-level supportability and material-management requirements.",
           "related_metric_ids": [],
           "related_skill_ids": ["provisioning", "requirements-management"]
         },
         {
           "id": "l3-mbse",
+          "short_label": "Cameo MBSE model built",
           "text": "Built a Cameo MBSE model using logical and physical architecture, imported requirements, profiles, value types, tables, and BDD, IBD, and Activity diagrams.",
           "related_metric_ids": [],
           "related_skill_ids": ["cameo", "mbse", "sysml-modeling"]
         },
         {
           "id": "l3-cam",
+          "short_label": "$9.1M CAM execution",
           "text": "Managed cost, schedule, requirements, forecasts, variances, and deliverables as CAM on a $9.1M sustainment effort.",
           "related_metric_ids": ["cam"],
           "related_skill_ids": ["control-account-management", "evms", "project-management"]
         },
         {
           "id": "l3-spares",
+          "short_label": "Spares strategy delivered",
           "text": "Coordinated procurement, reliability, and systems teams to produce a spares CDRL using availability, cost, reliability, repair-cycle, turnaround-time, and lead-time inputs.",
           "related_metric_ids": [],
           "related_skill_ids": ["provisioning", "data-analytics", "integrated-logistics-support"]
@@ -1518,30 +1545,35 @@
       "accomplishments": [
         {
           "id": "ng-req-define",
+          "short_label": "Requirements defined and validated",
           "text": "Collaborates with SMEs and Product Owners to define, decompose, allocate, and validate system requirements using systems architecture and DOORS.",
           "related_metric_ids": [],
           "related_skill_ids": ["systems-engineering", "requirements-management", "doors"]
         },
         {
           "id": "ng-doors",
+          "short_label": "Bidirectional DOORS traceability",
           "text": "Manages requirements decomposition, derivation, and bidirectional traceability in IBM DOORS.",
           "related_metric_ids": [],
           "related_skill_ids": ["requirements-management", "doors"]
         },
         {
           "id": "ng-mbse-links",
+          "short_label": "Requirements linked to architecture",
           "text": "Maintains parent-child linkages to synchronize requirements with MBSE architectural models.",
           "related_metric_ids": [],
           "related_skill_ids": ["mbse", "doors"]
         },
         {
           "id": "ng-agile",
+          "short_label": "Agile engineering cadence",
           "text": "Participates in an Agile environment with daily stand-ups.",
           "related_metric_ids": [],
           "related_skill_ids": ["jira"]
         },
         {
           "id": "ng-jira",
+          "short_label": "Jira workflow coordinated",
           "text": "Oversees Jira Kanban workflow, story progression, team-task visibility, and completion coordination.",
           "related_metric_ids": [],
           "related_skill_ids": ["jira", "project-management"]
