@@ -18,12 +18,19 @@ class SqlFoundationTests(unittest.TestCase):
         )
         self.rollbacks = sorted(MIGRATIONS.glob("PS-PLAT-*_rollback.sql"))
 
-    def test_five_ordered_forward_and_rollback_migrations_exist(self):
+    def test_six_ordered_forward_and_rollback_migrations_exist(self):
         self.assertEqual(
             [path.name.split("_")[0] for path in self.forward],
-            ["PS-PLAT-001", "PS-PLAT-002", "PS-PLAT-003", "PS-PLAT-004", "PS-PLAT-005"],
+            [
+                "PS-PLAT-001",
+                "PS-PLAT-002",
+                "PS-PLAT-003",
+                "PS-PLAT-004",
+                "PS-PLAT-005",
+                "PS-PLAT-006",
+            ],
         )
-        self.assertEqual(len(self.rollbacks), 5)
+        self.assertEqual(len(self.rollbacks), 6)
 
     def test_forward_migrations_are_transactional_and_recorded(self):
         for path in self.forward:
@@ -55,6 +62,22 @@ class SqlFoundationTests(unittest.TestCase):
         self.assertIn("FOREIGN KEY (from_entity_id, owner_profile_id)", sql)
         self.assertIn("FOREIGN KEY (evidence_item_id, owner_profile_id)", sql)
         self.assertIn("FOREIGN KEY (target_entity_id, owner_profile_id)", sql)
+
+    def test_living_resume_domain_is_private_tenant_owned_and_reviewable(self):
+        sql = (MIGRATIONS / "PS-PLAT-006_living_resume_domain.sql").read_text(
+            encoding="utf-8"
+        )
+        rollback = (
+            MIGRATIONS / "PS-PLAT-006_living_resume_domain_rollback.sql"
+        ).read_text(encoding="utf-8")
+
+        self.assertGreaterEqual(sql.count("DEFAULT N'private'"), 5)
+        self.assertGreaterEqual(sql.count("DEFAULT N'draft'"), 4)
+        self.assertIn("FOREIGN KEY (chapter_id, owner_profile_id)", sql)
+        self.assertIn("FOREIGN KEY (skill_id, owner_profile_id)", sql)
+        self.assertIn("FOREIGN KEY (ai_proposal_id, owner_profile_id)", sql)
+        self.assertIn("Content approval events are immutable", sql)
+        self.assertIn("contains member data", rollback)
 
     def test_verification_script_is_read_only(self):
         sql = VERIFY.read_text(encoding="utf-8").upper()

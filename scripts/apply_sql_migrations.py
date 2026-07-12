@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_DIR = ROOT / "SQL FIles" / "Migrations"
 VERIFY_PATH = ROOT / "SQL FIles" / "Verification" / "peerslate_platform_foundation_verify.sql"
 
-EXPECTED_MIGRATIONS = {f"PS-PLAT-{number:03d}" for number in range(1, 6)}
+EXPECTED_MIGRATIONS = {f"PS-PLAT-{number:03d}" for number in range(1, 7)}
 EXPECTED_TABLES = {
     "schema_migrations",
     "audit_events",
@@ -37,8 +37,23 @@ EXPECTED_TABLES = {
     "notifications",
     "notification_preferences",
     "user_consents",
+    "career_chapters",
+    "career_experiences",
+    "career_education",
+    "career_credentials",
+    "career_projects",
+    "career_achievements",
+    "career_skills",
+    "career_skill_links",
+    "career_timeline_events",
+    "voice_drafts",
+    "content_approval_events",
 }
-EXPECTED_PROGRAMMABLE_OBJECTS = {"usp_AppendAuditEvent", "trg_audit_events_immutable"}
+EXPECTED_PROGRAMMABLE_OBJECTS = {
+    "usp_AppendAuditEvent",
+    "trg_audit_events_immutable",
+    "trg_content_approval_events_immutable",
+}
 
 
 def normalize_connection_string(connection_string: str) -> str:
@@ -160,7 +175,7 @@ def verify_foundation() -> None:
         for failure in failures:
             print(f"FAILED: {failure}")
         raise RuntimeError("PeerSlate foundation verification failed.")
-    print("Verified all five migration records and all 20 foundation tables.")
+    print("Verified all six migration records and all 31 platform and career tables.")
     print("Verified tenant constraints, private profile defaults, and opt-in discovery defaults.")
 
 

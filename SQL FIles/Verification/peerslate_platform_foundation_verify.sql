@@ -17,13 +17,21 @@ FROM (VALUES
     (N'evidence_links'), (N'ai_proposals'), (N'ai_proposal_changes'),
     (N'connection_preferences'), (N'connection_requests'), (N'member_connections'),
     (N'user_blocks'), (N'user_reports'), (N'notifications'),
-    (N'notification_preferences'), (N'user_consents')
+    (N'notification_preferences'), (N'user_consents'),
+    (N'career_chapters'), (N'career_experiences'), (N'career_education'),
+    (N'career_credentials'), (N'career_projects'), (N'career_achievements'),
+    (N'career_skills'), (N'career_skill_links'), (N'career_timeline_events'),
+    (N'voice_drafts'), (N'content_approval_events')
 ) AS expected(object_name)
 ORDER BY expected.object_name;
 
 SELECT expected.object_name,
        CASE WHEN OBJECT_ID(N'dbo.' + expected.object_name) IS NOT NULL THEN 1 ELSE 0 END AS exists_flag
-FROM (VALUES (N'usp_AppendAuditEvent'), (N'trg_audit_events_immutable')) AS expected(object_name)
+FROM (VALUES
+    (N'usp_AppendAuditEvent'),
+    (N'trg_audit_events_immutable'),
+    (N'trg_content_approval_events_immutable')
+) AS expected(object_name)
 ORDER BY expected.object_name;
 
 SELECT t.name AS table_name, SUM(CONVERT(bigint, p.rows)) AS row_count
@@ -35,7 +43,10 @@ WHERE t.name IN
     N'entity_access_grants', N'entity_publication_versions', N'file_assets',
     N'evidence_items', N'evidence_links', N'ai_proposals', N'ai_proposal_changes',
     N'connection_preferences', N'connection_requests', N'member_connections',
-    N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents'
+    N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents',
+    N'career_chapters', N'career_experiences', N'career_education', N'career_credentials',
+    N'career_projects', N'career_achievements', N'career_skills', N'career_skill_links',
+    N'career_timeline_events', N'voice_drafts', N'content_approval_events'
 )
 GROUP BY t.name
 ORDER BY t.name;
@@ -50,7 +61,10 @@ WHERE fk.is_not_trusted = 1
       N'entity_access_grants', N'entity_publication_versions', N'file_assets',
       N'evidence_items', N'evidence_links', N'ai_proposals', N'ai_proposal_changes',
       N'connection_preferences', N'connection_requests', N'member_connections',
-      N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents'
+      N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents',
+      N'career_chapters', N'career_experiences', N'career_education', N'career_credentials',
+      N'career_projects', N'career_achievements', N'career_skills', N'career_skill_links',
+      N'career_timeline_events', N'voice_drafts', N'content_approval_events'
   );
 
 SELECT cc.name AS disabled_or_untrusted_check,
