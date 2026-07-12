@@ -841,10 +841,15 @@
         0 1.5rem 4rem rgb(10 38 78 / 14%),
         inset 0 1px 0 rgb(255 255 255 / 92%);
     backdrop-filter: blur(22px) saturate(1.18);
+    /* One coordinated easing/duration for every part of the open/close so
+       the grow, the re-stagger, and the shadow settle together instead of
+       finishing at three different times (which read as jerky). */
     transition:
-        flex-grow 420ms cubic-bezier(.22,.8,.25,1),
-        transform 260ms cubic-bezier(.22,.8,.25,1),
-        box-shadow 260ms ease;
+        flex-grow 460ms cubic-bezier(.22, .82, .26, 1),
+        transform 460ms cubic-bezier(.22, .82, .26, 1),
+        box-shadow 460ms ease;
+    /* Hint the compositor so the re-stagger/hover transforms stay smooth. */
+    will-change: transform;
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(1) {
@@ -866,6 +871,12 @@
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:focus-within {
     box-shadow: 0 1.75rem 4.5rem rgb(24 64 115 / 20%);
     transform: translateY(calc(var(--r2-card-offset) - 0.35rem));
+    /* Snappy hover lift (the base 460ms is tuned for the big expand, which
+       would feel laggy for a small hover). Hover-out keeps the gentle base
+       timing for a soft settle. */
+    transition:
+        transform 220ms cubic-bezier(.22, .82, .26, 1),
+        box-shadow 220ms ease;
 }
 
 /* Expanded state: the open chapter takes the stage; the others step
@@ -901,7 +912,7 @@
 
 .r2-exp-card__preview {
     max-height: 60rem;
-    transition: opacity 260ms ease, max-height 420ms cubic-bezier(.22,.8,.25,1);
+    transition: opacity 300ms ease, max-height 460ms cubic-bezier(.22, .82, .26, 1);
 }
 
 .r2-experience-card :is(h3, h4, p, li, strong, span, small) {
@@ -918,7 +929,9 @@
 }
 
 .r2-exp-card__full {
-    animation: r2-exp-reveal 360ms cubic-bezier(.22,.8,.25,1);
+    /* Emerges with the grow (slight lead-in delay) on the same easing so the
+       record fades up as the card opens rather than before it. */
+    animation: r2-exp-reveal 420ms cubic-bezier(.22, .82, .26, 1) 60ms both;
 }
 
 @keyframes r2-exp-reveal {

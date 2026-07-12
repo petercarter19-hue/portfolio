@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     behavior: reducedMotion.matches ? 'auto' : 'smooth',
                     block: fits ? 'center' : 'start',
                 });
-            }, 440);
+            }, 480);
         }
 
         function openChapter(card) {
