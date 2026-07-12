@@ -43,6 +43,17 @@ limiter = Limiter(
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
+@app.after_request
+def prevent_stale_html(response):
+    """Always revalidate HTML pages so a design change (like the homepage
+    move from peerslate.html to the Experience page) can't stick in a
+    visitor's browser cache. Versioned static assets (?v=...) are left
+    cacheable — only text/html is marked no-cache."""
+    if response.mimetype == 'text/html':
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
+
 # -------------------------------------------------------
 # SHARED NAVIGATION LINKS
 # @app.context_processor means Flask runs this function before
