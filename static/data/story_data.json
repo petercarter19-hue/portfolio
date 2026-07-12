@@ -1,5 +1,5 @@
 {
-  "_note": "My Story page data. Four acts, each with authored cards. Content and layout are separated: 'layout' carries per-breakpoint grid placement consumed as CSS custom properties. Reusable templates read this file; no profile facts live in template logic.",
+  "_note": "My Story page data. Four acts, each with authored cards. Content and layout are separated: 'layout' carries per-breakpoint grid placement consumed as CSS custom properties. Reusable templates read this file; no profile facts live in template logic. Optional per-item 'icon' names come from the template's generic icon set.",
   "profile_slug": "petec",
   "owner_first_name": "Pete",
   "page_title": "Pete Carter | My Story",
@@ -37,24 +37,24 @@
       "atmosphere": "day",
       "cards": [
         {
-          "id": "now-portrait",
+          "id": "now-maui",
           "type": "image",
+          "variant": "backdrop",
           "importance": "anchor",
           "image": {
-            "src": "images/story/pete-headshot.jpg",
-            "mobile": "images/story/pete-headshot-m.jpg",
-            "alt": "Studio portrait of Pete Carter smiling in a navy suit and glasses",
+            "src": "images/story/pete-danielle-maui-beach.jpg",
+            "mobile": "images/story/pete-danielle-maui-beach-m.jpg",
+            "alt": "Pete and Danielle standing together on lava rocks at a Maui beach, a sailboat on the water behind them",
             "priority": true
           },
-          "caption": "Pete Carter · Athens, Alabama",
           "layout": {
             "desktop": {
-              "col": "4 / span 5",
-              "row": "1 / span 6",
-              "z": 2
+              "col": "1 / span 12",
+              "row": "1 / span 8",
+              "z": 1
             },
             "tablet": {
-              "col": "1 / span 4",
+              "col": "1 / span 8",
               "row": "1 / span 5"
             }
           }
@@ -67,16 +67,14 @@
           "attribution": "— Pete",
           "layout": {
             "desktop": {
-              "col": "3 / span 3",
+              "col": "8 / span 2",
               "row": "1 / span 2",
-              "rot": "-1deg",
-              "x": "-0.75rem",
-              "y": "0.65rem",
+              "rot": "-1.5deg",
               "z": 4
             },
             "tablet": {
               "col": "5 / span 4",
-              "row": "1 / span 2",
+              "row": "6 / span 2",
               "rot": "0.75deg"
             }
           }
@@ -88,14 +86,17 @@
           "eyebrow": "Currently",
           "list": [
             {
+              "icon": "book",
               "label": "Learning",
               "text": "AI and automation for systems engineering"
             },
             {
+              "icon": "code",
               "label": "Building",
               "text": "Systems that make a mission-level impact"
             },
             {
+              "icon": "compass",
               "label": "Exploring",
               "text": "Research, teaching, and what's next"
             }
@@ -107,31 +108,32 @@
               "z": 2
             },
             "tablet": {
-              "col": "5 / span 4",
-              "row": "3 / span 3"
+              "col": "1 / span 4",
+              "row": "6 / span 3"
             }
           }
         },
         {
           "id": "now-danielle",
           "type": "image",
+          "variant": "polaroid",
           "importance": "medium",
           "image": {
             "src": "images/story/pete-danielle-dinner.jpg",
             "mobile": "images/story/pete-danielle-dinner-m.jpg",
             "alt": "Pete and Danielle smiling together at a restaurant"
           },
-          "caption": "Danielle & me — married to my best friend.",
+          "caption": "Danielle & me",
           "layout": {
             "desktop": {
-              "col": "10 / span 3",
-              "row": "1 / span 3",
-              "rot": "1deg",
+              "col": "11 / span 2",
+              "row": "1 / span 2",
+              "rot": "1.2deg",
               "z": 3
             },
             "tablet": {
               "col": "5 / span 4",
-              "row": "6 / span 4"
+              "row": "8 / span 3"
             }
           }
         },
@@ -144,12 +146,12 @@
           "layout": {
             "desktop": {
               "col": "1 / span 3",
-              "row": "4 / span 3",
-              "rot": "-0.5deg"
+              "row": "4 / span 2",
+              "z": 2
             },
             "tablet": {
               "col": "1 / span 4",
-              "row": "6 / span 2"
+              "row": "9 / span 2"
             }
           }
         },
@@ -161,20 +163,20 @@
           "body": "Everything else is just details.",
           "layout": {
             "desktop": {
-              "col": "8 / span 4",
-              "row": "6 / span 2",
-              "rot": "0.35deg",
-              "z": 3
+              "col": "10 / span 3",
+              "row": "6 / span 3",
+              "z": 2
             },
             "tablet": {
               "col": "5 / span 4",
-              "row": "10 / span 2"
+              "row": "16 / span 2"
             }
           }
         },
         {
           "id": "now-turning",
           "type": "paper",
+          "variant": "white",
           "importance": "medium",
           "eyebrow": "The turning point",
           "title": "I went back at 36.",
@@ -186,22 +188,20 @@
           },
           "layout": {
             "desktop": {
-              "col": "3 / span 3",
+              "col": "1 / span 3",
               "row": "6 / span 3",
-              "rot": "-0.75deg",
-              "x": "-0.6rem",
-              "y": "0.3rem",
-              "z": 4
+              "z": 3
             },
             "tablet": {
               "col": "1 / span 4",
-              "row": "8 / span 3"
+              "row": "11 / span 3"
             }
           }
         },
         {
           "id": "now-dogs",
           "type": "image",
+          "variant": "polaroid",
           "importance": "small",
           "image": {
             "src": "images/story/dogs-couch.jpg",
@@ -211,21 +211,22 @@
           "caption": "My two co-pilots.",
           "layout": {
             "desktop": {
-              "col": "6 / span 3",
-              "row": "7 / span 2",
-              "rot": "-1deg",
-              "y": "-0.65rem",
-              "z": 4
+              "col": "8 / span 2",
+              "row": "5 / span 2",
+              "rot": "-1.2deg",
+              "x": "0.5rem",
+              "z": 2
             },
             "tablet": {
-              "col": "1 / span 4",
-              "row": "11 / span 3"
+              "col": "5 / span 4",
+              "row": "13 / span 3"
             }
           }
         },
         {
           "id": "now-travel-stat",
           "type": "stat",
+          "variant": "dark",
           "importance": "small",
           "stat": {
             "value": "10",
@@ -234,14 +235,13 @@
           },
           "layout": {
             "desktop": {
-              "col": "9 / span 2",
-              "row": "2 / span 2",
-              "x": "-0.45rem",
-              "z": 4
+              "col": "8 / span 2",
+              "row": "3 / span 2",
+              "z": 2
             },
             "tablet": {
               "col": "5 / span 2",
-              "row": "10 / span 2"
+              "row": "11 / span 2"
             }
           }
         },
@@ -257,14 +257,14 @@
           "caption": "Our home base · Athens, Alabama",
           "layout": {
             "desktop": {
-              "col": "9 / span 4",
-              "row": "4 / span 3",
+              "col": "10 / span 3",
+              "row": "3 / span 3",
               "rot": "0.5deg",
               "z": 2
             },
             "tablet": {
-              "col": "5 / span 4",
-              "row": "12 / span 3",
+              "col": "1 / span 4",
+              "row": "14 / span 3",
               "rot": "0.5deg"
             }
           }
@@ -272,6 +272,7 @@
         {
           "id": "now-mile-stat",
           "type": "stat",
+          "variant": "dark",
           "importance": "small",
           "stat": {
             "value": "100+",
@@ -280,13 +281,13 @@
           },
           "layout": {
             "desktop": {
-              "col": "10 / span 3",
+              "col": "8 / span 2",
               "row": "7 / span 2",
-              "rot": "0.5deg"
+              "z": 2
             },
             "tablet": {
-              "col": "1 / span 4",
-              "row": "14 / span 2"
+              "col": "7 / span 2",
+              "row": "11 / span 2"
             }
           }
         }
@@ -299,7 +300,7 @@
       "title": "How I became this person.",
       "nav_label": "How I became this person",
       "intro": "The chapters that shaped me — career pivots, risk, service, and the moments that changed everything.",
-      "atmosphere": "warm",
+      "atmosphere": "dusk",
       "timeline": true,
       "cards": [
         {
@@ -322,7 +323,7 @@
             "desktop": {
               "col": "1 / span 3",
               "row": "1 / span 3",
-              "rot": "-0.75deg",
+              "rot": "-0.5deg",
               "z": 3
             },
             "tablet": {
@@ -351,7 +352,6 @@
             "desktop": {
               "col": "4 / span 3",
               "row": "1 / span 3",
-              "y": "0.7rem",
               "z": 2
             },
             "tablet": {
@@ -407,10 +407,9 @@
           },
           "layout": {
             "desktop": {
-              "col": "1 / span 4",
+              "col": "1 / span 3",
               "row": "4 / span 3",
-              "rot": "0.5deg",
-              "z": 2
+              "rot": "0.4deg"
             },
             "tablet": {
               "col": "1 / span 4",
@@ -436,10 +435,9 @@
           },
           "layout": {
             "desktop": {
-              "col": "5 / span 4",
+              "col": "4 / span 3",
               "row": "4 / span 3",
-              "y": "1rem",
-              "z": 3
+              "z": 2
             },
             "tablet": {
               "col": "5 / span 4",
@@ -466,10 +464,9 @@
           },
           "layout": {
             "desktop": {
-              "col": "4 / span 4",
-              "row": "7 / span 3",
-              "rot": "-0.5deg",
-              "z": 2
+              "col": "7 / span 3",
+              "row": "5 / span 3",
+              "rot": "-0.4deg"
             },
             "tablet": {
               "col": "1 / span 4",
@@ -495,10 +492,9 @@
           },
           "layout": {
             "desktop": {
-              "col": "8 / span 5",
-              "row": "7 / span 3",
-              "rot": "0.4deg",
-              "z": 3
+              "col": "10 / span 3",
+              "row": "5 / span 3",
+              "rot": "0.4deg"
             },
             "tablet": {
               "col": "5 / span 4",
@@ -588,54 +584,6 @@
           }
         },
         {
-          "id": "life-ski",
-          "type": "image",
-          "variant": "polaroid",
-          "importance": "small",
-          "image": {
-            "src": "images/story/pete-danielle-ski-lift.jpg",
-            "mobile": "images/story/pete-danielle-ski-lift-m.jpg",
-            "alt": "Pete and Danielle in helmets and goggles on a ski lift"
-          },
-          "caption": "Adventure partner for life.",
-          "layout": {
-            "desktop": {
-              "col": "4 / span 3",
-              "row": "4 / span 3",
-              "rot": "-0.9deg",
-              "y": "0.5rem"
-            },
-            "tablet": {
-              "col": "1 / span 4",
-              "row": "11 / span 3"
-            }
-          }
-        },
-        {
-          "id": "life-monkey",
-          "type": "image",
-          "variant": "polaroid",
-          "importance": "small",
-          "image": {
-            "src": "images/story/pete-danielle-monkey-forest.jpg",
-            "mobile": "images/story/pete-danielle-monkey-forest-m.jpg",
-            "alt": "A monkey photobombing Pete and Danielle's selfie in Ubud's Monkey Forest"
-          },
-          "caption": "Ubud's Monkey Forest. He took the wheel.",
-          "layout": {
-            "desktop": {
-              "col": "7 / span 3",
-              "row": "4 / span 3",
-              "rot": "1.1deg",
-              "x": "-0.35rem"
-            },
-            "tablet": {
-              "col": "5 / span 4",
-              "row": "11 / span 3"
-            }
-          }
-        },
-        {
           "id": "life-little-things",
           "type": "paper",
           "importance": "small",
@@ -661,25 +609,48 @@
           }
         },
         {
-          "id": "life-skydive",
+          "id": "life-ski",
           "type": "image",
-          "variant": "film",
+          "variant": "polaroid",
           "importance": "small",
           "image": {
-            "src": "images/story/pete-skydive.jpg",
-            "mobile": "images/story/pete-skydive-m.jpg",
-            "alt": "Pete mid-freefall during a tandem skydive"
+            "src": "images/story/pete-danielle-ski-lift.jpg",
+            "mobile": "images/story/pete-danielle-ski-lift-m.jpg",
+            "alt": "Pete and Danielle in helmets and goggles on a ski lift"
           },
-          "caption": "Ran a 10K that morning. Jumped out of a plane that afternoon.",
+          "caption": "Adventure partner for life.",
           "layout": {
             "desktop": {
-              "col": "8 / span 3",
-              "row": "7 / span 3",
-              "rot": "0.75deg"
+              "col": "4 / span 3",
+              "row": "4 / span 3",
+              "rot": "-1deg"
             },
             "tablet": {
-              "col": "4 / span 5",
-              "row": "14 / span 2"
+              "col": "1 / span 4",
+              "row": "11 / span 3"
+            }
+          }
+        },
+        {
+          "id": "life-monkey",
+          "type": "image",
+          "variant": "polaroid",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-danielle-monkey-forest.jpg",
+            "mobile": "images/story/pete-danielle-monkey-forest-m.jpg",
+            "alt": "A monkey photobombing Pete and Danielle's selfie in Ubud's Monkey Forest"
+          },
+          "caption": "Ubud's Monkey Forest. He took the wheel.",
+          "layout": {
+            "desktop": {
+              "col": "7 / span 3",
+              "row": "4 / span 3",
+              "rot": "1deg"
+            },
+            "tablet": {
+              "col": "5 / span 4",
+              "row": "11 / span 3"
             }
           }
         },
@@ -698,8 +669,7 @@
             "desktop": {
               "col": "10 / span 3",
               "row": "4 / span 3",
-              "y": "0.75rem",
-              "rot": "-0.4deg"
+              "rot": "-0.5deg"
             },
             "tablet": {
               "col": "5 / span 4",
@@ -720,9 +690,8 @@
           "caption": "The long way up is the point.",
           "layout": {
             "desktop": {
-              "col": "1 / span 4",
-              "row": "6 / span 4",
-              "rot": "-0.5deg"
+              "col": "1 / span 3",
+              "row": "6 / span 3"
             },
             "tablet": {
               "col": "1 / span 4",
@@ -738,14 +707,37 @@
           "attribution": "Where ideas turn into experiments.",
           "layout": {
             "desktop": {
-              "col": "5 / span 3",
+              "col": "4 / span 2",
               "row": "7 / span 2",
-              "rot": "0.9deg",
+              "rot": "0.8deg",
               "z": 3
             },
             "tablet": {
               "col": "5 / span 4",
               "row": "20 / span 2"
+            }
+          }
+        },
+        {
+          "id": "life-skydive",
+          "type": "image",
+          "variant": "film",
+          "importance": "small",
+          "image": {
+            "src": "images/story/pete-skydive.jpg",
+            "mobile": "images/story/pete-skydive-m.jpg",
+            "alt": "Pete mid-freefall during a tandem skydive"
+          },
+          "caption": "Ran a 10K that morning. Jumped out of a plane that afternoon.",
+          "layout": {
+            "desktop": {
+              "col": "6 / span 3",
+              "row": "7 / span 2",
+              "rot": "0.6deg"
+            },
+            "tablet": {
+              "col": "4 / span 5",
+              "row": "14 / span 2"
             }
           }
         },
@@ -757,9 +749,9 @@
           "attribution": "No shame.",
           "layout": {
             "desktop": {
-              "col": "11 / span 2",
+              "col": "9 / span 2",
               "row": "7 / span 2",
-              "rot": "-1.1deg",
+              "rot": "-1deg",
               "z": 3
             },
             "tablet": {
@@ -781,8 +773,7 @@
           "layout": {
             "desktop": {
               "col": "11 / span 2",
-              "row": "9 / span 2",
-              "y": "0.5rem"
+              "row": "7 / span 2"
             },
             "tablet": {
               "col": "5 / span 2",
@@ -827,28 +818,21 @@
           "eyebrow": "What I'm focused on",
           "list": [
             {
+              "icon": "chip",
               "label": "AI & automation",
               "text": "applied to real systems engineering work"
             },
             {
+              "icon": "layers",
               "label": "MBSE",
               "text": "Cameo Systems Modeler in daily practice"
             },
             {
+              "icon": "users",
               "label": "Mentoring",
               "text": "helping others grow their potential"
             }
           ],
-          "signal": {
-            "variant": "orbit",
-            "eyebrow": "Focus loop",
-            "title": "Build with purpose",
-            "steps": [
-              "Model",
-              "Build",
-              "Mentor"
-            ]
-          },
           "layout": {
             "desktop": {
               "col": "4 / span 2",
@@ -867,34 +851,25 @@
           "eyebrow": "What I'm learning",
           "list": [
             {
+              "icon": "flask",
               "label": "Research methods",
               "text": "asking better questions, on purpose"
             },
             {
+              "icon": "chart",
               "label": "AI & ML foundations",
               "text": "deepening the technical core"
             },
             {
+              "icon": "heart",
               "label": "Human-centered AI",
               "text": "technology with purpose"
             }
           ],
-          "signal": {
-            "variant": "path",
-            "eyebrow": "Learning rhythm",
-            "title": "Questions become practice",
-            "steps": [
-              "Question",
-              "Research",
-              "Apply"
-            ]
-          },
           "layout": {
             "desktop": {
               "col": "6 / span 2",
-              "row": "1 / span 5",
-              "rot": "-0.35deg",
-              "y": "0.4rem"
+              "row": "1 / span 5"
             },
             "tablet": {
               "col": "5 / span 4",
@@ -910,21 +885,10 @@
           "title": "Systems Engineering Ph.D.",
           "body": "University of South Alabama · January 2027. Build. Teach. Contribute.",
           "hand": "Leave things better than I found them.",
-          "signal": {
-            "variant": "waypoint",
-            "eyebrow": "Next waypoint",
-            "title": "The path keeps moving",
-            "steps": [
-              "Now",
-              "Jan 2027",
-              "Beyond"
-            ]
-          },
           "layout": {
             "desktop": {
               "col": "8 / span 2",
-              "row": "1 / span 5",
-              "rot": "0.35deg"
+              "row": "1 / span 5"
             },
             "tablet": {
               "col": "1 / span 4",
@@ -947,9 +911,8 @@
             "desktop": {
               "col": "2 / span 2",
               "row": "4 / span 2",
-              "rot": "-1.2deg",
-              "x": "0.5rem",
-              "y": "1rem",
+              "rot": "-2deg",
+              "y": "-0.75rem",
               "z": 4
             },
             "tablet": {
@@ -962,7 +925,7 @@
           "id": "next-ai",
           "type": "ai",
           "importance": "medium",
-          "eyebrow": "Ask me anything about my story",
+          "eyebrow": "Ask me anything about my story.",
           "body": "I'm an open book. Every answer is grounded in my approved public story and résumé evidence.",
           "questions": [
             "Why did you go back to school at 36?",
