@@ -417,13 +417,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if (label) label.textContent = state === 'open' ? 'Close chapter' : 'View chapter';
         }
 
+        // Bring the just-opened chapter into a comfortable frame. Generic for
+        // any number of cards and any expanded height (careers vary — some
+        // profiles have more or fewer roles): a card that fits under the
+        // sticky header is centred; one taller than the viewport is aligned to
+        // its top so the start of the record is never clipped. The card's CSS
+        // scroll-margin-top keeps that top clear of the sticky header. Runs
+        // after the expand/stagger transition settles (flex-grow is 420ms) so
+        // it measures the card's final laid-out height.
+        function frameOpenCard(card) {
+            window.setTimeout(() => {
+                // The visitor may have closed or switched chapters within the
+                // settle delay — don't yank the page to a no-longer-open card.
+                if (!card.classList.contains('is-open')) return;
+                const header = document.querySelector('.global-header');
+                const headerH = header && getComputedStyle(header).position === 'sticky'
+                    ? header.getBoundingClientRect().height
+                    : 0;
+                const fits = card.getBoundingClientRect().height <= window.innerHeight - headerH - 32;
+                card.scrollIntoView({
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                    block: fits ? 'center' : 'start',
+                });
+            }, 580);
+        }
+
         function openChapter(card) {
             stage.classList.add('is-expanded');
             cards.forEach((other) => setCardState(other, other === card ? 'open' : 'aside'));
             announce('Showing the full ' + (card.dataset.r2ExpName || 'chapter') + ' record.');
-            if (!reducedMotion.matches) {
-                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            frameOpenCard(card);
         }
 
         function closeAll() {

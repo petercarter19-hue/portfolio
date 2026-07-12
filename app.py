@@ -43,6 +43,17 @@ limiter = Limiter(
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
+@app.after_request
+def prevent_stale_html(response):
+    """Always revalidate HTML pages so a design change (like the homepage
+    move from peerslate.html to the Experience page) can't stick in a
+    visitor's browser cache. Versioned static assets (?v=...) are left
+    cacheable — only text/html is marked no-cache."""
+    if response.mimetype == 'text/html':
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
+
 # -------------------------------------------------------
 # SHARED NAVIGATION LINKS
 # @app.context_processor means Flask runs this function before
@@ -839,8 +850,16 @@ def _render_living_resume(
     resume_degrees = [
         item for item in resume_data['education'] if item['id'] in degree_ids
     ]
+    # Development is forward-looking growth only, so already-earned
+    # credentials (e.g. an obtained PMP) don't belong here — they stay on
+    # the timeline/ledger. Keep the non-degree items that are still upcoming
+    # or in progress.
+    _earned_statuses = {'Certified', 'Completed', 'Earned', 'Obtained'}
     resume_development = [
-        item for item in resume_data['education'] if item['id'] not in degree_ids
+        item
+        for item in resume_data['education']
+        if item['id'] not in degree_ids
+        and item.get('status') not in _earned_statuses
     ]
     featured_resume_skills = [
         item
