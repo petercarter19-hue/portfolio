@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-header-1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-refine-4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-refine-5">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page{% endblock %}
@@ -120,7 +120,6 @@
                 <a href="#resume-development" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-compass"></use></svg>Development</a>
             </nav>
             <p>Last updated<br><strong>{{ living_resume.last_updated }}</strong></p>
-            <a class="lr-rail-pdf" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>Résumé PDF</a>
         </aside>
 
         <div class="lr-resume-flow r2-resume-flow">
@@ -392,5 +391,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume2-refine-2"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume2-refine-5"></script>
 {% endblock %}
