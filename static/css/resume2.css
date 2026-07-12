@@ -850,7 +850,7 @@
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(3) {
-    --r2-card-offset: -8rem;
+    --r2-card-offset: -6rem;
     transform: translateY(var(--r2-card-offset));
 }
 
@@ -1428,16 +1428,23 @@
     position: relative;
     grid-column: 3;
     grid-row: 1 / span 2;
+    /* Held-left: the left edge stays put (left: 7rem) and the right edge
+       pins to the page's content edge, so the card is as wide as the page
+       allows without ever clipping the last column. Roomy screens make it
+       wide enough for four columns (below), narrower ones keep three. */
     width: calc(100% - 7rem);
     margin: 10rem 0 0;
     padding: clamp(2rem, 3vw, 3rem);
     left: 7rem;
 }
 
-/* The card is narrower now that it sits further right, so its evidence
-   grid drops to three columns to keep each card readable. */
-.r2-vertical-composition .r2-skills .r2-skill-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+/* Four columns only where the held-left card is wide enough for them to
+   stay readable (roomy screens); narrower screens keep three so the last
+   column is never cramped or clipped off the page. */
+@media (max-width: 102rem) {
+    .r2-vertical-composition .r2-skills .r2-skill-card-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 .r2-vertical-composition .r2-skill-explorer {
