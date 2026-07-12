@@ -1,0 +1,3 @@
+# Local database-operations tooling only; not installed by the web deployment pipeline.
+mssql-python==1.11.0
+python-dotenv==1.2.2
