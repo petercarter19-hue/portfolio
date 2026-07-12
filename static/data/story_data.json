@@ -50,7 +50,7 @@
           "layout": {
             "desktop": {
               "col": "1 / span 12",
-              "row": "1 / span 8",
+              "row": "1 / span 7",
               "z": 1
             },
             "tablet": {
@@ -67,7 +67,7 @@
           "attribution": "— Pete",
           "layout": {
             "desktop": {
-              "col": "8 / span 2",
+              "col": "4 / span 2",
               "row": "1 / span 2",
               "rot": "-1.5deg",
               "z": 4
@@ -163,8 +163,8 @@
           "body": "Everything else is just details.",
           "layout": {
             "desktop": {
-              "col": "10 / span 3",
-              "row": "6 / span 3",
+              "col": "7 / span 3",
+              "row": "6 / span 2",
               "z": 2
             },
             "tablet": {
@@ -188,8 +188,8 @@
           },
           "layout": {
             "desktop": {
-              "col": "1 / span 3",
-              "row": "6 / span 3",
+              "col": "2 / span 3",
+              "row": "6 / span 2",
               "z": 3
             },
             "tablet": {
@@ -211,10 +211,9 @@
           "caption": "My two co-pilots.",
           "layout": {
             "desktop": {
-              "col": "8 / span 2",
-              "row": "5 / span 2",
+              "col": "5 / span 2",
+              "row": "6 / span 2",
               "rot": "-1.2deg",
-              "x": "0.5rem",
               "z": 2
             },
             "tablet": {
@@ -235,8 +234,8 @@
           },
           "layout": {
             "desktop": {
-              "col": "8 / span 2",
-              "row": "3 / span 2",
+              "col": "9 / span 2",
+              "row": "1 / span 2",
               "z": 2
             },
             "tablet": {
@@ -257,7 +256,7 @@
           "caption": "Our home base · Athens, Alabama",
           "layout": {
             "desktop": {
-              "col": "10 / span 3",
+              "col": "9 / span 4",
               "row": "3 / span 3",
               "rot": "0.5deg",
               "z": 2
@@ -281,8 +280,8 @@
           },
           "layout": {
             "desktop": {
-              "col": "8 / span 2",
-              "row": "7 / span 2",
+              "col": "10 / span 3",
+              "row": "6 / span 2",
               "z": 2
             },
             "tablet": {

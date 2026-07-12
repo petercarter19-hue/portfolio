@@ -124,7 +124,7 @@ body.story-acts-page :is(h1, h2, h3) {
     padding-right: clamp(1.4rem, 2.4vw, 2.5rem);
 }
 
-#act-now .story-collage { min-height: clamp(44rem, 52vw, 52rem); }
+#act-now .story-collage { min-height: clamp(40rem, 48vw, 47rem); }
 #act-becoming .story-collage { min-height: clamp(33rem, 39vw, 39rem); }
 #act-life .story-collage { min-height: clamp(42rem, 50vw, 49rem); }
 #act-next .story-collage { min-height: clamp(30rem, 35vw, 35rem); }
