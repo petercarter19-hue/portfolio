@@ -5,10 +5,10 @@
       "name": "flask",
       "runtimeExecutable": "venv/bin/python",
       "runtimeArgs": ["app.py"],
-      "port": 5001,
+      "port": 5000,
       "autoPort": false,
       "env": {
-        "PORT": "5001"
+        "PORT": "5000"
       }
     }
   ]

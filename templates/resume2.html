@@ -251,7 +251,7 @@
                         <div class="r2-exp-card__preview">
                             <p>{{ role.summary }}</p>
                             <ul>
-                                {% for item in role.resume2_accomplishments[:3] %}
+                                {% for item in role.resume2_accomplishments[:4] %}
                                 <li>{{ item.text }}</li>
                                 {% endfor %}
                             </ul>
@@ -311,8 +311,10 @@
                     {% set edu_accents = ['#4f5bd5', '#4ea3ff', '#2ec8d3', '#d7a33e'] %}
                     {% for item in resume_degrees %}
                     <article class="r2-education-card{% if loop.first %} is-primary{% endif %}" style="--edu-accent: {{ edu_accents[loop.index0 % 4] }};">
-                        <span class="r2-edu-icon" aria-hidden="true"><svg><use href="#lr-icon-graduation"></use></svg></span>
-                        <small class="r2-edu-status">{{ item.status }}</small>
+                        <div class="r2-edu-statusline">
+                            <small class="r2-edu-status">{{ item.status }}</small>
+                            {% if item.date %}<span class="r2-edu-date">{{ item.date }}</span>{% endif %}
+                        </div>
                         <h3>{{ item.credential }}</h3>
                         <strong>{{ item.institution }}</strong>
                         <p>{{ item.detail }}</p>
