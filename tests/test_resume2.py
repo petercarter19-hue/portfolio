@@ -45,54 +45,43 @@ class Resume2Tests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_resume1_and_resume2_render_as_separate_compositions(self):
-        resume1 = self.client.get('/petec/resume', base_url='http://localhost')
-        resume2 = self.client.get('/petec/resume2', base_url='http://localhost')
-
-        self.assertEqual(resume1.status_code, 200)
-        self.assertEqual(resume2.status_code, 200)
-        self.assertNotIn(b'class="lr-page resume-v2"', resume1.data)
-        self.assertIn(b'class="lr-page resume-v2"', resume2.data)
-        self.assertIn(b'css/resume2.css', resume2.data)
-
-    def test_resume_header_tabs_include_both_versions_with_one_current_link(self):
-        for path, active_href in (
-            ('/petec/resume', '/petec/resume'),
-            ('/petec/resume2', '/petec/resume2'),
-        ):
+    def test_legacy_resume_routes_redirect_to_the_canonical_living_resume(self):
+        for path in ('/resume', '/petec/resume'):
             with self.subTest(path=path):
                 response = self.client.get(path, base_url='http://localhost')
-                response_text = response.get_data(as_text=True)
-                parser = ResumeHeaderTabsParser()
-                parser.feed(response_text)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.location.endswith('/petec/resume2'))
 
-                self.assertEqual(len(parser.links), 7)
-                self.assertEqual(
-                    [link['text'] for link in parser.links],
-                    [
-                        'Overview',
-                        'My Story',
-                        'Evidence',
-                        'Projects',
-                        'Slate Board',
-                        'Resume 1',
-                        'Resume 2',
-                    ],
-                )
-                current_links = [
-                    link
-                    for link in parser.links
-                    if link['attributes'].get('aria-current') == 'page'
-                ]
-                self.assertEqual(len(current_links), 1)
-                self.assertEqual(current_links[0]['attributes']['href'], active_href)
+        canonical = self.client.get('/petec/resume2', base_url='http://localhost')
+        self.assertEqual(canonical.status_code, 200)
+        self.assertIn(b'class="lr-page resume-v2"', canonical.data)
+        self.assertIn(b'css/resume2.css', canonical.data)
 
-                header_start = response_text.index('<header class="global-header">')
-                header_end = response_text.index('</header>', header_start)
-                tabs_start = response_text.index('profile-tabs--resume')
-                self.assertLess(header_start, tabs_start)
-                self.assertLess(tabs_start, header_end)
-                self.assertNotIn('resume-version-switch', response_text)
+    def test_resume_header_tabs_include_one_canonical_resume_link(self):
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+        response_text = response.get_data(as_text=True)
+        parser = ResumeHeaderTabsParser()
+        parser.feed(response_text)
+
+        self.assertEqual(len(parser.links), 6)
+        self.assertEqual(
+            [link['text'] for link in parser.links],
+            ['Overview', 'My Story', 'Evidence', 'Projects', 'Slate Board', 'Resume'],
+        )
+        current_links = [
+            link
+            for link in parser.links
+            if link['attributes'].get('aria-current') == 'page'
+        ]
+        self.assertEqual(len(current_links), 1)
+        self.assertEqual(current_links[0]['attributes']['href'], '/petec/resume2')
+        self.assertNotIn('Resume 1', response_text)
+
+        header_start = response_text.index('<header class="global-header">')
+        header_end = response_text.index('</header>', header_start)
+        tabs_start = response_text.index('profile-tabs--resume')
+        self.assertLess(header_start, tabs_start)
+        self.assertLess(tabs_start, header_end)
 
     def test_profile_slug_routes_do_not_fall_back_to_pete(self):
         adapter = app.url_map.bind('localhost')
@@ -109,24 +98,19 @@ class Resume2Tests(unittest.TestCase):
             404,
         )
 
-    def test_both_versions_render_the_exact_shared_constellation(self):
-        resume1 = self.client.get('/petec/resume', base_url='http://localhost')
+    def test_public_and_internal_routes_render_the_exact_shared_constellation(self):
+        preview = self.client.get('/_internal/living-resume-v2', base_url='http://localhost')
         resume2 = self.client.get('/petec/resume2', base_url='http://localhost')
 
         self.assertEqual(
-            constellation_fragment(resume1.data),
+            constellation_fragment(preview.data),
             constellation_fragment(resume2.data),
         )
 
         project_root = Path(__file__).resolve().parents[1]
-        for template_name in ('living_resume_v2.html', 'resume2.html'):
-            template = (project_root / 'templates' / template_name).read_text(
-                encoding='utf-8'
-            )
-            self.assertIn(
-                '{% include "partials/career_constellation.html" %}',
-                template,
-            )
+        template = (project_root / 'templates' / 'resume2.html').read_text(encoding='utf-8')
+        self.assertIn('{% include "partials/career_constellation.html" %}', template)
+        self.assertFalse((project_root / 'templates' / 'living_resume_v2.html').exists())
 
     def test_resume2_omits_the_retired_micap_example(self):
         response = self.client.get('/petec/resume2', base_url='http://localhost')
@@ -155,7 +139,7 @@ class Resume2Tests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
-        self.assertIn('css/resume2.css?v=resume2-polish-2', response_text)
+        self.assertIn('css/resume2.css?v=resume2-refine-2', response_text)
 
         section_positions = [
             response_text.index(f'id="{section_id}"')
@@ -172,6 +156,29 @@ class Resume2Tests(unittest.TestCase):
 
         self.assertEqual(section_positions, sorted(section_positions))
         self.assertLess(section_positions[-1], constellation_position)
+
+    def test_resume2_renders_twenty_evidence_backed_skill_flip_cards(self):
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data.count(b'class="lr-skill-flip r2-skill-card"'),
+            20,
+        )
+        self.assertIn(b'r2-skill-card__front', response.data)
+        self.assertIn(b'r2-skill-card__back', response.data)
+        self.assertIn(b'one or two factual examples', response.data)
+
+    def test_profile_tabs_render_everywhere_except_the_root_landing_page(self):
+        root = self.client.get('/', base_url='http://localhost')
+        self.assertNotIn(b'class="profile-tabs', root.data)
+
+        for path in ('/petec', '/petec/my-story', '/the-slate', '/experience'):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b'class="profile-tabs', response.data)
+                self.assertNotIn(b'>Experience</a>', response.data)
 
 
 if __name__ == '__main__':

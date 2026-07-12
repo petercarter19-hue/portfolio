@@ -96,7 +96,8 @@ def shared_navigation_urls():
         'portfolio_work_url': portfolio_url('work'),
         'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
-        'portfolio_resume_url': portfolio_url('resume'),
+        # Resume 2 is now the one canonical public resume experience.
+        'portfolio_resume_url': portfolio_url('resume2'),
         'portfolio_contact_url': portfolio_url('contact'),
         'portfolio_hobbies_url': portfolio_url('hobbies'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
@@ -696,8 +697,8 @@ def _load_resume_profile(profile_slug):
 
 def _render_living_resume(
     profile_slug='petec',
-    template_name='living_resume_v2.html',
-    resume_version=1,
+    template_name='resume2.html',
+    resume_version=2,
     is_internal_preview=False,
 ):
     """Build either résumé composition from one shared structured model."""
@@ -777,6 +778,7 @@ def _render_living_resume(
             if accomplishment.get('id') in used_evidence:
                 continue
             outcomes.append({
+                'label': accomplishment.get('short_label', 'Impact outcome'),
                 'text': accomplishment['text'],
                 'evidence_id': accomplishment.get('id'),
             })
@@ -852,8 +854,7 @@ def _render_living_resume(
         role['orb_color'] = color
         role['orb_icon'] = icon
 
-    # Resume 2 keeps the same records but presents a non-retired public
-    # proof set. Resume 1 remains unchanged for side-by-side review.
+    # The canonical Living Resume presents a non-retired public proof set.
     # The full filtered list ships to the template: collapsed cards show
     # a short preview slice, and the expanded chapter view shows all of
     # them (DoD has 13, L3Harris 9, Northrop 5 after filtering).
@@ -888,6 +889,23 @@ def _render_living_resume(
                 'skills': group_skills,
             })
 
+    # Resume 2 uses an explicitly ordered fixture list so the reusable card
+    # component never hardcodes Pete-specific skills. Every public card must
+    # retain one or more approved evidence records from the selected profile.
+    resume2_featured_skills = []
+    for skill_id in living_resume.get('resume2_featured_skill_ids', []):
+        skill = skill_by_id.get(skill_id)
+        if not skill:
+            continue
+        resume2_skill = dict(skill)
+        resume2_skill['resume2_evidence_items'] = [
+            item
+            for item in skill.get('evidence_items', [])
+            if 'micap' not in item['text'].lower()
+        ]
+        if resume2_skill['resume2_evidence_items']:
+            resume2_featured_skills.append(resume2_skill)
+
     profile_name = resume_data['profile']['name'].strip()
     profile_first_name = profile_name.split()[0] if profile_name else 'Profile'
 
@@ -908,6 +926,7 @@ def _render_living_resume(
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
         resume2_skill_groups=resume2_skill_groups,
+        resume2_featured_skills=resume2_featured_skills,
         skill_lookup=skill_by_id,
         profile_slug=profile_slug,
         profile_first_name=profile_first_name,
@@ -918,13 +937,16 @@ def _render_living_resume(
 
 @app.route('/resume')
 def resume():
-    """Keep the existing unscoped fixture alias for old bookmarks."""
-    return _render_living_resume('petec')
+    """Send legacy resume bookmarks to the canonical Living Resume page."""
+    return redirect(url_for('profile_resume2', profile_slug='petec'), code=302)
 
 
 @app.route('/<profile_slug>/resume')
 def profile_resume(profile_slug):
-    return _render_living_resume(profile_slug)
+    # Validate the tenant-safe fixture before redirecting so unknown profile
+    # slugs still return 404 instead of silently falling back to Pete.
+    _load_resume_profile(profile_slug)
+    return redirect(url_for('profile_resume2', profile_slug=profile_slug), code=302)
 
 
 @app.route('/<profile_slug>/resume2')
@@ -944,7 +966,12 @@ def living_resume_v2():
     if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
         abort(404)
 
-    return _render_living_resume('petec', is_internal_preview=True)
+    return _render_living_resume(
+        'petec',
+        template_name='resume2.html',
+        resume_version=2,
+        is_internal_preview=True,
+    )
 
 
 # -------------------------------------------------------
@@ -1072,7 +1099,7 @@ def sitemap_xml():
     # API routes are deliberately left out).
     public_paths = [
         '/', '/petec', '/experience',
-        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume',
+        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume2',
         '/petec/slate-board', '/petec/interview-me', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
