@@ -260,7 +260,7 @@
     padding: 1.9rem 2rem 1.7rem;
     background: linear-gradient(140deg, rgb(255 255 255 / 88%), rgb(255 248 239 / 72%));
     border-radius: 1.5rem 1.5rem 0.75rem 1.5rem;
-    transform: translate(0.15rem, -1.55rem);
+    transform: translate(-1.6rem, -1.55rem);
 }
 
 .r2-quote-card::after {
@@ -308,13 +308,13 @@
     display: grid;
     align-self: start;
     align-content: start;
-    width: calc(100% + clamp(7rem, 9vw, 11rem));
+    width: calc(100% - 0.5rem);
     justify-self: end;
     gap: 1rem;
     margin-top: 2.5rem;
     padding: 1.9rem 2.1rem 2rem;
     border-radius: 0.75rem 1.5rem 1.5rem;
-    transform: translateX(clamp(1rem, 1.6vw, 2rem));
+    transform: translateX(clamp(0.75rem, 1.4vw, 1.5rem));
 }
 
 .r2-ai-kicker {
@@ -784,6 +784,7 @@
    role is a standalone card in an expandable stage. */
 .r2-experience {
     width: 101%;
+    margin-top: clamp(3rem, 6vw, 5.5rem);
     margin-left: -0.5%;
     padding: 0;
     background: none;
@@ -842,7 +843,7 @@
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(3) {
-    --r2-card-offset: -3.75rem;
+    --r2-card-offset: -6rem;
     transform: translateY(var(--r2-card-offset));
 }
 
@@ -1356,8 +1357,8 @@
     width: 100%;
     margin-left: 0;
     padding: clamp(1.6rem, 2.4vw, 2.4rem);
-    top: 2rem;
-    left: -4.25rem;
+    top: 0;
+    left: -6.5rem;
 }
 
 .r2-vertical-composition .r2-education-grid {
@@ -1404,10 +1405,10 @@
     position: relative;
     grid-column: 3;
     grid-row: 1 / span 2;
-    width: calc(100% + 7.75rem);
+    width: calc(100% + 1.75rem);
     margin: 10rem 0 0;
     padding: clamp(2rem, 3vw, 3rem);
-    left: -7rem;
+    left: -1.75rem;
 }
 
 .r2-vertical-composition .r2-skill-explorer {
