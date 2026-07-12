@@ -1046,6 +1046,80 @@
     font-weight: 750;
 }
 
+/* ==========================================================
+   Employer accent identity — the three large Experience cards
+   (Northrop Grumman, L3Harris, Department of Defense / U.S. Air
+   Force) only. Color-only: every rule below sets color/background/
+   border-color/box-shadow, never a layout, size, spacing, or
+   position property. `data-r2-exp-card` already exists on each card
+   (set from the role id in resume2.html), so no markup changes are
+   needed. The smaller Living Résumé Ledger cards use a different
+   component (`.lr-ledger-panel`) and are untouched by these rules.
+   ========================================================== */
+.r2-experience-card[data-r2-exp-card="northrop"] {
+    --experience-accent: #625fe8;
+    --experience-accent-soft: rgb(98 95 232 / 12%);
+    --experience-accent-border: rgb(98 95 232 / 42%);
+    --experience-accent-glow: rgb(98 95 232 / 18%);
+}
+
+.r2-experience-card[data-r2-exp-card="l3harris"] {
+    --experience-accent: #2db9c3;
+    --experience-accent-soft: rgb(45 185 195 / 9%);
+    --experience-accent-border: rgb(45 185 195 / 34%);
+    --experience-accent-glow: rgb(45 185 195 / 12%);
+}
+
+.r2-experience-card[data-r2-exp-card="dod"] {
+    --experience-accent: #d3a343;
+    /* Amber/gold reads noticeably more vivid than the indigo/teal accents
+       at equal opacity (warm hues read as more prominent against this
+       page's cool blue backdrop), so its soft-tint and glow are dialed
+       back further to land at the same *perceived* restraint. */
+    --experience-accent-soft: rgb(211 163 67 / 5%);
+    --experience-accent-border: rgb(211 163 67 / 32%);
+    --experience-accent-glow: rgb(211 163 67 / 7%);
+}
+
+/* Faint background tint (layered on top of the existing glass
+   gradient, which is unchanged) + a tinted border + a very soft
+   accent-colored glow added alongside the existing shadow layers. */
+.r2-experience-card[data-r2-exp-card] {
+    background:
+        radial-gradient(135% 130% at 12% -10%, var(--experience-accent-soft) 0%, transparent 62%),
+        linear-gradient(135deg, rgb(255 255 255 / 88%), rgb(244 249 255 / 76%));
+    border-color: var(--experience-accent-border);
+    box-shadow:
+        0 1.5rem 4rem rgb(10 38 78 / 14%),
+        inset 0 1px 0 rgb(255 255 255 / 92%),
+        0 0 2.5rem var(--experience-accent-glow);
+}
+
+.r2-exp-stage.is-expanded .r2-experience-card[data-r2-exp-card].is-aside {
+    background:
+        radial-gradient(135% 130% at 12% -10%, var(--experience-accent-soft) 0%, transparent 62%),
+        linear-gradient(135deg, rgb(255 255 255 / 68%), rgb(244 249 255 / 54%));
+}
+
+/* Icon chip: prefers the employer accent over the ledger's rotating
+   --orb color (untouched everywhere else on the page). */
+.r2-experience-card[data-r2-exp-card] .r2-card-icon {
+    background: var(--experience-accent, var(--orb, var(--r2-indigo)));
+}
+
+/* Date badge — scoped to the experience card's own head so the shared
+   small-text rule used by Education/Development cards is untouched. */
+.r2-experience-card[data-r2-exp-card] .r2-exp-card__head small {
+    color: var(--experience-accent);
+}
+
+/* Methods & tools tags in the expanded "full record" view. */
+.r2-experience-card[data-r2-exp-card] .r2-exp-tags span {
+    color: color-mix(in srgb, var(--experience-accent) 62%, #0a1b36);
+    background: var(--experience-accent-soft);
+    border-color: var(--experience-accent-border);
+}
+
 .r2-experience-card p,
 .r2-experience-card li,
 .r2-education-grid p,

@@ -33,7 +33,7 @@
 
 .living-resume-v2-page .platform-nav__inner {
     width: min(calc(100% - 3rem), 112rem);
-    min-height: 4.6rem;
+    min-height: 4rem;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: clamp(1.5rem, 2.8vw, 3.75rem);
 }
@@ -52,7 +52,7 @@
 }
 
 .living-resume-v2-page .platform-brand__logo img {
-    height: 2.55rem;
+    height: 2.2rem;
     filter:
         saturate(1.18)
         contrast(1.08)
