@@ -139,7 +139,7 @@ class Resume2Tests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
-        self.assertIn('css/resume2.css?v=resume2-refine-10', response_text)
+        self.assertIn('css/resume2.css?v=resume2-refine-11', response_text)
 
         section_positions = [
             response_text.index(f'id="{section_id}"')
