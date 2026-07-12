@@ -38,18 +38,32 @@ GitHub remains a code-hosting mirror; it is not the deployment trigger during th
    curl.exe -sS -L -o NUL -w "HTTP=%{http_code} final=%{url_effective}`n" https://peerslate.com/petec/resume2
    ```
 
-## Current one-time setup gap
+## Current Azure DevOps setup
 
-As of 2026-07-11, pull request #1 was completed into Azure DevOps `main`, but Azure DevOps Pipelines displayed **Create your first Pipeline**. That means an Azure DevOps repository and pull-request flow exist, but no Azure DevOps pipeline has yet been connected to deploy `main` to the `peerslate-pete` Azure Web App.
+The Azure DevOps pipeline is now configured in `azure-pipelines.yml` and is connected to the `peerslate-pete` Azure Web App through a secure Azure DevOps service connection. It:
 
-Do not assume that an Azure DevOps merge deploys by itself. First-time pipeline setup requires Peter's explicit approval because it creates an external deployment configuration. Configure it to:
+- triggers when Azure DevOps `main` changes;
+- builds with Python 3.12 and `requirements.txt`;
+- deploys the application package to `peerslate-pete`;
+- keeps credentials in Azure/Azure DevOps rather than Git.
 
-- trigger from Azure DevOps `main`;
-- build the Flask application with Python 3.12 and `requirements.txt`;
-- deploy to Azure Web App `peerslate-pete`;
-- keep secrets only in Azure DevOps/Azure configuration, never in Git.
+Pipeline run `#20260712.1` was the first manual deployment run, started from merge commit `5962db4` (Azure DevOps PR #2). Its status must be checked before saying the site is live.
 
-After the pipeline exists, use the safe release flow above for every deployment.
+## Instructions for Claude on another computer
+
+1. Pull from the Azure remote before doing release work:
+
+   ```powershell
+   git fetch azure --prune
+   git switch main
+   git pull azure main
+   ```
+
+2. Make ordinary changes on a named branch, commit them, and push that branch to `azure`.
+3. Create and complete an Azure DevOps pull request into Azure `main`.
+4. Open Azure DevOps **Pipelines** and verify the matching run has green **Build** and **Deploy** stages.
+5. Verify the actual public page with `curl.exe` before reporting success.
+6. If a pipeline pauses for an Azure DevOps environment permission, permit the existing `peerslate-pete` environment. Do not create or expose secrets.
 
 ## Do not do these things
 
