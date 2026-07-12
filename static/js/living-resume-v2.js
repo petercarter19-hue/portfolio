@@ -394,6 +394,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+    /* ----- Skills & Evidence: chip → overlay evidence popup -----
+       Clicking a skill chip highlights it and floats a popup bubble beneath
+       the grid. The popup is absolutely positioned, so it overlays whatever
+       sits below (Development) instead of pushing the layout down, and its
+       tail points at the active chip. All content is data-driven from the
+       JSON island rendered by the template. */
+    const skillmap = page.querySelector('[data-skillmap]');
+    if (skillmap) {
+        const chips = Array.from(skillmap.querySelectorAll('[data-skill-chip]'));
+        const pop = skillmap.querySelector('#r2-skillpop');
+        const tail = pop && pop.querySelector('.r2-skillpop__tail');
+        const titleEl = pop && pop.querySelector('[data-skillpop-title]');
+        const summaryEl = pop && pop.querySelector('[data-skillpop-summary]');
+        const listEl = pop && pop.querySelector('[data-skillpop-list]');
+        const ctaEl = pop && pop.querySelector('[data-skillpop-cta]');
+        const closeEl = pop && pop.querySelector('[data-skillpop-close]');
+        const dataScript = skillmap.querySelector('[data-skillmap-data]');
+
+        let skillData = {};
+        try {
+            skillData = JSON.parse(dataScript.textContent);
+        } catch (err) {
+            skillData = {};
+        }
+
+        let activeChip = null;
+
+        function positionTail(chip) {
+            if (!tail) return;
+            const chipRect = chip.getBoundingClientRect();
+            const popRect = pop.getBoundingClientRect();
+            const centre = chipRect.left + chipRect.width / 2 - popRect.left;
+            const edge = 26; // keep the tail clear of the popup's rounded corners
+            tail.style.left = Math.max(edge, Math.min(popRect.width - edge, centre)) + 'px';
+        }
+
+        function openPop(chip) {
+            const id = chip.getAttribute('data-skill-chip');
+            const entry = skillData[id];
+            if (!entry || !pop) return;
+
+            titleEl.textContent = entry.name || '';
+            summaryEl.textContent = entry.summary || '';
+            summaryEl.hidden = !entry.summary;
+
+            listEl.innerHTML = '';
+            (entry.evidence || []).forEach((text) => {
+                const li = document.createElement('li');
+                li.textContent = text;
+                listEl.appendChild(li);
+            });
+
+            if (ctaEl) ctaEl.dataset.ask = entry.ask || '';
+
+            chips.forEach((other) => {
+                other.setAttribute('aria-expanded', String(other === chip));
+            });
+            activeChip = chip;
+            pop.hidden = false;
+            // Wait for the popup to lay out, then position the tail and make
+            // sure the whole popup is on-screen — it overlays downward, so a
+            // skill opened low on the page could otherwise spill below the fold.
+            window.requestAnimationFrame(() => {
+                positionTail(chip);
+                // scrollIntoView with block:'nearest' only moves the page when
+                // the popup isn't fully visible, and by the minimum amount —
+                // the popup's scroll-margin keeps a gap from the viewport edge.
+                pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+        }
+
+        function closePop() {
+            if (!pop) return;
+            pop.hidden = true;
+            chips.forEach((chip) => chip.setAttribute('aria-expanded', 'false'));
+            activeChip = null;
+        }
+
+        chips.forEach((chip) => {
+            chip.addEventListener('click', () => {
+                if (activeChip === chip) {
+                    closePop();
+                } else {
+                    openPop(chip);
+                }
+            });
+        });
+
+        if (closeEl) {
+            closeEl.addEventListener('click', () => {
+                const returnTo = activeChip;
+                closePop();
+                if (returnTo) returnTo.focus();
+            });
+        }
+
+        if (ctaEl) {
+            ctaEl.addEventListener('click', () => {
+                const prompt = ctaEl.dataset.ask;
+                if (prompt && window.askPeteAI) window.askPeteAI(prompt);
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && activeChip) {
+                const returnTo = activeChip;
+                closePop();
+                returnTo.focus();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (activeChip && !skillmap.contains(event.target)) closePop();
+        });
+
+        window.addEventListener('resize', () => {
+            if (activeChip) positionTail(activeChip);
+        });
+    }
+
     /* ----- Experience: one open chapter, the others step aside ----- */
     const expSection = page.querySelector('[data-r2-exp]');
     if (expSection) {
@@ -505,6 +625,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+    }
+
+    /* ----- Sub-header Ask AI takes over once the identity card scrolls away -----
+       The résumé already offers the full Ask AI panel inside the identity card,
+       so the compact field in the sub-header would be redundant while that card
+       is on screen. It stays hidden until the card leaves the viewport, then
+       fades in — keeping the assistant one field away for the rest of the page. */
+    const subheaderAsk = document.querySelector('[data-resume-subheader-ask]');
+    if (subheaderAsk) {
+        const setSubheaderAsk = (visible) => {
+            subheaderAsk.classList.toggle('is-visible', visible);
+            subheaderAsk.setAttribute('aria-hidden', String(!visible));
+        };
+
+        if (aiCard && 'IntersectionObserver' in window) {
+            setSubheaderAsk(false);
+            const cardWatcher = new IntersectionObserver((entries) => {
+                // isIntersecting is true while any part of the card is visible.
+                setSubheaderAsk(!entries[0].isIntersecting);
+            });
+            cardWatcher.observe(aiCard);
+        } else {
+            // No card or no observer support: keep the field available.
+            setSubheaderAsk(true);
+        }
     }
 
     /* ----- Constellation grows to a full-screen stage on approach ----- */
