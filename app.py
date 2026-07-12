@@ -877,19 +877,38 @@ def _render_living_resume(
         for event in living_resume['events']
         if event['source'] == 'education' and event['kind'] == 'Education'
     }
-    resume_degrees = [
-        item for item in resume_data['education'] if item['id'] in degree_ids
-    ]
-    # Development is forward-looking growth only, so already-earned
-    # credentials (e.g. an obtained PMP) don't belong here — they stay on
-    # the timeline/ledger. Keep the non-degree items that are still upcoming
-    # or in progress.
+
+    # Education card lists degrees most-recent first. Parse the "Month YYYY"
+    # date for sorting; anything undated sorts last so a missing date never
+    # crashes the page.
+    def _degree_sort_key(item):
+        raw = (item.get('date') or '').strip()
+        if raw:
+            try:
+                return datetime.strptime(raw, '%B %Y')
+            except ValueError:
+                pass
+        return datetime.min
+
+    resume_degrees = sorted(
+        (item for item in resume_data['education'] if item['id'] in degree_ids),
+        key=_degree_sort_key,
+        reverse=True,
+    )
+    # Development gathers forward-looking growth (upcoming/in-progress
+    # non-degree items). A profile can also pin an already-earned credential
+    # here with "show_in_development": true — e.g. the PMP, which was moved off
+    # the timeline into this card — so earned status alone no longer excludes
+    # it.
     _earned_statuses = {'Certified', 'Completed', 'Earned', 'Obtained'}
     resume_development = [
         item
         for item in resume_data['education']
         if item['id'] not in degree_ids
-        and item.get('status') not in _earned_statuses
+        and (
+            item.get('status') not in _earned_statuses
+            or item.get('show_in_development')
+        )
     ]
     featured_resume_skills = [
         item
@@ -942,6 +961,7 @@ def _render_living_resume(
     # component never hardcodes Pete-specific skills. Every public card must
     # retain one or more approved evidence records from the selected profile.
     resume2_featured_skills = []
+    resume2_skill_icons = living_resume.get('resume2_featured_skill_icons', {})
     for skill_id in living_resume.get('resume2_featured_skill_ids', []):
         skill = skill_by_id.get(skill_id)
         if not skill:
@@ -952,6 +972,9 @@ def _render_living_resume(
             for item in skill.get('evidence_items', [])
             if 'micap' not in item['text'].lower()
         ]
+        # Presentational icon comes from the fixture's featured-skill icon map
+        # so the reusable card component never hardcodes a per-skill glyph.
+        resume2_skill['icon'] = resume2_skill_icons.get(skill_id, 'shield')
         if resume2_skill['resume2_evidence_items']:
             resume2_featured_skills.append(resume2_skill)
 

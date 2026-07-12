@@ -408,6 +408,24 @@
     color: var(--r2-muted);
 }
 
+/* No harsh blue focus outline on the Ask AI field (Pete). The résumé's
+   global :focus-visible rule paints a 3px #0b6dd7 ring on every input; here
+   the whole pill lights up in the card's own teal instead, so keyboard focus
+   stays clearly visible without the jarring blue box. */
+.r2-ai-card .hero-ai-search__input:focus,
+.r2-ai-card .hero-ai-search__input:focus-visible {
+    outline: none;
+    outline-offset: 0;
+}
+
+.r2-ai-card .hero-ai-search:focus-within .hero-ai-search__box {
+    border-color: #2ec8d3;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 0 0 3px rgb(46 200 211 / 26%),
+        0 0.5rem 1.4rem rgb(23 64 116 / 12%);
+}
+
 .r2-ai-card .hero-ai-search__button {
     background: linear-gradient(180deg, #2ec8d3, #167b87);
     border-radius: 999px;
@@ -482,8 +500,47 @@
     border-color: rgb(46 200 211 / 42%);
 }
 
+/* ---- Conversation takeover ----------------------------------------------
+   Instead of a bubble popping out under the bar, the card's intro (kicker +
+   blurb + suggestion chips) steps aside and the answer fills that same space
+   above the input. chatbot.js toggles .is-conversing; the answer's × restores
+   the intro. The intro keeps the card's 1rem rhythm on its own so hiding it
+   leaves no gap. */
+.r2-ai-intro {
+    display: grid;
+    gap: 1rem;
+}
+
+.r2-ai-card .hero-ai-search {
+    display: flex;
+    flex-direction: column;
+}
+
+.r2-ai-card.is-conversing .r2-ai-intro {
+    display: none;
+}
+
+/* The answer stops floating and sits in the freed space, above the input. */
+.r2-ai-card.is-conversing .hero-ai-answer {
+    position: static;
+    order: -1;
+    inset: auto;
+    margin: 0 0 0.85rem;
+    max-height: min(52vh, 24rem);
+    min-height: 11rem;
+}
+
+.r2-ai-card.is-conversing .hero-ai-answer::before {
+    display: none;
+}
+
 .resume2-story .r2-timeline-shell {
-    width: min(91vw, 106rem);
+    /* Center the timeline over the LEDGER CARD (not the page): match the
+       ledger layout's width, then indent past the rail + gap so the timeline
+       sits directly above the card and shares its right edge. */
+    width: min(98vw, 118rem);
+    box-sizing: border-box;
+    padding-left: calc(16.25rem + 1.5rem);
     margin-top: clamp(3rem, 6vw, 6rem);
 }
 
@@ -550,12 +607,16 @@
     border-radius: 2rem;
 }
 
+/* Ledger overview card height (2026-07-12): trimmed from 37rem to 28rem
+   after the Evidence-highlights and full-chapter-details sections were
+   removed, so the card fits its remaining content (headline + summary +
+   Key outcomes) without dead space and the Experience section moves up. */
 .r2-ledger .lr-ledger__detail {
-    min-height: 37rem;
+    min-height: 28rem;
 }
 
 .r2-ledger-panel {
-    min-height: 37rem;
+    min-height: 28rem;
     padding: clamp(1.75rem, 2.4vw, 2.75rem);
 }
 
@@ -855,9 +916,12 @@
    glass shell, the intro heading becomes its own compact card, and each
    role is a standalone card in an expandable stage. */
 .r2-experience {
-    width: 101%;
+    /* Nudged right: the right edge is already at the page edge, so shift the
+       left edge in and keep the right pinned — the block and its chapter cards
+       move rightward without overflowing. */
+    width: 98%;
     margin-top: clamp(3rem, 6vw, 5.5rem);
-    margin-left: -0.5%;
+    margin-left: 2.5%;
     /* Bottom room so the downward-staggered cards never reach the section
        below (their translateY doesn't add layout height on its own). */
     padding: 0 0 5rem;
@@ -1519,7 +1583,9 @@
     grid-template-rows: auto auto;
     align-items: start;
     gap: 1.75rem 1.75rem;
-    margin: clamp(5rem, 7vw, 7rem) 0 0;
+    /* Gap below the Experience cards, halved — pulls the whole
+       Education/Skills/Development block up. */
+    margin: clamp(2.5rem, 3.5vw, 3.5rem) 0 0;
     padding-bottom: 4rem;
 }
 
@@ -1533,6 +1599,94 @@
 
 .r2-vertical-composition .r2-section-heading > p {
     font-size: 0.94rem;
+}
+
+/* Development header runs horizontally to save vertical space: the intro line
+   sits on the same band as the "Development" title — baseline-aligned, over at
+   the right end of the card — instead of stacked beneath it. */
+.r2-vertical-composition .r2-development .r2-section-heading {
+    display: grid;
+    max-width: none;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+        "kicker kicker"
+        "title  subtitle";
+    align-items: baseline;
+    column-gap: clamp(1.25rem, 2vw, 2rem);
+    row-gap: 0.5rem;
+}
+
+.r2-vertical-composition .r2-development .r2-section-heading > span {
+    grid-area: kicker;
+}
+
+.r2-vertical-composition .r2-development .r2-section-heading h2 {
+    grid-area: title;
+    margin: 0;
+}
+
+.r2-vertical-composition .r2-development .r2-section-heading > p {
+    grid-area: subtitle;
+    justify-self: start;
+    align-self: baseline;
+    max-width: none;
+    margin: 0;
+}
+
+/* Skills header runs horizontally too: "Skills & Evidence" on the left with
+   its summary baseline-aligned at the right end of the card. The card is
+   narrower than Development, so the title steps down a size to leave room. */
+.r2-vertical-composition .r2-skills .r2-section-heading {
+    display: grid;
+    max-width: none;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+        "kicker  kicker"
+        "title   summary";
+    align-items: baseline;
+    column-gap: clamp(1rem, 2vw, 2rem);
+    row-gap: 0.4rem;
+}
+
+.r2-vertical-composition .r2-skills .r2-section-heading > span {
+    grid-area: kicker;
+}
+
+.r2-vertical-composition .r2-skills .r2-section-heading h2 {
+    grid-area: title;
+    margin: 0;
+    font-size: clamp(2.1rem, 2.8vw, 3.2rem);
+}
+
+.r2-vertical-composition .r2-skills .r2-section-heading > p {
+    grid-area: summary;
+    justify-self: end;
+    max-width: 20ch;
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-align: right;
+}
+
+/* On narrow screens the composition stacks and the cards get tight — revert
+   both horizontal headers to their normal stacked flow. */
+@media (max-width: 64rem) {
+    .r2-vertical-composition .r2-development .r2-section-heading,
+    .r2-vertical-composition .r2-skills .r2-section-heading {
+        display: block;
+    }
+
+    .r2-vertical-composition .r2-development .r2-section-heading > p,
+    .r2-vertical-composition .r2-skills .r2-section-heading > p {
+        justify-self: stretch;
+        max-width: none;
+        margin-top: 0.6rem;
+        text-align: left;
+    }
+
+    .r2-vertical-composition .r2-skills .r2-section-heading h2 {
+        font-size: clamp(2.6rem, 3.4vw, 3.8rem);
+    }
 }
 
 .r2-vertical-composition .r2-education {
@@ -1587,27 +1741,37 @@
 }
 
 .r2-vertical-composition .r2-skills {
+    /* The gutter the card keeps between its right edge and the viewport when
+       it bleeds out on big screens. */
+    --r2-skills-gutter: 1.75rem;
+    /* How far the card is held to the right inside column 3. Smaller = the
+       card elongates leftward, tightening the gap to the Education card. */
+    --r2-skills-left: 0.5rem;
     position: relative;
+    /* Sit above the Development band (a later grid sibling) so the evidence
+       popup, which overlays downward into it, always paints on top. */
+    z-index: 5;
     grid-column: 3;
-    grid-row: 1 / span 2;
-    /* Held-left: the left edge stays put (left: 7rem) and the right edge
-       pins to the page's content edge, so the card is as wide as the page
-       allows without ever clipping the last column. Roomy screens make it
-       wide enough for four columns (below), narrower ones keep three. */
-    width: calc(100% - 7rem);
-    margin: 10rem 0 0;
+    grid-row: 1;
+    /* Held-left, bleed-right. The left edge is held --r2-skills-left into
+       column 3; the right edge bleeds toward the viewport edge — on wide
+       screens the page content caps at min(98vw, 118rem) and the leftover
+       right margin becomes a deliberate rightward pop-out past the
+       Ledger/Experience above (the fun horizontal play Pete wants). On normal
+       screens that leftover margin is tiny, so the card never runs off-screen.
+       max(0px, …) keeps the bleed from ever going negative. */
+    width: calc(
+        100% - var(--r2-skills-left) +
+        max(0px, (100vw - min(98vw, 118rem)) / 2 - var(--r2-skills-gutter))
+    );
+    margin: 4rem 0 0;
     padding: clamp(2rem, 3vw, 3rem);
-    left: 7rem;
+    left: var(--r2-skills-left);
 }
 
-/* Four columns only where the held-left card is wide enough for them to
-   stay readable (roomy screens); narrower screens keep three so the last
-   column is never cramped or clipped off the page. */
-@media (max-width: 102rem) {
-    .r2-vertical-composition .r2-skills .r2-skill-card-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
+/* Column count for the chip grid is driven by the card's own width via a
+   container query (see .r2-skillmap__grid), so no viewport rule is needed
+   here. */
 
 .r2-vertical-composition .r2-skill-explorer {
     grid-template-columns: 1fr;
@@ -1625,120 +1789,323 @@
     min-height: 28rem;
 }
 
-.r2-skill-card-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.9rem;
-    margin-top: 1.75rem;
+/* ==========================================================================
+   Skills & Evidence — horizontal 4×4 chip map with an overlay evidence popup
+   (2026-07-12, Pete). Replaces the tall flip cards: clicking a chip highlights
+   it and floats a popup bubble that overlays whatever sits below it instead of
+   pushing the layout down. Big-screen focused, per the approved mockup.
+   ========================================================================== */
+.r2-skillmap {
+    position: relative;
+    margin-top: 1.9rem;
+    container: skillmap / inline-size;
 }
 
-.r2-skill-card {
+/* Column count follows the card's OWN width, not the viewport: the held-left
+   card widens as it bleeds out on big screens, so a container query lands the
+   4×4 exactly when there's room for readable chips, and falls back to 3 / 2. */
+.r2-skillmap__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+/* Phones: one full-width column so long single words ("Engineering",
+   "Management") never break mid-word. */
+@container skillmap (max-width: 24rem) {
+    .r2-skillmap__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@container skillmap (min-width: 33rem) {
+    .r2-skillmap__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@container skillmap (min-width: 47rem) {
+    .r2-skillmap__grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* When the card is narrow (its 2-column state — phones and stacked layouts),
+   tighten the chips so long single words like "Management" keep to one line
+   instead of clipping. */
+@container skillmap (max-width: 33rem) {
+    .r2-skillchip {
+        gap: 0.5rem;
+        padding: 0.55rem 0.6rem;
+    }
+
+    .r2-skillchip__icon {
+        width: 1.7rem;
+        height: 1.7rem;
+    }
+
+    .r2-skillchip__icon svg {
+        width: 1.05rem;
+        height: 1.05rem;
+    }
+
+    .r2-skillchip__label {
+        font-size: 0.82rem;
+    }
+}
+
+.r2-skillchip {
+    display: flex;
     min-width: 0;
-    min-height: 11.5rem;
-}
-
-.r2-skill-card__front,
-.r2-skill-card__back {
-    gap: 0.55rem;
-    padding: 1rem;
-    border-radius: 1rem;
-}
-
-.r2-skill-card__front {
-    color: #173f82;
-    background: linear-gradient(145deg, rgb(255 255 255 / 88%), rgb(237 246 255 / 84%));
-    border: 1px solid rgb(78 163 255 / 48%);
-    text-align: center;
-}
-
-.r2-skill-card__front svg {
-    color: var(--r2-azure);
-    font-size: 1.35rem;
-}
-
-.r2-skill-card__front strong {
-    max-width: 15ch;
+    min-height: 4rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
     color: var(--r2-ink);
-    font-size: clamp(0.86rem, 0.82vw, 1rem);
-    line-height: 1.25;
+    text-align: left;
+    background: linear-gradient(145deg, rgb(255 255 255 / 92%), rgb(244 249 255 / 82%));
+    border: 1px solid rgb(79 91 213 / 14%);
+    border-radius: 0.85rem;
+    box-shadow: 0 1px 2px rgb(16 42 92 / 6%), 0 6px 16px rgb(16 42 92 / 5%);
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
-.r2-skill-card__front small {
-    color: #526983;
-    font-size: 0.64rem;
-    line-height: 1.35;
+.r2-skillchip:hover {
+    transform: translateY(-1px);
+    border-color: rgb(79 91 213 / 32%);
+    box-shadow: 0 2px 5px rgb(16 42 92 / 8%), 0 12px 26px rgb(16 42 92 / 9%);
 }
 
-.r2-skill-card__front em {
-    color: #2456a4;
-    font-size: 0.64rem;
-    font-style: normal;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+.r2-skillchip:focus-visible {
+    outline: 3px solid var(--r2-indigo);
+    outline-offset: 2px;
 }
 
-.r2-skill-card__back {
-    align-content: center;
-    justify-items: stretch;
-    color: #fff;
-    background: linear-gradient(145deg, #173f82, #2456a4 58%, #167b87);
-    border: 1px solid rgb(78 163 255 / 52%);
-}
-
-.r2-skill-card__back > strong {
-    color: #fff;
-    font-size: 0.75rem;
-    line-height: 1.2;
-    text-align: center;
-}
-
-.r2-skill-card__back ul {
+.r2-skillchip__icon {
     display: grid;
-    gap: 0.35rem;
-    margin: 0;
-    padding-left: 0.95rem;
-    color: #fff;
-    font-size: clamp(0.62rem, 0.58vw, 0.72rem);
-    line-height: 1.34;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    color: var(--r2-indigo);
 }
 
-.r2-skill-card__back li {
+.r2-skillchip__icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.r2-skillchip__label {
+    min-width: 0;
+    font: 650 clamp(0.86rem, 0.72vw, 0.98rem)/1.2 var(--r2-ui);
+    color: var(--r2-ink);
+    overflow-wrap: break-word;
+}
+
+.r2-skillchip[aria-expanded="true"] {
+    color: var(--r2-indigo);
+    background: linear-gradient(145deg, rgb(238 240 255 / 96%), rgb(228 236 255 / 90%));
+    border-color: var(--r2-indigo);
+    box-shadow: inset 0 0 0 1px var(--r2-indigo), 0 10px 24px rgb(79 91 213 / 20%);
+}
+
+.r2-skillchip[aria-expanded="true"] .r2-skillchip__label {
+    color: var(--r2-indigo);
+    font-weight: 750;
+}
+
+/* --- Overlay evidence popup ------------------------------------------------ */
+.r2-skillpop {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 0.95rem);
+    left: 1.5%;
+    right: 1.5%;
+    /* Gap kept from the viewport edges (and the sticky header) when the popup
+       is scrolled into view on open. */
+    scroll-margin-top: 7rem;
+    scroll-margin-bottom: 1.75rem;
+    padding: clamp(1.7rem, 2.4vw, 2.6rem) clamp(1.7rem, 2.4vw, 2.9rem);
+    background: linear-gradient(150deg, rgb(255 255 255 / 97%), rgb(238 245 255 / 93%));
+    border: 1px solid rgb(79 91 213 / 16%);
+    border-radius: 1.5rem;
+    box-shadow: 0 26px 64px rgb(16 42 92 / 20%), 0 2px 8px rgb(16 42 92 / 8%);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
 }
 
-.r2-skill-card__back > small {
-    color: rgb(255 255 255 / 76%);
-    font-size: 0.58rem;
-    text-align: center;
-    text-transform: uppercase;
+.r2-skillpop:not([hidden]) {
+    animation: r2-skillpop-in 220ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes r2-skillpop-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+/* Soft sky bleed on the right, echoing the page's mountain-sky backdrop. */
+.r2-skillpop::after {
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 0 auto;
+    width: 52%;
+    background:
+        image-set(
+            url("../images/Mockups/resume2/resume2-blue-mountain-background.avif") type("image/avif"),
+            url("../images/Mockups/resume2/resume2-blue-mountain-background.webp") type("image/webp")
+        ) right center / cover no-repeat;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 78%);
+    mask-image: linear-gradient(90deg, transparent, #000 78%);
+    opacity: 0.32;
+    pointer-events: none;
+    content: "";
+}
+
+.r2-skillpop__tail {
+    position: absolute;
+    top: -0.6rem;
+    left: 8%;
+    width: 1.2rem;
+    height: 1.2rem;
+    background: rgb(252 253 255 / 98%);
+    border-top: 1px solid rgb(79 91 213 / 16%);
+    border-left: 1px solid rgb(79 91 213 / 16%);
+    border-radius: 0.24rem 0 0 0;
+    transform: translateX(-50%) rotate(45deg);
+    transition: left 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.r2-skillpop__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    color: var(--r2-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.r2-skillpop__close:hover {
+    color: var(--r2-ink);
+    background: rgb(79 91 213 / 10%);
+}
+
+.r2-skillpop__close svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.r2-skillpop__title {
+    margin: 0;
+    padding-right: 2.5rem;
+    color: var(--r2-ink);
+    font: 600 clamp(1.5rem, 1.8vw, 2rem)/1.08 var(--r2-display);
+}
+
+.r2-skillpop__summary {
+    max-width: 48ch;
+    margin: 0.55rem 0 0;
+    color: var(--r2-muted);
+    font-size: clamp(0.95rem, 0.8vw, 1.05rem);
+    line-height: 1.45;
+}
+
+.r2-skillpop__list {
+    display: grid;
+    max-width: 62ch;
+    gap: 0.95rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.r2-skillpop__list li {
+    position: relative;
+    min-height: 1.6rem;
+    padding: 0.1rem 0 0 2.55rem;
+    color: var(--r2-ink);
+    font-size: clamp(0.92rem, 0.78vw, 1.02rem);
+    line-height: 1.45;
+}
+
+.r2-skillpop__list li::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 1.5px solid rgb(78 163 255 / 60%);
+    border-radius: 50%;
+    background: rgb(240 247 255 / 85%) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l3.8 3.8L18 7' fill='none' stroke='%234f5bd5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 1rem no-repeat;
+    content: "";
+}
+
+.r2-skillpop__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.65rem;
+    padding: 0;
+    color: var(--r2-indigo);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: 750 clamp(0.9rem, 0.75vw, 1rem)/1 var(--r2-ui);
+}
+
+.r2-skillpop__cta:focus-visible {
+    outline: 3px solid var(--r2-indigo);
+    outline-offset: 3px;
+    border-radius: 0.3rem;
+}
+
+.r2-skillpop__arrow {
+    font-size: 1.1em;
+    transition: transform 160ms ease;
+}
+
+.r2-skillpop__cta:hover .r2-skillpop__arrow {
+    transform: translateX(4px);
 }
 
 .r2-vertical-composition .r2-development {
     position: relative;
-    grid-column: 1 / span 2;
+    z-index: 1;
+    /* Twice as wide as before (was columns 1–2): now spans the full
+       composition so it sits squarely underneath both the Education and
+       Skills cards. Left anchor is unchanged. */
+    grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
     margin: 1.75rem 0 0;
-    padding: clamp(1.6rem, 2.4vw, 2.4rem);
+    padding: clamp(1.5rem, 2.2vw, 2.2rem);
     left: -0.75rem;
 }
 
-/* Two-up so the section is short (was a tall single stack), with slightly
-   larger text now that the icons are gone. */
+/* Wide and low-slung: the credentials sit side by side so the card reads as a
+   short horizontal band under the two cards above, not a tall stack. auto-fit
+   keeps it generic — 3 credentials land 3-up on the full-width card, 2 land
+   2-up, without hardcoding a count. */
 .r2-vertical-composition .r2-development-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 1.4rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.2rem;
 }
 
 .r2-vertical-composition .r2-development-row article,
 .r2-vertical-composition .r2-development-row article:nth-child(n) {
     min-height: 0;
-    padding: 1.15rem 1.25rem;
+    padding: 1.1rem 1.35rem;
     transform: none;
 }
 
@@ -1894,10 +2261,7 @@
 
     .r2-vertical-composition .r2-skills {
         left: 0;
-    }
-
-    .r2-skill-card-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        padding: clamp(1.1rem, 3.5vw, 2.4rem);
     }
 
     .r2-vertical-composition .r2-development {
@@ -1924,6 +2288,12 @@
         transform: none;
     }
 
+    /* Below desktop the timeline becomes a horizontal-scroll strip, so drop
+       the card-alignment indent and let it use the full width. */
+    .resume2-story .r2-timeline-shell {
+        padding-left: 0;
+    }
+
     .r2-timeline-shell .lr-timeline-region {
         overflow-x: auto;
         overscroll-behavior-inline: contain;
@@ -1932,8 +2302,8 @@
     }
 
     .r2-timeline-shell .lr-timeline {
-        width: 64rem;
-        grid-template-columns: repeat(8, minmax(7rem, 1fr));
+        width: calc(var(--lr-timeline-count, 8) * 8rem);
+        grid-template-columns: repeat(var(--lr-timeline-count, 8), minmax(7rem, 1fr));
     }
 
     .r2-timeline-shell .lr-timeline__event {
@@ -2106,8 +2476,8 @@
     }
 
     .r2-timeline-shell .lr-timeline {
-        width: 58rem;
-        grid-template-columns: repeat(8, minmax(6.5rem, 1fr));
+        width: calc(var(--lr-timeline-count, 8) * 7.25rem);
+        grid-template-columns: repeat(var(--lr-timeline-count, 8), minmax(6.5rem, 1fr));
     }
 
     .r2-timeline-shell .lr-timeline__event {
@@ -2245,14 +2615,6 @@
         grid-column: auto;
     }
 
-    .r2-skill-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .r2-skill-card {
-        min-height: 12rem;
-    }
-
     .r2-development-row article:nth-child(n) {
         transform: none;
     }
@@ -2285,14 +2647,6 @@
 
     .r2-metric-card {
         min-height: 9rem;
-    }
-
-    .r2-skill-card-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .r2-skill-card {
-        min-height: 10.75rem;
     }
 }
 
@@ -2353,8 +2707,8 @@
     .r2-category-list,
     .r2-skill-lists,
     .r2-evidence-panel,
-    .r2-skill-card__front,
-    .r2-skill-card__back,
+    .r2-skillchip,
+    .r2-skillpop,
     .r2-outcome-flip__front,
     .r2-outcome-flip__back {
         border: 2px solid CanvasText;

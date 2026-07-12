@@ -85,7 +85,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=ask-subheader-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=frosted-header-1"
     >
     <link
         rel="stylesheet"
@@ -118,7 +118,9 @@
         <nav class="platform-nav" aria-label="PeerSlate platform navigation">
             <div class="site-container platform-nav__inner">
                 <div class="platform-brand">
-                    <a class="platform-brand__logo" href="{{ peerslate_home_url }}" aria-label="{{ platform_brand_name }} home">
+                    {# The PeerSlate logo returns to the site root (peerslate.com),
+                       not the /peerslate marketing splash. #}
+                    <a class="platform-brand__logo" href="{{ url_for('home') }}" aria-label="{{ platform_brand_name }} home">
                         {# Previous PeerSlate logo lockup (metallic S-mark +
                            wordmark), restored in place of the inline mark. #}
                         <img
@@ -144,9 +146,12 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/interview-me'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
-                    <li><a href="{{ url_for('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
+                    {# About points at Pete's profile-shell About (/petec/about) so it
+                       carries the same slim frosted header + centred sub-header as the
+                       rest of the profile — the bare /about alias stays working. #}
+                    <li><a href="{{ portfolio_url('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
                 </ul>
 
                 <div class="platform-actions">
@@ -330,7 +335,7 @@
        Hidden on desktop via CSS. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=health-check-1"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=ask-takeover-1"></script>
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
     {% block extra_scripts %}{% endblock %}
