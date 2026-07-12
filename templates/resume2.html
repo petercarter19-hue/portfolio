@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=resume-header-1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-refine-2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume2-refine-4">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page{% endblock %}
@@ -251,7 +251,7 @@
                         <div class="r2-exp-card__preview">
                             <p>{{ role.summary }}</p>
                             <ul>
-                                {% for item in role.resume2_accomplishments[:3] %}
+                                {% for item in role.resume2_accomplishments[:4] %}
                                 <li>{{ item.text }}</li>
                                 {% endfor %}
                             </ul>
@@ -311,8 +311,10 @@
                     {% set edu_accents = ['#4f5bd5', '#4ea3ff', '#2ec8d3', '#d7a33e'] %}
                     {% for item in resume_degrees %}
                     <article class="r2-education-card{% if loop.first %} is-primary{% endif %}" style="--edu-accent: {{ edu_accents[loop.index0 % 4] }};">
-                        <span class="r2-edu-icon" aria-hidden="true"><svg><use href="#lr-icon-graduation"></use></svg></span>
-                        <small class="r2-edu-status">{{ item.status }}</small>
+                        <div class="r2-edu-statusline">
+                            <small class="r2-edu-status">{{ item.status }}</small>
+                            {% if item.date %}<span class="r2-edu-date">{{ item.date }}</span>{% endif %}
+                        </div>
                         <h3>{{ item.credential }}</h3>
                         <strong>{{ item.institution }}</strong>
                         <p>{{ item.detail }}</p>
