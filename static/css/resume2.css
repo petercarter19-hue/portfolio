@@ -19,8 +19,8 @@
         radial-gradient(circle at 18% 16%, rgb(255 255 255 / 58%), transparent 32%),
         linear-gradient(180deg, rgb(235 247 255 / 18%) 0%, rgb(225 242 255 / 28%) 55%, rgb(219 236 251 / 58%) 100%),
         image-set(
-            url("../images/mockups/resume2/resume2-blue-mountain-background.avif") type("image/avif"),
-            url("../images/mockups/resume2/resume2-blue-mountain-background.webp") type("image/webp")
+            url("../images/Mockups/resume2/resume2-blue-mountain-background.avif") type("image/avif"),
+            url("../images/Mockups/resume2/resume2-blue-mountain-background.webp") type("image/webp")
         ) center top / cover no-repeat;
     content: "";
 }
@@ -1726,7 +1726,7 @@
 
     .r2-timeline-shell .lr-timeline {
         width: 64rem;
-        grid-template-columns: repeat(7, minmax(8rem, 1fr));
+        grid-template-columns: repeat(8, minmax(7rem, 1fr));
     }
 
     .r2-timeline-shell .lr-timeline__event {
@@ -1803,8 +1803,8 @@
         background:
             linear-gradient(180deg, rgb(237 248 255 / 28%) 0%, rgb(223 239 252 / 56%) 75%, #deedfa 100%),
             image-set(
-                url("../images/mockups/resume2/resume2-blue-mountain-background-mobile.avif") type("image/avif"),
-                url("../images/mockups/resume2/resume2-blue-mountain-background-mobile.webp") type("image/webp")
+                url("../images/Mockups/resume2/resume2-blue-mountain-background-mobile.avif") type("image/avif"),
+                url("../images/Mockups/resume2/resume2-blue-mountain-background-mobile.webp") type("image/webp")
             ) center top / 100% auto no-repeat,
             #deedfa;
     }
@@ -1900,17 +1900,17 @@
 
     .r2-timeline-shell .lr-timeline {
         width: 58rem;
-        grid-template-columns: repeat(7, minmax(7.5rem, 1fr));
+        grid-template-columns: repeat(8, minmax(6.5rem, 1fr));
     }
 
     .r2-timeline-shell .lr-timeline__event {
         min-height: 9.75rem;
-        grid-template-rows: 5rem auto auto;
+        grid-template-rows: 4.5rem auto auto;
     }
 
     .r2-timeline-shell .lr-timeline__marker {
-        width: 4.6rem;
-        height: 4.6rem;
+        width: 4.1rem;
+        height: 4.1rem;
     }
 
     .resume2-story .r2-ledger-layout {

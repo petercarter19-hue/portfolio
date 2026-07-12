@@ -9933,6 +9933,14 @@ a.ct-card:focus-visible {
         font-weight: 750;
     }
 
+    /* The bottom tab bar mirrors .profile-tabs (see mobile-nav.js), so on
+       pages that get one, the old sticky top copy is redundant — both were
+       showing the same six links on screen at once. Bottom bar takes over
+       section nav; the top strip stays for pages without one. */
+    body.has-mobile-tabbar .profile-tabs {
+        display: none;
+    }
+
     /* Room so the fixed bar never covers the last of the page content. */
     body { padding-bottom: 58px; }
 
