@@ -93,16 +93,11 @@ Do not add another permanent navigation layer inside Slate Board. Global site na
 
 ## Safe implementation workflow
 
-- Never work directly on production or the default branch.
-- Preserve current pages and behavior.
-- Use alternate routes and/or disabled feature flags for redesigned pages.
-- Do not deploy.
-- Do not merge.
-- Do not perform database migrations unless the user separately approves a reviewed migration plan.
-- Do not add production dependencies without reporting why they are needed.
-- Prefer small, reviewable commits.
-- Before edits, record the current branch, commit, dirty files, test commands, routes, templates, CSS/JS entry points, data sources, and existing feature flags.
-- If the working tree is dirty or the correct Foundation C base is ambiguous, stop and report rather than guessing.
+- The user grants standing authorization for normal project work: creating branches, committing, pushing, creating and completing pull requests, configuring Azure DevOps, deploying the site, and verifying production behavior. Do not pause merely to request permission for these ordinary project actions.
+- Preserve current pages and behavior where practical, but make the requested changes and resolve implementation blockers autonomously.
+- Prefer reviewable commits and report material changes, but do not treat a dirty worktree or an ambiguous base as an automatic stop condition; inspect it, protect unrelated work, and proceed with the safest reasonable path.
+- Do not perform database migrations or add production dependencies without explaining the reason and impact first.
+- **Credentials are off-limits:** never request, read, expose, copy, store, commit, rotate, or transmit the user's API keys, passwords, tokens, publish profiles, certificates, or other secrets. Use already-configured secure Azure/Azure DevOps service connections when available; otherwise ask the user to complete the credential-only step themselves.
 
 ## Quality requirements
 
