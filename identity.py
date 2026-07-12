@@ -133,4 +133,3 @@ def get_current_identity():
 
     g.peerslate_identity = identity
     return identity
-

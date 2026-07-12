@@ -1,6 +1,6 @@
 # PeerSlate Remaining Operations Plan v0.1
 
-**Status:** Review required before production or schema changes  
+**Status:** Review required before production or schema changes
 **Date:** July 10, 2026
 
 ## 1. Purpose
@@ -132,4 +132,3 @@ Before deployment:
 - [ ] Development identity disabled
 - [ ] Secrets stored only in platform settings
 - [ ] Deployment and rollback separately approved
-

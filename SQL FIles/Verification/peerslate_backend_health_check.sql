@@ -68,4 +68,3 @@ FROM dbo.daily_feed_cards
 WHERE publish_date = CAST(GETDATE() AS DATE)
 GROUP BY publish_date, feed_name
 ORDER BY feed_name;
-

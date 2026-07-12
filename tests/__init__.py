@@ -1,2 +1,1 @@
 """PeerSlate test suite."""
-

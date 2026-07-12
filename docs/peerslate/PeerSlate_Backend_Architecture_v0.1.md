@@ -1,7 +1,7 @@
 # PeerSlate Backend Architecture v0.1
 
-**Status:** Local implementation complete; production authentication and deployment not enabled  
-**Date:** July 10, 2026  
+**Status:** Local implementation complete; production authentication and deployment not enabled
+**Date:** July 10, 2026
 **Scope:** Effort 6 database service, identity boundary, APIs, UI adapters, and verification
 
 ## 1. Implemented Outcome

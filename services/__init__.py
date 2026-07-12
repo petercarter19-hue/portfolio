@@ -1,2 +1,1 @@
 """PeerSlate application services."""
-
