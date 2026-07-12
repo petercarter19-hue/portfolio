@@ -219,7 +219,7 @@
         "short_label": "M.S. Engineering Management",
         "display_period": "4.0 GPA",
         "featured_metric_ids": ["gpa"],
-        "show_in_ledger": false,
+        "show_in_ledger": true,
         "show_in_constellation": true,
         "constellation_x": 68,
         "constellation_y": 20,

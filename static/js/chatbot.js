@@ -138,7 +138,7 @@ function initializeChatbot() {
     // -------------------------------------------------------
 
     const pageAskAnchor = document.querySelector(
-        '.ps-askbar, .resume-ai-panel, .story-hero__ai, .page-ai-after-hero, .ct-ai, .hero-ai-panel, .bd-assistant'
+        '.ps-askbar, .resume-ai-panel, .story-hero__ai, .page-ai-after-hero, .ct-ai, .hero-ai-panel, .bd-assistant, .hero-ai-search'
     );
 
     if (toggle) {

@@ -3146,6 +3146,25 @@ body[data-theme="modern-blue"] .profile-tab {
     color: var(--text);
 }
 
+/* Unified profile-tab (second-row) links: adopt the Résumé page's softer
+   slate link with an indigo active state site-wide (2026-07-12). The
+   Résumé page layers its own living-resume-v2.css treatment on top, so it
+   is unchanged; this brings every other page's row into line with it. */
+body[data-theme="modern-blue"] .profile-tabs .profile-tab {
+    color: #43546c;
+    font-weight: 680;
+}
+
+body[data-theme="modern-blue"] .profile-tabs .profile-tab:hover,
+body[data-theme="modern-blue"] .profile-tabs .profile-tab:focus-visible,
+body[data-theme="modern-blue"] .profile-tabs .profile-tab[aria-current="page"] {
+    color: #4f5bd5;
+}
+
+body[data-theme="modern-blue"] .profile-tabs .profile-tab::after {
+    background: #4f5bd5;
+}
+
 body[data-theme="modern-blue"] .btn-secondary {
     background: #ffffff;
 }
@@ -9931,6 +9950,14 @@ a.ct-card:focus-visible {
         color: var(--accent);
         background: var(--accent-soft);
         font-weight: 750;
+    }
+
+    /* The bottom tab bar mirrors .profile-tabs (see mobile-nav.js), so on
+       pages that get one, the old sticky top copy is redundant — both were
+       showing the same six links on screen at once. Bottom bar takes over
+       section nav; the top strip stays for pages without one. */
+    body.has-mobile-tabbar .profile-tabs {
+        display: none;
     }
 
     /* Room so the fixed bar never covers the last of the page content. */
