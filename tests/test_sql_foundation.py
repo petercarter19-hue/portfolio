@@ -18,7 +18,7 @@ class SqlFoundationTests(unittest.TestCase):
         )
         self.rollbacks = sorted(MIGRATIONS.glob("PS-PLAT-*_rollback.sql"))
 
-    def test_six_ordered_forward_and_rollback_migrations_exist(self):
+    def test_seven_ordered_forward_and_rollback_migrations_exist(self):
         self.assertEqual(
             [path.name.split("_")[0] for path in self.forward],
             [
@@ -28,9 +28,10 @@ class SqlFoundationTests(unittest.TestCase):
                 "PS-PLAT-004",
                 "PS-PLAT-005",
                 "PS-PLAT-006",
+                "PS-PLAT-007",
             ],
         )
-        self.assertEqual(len(self.rollbacks), 6)
+        self.assertEqual(len(self.rollbacks), 7)
 
     def test_forward_migrations_are_transactional_and_recorded(self):
         for path in self.forward:
@@ -78,6 +79,18 @@ class SqlFoundationTests(unittest.TestCase):
         self.assertIn("FOREIGN KEY (ai_proposal_id, owner_profile_id)", sql)
         self.assertIn("Content approval events are immutable", sql)
         self.assertIn("contains member data", rollback)
+
+    def test_living_resume_read_contracts_are_side_effect_free_and_audience_scoped(self):
+        sql = (MIGRATIONS / "PS-PLAT-007_living_resume_reads.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("usp_GetOwnerLivingResume", sql)
+        self.assertIn("usp_GetPublicLivingResumeBySlug", sql)
+        self.assertIn("chapter.visibility = N''public''", sql)
+        self.assertIn("chapter.approval_status = N''approved''", sql)
+        self.assertIn("chapter.publication_status = N''published''", sql)
+        self.assertNotIn("usp_Ensure", sql)
+        self.assertNotIn("usp_Upsert", sql)
 
     def test_verification_script_is_read_only(self):
         sql = VERIFY.read_text(encoding="utf-8").upper()

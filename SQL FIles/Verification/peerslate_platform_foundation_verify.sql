@@ -29,6 +29,8 @@ SELECT expected.object_name,
        CASE WHEN OBJECT_ID(N'dbo.' + expected.object_name) IS NOT NULL THEN 1 ELSE 0 END AS exists_flag
 FROM (VALUES
     (N'usp_AppendAuditEvent'),
+    (N'usp_GetOwnerLivingResume'),
+    (N'usp_GetPublicLivingResumeBySlug'),
     (N'trg_audit_events_immutable'),
     (N'trg_content_approval_events_immutable')
 ) AS expected(object_name)

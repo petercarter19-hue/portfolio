@@ -138,7 +138,8 @@ Forward order:
 4. `PS-PLAT-004_connections_notifications.sql`
 5. `PS-PLAT-005_tenant_integrity.sql`
 6. `PS-PLAT-006_living_resume_domain.sql`
-7. `peerslate_platform_foundation_verify.sql`
+7. `PS-PLAT-007_living_resume_reads.sql`
+8. `peerslate_platform_foundation_verify.sql`
 
 The repository helper prints the plan by default and applies only with an explicit flag:
 
@@ -164,7 +165,7 @@ Each forward script:
 
 Before production application code uses these tables:
 
-1. Run all six migrations against the configured Azure SQL database.
+1. Run all seven migrations against the configured Azure SQL database.
 2. Run the read-only foundation verification script.
 3. Confirm all migration IDs are present exactly once.
 4. Confirm every new foreign key is trusted.

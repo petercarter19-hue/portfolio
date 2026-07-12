@@ -22,6 +22,15 @@ DASHBOARD_SECTIONS = (
     "challenge_progress",
 )
 
+LIVING_RESUME_SECTIONS = (
+    "profile",
+    "chapters",
+    "achievements",
+    "skills",
+    "skill_proofs",
+    "timeline",
+)
+
 
 class ApiValidationError(ValueError):
     """Raised when browser-provided API input is invalid."""
@@ -34,6 +43,16 @@ def require_identity(view):
             get_current_identity()
         except AuthenticationRequired as error:
             return jsonify({"success": False, "message": str(error)}), 401
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def require_living_resume_database(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not current_app.config.get("PEERSLATE_LIVING_RESUME_DB_ENABLED", False):
+            return jsonify({"success": False, "message": "Not found."}), 404
         return view(*args, **kwargs)
 
     return wrapped
@@ -140,6 +159,41 @@ def get_dashboard():
     )
     dashboard = database_service.name_result_sets(result_sets, DASHBOARD_SECTIONS)
     return jsonify({"success": True, "dashboard": dashboard})
+
+
+@peerslate_api.get("/living-resume/me")
+@require_living_resume_database
+@require_identity
+def get_owner_living_resume():
+    identity = get_current_identity()
+    try:
+        result_sets = database_service.execute_procedure(
+            "usp_GetOwnerLivingResume", [("@UserKey", identity.user_key)]
+        )
+    except DatabaseServiceError as error:
+        if "Living Resume owner profile not found" not in str(error.__cause__ or ""):
+            raise
+        return jsonify({"success": False, "message": "Living Resume not found."}), 404
+    resume = database_service.name_result_sets(result_sets, LIVING_RESUME_SECTIONS)
+    return jsonify({"success": True, "living_resume": resume})
+
+
+@peerslate_api.get("/public/profiles/<string:profile_slug>/living-resume")
+@require_living_resume_database
+def get_public_living_resume(profile_slug):
+    clean_slug = profile_slug.strip().lower()
+    if not clean_slug or len(clean_slug) > 100:
+        raise ApiValidationError("profile_slug has an unsupported value.")
+    try:
+        result_sets = database_service.execute_procedure(
+            "usp_GetPublicLivingResumeBySlug", [("@ProfileSlug", clean_slug)]
+        )
+    except DatabaseServiceError as error:
+        if "Public Living Resume not found" not in str(error.__cause__ or ""):
+            raise
+        return jsonify({"success": False, "message": "Living Resume not found."}), 404
+    resume = database_service.name_result_sets(result_sets, LIVING_RESUME_SECTIONS)
+    return jsonify({"success": True, "living_resume": resume})
 
 
 @peerslate_api.get("/feed/break")

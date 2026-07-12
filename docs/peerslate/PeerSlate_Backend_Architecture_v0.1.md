@@ -83,6 +83,7 @@ The local user is a fixture identity only. It does not prove production authenti
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PEERSLATE_DATABASE_UI_ENABLED` | `false` | Enables SQL-backed Board, Daily Slate, and Break behavior. |
+| `PEERSLATE_LIVING_RESUME_DB_ENABLED` | `false` | Enables the owner/public Living Resume read APIs after PS-PLAT-006 and PS-PLAT-007 verification. |
 | `PEERSLATE_ENABLE_DB_TEST_ROUTES` | `false` | Enables temporary raw connectivity routes locally. Keep off in production. |
 | `PEERSLATE_ALLOW_DEV_IDENTITY` | `false` | Allows the configured development user. Never enable in production. |
 | `PEERSLATE_TRUST_EASYAUTH_HEADERS` | `false` | Allows intentional local Easy Auth simulation. Azure is detected automatically. |

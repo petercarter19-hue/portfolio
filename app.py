@@ -42,6 +42,9 @@ app.config.update(
     PEERSLATE_DATABASE_UI_ENABLED=(
         os.environ.get('PEERSLATE_DATABASE_UI_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_LIVING_RESUME_DB_ENABLED=(
+        os.environ.get('PEERSLATE_LIVING_RESUME_DB_ENABLED', 'false').lower() == 'true'
+    ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
     ),

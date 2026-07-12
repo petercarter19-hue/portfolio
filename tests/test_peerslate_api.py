@@ -15,6 +15,7 @@ class PeerSlateApiTests(unittest.TestCase):
             "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
             "PEERSLATE_ENABLE_DB_TEST_ROUTES": app.config.get("PEERSLATE_ENABLE_DB_TEST_ROUTES"),
             "PEERSLATE_DATABASE_UI_ENABLED": app.config.get("PEERSLATE_DATABASE_UI_ENABLED"),
+            "PEERSLATE_LIVING_RESUME_DB_ENABLED": app.config.get("PEERSLATE_LIVING_RESUME_DB_ENABLED"),
         }
         app.config.update(
             TESTING=True,
@@ -22,6 +23,7 @@ class PeerSlateApiTests(unittest.TestCase):
             PEERSLATE_DEV_USER_KEY="test-user-1",
             PEERSLATE_ENABLE_DB_TEST_ROUTES=False,
             PEERSLATE_DATABASE_UI_ENABLED=False,
+            PEERSLATE_LIVING_RESUME_DB_ENABLED=False,
         )
         self.client = app.test_client()
 
@@ -139,6 +141,42 @@ class PeerSlateApiTests(unittest.TestCase):
         self.assertIn(b'saved privately', database_board.data)
         self.assertIn(b'data-database-ui="true"', daily_slate.data)
         self.assertIn(b'data-break-api="true"', break_feed.data)
+
+    def test_living_resume_database_routes_are_feature_flagged_off(self):
+        self.assertEqual(self.client.get("/api/living-resume/me").status_code, 404)
+        self.assertEqual(
+            self.client.get("/api/public/profiles/example/living-resume").status_code,
+            404,
+        )
+
+    @patch("peerslate_api.database_service.execute_procedure")
+    def test_owner_living_resume_uses_server_identity_and_named_contract(self, execute):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        execute.return_value = [[{"profile_slug": "example"}]] + [[] for _ in range(5)]
+
+        response = self.client.get("/api/living-resume/me?user_key=someone-else")
+
+        self.assertEqual(response.status_code, 200)
+        parameters = execute.call_args.args[1]
+        self.assertEqual(parameters, [("@UserKey", "test-user-1")])
+        payload = response.get_json()["living_resume"]
+        self.assertEqual(
+            set(payload),
+            {"profile", "chapters", "achievements", "skills", "skill_proofs", "timeline"},
+        )
+
+    @patch("peerslate_api.database_service.execute_procedure")
+    def test_public_living_resume_passes_only_clean_slug(self, execute):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        execute.return_value = [[{"profile_slug": "sample-member"}]] + [[] for _ in range(5)]
+
+        response = self.client.get("/api/public/profiles/Sample-Member/living-resume")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            execute.call_args.args[1],
+            [("@ProfileSlug", "sample-member")],
+        )
 
     @patch("identity.database_service.first_row")
     @patch("peerslate_api.database_service.execute_procedure")

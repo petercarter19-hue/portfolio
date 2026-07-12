@@ -15,6 +15,8 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_CompleteChallenge",
         "usp_EvaluateUserFlatAchievements",
         "usp_GetPeerSlateUserDashboard",
+        "usp_GetOwnerLivingResume",
+        "usp_GetPublicLivingResumeBySlug",
         "usp_GetSlateSpaceForUser",
         "usp_GetTodayBreakFeedForUser",
         "usp_GetTodayBreakPollOptions",

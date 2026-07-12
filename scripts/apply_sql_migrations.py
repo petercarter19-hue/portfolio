@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_DIR = ROOT / "SQL FIles" / "Migrations"
 VERIFY_PATH = ROOT / "SQL FIles" / "Verification" / "peerslate_platform_foundation_verify.sql"
 
-EXPECTED_MIGRATIONS = {f"PS-PLAT-{number:03d}" for number in range(1, 7)}
+EXPECTED_MIGRATIONS = {f"PS-PLAT-{number:03d}" for number in range(1, 8)}
 EXPECTED_TABLES = {
     "schema_migrations",
     "audit_events",
@@ -51,6 +51,8 @@ EXPECTED_TABLES = {
 }
 EXPECTED_PROGRAMMABLE_OBJECTS = {
     "usp_AppendAuditEvent",
+    "usp_GetOwnerLivingResume",
+    "usp_GetPublicLivingResumeBySlug",
     "trg_audit_events_immutable",
     "trg_content_approval_events_immutable",
 }
@@ -175,7 +177,7 @@ def verify_foundation() -> None:
         for failure in failures:
             print(f"FAILED: {failure}")
         raise RuntimeError("PeerSlate foundation verification failed.")
-    print("Verified all six migration records and all 31 platform and career tables.")
+    print("Verified all seven migration records and all 31 platform and career tables.")
     print("Verified tenant constraints, private profile defaults, and opt-in discovery defaults.")
 
 
