@@ -104,6 +104,11 @@
     gap: clamp(1.75rem, 3.2vw, 3.5rem);
     padding: clamp(2rem, 4vw, 4rem);
     border-radius: 2rem;
+    /* Dropped down 1/4 of the card's own width for a hand-placed offset
+       against the quote card. A grid item's margin % resolves against its
+       column width (= this card's width), so 25% == 1/4 of the card at
+       every screen size. */
+    margin-top: 25%;
 }
 
 .r2-portrait {
@@ -1649,6 +1654,8 @@
     .r2-identity-card {
         grid-template-columns: 7.5rem minmax(0, 1fr);
         padding: 2.25rem;
+        /* Single-column stack below this width: no hand-placed offset. */
+        margin-top: 0;
     }
 
     .r2-quote-card {
