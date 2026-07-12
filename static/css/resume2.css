@@ -845,9 +845,9 @@
        the grow, the re-stagger, and the shadow settle together instead of
        finishing at three different times (which read as jerky). */
     transition:
-        flex-grow 460ms cubic-bezier(.22, .82, .26, 1),
-        transform 460ms cubic-bezier(.22, .82, .26, 1),
-        box-shadow 460ms ease;
+        flex-grow 560ms cubic-bezier(.22, .82, .26, 1),
+        transform 560ms cubic-bezier(.22, .82, .26, 1),
+        box-shadow 560ms ease;
     /* Hint the compositor so the re-stagger/hover transforms stay smooth. */
     will-change: transform;
 }
@@ -912,7 +912,7 @@
 
 .r2-exp-card__preview {
     max-height: 60rem;
-    transition: opacity 300ms ease, max-height 460ms cubic-bezier(.22, .82, .26, 1);
+    transition: opacity 340ms ease, max-height 560ms cubic-bezier(.22, .82, .26, 1);
 }
 
 .r2-experience-card :is(h3, h4, p, li, strong, span, small) {
@@ -931,7 +931,7 @@
 .r2-exp-card__full {
     /* Emerges with the grow (slight lead-in delay) on the same easing so the
        record fades up as the card opens rather than before it. */
-    animation: r2-exp-reveal 420ms cubic-bezier(.22, .82, .26, 1) 60ms both;
+    animation: r2-exp-reveal 500ms cubic-bezier(.22, .82, .26, 1) 80ms both;
 }
 
 @keyframes r2-exp-reveal {
