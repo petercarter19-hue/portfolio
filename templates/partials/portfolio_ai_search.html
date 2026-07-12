@@ -2,13 +2,17 @@
    this partial (e.g. from profile fixture data); it defaults to Pete so
    every existing include renders exactly as before. #}
 {% set ai_owner = ai_owner_name | default('Pete') %}
+{# ai_input_id lets a page include this form more than once (e.g. the résumé's
+   identity card AND its sub-header) without duplicating the hero-ai-input id.
+   Defaults preserve every existing single-form include unchanged. #}
+{% set ai_input_id = ai_input_id | default('hero-ai-input') %}
 <form class="hero-ai-search" data-hero-ai-search aria-label="Ask {{ ai_owner }} AI">
-    <label class="hero-ai-search__label" for="hero-ai-input">
+    <label class="hero-ai-search__label" for="{{ ai_input_id }}">
         Ask {{ ai_owner }} AI
     </label>
     <div class="hero-ai-search__box">
         <input
-            id="hero-ai-input"
+            id="{{ ai_input_id }}"
             class="hero-ai-search__input"
             type="text"
             placeholder="Ask about {{ ai_owner }}'s experience, skills, projects, or results..."

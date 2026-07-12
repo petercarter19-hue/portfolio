@@ -4,6 +4,10 @@
 **Date:** July 12, 2026
 **Scope:** Site-wide data foundations only; no page-specific Resume, Slate Board, Feed, Interview, or recruiter schema
 
+> July 12 continuation: PS-PLAT-006 is now included as the separately documented
+> PS-FEAT-001 career-domain phase. The original PS-PLAT-001 through PS-PLAT-005
+> foundation remains unchanged.
+
 ## 1. Purpose
 
 PeerSlate already has a useful Azure SQL foundation for authenticated users, the Break Feed, saved boards, polls, challenges, journals, Slate Spaces, progress, achievements, and badges. The next database work must support the product as a multi-user, evidence-backed platform without coupling the schema to one page or to Pete's fixture content.
@@ -133,14 +137,16 @@ Forward order:
 3. `PS-PLAT-003_evidence_ai.sql`
 4. `PS-PLAT-004_connections_notifications.sql`
 5. `PS-PLAT-005_tenant_integrity.sql`
-6. `peerslate_platform_foundation_verify.sql`
+6. `PS-PLAT-006_living_resume_domain.sql`
+7. `PS-PLAT-007_living_resume_reads.sql`
+8. `peerslate_platform_foundation_verify.sql`
 
 The repository helper prints the plan by default and applies only with an explicit flag:
 
 ```powershell
 python -m pip install -r requirements-sql.txt
 python scripts/apply_sql_migrations.py
-python scripts/apply_sql_migrations.py --apply
+python scripts/apply_sql_migrations.py --apply --verify
 ```
 
 `requirements-sql.txt` is operational tooling only. It is separate from the web application's production dependency file and is not installed by the deployment pipeline.
@@ -159,7 +165,7 @@ Each forward script:
 
 Before production application code uses these tables:
 
-1. Run all four migrations against the configured Azure SQL database.
+1. Run all seven migrations against the configured Azure SQL database.
 2. Run the read-only foundation verification script.
 3. Confirm all migration IDs are present exactly once.
 4. Confirm every new foreign key is trusted.

@@ -30,7 +30,11 @@
 
 {% block content %}
 
-<section class="board-page" aria-labelledby="board-title">
+<section
+    class="board-page"
+    aria-labelledby="board-title"
+    data-board-api="{{ 'true' if database_ui_enabled else 'false' }}"
+>
     <div class="site-container">
 
         <!-- ============ HERO ============ -->
@@ -102,14 +106,11 @@
             </article>
         </div>
 
-        {# Portfolio tab strip (2026-07-08): the Slate Board is a standalone
-           page with its own hero, so base.html doesn't give it the shared
-           profile band + tabs — which left no way to reach the other slate
-           pages without going Home. Include the tab strip here so Overview /
-           My Slate / Evidence / Projects / Resume are one click away. #}
-        <div class="bd-tabs">
-            {% include "partials/profile_tabs.html" %}
-        </div>
+        {# In-page tab strip removed 2026-07-12: base.html now renders the
+           shared profile sub-header in the global header on every page, so this
+           second copy was a duplicate sub-header unique to the Slate Board.
+           Removing it makes the Slate Board match the résumé and the rest of
+           the profile — one centred sub-header, in the header. #}
 
         <!-- ============ MY WHITEBOARD ============ -->
         {# Original single-whiteboard design (restored): a "Chalk it up"
@@ -152,9 +153,13 @@
                     <span class="board-compose__count" id="board-compose-count" aria-live="polite">0 / 90</span>
                     <button class="ps-btn ps-btn--primary board-compose__btn" type="button" id="board-compose-add" disabled>Chalk It Up</button>
                 </div>
-                <p class="board-compose__note">
+                <p class="board-compose__note" id="board-compose-status" aria-live="polite">
+                    {% if database_ui_enabled %}
+                    New entries are saved privately to your authenticated PeerSlate Slate Board.
+                    {% else %}
                     Your entries ink onto the board below and stay saved in this browser.
-                    With PeerSlate accounts they'll publish to your site and the Slate Feed too.
+                    Database storage remains off until PeerSlate authentication is enabled.
+                    {% endif %}
                 </p>
             </div>
 

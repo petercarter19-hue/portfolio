@@ -1,3 +1,4 @@
+import json
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -139,7 +140,7 @@ class Resume2Tests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
-        self.assertIn('css/resume2.css?v=resume2-refine-11', response_text)
+        self.assertIn('css/resume2.css?v=resume2-skillmap-16', response_text)
 
         section_positions = [
             response_text.index(f'id="{section_id}"')
@@ -157,17 +158,27 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(section_positions, sorted(section_positions))
         self.assertLess(section_positions[-1], constellation_position)
 
-    def test_resume2_renders_twenty_evidence_backed_skill_flip_cards(self):
+    def test_resume2_renders_each_configured_evidence_backed_skill_control(self):
         response = self.client.get('/petec/resume2', base_url='http://localhost')
+        fixture_path = (
+            Path(__file__).resolve().parents[1]
+            / 'static'
+            / 'data'
+            / 'resume_data.json'
+        )
+        fixture = json.loads(fixture_path.read_text(encoding='utf-8'))
+        expected_skill_count = len(
+            fixture['living_resume']['resume2_featured_skill_ids']
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data.count(b'class="lr-skill-flip r2-skill-card"'),
-            20,
+            response.data.count(b'class="r2-skillchip"'),
+            expected_skill_count,
         )
-        self.assertIn(b'r2-skill-card__front', response.data)
-        self.assertIn(b'r2-skill-card__back', response.data)
-        self.assertIn(b'one or two factual examples', response.data)
+        self.assertIn(b'class="r2-skillpop"', response.data)
+        self.assertIn(b'data-skillmap-data', response.data)
+        self.assertIn(b'Reveal supporting evidence', response.data)
 
     def test_profile_tabs_render_everywhere_except_the_root_landing_page(self):
         root = self.client.get('/', base_url='http://localhost')
