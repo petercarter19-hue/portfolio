@@ -72,7 +72,7 @@ class MyStoryTests(unittest.TestCase):
                     expected_ids,
                 )
                 self.assertEqual(parser.collages, 4)
-                self.assertIn(b'css/story-acts.css?v=story-acts-3', response.data)
+                self.assertIn(b'css/story-acts.css?v=story-acts-4', response.data)
 
     def test_story_has_one_page_heading_and_labelled_act_sections(self):
         response, parser = self.render_story()
