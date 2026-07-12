@@ -11,6 +11,10 @@ class DatabaseServiceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.execute_procedure("usp_Good; DROP TABLE users")
 
+    def test_rejects_unknown_well_formed_procedure_name(self):
+        with self.assertRaises(ValueError):
+            self.service.execute_procedure("usp_UnexpectedProcedure")
+
     def test_rejects_untrusted_parameter_name(self):
         with self.assertRaises(ValueError):
             self.service.execute_procedure(
@@ -29,7 +33,7 @@ class DatabaseServiceTests(unittest.TestCase):
             [{"saved_id": 42}],
         ]
 
-        result = self.service.last_result("usp_Good")
+        result = self.service.last_result("usp_AddSlateItem")
 
         self.assertEqual(result, [{"saved_id": 42}])
 

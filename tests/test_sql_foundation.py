@@ -1,10 +1,12 @@
 import unittest
+import importlib.util
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "SQL FIles" / "Migrations"
 VERIFY = ROOT / "SQL FIles" / "Verification" / "peerslate_platform_foundation_verify.sql"
+RUNNER = ROOT / "scripts" / "apply_sql_migrations.py"
 
 
 class SqlFoundationTests(unittest.TestCase):
@@ -58,6 +60,63 @@ class SqlFoundationTests(unittest.TestCase):
         sql = VERIFY.read_text(encoding="utf-8").upper()
         for forbidden in ("INSERT ", "UPDATE ", "DELETE ", "DROP ", "ALTER ", "CREATE "):
             self.assertNotIn(forbidden, sql)
+
+    def test_verification_validator_accepts_complete_safe_foundation(self):
+        spec = importlib.util.spec_from_file_location("peerslate_migrations", RUNNER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        results = [
+            [{"database_name": "test"}],
+            [{"migration_id": item} for item in sorted(module.EXPECTED_MIGRATIONS)],
+            [
+                {"object_name": item, "exists_flag": 1}
+                for item in sorted(module.EXPECTED_TABLES)
+            ],
+            [
+                {"object_name": item, "exists_flag": 1}
+                for item in sorted(module.EXPECTED_PROGRAMMABLE_OBJECTS)
+            ],
+            [],
+            [],
+            [],
+            [{
+                "user_count": 2,
+                "profile_count": 2,
+                "private_profile_count": 2,
+                "discovery_off_count": 2,
+            }],
+        ]
+
+        self.assertEqual(module.validate_verification_results(results), [])
+
+    def test_verification_validator_rejects_public_backfill_or_opt_in(self):
+        spec = importlib.util.spec_from_file_location("peerslate_migrations", RUNNER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        results = [
+            [{"database_name": "test"}],
+            [{"migration_id": item} for item in sorted(module.EXPECTED_MIGRATIONS)],
+            [
+                {"object_name": item, "exists_flag": 1}
+                for item in sorted(module.EXPECTED_TABLES)
+            ],
+            [
+                {"object_name": item, "exists_flag": 1}
+                for item in sorted(module.EXPECTED_PROGRAMMABLE_OBJECTS)
+            ],
+            [],
+            [],
+            [],
+            [{
+                "user_count": 2,
+                "profile_count": 2,
+                "private_profile_count": 1,
+                "discovery_off_count": 1,
+            }],
+        ]
+
+        failures = module.validate_verification_results(results)
+        self.assertEqual(len(failures), 2)
 
 
 if __name__ == "__main__":

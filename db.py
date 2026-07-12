@@ -1,4 +1,5 @@
 import os    # Reads environment variables
+import re
 from datetime import date, datetime    # Handles SQL date and time values
 from decimal import Decimal    # Handles SQL decimal values
 
@@ -17,17 +18,13 @@ def normalize_connection_string(connection_string):
         ".database.windows.net",
     )
 
-    supported_parts = []
-
-    for part in connection_string.split(";"):
-        keyword = part.partition("=")[0].strip().lower()
-
-        if keyword == "connection timeout":
-            continue
-
-        supported_parts.append(part)
-
-    return ";".join(supported_parts)
+    # Avoid splitting the complete connection string because a properly
+    # escaped password may itself contain a semicolon.
+    return re.sub(
+        r"(?i)(^|;)\s*connection timeout\s*=\s*[^;]*(?=;|$)",
+        r"\1",
+        connection_string,
+    )
 
 
 def get_connection():

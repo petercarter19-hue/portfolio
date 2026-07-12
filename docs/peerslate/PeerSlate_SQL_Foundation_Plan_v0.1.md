@@ -140,7 +140,7 @@ The repository helper prints the plan by default and applies only with an explic
 ```powershell
 python -m pip install -r requirements-sql.txt
 python scripts/apply_sql_migrations.py
-python scripts/apply_sql_migrations.py --apply
+python scripts/apply_sql_migrations.py --apply --verify
 ```
 
 `requirements-sql.txt` is operational tooling only. It is separate from the web application's production dependency file and is not installed by the deployment pipeline.
@@ -159,7 +159,7 @@ Each forward script:
 
 Before production application code uses these tables:
 
-1. Run all four migrations against the configured Azure SQL database.
+1. Run all five migrations against the configured Azure SQL database.
 2. Run the read-only foundation verification script.
 3. Confirm all migration IDs are present exactly once.
 4. Confirm every new foreign key is trusted.

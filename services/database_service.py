@@ -8,6 +8,35 @@ from db import fetch_all_result_sets, get_connection
 _PROCEDURE_NAME = re.compile(r"^usp_[A-Za-z0-9_]+$")
 _PARAMETER_NAME = re.compile(r"^@[A-Za-z][A-Za-z0-9_]*$")
 
+ALLOWED_PROCEDURES = frozenset(
+    {
+        "usp_AddSlateItem",
+        "usp_ArchiveSlateItem",
+        "usp_CompleteChallenge",
+        "usp_EvaluateUserFlatAchievements",
+        "usp_GetPeerSlateUserDashboard",
+        "usp_GetSlateSpaceForUser",
+        "usp_GetTodayBreakFeedForUser",
+        "usp_GetTodayBreakPollOptions",
+        "usp_GetTodayJournalPromptForUser",
+        "usp_GetUserBadges",
+        "usp_GetUserBoardContents",
+        "usp_GetUserChallengeHistory",
+        "usp_GetUserChallengeProgress",
+        "usp_GetUserJournalHistory",
+        "usp_LinkSlateItems",
+        "usp_RecordFeedInteraction",
+        "usp_RestoreSlateItem",
+        "usp_SaveContentToBoard",
+        "usp_SaveJournalResponse",
+        "usp_SubmitPollVote",
+        "usp_UnlinkSlateItems",
+        "usp_UnsaveContentFromBoard",
+        "usp_UpdateSlateItem",
+        "usp_UpsertAppUserFromAuth",
+    }
+)
+
 
 class DatabaseServiceError(RuntimeError):
     """Raised when a database operation cannot be completed safely."""
@@ -17,7 +46,10 @@ class DatabaseService:
     """Execute known stored procedures with positional parameter binding."""
 
     def execute_procedure(self, procedure_name, parameters=None):
-        if not _PROCEDURE_NAME.fullmatch(procedure_name):
+        if (
+            not _PROCEDURE_NAME.fullmatch(procedure_name)
+            or procedure_name not in ALLOWED_PROCEDURES
+        ):
             raise ValueError("Invalid stored procedure name.")
 
         bound_parameters = list(parameters or [])

@@ -49,6 +49,18 @@ def protect_json_writes():
             {"success": False, "message": "A same-origin request header is required."}
         ), 403
 
+    origin = request.headers.get("Origin")
+    if origin and origin.rstrip("/") != request.host_url.rstrip("/"):
+        return jsonify(
+            {"success": False, "message": "Cross-origin writes are not allowed."}
+        ), 403
+
+    fetch_site = request.headers.get("Sec-Fetch-Site")
+    if fetch_site and fetch_site not in {"same-origin", "none"}:
+        return jsonify(
+            {"success": False, "message": "Cross-site writes are not allowed."}
+        ), 403
+
     if request.content_length and not request.is_json:
         return jsonify(
             {"success": False, "message": "Write requests must use JSON."}

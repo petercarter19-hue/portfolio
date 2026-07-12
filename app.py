@@ -1204,7 +1204,6 @@ def db_test():
             {
                 'success': False,
                 'message': 'PeerSlate could not connect to Azure SQL.',
-                'error': str(error),
             }
         ), 500
 
@@ -1240,7 +1239,6 @@ def dashboard_test():
             {
                 'success': False,
                 'message': 'The PeerSlate dashboard could not be loaded.',
-                'error': str(error),
             }
         ), 500
 

@@ -14,12 +14,14 @@ class PeerSlateApiTests(unittest.TestCase):
             "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
             "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
             "PEERSLATE_ENABLE_DB_TEST_ROUTES": app.config.get("PEERSLATE_ENABLE_DB_TEST_ROUTES"),
+            "PEERSLATE_DATABASE_UI_ENABLED": app.config.get("PEERSLATE_DATABASE_UI_ENABLED"),
         }
         app.config.update(
             TESTING=True,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
             PEERSLATE_DEV_USER_KEY="test-user-1",
             PEERSLATE_ENABLE_DB_TEST_ROUTES=False,
+            PEERSLATE_DATABASE_UI_ENABLED=False,
         )
         self.client = app.test_client()
 
@@ -54,6 +56,23 @@ class PeerSlateApiTests(unittest.TestCase):
     def test_write_routes_require_same_origin_header(self):
         response = self.client.post(
             "/api/slate-items",
+            json={
+                "space_name": "Career Slate",
+                "space_type": "career",
+                "item_type": "goal",
+                "title": "Test item",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_write_routes_reject_cross_origin_requests(self):
+        response = self.client.post(
+            "/api/slate-items",
+            headers={
+                "X-PeerSlate-Request": "same-origin",
+                "Origin": "https://attacker.example",
+            },
             json={
                 "space_name": "Career Slate",
                 "space_type": "career",
@@ -105,6 +124,21 @@ class PeerSlateApiTests(unittest.TestCase):
     def test_temporary_database_routes_are_disabled_by_default(self):
         self.assertEqual(self.client.get("/api/db-test").status_code, 404)
         self.assertEqual(self.client.get("/api/dashboard/test").status_code, 404)
+
+    def test_database_ui_is_off_by_default_and_private_when_enabled(self):
+        board_preview = self.client.get("/slate-board")
+        self.assertIn(b'data-board-api="false"', board_preview.data)
+        self.assertIn(b'stay saved in this browser', board_preview.data)
+
+        app.config["PEERSLATE_DATABASE_UI_ENABLED"] = True
+        database_board = self.client.get("/slate-board")
+        daily_slate = self.client.get("/the-slate/daily")
+        break_feed = self.client.get("/the-slate/break")
+
+        self.assertIn(b'data-board-api="true"', database_board.data)
+        self.assertIn(b'saved privately', database_board.data)
+        self.assertIn(b'data-database-ui="true"', daily_slate.data)
+        self.assertIn(b'data-break-api="true"', break_feed.data)
 
     @patch("identity.database_service.first_row")
     @patch("peerslate_api.database_service.execute_procedure")
