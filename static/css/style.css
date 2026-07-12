@@ -2864,6 +2864,63 @@ body[data-theme="modern-blue"] {
     z-index: 40;
 }
 
+/* ---- Ask AI launcher pinned to the right of the sub-header tab strip.
+   Replaces the old floating bottom-right chat bubble. ---- */
+.profile-tabs__ask-btn {
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 15px;
+    color: #10606b;
+    background: rgb(46 200 211 / 12%);
+    border: 1px solid rgb(22 123 135 / 34%);
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 750;
+    white-space: nowrap;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.profile-tabs__ask-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.profile-tabs__ask-btn:hover,
+.profile-tabs__ask-btn:focus-visible {
+    color: #fff;
+    background: #167b87;
+    border-color: #167b87;
+}
+
+/* On the résumé sub-header the tabs are centred, so pin the launcher to the
+   right edge without disturbing that centring. */
+.living-resume-v2-page .profile-tabs--resume .profile-tabs__inner {
+    position: relative;
+}
+
+.living-resume-v2-page .profile-tabs--resume .profile-tabs__ask-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0;
+    min-height: 2rem;
+    padding: 0 0.85rem;
+    font-size: 0.76rem;
+}
+
+/* The sub-header launcher takes over from the floating bubble on every page
+   that shows the profile sub-header. */
+body.portfolio-shell #chat-toggle {
+    display: none !important;
+}
+
 /* ---- Quick-ask chips, slim row under the tab strip (overview) ---- */
 .profile-tabs__chips {
     display: flex;
