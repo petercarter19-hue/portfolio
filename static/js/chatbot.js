@@ -314,8 +314,19 @@ function initializeChatbot() {
         const heroButton = heroSearch.querySelector('.hero-ai-search__button');
         const defaultStatus = 'Answers use approved public portfolio evidence.';
 
+        // Opt-in "takeover" host: an ancestor marked data-hero-ai-takeover
+        // (the résumé identity card). While an answer is showing, the card's
+        // intro (kicker + blurb + suggestion chips) steps aside via
+        // .is-conversing and the conversation fills that same space instead of
+        // floating out as a separate bubble. Closing the answer restores it.
+        const takeoverHost = heroSearch.closest('[data-hero-ai-takeover]');
+
         function renderHeroAnswer(question, responseText, isLoading) {
             if (!heroAnswer) return;
+
+            if (takeoverHost) {
+                takeoverHost.classList.add('is-conversing');
+            }
 
             heroAnswer.hidden = false;
             heroAnswer.innerHTML = [
@@ -335,6 +346,10 @@ function initializeChatbot() {
             heroAnswer.hidden = true;
             heroAnswer.classList.remove('is-loading');
             heroAnswer.textContent = '';
+
+            if (takeoverHost) {
+                takeoverHost.classList.remove('is-conversing');
+            }
         }
 
         function submitHeroQuestion(question) {

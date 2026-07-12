@@ -88,26 +88,40 @@
     ],
     "resume2_featured_skill_ids": [
       "systems-engineering",
-      "sysml-modeling",
-      "cameo",
-      "mbse",
       "requirements-management",
-      "doors",
-      "life-cycle-management",
+      "mbse",
+      "sysml-modeling",
+      "project-management",
+      "contracting",
       "control-account-management",
       "evms",
-      "contracting",
-      "project-management",
       "sustainment",
       "integrated-logistics-support",
       "provisioning",
-      "ai",
-      "process-improvement",
-      "ms-excel",
+      "life-cycle-management",
       "data-analytics",
-      "jira",
+      "process-improvement",
+      "ai",
       "webpage-development"
     ],
+    "resume2_featured_skill_icons": {
+      "systems-engineering": "settings",
+      "requirements-management": "file",
+      "mbse": "box",
+      "sysml-modeling": "layout",
+      "project-management": "briefcase",
+      "contracting": "award",
+      "control-account-management": "book",
+      "evms": "repeat",
+      "sustainment": "wrench",
+      "integrated-logistics-support": "grid",
+      "provisioning": "map",
+      "life-cycle-management": "compass",
+      "data-analytics": "chart",
+      "process-improvement": "bolt",
+      "ai": "sparkles",
+      "webpage-development": "link"
+    },
     "events": [
       {
         "id": "education-as",
@@ -234,7 +248,7 @@
         "icon": "award",
         "short_label": "PMP",
         "display_period": "Certified",
-        "show_in_ledger": true,
+        "show_in_ledger": false,
         "show_in_constellation": true,
         "constellation_x": 84,
         "constellation_y": 12,
@@ -249,7 +263,7 @@
         "icon": "sparkles",
         "short_label": "Systems Engineering Ph.D.",
         "display_period": "Expected 2027 start",
-        "show_in_ledger": true,
+        "show_in_ledger": false,
         "show_in_constellation": true,
         "constellation_x": 95.2,
         "constellation_y": 4,
@@ -1330,11 +1344,25 @@
       "detail": "Admitted with expected January 2027 start; this is upcoming, not completed."
     },
     {
-      "id": "education-incose",
-      "credential": "AZ-900 / AI-901 / AWS Practitioner Path",
-      "institution": "Planned professional development",
+      "id": "education-az900",
+      "credential": "Microsoft Azure Fundamentals",
+      "institution": "Microsoft Certified · AZ-900",
       "status": "In Progress",
-      "detail": "Planned professional development aligned with cloud fundamentals, AI fundamentals, secure technical systems, and AI-enabled engineering execution."
+      "detail": "Foundational cloud concepts and core Azure services."
+    },
+    {
+      "id": "education-ai901",
+      "credential": "Microsoft Azure AI Fundamentals",
+      "institution": "Microsoft Certified · AI-901",
+      "status": "In Progress",
+      "detail": "Foundational AI and machine-learning concepts on Azure."
+    },
+    {
+      "id": "education-aws-ccp",
+      "credential": "AWS Certified Cloud Practitioner",
+      "institution": "Amazon Web Services · CLF-C02",
+      "status": "In Progress",
+      "detail": "Foundational AWS Cloud fluency across services, security, and pricing."
     }
   ],
   "career_roles": [

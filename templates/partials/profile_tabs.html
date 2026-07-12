@@ -31,6 +31,20 @@
                 Resume
             </a>
         </div>
+        {% if is_resume_page %}
+        {# Résumé sub-header Ask AI: a full inline field with its own place to
+           type, pinned to the right of the tab strip. It stays hidden until the
+           reader scrolls past the identity card's Ask AI panel — living-resume-v2.js
+           toggles .is-visible — so it only takes over once that card leaves the
+           screen. The answer drops down below the strip (see .profile-tabs__ask
+           .hero-ai-answer). Its input id is unique so it never clashes with the
+           card's hero-ai-input. #}
+        <div class="profile-tabs__ask profile-tabs__ask--resume" data-resume-subheader-ask aria-hidden="true">
+            {% with ai_owner_name = profile_first_name | default('Pete'), ai_input_id = 'subheader-ai-input' %}
+                {% include "partials/portfolio_ai_search.html" %}
+            {% endwith %}
+        </div>
+        {% else %}
         {# Ask Pete AI launcher, pinned to the right of the tab strip. Replaces
            the old floating bottom-right chat bubble (hidden via CSS on pages
            that show this bar). Opens the same assistant panel. #}
@@ -40,5 +54,6 @@
             </svg>
             <span>Ask {{ profile_first_name | default('Pete') }} AI</span>
         </button>
+        {% endif %}
     </div>
 </nav>

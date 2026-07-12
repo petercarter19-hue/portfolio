@@ -2931,15 +2931,21 @@ body.portfolio-shell #chat-toggle {
    own headers. Values mirror living-resume-v2.css. (2026-07-12)
    ===================================================================== */
 body.portfolio-shell:not(.living-resume-v2-page) .global-header {
-    background: rgb(248 252 255 / 92%);
+    /* Clear frosted glass (2026-07-12): matches The Slate's translucent
+       header and the résumé's, so page content shows through on scroll. */
+    background: rgb(248 252 255 / 68%);
     border-bottom: 1px solid rgb(125 157 198 / 34%);
     box-shadow: 0 0.85rem 2.4rem rgb(10 27 54 / 12%);
-    backdrop-filter: blur(26px) saturate(1.35);
-    -webkit-backdrop-filter: blur(26px) saturate(1.35);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 
 body.portfolio-shell:not(.living-resume-v2-page) .platform-nav__inner {
-    width: min(calc(100% - 3rem), 112rem);
+    /* Full-bleed so the search + Sign In always sit at the far-right end of the
+       header at every width (the capped, left-aligned inner used to strand them
+       well short of the edge on wide monitors). */
+    width: 100%;
+    padding-inline: clamp(1rem, 2vw, 2.25rem);
     min-height: 4rem;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: clamp(1.5rem, 2.8vw, 3.75rem);
