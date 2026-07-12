@@ -36,8 +36,10 @@
             /* Touch devices (iPads, tablets): swap the viewport tag so the
                browser itself renders the page 1280px wide and shrinks it to
                the screen — pixel-perfect desktop, handled natively. */
-            var nativeResponsivePaths = ['/resume', '/petec/resume', '/_internal/living-resume-v2'];
-            if (navigator.maxTouchPoints > 1 && nativeResponsivePaths.indexOf(window.location.pathname) === -1) {
+            var nativeResponsivePath = window.location.pathname === '/resume'
+                || window.location.pathname === '/_internal/living-resume-v2'
+                || /\/resume2?$/.test(window.location.pathname);
+            if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
                         .setAttribute('content', 'width=' + DESKTOP_WIDTH);
@@ -87,7 +89,7 @@
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-1"
+        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-2-mtn"
     >
     <link
         rel="stylesheet"
@@ -98,6 +100,8 @@
 </head>
 
 <body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+
+    {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -135,7 +139,6 @@
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
                        with the current homepage before switching. #}
-                    <li><a href="{{ url_for('experience') }}" {% if request.path == '/experience' %}aria-current="page"{% endif %}>Experience</a></li>
                     {# THE SLATE (2026-07-08): one main link to the product hub.
                        It replaced the separate "Slate Feed" and "Slate Board"
                        links — both experiences now live inside The Slate's
@@ -183,6 +186,12 @@
                 </div>
             </div>
         </nav>
+
+        {# Keep the profile navigation inside the sticky global header so the
+           two navigation levels read as one connected piece of chrome. #}
+        {% if request.path != '/' %}
+            {% include "partials/profile_tabs.html" %}
+        {% endif %}
     </header>
 
     {# The profile band + tab strip frame the portfolio pages — EXCEPT
@@ -199,7 +208,6 @@
            bar) between the profile band and the tab strip. Other pages leave
            this empty, so their tabs sit directly under the band. #}
         {% block profile_preface %}{% endblock %}
-        {% include "partials/profile_tabs.html" %}
     {% endif %}
 
     <main id="main-content" class="main-content">
@@ -311,7 +319,6 @@
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
         {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"},
-        {"title": "Experience", "sub": "The cinematic homepage", "href": "{{ url_for('experience') }}", "keys": "experience cinematic homepage new home scroll aurora preview"}
     ]
     </script>
 

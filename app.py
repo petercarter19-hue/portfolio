@@ -88,12 +88,16 @@ def shared_navigation_urls():
         # point at this deployment's own "/" instead of an external domain.
         # (Previously any unrecognized host — like the Azure URL — sent
         # visitors to https://peerslate.com/, which isn't Pete's live site.)
-        'peerslate_home_url': url_for('home'),
+        # The marketing/"How PeerSlate Works" page moved off the root when
+        # the Experience page became the homepage; keep this pointing at
+        # the page that actually hosts the #how-it-works anchor.
+        'peerslate_home_url': url_for('peerslate_home'),
         'portfolio_home_url': portfolio_url(),
         'portfolio_work_url': portfolio_url('work'),
         'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
-        'portfolio_resume_url': portfolio_url('resume'),
+        # Resume 2 is now the one canonical public resume experience.
+        'portfolio_resume_url': portfolio_url('resume2'),
         'portfolio_contact_url': portfolio_url('contact'),
         'portfolio_hobbies_url': portfolio_url('hobbies'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
@@ -217,6 +221,11 @@ def build_knowledge_context(user_message):
     if any(word in question for word in ['recruiter', 'hire', 'candidate', 'fit', 'target', 'industry', 'clearance', 'available']):
         selected_files.append('recruiter_faq.md')
 
+    # Personal-story questions (the My Story page invites these) route to
+    # the approved story chapter file so answers stay grounded.
+    if any(word in question for word in ['story', 'chapter', 'pizza', 'domino', 'healthcare', '36', 'back to school', 'pandemic', 'covid', 'run', 'running', '100 miles', 'skydiv', 'travel', 'countries', 'dog', 'blazer', 'falcon', 'danielle', 'family', 'hobby', 'hobbies', 'life', 'personal', 'hiking', 'baseball']):
+        selected_files.append('personal_story.md')
+
     # Keep source order stable and remove duplicates.
     selected_files = list(dict.fromkeys(selected_files))
 
@@ -308,11 +317,12 @@ def is_platform_hostname(hostname):
     clean_host = hostname.split(':', 1)[0].lower()
     return clean_host in {'peerslate.com', 'www.peerslate.com'}
 
-# The root URL ("/") is the separate PeerSlate marketing homepage,
-# not Pete's personal portfolio - see templates/peerslate.html.
+# The root URL ("/") is the cinematic Experience page (2026-07-10):
+# it won the side-by-side comparison against the old marketing homepage.
+# The previous marketing page remains reachable at /peerslate.
 @app.route('/')
 def home():
-    return render_template('peerslate.html')
+    return render_template('experience.html')
 
 # Three URLs, one page: /petec is the current address, while /portfolio
 # and /pete are kept working as older addresses so no existing link breaks.
@@ -360,10 +370,14 @@ def about():
 @app.route('/my-story')
 @app.route('/petec/my-story')
 def my_story():
-    # The My Story page replaced "About" in the navigation.
-    # The URL uses a hyphen (/my-story) because URLs can't have spaces,
-    # while the Python function name uses an underscore (my_story).
-    return render_template('my_story.html')
+    # The four-act cinematic story page renders entirely from structured
+    # fixture data so the same templates work for any profile's story.
+    story_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'story_data.json')
+
+    with open(story_path, 'r', encoding='utf-8') as f:
+        story = json.load(f)
+
+    return render_template('my_story.html', story=story)
 
 @app.route('/work')
 @app.route('/petec/work')
@@ -652,11 +666,43 @@ def hobbies():
 def contact():
     return render_template('contact.html')
 
-def _render_living_resume(is_internal_preview=False):
-    """Build the public résumé and gated preview from one shared data model."""
-    resume_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'resume_data.json')
+RESUME_PROFILE_FILES = {
+    # Fixture registry only. Reusable components read all profile-owned
+    # content from the selected structured data source.
+    'petec': 'resume_data.json',
+}
+
+
+def _load_resume_profile(profile_slug):
+    """Load one allowlisted public profile without cross-tenant fallback."""
+    data_filename = RESUME_PROFILE_FILES.get(profile_slug)
+    if data_filename is None:
+        abort(404)
+
+    resume_path = os.path.join(
+        os.path.dirname(__file__),
+        'static',
+        'data',
+        data_filename,
+    )
     with open(resume_path, 'r', encoding='utf-8') as resume_file:
         resume_data = json.load(resume_file)
+
+    data_slug = resume_data.get('profile', {}).get('slug')
+    if data_slug and data_slug != profile_slug:
+        abort(404)
+
+    return resume_data
+
+
+def _render_living_resume(
+    profile_slug='petec',
+    template_name='resume2.html',
+    resume_version=2,
+    is_internal_preview=False,
+):
+    """Build either résumé composition from one shared structured model."""
+    resume_data = _load_resume_profile(profile_slug)
 
     role_by_id = {item['id']: item for item in resume_data['career_roles']}
     education_by_id = {item['id']: item for item in resume_data['education']}
@@ -732,6 +778,7 @@ def _render_living_resume(is_internal_preview=False):
             if accomplishment.get('id') in used_evidence:
                 continue
             outcomes.append({
+                'label': accomplishment.get('short_label', 'Impact outcome'),
                 'text': accomplishment['text'],
                 'evidence_id': accomplishment.get('id'),
             })
@@ -807,8 +854,63 @@ def _render_living_resume(is_internal_preview=False):
         role['orb_color'] = color
         role['orb_icon'] = icon
 
+    # The canonical Living Resume presents a non-retired public proof set.
+    # The full filtered list ships to the template: collapsed cards show
+    # a short preview slice, and the expanded chapter view shows all of
+    # them (DoD has 13, L3Harris 9, Northrop 5 after filtering).
+    resume2_experience = []
+    for role in resume_experience:
+        resume2_role = dict(role)
+        resume2_role['resume2_accomplishments'] = [
+            item
+            for item in role['accomplishments']
+            if 'micap' not in item['text'].lower()
+        ]
+        resume2_experience.append(resume2_role)
+
+    resume2_skill_groups = []
+    for group_config in living_resume.get('resume2_skill_categories', []):
+        group_skills = []
+        for skill in skill_by_id.values():
+            if skill.get('category_id') not in group_config['source_category_ids']:
+                continue
+            resume2_skill = dict(skill)
+            resume2_skill['resume2_evidence_items'] = [
+                item
+                for item in skill.get('evidence_items', [])
+                if 'micap' not in item['text'].lower()
+            ]
+            if resume2_skill['resume2_evidence_items']:
+                group_skills.append(resume2_skill)
+        if group_skills:
+            resume2_skill_groups.append({
+                'id': group_config['id'],
+                'label': group_config['label'],
+                'skills': group_skills,
+            })
+
+    # Resume 2 uses an explicitly ordered fixture list so the reusable card
+    # component never hardcodes Pete-specific skills. Every public card must
+    # retain one or more approved evidence records from the selected profile.
+    resume2_featured_skills = []
+    for skill_id in living_resume.get('resume2_featured_skill_ids', []):
+        skill = skill_by_id.get(skill_id)
+        if not skill:
+            continue
+        resume2_skill = dict(skill)
+        resume2_skill['resume2_evidence_items'] = [
+            item
+            for item in skill.get('evidence_items', [])
+            if 'micap' not in item['text'].lower()
+        ]
+        if resume2_skill['resume2_evidence_items']:
+            resume2_featured_skills.append(resume2_skill)
+
+    profile_name = resume_data['profile']['name'].strip()
+    profile_first_name = profile_name.split()[0] if profile_name else 'Profile'
+
     return render_template(
-        'living_resume_v2.html',
+        template_name,
         resume=resume_data,
         living_resume=living_resume,
         ledger_events=ledger_events,
@@ -819,18 +921,41 @@ def _render_living_resume(is_internal_preview=False):
         constellation_evidence_metrics=constellation_evidence_metrics,
         constellation_outcome_metrics=constellation_outcome_metrics,
         resume_experience=resume_experience,
+        resume2_experience=resume2_experience,
         resume_degrees=resume_degrees,
         resume_development=resume_development,
         featured_resume_skills=featured_resume_skills,
+        resume2_skill_groups=resume2_skill_groups,
+        resume2_featured_skills=resume2_featured_skills,
         skill_lookup=skill_by_id,
+        profile_slug=profile_slug,
+        profile_first_name=profile_first_name,
+        resume_version=resume_version,
         is_internal_preview=is_internal_preview,
     )
 
 
 @app.route('/resume')
-@app.route('/petec/resume')
 def resume():
-    return _render_living_resume()
+    """Send legacy resume bookmarks to the canonical Living Resume page."""
+    return redirect(url_for('profile_resume2', profile_slug='petec'), code=302)
+
+
+@app.route('/<profile_slug>/resume')
+def profile_resume(profile_slug):
+    # Validate the tenant-safe fixture before redirecting so unknown profile
+    # slugs still return 404 instead of silently falling back to Pete.
+    _load_resume_profile(profile_slug)
+    return redirect(url_for('profile_resume2', profile_slug=profile_slug), code=302)
+
+
+@app.route('/<profile_slug>/resume2')
+def profile_resume2(profile_slug):
+    return _render_living_resume(
+        profile_slug,
+        template_name='resume2.html',
+        resume_version=2,
+    )
 
 
 @app.route('/_internal/living-resume-v2')
@@ -841,7 +966,12 @@ def living_resume_v2():
     if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
         abort(404)
 
-    return _render_living_resume(is_internal_preview=True)
+    return _render_living_resume(
+        'petec',
+        template_name='resume2.html',
+        resume_version=2,
+        is_internal_preview=True,
+    )
 
 
 # -------------------------------------------------------
@@ -969,7 +1099,7 @@ def sitemap_xml():
     # API routes are deliberately left out).
     public_paths = [
         '/', '/petec', '/experience',
-        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume',
+        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume2',
         '/petec/slate-board', '/petec/interview-me', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',

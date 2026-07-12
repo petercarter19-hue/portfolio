@@ -8,7 +8,8 @@
     "My Story" so it doesn't clash with The Slate's own "My Slate". The
     .profile-tabs__list wrapper is what the mobile bottom nav mirrors.
 #}
-<nav class="profile-tabs" aria-label="Pete Carter profile tabs">
+{% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
+<nav class="profile-tabs{% if is_resume_page %} profile-tabs--resume{% endif %}" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
         <div class="profile-tabs__list" data-mobile-tabsource>
             <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
@@ -26,7 +27,7 @@
             <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
                 Slate Board
             </a>
-            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if request.path in ['/resume', '/petec/resume'] %}aria-current="page"{% endif %}>
+            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if is_resume_page %}aria-current="page"{% endif %}>
                 Resume
             </a>
         </div>

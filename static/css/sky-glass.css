@@ -16,14 +16,14 @@
     z-index: -1;
     background:
         linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-        url("../images/cinematic/together-summit.jpg") center top / cover no-repeat;
+        url("../images/background-templates/mountains.png") center top / cover no-repeat;
 }
 
 @media (max-width: 48rem) {
     .site-sky {
         background:
             linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-            url("../images/cinematic/together-summit-m.jpg") center top / cover no-repeat;
+            url("../images/background-templates/mountains.png") center top / cover no-repeat;
     }
 }
 
