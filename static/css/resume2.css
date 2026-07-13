@@ -2729,31 +2729,32 @@
 }
 
 /* =====================================================================
-   EXPERIENCE HEADER ROW (2026-07-13)
-   Skills & Evidence was moved up to sit beside the Experience intro card,
-   below the ledger and above the experience chapter cards — a playful
-   right-hand offset with real spacing (no overlap).
+   RÉSUMÉ LAYOUT PASS (2026-07-13b, Pete's feedback)
+   - Skills spans full width ABOVE the Experience title (8 × 2 chip grid).
+   - Experience title drops down close to the chapter cards.
+   - Smaller section-heading titles; title + summary each on one line.
+   - Education stacks vertically (left); Development stays horizontal to its
+     right; Certifications sit below Education; Achievements below Development.
    ===================================================================== */
-.r2-exp-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    align-items: start;
-    gap: clamp(1.5rem, 3vw, 3.5rem);
+
+/* --- Smaller section titles (were oversized), title + summary one line each */
+.resume-v2 .r2-section-heading h2 {
+    font-size: clamp(1.4rem, 1.9vw, 2rem);
+    line-height: 1.12;
+}
+.resume-v2 .r2-section-heading > span {
+    font-size: 0.72rem;
+}
+.resume-v2 .r2-section-heading > p {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
 }
 
-.r2-exp-header .r2-exp-intro-card {
-    max-width: none;
-}
-
-/* The relocated Skills panel. It carries its own glass card here (it used to
-   inherit the composition column's surface). margin-top gives the playful
-   drop AND adds real layout height, so it never overlaps the cards below. */
-.r2-skills--beside {
-    position: relative;
-    z-index: 6;
+/* --- Skills full-width panel above the Experience title ---------------- */
+.r2-skills--top {
     width: 100%;
-    margin: 2.5rem 0 0;
-    padding: clamp(1.5rem, 2.2vw, 2.25rem);
+    margin: 0 0 clamp(1.75rem, 3vw, 2.75rem);
+    padding: clamp(1.25rem, 2vw, 2rem);
     background: linear-gradient(135deg, rgb(255 255 255 / 86%), rgb(244 249 255 / 74%));
     border: 1px solid rgb(255 255 255 / 82%);
     border-radius: 1.5rem;
@@ -2762,18 +2763,159 @@
         inset 0 1px 0 rgb(255 255 255 / 92%);
     backdrop-filter: blur(22px) saturate(1.18);
 }
+.r2-skills--top .r2-skillmap { margin-top: 1rem; }
 
-.r2-skills--beside .r2-skillmap {
-    margin-top: 1.2rem;
+/* Two rows of eight. Higher specificity than the container-query defaults. */
+.r2-skills--top .r2-skillmap__grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+.r2-skills--top .r2-skillchip {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-height: 4.4rem;
+    padding: 0.7rem 0.5rem;
+    text-align: center;
+}
+.r2-skills--top .r2-skillchip__label {
+    font-size: 0.7rem;
+    line-height: 1.15;
+}
+@media (max-width: 78rem) {
+    .r2-skills--top .r2-skillmap__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 40rem) {
+    .r2-skills--top .r2-skillmap__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Stack the header row on narrow screens (intro above skills). */
+/* --- Experience title drops down toward the chapter cards -------------- */
+.r2-experience .r2-exp-intro-card {
+    display: inline-block;
+    margin-top: clamp(1.5rem, 3vw, 3rem);
+}
+.r2-experience .r2-exp-stage {
+    margin-top: 1rem;
+}
+
+/* --- Vertical composition becomes a 2 × 2 grid ------------------------- */
+/* Education (tall, left) | Development (wide, right)
+   Certifications (left)  | Achievements (right)                          */
+.r2-vertical-composition {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    grid-template-rows: auto auto;
+    gap: clamp(1.25rem, 2.4vw, 2.4rem);
+}
+.r2-vertical-composition .r2-education { grid-column: 1; grid-row: 1; }
+.r2-vertical-composition .r2-development { grid-column: 2; grid-row: 1; width: 100%; margin: 0; left: 0; }
+.r2-vertical-composition .r2-certifications { grid-column: 1; grid-row: 2; }
+.r2-vertical-composition .r2-achievements { grid-column: 2; grid-row: 2; }
+
+/* Education stacks its degree cards vertically. */
+.r2-vertical-composition .r2-education-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+/* Development stays horizontal but fits the right column (2-up), no stagger. */
+.r2-vertical-composition .r2-development-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+.r2-vertical-composition .r2-development-row article { transform: none; min-height: 0; }
+
+/* --- Certifications card ---------------------------------------------- */
+.r2-cert-grid { display: grid; gap: 0.75rem; margin-top: 1rem; }
+.r2-cert-card {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(160deg, rgb(255 252 245 / 92%), rgb(255 255 255 / 82%));
+    border: 1px solid rgb(215 163 62 / 34%);
+    border-radius: 1.1rem;
+    box-shadow: 0 0.75rem 2.5rem rgb(113 73 8 / 8%);
+}
+.r2-cert-badge {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.9rem;
+    height: 2.9rem;
+    color: #b9822a;
+    background: rgb(255 249 238 / 85%);
+    border: 1px solid rgb(215 163 62 / 42%);
+    border-radius: 0.85rem;
+}
+.r2-cert-badge svg { width: 1.5rem; height: 1.5rem; }
+.r2-cert-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #8a6323;
+    background: rgb(255 244 224 / 80%);
+    border-radius: 999px;
+}
+.r2-cert-body h3 { margin: 0.4rem 0 0.15rem; font-size: 1.1rem; }
+.r2-cert-body strong { display: block; color: #4f5bd5; font-size: 0.85rem; }
+.r2-cert-body p { margin: 0.3rem 0 0; font-size: 0.82rem; line-height: 1.45; color: #42516a; }
+
+/* --- Achievements card ------------------------------------------------ */
+.r2-achieve-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.65rem; }
+.r2-achieve-item {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    padding: 0.85rem 1rem;
+    background: rgb(255 255 255 / 82%);
+    border: 1px solid rgb(67 114 170 / 20%);
+    border-radius: 1rem;
+}
+.r2-achieve-item.is-featured {
+    border-color: rgb(215 163 62 / 46%);
+    background: linear-gradient(160deg, rgb(255 250 240 / 94%), rgb(255 255 255 / 84%));
+    box-shadow: 0 0.75rem 2.5rem rgb(113 73 8 / 9%);
+}
+.r2-achieve-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.4rem;
+    height: 2.4rem;
+    color: #4f5bd5;
+    background: rgb(240 243 255 / 80%);
+    border: 1px solid rgb(79 91 213 / 24%);
+    border-radius: 0.7rem;
+}
+.r2-achieve-item.is-featured .r2-achieve-icon {
+    color: #b9822a;
+    background: rgb(255 249 238 / 85%);
+    border-color: rgb(215 163 62 / 42%);
+}
+.r2-achieve-icon svg { width: 1.25rem; height: 1.25rem; }
+.r2-achieve-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+.r2-achieve-head h3 { margin: 0; font-size: 0.98rem; line-height: 1.2; }
+.r2-achieve-year { flex: none; font-size: 0.72rem; font-weight: 700; color: #6f7d94; }
+.r2-achieve-body > strong { display: block; margin-top: 0.1rem; font-size: 0.78rem; color: #4f5bd5; }
+.r2-achieve-body > p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.45; color: #42516a; }
+
+/* --- Narrow screens: everything returns to a single readable column --- */
 @media (max-width: 60rem) {
-    .r2-exp-header {
+    .r2-vertical-composition {
         grid-template-columns: 1fr;
     }
-
-    .r2-skills--beside {
-        margin-top: 1.5rem;
+    .r2-vertical-composition .r2-education,
+    .r2-vertical-composition .r2-development,
+    .r2-vertical-composition .r2-certifications,
+    .r2-vertical-composition .r2-achievements {
+        grid-column: 1;
     }
+    .r2-vertical-composition .r2-education { grid-row: auto; }
+    .r2-vertical-composition .r2-development { grid-row: auto; }
+    .r2-vertical-composition .r2-certifications { grid-row: auto; }
+    .r2-vertical-composition .r2-achievements { grid-row: auto; }
+    .r2-vertical-composition .r2-development-row { grid-template-columns: 1fr; }
 }
