@@ -337,11 +337,82 @@ def home():
 
 # Three URLs, one page: /petec is the current address, while /portfolio
 # and /pete are kept working as older addresses so no existing link breaks.
+# OVERVIEW OVERHAUL (2026-07-13): the profile Overview is now the five-scene
+# editorial page (overview.html) built from Pete's approved mockups. The
+# previous overview template (index.html) stays on disk for easy rollback.
+def build_overview_view_model():
+    """Assemble the five-scene Overview from the same approved fixtures the
+    résumé and story pages read. Every fact shown is real: fictional mockup
+    data (invented employers, scores, endorsements) is replaced here, and
+    the retired MICAP example is never included."""
+    data_dir = os.path.join(os.path.dirname(__file__), 'static', 'data')
+    with open(os.path.join(data_dir, 'resume_data.json'), 'r', encoding='utf-8') as f:
+        resume = json.load(f)
+
+    living = resume.get('living_resume', {})
+    metrics_by_id = {m['id']: m for m in resume.get('metrics', [])}
+    roles_by_id = {r['id']: r for r in resume.get('career_roles', [])}
+
+    def metric(mid):
+        m = metrics_by_id.get(mid, {})
+        return {'value': m.get('value', ''), 'label': m.get('label', '')}
+
+    chapters = []
+    for order, (rid, card_title, image) in enumerate((
+        ('northrop', 'Complex Systems, Engineered', 'images/cinematic/work-card-path.jpg'),
+        ('l3harris', 'Reliability & Digital Engineering', 'images/cinematic/together-summit-m.jpg'),
+        ('dod', 'Readiness & Technical Leadership', 'images/cinematic/future-path-m.jpg'),
+    ), start=1):
+        role = roles_by_id[rid]
+        chapters.append({
+            'number': f'{order:02d}',
+            'title': role['title'].split(' - ')[0],
+            'org': role['employer'],
+            'dates': role['dates'],
+            'card_title': card_title,
+            'summary': role['headline_contribution'],
+            'evidence_count': len(role.get('accomplishments', [])),
+            'image': image,
+        })
+
+    return {
+        'name': resume.get('profile', {}).get('name', 'Pete Carter'),
+        'chapters': chapters,
+        'ledger': [
+            {'value': len(resume.get('metrics', [])) - 1, 'label': 'Measured outcomes'},  # MICAP excluded
+            {'value': len(resume.get('skills', [])), 'label': 'Evidenced skills'},
+            {'value': len(resume.get('case_studies', [])), 'label': 'Case studies'},
+            {'value': len(resume.get('education', [])), 'label': 'Credentials'},
+        ],
+        'last_updated': living.get('last_updated', ''),
+        'impact': {
+            'headline': metric('contract'),
+            'strip': [metric('engineers-led'), metric('platforms'), metric('gpa')],
+        },
+        'ribbon_strip': [metric('contract'), metric('repair-test'), metric('modernization')],
+        'rail': {
+            'outcome': metric('modernization'),
+            'quote': living.get('quote', ''),
+        },
+        'dashboard_stats': [
+            {'value': '54', 'label': 'Avionics systems tracked', 'note': 'sustainment tracker'},
+            {'value': '9', 'label': 'Redesign efforts led', 'note': '$19.2M combined value'},
+            {'value': '35%', 'label': 'Faster issue-to-action', 'note': 'year over year'},
+            {'value': '70%', 'label': 'Repair & test improvement', 'note': 'verified outcome'},
+        ],
+        'pinned_projects': [
+            {'title': 'Interactive Résumé & Career Assistant', 'note': 'Flask + Claude · live on this site', 'pct': 92},
+            {'title': 'ARN-67 Glideslope Modernization', 'note': '$4.6M · government lead', 'pct': 88},
+            {'title': 'Sustainment Tracker · 54 systems', 'note': '35% faster issue-to-action', 'pct': 76},
+        ],
+    }
+
+
 @app.route('/petec')
 @app.route('/portfolio')
 @app.route('/pete')
 def portfolio_home():
-    return render_template('index.html')
+    return render_template('overview.html', overview=build_overview_view_model())
 
 @app.route('/peerslate')
 def peerslate_home():
