@@ -2421,24 +2421,26 @@ body[data-theme="modern-blue"] {
     position: sticky;
     top: 0;
     z-index: 1200;
-    /* Frosted glass: a translucent tint over a strong blur, so page content
-       shows through as you scroll — clearer and classier than a solid bar. */
-    background: color-mix(in srgb, var(--nav-bg) 78%, transparent);
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(22px) saturate(1.5);
-    -webkit-backdrop-filter: blur(22px) saturate(1.5);
+    /* One solid, dependable site header. Individual pages keep their own
+       atmosphere below this line; the navigation itself no longer changes
+       opacity or lets moving content show through. */
+    background: #f6f8fc;
+    border-bottom: 1px solid rgb(125 157 198 / 34%);
+    box-shadow: 0 0.45rem 1.4rem rgb(10 27 54 / 10%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .platform-nav__inner {
-    min-height: 68px;
+    min-height: 64px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 28px;
+    gap: clamp(1.5rem, 2.8vw, 3.75rem);
     width: 100%;
     max-width: none;
     margin-inline: 0;
-    padding-inline: clamp(12px, 1vw, 20px);
+    padding-inline: clamp(1rem, 2vw, 2.25rem);
 }
 
 .platform-brand {
@@ -2455,6 +2457,12 @@ body[data-theme="modern-blue"] {
     display: inline-flex;
     align-items: center;
     gap: 9px;
+    padding: 0.35rem 0.45rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(226 238 250 / 92%));
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 92%),
+        0 0.4rem 1rem rgb(51 112 189 / 13%);
 }
 
 /* PeerSlate logo lockup (metallic S-mark + wordmark). Pete wants the
@@ -2464,7 +2472,7 @@ body[data-theme="modern-blue"] {
    white chrome without recoloring it. (2026-07-07) */
 .platform-brand__logo img {
     display: block;
-    height: 34px;
+    height: 2.2rem;
     width: auto;
     filter: drop-shadow(0 1px 1px rgb(6 26 58 / 22%));
 }
@@ -2501,8 +2509,9 @@ body[data-theme="modern-blue"] {
 .platform-nav__links {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: clamp(14px, 2.2vw, 36px);
+    justify-content: space-evenly;
+    gap: clamp(1.15rem, 2.3vw, 3rem);
+    width: 100%;
     list-style: none;
 }
 
@@ -2510,8 +2519,8 @@ body[data-theme="modern-blue"] {
     position: relative;
     padding: 6px 0;
     color: var(--text);
-    font-size: 0.92rem;
-    font-weight: 560;
+    font-size: clamp(0.93rem, 0.85vw, 1.02rem);
+    font-weight: 620;
     white-space: nowrap;
     transition: color 160ms ease;
 }
@@ -2931,13 +2940,11 @@ body.portfolio-shell #chat-toggle {
    own headers. Values mirror living-resume-v2.css. (2026-07-12)
    ===================================================================== */
 body.portfolio-shell:not(.living-resume-v2-page) .global-header {
-    /* Clear frosted glass (2026-07-12): matches The Slate's translucent
-       header and the résumé's, so page content shows through on scroll. */
-    background: rgb(248 252 255 / 68%);
+    background: #f6f8fc;
     border-bottom: 1px solid rgb(125 157 198 / 34%);
-    box-shadow: 0 0.85rem 2.4rem rgb(10 27 54 / 12%);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    box-shadow: 0 0.45rem 1.4rem rgb(10 27 54 / 10%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 body.portfolio-shell:not(.living-resume-v2-page) .platform-nav__inner {
@@ -3071,6 +3078,74 @@ body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask-btn {
     font-size: 0.76rem;
 }
 
+/* Overview Ask AI handoff: the full search field takes the same compact
+   sub-header position and visual treatment as the Living Résumé field. It is
+   revealed by chatbot.js only after the large Ask Pete's Slate bar scrolls
+   away, avoiding two competing AI inputs in the same viewport. */
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 200ms ease, visibility 200ms ease;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs:has(.profile-tabs__ask--overview.is-visible) .profile-tabs__list {
+    padding-right: 19rem;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__box {
+    min-height: 2.4rem;
+    padding: 4px;
+    background: linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(240 248 255 / 94%));
+    border: 1px solid rgb(46 200 211 / 46%);
+    border-radius: 999px;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 0.4rem 1rem rgb(23 64 116 / 12%);
+    overflow: visible;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search:focus-within .hero-ai-search__box {
+    border-color: #2ec8d3;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 0 0 3px rgb(46 200 211 / 28%);
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__input {
+    width: 13.5rem;
+    min-height: 2rem;
+    padding-left: 0.9rem;
+    color: #0a1b36;
+    font-size: 0.82rem;
+    outline: none;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__input::placeholder {
+    color: #5a6b84;
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__button {
+    min-height: 2rem;
+    padding: 0 0.9rem;
+    background: linear-gradient(180deg, #2ec8d3, #167b87);
+    border-radius: 999px;
+    color: #04222a;
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
 @media (max-width: 1180px) {
     body.portfolio-shell:not(.living-resume-v2-page) .platform-nav__inner {
         grid-template-columns: minmax(0, 1fr) auto;
@@ -3154,6 +3229,16 @@ body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask-btn {
     body.portfolio-shell:not(.living-resume-v2-page) .profile-tab {
         min-height: 2.35rem;
         font-size: 0.75rem;
+    }
+
+    /* The phone header already exposes Ask AI, so keep the horizontally
+       scrolling profile tabs clear instead of squeezing an inline field in. */
+    body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview {
+        display: none;
+    }
+
+    body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs:has(.profile-tabs__ask--overview.is-visible) .profile-tabs__list {
+        padding-right: 0;
     }
 }
 
@@ -5593,29 +5678,29 @@ body[data-theme="modern-blue"] #chat-panel {
 }
 
 .peerslate-home-page .global-header {
-    /* Frosted glass so the marketing hero shows through the pinned header. */
-    background: rgb(255 255 255 / 72%);
+    background: #f6f8fc;
     border-bottom-color: var(--home-border);
-    box-shadow: none;
+    box-shadow: 0 0.45rem 1.4rem rgb(10 27 54 / 10%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 @media (max-width: 743px) {
-    /* Same phone legibility fix as the Light theme header: more opaque +
-       a touch more blur so the nav links stay readable while scrolling. */
     .peerslate-home-page .global-header {
-        background: rgb(255 255 255 / 90%);
-        backdrop-filter: blur(26px) saturate(1.5);
-        -webkit-backdrop-filter: blur(26px) saturate(1.5);
+        background: #f6f8fc;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 }
 
 .peerslate-home-page .platform-nav__inner {
-    min-height: 80px;
-    gap: 30px;
+    width: 100%;
+    min-height: 64px;
+    gap: clamp(1.5rem, 2.8vw, 3.75rem);
 }
 
 .peerslate-home-page .platform-nav__links {
-    gap: 1.5rem;
+    gap: clamp(1.15rem, 2.3vw, 3rem);
     scrollbar-width: none;
 }
 
@@ -7868,21 +7953,18 @@ body.slate-light .main-content {
 
 /* ---- global platform header (light, like the homepage) ---- */
 body.slate-light .global-header {
-    /* Frosted glass on the Light theme (inherits the base blur). */
-    background: rgb(255 255 255 / 72%);
+    background: #f6f8fc;
     border-bottom: 1px solid var(--border);
-    box-shadow: none;
+    box-shadow: 0 0.45rem 1.4rem rgb(10 27 54 / 10%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 @media (max-width: 743px) {
-    /* On phones the header stays pinned while the page scrolls behind it,
-       so the 72% wash let content bleed through enough to blur the nav
-       links. More opaque + a touch more blur keeps the frosted look but
-       keeps the links readable while scrolling. */
     body.slate-light .global-header {
-        background: rgb(255 255 255 / 90%);
-        backdrop-filter: blur(26px) saturate(1.5);
-        -webkit-backdrop-filter: blur(26px) saturate(1.5);
+        background: #f6f8fc;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 }
 
@@ -13495,4 +13577,3 @@ button.ts-react:hover { color: #d23b5e; }
 
 /* The round Ask button inside the bar keeps the accent fill (it sits on
    the dark bar, so a stone-on-stone button would vanish). */
-

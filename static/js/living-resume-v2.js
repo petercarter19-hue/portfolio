@@ -652,19 +652,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* ----- Constellation grows to a full-screen stage on approach ----- */
-    const constellation = page.querySelector('.lr-constellation');
-    if (constellation && 'IntersectionObserver' in window) {
-        const stageObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    constellation.classList.add('is-fullstage');
-                    stageObserver.disconnect();
-                }
-            });
-        }, { rootMargin: '0px 0px -30% 0px' });
-        stageObserver.observe(constellation);
-    } else if (constellation) {
-        constellation.classList.add('is-fullstage');
-    }
 });

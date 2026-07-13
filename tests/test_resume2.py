@@ -134,13 +134,33 @@ class Resume2Tests(unittest.TestCase):
             self.assertTrue(asset.is_file())
             self.assertLess(asset.stat().st_size, source.stat().st_size)
 
+    def test_constellation_is_full_width_without_scroll_triggered_expansion(self):
+        project_root = Path(__file__).resolve().parents[1]
+        resume_css = (project_root / 'static' / 'css' / 'resume2.css').read_text(
+            encoding='utf-8'
+        )
+        resume_js = (
+            project_root / 'static' / 'js' / 'living-resume-v2.js'
+        ).read_text(encoding='utf-8')
+
+        self.assertIn(
+            '.resume-v2 .lr-constellation {\n    width: 100%;',
+            resume_css,
+        )
+        self.assertNotIn('is-fullstage', resume_css)
+        self.assertNotIn('is-fullstage', resume_js)
+        self.assertNotIn('stageObserver', resume_js)
+
     def test_vertical_composition_preserves_semantic_section_order(self):
         response = self.client.get('/petec/resume2', base_url='http://localhost')
         response_text = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
-        self.assertIn('css/resume2.css?v=resume2-skillmap-16', response_text)
+        self.assertIn(
+            'css/resume2.css?v=constellation-fullstage-17',
+            response_text,
+        )
 
         section_positions = [
             response_text.index(f'id="{section_id}"')

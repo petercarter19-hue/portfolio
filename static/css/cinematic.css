@@ -48,8 +48,8 @@
     overflow-x: clip;
 }
 
-/* Pull the whole page up underneath the sticky frosted header so the
-   aurora sky runs behind the glass bar (JS measures the real header
+/* Pull the whole page up underneath the sticky site header so the
+   aurora sky begins directly beneath it (JS measures the real header
    height into --cine-header-h; 81px is the desktop fallback). */
 .cinematic-home-page .main-content {
     margin-top: calc(-1 * var(--cine-header-h, 81px));
@@ -67,28 +67,30 @@ body.cinematic-home-page #chat-toggle {
 }
 
 body.cinematic-home-page .global-header {
-    background: rgb(242 247 255 / 42%);
-    border-bottom-color: rgb(255 255 255 / 28%);
-    box-shadow: 0 12px 34px rgb(7 16 36 / 8%);
-    -webkit-backdrop-filter: blur(18px) saturate(1.35);
-    backdrop-filter: blur(18px) saturate(1.35);
+    background: #f6f8fc;
+    border-bottom-color: rgb(125 157 198 / 34%);
+    box-shadow: 0 0.45rem 1.4rem rgb(10 27 54 / 10%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 body.cinematic-home-page .platform-nav__inner {
-    min-height: 60px;
-    gap: 22px;
+    width: 100%;
+    min-height: 64px;
+    gap: clamp(1.5rem, 2.8vw, 3.75rem);
 }
 
 body.cinematic-home-page .platform-brand__logo img {
-    height: 28px;
+    height: 2.2rem;
 }
 
 body.cinematic-home-page .platform-nav__links {
-    gap: 1.15rem;
+    justify-content: space-evenly;
+    gap: clamp(1.15rem, 2.3vw, 3rem);
 }
 
 body.cinematic-home-page .platform-nav__links a {
-    font-size: 0.86rem;
+    font-size: clamp(0.93rem, 0.85vw, 1.02rem);
 }
 
 body.cinematic-home-page .theme-menu__btn,
@@ -114,7 +116,7 @@ body.cinematic-home-page .sign-in-btn {
     align-items: center;
     justify-content: center;
     /* Anchor jumps (Watch Overview, scroll cue) land just below the
-       pinned frosted header instead of tucking the heading under it. */
+       pinned site header instead of tucking the heading under it. */
     scroll-margin-top: calc(var(--cine-header-h, 81px) * 0.4);
 }
 
@@ -1653,7 +1655,7 @@ body.cinematic-home-page.cine-chat-anchored #chat-input {
 
     /* The phone header is two rows tall and stays pinned on this page,
        so give section headings extra clearance — otherwise an eyebrow
-       can hide behind the frosted glass right after an anchor jump. */
+       can hide behind the sticky header right after an anchor jump. */
     .cinematic-section .section-content {
         padding-top: calc(var(--cine-curve) + var(--cine-header-h, 118px) + 28px);
     }

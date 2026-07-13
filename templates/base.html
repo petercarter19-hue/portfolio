@@ -85,7 +85,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=frosted-header-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=solid-standard-header-2"
     >
     <link
         rel="stylesheet"
@@ -131,12 +131,9 @@
                 </div>
 
                 <ul class="platform-nav__links">
-                    {# "Home" points at Pete's Overview (his profile home), not the
-                       PeerSlate marketing splash — this is his personal site, so
-                       Home should land visitors on his slate. It owns the bare
-                       overview paths; Example Slate then highlights on the deeper
-                       portfolio sub-pages so the two links never both light up. #}
-                    <li><a href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>Home</a></li>
+                    {# Pete's Slate is the branded label for the PeerSlate homepage
+                       at "/". The Example Slate remains Pete's public profile. #}
+                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Pete's Slate</a></li>
                     {# EXPERIENCE (2026-07-08): the cinematic homepage
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
@@ -146,10 +143,10 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path and request.path not in ['/petec', '/portfolio', '/pete', '/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     {# About points at Pete's profile-shell About (/petec/about) so it
-                       carries the same slim frosted header + centred sub-header as the
+                       carries the same slim solid header + centred sub-header as the
                        rest of the profile — the bare /about alias stays working. #}
                     <li><a href="{{ portfolio_url('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
                 </ul>
@@ -335,7 +332,7 @@
        Hidden on desktop via CSS. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=ask-takeover-1"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=overview-handoff-2"></script>
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
     {% block extra_scripts %}{% endblock %}
