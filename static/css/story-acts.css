@@ -1,9 +1,11 @@
 /* ==========================================================================
    MY STORY — four-act cinematic collage
-   Organized chaos on a disciplined 12-column grid. Cards carry authored
+   Organized calm on a disciplined 12-column grid. Cards carry authored
    placement as custom properties (--d-* desktop, --t-* tablet) set inline
    from story_data.json; mobile ignores them and reads top-to-bottom.
    Foundation C: Newsreader display / Inter UI / approved palette only.
+   Type direction: light, editorial weights — display serif at 500,
+   UI labels at 600 max. Bold is reserved for nothing on this page.
    ========================================================================== */
 
 /* ---- Page shell -------------------------------------------------------- */
@@ -18,15 +20,22 @@ body.story-acts-page .main-content {
     background: transparent;
 }
 
+/* sky-glass.css paints a white halo behind every heading on slate-light
+   pages; over this page's dark rail it reads as a glow. Kill it here. */
+body.story-acts-page :is(h1, h2, h3) {
+    text-shadow: none;
+}
+
 .story-acts {
     --st-ink: #0a1b36;
-    --st-muted: #43546c;
+    --st-muted: #4c5d75;
     --st-indigo: #4f5bd5;
     --st-azure: #4ea3ff;
     --st-cyan: #2ec8d3;
     --st-amber: #d7a33e;
     --st-cloud: #f6f8fc;
     --st-night: #060b18;
+    --st-card-radius: 0.85rem;
     --st-display: "Newsreader", "Source Serif 4", Georgia, serif;
     --st-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
     --st-hand: "Caveat", "Segoe Script", cursive;
@@ -35,7 +44,7 @@ body.story-acts-page .main-content {
     font-family: var(--st-ui);
 }
 
-/* ---- Acts: four compact editorial scenes ------------------------------- */
+/* ---- Acts: four full-bleed editorial bands ------------------------------ */
 
 .story-act {
     position: relative;
@@ -43,7 +52,7 @@ body.story-acts-page .main-content {
     min-height: 0;
     padding: 0;
     scroll-margin-top: 4.25rem;
-    border-top: 2px solid rgb(255 255 255 / 88%);
+    border-top: 2px solid rgb(255 255 255 / 92%);
 }
 
 .story-act::before {
@@ -55,44 +64,33 @@ body.story-acts-page .main-content {
     background-size: cover;
 }
 
-/* Act atmospheres. Light-first; the night treatment closes the story. */
+/* Act atmospheres. Each band reads like one large card with its own
+   photographic backdrop: light peaks, dark dusk, bright outdoors, night. */
+/* Act One's landscape photo is a data-driven backdrop CARD, so the band
+   behind it only needs a quiet sky wash. */
 .story-act--day::before {
-    background:
-        linear-gradient(180deg, rgb(246 248 252 / 62%) 0%, rgb(246 248 252 / 26%) 45%, rgb(219 236 251 / 68%) 100%),
-        url("../images/background-templates/mountains.png") center top / cover no-repeat,
-        #dceefe;
+    background: linear-gradient(180deg, #f4f8fd 0%, #e9f1fa 55%, #dfeaf7 100%);
 }
 
-.story-act--warm::before {
+.story-act--dusk::before {
     background:
-        linear-gradient(180deg, rgb(255 248 239 / 78%) 0%, rgb(255 248 239 / 42%) 45%, rgb(246 240 230 / 82%) 100%),
+        linear-gradient(180deg, rgb(8 15 30 / 86%) 0%, rgb(11 20 38 / 76%) 48%, rgb(6 12 25 / 90%) 100%),
         url("../images/cinematic/story-sunset-bg.jpg") center / cover no-repeat,
-        #fff8ef;
+        #0b1426;
 }
 
 .story-act--bright::before {
     background:
-        radial-gradient(circle at 80% 12%, rgb(78 163 255 / 12%), transparent 45%),
-        radial-gradient(circle at 12% 80%, rgb(46 200 211 / 10%), transparent 40%),
-        linear-gradient(180deg, #f2f7fd 0%, #e9f2fb 55%, #dfecf9 100%);
+        linear-gradient(180deg, rgb(242 247 253 / 72%) 0%, rgb(236 244 252 / 52%) 50%, rgb(223 236 249 / 76%) 100%),
+        url("../images/cinematic/together-summit.jpg") center 30% / cover no-repeat,
+        #e9f2fb;
 }
 
 .story-act--night::before {
     background:
-        radial-gradient(circle at 74% 10%, rgb(78 163 255 / 17%), transparent 43%),
-        linear-gradient(180deg, #edf4fb 0%, #dceaf7 100%);
-}
-
-/* A quiet texture behind the closing collage; the star field lives on the
-   closing card so Act Four stays light like the reference composition. */
-.story-act--night::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image: radial-gradient(circle at 82% 78%, rgb(79 91 213 / 10%), transparent 34%);
-    background-repeat: no-repeat;
-    pointer-events: none;
+        linear-gradient(180deg, rgb(6 11 22 / 90%) 0%, rgb(10 19 38 / 82%) 55%, rgb(5 9 20 / 93%) 100%),
+        url("../images/cinematic/hero-aurora.jpg") center / cover no-repeat,
+        #070d1c;
 }
 
 /* Keep the reference's crisp white dividers between acts. */
@@ -119,17 +117,17 @@ body.story-acts-page .main-content {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     grid-auto-rows: minmax(3.1rem, auto);
     grid-auto-flow: dense;
-    gap: clamp(0.55rem, 0.9vw, 1rem);
+    gap: clamp(0.85rem, 1.3vw, 1.35rem);
     position: relative;
     min-width: 0;
-    padding: clamp(0.8rem, 1.5vw, 1.4rem);
-    padding-right: clamp(1rem, 2vw, 2rem);
+    padding: clamp(1.25rem, 2vw, 2.1rem);
+    padding-right: clamp(1.4rem, 2.4vw, 2.5rem);
 }
 
-#act-now .story-collage { min-height: clamp(40rem, 49vw, 48rem); }
-#act-becoming .story-collage { min-height: clamp(41rem, 48vw, 47rem); }
-#act-life .story-collage { min-height: clamp(43rem, 52vw, 51rem); }
-#act-next .story-collage { min-height: clamp(31rem, 36vw, 36rem); }
+#act-now .story-collage { min-height: clamp(40rem, 48vw, 47rem); }
+#act-becoming .story-collage { min-height: clamp(33rem, 39vw, 39rem); }
+#act-life .story-collage { min-height: clamp(42rem, 50vw, 49rem); }
+#act-next .story-collage { min-height: clamp(30rem, 35vw, 35rem); }
 
 /* ---- Act headers: persistent editorial rail ---------------------------- */
 
@@ -142,11 +140,7 @@ body.story-acts-page .main-content {
     max-width: none;
     padding: clamp(2rem, 3.5vw, 3.75rem) clamp(1.2rem, 2vw, 2rem);
     color: #f4f7fb;
-    background:
-        linear-gradient(180deg, rgb(3 10 16 / 97%), rgb(4 12 20 / 94%)),
-        #050d14;
-    border-right: 1px solid rgb(78 163 255 / 18%);
-    box-shadow: 0.75rem 0 2.4rem rgb(1 8 14 / 17%);
+    background: linear-gradient(180deg, #0a0e14 0%, #05080d 100%);
     z-index: 6;
 }
 
@@ -157,7 +151,6 @@ body.story-acts-page .main-content {
     height: 2px;
     margin-top: 1.2rem;
     background: var(--st-azure);
-    box-shadow: 0 0 1rem rgb(78 163 255 / 45%);
 }
 
 .story-act__eyebrow {
@@ -166,9 +159,9 @@ body.story-acts-page .main-content {
     gap: 0.65rem;
     margin: 0;
     color: var(--st-azure);
-    font-size: 0.78rem;
-    font-weight: 850;
-    letter-spacing: 0.16em;
+    font-size: 0.74rem;
+    font-weight: 650;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
 }
 
@@ -176,43 +169,37 @@ body.story-acts-page .main-content {
     display: none;
     font-family: var(--st-display);
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0;
 }
 
 .story-act :is(h1, h2) {
     order: 1;
-    margin: 0.5rem 0 0;
+    margin: 0.6rem 0 0;
     color: #f4f7fb;
     font-family: var(--st-display);
-    font-size: clamp(2.45rem, 3.4vw, 3.75rem);
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    line-height: 1;
+    font-size: clamp(2.05rem, 2.65vw, 3.05rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
     max-width: none;
 }
 
 .story-act__intro {
     order: 4;
-    max-width: 22ch;
+    max-width: 24ch;
     margin: 1.25rem 0 0;
-    color: #c2ced9;
-    font-size: clamp(0.9rem, 1vw, 1.02rem);
-    line-height: 1.55;
+    color: #b7c3d3;
+    font-size: clamp(0.88rem, 0.95vw, 0.98rem);
+    font-weight: 400;
+    line-height: 1.62;
 }
 
 .story-act__eyebrow { order: 0; }
 
 .story-act--night .story-act__eyebrow { color: var(--st-cyan); }
 .story-act--night :is(h1, h2) { color: #f2f7ff; }
-.story-act--night .story-act__intro { color: #c3d0df; }
-
-/* Light glass goes cleaner and more opaque over the night scene. */
-.story-act--night .sc-glass,
-.story-act--night .sc-ai,
-.story-act--night .sc-stat {
-    background: rgb(246 248 252 / 88%);
-}
+.story-act--night .story-act__intro { color: #b7c3d3; }
 
 /* ---- Card base ---------------------------------------------------------- */
 
@@ -229,16 +216,18 @@ body.story-acts-page .main-content {
     align-self: stretch;
 }
 
-/* ---- Surfaces ----------------------------------------------------------- */
+/* ---- Surfaces ------------------------------------------------------------
+   Three quiet families, matched to the reference: clean near-opaque white,
+   deep midnight navy, and warm note paper. Shadows stay soft and close. */
 
 .sc-glass,
 .sc-ai {
-    padding: clamp(1rem, 1.35vw, 1.45rem);
-    background: rgb(246 248 252 / 82%);
-    border: 1px solid rgb(255 255 255 / 82%);
-    border-radius: 0.9rem;
-    box-shadow: 0 1rem 2.4rem rgb(10 38 78 / 16%);
-    backdrop-filter: blur(18px) saturate(125%);
+    padding: clamp(1.05rem, 1.4vw, 1.5rem);
+    background: rgb(255 255 255 / 93%);
+    border: 1px solid rgb(255 255 255 / 90%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.7rem 1.9rem rgb(10 27 54 / 12%);
+    backdrop-filter: blur(14px) saturate(120%);
 }
 
 .sc-dark,
@@ -246,38 +235,54 @@ body.story-acts-page .main-content {
 .sc-closing {
     padding: clamp(1.15rem, 1.55vw, 1.7rem);
     color: #f2f7ff;
-    background: linear-gradient(150deg, rgb(10 27 54 / 90%), rgb(6 11 24 / 84%));
-    border: 1px solid rgb(78 163 255 / 28%);
-    border-radius: 0.9rem;
-    box-shadow: 0 1.2rem 3rem rgb(4 12 28 / 32%);
+    background: linear-gradient(160deg, #1a2b50 0%, #0c1830 100%);
+    border: 1px solid rgb(122 156 255 / 22%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.9rem 2.2rem rgb(4 12 28 / 30%);
 }
 
 .sc-paper {
     padding: clamp(1rem, 1.35vw, 1.4rem);
-    background: linear-gradient(160deg, #fffdf8, #fff8ef);
-    border: 1px solid rgb(215 163 62 / 22%);
-    border-radius: 0.55rem;
-    box-shadow: 0 0.9rem 2.25rem rgb(74 55 15 / 12%);
+    background: linear-gradient(165deg, #fdf9ec 0%, #f8f0da 100%);
+    border: 1px solid rgb(178 143 66 / 24%);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.7rem 1.8rem rgb(74 55 15 / 13%);
+}
+
+/* Keepsake notes that the reference renders on clean white stock. */
+.sc-paper.sc-var-white {
+    background: rgb(255 255 255 / 94%);
+    border: 1px solid rgb(255 255 255 / 88%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.7rem 1.9rem rgb(10 27 54 / 12%);
 }
 
 .sc-stat {
     display: grid;
     align-content: center;
-    gap: 0.35rem;
-    padding: 1rem;
+    gap: 0.3rem;
+    padding: 1.1rem 1.2rem;
     text-align: left;
-    background: rgb(246 248 252 / 74%);
-    border: 1px solid rgb(255 255 255 / 60%);
-    border-radius: 0.85rem;
-    box-shadow: 0 1rem 2.5rem rgb(10 38 78 / 12%);
-    backdrop-filter: blur(14px) saturate(120%);
+    background: rgb(255 255 255 / 90%);
+    border: 1px solid rgb(255 255 255 / 85%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.7rem 1.9rem rgb(10 27 54 / 12%);
+    backdrop-filter: blur(12px) saturate(118%);
+}
+
+/* The reference renders statistics as midnight cards. */
+.sc-stat.sc-var-dark {
+    display: grid;
+    padding: 1.1rem 1.2rem;
+    background: linear-gradient(160deg, #1a2b50 0%, #0c1830 100%);
+    backdrop-filter: none;
 }
 
 @supports not (backdrop-filter: blur(1px)) {
     .sc-glass,
     .sc-ai,
     .sc-stat {
-        background: rgb(246 248 252 / 96%);
+        background: rgb(255 255 255 / 97%);
     }
 }
 
@@ -294,9 +299,9 @@ body.story-acts-page .main-content {
     flex: 1;
     overflow: hidden;
     margin: 0;
-    border: 1px solid rgb(255 255 255 / 70%);
-    border-radius: 0.8rem;
-    box-shadow: 0 1.25rem 3rem rgb(10 38 78 / 24%);
+    border: 1px solid rgb(255 255 255 / 72%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.9rem 2.2rem rgb(10 27 54 / 20%);
 }
 
 .sc-figure img {
@@ -313,13 +318,13 @@ body.story-acts-page .main-content {
     bottom: 0;
     left: 0;
     z-index: 1;
-    padding: 2.25rem 1.1rem 0.9rem;
+    padding: 2.25rem 1.1rem 0.85rem;
     color: #fff;
-    background: linear-gradient(180deg, transparent, rgb(6 17 33 / 78%));
-    font-size: 0.88rem;
-    font-weight: 650;
-    line-height: 1.4;
-    text-shadow: 0 1px 8px rgb(0 0 0 / 45%);
+    background: linear-gradient(180deg, transparent, rgb(6 17 33 / 74%));
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.45;
+    text-shadow: 0 1px 6px rgb(0 0 0 / 40%);
 }
 
 .sc-figure__eyebrow {
@@ -327,12 +332,12 @@ body.story-acts-page .main-content {
     top: 0.9rem;
     left: 0.9rem;
     z-index: 1;
-    padding: 0.4rem 0.8rem;
+    padding: 0.42rem 0.85rem;
     color: var(--st-ink);
-    background: rgb(246 248 252 / 88%);
+    background: rgb(255 255 255 / 90%);
     border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 850;
+    font-size: 0.7rem;
+    font-weight: 650;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     backdrop-filter: blur(8px);
@@ -340,14 +345,23 @@ body.story-acts-page .main-content {
 
 .sc-anchor.sc-image { min-height: 22rem; }
 
+/* Backdrop variant: one landscape photo underlays an act's whole collage
+   and the cards compose around its subjects. Purely layout-driven — the
+   photo, its alt text, and its grid span all come from the story data. */
+.sc-image.sc-var-backdrop .sc-figure {
+    border: 1px solid rgb(255 255 255 / 78%);
+    border-radius: 1.05rem;
+    box-shadow: 0 1.2rem 3rem rgb(10 27 54 / 22%);
+}
+
 /* Scrapbook language from the reference: selected real photos become
    physical-looking prints without changing their semantic image markup. */
 .sc-image.sc-var-polaroid .sc-figure {
     overflow: visible;
     background: #fffdf9;
     border: 0;
-    border-radius: 0.2rem;
-    box-shadow: 0 1rem 2.2rem rgb(10 27 54 / 22%);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.8rem 1.9rem rgb(10 27 54 / 18%);
 }
 
 .sc-image.sc-var-polaroid .sc-figure picture {
@@ -366,8 +380,8 @@ body.story-acts-page .main-content {
     color: #243550;
     background: #fffdf9;
     font-family: var(--st-hand);
-    font-size: clamp(1rem, 1.3vw, 1.35rem);
-    font-weight: 600;
+    font-size: clamp(1rem, 1.25vw, 1.3rem);
+    font-weight: 500;
     line-height: 1;
     text-shadow: none;
 }
@@ -376,32 +390,34 @@ body.story-acts-page .main-content {
     border: 0.4rem solid #f8f5ed;
     border-bottom-width: 1.8rem;
     border-radius: 0.3rem;
-    box-shadow: 0 1rem 2.2rem rgb(10 27 54 / 19%);
+    box-shadow: 0 0.8rem 1.9rem rgb(10 27 54 / 16%);
 }
 
-#act-now-now-portrait .sc-figure img { object-position: 50% 28%; }
+#act-now-now-maui .sc-figure img { object-position: 50% 38%; }
 #act-now-now-danielle .sc-figure img { object-position: 50% 32%; }
 #act-now-now-home .sc-figure img { object-position: center; }
 #act-life-life-race .sc-figure img { object-position: 50% 22%; }
+/* Tall reflection shot: keep the crop on the real couple, not the mirror. */
+#act-life-life-bali .sc-figure img { object-position: 50% 32%; }
 #act-next-next-bridge .sc-figure img { object-position: center; }
 
 #act-life .sc-anchor.sc-image { min-height: 14rem; }
-#act-now-now-purpose .sc-title { font-size: clamp(1.25rem, 1.55vw, 1.75rem); }
+#act-now-now-purpose .sc-title { font-size: clamp(1.15rem, 1.4vw, 1.55rem); }
 
 /* ---- Shared content pieces ---------------------------------------------- */
 
 .sc-eyebrow {
     margin: 0;
-    color: #315fb8;
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.13em;
+    color: #3568c0;
+    font-size: 0.7rem;
+    font-weight: 650;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
 }
 
 .sc-dark .sc-eyebrow,
 .sc-var-dark .sc-eyebrow {
-    color: #7fd4dc;
+    color: #8fd7de;
 }
 
 .sc-paper .sc-eyebrow {
@@ -409,23 +425,24 @@ body.story-acts-page .main-content {
 }
 
 .sc-title {
-    margin: 0.45rem 0 0;
+    margin: 0.5rem 0 0;
     font-family: var(--st-display);
-    font-size: clamp(1.4rem, 1.7vw, 1.9rem);
-    font-weight: 650;
-    letter-spacing: -0.015em;
-    line-height: 1.08;
+    font-size: clamp(1.3rem, 1.55vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
 }
 
 .sc-anchor .sc-title {
-    font-size: clamp(1.9rem, 2.4vw, 2.8rem);
+    font-size: clamp(1.75rem, 2.15vw, 2.5rem);
 }
 
 .sc-body {
     margin: 0.55rem 0 0;
     color: var(--st-muted);
-    font-size: 0.94rem;
-    line-height: 1.58;
+    font-size: 0.92rem;
+    font-weight: 400;
+    line-height: 1.6;
 }
 
 .sc-dark .sc-body,
@@ -435,26 +452,49 @@ body.story-acts-page .main-content {
 
 .sc-list {
     display: grid;
-    gap: 0.75rem;
-    margin: 0.9rem 0 0;
+    gap: 0.85rem;
+    margin: 0.95rem 0 0;
     padding: 0;
     list-style: none;
 }
 
 .sc-list li {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+}
+
+.sc-list__icon {
     display: grid;
-    gap: 0.1rem;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    color: #3d63c4;
+    background: rgb(79 91 213 / 9%);
+    border-radius: 0.55rem;
+}
+
+.sc-list__icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.sc-list__text {
+    display: grid;
+    gap: 0.12rem;
 }
 
 .sc-list strong {
     color: var(--st-ink);
-    font-size: 0.86rem;
-    font-weight: 800;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
-.sc-list span {
+.sc-list__text > span {
     color: var(--st-muted);
-    font-size: 0.86rem;
+    font-size: 0.82rem;
+    font-weight: 400;
     line-height: 1.45;
 }
 
@@ -462,8 +502,8 @@ body.story-acts-page .main-content {
     margin: 0.4rem 0 0;
     color: #1d3a6e;
     font-family: var(--st-hand);
-    font-size: clamp(1.5rem, 1.8vw, 1.9rem);
-    font-weight: 600;
+    font-size: clamp(1.45rem, 1.7vw, 1.8rem);
+    font-weight: 500;
     line-height: 1.15;
 }
 
@@ -471,19 +511,20 @@ body.story-acts-page .main-content {
     margin: 0.5rem 0 0;
     color: #8a6323;
     font-size: 0.78rem;
-    font-weight: 700;
+    font-weight: 500;
     letter-spacing: 0.05em;
 }
 
 .sc-checklist {
     display: grid;
-    gap: 0.45rem;
+    gap: 0.5rem;
     margin: 0.8rem 0 0;
     padding: 0;
     list-style: none;
     color: #3c4d66;
     font-family: var(--st-hand);
-    font-size: 1.35rem;
+    font-size: 1.3rem;
+    font-weight: 500;
     line-height: 1.1;
 }
 
@@ -492,21 +533,22 @@ body.story-acts-page .main-content {
     color: var(--st-amber);
 }
 
+/* The reference paints its big keepsake numbers in confident periwinkle. */
 .sc-ghost {
     position: absolute;
-    right: 0.75rem;
-    bottom: 0.25rem;
+    right: 0.8rem;
+    bottom: 0.3rem;
     z-index: 0;
-    color: rgb(79 91 213 / 14%);
+    color: rgb(79 91 213 / 30%);
     font-family: var(--st-display);
-    font-size: clamp(5rem, 7vw, 8rem);
-    font-weight: 700;
+    font-size: clamp(4.25rem, 5.5vw, 6.5rem);
+    font-weight: 500;
     line-height: 1;
     pointer-events: none;
 }
 
 .sc-var-dark .sc-ghost {
-    color: rgb(78 163 255 / 18%);
+    color: rgb(78 163 255 / 24%);
 }
 
 .sc-link {
@@ -514,10 +556,10 @@ body.story-acts-page .main-content {
     min-height: 2.75rem;
     align-items: center;
     gap: 0.45rem;
-    margin-top: 0.75rem;
-    color: #1d58b4;
-    font-size: 0.86rem;
-    font-weight: 800;
+    margin-top: 0.6rem;
+    color: #2b62c2;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-decoration: none;
 }
 
@@ -531,22 +573,35 @@ body.story-acts-page .main-content {
 .sc-stat-value {
     color: #173f82;
     font-family: var(--st-display);
-    font-size: clamp(2.4rem, 3vw, 3.5rem);
-    font-weight: 650;
+    font-size: clamp(2.3rem, 2.8vw, 3.3rem);
+    font-weight: 500;
     line-height: 1;
+}
+
+.sc-stat.sc-var-dark .sc-stat-value {
+    color: #eef4ff;
 }
 
 .sc-stat-label {
     color: var(--st-ink);
-    font-size: 0.88rem;
-    font-weight: 800;
-    line-height: 1.3;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.sc-stat.sc-var-dark .sc-stat-label {
+    color: #dfe9f6;
 }
 
 .sc-stat-context {
     color: var(--st-muted);
-    font-size: 0.78rem;
-    line-height: 1.45;
+    font-size: 0.76rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.sc-stat.sc-var-dark .sc-stat-context {
+    color: #9fb2cc;
 }
 
 /* ---- Chapters (Act Two) -------------------------------------------------- */
@@ -563,70 +618,68 @@ body.story-acts-page .main-content {
 
 .story-chapter-path path {
     fill: none;
-    stroke: rgb(255 255 255 / 82%);
-    stroke-width: 2.2;
+    stroke: rgb(255 255 255 / 45%);
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-dasharray: 3 8;
-    filter: drop-shadow(0 2px 2px rgb(10 27 54 / 28%));
 }
 
 .sc-chapter {
-    padding: clamp(1.05rem, 1.35vw, 1.45rem);
-    background: rgb(255 253 248 / 88%);
-    border: 1px solid rgb(255 255 255 / 78%);
-    border-radius: 0.8rem;
-    box-shadow: 0 1.15rem 2.65rem rgb(74 55 15 / 16%);
-    backdrop-filter: blur(14px) saturate(118%);
+    padding: clamp(1.1rem, 1.4vw, 1.5rem);
+    background: rgb(255 255 255 / 94%);
+    border: 1px solid rgb(255 255 255 / 88%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.9rem 2.2rem rgb(4 12 28 / 26%);
+    backdrop-filter: blur(12px) saturate(115%);
 }
 
 .sc-chapter.sc-var-ember {
     color: #fff8ef;
     background:
-        linear-gradient(145deg, rgb(100 31 13 / 86%), rgb(181 69 27 / 76%)),
-        linear-gradient(35deg, #54200f, #d38246);
+        radial-gradient(circle at 85% 110%, rgb(255 176 106 / 30%), transparent 55%),
+        linear-gradient(150deg, #571f0d 0%, #a34a1c 100%);
+    border: 1px solid rgb(255 200 150 / 22%);
 }
 
 .sc-chapter.sc-var-clinical {
     background:
-        linear-gradient(90deg, rgb(255 253 248 / 95%) 0 56%, rgb(207 221 226 / 88%) 56% 100%),
-        #f6f4ed;
+        linear-gradient(90deg, rgb(255 255 255 / 97%) 0 58%, rgb(214 226 232 / 90%) 100%),
+        #f2f5f6;
 }
 
 .sc-chapter.sc-var-summit {
     background:
-        linear-gradient(90deg, rgb(255 240 214 / 92%) 0 42%, rgb(18 42 67 / 18%) 66%, rgb(4 16 31 / 42%) 100%),
-        url("../images/cinematic/future-path.jpg") center / cover no-repeat;
+        linear-gradient(90deg, rgb(246 238 224 / 96%) 0 36%, rgb(246 238 224 / 62%) 54%, rgb(30 30 50 / 8%) 78%),
+        url("../images/cinematic/story-card-turning.jpg") right center / cover no-repeat;
 }
 
 .sc-chapter.sc-var-workbench {
     background:
-        linear-gradient(135deg, rgb(248 246 239 / 96%) 0 54%, rgb(19 39 59 / 14%) 54%),
-        repeating-linear-gradient(0deg, transparent 0 16px, rgb(49 95 145 / 6%) 16px 17px),
-        #eef2f4;
+        repeating-linear-gradient(0deg, transparent 0 17px, rgb(49 95 145 / 5%) 17px 18px),
+        rgb(250 251 252 / 96%);
 }
 
 .sc-chapter.sc-var-air {
     background:
-        linear-gradient(105deg, rgb(255 253 248 / 96%) 0 55%, rgb(255 253 248 / 42%) 78%),
-        url("../images/background-templates/mountains.png") 72% center / cover no-repeat;
+        linear-gradient(100deg, rgb(255 255 255 / 96%) 0 46%, rgb(255 255 255 / 52%) 66%, rgb(255 255 255 / 5%) 90%),
+        url("../images/cinematic/work-clouds.jpg") 80% 30% / cover no-repeat;
 }
 
 .sc-chapter.sc-var-systems,
 .sc-chapter.sc-var-code {
     color: #f2f7ff;
     background:
-        radial-gradient(circle at 88% 12%, rgb(46 200 211 / 23%), transparent 30%),
-        repeating-linear-gradient(90deg, transparent 0 28px, rgb(78 163 255 / 5%) 28px 29px),
-        linear-gradient(150deg, rgb(10 27 54 / 96%), rgb(6 11 24 / 92%));
-    border: 1px solid rgb(78 163 255 / 28%);
-    box-shadow: 0 1.5rem 4rem rgb(4 12 28 / 35%);
+        radial-gradient(circle at 88% 10%, rgb(46 200 211 / 16%), transparent 34%),
+        linear-gradient(160deg, #1a2b50 0%, #0c1830 100%);
+    border: 1px solid rgb(122 156 255 / 22%);
+    box-shadow: 0 1rem 2.6rem rgb(4 12 28 / 34%);
     backdrop-filter: none;
 }
 
 .sc-chapter.sc-var-code {
     background:
-        linear-gradient(90deg, rgb(6 17 33 / 94%), rgb(9 34 56 / 90%)),
-        repeating-linear-gradient(0deg, transparent 0 15px, rgb(46 200 211 / 12%) 15px 16px);
+        repeating-linear-gradient(0deg, transparent 0 16px, rgb(46 200 211 / 7%) 16px 17px),
+        linear-gradient(140deg, #101f3d 0%, #0a1526 100%);
 }
 
 .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) :is(.sc-title, .sc-body),
@@ -635,38 +688,49 @@ body.story-acts-page .main-content {
 }
 
 .sc-chapter.sc-var-summit .sc-title {
-    max-width: 8ch;
+    max-width: 10ch;
     color: var(--st-ink);
-    font-size: clamp(2rem, 3.7vw, 4.5rem);
+    font-size: clamp(1.7rem, 2.3vw, 2.7rem);
 }
 
-.sc-chapter.sc-var-summit .sc-body { max-width: 31ch; color: #25374c; }
-.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-eyebrow { color: #8de0e6; }
+.sc-chapter.sc-var-summit .sc-body { max-width: 26ch; color: #33445c; }
+.sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-eyebrow { color: #8fd7de; }
+.sc-chapter.sc-var-ember .sc-eyebrow { color: #ffd9ae; }
 .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-body { color: #d5e0ea; }
+
+/* The turning-point chapter carries its keepsake number inline, like the
+   reference: a confident serif numeral above the era line. */
+.sc-chapter.sc-var-summit .sc-ghost {
+    position: static;
+    display: block;
+    margin-bottom: 0.2rem;
+    color: #1d3a6e;
+    font-size: clamp(3rem, 4vw, 4.75rem);
+}
 
 .sc-chapter.is-open {
     align-self: start;
     z-index: 30;
     height: auto;
-    box-shadow: 0 1.5rem 4rem rgb(4 12 28 / 38%);
+    box-shadow: 0 1.2rem 3rem rgb(4 12 28 / 36%);
 }
 
 .sc-node {
     position: absolute;
-    top: -0.8rem;
-    left: -0.8rem;
+    top: -0.75rem;
+    left: -0.75rem;
     display: grid;
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.25rem;
+    height: 2.25rem;
     place-items: center;
     color: #fff;
     background: linear-gradient(150deg, var(--st-azure), var(--st-indigo));
     border: 3px solid rgb(255 255 255 / 92%);
     border-radius: 50%;
-    box-shadow: 0 0.5rem 1.25rem rgb(23 64 116 / 30%);
+    box-shadow: 0 0.4rem 1rem rgb(4 12 28 / 30%);
     font-family: var(--st-display);
-    font-size: 1.05rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .sc-expand-toggle {
@@ -674,35 +738,32 @@ body.story-acts-page .main-content {
     min-height: 2.75rem;
     align-items: center;
     gap: 0.45rem;
-    margin-top: 0.9rem;
-    padding: 0.55rem 1rem;
-    color: #1d58b4;
+    margin-top: 0.7rem;
+    padding: 0.5rem 0;
+    color: #2b62c2;
     background: transparent;
-    border: 1px solid rgb(50 101 176 / 30%);
-    border-radius: 999px;
+    border: 0;
     cursor: pointer;
-    font: 800 0.8rem/1 var(--st-ui);
-    transition: background 160ms ease-out, color 160ms ease-out;
+    font: 600 0.82rem/1 var(--st-ui);
+    transition: color 160ms ease-out;
 }
 
 .sc-expand-toggle:hover,
 .sc-expand-toggle:focus-visible {
-    color: #fff;
-    background: #1d58b4;
+    color: #163e86;
+    text-decoration: underline;
 }
 
 .sc-var-dark .sc-expand-toggle,
 .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle {
     color: #9fd7ff;
-    border-color: rgb(159 215 255 / 40%);
 }
 
 .sc-var-dark .sc-expand-toggle:hover,
 .sc-var-dark .sc-expand-toggle:focus-visible,
 .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle:hover,
 .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle:focus-visible {
-    color: var(--st-night);
-    background: #9fd7ff;
+    color: #d3ecff;
 }
 
 .sc-expand-arrow {
@@ -728,6 +789,7 @@ body.story-acts-page .main-content {
     margin: 0.65rem 0 0;
     color: var(--st-muted);
     font-size: 0.92rem;
+    font-weight: 400;
     line-height: 1.6;
 }
 
@@ -760,7 +822,7 @@ body.story-acts-page .main-content {
     border: 0;
     border-radius: 999px;
     cursor: pointer;
-    font: 750 0.8rem/1 var(--st-ui);
+    font: 600 0.8rem/1 var(--st-ui);
 }
 
 .sc-ask:hover,
@@ -772,35 +834,36 @@ body.story-acts-page .main-content {
 
 .sc-closing {
     display: grid;
-    align-content: center;
+    align-content: start;
     min-height: 20rem;
+    padding-top: clamp(1.75rem, 2.4vw, 2.6rem);
     background:
-        linear-gradient(150deg, rgb(10 27 54 / 58%), rgb(6 11 24 / 78%)),
+        linear-gradient(165deg, rgb(10 27 54 / 52%), rgb(6 11 24 / 82%)),
         url("../images/cinematic/hero-aurora.jpg") center / cover no-repeat;
-    backdrop-filter: blur(10px);
 }
 
 .sc-closing-title {
     margin: 0;
     font-family: var(--st-display);
-    font-size: clamp(2.4rem, 3.6vw, 4rem);
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    line-height: 1.02;
+    font-size: clamp(2.1rem, 3vw, 3.4rem);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.06;
 }
 
 .sc-closing-body {
     margin: 0.9rem 0 0;
     color: #c3d0df;
     font-family: var(--st-display);
-    font-size: clamp(1.25rem, 1.6vw, 1.7rem);
-    line-height: 1.3;
+    font-size: clamp(1.15rem, 1.45vw, 1.55rem);
+    font-weight: 400;
+    line-height: 1.32;
 }
 
 .sc-closing-sign {
-    margin-top: 1.4rem;
-    color: #7fd4dc;
-    font-size: clamp(1.7rem, 2vw, 2.2rem);
+    margin-top: 1.3rem;
+    color: #8fd7de;
+    font-size: clamp(1.6rem, 1.9vw, 2.1rem);
 }
 
 #act-next .sc-glass,
@@ -815,30 +878,56 @@ body.story-acts-page .main-content {
     flex-direction: column;
 }
 
+/* The reference keeps Act Four's supporting cards white, including the
+   "working toward" note; only the sticky notes elsewhere stay cream. */
+#act-next .sc-paper {
+    background: rgb(255 255 255 / 93%);
+    border: 1px solid rgb(255 255 255 / 90%);
+    border-radius: var(--st-card-radius);
+    box-shadow: 0 0.7rem 1.9rem rgb(10 27 54 / 12%);
+}
+
+#act-next .sc-paper .sc-eyebrow { color: #3568c0; }
+
+#act-next .sc-paper .sc-hand {
+    margin-top: 0.9rem;
+    color: #2b4a86;
+}
+
+/* Quiet waypoint line-art at the foot of the "working toward" card. */
+#act-next .sc-paper::after {
+    content: "";
+    margin-top: auto;
+    padding-top: 1rem;
+    height: 2.6rem;
+    background:
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" fill="none" stroke="%234ea3ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 30l24-18 14 11 12-8 22 15" opacity="0.75"/><path d="M78 30l18-13 18 13" opacity="0.45"/><circle cx="30" cy="12" r="2.2" fill="%234ea3ff" stroke="none" opacity="0.8"/></svg>')
+        left bottom / auto 1.6rem no-repeat;
+    opacity: 0.9;
+}
+
 #act-next .sc-list {
-    gap: 0.85rem;
+    gap: 0.8rem;
 }
 
 #act-next .sc-list strong {
     font-size: 0.8rem;
 }
 
-#act-next .sc-list span {
+#act-next .sc-list__text > span {
     font-size: 0.76rem;
 }
 
 #act-next .sc-title {
-    font-size: clamp(1.2rem, 1.55vw, 1.7rem);
+    font-size: clamp(1.15rem, 1.45vw, 1.6rem);
 }
 
 #act-next .sc-hand {
-    font-size: clamp(1.2rem, 1.5vw, 1.65rem);
+    font-size: clamp(1.2rem, 1.5vw, 1.6rem);
 }
 
-/* Compact trajectory modules turn the lower part of Act Four into useful
-   supporting information. They stay deliberately secondary to each card's
-   main subject and render from the story data rather than profile-specific
-   markup. */
+/* Compact trajectory modules remain available to any profile's data; the
+   default fixture no longer uses them. */
 .sc-signal {
     position: relative;
     overflow: hidden;
@@ -867,7 +956,7 @@ body.story-acts-page .main-content {
     margin: 0;
     color: #7fd4dc;
     font-size: 0.61rem;
-    font-weight: 850;
+    font-weight: 650;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -878,6 +967,7 @@ body.story-acts-page .main-content {
     color: #fff;
     font-family: var(--st-display);
     font-size: 0.94rem;
+    font-weight: 500;
     line-height: 1.12;
 }
 
@@ -908,7 +998,7 @@ body.story-acts-page .main-content {
     padding-left: 1.05rem;
     color: #dbe9f8;
     font-size: 0.58rem;
-    font-weight: 750;
+    font-weight: 600;
     line-height: 1.2;
     text-align: left;
 }
@@ -946,39 +1036,47 @@ body.story-acts-page .main-content {
 
 .sc-ai {
     display: grid;
-    gap: 0.8rem;
+    gap: 0.85rem;
     align-content: start;
 }
 
-.sc-ai .sc-eyebrow {
-    color: #167582;
-    font-size: 0.82rem;
+.sc-ai-title {
+    margin: 0;
+    font-family: var(--st-display);
+    font-size: clamp(1.3rem, 1.55vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+}
+
+.sc-ai .sc-body {
+    margin: 0;
+    font-size: 0.85rem;
 }
 
 .sc-ai-chips {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 0.5rem;
 }
 
 .sc-ai-chip {
     min-height: 2.75rem;
-    padding: 0.5rem 0.95rem;
-    color: #10606b;
+    padding: 0.6rem 0.95rem;
+    color: #33445c;
     text-align: left;
-    background: rgb(46 200 211 / 12%);
-    border: 1px solid rgb(22 123 135 / 32%);
-    border-radius: 999px;
+    background: rgb(10 27 54 / 4%);
+    border: 1px solid rgb(10 27 54 / 10%);
+    border-radius: 0.65rem;
     cursor: pointer;
-    font: 650 0.8rem/1.25 var(--st-ui);
-    transition: background 160ms ease-out, color 160ms ease-out;
+    font: 500 0.8rem/1.3 var(--st-ui);
+    transition: background 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
 }
 
 .sc-ai-chip:hover,
 .sc-ai-chip:focus-visible {
-    color: #fff;
-    background: #167b87;
-    border-color: #167b87;
+    color: var(--st-ink);
+    background: rgb(78 163 255 / 12%);
+    border-color: rgb(78 163 255 / 45%);
 }
 
 .sc-ai .hero-ai-search {
@@ -995,11 +1093,11 @@ body.story-acts-page .main-content {
 }
 
 .sc-ai .hero-ai-search__box {
-    min-height: 3.25rem;
-    background: rgb(255 255 255 / 94%);
+    min-height: 3.1rem;
+    background: rgb(255 255 255 / 97%);
     border-radius: 999px;
-    border-color: rgb(46 200 211 / 45%);
-    box-shadow: 0 0.65rem 1.5rem rgb(10 38 78 / 11%);
+    border-color: rgb(10 27 54 / 14%);
+    box-shadow: 0 0.4rem 1.1rem rgb(10 38 78 / 8%);
 }
 
 .sc-ai .hero-ai-search__box::before {
@@ -1059,7 +1157,7 @@ body.story-acts-page .main-content {
     color: #47597a;
     border-radius: 999px;
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 600;
     text-decoration: none;
     transition: background 160ms ease-out, color 160ms ease-out;
 }
@@ -1119,7 +1217,7 @@ body.sa-js .sa-reveal.is-in {
     gap: 1.25rem;
     padding: 1rem clamp(1.25rem, 3vw, 3rem);
     color: #1d58b4;
-    background: rgb(255 255 255 / 96%);
+    background: rgb(255 255 255 / 97%);
     border-top: 1px solid rgb(78 163 255 / 18%);
     border-bottom: 1px solid rgb(10 27 54 / 8%);
     box-shadow: 0 -0.5rem 1.8rem rgb(10 38 78 / 8%);
@@ -1144,7 +1242,7 @@ body.sa-js .sa-reveal.is-in {
     color: #1d58b4;
     font-family: var(--st-hand);
     font-size: clamp(1.1rem, 1.45vw, 1.45rem);
-    font-weight: 600;
+    font-weight: 500;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -1192,7 +1290,8 @@ body.sa-js .sa-reveal.is-in {
     outline-offset: 3px;
 }
 
-.story-act--night :is(a, button):focus-visible {
+.story-act--night :is(a, button):focus-visible,
+.story-act--dusk :is(a, button):focus-visible {
     outline-color: #9fd7ff;
 }
 
@@ -1316,7 +1415,7 @@ body.sa-js .sa-reveal.is-in {
         border-bottom: 1px solid rgb(78 163 255 / 18%);
     }
 
-    .story-act :is(h1, h2) { font-size: clamp(2.5rem, 13vw, 3.4rem); }
+    .story-act :is(h1, h2) { font-size: clamp(2.15rem, 10vw, 2.9rem); }
     .story-act__intro { max-width: 37ch; }
 
     .story-chapter-path { display: none; }

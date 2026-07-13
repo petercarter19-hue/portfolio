@@ -89,7 +89,7 @@
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-2-mtn"
+        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=slate-subheader-3"
     >
     {# Editorial-glass visual pass (background + card finish). Scoped
        entirely under body.ps-editorial-surface; must load after
@@ -106,7 +106,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
@@ -148,9 +148,10 @@
                        big swing live before it replaces anything. Route +
                        page: app.py `atrium()` / templates/atrium.html. #}
                     <li><a href="{{ url_for('atrium') }}" {% if request.path == '/atrium' %}aria-current="page"{% endif %}>Atrium</a></li>
-                    {# Pete's Slate is the branded label for the PeerSlate homepage
-                       at "/". The Example Slate remains Pete's public profile. #}
-                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Pete's Slate</a></li>
+                    {# Pete's Slate always opens Pete's profile Overview. The
+                       cinematic PeerSlate landing experience remains available
+                       through the distinct Home link and the brand logo. #}
+                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Pete's Slate</a></li>
                     {# EXPERIENCE (2026-07-08): the cinematic homepage
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
@@ -160,7 +161,7 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Home</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     {# About points at Pete's profile-shell About (/petec/about) so it
                        carries the same slim solid header + centred sub-header as the

@@ -1,121 +1,137 @@
-// Slate Board interactions — browser-only, no secrets.
-// Two features:
-//   1. Whiteboard / Chalkboard toggle: flips data-board-mode on the
-//      .whiteboard and remembers the choice in this browser.
-//   2. "Chalk It Up" compose: pick a section (Short Term / Long Term /
-//      Projects / Work), write up to 90 characters, and the entry inks
-//      onto that quarter of the board. Entries persist in this browser
-//      (localStorage) until PeerSlate accounts add real storage.
+// Slate Board interactions. Browser storage remains the default; an explicit
+// feature flag switches member-created items to the authenticated SQL API.
 
 (function () {
     var board = document.querySelector('.whiteboard');
     if (!board) { return; }
 
-    // Section key -> the ink color class family used by that quarter.
+    var boardPage = board.closest('[data-board-api]');
+    var apiEnabled = boardPage && boardPage.dataset.boardApi === 'true';
+    var statusEl = document.getElementById('board-compose-status');
     var SECTION_COLORS = { short: 'green', long: 'violet', projects: 'blue', work: 'red' };
 
-    // ---- 1. board style toggle ----
+    // Whiteboard / chalkboard preference is visual and safely remains local.
     var MODE_KEY = 'peerslateBoardMode';
     var modeButtons = document.querySelectorAll('[data-board-mode]');
 
     function applyMode(mode) {
         board.dataset.boardMode = mode;
-        // Guarded like saveEntries below: some browsers throw on any
-        // localStorage access, and an unhandled throw here (applyMode runs
-        // at init) would kill the whole file — compose wiring included.
-        try {
-            localStorage.setItem(MODE_KEY, mode);
-        } catch (e) { /* mode still applies this visit */ }
-        modeButtons.forEach(function (btn) {
-            var active = btn.dataset.boardMode === mode;
-            btn.classList.toggle('is-active', active);
-            btn.setAttribute('aria-pressed', String(active));
+        try { localStorage.setItem(MODE_KEY, mode); } catch (error) { /* optional */ }
+        modeButtons.forEach(function (button) {
+            var active = button.dataset.boardMode === mode;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
         });
     }
 
-    modeButtons.forEach(function (btn) {
-        btn.addEventListener('click', function () { applyMode(btn.dataset.boardMode); });
+    modeButtons.forEach(function (button) {
+        button.addEventListener('click', function () { applyMode(button.dataset.boardMode); });
     });
 
     var savedMode = null;
-    try {
-        savedMode = localStorage.getItem(MODE_KEY);
-    } catch (e) { /* storage blocked — fall through to the default */ }
+    try { savedMode = localStorage.getItem(MODE_KEY); } catch (error) { /* optional */ }
     applyMode(savedMode === 'chalk' ? 'chalk' : 'white');
 
-    // ---- 2. working "Chalk It Up" compose ----
     var MAX_CHARS = 90;
     var ENTRIES_KEY = 'peerslateBoardEntries';
-
     var input = document.getElementById('board-compose-input');
     var countEl = document.getElementById('board-compose-count');
     var addBtn = document.getElementById('board-compose-add');
-    var sectionBtns = document.querySelectorAll('[data-wb-target]');
-
-    if (!input || !addBtn) { return; }
+    var sectionButtons = document.querySelectorAll('[data-wb-target]');
+    if (!input || !addBtn || !countEl) { return; }
 
     var currentSection = 'short';
 
-    sectionBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            currentSection = btn.dataset.wbTarget;
-            sectionBtns.forEach(function (b) {
-                b.classList.toggle('is-active', b === btn);
+    function announce(message) {
+        if (statusEl) { statusEl.textContent = message; }
+    }
+
+    function api(url, options) {
+        var settings = options || {};
+        settings.headers = Object.assign({}, settings.headers || {}, {
+            'X-PeerSlate-Request': 'same-origin'
+        });
+        if (settings.body) { settings.headers['Content-Type'] = 'application/json'; }
+        return fetch(url, settings).then(function (response) {
+            return response.json().then(function (payload) {
+                if (!response.ok || !payload.success) {
+                    throw new Error(payload.message || 'PeerSlate could not complete the request.');
+                }
+                return payload;
+            });
+        });
+    }
+
+    sectionButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            currentSection = button.dataset.wbTarget;
+            sectionButtons.forEach(function (candidate) {
+                candidate.classList.toggle('is-active', candidate === button);
             });
         });
     });
 
-    function loadEntries() {
-        try {
-            return JSON.parse(localStorage.getItem(ENTRIES_KEY)) || [];
-        } catch (e) {
-            return [];
+    function loadLocalEntries() {
+        try { return JSON.parse(localStorage.getItem(ENTRIES_KEY)) || []; }
+        catch (error) { return []; }
+    }
+
+    function saveLocalEntries(entries) {
+        try { localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries)); }
+        catch (error) { /* entry still remains for this page visit */ }
+    }
+
+    function removeEntry(entry, listItem, button) {
+        if (!apiEnabled || !entry.id) {
+            listItem.remove();
+            saveLocalEntries(loadLocalEntries().filter(function (saved) {
+                return saved.ts !== entry.ts;
+            }));
+            return;
         }
+
+        button.disabled = true;
+        api('/api/slate-items/' + entry.id + '/archive', {
+            method: 'POST',
+            body: JSON.stringify({ note: 'Archived from the Slate Board.' })
+        }).then(function () {
+            listItem.remove();
+            announce('Board item archived.');
+        }).catch(function (error) {
+            button.disabled = false;
+            announce(error.message);
+        });
     }
 
-    function saveEntries(entries) {
-        try {
-            localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
-        } catch (e) { /* quota — the line still shows this visit */ }
-    }
-
-    // Adds one ink line to a section's list. User lines are plain ink
-    // (no card exists yet to link to) plus a tiny eraser button that
-    // appears on hover. textContent keeps typed input inert.
     function inkEntry(entry) {
-        // Only accept well-formed entries with a known section key. Stored
-        // data can drift or be hand-edited, and an unexpected section value
-        // would otherwise be interpolated into the querySelector below.
         if (!entry || typeof entry.text !== 'string' || !SECTION_COLORS[entry.section]) { return; }
         var list = document.querySelector('.wb-section[data-wb="' + entry.section + '"] .wb-list');
         if (!list) { return; }
 
-        var li = document.createElement('li');
-        li.className = 'wb-user';
-        li.style.setProperty('--i', String(list.children.length));
+        var listItem = document.createElement('li');
+        listItem.className = 'wb-user';
+        listItem.style.setProperty('--i', String(list.children.length));
 
         var ink = document.createElement('span');
-        ink.className = 'wb-ink wb-ink--' + (SECTION_COLORS[entry.section] || 'green');
+        ink.className = 'wb-ink wb-ink--' + SECTION_COLORS[entry.section];
         ink.textContent = entry.text;
-        li.appendChild(ink);
+        listItem.appendChild(ink);
 
-        var del = document.createElement('button');
-        del.className = 'wb-del';
-        del.type = 'button';
-        del.setAttribute('aria-label', 'Erase this entry');
-        del.textContent = '×';
-        del.addEventListener('click', function () {
-            li.remove();
-            saveEntries(loadEntries().filter(function (e) { return e.ts !== entry.ts; }));
+        var removeButton = document.createElement('button');
+        removeButton.className = 'wb-del';
+        removeButton.type = 'button';
+        removeButton.setAttribute('aria-label', 'Archive this entry');
+        removeButton.textContent = 'x';
+        removeButton.addEventListener('click', function () {
+            removeEntry(entry, listItem, removeButton);
         });
-        li.appendChild(del);
-
-        list.appendChild(li);
+        listItem.appendChild(removeButton);
+        list.appendChild(listItem);
     }
 
     function refreshCompose() {
-        var len = input.value.length;
-        countEl.textContent = len + ' / ' + MAX_CHARS;
+        var length = input.value.length;
+        countEl.textContent = length + ' / ' + MAX_CHARS;
         addBtn.disabled = input.value.trim().length === 0;
     }
 
@@ -126,23 +142,52 @@
         refreshCompose();
     });
 
+    function saveDatabaseEntry(entry) {
+        addBtn.disabled = true;
+        announce('Saving privately to your Slate Board...');
+        return api('/api/slate-items', {
+            method: 'POST',
+            body: JSON.stringify({
+                space_name: 'Slate Board',
+                space_type: 'board',
+                item_type: currentSection,
+                title: entry.text,
+                category: currentSection,
+                color_label: SECTION_COLORS[currentSection]
+            })
+        }).then(function (payload) {
+            var saved = payload.items && payload.items[0];
+            entry.id = saved && (saved.slate_item_id || saved.id);
+            inkEntry(entry);
+            input.value = '';
+            announce('Saved privately to your Slate Board.');
+        }).catch(function (error) {
+            announce(error.message);
+        }).finally(function () {
+            refreshCompose();
+            input.focus();
+        });
+    }
+
     addBtn.addEventListener('click', function () {
         var text = input.value.trim().slice(0, MAX_CHARS);
         if (!text) { return; }
-
         var entry = { ts: Date.now(), section: currentSection, text: text };
+
+        if (apiEnabled) {
+            saveDatabaseEntry(entry);
+            return;
+        }
+
         inkEntry(entry);
-
-        var entries = loadEntries();
+        var entries = loadLocalEntries();
         entries.push(entry);
-        saveEntries(entries);
-
+        saveLocalEntries(entries);
         input.value = '';
         refreshCompose();
         input.focus();
     });
 
-    // Enter chalks it straight on (Shift+Enter still makes a new line).
     input.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -150,7 +195,27 @@
         }
     });
 
-    // Restore this browser's saved entries.
-    loadEntries().forEach(inkEntry);
+    if (apiEnabled) {
+        api('/api/slate-spaces/Slate%20Board').then(function (payload) {
+            var items = payload.slate_space && payload.slate_space.items || [];
+            items.forEach(function (item) {
+                var section = SECTION_COLORS[item.category] ? item.category : 'short';
+                inkEntry({
+                    id: item.slate_item_id,
+                    ts: item.slate_item_id,
+                    section: section,
+                    text: item.title
+                });
+            });
+            announce(items.length
+                ? 'Your private Slate Board is loaded.'
+                : 'Your Slate Board is empty. Add the first private item.');
+        }).catch(function (error) {
+            announce(error.message + ' You can still add the first private item.');
+        });
+    } else {
+        loadLocalEntries().forEach(inkEntry);
+    }
+
     refreshCompose();
 })();

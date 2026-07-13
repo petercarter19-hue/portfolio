@@ -9,6 +9,8 @@
 
     var DAILY_KEY = 'theSlateDailyCards';
     var MAX_SAVED_CARDS = 20;
+    var databasePage = document.querySelector('[data-database-ui="true"]');
+    var apiEnabled = Boolean(databasePage);
 
     // Category chip → tag tint used when the visitor's card renders.
     var CAT_TINTS = {
@@ -57,6 +59,22 @@
         } catch (err) {
             /* storage full/blocked — the card still renders this visit */
         }
+    }
+
+    function api(url, options) {
+        var settings = options || {};
+        settings.headers = Object.assign({}, settings.headers || {}, {
+            'X-PeerSlate-Request': 'same-origin'
+        });
+        if (settings.body) { settings.headers['Content-Type'] = 'application/json'; }
+        return fetch(url, settings).then(function (response) {
+            return response.json().then(function (payload) {
+                if (!response.ok || !payload.success) {
+                    throw new Error(payload.message || 'PeerSlate could not complete the request.');
+                }
+                return payload;
+            });
+        });
     }
 
     // Single-select behavior for a group of chip buttons.
@@ -112,6 +130,13 @@
         vis.textContent = card.privacy;
 
         article.querySelector('.ts-daily__delete').addEventListener('click', function () {
+            if (apiEnabled && card.id) {
+                api('/api/slate-items/' + card.id + '/archive', {
+                    method: 'POST',
+                    body: JSON.stringify({ note: 'Archived from Daily Slate.' })
+                }).then(function () { article.remove(); });
+                return;
+            }
             var cards = loadSavedCards().filter(function (saved) { return saved.ts !== card.ts; });
             saveCards(cards);
             article.remove();
@@ -132,6 +157,18 @@
         makeSingleSelect(catBtns);
         makeSingleSelect(privacyBtns);
 
+        if (apiEnabled) {
+            privacyBtns.forEach(function (button) {
+                var isPrivate = button.dataset.privacy === 'Private';
+                button.classList.toggle('is-active', isPrivate);
+                button.setAttribute('aria-pressed', String(isPrivate));
+                if (!isPrivate) {
+                    button.disabled = true;
+                    button.title = 'Publishing is a separate action and is not enabled yet.';
+                }
+            });
+        }
+
         textarea.addEventListener('input', function () {
             var length = textarea.value.length;
             counter.textContent = length + ' / 500';
@@ -148,9 +185,40 @@
             var card = {
                 text: text,
                 cat: activeCat ? activeCat.dataset.cat : 'Work',
-                privacy: activePrivacy ? activePrivacy.dataset.privacy : 'Public',
+                privacy: apiEnabled ? 'Private' : (activePrivacy ? activePrivacy.dataset.privacy : 'Public'),
                 ts: Date.now()
             };
+
+            if (apiEnabled) {
+                postBtn.disabled = true;
+                api('/api/slate-items', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        space_name: 'Daily Slate',
+                        space_type: 'daily',
+                        item_type: 'progress',
+                        title: text.slice(0, 200),
+                        body: text,
+                        category: card.cat
+                    })
+                }).then(function (payload) {
+                    var saved = payload.items && payload.items[0];
+                    card.id = saved && (saved.slate_item_id || saved.id);
+                    if (dailyList) { dailyList.prepend(buildDailyCard(card)); }
+                    textarea.value = '';
+                    counter.textContent = '0 / 500';
+                    counter.classList.remove('is-warn');
+                    doneNote.textContent = 'Saved privately to your Daily Slate.';
+                    doneNote.hidden = false;
+                    window.setTimeout(function () { doneNote.hidden = true; }, 6000);
+                }).catch(function (error) {
+                    doneNote.textContent = error.message;
+                    doneNote.hidden = false;
+                }).finally(function () {
+                    postBtn.disabled = textarea.value.trim().length === 0;
+                });
+                return;
+            }
 
             var cards = loadSavedCards();
             cards.unshift(card);
@@ -175,7 +243,20 @@
 
     // Render previously saved cards at the top of the Daily list.
     var dailyList = document.querySelector('[data-ts-daily-list]');
-    if (dailyList) {
+    if (dailyList && apiEnabled) {
+        api('/api/slate-spaces/Daily%20Slate').then(function (payload) {
+            var items = payload.slate_space && payload.slate_space.items || [];
+            items.slice().reverse().forEach(function (item) {
+                dailyList.prepend(buildDailyCard({
+                    id: item.slate_item_id,
+                    text: item.body || item.title,
+                    cat: item.category || 'Work',
+                    privacy: 'Private',
+                    ts: Date.parse(item.updated_at || item.created_at) || Date.now()
+                }));
+            });
+        });
+    } else if (dailyList) {
         loadSavedCards().reverse().forEach(function (card) {
             dailyList.prepend(buildDailyCard(card));
         });

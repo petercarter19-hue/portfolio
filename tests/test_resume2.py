@@ -1,3 +1,4 @@
+import json
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -157,7 +158,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
         self.assertIn(
-            'css/resume2.css?v=constellation-fullstage-17',
+            'css/resume2.css?v=skills-relocated-20',
             response_text,
         )
 
@@ -179,17 +180,41 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(section_positions, sorted(section_positions))
         self.assertLess(section_positions[-1], constellation_position)
 
-    def test_resume2_renders_evidence_backed_skill_chip_grid_and_popover(self):
+    def test_resume2_renders_each_configured_evidence_backed_skill_control(self):
         response = self.client.get('/petec/resume2', base_url='http://localhost')
+        fixture_path = (
+            Path(__file__).resolve().parents[1]
+            / 'static'
+            / 'data'
+            / 'resume_data.json'
+        )
+        fixture = json.loads(fixture_path.read_text(encoding='utf-8'))
+        expected_skill_count = len(
+            fixture['living_resume']['resume2_featured_skill_ids']
+        )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(expected_skill_count, 16)
         self.assertEqual(
             response.data.count(b'class="r2-skillchip"'),
-            16,
+            expected_skill_count,
         )
         self.assertIn(b'class="r2-skillpop"', response.data)
         self.assertIn(b'data-skillmap-data', response.data)
-        self.assertIn(b'View full evidence', response.data)
+        self.assertIn(b'Reveal supporting evidence', response.data)
+
+    def test_development_section_lists_every_forward_credential(self):
+        # Skills & Evidence was moved out of the vertical composition into the
+        # Experience header, so the old composition-grid guard no longer
+        # applies. Development still renders its full set of credentials.
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+        response_text = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        development_start = response_text.index('<div class="r2-development-row">')
+        development_end = response_text.index('</div>', development_start)
+        development_html = response_text[development_start:development_end]
+        self.assertEqual(development_html.count('<article>'), 4)
 
     def test_profile_tabs_render_everywhere_except_the_root_landing_page(self):
         root = self.client.get('/', base_url='http://localhost')
