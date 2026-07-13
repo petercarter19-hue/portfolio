@@ -9,17 +9,20 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
+{# Editorial-glass pass (2026-07-13): the résumé sky is now the shared
+   pale editorial field, so preload that instead of the retired
+   mountain image. #}
 <link
     rel="preload"
     as="image"
-    href="{{ url_for('static', filename='images/Mockups/resume2/resume2-blue-mountain-background.avif') }}"
-    type="image/avif"
+    href="{{ url_for('static', filename='images/background-templates/peerslate-editorial-field.jpg') }}"
+    type="image/jpeg"
 >
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=solid-header-3">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=restored-desktop-grids-19">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=constellation-fullstage-17">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page{% endblock %}
@@ -202,12 +205,70 @@
             </section>
 
             <section class="r2-section r2-experience" id="resume-experience" data-reveal data-resume-section aria-labelledby="resume-experience-title" data-r2-exp>
-                <div class="r2-exp-intro-card">
-                    <header class="r2-section-heading">
-                        <span>02 / The work, in full context</span>
-                        <h2 id="resume-experience-title">Experience</h2>
-                        <p>A progression of impact across organizations, missions, and technical systems. Open any chapter to read the full record — the others step aside, never away.</p>
-                    </header>
+                {# The Experience intro and the Skills & Evidence panel share
+                   one row here (Skills was moved up from the vertical
+                   composition below the ledger, playfully offset to the
+                   right), with the experience chapter cards beneath. #}
+                <div class="r2-exp-header">
+                    <div class="r2-exp-intro-card">
+                        <header class="r2-section-heading">
+                            <span>02 / The work, in full context</span>
+                            <h2 id="resume-experience-title">Experience</h2>
+                            <p>A progression of impact across organizations, missions, and technical systems. Open any chapter to read the full record — the others step aside, never away.</p>
+                        </header>
+                    </div>
+
+                    <section class="r2-section r2-skills r2-skills--beside" id="resume-skills" data-reveal data-resume-section aria-labelledby="resume-skills-title">
+                        <header class="r2-section-heading">
+                            <span>04 / Claims connected to proof</span>
+                            <h2 id="resume-skills-title">Skills &amp; Evidence</h2>
+                            <p>Core capabilities with verified impact.</p>
+                        </header>
+                        <div class="r2-skillmap" data-skillmap>
+                            <div class="r2-skillmap__grid" role="list" aria-label="Evidence-backed skills">
+                                {% for skill in resume2_featured_skills %}
+                                <button
+                                    class="r2-skillchip"
+                                    type="button"
+                                    role="listitem"
+                                    data-skill-chip="{{ skill.id }}"
+                                    aria-expanded="false"
+                                    aria-controls="r2-skillpop"
+                                    aria-label="{{ skill.display_name }}. Reveal supporting evidence."
+                                >
+                                    <span class="r2-skillchip__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon }}"></use></svg></span>
+                                    <span class="r2-skillchip__label">{{ skill.display_name }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+
+                            <div class="r2-skillpop" id="r2-skillpop" role="dialog" aria-labelledby="r2-skillpop-title" aria-live="polite" hidden>
+                                <span class="r2-skillpop__tail" aria-hidden="true"></span>
+                                <button class="r2-skillpop__close" type="button" data-skillpop-close aria-label="Close skill details">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                </button>
+                                <h3 class="r2-skillpop__title" id="r2-skillpop-title" data-skillpop-title></h3>
+                                <p class="r2-skillpop__summary" data-skillpop-summary></p>
+                                <ul class="r2-skillpop__list" data-skillpop-list></ul>
+                                <button class="r2-skillpop__cta" type="button" data-skillpop-cta>
+                                    View full evidence <span class="r2-skillpop__arrow" aria-hidden="true">→</span>
+                                </button>
+                            </div>
+
+                            <script type="application/json" data-skillmap-data>
+                                {
+                                {% for skill in resume2_featured_skills %}
+                                    "{{ skill.id }}": {
+                                        "name": {{ skill.display_name|tojson }},
+                                        "summary": {{ (skill.front_summary or '')|tojson }},
+                                        "evidence": [{% for evidence in skill.resume2_evidence_items[:3] %}{{ evidence.text|tojson }}{{ ',' if not loop.last }}{% endfor %}],
+                                        "ask": {{ ('Walk me through the approved evidence behind ' ~ resume.profile.name ~ '’s ' ~ skill.display_name ~ ' capability.')|tojson }}
+                                    }{{ ',' if not loop.last }}
+                                {% endfor %}
+                                }
+                            </script>
+                        </div>
+                    </section>
                 </div>
                 <p class="r2-visually-hidden" data-r2-exp-status role="status" aria-live="polite" aria-atomic="true"></p>
                 <div class="r2-exp-stage" data-r2-exp-stage>
@@ -282,58 +343,6 @@
                         <p>{{ item.detail }}</p>
                     </article>
                     {% endfor %}
-                </div>
-            </section>
-
-            <section class="r2-section r2-skills" id="resume-skills" data-reveal data-resume-section aria-labelledby="resume-skills-title">
-                <header class="r2-section-heading">
-                    <span>04 / Claims connected to proof</span>
-                    <h2 id="resume-skills-title">Skills &amp; Evidence</h2>
-                    <p>Core capabilities with verified impact.</p>
-                </header>
-                <div class="r2-skillmap" data-skillmap>
-                    <div class="r2-skillmap__grid" role="list" aria-label="Evidence-backed skills">
-                        {% for skill in resume2_featured_skills %}
-                        <button
-                            class="r2-skillchip"
-                            type="button"
-                            role="listitem"
-                            data-skill-chip="{{ skill.id }}"
-                            aria-expanded="false"
-                            aria-controls="r2-skillpop"
-                            aria-label="{{ skill.display_name }}. Reveal supporting evidence."
-                        >
-                            <span class="r2-skillchip__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon }}"></use></svg></span>
-                            <span class="r2-skillchip__label">{{ skill.display_name }}</span>
-                        </button>
-                        {% endfor %}
-                    </div>
-
-                    <div class="r2-skillpop" id="r2-skillpop" role="dialog" aria-labelledby="r2-skillpop-title" aria-live="polite" hidden>
-                        <span class="r2-skillpop__tail" aria-hidden="true"></span>
-                        <button class="r2-skillpop__close" type="button" data-skillpop-close aria-label="Close skill details">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                        </button>
-                        <h3 class="r2-skillpop__title" id="r2-skillpop-title" data-skillpop-title></h3>
-                        <p class="r2-skillpop__summary" data-skillpop-summary></p>
-                        <ul class="r2-skillpop__list" data-skillpop-list></ul>
-                        <button class="r2-skillpop__cta" type="button" data-skillpop-cta>
-                            View full evidence <span class="r2-skillpop__arrow" aria-hidden="true">→</span>
-                        </button>
-                    </div>
-
-                    <script type="application/json" data-skillmap-data>
-                        {
-                        {% for skill in resume2_featured_skills %}
-                            "{{ skill.id }}": {
-                                "name": {{ skill.display_name|tojson }},
-                                "summary": {{ (skill.front_summary or '')|tojson }},
-                                "evidence": [{% for evidence in skill.resume2_evidence_items[:3] %}{{ evidence.text|tojson }}{{ ',' if not loop.last }}{% endfor %}],
-                                "ask": {{ ('Walk me through the approved evidence behind ' ~ resume.profile.name ~ '’s ' ~ skill.display_name ~ ' capability.')|tojson }}
-                            }{{ ',' if not loop.last }}
-                        {% endfor %}
-                        }
-                    </script>
                 </div>
             </section>
 

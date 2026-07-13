@@ -983,18 +983,20 @@
     will-change: transform;
 }
 
+/* Gentle, downward-only stagger — playful but never enough to overlap the
+   header above or the section below (the section keeps 5rem bottom room). */
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(1) {
-    --r2-card-offset: -6rem;
+    --r2-card-offset: 0rem;
     transform: translateY(var(--r2-card-offset));
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(2) {
-    --r2-card-offset: -6rem;
+    --r2-card-offset: 2rem;
     transform: translateY(var(--r2-card-offset));
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(3) {
-    --r2-card-offset: -6rem;
+    --r2-card-offset: 1rem;
     transform: translateY(var(--r2-card-offset));
 }
 
@@ -1576,16 +1578,16 @@
    The semantic document order stays Education → Skills → Development; the
    grid only changes their visual placement. Narrow screens return to normal
    document flow below. */
+/* Skills moved up next to the Experience intro, so this block is now just
+   Education → Development, in a clean vertical stack with generous spacing —
+   no overlapping collage. */
 .r2-vertical-composition {
     display: grid;
     width: 100%;
-    grid-template-columns: minmax(4rem, 0.35fr) minmax(16rem, 0.8fr) minmax(28rem, 1.35fr);
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    gap: 1.75rem 1.75rem;
-    /* Gap below the Experience cards, halved — pulls the whole
-       Education/Skills/Development block up. */
-    margin: clamp(2.5rem, 3.5vw, 3.5rem) 0 0;
+    gap: clamp(2.75rem, 4.5vw, 4.5rem);
+    margin: clamp(2.75rem, 4vw, 4rem) 0 0;
     padding-bottom: 4rem;
 }
 
@@ -1644,7 +1646,7 @@
         "kicker  kicker"
         "title   summary";
     align-items: baseline;
-    column-gap: clamp(0.75rem, 1.2vw, 1.25rem);
+    column-gap: clamp(1rem, 2vw, 2rem);
     row-gap: 0.4rem;
 }
 
@@ -1660,13 +1662,12 @@
 
 .r2-vertical-composition .r2-skills .r2-section-heading > p {
     grid-area: summary;
-    justify-self: start;
-    max-width: none;
+    justify-self: end;
+    max-width: 20ch;
     margin: 0;
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     line-height: 1.45;
-    text-align: left;
-    white-space: nowrap;
+    text-align: right;
 }
 
 /* On narrow screens the composition stacks and the cards get tight — revert
@@ -1683,7 +1684,6 @@
         max-width: none;
         margin-top: 0.6rem;
         text-align: left;
-        white-space: normal;
     }
 
     .r2-vertical-composition .r2-skills .r2-section-heading h2 {
@@ -1693,19 +1693,18 @@
 
 .r2-vertical-composition .r2-education {
     position: relative;
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: auto;
     width: 100%;
     margin-left: 0;
     padding: clamp(1.6rem, 2.4vw, 2.4rem);
-    /* Match the Skills top and the left edge of the first Experience card. */
-    top: 4rem;
-    left: -8.25rem;
+    top: 0;
+    left: 0;
 }
 
 .r2-vertical-composition .r2-education-grid {
-    grid-template-columns: 1fr;
-    gap: 0.85rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1rem;
     margin-top: 1.4rem;
 }
 
@@ -1747,29 +1746,29 @@
     /* The gutter the card keeps between its right edge and the viewport when
        it bleeds out on big screens. */
     --r2-skills-gutter: 1.75rem;
-    /* Pull the card left to the second Experience column while preserving
-       its existing right edge beside the Northrop Grumman column. */
-    --r2-skills-shift: 8rem;
+    /* How far the card is held to the right inside column 3. Smaller = the
+       card elongates leftward, tightening the gap to the Education card. */
+    --r2-skills-left: 0.5rem;
     position: relative;
     /* Sit above the Development band (a later grid sibling) so the evidence
        popup, which overlays downward into it, always paints on top. */
     z-index: 5;
     grid-column: 3;
     grid-row: 1;
-    /* Held-left, bleed-right. The left edge reaches back into the second
-       Experience column; the right edge stays at the viewport-side rail. On wide
+    /* Held-left, bleed-right. The left edge is held --r2-skills-left into
+       column 3; the right edge bleeds toward the viewport edge — on wide
        screens the page content caps at min(98vw, 118rem) and the leftover
        right margin becomes a deliberate rightward pop-out past the
        Ledger/Experience above (the fun horizontal play Pete wants). On normal
        screens that leftover margin is tiny, so the card never runs off-screen.
        max(0px, …) keeps the bleed from ever going negative. */
     width: calc(
-        100% + var(--r2-skills-shift) +
+        100% - var(--r2-skills-left) +
         max(0px, (100vw - min(98vw, 118rem)) / 2 - var(--r2-skills-gutter))
     );
     margin: 4rem 0 0;
     padding: clamp(2rem, 3vw, 3rem);
-    left: calc(-1 * var(--r2-skills-shift));
+    left: var(--r2-skills-left);
 }
 
 /* Column count for the chip grid is driven by the card's own width via a
@@ -1830,50 +1829,6 @@
 @container skillmap (min-width: 47rem) {
     .r2-skillmap__grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-/* The hand-aligned desktop composition intentionally gives Skills the width
-   of two Experience columns. That container is narrower than 47rem at the
-   standard 1280px review viewport, but the approved presentation is still a
-   complete 4 x 4 map. Keep the container-query fallbacks for smaller stacked
-   layouts and lock the wide composition to four columns. */
-@media (min-width: 75.0625rem) {
-    .r2-vertical-composition .r2-skillmap__grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-}
-
-/* At the standard laptop review widths the aligned Skills card is compact.
-   Stack each icon over its label so the 4 x 4 shape remains legible without
-   splitting words down the middle. Wider desktops retain the horizontal chip
-   treatment from the approved Skills mockup. */
-@media (min-width: 75.0625rem) and (max-width: 90rem) {
-    .r2-vertical-composition .r2-skillchip {
-        min-height: 6rem;
-        flex-direction: column;
-        justify-content: center;
-        gap: 0.4rem;
-        padding: 0.7rem 0.55rem;
-        text-align: center;
-    }
-
-    .r2-vertical-composition .r2-skillchip__icon {
-        width: 1.65rem;
-        height: 1.65rem;
-    }
-
-    .r2-vertical-composition .r2-skillchip__icon svg {
-        width: 1.05rem;
-        height: 1.05rem;
-    }
-
-    .r2-vertical-composition .r2-skillchip__label {
-        font-size: 0.78rem;
-        line-height: 1.16;
-        overflow-wrap: normal;
-        word-break: normal;
-        hyphens: none;
     }
 }
 
@@ -2132,11 +2087,11 @@
        composition so it sits squarely underneath both the Education and
        Skills cards. Left anchor is unchanged. */
     grid-column: 1 / -1;
-    grid-row: 2;
+    grid-row: auto;
     width: 100%;
-    margin: 1.75rem 0 0;
+    margin: 0;
     padding: clamp(1.5rem, 2.2vw, 2.2rem);
-    left: -0.75rem;
+    left: 0;
 }
 
 /* Wide and low-slung: the credentials sit side by side so the card reads as a
@@ -2147,16 +2102,6 @@
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
     gap: 1.25rem;
     margin-top: 1.2rem;
-}
-
-/* All four approved Development records form one low, continuous desktop
-   row. Explicit columns prevent the fourth card from wrapping simply because
-   the automatic 15rem minimum plus gaps is a few pixels wider than the band. */
-@media (min-width: 75.0625rem) {
-    .r2-vertical-composition .r2-development-row {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        align-items: stretch;
-    }
 }
 
 .r2-vertical-composition .r2-development-row article,
@@ -2780,5 +2725,55 @@
     .r2-skill-lists button[aria-pressed="true"] {
         color: HighlightText;
         background: Highlight;
+    }
+}
+
+/* =====================================================================
+   EXPERIENCE HEADER ROW (2026-07-13)
+   Skills & Evidence was moved up to sit beside the Experience intro card,
+   below the ledger and above the experience chapter cards — a playful
+   right-hand offset with real spacing (no overlap).
+   ===================================================================== */
+.r2-exp-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    align-items: start;
+    gap: clamp(1.5rem, 3vw, 3.5rem);
+}
+
+.r2-exp-header .r2-exp-intro-card {
+    max-width: none;
+}
+
+/* The relocated Skills panel. It carries its own glass card here (it used to
+   inherit the composition column's surface). margin-top gives the playful
+   drop AND adds real layout height, so it never overlaps the cards below. */
+.r2-skills--beside {
+    position: relative;
+    z-index: 6;
+    width: 100%;
+    margin: 2.5rem 0 0;
+    padding: clamp(1.5rem, 2.2vw, 2.25rem);
+    background: linear-gradient(135deg, rgb(255 255 255 / 86%), rgb(244 249 255 / 74%));
+    border: 1px solid rgb(255 255 255 / 82%);
+    border-radius: 1.5rem;
+    box-shadow:
+        0 1.5rem 4rem rgb(10 38 78 / 14%),
+        inset 0 1px 0 rgb(255 255 255 / 92%);
+    backdrop-filter: blur(22px) saturate(1.18);
+}
+
+.r2-skills--beside .r2-skillmap {
+    margin-top: 1.2rem;
+}
+
+/* Stack the header row on narrow screens (intro above skills). */
+@media (max-width: 60rem) {
+    .r2-exp-header {
+        grid-template-columns: 1fr;
+    }
+
+    .r2-skills--beside {
+        margin-top: 1.5rem;
     }
 }

@@ -158,16 +158,18 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
         self.assertIn(
-            'css/resume2.css?v=restored-desktop-grids-19',
+            'css/resume2.css?v=skills-relocated-20',
             response_text,
         )
 
+        # Skills & Evidence now sits in the Experience header (beside the
+        # intro card, above the chapter cards), so it precedes Education.
         section_positions = [
             response_text.index(f'id="{section_id}"')
             for section_id in (
                 'resume-experience',
-                'resume-education',
                 'resume-skills',
+                'resume-education',
                 'resume-development',
             )
         ]
@@ -201,29 +203,15 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn(b'data-skillmap-data', response.data)
         self.assertIn(b'Reveal supporting evidence', response.data)
 
-    def test_desktop_skills_and_development_keep_the_approved_grid_shapes(self):
-        project_root = Path(__file__).resolve().parents[1]
-        resume_css = (project_root / 'static' / 'css' / 'resume2.css').read_text(
-            encoding='utf-8'
-        )
+    def test_development_section_lists_every_forward_credential(self):
+        # Skills & Evidence was moved out of the vertical composition into the
+        # Experience header, so the old composition-grid guard no longer
+        # applies. Development still renders its full set of credentials.
         response = self.client.get('/petec/resume2', base_url='http://localhost')
         response_text = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            '.r2-vertical-composition .r2-skillmap__grid {\n'
-            '        grid-template-columns: repeat(4, minmax(0, 1fr));',
-            resume_css,
-        )
-        self.assertIn(
-            '.r2-vertical-composition .r2-development-row {\n'
-            '        grid-template-columns: repeat(4, minmax(0, 1fr));',
-            resume_css,
-        )
-
-        development_start = response_text.index(
-            '<div class="r2-development-row">'
-        )
+        development_start = response_text.index('<div class="r2-development-row">')
         development_end = response_text.index('</div>', development_start)
         development_html = response_text[development_start:development_end]
         self.assertEqual(development_html.count('<article>'), 4)
