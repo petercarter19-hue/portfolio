@@ -1,177 +1,201 @@
-{# This page reuses the shared layout from base.html: header, footer, CSS, and chatbot. #}
 {% extends "base.html" %}
 
+{# PROJECTS — THE PROJECT EXHIBITION (2026-07-13)
+   Concept 1 of docs/design/projects-experience/ — a museum-quality,
+   light-first exhibition: three glass project panels on illuminated bases,
+   the active project forward, the others angled behind. Panels render from
+   profile-scoped project data (app.py `_load_profile_projects`) so the same
+   components serve any profile with any number of projects.
+   Artifact identities (Concept 3, 5%): digital → browser frame,
+   academic → blueprint notebook, physical → model + materials.
+   The previous "build log" page was replaced by this exhibition. #}
+
 {% block title %}Projects | Pete Carter{% endblock %}
+{% block meta_description %}Pete Carter's project exhibition — the Interactive Résumé & Verified Career Assistant and other work, presented as evidence-linked case studies.{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/projects-cinematic.css') }}?v=sky-1">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects-exhibition.css') }}?v=exhibition-1">
 {% endblock %}
 
+{# The visitor has already entered the profile — the Projects page begins
+   with the work, not the profile band (master brief §7). #}
+{% block profile_band %}{% endblock %}
+
 {% block content %}
-
-<!-- =====================================================
-     PROJECTS — the build log (2026-07-10 rebuild).
-     Same four projects and copy as before: the shipped
-     Interactive Resume leads as a cinematic case with a
-     real screenshot, and the three planned concepts follow
-     as "on the bench" glass cards.
-     ===================================================== -->
-<div class="projects-film" id="projects">
-
-    <section class="sky-haze pjf-open" aria-labelledby="work-title">
-        <p class="section-eyebrow">Projects</p>
-        <h1 id="work-title">Practical builds with<br><span>engineering purpose.</span></h1>
-        <p class="pjf-open__lead">
-            A concise look at portfolio projects that connect systems thinking,
-            software development, automation, and AI-enabled engineering.
-        </p>
-        <p class="pjf-focus" data-reveal>
-            <strong>Current Focus</strong>
-            Interactive resume, verified AI assistant, requirements tools, and smart engineering dashboards.
-        </p>
-    </section>
-
-    <div class="pjf-ai page-ai-after-hero" aria-label="Ask Pete AI" data-reveal>
-        {% include "partials/portfolio_ai_search.html" %}
+<div class="pjx" data-pjx>
+    {# The rotunda environment — rebuilt with CSS light and arch shapes,
+       never a mockup screenshot. #}
+    <div class="pjx-env" aria-hidden="true">
+        <span class="pjx-env__arch pjx-env__arch--l"></span>
+        <span class="pjx-env__arch pjx-env__arch--r"></span>
+        <span class="pjx-env__floor"></span>
     </div>
 
-    <!-- FEATURED BUILD ==================================== -->
-    <section class="pjf-feature" aria-labelledby="pjf-feature-title" data-reveal>
-        <div class="pjf-feature__copy">
-            <p class="pjf-status pjf-status--live">MVP Live / In Development</p>
-            <p class="section-eyebrow">Featured Build</p>
-            <h2 id="pjf-feature-title">Interactive Resume and Verified Career Assistant</h2>
-            <p class="pjf-feature__lead">
-                A Flask portfolio feature that turns approved public resume data into a
-                recruiter-focused, evidence-linked career dashboard with AI-assisted questions.
-            </p>
+    <header class="pjx-hero">
+        <p class="pjx-eyebrow" id="projects-eyebrow">Projects</p>
+        <h1 class="pjx-title" id="projects-title">Projects</h1>
+        <p class="pjx-sub">Ideas become systems. Systems become something people can use.</p>
+    </header>
 
-            <div class="pjf-feature__cols">
-                <section>
-                    <h3>What It Shows</h3>
-                    <ul>
-                        <li>Structured resume data connected to recruiter filters, skills, roles, and metrics.</li>
-                        <li>Interactive evidence cards that keep claims tied to visible supporting details.</li>
-                    </ul>
-                </section>
-                <section>
-                    <h3>What It Uses</h3>
-                    <div class="pjf-tags">
-                        <span>Python</span>
-                        <span>Flask</span>
-                        <span>Jinja</span>
-                        <span>JavaScript</span>
-                        <span>JSON</span>
-                    </div>
-                    <h3 class="pjf-next-title">Next Refinements</h3>
-                    <ul>
-                        <li>Replace the draft PDF with the final employer-facing resume.</li>
-                        <li>Add deeper project case studies as each build matures.</li>
-                    </ul>
-                </section>
-            </div>
-
-            <div class="pjf-feature__actions">
-                <a class="pjf-btn" href="{{ portfolio_resume_url }}">
-                    Open the live build
-                    <span aria-hidden="true">→</span>
-                </a>
-                <button
-                    class="pjf-btn pjf-btn--ghost"
-                    type="button"
-                    data-ask-resume
-                    data-ask="Summarize Pete's interactive resume project using approved portfolio information. Focus on what it demonstrates to recruiters."
+    <div class="pjx-scrollwrap" data-pjx-scrollwrap>
+        <div class="pjx-sticky">
+            <section class="pjx-stage" aria-label="Project exhibition" data-pjx-stage>
+                {% for p in projects %}
+                <article
+                    class="pjx-panel pjx-panel--{{ p.artifact_type }}{% if p.is_demo %} pjx-panel--demo{% endif %}"
+                    id="{{ p.slug }}"
+                    data-pjx-panel="{{ loop.index0 }}"
+                    data-pjx-slug="{{ p.slug }}"
+                    data-pjx-name="{{ p.short_title }}"
+                    aria-labelledby="pjx-title-{{ p.slug }}"
                 >
-                    Ask Pete AI
+                    <div class="pjx-panel__base" aria-hidden="true"></div>
+                    <div class="pjx-panel__body">
+                        <header class="pjx-panel__head">
+                            <span class="pjx-panel__num" aria-hidden="true">{{ p.number }}</span>
+                            <h2 class="pjx-panel__title" id="pjx-title-{{ p.slug }}">{{ p.title }}</h2>
+                            <p class="pjx-panel__status">
+                                <i class="pjx-status-dot pjx-status-dot--{{ p.status|lower }}" aria-hidden="true"></i>
+                                <span>{{ p.status }}</span>
+                            </p>
+                            {% if p.is_demo %}
+                            <p class="pjx-panel__demo-note">Demonstration project &mdash; layout preview only. Not a real portfolio project or outcome.</p>
+                            {% endif %}
+                            <ul class="pjx-panel__tags" aria-label="Project type">
+                                {% for tag in p.tags %}<li>{{ tag }}</li>{% endfor %}
+                            </ul>
+                        </header>
+
+                        {# ---- Artifact (Concept 3 identity) ---- #}
+                        {% if p.artifact_type == 'digital' %}
+                        <div class="pjx-art pjx-art--browser" role="img" aria-label="{{ p.artifact_alt }}">
+                            <div class="pjx-browser">
+                                <div class="pjx-browser__bar">
+                                    <span class="pjx-browser__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                                    <span class="pjx-browser__url">peerslate.com{{ p.live_url }}</span>
+                                </div>
+                                <div class="pjx-browser__app" aria-hidden="true">
+                                    <div class="pjx-browser__side">
+                                        <b>PeerSlate</b>
+                                        <span class="is-on">Overview</span>
+                                        <span>Experience</span>
+                                        <span>Projects</span>
+                                        <span>Skills</span>
+                                        <span>Assistant</span>
+                                    </div>
+                                    <div class="pjx-browser__main">
+                                        <div class="pjx-browser__chat">
+                                            <b>Career Assistant</b>
+                                            <span class="pjx-browser__online">Online</span>
+                                            <p>How can I help you learn about my work?</p>
+                                            <span class="pjx-browser__ask">Ask something&hellip;</span>
+                                        </div>
+                                        <div class="pjx-browser__evidence">
+                                            <b>$36M+</b>
+                                            <span>Contract oversight &middot; Proof &rarr;</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% elif p.artifact_type == 'academic' %}
+                        <div class="pjx-art pjx-art--blueprint" role="img" aria-label="{{ p.artifact_alt }}">
+                            <span class="pjx-blueprint__rings" aria-hidden="true"></span>
+                            <svg class="pjx-blueprint__drawing" viewBox="0 0 300 190" fill="none" stroke="rgba(196,216,255,0.55)" stroke-width="1" aria-hidden="true">
+                                <circle cx="118" cy="95" r="52"/>
+                                <circle cx="118" cy="95" r="30"/>
+                                <circle cx="118" cy="95" r="6"/>
+                                <path d="M118 25v140M48 95h140"/>
+                                <path d="M212 48h64M212 66h48M212 84h56" stroke-dasharray="3 4"/>
+                                <rect x="210" y="108" width="66" height="44" rx="3"/>
+                                <path d="M60 168h116" stroke-dasharray="8 5"/>
+                                <path d="M60 163v10M176 163v10"/>
+                            </svg>
+                            <span class="pjx-blueprint__pen" aria-hidden="true"></span>
+                        </div>
+                        {% elif p.artifact_type == 'physical' %}
+                        <div class="pjx-art pjx-art--model" role="img" aria-label="{{ p.artifact_alt }}">
+                            <svg class="pjx-model__house" viewBox="0 0 300 170" fill="none" aria-hidden="true">
+                                <g stroke="rgba(122,99,63,0.6)" stroke-width="1.4">
+                                    <path d="M70 150V86l60-38 60 38v64" fill="rgba(233,220,198,0.75)"/>
+                                    <path d="M130 150v-40h30v40" fill="rgba(210,190,160,0.8)"/>
+                                    <path d="M58 90l72-46 72 46" fill="none" stroke-width="2"/>
+                                    <path d="M190 150V96h56v54" fill="rgba(240,231,214,0.85)"/>
+                                    <path d="M190 96l28-16 28 16" fill="none"/>
+                                    <path d="M84 106h24v20H84zM202 112h16v14h-16z" fill="rgba(250,247,240,0.9)"/>
+                                </g>
+                                <path d="M40 150h224" stroke="rgba(122,99,63,0.5)" stroke-width="2"/>
+                                <g stroke="rgba(122,99,63,0.35)" stroke-width="1" stroke-dasharray="4 4">
+                                    <path d="M40 158h96M152 158h112"/>
+                                </g>
+                            </svg>
+                            <span class="pjx-model__swatch pjx-model__swatch--wood" aria-hidden="true"></span>
+                            <span class="pjx-model__swatch pjx-model__swatch--stone" aria-hidden="true"></span>
+                        </div>
+                        {% endif %}
+
+                        <p class="pjx-panel__summary">{{ p.summary }}</p>
+
+                        <footer class="pjx-panel__foot">
+                            {% if p.details_ready and p.publish_detail %}
+                            <a class="pjx-panel__cta" href="{{ portfolio_url('work/' ~ p.slug) }}" data-pjx-cta>
+                                {{ p.cta or 'Enter the project' }}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                            </a>
+                            {% else %}
+                            <p class="pjx-panel__pending">{{ p.status_note }}{% if not p.is_demo %} <span>Project details are being documented.</span>{% endif %}</p>
+                            {% endif %}
+                        </footer>
+                    </div>
+                    <button class="pjx-panel__select" type="button" data-pjx-select tabindex="-1" aria-hidden="true"></button>
+                </article>
+                {% endfor %}
+            </section>
+
+            <div class="pjx-controls" role="group" aria-label="Project navigation">
+                <button class="pjx-controls__btn" type="button" data-pjx-prev aria-label="Previous project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="pjx-controls__dots">
+                    {% for p in projects %}
+                    <button class="pjx-controls__dot" type="button" data-pjx-goto="{{ loop.index0 }}" aria-label="Show {{ p.short_title }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">
+                        <span>{{ p.number }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+                <span class="pjx-controls__count" aria-hidden="true"><b data-pjx-current>01</b>&nbsp;/&nbsp;{{ '%02d' % projects|length }}</span>
+                <button class="pjx-controls__btn" type="button" data-pjx-next aria-label="Next project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                 </button>
             </div>
+            <p class="r2-visually-hidden" role="status" aria-live="polite" data-pjx-live></p>
         </div>
 
-        <a class="pjf-feature__shot" href="{{ portfolio_resume_url }}" aria-label="Open the live Living Résumé">
-            <img
-                src="{{ url_for('static', filename='images/projects/living-resume-build.jpg') }}"
-                alt="Screenshot of the Living Résumé build: glass chapter panel with key outcome cards over a summit sky"
-                loading="lazy"
-            >
+        {# Scroll markers: one tall marker per project drives the exhibition
+           focus while the stage stays sticky. Normal document scrolling
+           only — never hijacked. #}
+        {% for p in projects %}
+        <div class="pjx-marker" data-pjx-marker="{{ loop.index0 }}" aria-hidden="true"></div>
+        {% endfor %}
+    </div>
+
+    <section class="pjx-continue" aria-label="Continue">
+        {% set featured = projects | selectattr('is_featured') | list | first %}
+        {% if featured and featured.details_ready and featured.publish_detail %}
+        <a class="pjx-continue__cta" href="{{ portfolio_url('work/' ~ featured.slug) }}">
+            Enter the {{ featured.short_title }} case study
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
+        {% endif %}
+        <p class="pjx-continue__note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5 21h14M7 21V10M17 21V10M4 10h16M6 10l6-6 6 6"/></svg>
+            Thoughtful work. Built to last.
+        </p>
     </section>
-
-    <!-- ON THE BENCH ====================================== -->
-    <section class="pjf-bench" aria-labelledby="pjf-bench-title">
-        <header class="sky-haze pjf-bench__head" data-reveal>
-            <p class="section-eyebrow">On the Bench</p>
-            <h2 id="pjf-bench-title">Three builds taking shape.</h2>
-        </header>
-
-        <div class="pjf-bench__grid">
-            <article class="pjf-card" data-reveal style="--orb: #3f6fe0;">
-                <p class="pjf-status">Planned Engineering Application</p>
-                <h3>Requirements Traceability Platform</h3>
-                <p class="pjf-card__lead">
-                    A planned web application for linking requirements, verification methods,
-                    test cases, and evidence with clear bidirectional traceability.
-                </p>
-                <h4>What It Shows</h4>
-                <ul>
-                    <li>Requirements discipline, verification thinking, and traceability structure.</li>
-                    <li>Ability to turn systems-engineering workflow into usable software.</li>
-                </ul>
-                <h4>Likely Stack</h4>
-                <div class="pjf-tags">
-                    <span>Python</span>
-                    <span>Flask</span>
-                    <span>PostgreSQL</span>
-                    <span>D3.js</span>
-                </div>
-            </article>
-
-            <article class="pjf-card" data-reveal style="--orb: #2aa8e6;">
-                <p class="pjf-status">Prototype Concept</p>
-                <h3>AI-Assisted Requirements Reviewer</h3>
-                <p class="pjf-card__lead">
-                    An LLM-powered tool concept for reviewing requirements for clarity,
-                    completeness, consistency, and verifiability with source-cited feedback.
-                </p>
-                <h4>What It Shows</h4>
-                <ul>
-                    <li>Policy-aware AI thinking applied to engineering quality problems.</li>
-                    <li>Practical focus on traceable feedback instead of generic chatbot output.</li>
-                </ul>
-                <h4>Likely Stack</h4>
-                <div class="pjf-tags">
-                    <span>Python</span>
-                    <span>OpenAI API</span>
-                    <span>LangChain</span>
-                    <span>FAISS</span>
-                </div>
-            </article>
-
-            <article class="pjf-card" data-reveal style="--orb: #2fc38d;">
-                <p class="pjf-status">Planned Private Integration</p>
-                <h3>Engineering Home Operations Dashboard</h3>
-                <p class="pjf-card__lead">
-                    A planned secure dashboard for bringing Home Assistant data into a
-                    clean operational view with status, automation, and alerting patterns.
-                </p>
-                <h4>What It Shows</h4>
-                <ul>
-                    <li>Interest in automation, reliable status visibility, and practical system integration.</li>
-                    <li>Ability to think about user workflows, security boundaries, and maintainable interfaces.</li>
-                </ul>
-                <h4>Likely Stack</h4>
-                <div class="pjf-tags">
-                    <span>Home Assistant</span>
-                    <span>REST API</span>
-                    <span>WebSocket</span>
-                    <span>Docker</span>
-                </div>
-            </article>
-        </div>
-    </section>
-
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/sky-reveal.js') }}?v=sky-1"></script>
+<script src="{{ url_for('static', filename='js/projects-exhibition.js') }}?v=exhibition-1" defer></script>
 {% endblock %}
