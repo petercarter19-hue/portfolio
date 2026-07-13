@@ -83,3 +83,19 @@ Branch: feat/cinematic-projects-experience
   approved copy already in resume_data.json case_study_sections).
   Then Phases 4-6 (states/docs, a11y, tests + screenshots).
   Verify on port 5057 (Codex holds 5000). Do NOT deploy without Pete's OK.
+
+### Projects Exhibition — COMPLETE (all phases)
+- Phase 2 (6705de7): exhibition index at /petec/work — CSS rotunda, sticky
+  3-panel stage, artifact renderers (digital/academic/physical), scroll
+  focus + controls + keyboard + hash, aria-live, responsive, no profile band.
+- Phase 3: /petec/work/interactive-resume case study — sticky chapter rail,
+  six documentary scenes from case_study_sections data (approved copy only,
+  real tech strip Python/Flask/Jinja/JS/JSON, real evidence fragments).
+- Phase 4: Senior Project + Sample Home Build gated to 404 (no invented
+  detail pages); persistent demo notice; HOW_TO.md (add/replace/fill docs).
+- Phase 5: reduced-motion, forced-colors, sr-only live region, focus rings,
+  44px touch targets, one-H1 structure per page.
+- Phase 6: tests/test_projects.py (10 tests: data order, demo flags,
+  panel order, no fictional mockup strings, six chapters, 404 gating,
+  a11y scaffolding). Suite: 75/75 pass. Verified desktop 1440 + mobile 390.
+- NOT deployed — awaiting Pete's review on port 5057.
