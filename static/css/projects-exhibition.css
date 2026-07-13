@@ -42,16 +42,34 @@
     pointer-events: none;
 }
 
+/* The approved rotunda photograph (2026-07-13, Pete) carries the space;
+   a soft white veil keeps every panel and label readable over it. Cards
+   stay legible on the plain Cloud White base if the image fails. */
 .pjx-env::before {
     content: "";
-    position: absolute;
+    /* Fixed to the viewport (like .site-sky) so the arch composition stays
+       framed while the page scrolls, instead of stretching over the full
+       document height. */
+    position: fixed;
     inset: 0;
     background:
-        radial-gradient(46% 30% at 50% 4%, rgb(255 255 255 / 85%), transparent 75%),
-        linear-gradient(180deg, rgb(246 248 252 / 55%), rgb(240 246 255 / 25%) 45%, rgb(235 242 255 / 45%) 100%);
+        linear-gradient(180deg, rgb(255 255 255 / 10%) 0%, rgb(248 250 254 / 0%) 45%, rgb(240 246 255 / 10%) 100%),
+        url("../images/background-templates/projects-rotunda.jpg") center top / cover no-repeat,
+        #f6f8fc;
 }
 
-.pjx-env__arch {
+@media (max-width: 48rem) {
+    .pjx-env::before {
+        background:
+            linear-gradient(180deg, rgb(255 255 255 / 14%) 0%, rgb(248 250 254 / 4%) 45%, rgb(240 246 255 / 14%) 100%),
+            url("../images/background-templates/projects-rotunda-mobile.jpg") center top / cover no-repeat,
+            #f6f8fc;
+    }
+}
+
+.pjx-env__arch { display: none; }
+
+.pjx-env__arch-retired {
     position: absolute;
     top: 6rem;
     width: clamp(14rem, 22vw, 22rem);
@@ -684,6 +702,8 @@
 
     .pjx-continue__cta { width: 100%; justify-content: center; min-height: 44px; }
     .pjx-env__arch { display: none; }
+
+.pjx-env__arch-retired { display: none; }
 }
 
 /* ---------------------------------------------------------------------

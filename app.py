@@ -642,12 +642,28 @@ def slate_board():
 @app.route('/interview-me')
 @app.route('/petec/interview-me')
 def interview_me():
-    # "Interview Me" - interview prep powered by the candidate's slate.
-    # The mock-interview coach calls the SAME /api/chat endpoint as every
-    # other Ask Pete AI feature for now, so answers are grounded in Pete's
-    # knowledge files. The 30 STAR + 30 behavioral questions live in the
-    # template; static/js/interview.js runs the console.
-    return render_template('interview_me.html')
+    # INTERVIEW WORKSPACE (2026-07-13): the page is now a three-mode working
+    # application (Interview Me / Interview You / Video Me) wrapped around
+    # the original practice studio — every original control keeps its id so
+    # static/js/interview.js runs unchanged; static/js/interview-workspace.js
+    # adds the workspace chrome. All AI calls still hit the same /api/chat.
+    #
+    # Entitlement hooks (server-side, not browser-decided): the workspace
+    # will eventually sit behind a paywall. These flags come from the
+    # environment so a deployment can gate tiers without code changes.
+    # Nothing here fabricates billing — defaults keep today's behavior.
+    entitlements = {
+        'written_practice': True,   # current free behavior
+        'model_answers': True,      # current free behavior
+        'mock_interviews': True,    # current free behavior
+        'video_studio': os.environ.get(
+            'INTERVIEW_VIDEO_STUDIO', 'preview'
+        ),  # preview | enabled | locked
+        'progress_history': os.environ.get(
+            'INTERVIEW_PROGRESS_HISTORY', 'preview'
+        ),  # preview | enabled | locked
+    }
+    return render_template('interview_me.html', interview_entitlements=entitlements)
 
 
 @app.route('/skills')
