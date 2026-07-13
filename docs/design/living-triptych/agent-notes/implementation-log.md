@@ -69,3 +69,17 @@ Chronological log of what Claude Code actually did on
   ledger, above the experience chapter cards) — a playful right-hand offset
   with real spacing, stacks under the intro on mobile. Section order + tests
   updated (test_resume2, test_living_resume_preview). 33/33 pass.
+
+## 2026-07-13 — Projects Exhibition build (PAUSED at Pete's request, resume 12:35p CST)
+
+Branch: feat/cinematic-projects-experience
+- Phase 0 ✅ (f3a05fd): mockup reference structure + audit.
+- Phase 1 ✅ (dd9c611): projects data (3 entries) + /petec/work data-driven
+  + /petec/work/<slug> gated case-study route. 65 tests pass.
+- NEXT (Phase 2): rewrite templates/work.html as the exhibition
+  (hero → sticky 3-panel stage → scroll markers → continue strip),
+  create static/css/projects-exhibition.css + static/js/projects-exhibition.js.
+  Then Phase 3: templates/project_case_study.html (chapter rail + 6 scenes,
+  approved copy already in resume_data.json case_study_sections).
+  Then Phases 4-6 (states/docs, a11y, tests + screenshots).
+  Verify on port 5057 (Codex holds 5000). Do NOT deploy without Pete's OK.
