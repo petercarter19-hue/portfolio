@@ -9,11 +9,14 @@
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
+{# Editorial-glass pass (2026-07-13): the résumé sky is now the shared
+   pale editorial field, so preload that instead of the retired
+   mountain image. #}
 <link
     rel="preload"
     as="image"
-    href="{{ url_for('static', filename='images/Mockups/resume2/resume2-blue-mountain-background.avif') }}"
-    type="image/avif"
+    href="{{ url_for('static', filename='images/background-templates/peerslate-editorial-field.jpg') }}"
+    type="image/jpeg"
 >
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

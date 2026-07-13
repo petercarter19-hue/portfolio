@@ -91,6 +91,13 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-2-mtn"
     >
+    {# Editorial-glass visual pass (background + card finish). Scoped
+       entirely under body.ps-editorial-surface; must load after
+       sky-glass.css so its equal-specificity card rules win. #}
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/editorial-glass.css') }}?v=editorial-1"
+    >
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/chatbot.css') }}?v=scroll-toggle-1"
@@ -99,7 +106,11 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+       cinematic homepage (served at "/" and its comparison link
+       /experience) gets the pale editorial background + card finish.
+       All of that CSS is scoped under this class in editorial-glass.css,
+       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
 
