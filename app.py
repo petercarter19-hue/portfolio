@@ -356,6 +356,111 @@ def experience():
     return render_template('experience.html')
 
 
+# ATRIUM (2026-07-12): "The Living Triptych" — an experimental cinematic
+# Overview. Three overlapping glass slabs (My Story / Projects / Living
+# Résumé) presented as one sculptural installation. It lives on its own
+# link + route so Pete can evaluate this big swing live without touching
+# the production homepage; if it lands it can become the front door.
+# Design brief: docs/design/living-triptych/LIVING_TRIPTYCH_VISION.md
+def build_atrium_view_model():
+    """Assemble the three-slab Atrium view model from the SAME real fixtures
+    the résumé and story pages read, so nothing is hardcoded and the slab
+    component stays tenant-safe (AGENTS.md: never bake one profile's employers
+    or metrics into a reusable component). Pete is the demo profile here; the
+    same shape renders any persona in living_resume_fixtures.json."""
+    data_dir = os.path.join(os.path.dirname(__file__), 'static', 'data')
+    with open(os.path.join(data_dir, 'resume_data.json'), 'r', encoding='utf-8') as f:
+        resume = json.load(f)
+    with open(os.path.join(data_dir, 'story_data.json'), 'r', encoding='utf-8') as f:
+        story = json.load(f)
+
+    profile = resume.get('profile', {})
+    living = resume.get('living_resume', {})
+
+    # Résumé chapters — real roles, newest first, no invented data.
+    role_order = ['northrop', 'l3harris', 'dod']
+    roles_by_id = {r['id']: r for r in resume.get('career_roles', [])}
+    chapters = []
+    for rid in role_order:
+        r = roles_by_id.get(rid)
+        if not r:
+            continue
+        chapters.append({
+            'period': r.get('dates', ''),
+            'org': r.get('employer', ''),
+            'role': r.get('title', ''),
+        })
+
+    # Metrics — real values by id. MICAP is excluded on purpose (AGENTS.md
+    # forbids the MICAP example in redesigned résumé copy).
+    metric_ids = ['contract', 'platforms', 'repair-test', 'modernization']
+    metrics_by_id = {m['id']: m for m in resume.get('metrics', [])}
+    metrics = [
+        {'value': metrics_by_id[mid]['value'], 'label': metrics_by_id[mid]['label']}
+        for mid in metric_ids if mid in metrics_by_id
+    ]
+
+    # Story value chips — from the story page's own closing values.
+    values = [v.get('label', '') for v in story.get('closing_values', [])]
+
+    # A small, curated set of Pete's real photographs for the amber slab.
+    story_photos = [
+        {'src': 'images/story/pete-misty-hike-m.jpg', 'alt': 'Pete on a misty mountain hike'},
+        {'src': 'images/story/pete-danielle-bali-gates-m.jpg', 'alt': 'Pete and Danielle at the Bali gates'},
+        {'src': 'images/story/pete-hawaii-overlook-m.jpg', 'alt': 'Pete at a Hawaii overlook'},
+        {'src': 'images/story/pete-race-10k-m.jpg', 'alt': 'Pete finishing a 10K race'},
+    ]
+
+    name = profile.get('name', 'This Professional')
+    return {
+        'identity': {
+            'name': name,
+            'roles': ['Person', 'Builder', 'Engineer'],
+            'tagline': 'Three dimensions of one career.',
+        },
+        'dimensions': [
+            {
+                'key': 'story', 'eyebrow': 'Person',
+                'title': 'My Story', 'tagline': 'The life that shaped the work.',
+                'blurb': 'Who I am. Where I come from. The experiences that shaped me.',
+                'href': '/petec/my-story', 'value_chips': values, 'photos': story_photos,
+            },
+            {
+                'key': 'projects', 'eyebrow': 'Builder',
+                'title': 'Projects', 'tagline': 'Ideas engineered into working systems.',
+                'blurb': 'What I build. How I think. Impact through systems.',
+                'href': '/petec/work',
+                'pillars': ['Architecture', 'Data layer', 'Product flow', 'Impact loop'],
+                'cards': [
+                    {'title': 'Modular design', 'body': 'Decoupled services. Built to scale.'},
+                    {'title': 'Data intelligence', 'body': 'Turning data into decisions and impact.'},
+                    {'title': 'Measurable impact', 'body': 'Outcomes that matter. Systems that last.'},
+                ],
+            },
+            {
+                'key': 'resume', 'eyebrow': 'Engineer',
+                'title': 'Living Résumé', 'tagline': 'The record, connected to the evidence.',
+                'blurb': 'An evidence-backed career. Always current. Always you.',
+                'href': '/petec/resume2',
+                'kicker': 'Evidence. Impact. Growth.', 'sub': 'A career in chapters.',
+                'chapters': chapters, 'metrics': metrics,
+                'quote': living.get('quote', ''),
+            },
+        ],
+        'ask': {
+            'placeholder': 'Ask the Slate',
+            'helper': "Ask anything about {}'s journey, projects, or impact.".format(
+                story.get('owner_first_name') or name.split(' ')[0]
+            ),
+        },
+    }
+
+
+@app.route('/atrium')
+def atrium():
+    return render_template('atrium.html', atrium=build_atrium_view_model())
+
+
 @app.route('/_internal/design-system')
 def design_system_preview():
     """Render Foundation A without exposing an unfinished page publicly.

@@ -131,6 +131,12 @@
                 </div>
 
                 <ul class="platform-nav__links">
+                    {# ATRIUM (2026-07-12): "The Living Triptych" — the
+                       experimental cinematic Overview. Kept as its own link
+                       (leftmost, front-door position) so Pete can judge this
+                       big swing live before it replaces anything. Route +
+                       page: app.py `atrium()` / templates/atrium.html. #}
+                    <li><a href="{{ url_for('atrium') }}" {% if request.path == '/atrium' %}aria-current="page"{% endif %}>Atrium</a></li>
                     {# Pete's Slate is the branded label for the PeerSlate homepage
                        at "/". The Example Slate remains Pete's public profile. #}
                     <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Pete's Slate</a></li>
@@ -190,8 +196,11 @@
         </nav>
 
         {# Keep the profile navigation inside the sticky global header so the
-           two navigation levels read as one connected piece of chrome. #}
-        {% if request.path != '/' %}
+           two navigation levels read as one connected piece of chrome.
+           Atrium (the Living Triptych Overview) is full-bleed cinematic and
+           carries its own in-slab navigation, so it opts out of the profile
+           tab strip just like the homepage. #}
+        {% if request.path not in ['/', '/atrium'] %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>
