@@ -395,15 +395,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     /* ----- Skills & Evidence: chip → overlay evidence popup -----
-       Clicking a skill chip highlights it and floats a popup bubble beneath
-       the grid. The popup is absolutely positioned, so it overlays whatever
-       sits below (Development) instead of pushing the layout down, and its
-       tail points at the active chip. All content is data-driven from the
-       JSON island rendered by the template. */
+       Clicking a skill chip highlights it and opens a compact pointer bubble
+       beside that chip. The popup is moved to the document layer and fixed to
+       the viewport so later resume cards cannot paint over it. All content is
+       data-driven from the JSON island rendered by the template. */
     const skillmap = page.querySelector('[data-skillmap]');
     if (skillmap) {
         const chips = Array.from(skillmap.querySelectorAll('[data-skill-chip]'));
         const pop = skillmap.querySelector('#r2-skillpop');
+        const popContent = pop && pop.querySelector('.r2-skillpop__content');
         const tail = pop && pop.querySelector('.r2-skillpop__tail');
         const titleEl = pop && pop.querySelector('[data-skillpop-title]');
         const summaryEl = pop && pop.querySelector('[data-skillpop-summary]');
@@ -421,11 +421,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let activeChip = null;
 
-        function positionTail(chip) {
-            if (!tail) return;
+        if (pop) document.body.appendChild(pop);
+
+        function positionPop(chip) {
+            if (!pop) return;
+            if (popContent) popContent.style.maxHeight = '';
             const chipRect = chip.getBoundingClientRect();
-            const popRect = pop.getBoundingClientRect();
-            const centre = chipRect.left + chipRect.width / 2 - popRect.left;
+            const viewportGap = 12;
+            const pointerGap = 7;
+            const belowTop = chipRect.bottom + pointerGap;
+            const belowSpace = window.innerHeight - belowTop - viewportGap;
+            const aboveSpace = chipRect.top - pointerGap - viewportGap;
+            let popRect = pop.getBoundingClientRect();
+            const placeAbove = popRect.height > belowSpace && aboveSpace > belowSpace;
+            const availableSpace = Math.max(160, placeAbove ? aboveSpace : belowSpace);
+
+            if (popContent && popRect.height > availableSpace) {
+                popContent.style.maxHeight = `${Math.round(availableSpace)}px`;
+                popRect = pop.getBoundingClientRect();
+            }
+
+            const top = placeAbove
+                ? chipRect.top - popRect.height - pointerGap
+                : belowTop;
+            const left = Math.max(
+                viewportGap,
+                Math.min(chipRect.left, window.innerWidth - popRect.width - viewportGap),
+            );
+
+            pop.classList.toggle('is-above', placeAbove);
+            pop.style.top = `${Math.max(viewportGap, Math.round(top))}px`;
+            pop.style.left = `${Math.round(left)}px`;
+
+            if (!tail) return;
+            const centre = chipRect.left + chipRect.width / 2 - left;
             const edge = 26; // keep the tail clear of the popup's rounded corners
             tail.style.left = Math.max(edge, Math.min(popRect.width - edge, centre)) + 'px';
         }
@@ -453,15 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             activeChip = chip;
             pop.hidden = false;
-            // Wait for the popup to lay out, then position the tail and make
-            // sure the whole popup is on-screen — it overlays downward, so a
-            // skill opened low on the page could otherwise spill below the fold.
+            // Wait for the content-sized popup to lay out before anchoring it
+            // within a few pixels of the selected skill.
             window.requestAnimationFrame(() => {
-                positionTail(chip);
-                // scrollIntoView with block:'nearest' only moves the page when
-                // the popup isn't fully visible, and by the minimum amount —
-                // the popup's scroll-margin keeps a gap from the viewport edge.
-                pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                positionPop(chip);
             });
         }
 
@@ -506,11 +530,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('click', (event) => {
-            if (activeChip && !skillmap.contains(event.target)) closePop();
+            if (activeChip && !skillmap.contains(event.target) && !pop.contains(event.target)) closePop();
         });
 
         window.addEventListener('resize', () => {
-            if (activeChip) positionTail(activeChip);
+            if (activeChip) positionPop(activeChip);
+        });
+
+        window.addEventListener('scroll', () => {
+            if (activeChip) positionPop(activeChip);
         });
     }
 
