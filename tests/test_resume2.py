@@ -161,12 +161,14 @@ class Resume2Tests(unittest.TestCase):
             response_text,
         )
 
+        # Skills & Evidence now sits in the Experience header (beside the
+        # intro card, above the chapter cards), so it precedes Education.
         section_positions = [
             response_text.index(f'id="{section_id}"')
             for section_id in (
                 'resume-experience',
-                'resume-education',
                 'resume-skills',
+                'resume-education',
                 'resume-development',
             )
         ]

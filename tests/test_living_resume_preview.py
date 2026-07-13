@@ -59,13 +59,15 @@ class LivingResumePreviewTests(unittest.TestCase):
             self.assertIn(f'id="{section_id}"'.encode(), response.data)
             self.assertIn(f'href="#{section_id}"'.encode(), response.data)
 
+        # Skills & Evidence moved into the Experience header (above the
+        # chapter cards), so it now precedes Education in document order.
         ordered_sections = [
             response.data.index(f'id="{section_id}"'.encode())
             for section_id in (
                 'resume-overview',
                 'resume-experience',
-                'resume-education',
                 'resume-skills',
+                'resume-education',
                 'resume-development',
             )
         ]

@@ -56,3 +56,16 @@ Chronological log of what Claude Code actually did on
   mockup data (impact score 9.2, endorsements, invented employers)
   replaced; MICAP excluded. index.html kept on disk for rollback.
 - Verified desktop scene-by-scene + mobile 375px; 33/33 tests pass.
+
+## 2026-07-13 — Living Résumé card spacing + Skills relocation
+
+- **No more overlapping cards** (Pete's request): experience chapter cards
+  restaggered to a gentle downward-only offset (0/2/1rem) so they never
+  overlap the header above or the section below; the Education/Skills/
+  Development "collage" grid was flattened to a clean vertical stack with
+  generous spacing.
+- **Skills & Evidence moved up**: relocated from the vertical composition to
+  a new `.r2-exp-header` row beside the Experience intro card (below the
+  ledger, above the experience chapter cards) — a playful right-hand offset
+  with real spacing, stacks under the intro on mobile. Section order + tests
+  updated (test_resume2, test_living_resume_preview). 33/33 pass.
