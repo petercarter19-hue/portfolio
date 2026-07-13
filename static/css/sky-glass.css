@@ -102,6 +102,94 @@ body.slate-light .profile-tabs {
     -webkit-backdrop-filter: var(--glass-blur);
 }
 
+/* The Slate routes use the same compact profile subheader as every public
+   Slate page. The in-page Slate Feed/My Slate/Daily tabs remain a separate
+   contextual control below; this rule only standardizes the global row. */
+body.slate-light.the-slate-page .profile-tabs {
+    position: static;
+    width: 100%;
+    margin: 0;
+    background: linear-gradient(180deg, rgb(236 246 255 / 70%), rgb(247 251 255 / 88%));
+    border-top: 1px solid rgb(139 169 206 / 26%);
+    border-bottom: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.slate-light.the-slate-page .profile-tabs::before,
+body.slate-light.the-slate-page .profile-tabs::after {
+    display: none;
+}
+
+body.slate-light.the-slate-page .profile-tabs__inner {
+    position: relative;
+    width: min(calc(100% - 3rem), 68rem);
+    min-height: 2.45rem;
+    justify-content: center;
+    padding: 0 0.75rem;
+    border: 0;
+}
+
+body.slate-light.the-slate-page .profile-tabs__list {
+    flex: 0 1 auto;
+    width: 100%;
+    justify-content: center;
+    gap: clamp(1rem, 2.3vw, 2.4rem);
+}
+
+body.slate-light.the-slate-page .profile-tab {
+    min-height: 2.45rem;
+    padding: 0 0.05rem;
+    color: #43546c;
+    font-size: 0.78rem;
+    font-weight: 680;
+    letter-spacing: 0.01em;
+}
+
+body.slate-light.the-slate-page .profile-tab::after {
+    height: 2px;
+    background: #4f5bd5;
+}
+
+body.slate-light.the-slate-page .profile-tab:hover,
+body.slate-light.the-slate-page .profile-tab:focus-visible,
+body.slate-light.the-slate-page .profile-tab[aria-current="page"] {
+    color: #4f5bd5;
+}
+
+body.slate-light.the-slate-page .profile-tabs__ask-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    min-height: 2rem;
+    margin-left: 0;
+    padding: 0 0.85rem;
+    font-size: 0.76rem;
+    transform: translateY(-50%);
+}
+
+@media (max-width: 743px) {
+    body.slate-light.the-slate-page .profile-tabs__inner {
+        width: 100%;
+        min-height: 2.35rem;
+        padding: 0 0.75rem;
+        overflow: hidden;
+    }
+
+    body.slate-light.the-slate-page .profile-tabs__list {
+        justify-content: flex-start;
+        gap: 1.25rem;
+        overflow-x: auto;
+        scroll-padding-inline: 0.75rem;
+    }
+
+    body.slate-light.the-slate-page .profile-tab {
+        min-height: 2.35rem;
+        font-size: 0.75rem;
+    }
+}
+
 /* Headings that sit directly on the sky get the résumé's soft halo so
    they hold up over clouds and rock. Invisible on white cards. */
 body.slate-light h1,

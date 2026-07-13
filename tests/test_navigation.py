@@ -85,6 +85,23 @@ class NavigationTests(unittest.TestCase):
         self.assertIn(b'data-resume-subheader-ask', resume.data)
         self.assertIn(b'id="subheader-ai-input"', resume.data)
 
+    def test_every_canonical_slate_route_uses_the_standard_subheader_scope(self):
+        for path in (
+            '/the-slate',
+            '/the-slate/my-slate',
+            '/the-slate/daily',
+            '/the-slate/pulse',
+            '/the-slate/break',
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b'the-slate-page', response.data)
+                self.assertIn(b'class="profile-tabs', response.data)
+
+        homepage = self.client.get('/', base_url='http://localhost')
+        self.assertNotIn(b'the-slate-page', homepage.data)
+
 
 if __name__ == '__main__':
     unittest.main()

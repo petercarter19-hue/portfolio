@@ -984,12 +984,12 @@
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(1) {
-    --r2-card-offset: 3rem;
+    --r2-card-offset: -6rem;
     transform: translateY(var(--r2-card-offset));
 }
 
 .r2-exp-stage:not(.is-expanded) .r2-experience-card:nth-child(2) {
-    --r2-card-offset: 10rem;
+    --r2-card-offset: -6rem;
     transform: translateY(var(--r2-card-offset));
 }
 
@@ -1644,7 +1644,7 @@
         "kicker  kicker"
         "title   summary";
     align-items: baseline;
-    column-gap: clamp(1rem, 2vw, 2rem);
+    column-gap: clamp(0.75rem, 1.2vw, 1.25rem);
     row-gap: 0.4rem;
 }
 
@@ -1660,12 +1660,13 @@
 
 .r2-vertical-composition .r2-skills .r2-section-heading > p {
     grid-area: summary;
-    justify-self: end;
-    max-width: 20ch;
+    justify-self: start;
+    max-width: none;
     margin: 0;
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     line-height: 1.45;
-    text-align: right;
+    text-align: left;
+    white-space: nowrap;
 }
 
 /* On narrow screens the composition stacks and the cards get tight — revert
@@ -1682,6 +1683,7 @@
         max-width: none;
         margin-top: 0.6rem;
         text-align: left;
+        white-space: normal;
     }
 
     .r2-vertical-composition .r2-skills .r2-section-heading h2 {
@@ -1696,8 +1698,9 @@
     width: 100%;
     margin-left: 0;
     padding: clamp(1.6rem, 2.4vw, 2.4rem);
-    top: 1.5rem;
-    left: -6.5rem;
+    /* Match the Skills top and the left edge of the first Experience card. */
+    top: 4rem;
+    left: -8.25rem;
 }
 
 .r2-vertical-composition .r2-education-grid {
@@ -1744,29 +1747,29 @@
     /* The gutter the card keeps between its right edge and the viewport when
        it bleeds out on big screens. */
     --r2-skills-gutter: 1.75rem;
-    /* How far the card is held to the right inside column 3. Smaller = the
-       card elongates leftward, tightening the gap to the Education card. */
-    --r2-skills-left: 0.5rem;
+    /* Pull the card left to the second Experience column while preserving
+       its existing right edge beside the Northrop Grumman column. */
+    --r2-skills-shift: 8rem;
     position: relative;
     /* Sit above the Development band (a later grid sibling) so the evidence
        popup, which overlays downward into it, always paints on top. */
     z-index: 5;
     grid-column: 3;
     grid-row: 1;
-    /* Held-left, bleed-right. The left edge is held --r2-skills-left into
-       column 3; the right edge bleeds toward the viewport edge — on wide
+    /* Held-left, bleed-right. The left edge reaches back into the second
+       Experience column; the right edge stays at the viewport-side rail. On wide
        screens the page content caps at min(98vw, 118rem) and the leftover
        right margin becomes a deliberate rightward pop-out past the
        Ledger/Experience above (the fun horizontal play Pete wants). On normal
        screens that leftover margin is tiny, so the card never runs off-screen.
        max(0px, …) keeps the bleed from ever going negative. */
     width: calc(
-        100% - var(--r2-skills-left) +
+        100% + var(--r2-skills-shift) +
         max(0px, (100vw - min(98vw, 118rem)) / 2 - var(--r2-skills-gutter))
     );
     margin: 4rem 0 0;
     padding: clamp(2rem, 3vw, 3rem);
-    left: var(--r2-skills-left);
+    left: calc(-1 * var(--r2-skills-shift));
 }
 
 /* Column count for the chip grid is driven by the card's own width via a

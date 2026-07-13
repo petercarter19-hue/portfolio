@@ -89,7 +89,7 @@
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=sky-2-mtn"
+        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=slate-subheader-3"
     >
     <link
         rel="stylesheet"
@@ -99,7 +99,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
 
