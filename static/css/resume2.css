@@ -1833,6 +1833,50 @@
     }
 }
 
+/* The hand-aligned desktop composition intentionally gives Skills the width
+   of two Experience columns. That container is narrower than 47rem at the
+   standard 1280px review viewport, but the approved presentation is still a
+   complete 4 x 4 map. Keep the container-query fallbacks for smaller stacked
+   layouts and lock the wide composition to four columns. */
+@media (min-width: 75.0625rem) {
+    .r2-vertical-composition .r2-skillmap__grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* At the standard laptop review widths the aligned Skills card is compact.
+   Stack each icon over its label so the 4 x 4 shape remains legible without
+   splitting words down the middle. Wider desktops retain the horizontal chip
+   treatment from the approved Skills mockup. */
+@media (min-width: 75.0625rem) and (max-width: 90rem) {
+    .r2-vertical-composition .r2-skillchip {
+        min-height: 6rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.7rem 0.55rem;
+        text-align: center;
+    }
+
+    .r2-vertical-composition .r2-skillchip__icon {
+        width: 1.65rem;
+        height: 1.65rem;
+    }
+
+    .r2-vertical-composition .r2-skillchip__icon svg {
+        width: 1.05rem;
+        height: 1.05rem;
+    }
+
+    .r2-vertical-composition .r2-skillchip__label {
+        font-size: 0.78rem;
+        line-height: 1.16;
+        overflow-wrap: normal;
+        word-break: normal;
+        hyphens: none;
+    }
+}
+
 /* When the card is narrow (its 2-column state — phones and stacked layouts),
    tighten the chips so long single words like "Management" keep to one line
    instead of clipping. */
@@ -2103,6 +2147,16 @@
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
     gap: 1.25rem;
     margin-top: 1.2rem;
+}
+
+/* All four approved Development records form one low, continuous desktop
+   row. Explicit columns prevent the fourth card from wrapping simply because
+   the automatic 15rem minimum plus gaps is a few pixels wider than the band. */
+@media (min-width: 75.0625rem) {
+    .r2-vertical-composition .r2-development-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: stretch;
+    }
 }
 
 .r2-vertical-composition .r2-development-row article,

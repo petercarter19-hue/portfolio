@@ -158,7 +158,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
         self.assertIn(
-            'css/resume2.css?v=aligned-card-grid-18',
+            'css/resume2.css?v=restored-desktop-grids-19',
             response_text,
         )
 
@@ -192,6 +192,7 @@ class Resume2Tests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(expected_skill_count, 16)
         self.assertEqual(
             response.data.count(b'class="r2-skillchip"'),
             expected_skill_count,
@@ -199,6 +200,33 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn(b'class="r2-skillpop"', response.data)
         self.assertIn(b'data-skillmap-data', response.data)
         self.assertIn(b'Reveal supporting evidence', response.data)
+
+    def test_desktop_skills_and_development_keep_the_approved_grid_shapes(self):
+        project_root = Path(__file__).resolve().parents[1]
+        resume_css = (project_root / 'static' / 'css' / 'resume2.css').read_text(
+            encoding='utf-8'
+        )
+        response = self.client.get('/petec/resume2', base_url='http://localhost')
+        response_text = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            '.r2-vertical-composition .r2-skillmap__grid {\n'
+            '        grid-template-columns: repeat(4, minmax(0, 1fr));',
+            resume_css,
+        )
+        self.assertIn(
+            '.r2-vertical-composition .r2-development-row {\n'
+            '        grid-template-columns: repeat(4, minmax(0, 1fr));',
+            resume_css,
+        )
+
+        development_start = response_text.index(
+            '<div class="r2-development-row">'
+        )
+        development_end = response_text.index('</div>', development_start)
+        development_html = response_text[development_start:development_end]
+        self.assertEqual(development_html.count('<article>'), 4)
 
     def test_profile_tabs_render_everywhere_except_the_root_landing_page(self):
         root = self.client.get('/', base_url='http://localhost')
