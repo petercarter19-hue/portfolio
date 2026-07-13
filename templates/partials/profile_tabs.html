@@ -9,6 +9,7 @@
     .profile-tabs__list wrapper is what the mobile bottom nav mirrors.
 #}
 {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
+{% set is_overview_page = request.path in ['/petec', '/portfolio', '/pete'] %}
 <nav class="profile-tabs{% if is_resume_page %} profile-tabs--resume{% endif %}" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
         <div class="profile-tabs__list" data-mobile-tabsource>
@@ -31,16 +32,17 @@
                 Resume
             </a>
         </div>
-        {% if is_resume_page %}
-        {# Résumé sub-header Ask AI: a full inline field with its own place to
-           type, pinned to the right of the tab strip. It stays hidden until the
-           reader scrolls past the identity card's Ask AI panel — living-resume-v2.js
-           toggles .is-visible — so it only takes over once that card leaves the
-           screen. The answer drops down below the strip (see .profile-tabs__ask
-           .hero-ai-answer). Its input id is unique so it never clashes with the
-           card's hero-ai-input. #}
-        <div class="profile-tabs__ask profile-tabs__ask--resume" data-resume-subheader-ask aria-hidden="true">
-            {% with ai_owner_name = profile_first_name | default('Pete'), ai_input_id = 'subheader-ai-input' %}
+        {% if is_resume_page or is_overview_page %}
+        {# Résumé + Overview use the same progressive Ask AI handoff: this
+           compact inline field remains hidden while the page's larger Ask AI
+           experience is visible, then takes its place in the sticky sub-header.
+           Each page receives a unique input id so its two AI forms never clash. #}
+        <div
+            class="profile-tabs__ask{% if is_resume_page %} profile-tabs__ask--resume{% else %} profile-tabs__ask--overview{% endif %}"
+            {% if is_resume_page %}data-resume-subheader-ask{% else %}data-overview-subheader-ask{% endif %}
+            aria-hidden="true"
+        >
+            {% with ai_owner_name = profile_first_name | default('Pete'), ai_input_id = 'subheader-ai-input' if is_resume_page else 'overview-subheader-ai-input' %}
                 {% include "partials/portfolio_ai_search.html" %}
             {% endwith %}
         </div>

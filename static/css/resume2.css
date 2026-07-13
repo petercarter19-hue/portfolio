@@ -2122,22 +2122,15 @@
     line-height: 1.5;
 }
 
-/* "See how the work became the story" — on Resume 2 the constellation
-   grows into a full-screen stage as it enters the viewport. Only the
-   outer frame changes; the constellation's internals are untouched. */
+/* "See how the work became the story" — the constellation is a full-width
+   stage from its first rendered frame. It no longer begins as a capped card
+   and snaps wider when the observer fires during a slow scroll. */
 .resume-v2 .lr-constellation {
-    transition: width 750ms cubic-bezier(.22, .8, .25, 1);
-}
-
-.resume-v2 .lr-constellation.is-fullstage {
     width: 100%;
+    margin-inline: 0;
 }
 
 .resume-v2 .lr-constellation__scene {
-    transition: border-radius 750ms cubic-bezier(.22, .8, .25, 1);
-}
-
-.resume-v2 .lr-constellation.is-fullstage .lr-constellation__scene {
     border-radius: 0;
     border-right: 0;
     border-left: 0;
