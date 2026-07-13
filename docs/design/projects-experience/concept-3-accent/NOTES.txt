@@ -1,0 +1,14 @@
+CONCEPT 3 - THE PROJECT STUDIO (5% weight: artifact identity only)
+
+Contributes to the build (visible in the Concept 1 mockups):
+- Digital system  -> translucent browser frame, interface fragments,
+  AI prompt fragment, evidence cards, indigo/azure accents
+- Academic        -> blueprint/spiral notebook, graph grid, drafting pen,
+  restrained navy; abstract technical drawing only (never a specific
+  design that could be mistaken for the real Senior Project)
+- Physical build  -> architectural model, plan sheet, material samples,
+  warm neutrals, Evidence Amber demonstration status
+
+Does NOT contribute:
+- Draggable desk objects, spinning models, cursor-chasing tools,
+  3D libraries, or a studio-table page layout
