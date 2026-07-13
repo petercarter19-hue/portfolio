@@ -1722,5 +1722,36 @@
       "name": "Confluence",
       "reason": "Listed in resume skills, but no direct approved professional-experience evidence bullet was available in the provided implementation spec."
     }
+  ],
+  "achievements": [
+    {
+      "id": "burdick",
+      "title": "Burdick Special Act Award",
+      "org": "U.S. Air Force",
+      "year": "2024",
+      "detail": "Peer-selected across the program for leadership, collaboration, and contributions.",
+      "featured": true
+    },
+    {
+      "id": "engineer-of-year",
+      "title": "SET Engineer of the Year (Group Level)",
+      "org": "Science, Engineering & Technology",
+      "year": "2024",
+      "detail": "Developmental Planning Engineer of the Year."
+    },
+    {
+      "id": "emerging-leader",
+      "title": "Defense Civilian Emerging Leader Program",
+      "org": "Department of Defense",
+      "year": "FY2024",
+      "detail": "Selected as one of 128 participants across the DoD."
+    },
+    {
+      "id": "outstanding-team",
+      "title": "Outstanding Engineer Team Award (Group Level)",
+      "org": "Science, Engineering & Technology",
+      "year": "2023",
+      "detail": "Recognized for team engineering impact."
+    }
   ]
 }

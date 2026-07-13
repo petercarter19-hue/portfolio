@@ -1080,15 +1080,29 @@ def _render_living_resume(
     # the timeline into this card — so earned status alone no longer excludes
     # it.
     _earned_statuses = {'Certified', 'Completed', 'Earned', 'Obtained'}
+    # Earned professional certifications (non-degree, already earned) now get
+    # their own Certifications card — e.g. the PMP.
+    resume_certifications = [
+        item
+        for item in resume_data['education']
+        if item['id'] not in degree_ids
+        and item.get('status') in _earned_statuses
+    ]
+    _certification_ids = {item['id'] for item in resume_certifications}
+    # Development gathers forward-looking growth (in-progress / upcoming
+    # non-degree items). Earned certs live in the Certifications card instead.
     resume_development = [
         item
         for item in resume_data['education']
         if item['id'] not in degree_ids
+        and item['id'] not in _certification_ids
         and (
             item.get('status') not in _earned_statuses
             or item.get('show_in_development')
         )
     ]
+    # Recognition / awards from the profile's own achievements list.
+    resume_achievements = resume_data.get('achievements', [])
     featured_resume_skills = [
         item
         for item in resume_data['skills']
@@ -1175,6 +1189,8 @@ def _render_living_resume(
         resume2_experience=resume2_experience,
         resume_degrees=resume_degrees,
         resume_development=resume_development,
+        resume_certifications=resume_certifications,
+        resume_achievements=resume_achievements,
         featured_resume_skills=featured_resume_skills,
         resume2_skill_groups=resume2_skill_groups,
         resume2_featured_skills=resume2_featured_skills,

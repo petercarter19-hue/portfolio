@@ -158,7 +158,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="r2-vertical-composition"', response_text)
         self.assertIn(
-            'css/resume2.css?v=skills-relocated-20',
+            'css/resume2.css?v=resume-cards-21',
             response_text,
         )
 
