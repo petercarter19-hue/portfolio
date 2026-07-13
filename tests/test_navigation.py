@@ -44,30 +44,36 @@ class NavigationTests(unittest.TestCase):
         parser.feed(response.get_data(as_text=True))
         return parser.links
 
-    def test_home_and_example_slate_are_distinct_destinations(self):
+    def test_petes_slate_and_home_are_distinct_destinations(self):
         homepage_links = self.parse_platform_links('/')
         profile_links = self.parse_platform_links('/petec')
 
         homepage_by_text = {link['text']: link for link in homepage_links}
         profile_by_text = {link['text']: link for link in profile_links}
 
-        self.assertEqual(homepage_by_text["Pete's Slate"]['attributes']['href'], '/')
-        self.assertEqual(profile_by_text["Pete's Slate"]['attributes']['href'], '/')
-        self.assertEqual(homepage_by_text['Example Slate']['attributes']['href'], '/petec')
-        self.assertEqual(profile_by_text['Example Slate']['attributes']['href'], '/petec')
         self.assertEqual(
-            homepage_by_text["Pete's Slate"]['attributes'].get('aria-current'),
-            'page',
+            homepage_by_text["Pete's Slate"]['attributes']['href'],
+            '/petec',
         )
-        self.assertNotIn('aria-current', homepage_by_text['Example Slate']['attributes'])
         self.assertEqual(
-            profile_by_text['Example Slate']['attributes'].get('aria-current'),
+            profile_by_text["Pete's Slate"]['attributes']['href'],
+            '/petec',
+        )
+        self.assertEqual(homepage_by_text['Home']['attributes']['href'], '/')
+        self.assertEqual(profile_by_text['Home']['attributes']['href'], '/')
+        self.assertEqual(
+            homepage_by_text['Home']['attributes'].get('aria-current'),
             'page',
         )
         self.assertNotIn(
             'aria-current',
-            profile_by_text["Pete's Slate"]['attributes'],
+            homepage_by_text["Pete's Slate"]['attributes'],
         )
+        self.assertEqual(
+            profile_by_text["Pete's Slate"]['attributes'].get('aria-current'),
+            'page',
+        )
+        self.assertNotIn('aria-current', profile_by_text['Home']['attributes'])
 
     def test_overview_renders_the_progressive_subheader_ai_field(self):
         overview = self.client.get('/petec', base_url='http://localhost')

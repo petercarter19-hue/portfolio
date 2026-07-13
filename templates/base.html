@@ -131,9 +131,10 @@
                 </div>
 
                 <ul class="platform-nav__links">
-                    {# Pete's Slate is the branded label for the PeerSlate homepage
-                       at "/". The Example Slate remains Pete's public profile. #}
-                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Pete's Slate</a></li>
+                    {# Pete's Slate always opens Pete's profile Overview. The
+                       cinematic PeerSlate landing experience remains available
+                       through the distinct Home link and the brand logo. #}
+                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Pete's Slate</a></li>
                     {# EXPERIENCE (2026-07-08): the cinematic homepage
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
@@ -143,7 +144,7 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Home</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     {# About points at Pete's profile-shell About (/petec/about) so it
                        carries the same slim solid header + centred sub-header as the
