@@ -1753,5 +1753,154 @@
       "year": "2023",
       "detail": "Recognized for team engineering impact."
     }
+  ],
+  "projects": [
+    {
+      "id": "interactive-resume",
+      "slug": "interactive-resume",
+      "number": "01",
+      "title": "Interactive Résumé & Verified Career Assistant",
+      "short_title": "Interactive Résumé",
+      "summary": "An interactive résumé and AI assistant that help you learn more about my work.",
+      "status": "Live",
+      "status_note": "Live on the site as an MVP",
+      "project_type": "Platform · AI · Web",
+      "tags": ["Platform", "AI", "Web"],
+      "technologies": ["Python", "Flask", "Jinja", "JavaScript", "JSON"],
+      "artifact_type": "digital",
+      "artifact_alt": "A translucent browser frame showing the live PeerSlate résumé interface with its AI career assistant",
+      "is_featured": true,
+      "is_demo": false,
+      "details_ready": true,
+      "publish_detail": true,
+      "noindex": false,
+      "live_url": "/petec/resume2",
+      "display_order": 1,
+      "cta": "Enter the project",
+      "case_study_sections": [
+        {
+          "section_key": "idea",
+          "eyebrow": "01",
+          "title": "The Idea",
+          "body": "A résumé should not merely state what someone has done. It should let people explore and verify it.",
+          "supporting_items": [
+            {"title": "Structured information", "detail": "Approved public résumé data modeled for clarity."},
+            {"title": "Evidence connection", "detail": "Claims stay linked to the proof behind them."},
+            {"title": "Recruiter exploration", "detail": "Explore roles, skills, projects, and results with depth."}
+          ]
+        },
+        {
+          "section_key": "problem",
+          "eyebrow": "02",
+          "title": "The Problem",
+          "body": "Traditional résumés are static by design. They flatten context, separate claims from proof, and make it hard to explore experience at different levels of depth.",
+          "supporting_items": [
+            {"title": "Static by nature", "detail": "One-size-fits-all documents can't adapt to different roles or audiences."},
+            {"title": "Context gets lost", "detail": "Accomplishments lack the surrounding context to convey real impact."},
+            {"title": "Claims without proof", "detail": "No direct link between what's claimed and the evidence behind it."},
+            {"title": "Hard to explore deeply", "detail": "Recruiters can't drill down into the details they care about most."}
+          ],
+          "closing": "We set out to reimagine the résumé as an interactive, verifiable experience that brings context, proof, and depth together — so people and AI can understand work as it really is."
+        },
+        {
+          "section_key": "role",
+          "eyebrow": "03",
+          "title": "My Role",
+          "body": "Pete shaped the concept and structure of the experience, connected approved public résumé data to a recruiter-focused interface, designed the evidence-linked navigation, and built the AI-assisted exploration flow.",
+          "supporting_items": [
+            {"title": "Concept", "detail": "Defined the core idea: turn a résumé into an interactive, verifiable story that helps recruiters quickly understand impact."},
+            {"title": "Information Architecture", "detail": "Structured the experience from high-level story to detailed evidence, optimized for clarity and recruiter workflows."},
+            {"title": "Evidence Linking", "detail": "Designed the navigation model that connects each claim to approved sources and supporting context."},
+            {"title": "AI-Assisted Experience", "detail": "Built the AI career assistant and exploration flow that helps visitors deepen understanding and ask follow-up questions."}
+          ]
+        },
+        {
+          "section_key": "build",
+          "eyebrow": "04",
+          "title": "The Build",
+          "body": "A Flask and Jinja feature that turns approved public résumé data into a recruiter-focused, evidence-linked interactive experience.",
+          "supporting_items": [
+            {"title": "Built for recruiters", "detail": "Scannable sections, evidence-linked claims, and a clean comparative layout help visitors make confident reads."},
+            {"title": "Modular evidence cards", "detail": "Each claim is supported by approved public evidence that can be inspected in context."}
+          ],
+          "system_layout": [
+            {"from": "Structured résumé data", "to": "Recruiter navigation"},
+            {"from": "Evidence cards", "to": "AI-assisted questions"}
+          ]
+        },
+        {
+          "section_key": "decisions",
+          "eyebrow": "05",
+          "title": "The Decisions",
+          "body": "Design choices guided by trust, clarity, and usefulness — so every visitor gets accurate answers and a better path forward.",
+          "supporting_items": [
+            {"title": "Tie every claim to visible proof", "detail": "Show sources and approval status for experience, skills, and outcomes.", "why": "Builds trust through transparency and lets visitors validate information quickly."},
+            {"title": "Ground AI responses in approved public information", "detail": "Limit answers to approved résumé data and public sources.", "why": "Prevents speculation and ensures answers stay accurate, ethical, and explainable."},
+            {"title": "Support multiple reading depths", "detail": "Surface key takeaways up front with the option to explore deeper details.", "why": "Respects different goals and time constraints without overwhelming the experience."},
+            {"title": "Make it useful for more than one user", "detail": "Design for recruiters, hiring managers, collaborators, and curious visitors.", "why": "Each audience gets what they need, whether evaluating fit or learning about the work."}
+          ]
+        },
+        {
+          "section_key": "result",
+          "eyebrow": "06",
+          "title": "The Result",
+          "body": "This project is live on the site as an MVP. It transforms approved public résumé information into a recruiter-focused, evidence-linked interactive experience and establishes the foundation for future case studies and deeper storytelling.",
+          "supporting_items": [
+            {"title": "Live on site", "detail": "Running as an MVP experience, continuously refined with real-world feedback."},
+            {"title": "Evidence-linked", "detail": "Claims connect to approved public evidence for confidence and transparency."},
+            {"title": "AI-assisted exploration", "detail": "AI helps visitors surface context and explore the work through natural language."},
+            {"title": "Extensible case-study foundation", "detail": "Built as a scalable pattern for future case studies and deeper project storytelling."}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "senior-project",
+      "slug": "senior-project",
+      "number": "02",
+      "title": "Senior Project",
+      "short_title": "Senior Project",
+      "summary": "Project details are being documented.",
+      "status": "Completed",
+      "status_note": "Case study in preparation",
+      "project_type": "Academic Project",
+      "tags": ["Academic Project"],
+      "technologies": [],
+      "artifact_type": "academic",
+      "artifact_alt": "A closed engineering notebook with abstract technical drawings, representing a case study in preparation",
+      "is_featured": false,
+      "is_demo": false,
+      "details_ready": false,
+      "publish_detail": false,
+      "noindex": false,
+      "live_url": "",
+      "display_order": 2,
+      "cta": "",
+      "case_study_sections": []
+    },
+    {
+      "id": "sample-home-build",
+      "slug": "sample-home-build",
+      "number": "03",
+      "title": "Sample: Home Build Project",
+      "short_title": "Sample Home Build",
+      "summary": "Layout preview only. Not a real portfolio project or outcome.",
+      "status": "Demonstration",
+      "status_note": "Demonstration project — layout preview only",
+      "project_type": "Physical Build",
+      "tags": ["Physical Build"],
+      "technologies": [],
+      "artifact_type": "physical",
+      "artifact_alt": "An architectural model with plan sheets and material samples, shown as demonstration layout content only",
+      "is_featured": false,
+      "is_demo": true,
+      "details_ready": false,
+      "publish_detail": false,
+      "noindex": true,
+      "live_url": "",
+      "display_order": 3,
+      "cta": "",
+      "case_study_sections": []
+    }
   ]
 }

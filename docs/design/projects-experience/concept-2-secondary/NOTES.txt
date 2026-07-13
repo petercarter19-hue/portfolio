@@ -1,0 +1,15 @@
+CONCEPT 2 - THE PROJECT FILM (15% weight: narrative pacing only)
+
+Contributes to the build:
+- Documentary-like pacing inside the case study
+- Six chapters: The Idea / The Problem / My Role / The Build /
+  The Decisions / The Result
+- Chapters feel like deliberate scenes, not stacked content cards
+- Scene-to-scene rhythm with generous vertical space
+- Graceful incomplete-project treatment ("The complete case study has
+  not yet been added") - applied to Senior Project
+- Projects with limited information simply show fewer sections; the
+  interface never pressures fabrication
+
+Does NOT contribute:
+- The Projects index design (no literal filmstrip rail)
