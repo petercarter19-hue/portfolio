@@ -587,10 +587,44 @@ def my_story():
 
     return render_template('my_story.html', story=story)
 
+# PROJECTS EXHIBITION (2026-07-13): the Projects page is now a cinematic
+# three-panel exhibition (Concept 1 of the master hybrid brief in
+# docs/design/projects-experience/). Projects are profile-scoped data from
+# the profile's resume fixture — never hardcoded into templates — so the
+# same components render any profile's projects.
+def _load_profile_projects(profile_slug):
+    """Return the profile's ordered, publishable project list."""
+    resume_data = _load_resume_profile(profile_slug)
+    if resume_data is None:
+        return None
+    projects = [dict(p) for p in resume_data.get('projects', [])]
+    projects.sort(key=lambda p: p.get('display_order', 99))
+    return projects
+
+
 @app.route('/work')
 @app.route('/petec/work')
 def work():
-    return render_template('work.html')
+    projects = _load_profile_projects('petec') or []
+    return render_template('work.html', projects=projects)
+
+
+@app.route('/petec/work/<slug>')
+def project_case_study(slug):
+    """A project's documentary-style case study. Only projects whose record
+    is ready AND approved for publishing get a detail page — incomplete and
+    demonstration projects intentionally 404 here rather than rendering
+    invented content."""
+    projects = _load_profile_projects('petec') or []
+    project = next((p for p in projects if p.get('slug') == slug), None)
+    if (
+        project is None
+        or not project.get('details_ready')
+        or not project.get('publish_detail')
+        or not project.get('case_study_sections')
+    ):
+        abort(404)
+    return render_template('project_case_study.html', project=project, projects=projects)
 
 @app.route('/slate-board')
 @app.route('/petec/slate-board')
