@@ -1,0 +1,370 @@
+{
+  "_comment": "Projects Board fixture for the /petec/work experience. This is a profile-scoped, editor-friendly view model: every card + detail-modal field lives here so a future edit UI (or the owner) can add/change projects without touching the template. Loaded by app.py `_load_project_board`. Fixture/demo content for the 'petec' profile only — reusable components must never hardcode any of this.",
+  "profile_slug": "petec",
+  "board": {
+    "title": "Projects",
+    "subtitle": "The work I’m building, shipping, and learning from.",
+    "page_size": 6
+  },
+  "projects": [
+    {
+      "id": "peerslate-platform",
+      "slug": "peerslate-platform",
+      "title": "PeerSlate Platform",
+      "summary": "Building an AI-powered platform that connects goals, projects, and people.",
+      "status": "active",
+      "status_label": "Active",
+      "progress": 75,
+      "tags": ["Web App", "SaaS", "AI"],
+      "is_featured": true,
+      "card_image": { "kind": "photo", "src": "images/projects/peerslate-home.jpg", "fallback_theme": "platform", "alt": "The PeerSlate homepage — Your Work. Your Story. Your Future." },
+      "detail": {
+        "logo": { "kind": "brand", "alt": "PeerSlate logo" },
+        "hero_device": { "kind": "photo", "src": "images/projects/peerslate-home.jpg", "fallback_theme": "platform", "alt": "The PeerSlate homepage hero" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "https://peerslate.com/petec", "note": "Ignored for now" },
+          "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
+          "roadmap": { "enabled": false, "url": "", "note": "Ignored for now" }
+        },
+        "about": "PeerSlate helps people turn goals into action, track progress, and build a story worth remembering.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Productivity",
+          "type": "Web Application",
+          "status": "Active",
+          "visibility": "Public",
+          "created": "Jun 27, 2026",
+          "team": { "count": 1, "note": "Solo build" }
+        },
+        "tech_stack": [
+          { "name": "Python", "key": "python" },
+          { "name": "Flask", "key": "flask" },
+          { "name": "JavaScript", "key": "javascript" },
+          { "name": "PostgreSQL", "key": "postgresql" },
+          { "name": "Azure", "key": "azure" },
+          { "name": "Jinja", "key": "jinja" }
+        ],
+        "key_features": [
+          "Living Résumé & Evidence",
+          "Slate Board (goals & progress)",
+          "AI Career Assistant",
+          "The Slate community feed",
+          "Interview Me studio",
+          "Story & Résumé integration"
+        ],
+        "updates": [
+          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Projects experience + résumé polish", "body": "Shipped the Projects experience and tightened the résumé evidence cards for clearer, more scannable proof." },
+          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Interview Workspace redesign", "body": "Rebuilt Interview Me into a three-mode Interview Workspace: Interview Me, Interview You, and Video Me." },
+          { "date_label": "JUL 12", "date_iso": "2026-07-12", "title": "My Story reached its first MVP", "body": "Cinematic, editorial storytelling for My Story — the first fully realized narrative pass on the platform." },
+          { "date_label": "JUL 12", "date_iso": "2026-07-12", "title": "Atrium ‘Living Triptych’ + career shapes", "body": "Launched the experimental Atrium overview and validated six different career shapes against the structured data model." },
+          { "date_label": "JUL 11", "date_iso": "2026-07-11", "title": "Living Résumé reached its first MVP", "body": "The Living Résumé hit MVP on top of a new structured career-data contract that powers every résumé view." },
+          { "date_label": "JUL 10", "date_iso": "2026-07-10", "title": "Overview overhaul", "body": "Reworked the profile Overview into a five-scene editorial homepage built from approved mockups." },
+          { "date_label": "JUL 09", "date_iso": "2026-07-09", "title": "Editorial-glass visual system", "body": "Introduced the pale editorial field background and premium glass card finish across the site." },
+          { "date_label": "JUN 28", "date_iso": "2026-06-28", "title": "AI Career Assistant MVP", "body": "Shipped the AI Career Assistant, grounded only in approved public portfolio evidence." },
+          { "date_label": "JUN 27", "date_iso": "2026-06-27", "title": "PeerSlate begins", "body": "First commit of the platform — the Flask app, base layout, and homepage scaffold." }
+        ],
+        "milestones": [
+          { "title": "AI Career Assistant MVP", "date_label": "JUN 28", "done": true },
+          { "title": "Living Résumé MVP", "date_label": "JUL 11", "done": true },
+          { "title": "My Story MVP", "date_label": "JUL 12", "done": true },
+          { "title": "Projects Experience", "date_label": "JUL 13", "done": true },
+          { "title": "Public Launch", "date_label": "TBD", "done": false }
+        ],
+        "media": [
+          { "src": "images/mockups/reume2.png", "alt": "The Living Résumé interface", "caption": "Living Résumé" },
+          { "src": "images/projects/living-resume-build.jpg", "alt": "Building the Living Résumé", "caption": "Build in progress" },
+          { "src": "images/background-templates/peerslate-editorial-field.jpg", "alt": "PeerSlate editorial field background", "caption": "Editorial glass system" }
+        ],
+        "links": [
+          { "label": "peerslate.com", "sub": "The live site", "url": "https://peerslate.com/petec", "kind": "web" },
+          { "label": "Microsoft Azure", "sub": "Hosting & pipeline", "url": "https://portal.azure.com", "kind": "cloud" },
+          { "label": "GitHub", "sub": "Source repository", "url": "https://github.com/petercarter19-hue/portfolio", "kind": "code" }
+        ],
+        "notes": [
+          { "body": "Keep every AI answer grounded in approved public evidence — a proposal, never an automatic edit." },
+          { "body": "Default new content and voice-created drafts to private; publishing stays a separate, explicit action." },
+          { "body": "Reusable components stay generic — no hardcoded employers, dates, or metrics. Pete’s content is fixture only." }
+        ]
+      }
+    },
+    {
+      "id": "home-gym-build",
+      "slug": "home-gym-build",
+      "title": "Home Gym Build",
+      "summary": "Designing and building my ultimate home training space.",
+      "status": "active",
+      "status_label": "Active",
+      "progress": 45,
+      "tags": ["Personal", "Build"],
+      "is_featured": false,
+      "card_image": { "kind": "photo", "src": "images/projects/home-gym.jpg", "fallback_theme": "fitness", "alt": "Pete's home garage gym — rack, weights, and conditioning space" },
+      "detail": {
+        "logo": { "kind": "illustration", "theme": "fitness", "alt": "Home Gym Build" },
+        "hero_device": { "kind": "photo", "src": "images/projects/home-gym.jpg", "fallback_theme": "fitness", "alt": "Pete's home garage gym" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "", "note": "Ignored for now" },
+          "github": { "enabled": false, "url": "" },
+          "roadmap": { "enabled": false, "url": "" }
+        },
+        "about": "Turning the garage into a complete home training space — rack, platform, conditioning, and recovery, built to last.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Personal",
+          "type": "Build Project",
+          "status": "Active",
+          "visibility": "Private",
+          "created": "Jun 20, 2026",
+          "team": { "count": 1, "note": "Solo build" }
+        },
+        "tech_stack": [],
+        "key_features": [
+          "Power rack & platform",
+          "Adjustable bench + dumbbells",
+          "Conditioning corner",
+          "Rubber flooring & storage",
+          "Mobility & recovery zone"
+        ],
+        "updates": [
+          { "date_label": "JUL 06", "date_iso": "2026-07-06", "title": "Flooring down", "body": "Laid the rubber flooring and set the platform footprint." },
+          { "date_label": "JUN 28", "date_iso": "2026-06-28", "title": "Rack assembled", "body": "Power rack built and anchored; first session done." },
+          { "date_label": "JUN 20", "date_iso": "2026-06-20", "title": "Planning & layout", "body": "Measured the space and sketched the equipment layout." }
+        ],
+        "milestones": [
+          { "title": "Space cleared & measured", "date_label": "JUN 20", "done": true },
+          { "title": "Rack & platform", "date_label": "JUN 28", "done": true },
+          { "title": "Conditioning corner", "date_label": "TBD", "done": false },
+          { "title": "Recovery zone", "date_label": "TBD", "done": false }
+        ],
+        "media": [],
+        "links": [],
+        "notes": [
+          { "body": "Prioritize the platform and rack first; conditioning gear can come later." }
+        ]
+      }
+    },
+    {
+      "id": "interview-experience",
+      "slug": "interview-experience",
+      "title": "Interview Experience",
+      "summary": "AI-powered mock interviews with feedback and coaching.",
+      "status": "active",
+      "status_label": "Active",
+      "progress": 60,
+      "tags": ["AI", "Interview", "Web"],
+      "is_featured": false,
+      "card_image": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Workspace" },
+      "detail": {
+        "logo": { "kind": "illustration", "theme": "interview", "alt": "Interview Experience" },
+        "hero_device": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Workspace" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/interview-me", "note": "Ignored for now" },
+          "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
+          "roadmap": { "enabled": false, "url": "" }
+        },
+        "about": "A practice studio that runs AI-powered mock interviews, then returns structured feedback and coaching so answers get sharper every round.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Career",
+          "type": "Web Application",
+          "status": "Active",
+          "visibility": "Public",
+          "created": "Jul 01, 2026",
+          "team": { "count": 1, "note": "Solo build" }
+        },
+        "tech_stack": [
+          { "name": "Python", "key": "python" },
+          { "name": "Flask", "key": "flask" },
+          { "name": "JavaScript", "key": "javascript" }
+        ],
+        "key_features": [
+          "Interview Me practice mode",
+          "Model answers & feedback",
+          "Behavioral & STAR coaching",
+          "Video Me studio (preview)"
+        ],
+        "updates": [
+          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Three-mode workspace", "body": "Reworked into Interview Me, Interview You, and Video Me modes." },
+          { "date_label": "JUL 05", "date_iso": "2026-07-05", "title": "Feedback loop", "body": "Added structured feedback after each practice answer." }
+        ],
+        "milestones": [
+          { "title": "Practice studio MVP", "date_label": "JUL 05", "done": true },
+          { "title": "Interview Workspace", "date_label": "JUL 13", "done": true },
+          { "title": "Video studio", "date_label": "TBD", "done": false }
+        ],
+        "media": [],
+        "links": [
+          { "label": "Interview Me", "sub": "Try the studio", "url": "https://peerslate.com/petec/interview-me", "kind": "web" }
+        ],
+        "notes": [
+          { "body": "Keep the video studio feature-flagged until the experience is solid." }
+        ]
+      }
+    },
+    {
+      "id": "living-resume",
+      "slug": "living-resume",
+      "title": "Living Résumé",
+      "summary": "A dynamic résumé that connects story, skills, and proof.",
+      "status": "completed",
+      "status_label": "Completed",
+      "progress": 100,
+      "tags": ["Web", "Design"],
+      "is_featured": false,
+      "card_image": { "kind": "photo", "src": "images/projects/living-resume-build.jpg", "fallback_theme": "resume", "alt": "The Living Résumé shown on a tablet" },
+      "detail": {
+        "logo": { "kind": "illustration", "theme": "resume", "alt": "Living Résumé" },
+        "hero_device": { "kind": "photo", "src": "images/mockups/reume2.png", "fallback_theme": "resume", "alt": "The Living Résumé interface" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/resume2", "note": "Ignored for now" },
+          "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
+          "roadmap": { "enabled": false, "url": "" }
+        },
+        "about": "A résumé that doesn’t just state what you’ve done — it lets people explore and verify it, connecting story, skills, and the proof behind each claim.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Career",
+          "type": "Web Feature",
+          "status": "Completed (MVP)",
+          "visibility": "Public",
+          "created": "Jul 01, 2026",
+          "team": { "count": 1, "note": "Solo build" }
+        },
+        "tech_stack": [
+          { "name": "Python", "key": "python" },
+          { "name": "Flask", "key": "flask" },
+          { "name": "Jinja", "key": "jinja" },
+          { "name": "JavaScript", "key": "javascript" }
+        ],
+        "key_features": [
+          "Structured career data model",
+          "Evidence-linked claims",
+          "Skills with proof points",
+          "ATS-friendly PDF path"
+        ],
+        "updates": [
+          { "date_label": "JUL 11", "date_iso": "2026-07-11", "title": "Reached first MVP", "body": "The Living Résumé hit MVP on a shared structured career-data contract." },
+          { "date_label": "JUL 12", "date_iso": "2026-07-12", "title": "Skills grid + evidence popup", "body": "Added the skills chip grid with evidence popups and timeline polish." }
+        ],
+        "milestones": [
+          { "title": "Structured data contract", "date_label": "JUL 11", "done": true },
+          { "title": "Living Résumé MVP", "date_label": "JUL 11", "done": true },
+          { "title": "Evidence popups", "date_label": "JUL 12", "done": true }
+        ],
+        "media": [
+          { "src": "images/mockups/reume2.png", "alt": "Living Résumé interface", "caption": "Living Résumé" },
+          { "src": "images/projects/living-resume-build.jpg", "alt": "Building the Living Résumé", "caption": "Build in progress" }
+        ],
+        "links": [
+          { "label": "View the résumé", "sub": "Live on the site", "url": "https://peerslate.com/petec/resume2", "kind": "web" },
+          { "label": "GitHub", "sub": "Source repository", "url": "https://github.com/petercarter19-hue/portfolio", "kind": "code" }
+        ],
+        "notes": [
+          { "body": "Always keep a traditional ATS-friendly PDF/download path alongside the interactive view." }
+        ]
+      }
+    },
+    {
+      "id": "nashville-trip",
+      "slug": "nashville-trip",
+      "title": "Nashville Trip",
+      "summary": "Exploring Nashville with Danielle. Memories & experiences.",
+      "status": "completed",
+      "status_label": "Completed",
+      "progress": 100,
+      "tags": ["Personal", "Travel"],
+      "is_featured": false,
+      "card_image": { "kind": "illustration", "theme": "travel", "alt": "Illustration of a city skyline at sunset over a river" },
+      "detail": {
+        "logo": { "kind": "illustration", "theme": "travel", "alt": "Nashville Trip" },
+        "hero_device": { "kind": "illustration", "theme": "travel", "alt": "Nashville skyline" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "", "note": "Ignored for now" },
+          "github": { "enabled": false, "url": "" },
+          "roadmap": { "enabled": false, "url": "" }
+        },
+        "about": "A long weekend in Nashville with Danielle — music, food, and a change of pace. Captured here as memories, not a work project.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Personal",
+          "type": "Travel",
+          "status": "Completed",
+          "visibility": "Private",
+          "created": "Jun 10, 2026",
+          "team": { "count": 2, "note": "Pete & Danielle" }
+        },
+        "tech_stack": [],
+        "key_features": [
+          "Live music on Broadway",
+          "Food & coffee spots",
+          "River & downtown walks",
+          "Photos & memories"
+        ],
+        "updates": [
+          { "date_label": "JUN 16", "date_iso": "2026-06-16", "title": "Home again", "body": "Back home with a camera roll full of memories." },
+          { "date_label": "JUN 14", "date_iso": "2026-06-14", "title": "Broadway night", "body": "Live music all evening downtown." }
+        ],
+        "milestones": [
+          { "title": "Trip planned", "date_label": "JUN 01", "done": true },
+          { "title": "Nashville weekend", "date_label": "JUN 14", "done": true },
+          { "title": "Photos organized", "date_label": "JUN 20", "done": true }
+        ],
+        "media": [],
+        "links": [],
+        "notes": [
+          { "body": "Personal memory — kept private." }
+        ]
+      }
+    },
+    {
+      "id": "book-tracker-app",
+      "slug": "book-tracker-app",
+      "title": "Book Tracker App",
+      "summary": "Planning a minimal book tracking app for readers.",
+      "status": "on-deck",
+      "status_label": "On Deck",
+      "progress": null,
+      "tags": ["Mobile", "Personal"],
+      "is_featured": false,
+      "card_image": { "kind": "illustration", "theme": "book", "alt": "Illustration of a book tracking app on a phone" },
+      "detail": {
+        "logo": { "kind": "illustration", "theme": "book", "alt": "Book Tracker App" },
+        "hero_device": { "kind": "illustration", "theme": "book", "alt": "Book tracker app on a phone" },
+        "actions": {
+          "view_live": { "enabled": false, "url": "", "note": "Ignored for now" },
+          "github": { "enabled": false, "url": "" },
+          "roadmap": { "enabled": false, "url": "" }
+        },
+        "about": "A minimal app for readers to track what they’re reading, set goals, and remember what they loved — still in the planning stage.",
+        "latest_update_ref": 0,
+        "info": {
+          "category": "Personal",
+          "type": "Mobile App",
+          "status": "On Deck",
+          "visibility": "Private",
+          "created": "Jul 10, 2026",
+          "team": { "count": 1, "note": "Solo build" }
+        },
+        "tech_stack": [],
+        "key_features": [
+          "Reading list & shelves",
+          "Reading goals & streaks",
+          "Notes & highlights",
+          "Simple, distraction-free UI"
+        ],
+        "updates": [
+          { "date_label": "JUL 10", "date_iso": "2026-07-10", "title": "Idea captured", "body": "Sketched the core idea and the first few screens." }
+        ],
+        "milestones": [
+          { "title": "Concept & sketches", "date_label": "JUL 10", "done": true },
+          { "title": "Prototype", "date_label": "TBD", "done": false },
+          { "title": "First build", "date_label": "TBD", "done": false }
+        ],
+        "media": [],
+        "links": [],
+        "notes": [
+          { "body": "Keep it minimal — resist feature creep. The whole point is a calm reading log." }
+        ]
+      }
+    }
+  ]
+}
