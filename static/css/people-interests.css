@@ -52,6 +52,52 @@
     color: #45566e;
 }
 
+.pi-strip__nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.45rem;
+}
+
+/* The old Slate Feed landing's hub destinations — quiet links under
+   the feed tabs since the board took over /the-slate. */
+.pi-strip__hub {
+    display: flex;
+    gap: 1.1rem;
+    padding-right: 0.55rem;
+}
+
+.pi-strip__hub a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    font-size: 0.74rem;
+    font-weight: 650;
+    color: #5b6c85;
+    text-decoration: none;
+    transition: color 150ms ease;
+}
+
+.pi-strip__hub a svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-strip__hub a:hover,
+.pi-strip__hub a:focus-visible {
+    color: #4f5bd5;
+    text-decoration: underline;
+}
+
+@media (max-width: 47.9375rem) {
+    .pi-strip__nav { align-items: flex-start; }
+}
+
 .pi-strip__tabs {
     display: flex;
     gap: 0.4rem;

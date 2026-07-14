@@ -836,12 +836,12 @@ def skills():
 
 @app.route('/the-slate')
 def the_slate():
-    # Tab 1 — Slate Feed, with the People layer active (the layer that
-    # best shows the PeerSlate idea: people connected by public goals).
-    return render_template(
-        'the_slate_feed.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
+    # THE SLATE LANDING = the People & Interests living board (2026-07-14,
+    # Pete): the approved corkboard feed replaced the old Slate Feed landing
+    # at this address. The previous landing template (the_slate_feed.html)
+    # stays on disk for easy rollback, and its hub links (Slate Board /
+    # My Slate / Daily Slate) now live in the board's feed strip.
+    return _render_people_interests_board()
 
 
 @app.route('/the-slate/my-slate')
@@ -966,16 +966,13 @@ def slate_feed_break():
     )
 
 
-# PS-FEAT-002 (2026-07-13): the People & Interests living board — the
-# corkboard-style continuous social feed built from Pete's two approved
-# mockups. It lives on its OWN route as a parallel, reviewable experience;
-# the current /the-slate landing is untouched until this version is
-# approved to replace it. The board itself is rendered by
-# static/js/people-interests.js from /api/feed/people-interests (cursor
-# pagination); the supporting rails render server-side from the same
+# PS-FEAT-002: the People & Interests living board — the corkboard-style
+# continuous social feed built from Pete's two approved mockups. Approved on
+# 2026-07-14 to BE The Slate landing (the_slate() above). The board is
+# rendered by static/js/people-interests.js from /api/feed/people-interests
+# (cursor pagination); the supporting rails render server-side from the same
 # fixture file. Every non-Pete author is a representative sample member.
-@app.route('/the-slate/people-interests')
-def the_slate_people_interests():
+def _render_people_interests_board():
     return render_template(
         'the_slate_people_interests.html',
         initial_feed=people_interests_feed.get_page(limit=16),
@@ -986,6 +983,13 @@ def the_slate_people_interests():
         goal_reaction=GOAL_REACTION,
         post_body_max=POST_BODY_MAX,
     )
+
+
+@app.route('/the-slate/people-interests')
+def the_slate_people_interests():
+    # The board launched at this address (2026-07-13) and became The Slate
+    # landing the next day — forward so any shared link keeps working.
+    return redirect(url_for('the_slate'), code=302)
 
 
 # Old /slate-feed addresses: everything moved into The Slate on
