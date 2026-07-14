@@ -104,6 +104,7 @@ def shared_navigation_urls():
         # the page that actually hosts the #how-it-works anchor.
         'peerslate_home_url': url_for('peerslate_home'),
         'portfolio_home_url': portfolio_url(),
+        'portfolio_atrium_url': portfolio_url('atrium'),
         'portfolio_work_url': portfolio_url('work'),
         'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
@@ -152,7 +153,7 @@ def keep_portfolio_on_canonical_path():
     old_portfolio_paths = {'/pete', '/portfolio'}
     # /skills is a real page again (the Skills profile tab), so it now
     # canonicalizes to /petec/skills like every other portfolio section.
-    section_paths = {'/about', '/contact', '/hobbies', '/interview-me', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
+    section_paths = {'/about', '/atrium', '/contact', '/hobbies', '/interview-me', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
 
     if request.path in old_portfolio_paths:
         return redirect('/petec', code=302)
@@ -342,6 +343,116 @@ def home():
 @app.route('/pete')
 def portfolio_home():
     return render_template('index.html')
+
+
+@app.route('/atrium')
+@app.route('/petec/atrium')
+def atrium():
+    """Render the isolated Living Triptych arrival experiment.
+
+    Pete's records are fixture content for this first vertical slice. The
+    template receives a compact, generic view model so no employer, date,
+    metric, or image path is embedded in the reusable slab markup.
+    """
+    profile_slug = 'petec'
+    resume_data = _load_resume_profile(profile_slug)
+
+    story_path = os.path.join(
+        os.path.dirname(__file__),
+        'static',
+        'data',
+        'story_data.json',
+    )
+    with open(story_path, 'r', encoding='utf-8') as story_file:
+        story_data = json.load(story_file)
+
+    if story_data.get('profile_slug') != profile_slug:
+        abort(404)
+
+    story_images = [
+        card['image']
+        for act in story_data.get('acts', [])
+        for card in act.get('cards', [])
+        if card.get('type') == 'image' and card.get('image')
+    ][:4]
+
+    role_by_id = {
+        role['id']: role
+        for role in resume_data.get('career_roles', [])
+    }
+    resume_chapters = []
+    for event in reversed(resume_data.get('living_resume', {}).get('events', [])):
+        if event.get('source') != 'role':
+            continue
+        role = role_by_id.get(event.get('source_id'))
+        if role is None:
+            continue
+        resume_chapters.append({
+            'id': event['id'],
+            'period': event.get('display_period', ''),
+            'title': role['title'],
+            'organization': role['employer'],
+        })
+
+    metric_by_id = {
+        metric['id']: metric
+        for metric in resume_data.get('metrics', [])
+        if metric.get('id') != 'micap'
+    }
+    resume_metrics = [
+        metric_by_id[metric_id]
+        for metric_id in resume_data.get('living_resume', {}).get('career_highlight_metric_ids', [])
+        if metric_id in metric_by_id
+    ][:3]
+
+    applied_projects = resume_data.get('applied_projects', [])
+    featured_project = applied_projects[0] if applied_projects else None
+    project_signals = []
+    if featured_project:
+        for group in featured_project.get('features', []):
+            if group.get('items'):
+                project_signals.append({
+                    'label': group.get('label', 'Project'),
+                    'detail': group['items'][0],
+                })
+
+    profile = resume_data['profile']
+    profile_name = profile['name'].strip()
+    triptych = {
+        'identity': {
+            'name': profile_name,
+            'first_name': profile_name.split()[0] if profile_name else 'Profile',
+            'dimensions': ['Person', 'Builder', 'Engineer'],
+            'summary': 'Three dimensions of one career.',
+        },
+        'story': {
+            'title': 'My Story',
+            'dimension': 'Person',
+            'lead': 'The life that shaped the work.',
+            'values': story_data.get('closing_values', [])[:3],
+            'images': story_images,
+            'destination': url_for('my_story'),
+        },
+        'projects': {
+            'title': 'Projects',
+            'dimension': 'Builder',
+            'lead': 'Ideas engineered into working systems.',
+            'featured': featured_project,
+            'featured_label': 'Interactive Resume and evidence-grounded career assistant',
+            'signals': project_signals[:3],
+            'destination': url_for('work'),
+        },
+        'resume': {
+            'title': 'Living Résumé',
+            'dimension': 'Engineer',
+            'lead': 'The record, connected to the evidence.',
+            'chapters': resume_chapters[:3],
+            'metrics': resume_metrics,
+            'destination': url_for('profile_resume2', profile_slug=profile_slug),
+        },
+    }
+
+    return render_template('atrium.html', triptych=triptych)
 
 @app.route('/peerslate')
 def peerslate_home():

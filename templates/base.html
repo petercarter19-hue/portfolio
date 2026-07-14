@@ -38,7 +38,8 @@
                the screen — pixel-perfect desktop, handled natively. */
             var nativeResponsivePath = window.location.pathname === '/resume'
                 || window.location.pathname === '/_internal/living-resume-v2'
-                || /\/resume2?$/.test(window.location.pathname);
+                || /\/resume2?$/.test(window.location.pathname)
+                || /\/atrium$/.test(window.location.pathname);
             if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
@@ -102,6 +103,7 @@
 <body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
     {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
+    {% set is_atrium_page = request.path in ['/atrium', '/petec/atrium'] %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -134,6 +136,7 @@
                     {# Pete's Slate is the branded label for the PeerSlate homepage
                        at "/". The Example Slate remains Pete's public profile. #}
                     <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Pete's Slate</a></li>
+                    <li><a href="{{ portfolio_atrium_url }}" {% if is_atrium_page %}aria-current="page"{% endif %}>Atrium</a></li>
                     {# EXPERIENCE (2026-07-08): the cinematic homepage
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
@@ -143,7 +146,7 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
+                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/atrium', '/petec/atrium', '/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Example Slate</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     {# About points at Pete's profile-shell About (/petec/about) so it
                        carries the same slim solid header + centred sub-header as the
@@ -191,7 +194,7 @@
 
         {# Keep the profile navigation inside the sticky global header so the
            two navigation levels read as one connected piece of chrome. #}
-        {% if request.path != '/' %}
+        {% if request.path != '/' and not is_atrium_page %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>
@@ -305,6 +308,7 @@
     <script id="nav-search-data" type="application/json">
     [
         {"title": "Overview", "sub": "Pete's slate home", "href": "{{ portfolio_home_url }}", "keys": "home overview profile pete carter example slate"},
+        {"title": "Atrium", "sub": "Living Triptych experiment", "href": "{{ portfolio_atrium_url }}", "keys": "atrium living triptych arrival story projects resume experiment"},
         {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
         {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
         {"title": "Projects", "sub": "Practical builds with purpose", "href": "{{ portfolio_work_url }}", "keys": "projects work builds apps case studies traceability dashboard"},
