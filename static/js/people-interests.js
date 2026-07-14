@@ -145,19 +145,71 @@
         return pin;
     }
 
-    function reactionTotal(post) {
-        var total = 0;
-        Object.keys(post.reactions || {}).forEach(function (key) {
-            total += post.reactions[key];
+    // Reactions to show for a post: fixture counts plus the viewer's own
+    // per-browser reactions layered on top (mirroring the overlay's display
+    // math). Ordered strongest-first. The goal-only reaction stays on goals.
+    function reactionEntries(post) {
+        var all = REACTIONS.concat(
+            (GOAL_REACTION && post.content_type === 'goal') ? [GOAL_REACTION] : []
+        );
+        var localMine = viewerReactions()[post.id] || [];
+        var serverMine = post.viewer_reactions || null;
+        var server = post.reactions || {};
+        var entries = [];
+        all.forEach(function (reaction) {
+            var localHas = localMine.indexOf(reaction.key) !== -1;
+            var serverHas = serverMine ? serverMine.indexOf(reaction.key) !== -1 : false;
+            // Show the viewer's *current* intent immediately: the fixture/server
+            // base count already includes their reaction iff serverHas, so swap
+            // that for their live local state. Add and remove both land on the
+            // optimistic click, and it never double-counts once the server
+            // confirms. (Pre-launch there is no serverMine, so this is just
+            // base + the viewer's own local reaction.)
+            var count = (server[reaction.key] || 0) - (serverHas ? 1 : 0) + (localHas ? 1 : 0);
+            if (count > 0) {
+                entries.push({ reaction: reaction, count: count, mine: localHas });
+            }
         });
-        return total;
+        entries.sort(function (a, b) { return b.count - a.count; });
+        return entries;
     }
 
-    function topReactionEmojis(post) {
-        var all = REACTIONS.concat(GOAL_REACTION ? [GOAL_REACTION] : []);
-        var present = all.filter(function (r) { return (post.reactions || {})[r.key] > 0; });
-        present.sort(function (a, b) { return post.reactions[b.key] - post.reactions[a.key]; });
-        return present.slice(0, 2).map(function (r) { return r.emoji; }).join('');
+    function reactionTotal(post) {
+        return reactionEntries(post).reduce(function (sum, entry) { return sum + entry.count; }, 0);
+    }
+
+    // Little emoji stickers "pressed" onto the board note so a post's
+    // reactions read at a glance from the board. Decorative only.
+    function buildStickers(post) {
+        var entries = reactionEntries(post).slice(0, 3);
+        if (!entries.length) { return null; }
+        var wrap = el('span', 'pi-card__stickers');
+        wrap.setAttribute('aria-hidden', 'true');
+        entries.forEach(function (entry) {
+            var chip = el('span', 'pi-sticker', entry.reaction.emoji);
+            chip.dataset.key = entry.reaction.key;
+            wrap.appendChild(chip);
+        });
+        return wrap;
+    }
+
+    // The board card's reaction + comment counts (footer, right-aligned).
+    function buildSocial(post) {
+        var social = el('span', 'pi-card__social');
+        var reactions = reactionTotal(post);
+        if (reactions > 0) {
+            var reactMini = el('span', 'pi-mini');
+            reactMini.appendChild(svgIcon(ICONS.heart));
+            reactMini.appendChild(document.createTextNode(' ' + reactions));
+            social.appendChild(reactMini);
+        }
+        if (post.comment_count > 0) {
+            var commentMini = el('span', 'pi-mini');
+            commentMini.appendChild(svgIcon(ICONS.comment));
+            commentMini.appendChild(document.createTextNode(' ' + post.comment_count));
+            social.appendChild(commentMini);
+        }
+        return social.childNodes.length ? social : null;
     }
 
     function buildPaper(post, isDetail) {
@@ -224,18 +276,8 @@
             foot.appendChild(el('span', 'pi-card__local', 'This browser only'));
         }
         if (!isDetail) {
-            var social = el('span', 'pi-card__social');
-            var reactions = reactionTotal(post);
-            if (reactions > 0) {
-                social.appendChild(el('span', 'pi-mini', topReactionEmojis(post) + ' ' + reactions));
-            }
-            if (post.comment_count > 0) {
-                var commentMini = el('span', 'pi-mini');
-                commentMini.appendChild(svgIcon(ICONS.comment));
-                commentMini.appendChild(document.createTextNode(' ' + post.comment_count));
-                social.appendChild(commentMini);
-            }
-            if (social.childNodes.length) { foot.appendChild(social); }
+            var social = buildSocial(post);
+            if (social) { foot.appendChild(social); }
         }
         paper.appendChild(foot);
 
@@ -274,8 +316,52 @@
         open.addEventListener('click', function () { openDetail(post.id, open); });
         card.appendChild(open);
         card.appendChild(buildPaper(post, false));
+        // Stickers live on .pi-card (not the paper) so the torn scraps'
+        // clip-path never crops them at the corner.
+        var stickers = buildStickers(post);
+        if (stickers) { card.appendChild(stickers); }
         item.appendChild(card);
         return item;
+    }
+
+    function cardSelector(postId) {
+        // Post ids are safe slugs / base36 locals; escape defensively anyway.
+        var esc = (window.CSS && CSS.escape) ? CSS.escape(postId) : postId;
+        return '.pi-item[data-post-id="' + esc + '"]';
+    }
+
+    // Reflect a post's current reactions back onto its board card: refresh
+    // the corner stickers (landing a just-added one) and the footer counts.
+    // Called after the viewer reacts inside the detail overlay.
+    function syncBoardCard(postId, addedKey) {
+        var item = board.querySelector(cardSelector(postId));
+        if (!item) { return; }
+        var post = postsById[postId];
+        if (!post) { return; }
+        var card = item.querySelector('.pi-card');
+        var paper = item.querySelector('.pi-card__paper');
+
+        var oldStickers = card.querySelector('.pi-card__stickers');
+        if (oldStickers) { oldStickers.remove(); }
+        var stickers = buildStickers(post);
+        if (stickers) {
+            card.appendChild(stickers);
+            if (addedKey && !reducedMotion) {
+                var esc = (window.CSS && CSS.escape) ? CSS.escape(addedKey) : addedKey;
+                var landed = stickers.querySelector('.pi-sticker[data-key="' + esc + '"]');
+                if (landed) { landed.classList.add('pi-sticker--land'); }
+            }
+        }
+
+        if (paper) {
+            var foot = paper.querySelector('.pi-card__foot');
+            if (foot) {
+                var oldSocial = foot.querySelector('.pi-card__social');
+                if (oldSocial) { oldSocial.remove(); }
+                var social = buildSocial(post);
+                if (social) { foot.appendChild(social); }
+            }
+        }
     }
 
     function renderPage(items, isNew) {
@@ -697,12 +783,14 @@
             available.push(GOAL_REACTION);
         }
         var mine = viewerReactions()[post.id] || [];
+        var serverMine = post.viewer_reactions || null;
         available.forEach(function (reaction) {
             var isActive = mine.indexOf(reaction.key) !== -1;
+            var serverHas = serverMine ? serverMine.indexOf(reaction.key) !== -1 : false;
             var serverCount = (post.reactions || {})[reaction.key] || 0;
-            // When the viewer's reaction lives only in this browser, add it
-            // on top of the fixture count for display.
-            var display = serverCount + (isActive && !post.viewer_reactions ? 1 : 0);
+            // Swap the server's record of the viewer's reaction for their live
+            // local state so the count matches the board sticker exactly.
+            var display = serverCount - (serverHas ? 1 : 0) + (isActive ? 1 : 0);
             var btn = el('button', 'pi-reaction' + (isActive ? ' is-active' : ''));
             btn.type = 'button';
             btn.setAttribute('aria-pressed', String(isActive));
@@ -714,14 +802,27 @@
             var countNode = el('span', 'pi-reaction__count', display > 0 ? String(display) : '');
             btn.appendChild(countNode);
             btn.addEventListener('click', function () {
-                toggleReaction(post, reaction.key, btn, countNode);
+                toggleReaction(post, reaction, btn, countNode);
             });
             bar.appendChild(btn);
         });
         return bar;
     }
 
-    function toggleReaction(post, key, btn, countNode) {
+    // A single emoji lifts off the tapped reaction and fades — the tactile
+    // "you reacted" beat, floating just above the reaction row.
+    function floatReactionEmoji(anchor, emoji) {
+        if (reducedMotion || !anchor) { return; }
+        var float = el('span', 'pi-react-float', emoji);
+        float.setAttribute('aria-hidden', 'true');
+        anchor.appendChild(float);
+        window.setTimeout(function () {
+            if (float.parentNode) { float.parentNode.removeChild(float); }
+        }, 900);
+    }
+
+    function toggleReaction(post, reaction, btn, countNode) {
+        var key = reaction.key;
         var store = viewerReactions();
         var mine = store[post.id] || [];
         var has = mine.indexOf(key) !== -1;
@@ -737,6 +838,11 @@
         store[post.id] = mine;
         writeStore(LOCAL_REACTIONS_KEY, store);
 
+        // Float the emoji off the button, and land it as a sticker on the
+        // board note so the reaction is visible from the board too.
+        if (nowActive) { floatReactionEmoji(btn, reaction.emoji); }
+        syncBoardCard(post.id, nowActive ? key : null);
+
         var request = nowActive
             ? api(CONFIG.posts_url + '/' + encodeURIComponent(post.id) + '/reactions', {
                 method: 'POST',
@@ -748,8 +854,12 @@
         request.then(function (payload) {
             if (payload.reactions) {
                 post.reactions = payload.reactions;
+                // When the server tracks the viewer, trust its counts (so the
+                // per-browser +1 isn't double-counted on the board / on reopen).
+                if (payload.viewer_reactions) { post.viewer_reactions = payload.viewer_reactions; }
                 var serverCount = payload.reactions[key] || 0;
                 countNode.textContent = serverCount > 0 ? String(serverCount) : '';
+                syncBoardCard(post.id, null);
             }
         }).catch(function () { /* per-browser fallback already applied */ });
     }
