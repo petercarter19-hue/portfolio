@@ -21,16 +21,30 @@ class PeopleInterestsPageTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_page_loads(self):
-        response = self.client.get("/the-slate/people-interests")
+    def test_the_slate_landing_is_the_board(self):
+        # The board took over /the-slate (Pete, 2026-07-14).
+        response = self.client.get("/the-slate")
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn("People &amp; Interests", html)
         self.assertIn("pi-board", html)
         self.assertIn("pi-initial-feed", html)
 
+    def test_old_board_address_forwards_to_the_slate(self):
+        response = self.client.get("/the-slate/people-interests")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.headers["Location"].endswith("/the-slate"))
+
+    def test_board_keeps_the_hub_links(self):
+        html = self.client.get("/the-slate").get_data(as_text=True)
+        self.assertIn("Slate Board", html)
+        self.assertIn("My Slate", html)
+        self.assertIn("Daily Slate", html)
+        self.assertIn("/the-slate/my-slate", html)
+        self.assertIn("/the-slate/daily", html)
+
     def test_page_keeps_existing_headers_and_feed_strip(self):
-        html = self.client.get("/the-slate/people-interests").get_data(as_text=True)
+        html = self.client.get("/the-slate").get_data(as_text=True)
         # The untouched global header and profile sub-header render as-is.
         self.assertIn("platform-nav", html)
         self.assertIn("profile-tabs", html)
@@ -39,14 +53,14 @@ class PeopleInterestsPageTests(unittest.TestCase):
         self.assertIn("News Feed", html)
 
     def test_existing_routes_unaffected(self):
-        for path in ("/the-slate", "/the-slate/break", "/the-slate/daily"):
+        for path in ("/the-slate/break", "/the-slate/daily", "/the-slate/my-slate", "/the-slate/pulse"):
             response = self.client.get(path, base_url="http://localhost")
             self.assertEqual(response.status_code, 200, path)
 
     def test_no_category_filter_row_above_the_board(self):
         # The mockup's All/People/Goals/... filter buttons were intentionally
         # removed to give the board more space.
-        html = self.client.get("/the-slate/people-interests").get_data(as_text=True)
+        html = self.client.get("/the-slate").get_data(as_text=True)
         self.assertNotIn("pi-filters", html)
 
 
