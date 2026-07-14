@@ -1,5 +1,23 @@
 # PeerSlate Repository Instructions
 
+## Mandatory shared AI and Git workflow
+
+Before planning changes, editing files, or running Git write operations, read `docs/AI_WORKFLOW.md` in full. It is the canonical collaboration workflow for Peter, Codex, Claude, every computer, and every worktree.
+
+Non-negotiable summary:
+
+- `origin` is Azure DevOps and is the only source of truth.
+- `github` is a backup mirror only; GitHub Actions deployment stays disabled.
+- Never commit or push directly to `main`.
+- Create one short-lived `work/YYYY-MM-DD-task-name` branch per task.
+- Only one person or AI may actively write to a branch at a time.
+- Commit and push before handoff; handoffs require the branch and exact full SHA.
+- Merge through an Azure pull request using squash merge, then delete the task branch.
+- Never discard unrelated work or perform destructive Git cleanup without a verified recovery reference.
+- Never stage or commit machine-local configuration, credentials, or secrets.
+
+If another document contains older Git or deployment instructions, `docs/AI_WORKFLOW.md` controls.
+
 ## Project purpose
 
 PeerSlate is a multi-user, evidence-backed professional story and growth platform. It is not a Pete-only portfolio. Pete's content is fixture/demo data only.
@@ -93,7 +111,8 @@ Do not add another permanent navigation layer inside Slate Board. Global site na
 
 ## Safe implementation workflow
 
-- The user grants standing authorization for normal project work: creating branches, committing, pushing, creating and completing pull requests, configuring Azure DevOps, deploying the site, and verifying production behavior. Do not pause merely to request permission for these ordinary project actions.
+- The user grants standing authorization for normal project work: creating task branches, committing, pushing task branches to Azure, creating and completing Azure pull requests, configuring Azure DevOps, deploying through Azure Pipelines, and verifying production behavior. This is not authorization to push directly to `main`, rewrite shared history, or bypass `docs/AI_WORKFLOW.md`.
+- Azure DevOps is the source of truth. The remote is named `origin`. GitHub is the `github` mirror and must not deploy the application.
 - Preserve current pages and behavior where practical, but make the requested changes and resolve implementation blockers autonomously.
 - Prefer reviewable commits and report material changes, but do not treat a dirty worktree or an ambiguous base as an automatic stop condition; inspect it, protect unrelated work, and proceed with the safest reasonable path.
 - Do not perform database migrations or add production dependencies without explaining the reason and impact first.
