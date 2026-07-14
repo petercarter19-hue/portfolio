@@ -1,20 +1,18 @@
 // =========================================================
-// CHATBOT WIDGET — chatbot.js
+// CHATBOT WIDGET - chatbot.js
 //
-// This file controls everything the chat widget DOES:
-// opening, closing, sending messages, and responding.
+// This file controls everything the chat widget does:
+// opening, closing, sending messages, and displaying replies.
 //
-// MVP 0: This is the visual prototype. Responses are
-// hardcoded mock text — no real AI is connected yet.
-// In MVP 1 we will replace getMockResponse() with a
-// real call to the Flask API, which will call Claude.
+// MVP 1: The widget sends visitor questions to Flask's
+// /api/chat route. Flask keeps the API key private, calls
+// Claude on the server, and returns the answer to the browser.
 // =========================================================
 
 
-// Wait until the full page has finished loading before
-// running any code. This prevents errors from trying to
-// find HTML elements that don't exist yet.
-document.addEventListener('DOMContentLoaded', function () {
+// Wait until the page is ready before running any code. If this file is
+// loaded after the page is already ready, run the setup immediately.
+function initializeChatbot() {
 
 
     // -------------------------------------------------------
@@ -23,7 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // the page for them every single time we use them.
     // -------------------------------------------------------
 
-    const toggle      = document.getElementById('chat-toggle');      // Floating "Ask Pete AI" button
+    const openButtons = document.querySelectorAll('[data-chat-open]'); // Header launchers
+    const toggle      = document.getElementById('chat-toggle');      // Floating launcher
     const panel       = document.getElementById('chat-panel');       // The slide-in chat panel
     const closeBtn    = document.getElementById('chat-close');       // The X button inside the header
     const messages    = document.getElementById('chat-messages');    // Scrollable message area
@@ -31,31 +30,106 @@ document.addEventListener('DOMContentLoaded', function () {
     const sendBtn     = document.getElementById('chat-send');        // The Send button
     const suggestions = document.querySelectorAll('.suggestion-btn'); // All 4 suggestion chips
 
+    if (!panel || !closeBtn || !messages || !input || !sendBtn) return;
+
+    let lastChatOpener = null;
+
+    function friendlyError(message) {
+        const error = new Error(message);
+        error.isFriendlyChatError = true;
+        return error;
+    }
+
+    function requestChatReply(text) {
+        return fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+        .then(function(response) {
+            return response.json()
+                .catch(function () {
+                    return {};
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        if (response.status === 400 && data.error) {
+                            throw friendlyError(data.error);
+                        }
+
+                        if (response.status === 429) {
+                            throw friendlyError('Too many questions in a short time. Please wait a moment and try again.');
+                        }
+
+                        throw friendlyError('Something went wrong. Please try again.');
+                    }
+
+                    return data;
+                });
+        });
+    }
 
     // -------------------------------------------------------
     // OPEN AND CLOSE THE PANEL
     // -------------------------------------------------------
 
-    // Clicking the floating button toggles the panel open or closed
-    toggle.addEventListener('click', function () {
-        panel.classList.toggle('open');
+    function openChat(opener, shouldFocus) {
+        if (opener) {
+            lastChatOpener = opener;
+        }
 
-        // When the panel opens, move focus to the input field
-        // so the user can start typing right away
-        if (panel.classList.contains('open')) {
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+
+        if (shouldFocus !== false) {
             input.focus();
+        }
+    }
+
+    function closeChat(shouldReturnFocus) {
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+
+        // Returning focus helps keyboard users land back where they started.
+        if (shouldReturnFocus !== false && lastChatOpener && document.contains(lastChatOpener)) {
+            lastChatOpener.focus();
+        }
+    }
+
+    openButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openChat(button);
+        });
+    });
+
+    if (toggle) {
+        toggle.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openChat(toggle);
+        });
+    }
+
+    closeBtn.addEventListener('click', function () {
+        closeChat(true);
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && panel.classList.contains('open')) {
+            closeChat(true);
         }
     });
 
-    // Clicking the X button closes the panel
-    closeBtn.addEventListener('click', function () {
-        panel.classList.remove('open');
-    });
+    // Clicking outside the open panel dismisses it without exposing state drift to screen readers.
+    document.addEventListener('click', function (event) {
+        const clickedLauncher = event.target.closest('[data-chat-open], #chat-toggle');
 
-    // Clicking anywhere outside the panel and button closes the panel
-    document.addEventListener('click', function (e) {
-        if (!panel.contains(e.target) && !toggle.contains(e.target)) {
-            panel.classList.remove('open');
+        if (
+            panel.classList.contains('open') &&
+            !panel.contains(event.target) &&
+            !clickedLauncher
+        ) {
+            closeChat(false);
         }
     });
 
@@ -70,12 +144,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             const question = btn.textContent.trim();
 
-            // Hide the suggestion chips — they've served their purpose
-            const suggestionsBox = document.getElementById('chat-suggestions');
-            if (suggestionsBox) {
-                suggestionsBox.style.display = 'none';
-            }
-
             sendMessage(question);
         });
     });
@@ -89,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
     sendBtn.addEventListener('click', handleSend);
 
     input.addEventListener('keydown', function (e) {
-        // Send on Enter key — but allow Shift+Enter to add a new line
+        // Send on Enter key, but allow Shift+Enter to add a new line
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();     // Stops the browser from adding a blank line
             handleSend();
@@ -106,27 +174,180 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // -------------------------------------------------------
-    // THE MESSAGE FLOW
-    // Shows the user's message, then gets and shows a response
+    // THE MESSAGE FLOW - MVP 1
+    // Sends the user's message to Flask, which calls the
+    // real Claude API and returns an intelligent answer.
     // -------------------------------------------------------
 
     function sendMessage(text) {
-        // 1. Display the user's message (right side, gold bubble)
+        // 1. Hide the suggestion chips after the visitor sends any question.
+        const suggestionsBox = document.getElementById('chat-suggestions');
+        if (suggestionsBox) {
+            suggestionsBox.style.display = 'none';
+        }
+
+        // 2. Display the user's message (right side, gold bubble)
         addMessage(text, 'user');
 
-        // 2. Show a "..." placeholder while we "wait" for a response.
-        //    In MVP 0 the response is instant, but this placeholder
-        //    sets up the same pattern we'll use in MVP 1 when real
-        //    API calls take a second or two to come back.
+        // 3. Show a "..." thinking bubble while we wait for Claude's response.
+        //    This gives the user visual feedback that something is happening.
         const thinkingBubble = addMessage('...', 'bot');
 
-        // 3. After a short delay, replace the placeholder with the response
-        setTimeout(function () {
-            const response = getMockResponse(text);
-            thinkingBubble.textContent = response;
+        // 4. Disable the input and button so the user can't send another
+        //    message while we're waiting for a response
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        // 5. Ask Flask for the answer and update the thinking bubble.
+        requestChatReply(text)
+        .then(function(data) {
+            if (data.response) {
+                thinkingBubble.textContent = data.response;
+            } else {
+                // If the server returned an error field, show a friendly message.
+                thinkingBubble.textContent = data.error || "Something went wrong. Please try again.";
+            }
             scrollToBottom();
-        }, 700);
+        })
+
+        // 8. If the network request itself failed (e.g. Flask isn't running),
+        //    show a fallback message instead of breaking silently.
+        .catch(function(error) {
+            if (error && error.isFriendlyChatError && error.message) {
+                thinkingBubble.textContent = error.message;
+            } else {
+                thinkingBubble.textContent = "I could not reach the assistant. Please check the connection and try again.";
+            }
+            scrollToBottom();
+        })
+
+        // 9. Whether it succeeded or failed, always re-enable the input
+        //    so the user can try again.
+        .finally(function() {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+        });
     }
+
+    // Named helpers make the shared chat behavior reusable from page-specific UI.
+    // They also keep browser JavaScript from knowing anything about API keys.
+    window.openChatPanel = function () {
+        openChat(document.activeElement);
+    };
+
+    window.closeChatPanel = function () {
+        closeChat(true);
+    };
+
+    window.sendChatMessage = function (question) {
+        const text = String(question || '').trim();
+        if (!text) return;
+        input.value = '';
+        sendMessage(text);
+    };
+
+    // Exposes one safe doorway for page-specific buttons, such as the
+    // interactive resume prompts, to open the same chat assistant and send
+    // a question without duplicating the chatbot logic in another file.
+    window.askPeteAI = function (question) {
+        openChat(document.activeElement);
+        window.sendChatMessage(question);
+    };
+
+    // Lowercase alias matching the homepage search specification.
+    window.askPeteAi = function (question) {
+        window.askPeteAI(question);
+    };
+
+    const heroSearches = document.querySelectorAll('[data-hero-ai-search]');
+    heroSearches.forEach(function (heroSearch) {
+        const heroInput = heroSearch.querySelector('.hero-ai-search__input');
+        const heroStatus = heroSearch.querySelector('[data-hero-ai-status]');
+        const heroAnswer = heroSearch.querySelector('[data-hero-ai-answer]');
+        const heroButton = heroSearch.querySelector('.hero-ai-search__button');
+        const defaultStatus = 'Answers use approved public portfolio evidence.';
+
+        function renderHeroAnswer(question, responseText, isLoading) {
+            if (!heroAnswer) return;
+
+            heroAnswer.hidden = false;
+            heroAnswer.innerHTML = [
+                '<button class="hero-ai-answer__close" type="button" data-hero-ai-answer-close aria-label="Close AI answer">×</button>',
+                '<div class="hero-ai-answer__question"></div>',
+                '<div class="hero-ai-answer__response"></div>'
+            ].join('');
+
+            heroAnswer.querySelector('.hero-ai-answer__question').textContent = question;
+            heroAnswer.querySelector('.hero-ai-answer__response').textContent = responseText;
+            heroAnswer.classList.toggle('is-loading', Boolean(isLoading));
+        }
+
+        function closeHeroAnswer() {
+            if (!heroAnswer) return;
+
+            heroAnswer.hidden = true;
+            heroAnswer.classList.remove('is-loading');
+            heroAnswer.textContent = '';
+        }
+
+        function submitHeroQuestion(question) {
+            const promptText = String(question || '').trim();
+            if (!promptText) return;
+
+            heroSearch.classList.add('is-searching');
+            if (heroStatus) {
+                heroStatus.textContent = 'Searching approved portfolio evidence...';
+            }
+            if (heroButton) {
+                heroButton.disabled = true;
+            }
+            renderHeroAnswer(promptText, 'Searching approved portfolio evidence...', true);
+
+            requestChatReply(promptText)
+                .then(function (data) {
+                    const response = data.response || data.error || 'Something went wrong. Please try again.';
+                    renderHeroAnswer(promptText, response, false);
+                })
+                .catch(function (error) {
+                    const response =
+                        error && error.isFriendlyChatError && error.message
+                            ? error.message
+                            : 'I could not reach the assistant. Please check the connection and try again.';
+                    renderHeroAnswer(promptText, response, false);
+                })
+                .finally(function () {
+                    heroSearch.classList.remove('is-searching');
+                    if (heroStatus) {
+                        heroStatus.textContent = defaultStatus;
+                    }
+                    if (heroButton) {
+                        heroButton.disabled = false;
+                    }
+                    if (heroInput) {
+                        heroInput.focus();
+                    }
+                });
+
+        }
+
+        heroSearch.addEventListener('click', function (event) {
+            if (event.target.closest('[data-hero-ai-answer-close]')) {
+                closeHeroAnswer();
+                if (heroInput) {
+                    heroInput.focus();
+                }
+            }
+        });
+
+        heroSearch.addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitHeroQuestion(heroInput ? heroInput.value : '');
+            if (heroInput) {
+                heroInput.value = '';
+            }
+        });
+    });
 
 
     // -------------------------------------------------------
@@ -159,53 +380,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // -------------------------------------------------------
-    // MOCK RESPONSES — MVP 0 placeholder
-    //
-    // This function returns a pre-written response based on
-    // keywords found in the user's question. It is a stand-in
-    // for real AI.
-    //
-    // In MVP 1, this entire function will be replaced with a
-    // fetch() call to the Flask /api/chat route, which will
-    // send the question to the Claude API and stream back a
-    // real answer grounded in Pete's knowledge base files.
-    // -------------------------------------------------------
 
-    function getMockResponse(text) {
-        const q = text.toLowerCase();
+}  // End of initializeChatbot
 
-        if (q.includes('experience') || q.includes('background') || q.includes('career')) {
-            return "Pete is a systems engineer with experience across the U.S. Air Force, DoD, L3Harris, and Northrop Grumman. He specializes in requirements engineering, MBSE, and digital engineering. [Source: Professional Summary]";
-        }
-
-        if (q.includes('mbse') || q.includes('systems engineering') || q.includes('model') || q.includes('sysml')) {
-            return "Pete is proficient in MBSE using Cameo/MagicDraw and SysML. He applies model-based approaches to architecture, requirements traceability, and interface management across defense programs. [Source: Technical Skills]";
-        }
-
-        if (q.includes('certif') || q.includes('pmp') || q.includes('phd') || q.includes('degree')) {
-            return "Pete holds a PMP certification and has been admitted to the University of South Alabama Systems Engineering Ph.D. program, with an expected January 2027 start. He also holds an active U.S. Secret security clearance. [Source: Accomplishments]";
-        }
-
-        if (q.includes('leader') || q.includes('manag') || q.includes('team')) {
-            return "Pete has led cross-functional engineering teams, managed requirements baselines for major defense programs, and mentored junior engineers throughout his career. [Source: Career History]";
-        }
-
-        if (q.includes('ai') || q.includes('automation') || q.includes('python') || q.includes('software')) {
-            return "Pete is actively learning Python and building AI-enabled tools. This portfolio site — built with Flask and the Claude API — is a live demonstration of those skills in action. [Source: Professional Summary]";
-        }
-
-        if (q.includes('northrop') || q.includes('l3') || q.includes('harris') || q.includes('dod') || q.includes('air force')) {
-            return "Pete has worked across several major defense organizations, including the U.S. Air Force, DoD, L3Harris, and his current role at Northrop Grumman in systems and requirements engineering. [Source: Career History]";
-        }
-
-        if (q.includes('contact') || q.includes('hire') || q.includes('reach') || q.includes('available')) {
-            return "You can reach Pete through the Contact page on this site. He is open to discussing engineering leadership and digital engineering opportunities.";
-        }
-
-        // Default — used when nothing matches
-        return "That's a great question! I'm grounded in Pete's approved portfolio information. Try asking about his experience, MBSE background, certifications, leadership, or AI interests — or use the Contact page to reach him directly.";
-    }
-
-
-});  // End of DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeChatbot);
+} else {
+    initializeChatbot();
+}
