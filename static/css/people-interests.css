@@ -179,7 +179,11 @@
 
 @media (min-width: 64rem) {
     .pi-layout {
-        grid-template-columns: 13rem minmax(0, 1fr);
+        /* Board capped narrow and centred; the left rail widens into the
+           freed space. The right rail still flows below as a full-width
+           strip until there's room for it. */
+        grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 52rem);
+        justify-content: center;
     }
 
     .pi-rail--right {
@@ -192,7 +196,9 @@
 
 @media (min-width: 84.5rem) {
     .pi-layout {
-        grid-template-columns: 13.5rem minmax(0, 1fr) 13.5rem;
+        /* Facebook-style three columns: a fixed narrow board in the
+           middle with the two supporting rails growing on either side. */
+        grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 52rem) minmax(13.5rem, 17rem);
     }
 
     .pi-rail--right {
@@ -406,9 +412,9 @@
 .pi-saved__paper {
     padding: 0.5rem 0.6rem;
     border-radius: 0.15rem 0.9rem 0.2rem 0.7rem;
-    font-family: Caveat, cursive;
-    font-size: 0.98rem;
-    line-height: 1.25;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.3;
     color: #3d3a32;
     box-shadow: 0 3px 8px rgb(60 46 20 / 14%);
 }
@@ -708,37 +714,25 @@
 }
 
 /* ---------------------------------------------------------------------
-   Composer — a wide paper strip taped to the top of the board.
+   Composer — a clean standalone card that sits ABOVE the cork board
+   (Facebook / LinkedIn style), so the board stays focused on shared
+   content. No longer taped onto the cork.
    --------------------------------------------------------------------- */
 .pi-composer {
     position: relative;
-    margin-bottom: 1.15rem;
-    padding: 0.7rem 0.9rem;
-    border-radius: 0.35rem;
-    background: linear-gradient(180deg, #fffdf7, #f8f3e6);
+    margin-bottom: 1.05rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1.05rem;
+    border: 1px solid rgb(226 232 244 / 90%);
+    /* NOTE: no backdrop-filter here — it would create a containing block
+       that traps the pop-out dialog's position:fixed (Pete, 2026-07-14). */
+    background: rgb(255 255 255 / 96%);
     box-shadow:
-        0 1px 0 rgb(255 255 255 / 65%) inset,
-        0 10px 22px rgb(56 38 12 / 26%);
+        0 1px 0 rgb(255 255 255 / 70%) inset,
+        0 0.7rem 1.8rem rgb(17 44 78 / 12%);
 }
 
-/* Tape holding the composer to the board. */
-.pi-composer::before,
-.pi-composer::after {
-    content: "";
-    position: absolute;
-    top: -0.55rem;
-    width: 4.2rem;
-    height: 1.15rem;
-    background: linear-gradient(180deg, rgb(252 250 235 / 62%), rgb(240 234 208 / 52%));
-    box-shadow: 0 2px 5px rgb(56 38 12 / 18%);
-    border-left: 1px dashed rgb(120 100 60 / 20%);
-    border-right: 1px dashed rgb(120 100 60 / 20%);
-}
-
-.pi-composer::before { left: 8%; transform: rotate(-3deg); }
-.pi-composer::after { right: 8%; transform: rotate(2.5deg); }
-
-.pi-composer__row {
+.pi-composer__bar {
     display: flex;
     align-items: center;
     gap: 0.65rem;
@@ -752,8 +746,8 @@
     border: 1px solid rgb(122 96 52 / 22%);
     border-radius: 999px;
     background: rgb(255 255 255 / 75%);
-    font-family: Caveat, cursive;
-    font-size: 1.12rem;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.0rem;
     color: #6d6250;
     text-align: left;
     cursor: text;
@@ -810,6 +804,60 @@
     color: #4149bb;
 }
 
+/* Kind picker — revealed with the writing area, not on the quiet top row. */
+.pi-composer__kind {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+    margin-top: 0.7rem;
+}
+
+.pi-composer__kindlabel {
+    font-family: Inter, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 640;
+    color: #6d6250;
+}
+
+/* Type-specific extras that appear once a kind is chosen. Preview
+   affordances for now — accounts wire them to real behaviour. */
+.pi-composer__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+}
+
+.pi-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.34rem 0.7rem;
+    border: 1px dashed rgb(122 96 52 / 34%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 55%);
+    font-family: Inter, sans-serif;
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: #5a5140;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.pi-opt:hover,
+.pi-opt:focus-visible {
+    border-color: rgb(79 91 213 / 50%);
+    color: #4149bb;
+}
+
+.pi-opt.is-on {
+    background: rgb(79 91 213 / 12%);
+    border-style: solid;
+    border-color: rgb(79 91 213 / 55%);
+    color: #4149bb;
+}
+
 .pi-composer__post {
     margin-left: auto;
     min-height: 2.3rem;
@@ -823,10 +871,84 @@
     cursor: not-allowed;
 }
 
-.pi-composer__expanded {
-    margin-top: 0.7rem;
-    padding-top: 0.7rem;
-    border-top: 1px dashed rgb(122 96 52 / 25%);
+/* ---------------------------------------------------------------------
+   Pop-out compose dialog — clicking the bar opens this as a centred modal
+   over a dimmed backdrop, rather than expanding inline (Pete, 2026-07-14).
+   --------------------------------------------------------------------- */
+.pi-composer__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1300; /* above the sticky .global-header (1200) */
+    background: rgb(12 22 41 / 45%);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.pi-composer__dialog {
+    position: fixed;
+    z-index: 1301;
+    top: 50%;
+    left: 50%;
+    width: min(100% - 2rem, 34rem);
+    max-height: min(calc(100vh - 2.5rem), 40rem);
+    overflow-y: auto;
+    transform: translate(-50%, -50%);
+    padding: 1.1rem 1.15rem 1.2rem;
+    border-radius: 1.1rem;
+    background: #fdfcf8;
+    box-shadow: 0 1.6rem 4rem rgb(20 14 4 / 42%);
+    /* Its own keyframe keeps the -50%/-50% centring in the final frame. */
+    animation: pi-composer-in 220ms cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+
+@keyframes pi-composer-in {
+    0%   { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.98); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.pi-composer__dialoghead {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+}
+
+.pi-composer__dialoghead strong {
+    font-family: Inter, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1c2b47;
+}
+
+.pi-composer__close {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(28 43 71 / 8%);
+    color: #33455f;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.pi-composer__close:hover,
+.pi-composer__close:focus-visible { background: rgb(28 43 71 / 16%); }
+
+.pi-composer__close svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pi-composer__dialog { animation: none; }
 }
 
 .pi-composer__text {
@@ -835,9 +957,9 @@
     border: 1px solid rgb(122 96 52 / 25%);
     border-radius: 0.6rem;
     background: rgb(255 255 255 / 85%);
-    font-family: Caveat, cursive;
-    font-size: 1.25rem;
-    line-height: 1.35;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.4;
     color: #3d3a32;
     resize: vertical;
 }
@@ -887,40 +1009,56 @@
 }
 
 /* ---------------------------------------------------------------------
-   THE BOARD GRID — deterministic collage. ~4 items across on desktop.
-   Row spans give intentional size variety; dense flow fills gaps.
+   THE BOARD GRID — a content-fit masonry (Pete, 2026-07-14). Two items
+   across at every width above phones, so the board reads like a focused,
+   mobile-style feed even on a wide PC. The board is capped narrow and
+   centred in .pi-layout; the rails absorb the freed width.
+
+   Each note is sized to its OWN text — no fixed row height, no empty gap
+   below short notes. A fine 1px auto-row lets people-interests.js set
+   every item's row span from its measured height; grid-auto-flow: dense
+   then packs the two columns tight, filling the shorter column first.
    --------------------------------------------------------------------- */
 .pi-board {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: 5.4rem;
-    grid-auto-flow: dense;
-    gap: 1.25rem 1.15rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1px;      /* fine unit; JS spans the rows each note needs */
+    grid-auto-flow: row dense;
+    column-gap: 1.15rem;
+    row-gap: 0;               /* vertical spacing is baked into the JS span */
 }
 
-@media (max-width: 84.4375rem) {
-    .pi-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
+/* Two cards per row on phones too — mobile is where most people read this,
+   so it never drops to a single column, even on the smallest screens
+   (Pete, 2026-07-14). Big phones (Pro Max / Galaxy) stay two-up as well. */
 @media (max-width: 47.9375rem) {
-    .pi-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 0.85rem; }
+    .pi-board { column-gap: 0.7rem; }
 }
 
 @media (max-width: 26.25rem) {
-    .pi-board { grid-template-columns: minmax(0, 1fr); }
+    .pi-board { column-gap: 0.55rem; }
 }
 
-/* Size vocabulary — layout_variant comes stored with each item. */
-.pi-item { grid-row: span 3; min-width: 0; }
-.pi-item--small { grid-row: span 2; }
-.pi-item--tall { grid-row: span 4; }
-.pi-item--photo { grid-row: span 4; }
-.pi-item--wide { grid-column: span 2; grid-row: span 3; }
-.pi-item--featured { grid-column: span 2; grid-row: span 4; }
+/* Notes sit at the top of their span; the leftover row is the gap below. */
+.pi-item { align-self: start; min-width: 0; }
 
-@media (max-width: 26.25rem) {
-    .pi-item--wide,
-    .pi-item--featured { grid-column: span 1; }
+/* Emphasis posts still stretch the full board width across both columns. */
+.pi-item--wide,
+.pi-item--featured { grid-column: 1 / -1; }
+
+/* Phones: trim the cork frame + note chrome so the two cards keep enough
+   width for names and body text to read (Pete, 2026-07-14). */
+@media (max-width: 47.9375rem) {
+    .pi-board-surface {
+        border-width: 13px;
+        padding: 0.85rem 0.7rem 1.1rem;
+    }
+    .pi-card__paper { padding: 0.6rem 0.58rem 0.55rem; }
+    .pi-card__paper--lined { padding-left: 1.4rem; }
+    .pi-card__head { gap: 0.3rem; margin-bottom: 0.32rem; }
+    .pi-card__head .pi-ava { width: 1.35rem; height: 1.35rem; font-size: 0.5rem; }
+    .pi-card__name { font-size: 0.92rem; }
+    .pi-card__time { font-size: 0.58rem; }
 }
 
 /* ---------------------------------------------------------------------
@@ -930,7 +1068,6 @@
    --------------------------------------------------------------------- */
 .pi-card {
     position: relative;
-    height: 100%;
     min-width: 0;
 }
 
@@ -940,7 +1077,6 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100%;
     padding: 0.8rem 0.85rem 0.7rem;
     /* Pinned at the top, bottom leaning off the board: a whisper of
        rotateX sells the lift; the shadow stack does the rest. */
@@ -1111,8 +1247,6 @@
 
 .pi-photo {
     position: relative;
-    flex: 1 1 auto;
-    min-height: 0;
     overflow: hidden;
     background: #e8e4d8;
     box-shadow: inset 0 1px 4px rgb(30 24 14 / 35%);
@@ -1130,8 +1264,7 @@
 
 .pi-photo img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
     display: block;
 }
 
@@ -1219,8 +1352,8 @@
 }
 
 .pi-card__name {
-    font-family: Caveat, cursive;
-    font-size: 1.06rem;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.02rem;
     font-weight: 700;
     color: #33302a;
     white-space: nowrap;
@@ -1238,52 +1371,46 @@
 }
 
 .pi-card__title {
-    margin: 0 0 0.15rem;
-    font-family: Caveat, cursive;
-    font-size: 1.35rem;
+    margin: 0 0 0.2rem;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.26rem;
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1.2;
     color: #33302a;
 }
 
+/* Note body — full text, no clamp. The note grows to fit what's written
+   and people-interests.js spans it, so there's no empty tail below. */
 .pi-card__body {
-    flex: 1 1 auto;
-    min-height: 0;
     margin: 0;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: var(--pi-clamp, 5);
-    font-family: Caveat, cursive;
-    font-size: 1.3rem;
-    font-weight: 600;
-    line-height: 1.28;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.12rem;
+    font-weight: 400;
+    line-height: 1.42;
     color: #3d3a32;
     overflow-wrap: anywhere;
 }
 
+/* Longer notes render a touch more compact, still in Andika. */
 .pi-card--print .pi-card__body {
-    font-family: Inter, sans-serif;
-    font-size: 0.82rem;
-    font-weight: 480;
+    font-size: 1.02rem;
+    font-weight: 400;
     line-height: 1.45;
-    color: #38414f;
 }
 
-.pi-item--small .pi-card__body { --pi-clamp: 3; font-size: 1.42rem; }
-.pi-item--standard .pi-card__body { --pi-clamp: 6; }
-.pi-item--tall .pi-card__body { --pi-clamp: 9; }
-.pi-item--featured .pi-card__body { --pi-clamp: 5; font-size: 1.5rem; }
-.pi-item--photo .pi-card__body { --pi-clamp: 2; font-size: 1.15rem; }
+/* Emphasis posts read a touch larger; photo captions a touch smaller. */
+.pi-item--featured .pi-card__body,
+.pi-item--wide .pi-card__body { font-size: 1.22rem; }
+.pi-item--photo .pi-card__body { font-size: 1.04rem; }
 
 .pi-card__list {
     margin: 0.15rem 0 0;
     padding: 0;
     list-style: none;
-    font-family: Caveat, cursive;
-    font-size: 1.22rem;
-    font-weight: 600;
-    line-height: 1.4;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.08rem;
+    font-weight: 400;
+    line-height: 1.5;
     color: #3d3a32;
 }
 
@@ -1295,8 +1422,8 @@
 
 .pi-card__attribution {
     margin: 0.3rem 0 0;
-    font-family: Caveat, cursive;
-    font-size: 1.05rem;
+    font-family: 'Andika', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1.0rem;
     color: rgb(61 58 50 / 72%);
 }
 

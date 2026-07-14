@@ -371,39 +371,51 @@
             fragment.appendChild(buildBoardItem(post, isNew));
         });
         board.appendChild(fragment);
-        scheduleClampFit();
+        scheduleLayout();
     }
 
-    /* The grid gives each paper a fixed height, so a body squeezed by its
-       neighbors can get sliced mid-line. Snap every board body's line
-       clamp to the whole lines that actually fit its allocated space. */
-    var clampScheduled = false;
+    /* Content-fit masonry. Each note is exactly as tall as its own text or
+       photo — no fixed row height, so short notes never leave an empty
+       tail. We measure every note's natural (untransformed) height and
+       span it across the board's fine 1px rows, baking a small gap in
+       below. grid-auto-flow: dense then packs the two columns tight. */
+    var ROW_GAP = 18;
+    var layoutScheduled = false;
 
-    function fitClamps() {
-        clampScheduled = false;
-        Array.prototype.slice.call(board.querySelectorAll('.pi-card__body')).forEach(function (body) {
-            body.style.webkitLineClamp = '';
-            var lineHeight = parseFloat(getComputedStyle(body).lineHeight) || 24;
-            var available = body.clientHeight;
-            var lines = Math.max(1, Math.floor(available / lineHeight));
-            body.style.webkitLineClamp = String(lines);
-        });
+    function sizeItem(item) {
+        var card = item.querySelector('.pi-card') || item.firstElementChild;
+        if (!card) { return; }
+        // offsetHeight ignores the paper's rotate/lift transform, so the
+        // measurement is the true layout height.
+        var h = card.offsetHeight;
+        if (!h) { return; }
+        item.style.gridRowEnd = 'span ' + (Math.ceil(h) + ROW_GAP);
     }
 
-    function scheduleClampFit() {
-        if (clampScheduled) { return; }
-        clampScheduled = true;
-        window.requestAnimationFrame(fitClamps);
+    function layoutBoard() {
+        layoutScheduled = false;
+        Array.prototype.slice.call(board.querySelectorAll('.pi-item')).forEach(sizeItem);
     }
+
+    function scheduleLayout() {
+        if (layoutScheduled) { return; }
+        layoutScheduled = true;
+        window.requestAnimationFrame(layoutBoard);
+    }
+
+    // Photos land after the text, so re-flow once each one decodes.
+    board.addEventListener('load', function (event) {
+        if (event.target && event.target.tagName === 'IMG') { scheduleLayout(); }
+    }, true);
 
     if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(scheduleClampFit);
+        document.fonts.ready.then(scheduleLayout);
     }
 
     var resizeTimer = null;
     window.addEventListener('resize', function () {
         window.clearTimeout(resizeTimer);
-        resizeTimer = window.setTimeout(scheduleClampFit, 180);
+        resizeTimer = window.setTimeout(scheduleLayout, 150);
     });
 
     /* ============================================================
@@ -411,12 +423,15 @@
        ============================================================ */
 
     function addSkeletons(count) {
+        var heights = [150, 214, 122, 184];
         var skeletons = [];
         for (var i = 0; i < count; i += 1) {
-            var skeleton = el('div', 'pi-item ' + (i % 3 === 0 ? 'pi-item--tall' : 'pi-item--standard'));
+            var skeleton = el('div', 'pi-item');
             skeleton.setAttribute('aria-hidden', 'true');
+            var h = heights[i % heights.length];
+            skeleton.style.gridRowEnd = 'span ' + (h + ROW_GAP);
             var paper = el('div', 'pi-skeleton');
-            paper.style.height = '100%';
+            paper.style.height = h + 'px';
             skeleton.appendChild(paper);
             board.appendChild(skeleton);
             skeletons.push(skeleton);
@@ -470,22 +485,62 @@
     var composerError = document.querySelector('[data-pi-error]');
     var composerDone = document.querySelector('[data-pi-done]');
     var composerPost = document.querySelector('.pi-composer__post');
-    var composerCancel = document.querySelector('[data-pi-composer-cancel]');
+    var composerBackdrop = document.querySelector('[data-pi-composer-backdrop]');
+    var composerCloseEls = Array.prototype.slice.call(document.querySelectorAll('[data-pi-composer-close]'));
+    var composerLastFocus = null;
     var photoHint = document.querySelector('[data-pi-photo-hint]');
+    var composerOptions = document.querySelector('[data-pi-composer-options]');
     var typeButtons = Array.prototype.slice.call(document.querySelectorAll('[data-pi-type]'));
     var selectedType = 'note';
     var submitting = false;
 
+    // Each kind reveals its own extras once chosen. Preview affordances for
+    // now — visual toggles only until accounts wire them to real behaviour.
+    var TYPE_OPTIONS = {
+        goal: ['🎯 Target date', '🤝 Accountability partners', '📊 Track progress'],
+        project: ['🔗 Add a link', '👥 Find collaborators', '🚦 Set a status'],
+        idea: ['🏷️ Tag a topic', '💬 Ask for feedback'],
+        photo: ['🖼️ Add a caption']
+    };
+
+    function renderTypeOptions(type) {
+        if (!composerOptions) { return; }
+        composerOptions.textContent = '';
+        var opts = TYPE_OPTIONS[type];
+        if (!opts) { composerOptions.hidden = true; return; }
+        opts.forEach(function (label) {
+            var chip = el('button', 'pi-opt', label);
+            chip.type = 'button';
+            chip.setAttribute('aria-pressed', 'false');
+            chip.addEventListener('click', function () {
+                var on = chip.classList.toggle('is-on');
+                chip.setAttribute('aria-pressed', String(on));
+            });
+            composerOptions.appendChild(chip);
+        });
+        composerOptions.hidden = false;
+    }
+
+    // The composer POPS OUT as a modal dialog (backdrop + scroll lock +
+    // focus trap), rather than expanding inline beneath the trigger bar.
     function expandComposer() {
-        if (!composerPanel) { return; }
+        if (!composerPanel || !composerPanel.hidden) { return; }
+        composerLastFocus = document.activeElement;
+        if (composerBackdrop) { composerBackdrop.hidden = false; }
         composerPanel.hidden = false;
         composerOpen.setAttribute('aria-expanded', 'true');
-        composerText.focus();
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', composerKeydown, true);
+        window.requestAnimationFrame(function () { composerText.focus(); });
     }
 
     function collapseComposer() {
+        if (composerPanel.hidden) { return; }
         composerPanel.hidden = true;
+        if (composerBackdrop) { composerBackdrop.hidden = true; }
         composerOpen.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', composerKeydown, true);
         composerText.value = '';
         composerError.hidden = true;
         photoHint.hidden = true;
@@ -494,7 +549,31 @@
             btn.classList.remove('is-active');
             btn.setAttribute('aria-pressed', 'false');
         });
+        renderTypeOptions('note');
         updateCount();
+        if (composerLastFocus && document.contains(composerLastFocus)) {
+            composerLastFocus.focus();
+        }
+    }
+
+    function composerKeydown(event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            collapseComposer();
+            return;
+        }
+        if (event.key !== 'Tab') { return; }
+        var focusable = focusableIn(composerPanel);
+        if (!focusable.length) { return; }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
     }
 
     function updateCount() {
@@ -506,9 +585,8 @@
 
     if (composerOpen) {
         composerOpen.addEventListener('click', expandComposer);
-        composerCancel.addEventListener('click', function () {
-            collapseComposer();
-            composerOpen.focus();
+        composerCloseEls.forEach(function (closer) {
+            closer.addEventListener('click', collapseComposer);
         });
         composerText.addEventListener('input', updateCount);
 
@@ -528,6 +606,7 @@
                     selectedType = type;
                 }
                 photoHint.hidden = selectedType !== 'photo';
+                renderTypeOptions(selectedType);
                 if (composerPanel.hidden) { expandComposer(); }
             });
         });
@@ -566,6 +645,7 @@
                 btn.classList.toggle('is-active', isGoal);
                 btn.setAttribute('aria-pressed', String(isGoal));
             });
+            renderTypeOptions('goal');
             expandComposer();
             composerText.placeholder = "How's the goal coming? Two lines is plenty.";
             composer.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
@@ -662,6 +742,7 @@
         var item = buildBoardItem(post, !reducedMotion);
         var firstItem = board.querySelector('.pi-item');
         board.insertBefore(item, firstItem || null);
+        scheduleLayout();
         if (focusIt) {
             var open = item.querySelector('.pi-card__open');
             if (open) { open.focus({ preventScroll: true }); }
