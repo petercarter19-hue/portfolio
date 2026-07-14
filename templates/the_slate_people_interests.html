@@ -41,7 +41,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/people-interests.css') }}?v=pi-board-4"
+    href="{{ url_for('static', filename='css/people-interests.css') }}?v=pi-board-5"
 >
 {% endblock %}
 
@@ -132,6 +132,41 @@
                     </ul>
                     <a class="pi-raillink" href="{{ url_for('the_slate_my') }}">View all saved
                         <i class="sf-chevron" aria-hidden="true"></i></a>
+                </section>
+
+                <section class="ps-card pi-railcard" aria-labelledby="pi-circles-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="10" r="3"/><circle cx="16" cy="10" r="3"/><path d="M3 19c.5-2.5 2.4-4 5-4s4.5 1.5 5 4M11 19c.5-2.5 2.4-4 5-4s4.5 1.5 5 4"/></svg>
+                        <h2 id="pi-circles-title">Circles for you</h2>
+                    </header>
+                    <ul class="pi-circlelist">
+                        {% for circle in left_rail.circles %}
+                        <li class="pi-circlelist__row">
+                            <span class="pi-ava pi-ava--indigo" aria-hidden="true">{{ circle.name[:1] }}</span>
+                            <span class="pi-circlelist__body">
+                                <strong>{{ circle.name }}</strong>
+                                <small>{{ circle.members }} &middot; {{ circle.activity }}</small>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a class="pi-raillink" href="{{ url_for('the_slate') }}">Explore circles
+                        <i class="sf-chevron" aria-hidden="true"></i></a>
+                </section>
+
+                <section class="ps-card pi-railcard" aria-labelledby="pi-topics-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3L7 21M17 3l-2 18M4 8h17M3 15h17"/></svg>
+                        <h2 id="pi-topics-title">Topics you follow</h2>
+                    </header>
+                    <ul class="pi-topics">
+                        {% for topic in left_rail.topics %}
+                        <li>
+                            <span class="pi-topics__tag"><i aria-hidden="true">#</i>{{ topic.tag }}</span>
+                            <span class="pi-topics__count">{{ topic.count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </section>
             </aside>
 
@@ -246,6 +281,38 @@
                         <span>I'm in</span>
                     </button>
                 </section>
+
+                <section class="ps-card pi-railcard pi-poll" aria-labelledby="pi-poll-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
+                        <h2 id="pi-poll-title">Community poll</h2>
+                    </header>
+                    <p class="pi-poll__question">{{ right_rail.poll.question }}</p>
+                    <ul class="pi-poll__options" role="group" aria-label="Poll options">
+                        {% for option in right_rail.poll.options %}
+                        <li>
+                            <button class="pi-poll__opt" type="button" data-pi-poll-opt aria-pressed="false">
+                                <i class="pi-poll__fill" style="width: {{ option.pct }}%;" aria-hidden="true"></i>
+                                <span class="pi-poll__label">{{ option.label }}</span>
+                                <span class="pi-poll__pct">{{ option.pct }}%</span>
+                            </button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="pi-poll__foot">{{ right_rail.poll.votes }} &middot; preview</p>
+                </section>
+
+                <section class="ps-card pi-railcard pi-sharegood" aria-labelledby="pi-sharegood-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/></svg>
+                        <h2 id="pi-sharegood-title">{{ right_rail.share_good.title }}</h2>
+                    </header>
+                    <p class="pi-sharegood__body">{{ right_rail.share_good.body }}</p>
+                    <button class="ps-btn ps-btn--primary pi-sharegood__cta" type="button" data-pi-sharegood>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:0.85rem;height:0.85rem;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;"><path d="M12 5v14M5 12h14"/></svg>
+                        {{ right_rail.share_good.cta }}
+                    </button>
+                </section>
             </aside>
 
         </div>
@@ -290,5 +357,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/people-interests.js') }}?v=pi-board-4"></script>
+<script src="{{ url_for('static', filename='js/people-interests.js') }}?v=pi-board-5"></script>
 {% endblock %}

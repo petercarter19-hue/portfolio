@@ -496,6 +496,31 @@
         });
     }
 
+    // Community poll: pick-one preview (real voting lands with accounts).
+    var pollOpts = Array.prototype.slice.call(document.querySelectorAll('[data-pi-poll-opt]'));
+    pollOpts.forEach(function (opt) {
+        opt.addEventListener('click', function () {
+            pollOpts.forEach(function (other) {
+                other.setAttribute('aria-pressed', String(other === opt));
+            });
+        });
+    });
+
+    // "Share something good" opens the composer ready for a moment.
+    var shareGood = document.querySelector('[data-pi-sharegood]');
+    if (shareGood) {
+        shareGood.addEventListener('click', function () {
+            selectedType = 'moment';
+            typeButtons.forEach(function (btn) {
+                btn.classList.remove('is-active');
+                btn.setAttribute('aria-pressed', 'false');
+            });
+            expandComposer();
+            composerText.placeholder = 'Share something good — brighten the board.';
+            composer.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+        });
+    }
+
     // "Celebrate a win" in the right rail opens the composer as a Win.
     var celebrate = document.querySelector('[data-pi-celebrate]');
     if (celebrate) {

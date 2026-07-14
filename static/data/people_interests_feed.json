@@ -1138,6 +1138,36 @@
                 "preview": "People I want to learn from in B2B SaaS.",
                 "paper_color": "cream"
             }
+        ],
+        "circles": [
+            {
+                "name": "Product Builders",
+                "members": "1.2k members",
+                "activity": "12 new posts"
+            },
+            {
+                "name": "Run Club",
+                "members": "860 members",
+                "activity": "5 new posts"
+            }
+        ],
+        "topics": [
+            {
+                "tag": "productivity",
+                "count": 128
+            },
+            {
+                "tag": "design",
+                "count": 96
+            },
+            {
+                "tag": "side-projects",
+                "count": 84
+            },
+            {
+                "tag": "health",
+                "count": 72
+            }
         ]
     },
     "right_rail": {
@@ -1174,6 +1204,33 @@
             "title": "30-Minute Reset 🌿",
             "body": "Step outside, move your body, and clear your mind.",
             "joined": "1,248 people joined"
+        },
+        "poll": {
+            "question": "What's your go-to reset?",
+            "options": [
+                {
+                    "label": "Walk in nature",
+                    "pct": 42
+                },
+                {
+                    "label": "Good playlist",
+                    "pct": 26
+                },
+                {
+                    "label": "Coffee + quiet",
+                    "pct": 19
+                },
+                {
+                    "label": "Creative time",
+                    "pct": 13
+                }
+            ],
+            "votes": "1,893 votes"
+        },
+        "share_good": {
+            "title": "Share something good",
+            "body": "Brighten someone's day.",
+            "cta": "Create a post"
         }
     }
 }

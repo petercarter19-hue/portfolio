@@ -370,6 +370,166 @@
 .pi-saved__paper--green { background: linear-gradient(180deg, #e3f1c6, #d3e6ac); }
 .pi-saved__paper--cream { background: linear-gradient(180deg, #fbf6e8, #f3ead2); }
 
+/* Circles for you + Topics you follow (left rail) */
+.pi-circlelist {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-circlelist__row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgb(28 43 71 / 7%);
+}
+
+.pi-circlelist__row:first-child { border-top: 0; }
+
+.pi-circlelist__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.pi-circlelist__body strong { font-size: 0.8rem; color: #1c2b47; }
+.pi-circlelist__body small { font-size: 0.7rem; color: #8b98ab; }
+
+.pi-topics {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-topics li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid rgb(28 43 71 / 7%);
+}
+
+.pi-topics li:first-child { border-top: 0; }
+
+.pi-topics__tag {
+    font-size: 0.8rem;
+    font-weight: 620;
+    font-style: italic;
+    color: #33455f;
+}
+
+.pi-topics__tag i {
+    margin-right: 0.18rem;
+    color: #4f5bd5;
+    font-weight: 800;
+    font-style: normal;
+}
+
+.pi-topics__count {
+    padding: 0.08rem 0.5rem;
+    border-radius: 999px;
+    background: rgb(79 91 213 / 10%);
+    font-size: 0.68rem;
+    font-weight: 720;
+    color: #4149bb;
+}
+
+/* Community poll (right rail, from the retiring Break page) */
+.pi-poll__question {
+    margin: 0.1rem 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1c2b47;
+}
+
+.pi-poll__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-poll__opt {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.42rem 0.6rem;
+    border: 1px solid rgb(28 43 71 / 12%);
+    border-radius: 0.55rem;
+    background: rgb(255 255 255 / 55%);
+    overflow: hidden;
+    font-family: Inter, sans-serif;
+    cursor: pointer;
+    transition: border-color 150ms ease;
+}
+
+.pi-poll__opt:hover,
+.pi-poll__opt:focus-visible { border-color: rgb(79 91 213 / 45%); }
+
+.pi-poll__opt[aria-pressed="true"] {
+    border-color: rgb(79 91 213 / 60%);
+    background: rgb(79 91 213 / 8%);
+}
+
+.pi-poll__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: rgb(79 91 213 / 12%);
+    pointer-events: none;
+}
+
+.pi-poll__label {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.76rem;
+    font-weight: 620;
+    color: #33455f;
+    text-align: left;
+}
+
+.pi-poll__pct {
+    position: relative;
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 720;
+    color: #4149bb;
+}
+
+.pi-poll__foot {
+    margin: 0.5rem 0 0;
+    font-size: 0.68rem;
+    color: #8b98ab;
+}
+
+/* Share something good (right rail) */
+.pi-sharegood__body {
+    margin: 0.1rem 0 0.6rem;
+    font-size: 0.8rem;
+    color: #45566e;
+}
+
+.pi-sharegood__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.1rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+}
+
 /* Right rail — the Break/Pulse spirit: pick-me-up, goal check-in,
    community challenge. */
 .pi-pickme__quote {
@@ -728,14 +888,26 @@
 }
 
 .pi-card__paper {
+    /* Real-paper grain, shared by every family below. */
+    --pi-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0 0.10 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E");
     position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
     padding: 0.8rem 0.85rem 0.7rem;
-    transform: translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
-    transition: transform 180ms ease, box-shadow 180ms ease;
+    /* Pinned at the top, bottom leaning off the board: a whisper of
+       rotateX sells the lift; the shadow stack does the rest. */
+    transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
+    transform-origin: 50% 0;
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
     color: #3d3a32;
+    background-size: 9rem 9rem, auto;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 20%),
+        0 1px 2px rgb(56 38 12 / 22%),
+        0 9px 12px -6px rgb(56 38 12 / 22%),
+        0 22px 26px -12px rgb(56 38 12 / 36%);
 }
 
 /* The click target: one stretched, real button per card. */
@@ -761,14 +933,18 @@
 
 .pi-card:hover .pi-card__paper,
 .pi-card:focus-within .pi-card__paper {
-    transform: translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 3px)) rotate(calc(var(--pi-rot, 0deg) * 0.35));
-    box-shadow: 0 16px 30px rgb(56 38 12 / 32%);
+    transform: perspective(38rem) rotateX(2.1deg) translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 4px)) rotate(calc(var(--pi-rot, 0deg) * 0.35));
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 18%),
+        0 2px 3px rgb(56 38 12 / 20%),
+        0 14px 18px -8px rgb(56 38 12 / 26%),
+        0 30px 36px -14px rgb(56 38 12 / 42%);
 }
 
 /* --- Paper families --- */
 .pi-card__paper--sticky {
     border-radius: 0.18rem;
-    box-shadow: 0 10px 20px rgb(56 38 12 / 25%);
 }
 
 .pi-card__paper--sticky::after {
@@ -783,20 +959,27 @@
     border-bottom-right-radius: 0.18rem;
 }
 
-.pi-paper--yellow { background: linear-gradient(178deg, #fdf3a9 0%, #f9e47f 100%); }
-.pi-paper--green  { background: linear-gradient(178deg, #e2f1c4 0%, #cfe39b 100%); }
-.pi-paper--blue   { background: linear-gradient(178deg, #d8eafa 0%, #bcd9f0 100%); }
-.pi-paper--pink   { background: linear-gradient(178deg, #fbdde4 0%, #f5c8d2 100%); }
-.pi-paper--cream  { background: linear-gradient(178deg, #fbf6e8 0%, #f1e7cd 100%); }
-.pi-paper--violet { background: linear-gradient(178deg, #e2d9f8 0%, #d0c3f0 100%); }
-.pi-paper--kraft  { background: linear-gradient(178deg, #e6cda6 0%, #d9b98c 100%); }
-.pi-paper--white  { background: linear-gradient(178deg, #fffefa 0%, #f4f0e4 100%); }
-.pi-paper--peach  { background: linear-gradient(178deg, #fde4c8 0%, #f8d3ab 100%); }
-.pi-paper--aqua   { background: linear-gradient(178deg, #d4f0ea 0%, #b9e4db 100%); }
+.pi-paper--yellow { background-image: var(--pi-grain), linear-gradient(178deg, #fdf3a9 0%, #f9e47f 100%); }
+.pi-paper--green  { background-image: var(--pi-grain), linear-gradient(178deg, #e2f1c4 0%, #cfe39b 100%); }
+.pi-paper--blue   { background-image: var(--pi-grain), linear-gradient(178deg, #d8eafa 0%, #bcd9f0 100%); }
+.pi-paper--pink   { background-image: var(--pi-grain), linear-gradient(178deg, #fbdde4 0%, #f5c8d2 100%); }
+.pi-paper--cream  { background-image: var(--pi-grain), linear-gradient(178deg, #fbf6e8 0%, #f1e7cd 100%); }
+.pi-paper--violet { background-image: var(--pi-grain), linear-gradient(178deg, #e2d9f8 0%, #d0c3f0 100%); }
+.pi-paper--kraft  { background-image: var(--pi-grain), var(--pi-grain), linear-gradient(178deg, #e6cda6 0%, #d9b98c 100%); background-size: 9rem 9rem, 5rem 5rem, auto; }
+.pi-paper--white  { background-image: var(--pi-grain), linear-gradient(178deg, #fffefa 0%, #f4f0e4 100%); }
+.pi-paper--peach  { background-image: var(--pi-grain), linear-gradient(178deg, #fde4c8 0%, #f8d3ab 100%); }
+.pi-paper--aqua   { background-image: var(--pi-grain), linear-gradient(178deg, #d4f0ea 0%, #b9e4db 100%); }
 
-/* Torn scrap: ragged top + bottom edges. */
+/* Torn scrap: ragged top + bottom edges. clip-path clips box-shadows,
+   so the lift comes from drop-shadows that follow the torn silhouette. */
 .pi-card__paper--torn {
-    box-shadow: 0 10px 20px rgb(56 38 12 / 24%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 20%);
+    filter:
+        drop-shadow(0 1px 1px rgb(56 38 12 / 25%))
+        drop-shadow(0 9px 7px rgb(56 38 12 / 18%))
+        drop-shadow(0 20px 14px rgb(56 38 12 / 20%));
     clip-path: polygon(
         0% 3.5%, 6% 1%, 14% 3%, 24% 0.5%, 35% 2.5%, 47% 0.8%, 58% 3%,
         70% 1%, 82% 2.8%, 92% 0.6%, 100% 2.8%,
@@ -808,14 +991,15 @@
 /* Lined notepad sheet with a torn spiral edge on the left. */
 .pi-card__paper--lined {
     padding-left: 1.7rem;
-    background:
+    background-image:
+        var(--pi-grain),
         repeating-linear-gradient(
             180deg,
             transparent 0 1.5rem,
             rgb(78 133 190 / 28%) 1.5rem calc(1.5rem + 1px)
         ),
         linear-gradient(178deg, #fffefa 0%, #f5f1e6 100%);
-    box-shadow: 0 10px 20px rgb(56 38 12 / 24%);
+    background-size: 9rem 9rem, auto, auto;
     border-radius: 0.15rem;
 }
 
@@ -835,13 +1019,11 @@
 /* Kraft note card */
 .pi-card__paper--kraft {
     border-radius: 0.3rem;
-    box-shadow: 0 10px 20px rgb(56 38 12 / 26%);
 }
 
 /* Quote fragment */
 .pi-card__paper--quote {
     border-radius: 0.25rem;
-    box-shadow: 0 10px 20px rgb(56 38 12 / 25%);
 }
 
 .pi-quote__mark {
@@ -858,16 +1040,33 @@
 /* Polaroid photo card */
 .pi-card__paper--polaroid {
     padding: 0.55rem 0.55rem 0.5rem;
-    background: linear-gradient(178deg, #ffffff 0%, #f4f1ea 100%);
+    background-image: var(--pi-grain), linear-gradient(178deg, #ffffff 0%, #f4f1ea 100%);
     border-radius: 0.15rem;
-    box-shadow: 0 12px 24px rgb(56 38 12 / 30%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 60%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 16%),
+        0 1px 2px rgb(56 38 12 / 24%),
+        0 10px 14px -6px rgb(56 38 12 / 26%),
+        0 26px 30px -12px rgb(56 38 12 / 40%);
 }
 
 .pi-photo {
+    position: relative;
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
     background: #e8e4d8;
+    box-shadow: inset 0 1px 4px rgb(30 24 14 / 35%);
+}
+
+.pi-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, rgb(255 255 255 / 22%) 0%, rgb(255 255 255 / 6%) 28%, transparent 45%),
+        linear-gradient(0deg, rgb(30 24 14 / 10%) 0%, transparent 18%);
+    pointer-events: none;
 }
 
 .pi-photo img {
@@ -1142,8 +1341,8 @@
 
 /* New post settling onto the board */
 @keyframes pi-settle {
-    0% { transform: translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 14px)) rotate(var(--pi-rot, 0deg)) scale(1.03); opacity: 0; }
-    100% { transform: translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg)) scale(1); opacity: 1; }
+    0% { transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 14px)) rotate(var(--pi-rot, 0deg)) scale(1.03); opacity: 0; }
+    100% { transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg)) scale(1); opacity: 1; }
 }
 
 .pi-item--new .pi-card__paper {
@@ -1555,7 +1754,7 @@
 
     .pi-card:hover .pi-card__paper,
     .pi-card:focus-within .pi-card__paper {
-        transform: translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
+        transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
     }
 
     .pi-skeleton { animation: none; }
