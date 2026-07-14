@@ -196,9 +196,13 @@
 
 @media (min-width: 84.5rem) {
     .pi-layout {
-        /* Facebook-style three columns: a fixed narrow board in the
-           middle with the two supporting rails growing on either side. */
+        /* Facebook-style three columns: a fixed narrow board in the middle.
+           space-between pushes the rails out to the container edges — the
+           left rail lines up with the start of the page title, the right
+           rail with its end — and the gap to the board grows on wide
+           screens, shrinking as the page narrows (Pete, 2026-07-14). */
         grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 52rem) minmax(13.5rem, 17rem);
+        justify-content: space-between;
     }
 
     .pi-rail--right {
@@ -280,6 +284,56 @@
 .pi-raillink:hover,
 .pi-raillink:focus-visible {
     text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------
+   Left-rail nav card — The Slate's sections as vertical links (moved
+   here from the top strip). Uses the frosted .pi-railcard shell.
+   --------------------------------------------------------------------- */
+.pi-navcard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.55rem;
+}
+
+.pi-navcard__link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.62rem 0.7rem;
+    border-radius: 0.7rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 640;
+    color: #1c2b47;
+    text-decoration: none;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.pi-navcard__link svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: none;
+    fill: none;
+    stroke: #4f5bd5;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-navcard__link:hover,
+.pi-navcard__link:focus-visible {
+    background: rgb(79 91 213 / 9%);
+    color: #4f5bd5;
+}
+
+/* Feed switcher relocated to sit just above the composer. The pill hugs
+   its tabs and left-aligns over the board. */
+.pi-feedtabs {
+    width: max-content;
+    max-width: 100%;
+    margin: 0 0 0.8rem;
 }
 
 /* Avatars: images for real profiles, tinted initials for sample members. */

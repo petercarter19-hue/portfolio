@@ -42,7 +42,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/people-interests.css') }}?v=pi-board-16"
+    href="{{ url_for('static', filename='css/people-interests.css') }}?v=pi-board-17"
 >
 {% endblock %}
 
@@ -60,45 +60,11 @@
 <section class="pi-page" aria-labelledby="pi-title">
     <div class="pi-container">
 
-        <!-- ============ FEED STRIP: title + the three feeds ============ -->
+        <!-- ============ PAGE TITLE ============ -->
         <header class="pi-strip">
             <div class="pi-strip__copy">
                 <h1 id="pi-title">People &amp; Interests</h1>
                 <p>The living board of goals, projects and moments from the people and topics you follow.</p>
-            </div>
-            <div class="pi-strip__nav">
-                <nav class="sf-tabs pi-strip__tabs" aria-label="Feeds">
-                    <a class="sf-tab" href="{{ url_for('slate_feed_break') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 2v3M12 2v3"/></svg>
-                        Break Feed
-                    </a>
-                    <a class="sf-tab" href="{{ url_for('the_slate') }}" aria-current="page">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
-                        People &amp; Interests
-                    </a>
-                    {# News Feed doesn't exist yet — an honest preview chip, not a dead link. #}
-                    <span class="sf-tab sf-tab--soon" aria-disabled="true" title="Coming soon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>
-                        News Feed
-                        <small>soon</small>
-                    </span>
-                </nav>
-                {# The old Slate Feed landing's hub destinations, kept when the
-                   board took over /the-slate (Pete, 2026-07-14). #}
-                <nav class="pi-strip__hub" aria-label="The Slate sections">
-                    <a href="{{ portfolio_url('slate-board') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
-                        Slate Board
-                    </a>
-                    <a href="{{ url_for('the_slate_my') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 21h6M12 18v3"/><path d="M7.5 9.5h4M7.5 13h6"/></svg>
-                        My Slate
-                    </a>
-                    <a href="{{ url_for('the_slate_daily') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
-                        Daily Slate
-                    </a>
-                </nav>
             </div>
         </header>
 
@@ -107,31 +73,22 @@
 
             <!-- ---- LEFT SUPPORTING RAIL ---- -->
             <aside class="pi-rail pi-rail--left" aria-label="People and saved notes">
-                <section class="ps-card pi-railcard" aria-labelledby="pi-moving-title">
-                    <header class="pi-railhead">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
-                        <h2 id="pi-moving-title">People moving like you</h2>
-                    </header>
-                    <ul class="pi-people">
-                        {% for row in left_rail.people_moving %}
-                        {% set author = feed_authors.get(row.author, {}) %}
-                        <li class="pi-people__row">
-                            {{ rail_avatar(row.author) }}
-                            <span class="pi-people__body">
-                                <strong>{{ author.name }}</strong>
-                                <span class="pi-people__meta">
-                                    <i class="pi-chip pi-chip--{{ row.chip_tint }}">{{ row.chip }}</i>
-                                    {{ row.text }}
-                                </span>
-                            </span>
-                            <small>{{ row.time }}</small>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {# The old People & Progress directory retired with the
-                       previous landing; the real one arrives with accounts. #}
-                    <button class="pi-raillink pi-raillink--btn" type="button" aria-disabled="true" title="The member directory arrives with PeerSlate accounts">View all people</button>
-                </section>
+                {# The Slate's sections as vertical links — moved here from the
+                   top strip so the nav lives beside the board (Pete, 2026-07-14). #}
+                <nav class="ps-card pi-railcard pi-navcard" aria-label="The Slate sections">
+                    <a class="pi-navcard__link" href="{{ portfolio_url('slate-board') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        Slate Board
+                    </a>
+                    <a class="pi-navcard__link" href="{{ url_for('the_slate_my') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 21h6M12 18v3"/><path d="M7.5 9.5h4M7.5 13h6"/></svg>
+                        My Slate
+                    </a>
+                    <a class="pi-navcard__link" href="{{ url_for('the_slate_daily') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+                        Daily Slate
+                    </a>
+                </nav>
 
                 <section class="ps-card pi-railcard" aria-labelledby="pi-saved-title">
                     <header class="pi-railhead">
@@ -191,6 +148,21 @@
 
             <!-- ---- THE LIVING BOARD ---- -->
             <div class="pi-boardwrap">
+
+                {# Feed switcher, moved down here to sit right above the composer
+                   (Break Feed retired from this bar) — Pete, 2026-07-14. #}
+                <nav class="sf-tabs pi-strip__tabs pi-feedtabs" aria-label="Feeds">
+                    <a class="sf-tab" href="{{ url_for('the_slate') }}" aria-current="page">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                        People &amp; Interests
+                    </a>
+                    {# News Feed doesn't exist yet — an honest preview chip, not a dead link. #}
+                    <span class="sf-tab sf-tab--soon" aria-disabled="true" title="Coming soon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>
+                        News Feed
+                        <small>soon</small>
+                    </span>
+                </nav>
 
                 {# ---- Composer: a standalone card ABOVE the cork board, the way
                    Facebook / LinkedIn place it, so the board itself stays focused
@@ -401,5 +373,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/people-interests.js') }}?v=pi-board-16"></script>
+<script src="{{ url_for('static', filename='js/people-interests.js') }}?v=pi-board-17"></script>
 {% endblock %}
