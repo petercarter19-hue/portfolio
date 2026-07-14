@@ -602,11 +602,137 @@ def _load_profile_projects(profile_slug):
     return projects
 
 
+# Projects Board registry (2026-07-13): the /petec/work page was rebuilt from
+# the "too much" cinematic exhibition into a simple card grid + detail modal.
+# Its data is a profile-scoped, editor-friendly view model kept in its own file
+# so an owner (or a future edit UI) can add/change projects without touching
+# the template. Mirrors RESUME_PROFILE_FILES so it stays multi-tenant ready.
+PROJECT_BOARD_FILES = {
+    'petec': 'projects_board.json',
+}
+
+
+def _load_project_board(profile_slug):
+    """Load one profile's Projects Board view model (board meta + projects)."""
+    data_filename = PROJECT_BOARD_FILES.get(profile_slug)
+    if data_filename is None:
+        return None
+
+    board_path = os.path.join(
+        os.path.dirname(__file__),
+        'static',
+        'data',
+        data_filename,
+    )
+    try:
+        with open(board_path, 'r', encoding='utf-8') as board_file:
+            board_data = json.load(board_file)
+    except (OSError, ValueError):
+        return None
+
+    data_slug = board_data.get('profile_slug')
+    if data_slug and data_slug != profile_slug:
+        return None
+
+    # Graceful image fallback: a project may reference a photo whose file has
+    # not been uploaded yet (an owner points at images/projects/home-gym.jpg
+    # before dropping the file in). Rather than render a broken image, degrade
+    # that visual to its themed illustration until the asset exists — so the
+    # card "just works" the moment the file appears, with no code change.
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+
+    def _resolve_visual(visual):
+        if isinstance(visual, dict) and visual.get('kind') == 'photo':
+            src = visual.get('src') or ''
+            file_path = os.path.join(static_dir, *src.split('/')) if src else ''
+            if not file_path or not os.path.isfile(file_path):
+                return {
+                    'kind': 'illustration',
+                    'theme': visual.get('fallback_theme', 'platform'),
+                    'alt': visual.get('alt', ''),
+                }
+        return visual
+
+    for project in board_data.get('projects', []):
+        _normalize_board_project(project)
+        project['card_image'] = _resolve_visual(project.get('card_image'))
+        detail = project['detail']
+        detail['hero_device'] = _resolve_visual(detail.get('hero_device'))
+
+    return board_data
+
+
+def _normalize_board_project(project):
+    """Fill in a safe, complete shape so a partially-authored project (e.g. an
+    on-deck card captured before its detail is written, or a record from a
+    future edit UI) renders instead of 500-ing the whole page. The template
+    reaches deep into detail.actions/info/team, and Jinja raises on chained
+    access through a missing object — so every nested object gets a default."""
+    project.setdefault('tags', [])
+    project.setdefault('status', 'active')
+    project.setdefault('status_label',
+                       (project.get('status') or 'active').replace('-', ' ').title())
+    project.setdefault('title', 'Untitled project')
+    project.setdefault('summary', '')
+
+    detail = project.get('detail')
+    if not isinstance(detail, dict):
+        detail = {}
+    project['detail'] = detail
+
+    detail.setdefault('about', '')
+    detail.setdefault('latest_update_ref', 0)
+    for key in ('updates', 'milestones', 'media', 'links', 'notes',
+                'key_features', 'tech_stack'):
+        if not isinstance(detail.get(key), list):
+            detail[key] = []
+
+    logo = detail.get('logo')
+    if not isinstance(logo, dict):
+        logo = {'kind': 'illustration', 'theme': 'platform'}
+    logo.setdefault('alt', project.get('title', ''))
+    detail['logo'] = logo
+
+    actions = detail.get('actions') if isinstance(detail.get('actions'), dict) else {}
+    for key in ('view_live', 'github', 'roadmap'):
+        action = actions.get(key) if isinstance(actions.get(key), dict) else {}
+        action.setdefault('enabled', False)
+        action.setdefault('url', '')
+        actions[key] = action
+    detail['actions'] = actions
+
+    info = detail.get('info') if isinstance(detail.get('info'), dict) else {}
+    for key in ('category', 'type', 'status', 'visibility', 'created'):
+        info.setdefault(key, '—')
+    team = info.get('team') if isinstance(info.get('team'), dict) else {}
+    team.setdefault('note', '—')
+    info['team'] = team
+    detail['info'] = info
+    return project
+
+
+def _render_project_board(profile_slug):
+    board_data = _load_project_board(profile_slug)
+    if board_data is None:
+        abort(404)
+    return render_template(
+        'work.html',
+        board=board_data.get('board', {}),
+        projects=board_data.get('projects', []),
+    )
+
+
 @app.route('/work')
 @app.route('/petec/work')
 def work():
-    projects = _load_profile_projects('petec') or []
-    return render_template('work.html', projects=projects)
+    return _render_project_board('petec')
+
+
+@app.route('/<profile_slug>/work')
+def profile_work(profile_slug):
+    """Serve any registered profile's board (multi-tenant). Unknown profiles
+    404 rather than falling back to another tenant's data."""
+    return _render_project_board(profile_slug)
 
 
 @app.route('/petec/work/<slug>')
