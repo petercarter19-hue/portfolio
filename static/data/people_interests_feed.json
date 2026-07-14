@@ -1,0 +1,1236 @@
+{
+    "_note": "Fixture data for the People & Interests living board (PS-FEAT-002, /the-slate/people-interests). PeerSlate is pre-launch: Pete (petec) is the only real profile, so every other author is a representative sample member — the same convention as The Slate hub. Posts carry age_minutes offsets instead of absolute timestamps so the demo board always reads fresh; services/people_interests_feed.py resolves them once at load. Paper, color, rotation, attachment, and layout are STORED per item so the collage is deterministic — the same note never jumps to a new angle on refresh. Photos of Pete appear only on posts authored by petec.",
+    "authors": {
+        "petec": {
+            "name": "Pete Carter",
+            "title": "Systems Engineer",
+            "avatar": "images/story/pete-headshot-m.jpg",
+            "initials": "PC",
+            "tint": "blue",
+            "is_sample": false
+        },
+        "hannah-cho": {
+            "name": "Hannah Cho",
+            "initials": "HC",
+            "tint": "green",
+            "is_sample": true
+        },
+        "marcus-lee": {
+            "name": "Marcus Lee",
+            "initials": "ML",
+            "tint": "sky",
+            "is_sample": true
+        },
+        "priya-patel": {
+            "name": "Priya Patel",
+            "initials": "PP",
+            "tint": "violet",
+            "is_sample": true
+        },
+        "nash-williams": {
+            "name": "Nash Williams",
+            "initials": "NW",
+            "tint": "orange",
+            "is_sample": true
+        },
+        "ethan-park": {
+            "name": "Ethan Park",
+            "initials": "EP",
+            "tint": "blue",
+            "is_sample": true
+        },
+        "jordan-kim": {
+            "name": "Jordan Kim",
+            "initials": "JK",
+            "tint": "green",
+            "is_sample": true
+        },
+        "maya-johnson": {
+            "name": "Maya Johnson",
+            "initials": "MJ",
+            "tint": "violet",
+            "is_sample": true
+        },
+        "ben-thompson": {
+            "name": "Ben Thompson",
+            "initials": "BT",
+            "tint": "sky",
+            "is_sample": true
+        },
+        "sarah-lin": {
+            "name": "Sarah Lin",
+            "initials": "SL",
+            "tint": "orange",
+            "is_sample": true
+        },
+        "alex-rivera": {
+            "name": "Alex Rivera",
+            "initials": "AR",
+            "tint": "green",
+            "is_sample": true
+        },
+        "olivia-chen": {
+            "name": "Olivia Chen",
+            "initials": "OC",
+            "tint": "blue",
+            "is_sample": true
+        },
+        "daniel-kim": {
+            "name": "Daniel Kim",
+            "initials": "DK",
+            "tint": "violet",
+            "is_sample": true
+        },
+        "erica-nolan": {
+            "name": "Erica Nolan",
+            "initials": "EN",
+            "tint": "sky",
+            "is_sample": true
+        },
+        "james-torres": {
+            "name": "James Torres",
+            "initials": "JT",
+            "tint": "orange",
+            "is_sample": true
+        }
+    },
+    "posts": [
+        {
+            "id": "pi-maya-half",
+            "author": "maya-johnson",
+            "age_minutes": 120,
+            "content_type": "goal",
+            "paper": "sticky",
+            "paper_color": "yellow",
+            "layout": "featured",
+            "rotation": -1.2,
+            "attachment": "pin",
+            "pin_color": "red",
+            "handwriting": "cursive",
+            "body": "Running my first half marathon this Sunday! Who's in? Plan is 10 weeks of training, focusing on consistency over speed. Would love accountability partners!",
+            "reactions": {
+                "applaud": 12,
+                "celebrate": 9,
+                "inspired": 6,
+                "rooting": 4
+            },
+            "joining_count": 8,
+            "comments": [
+                {
+                    "id": "c-maya-1",
+                    "author": "sarah-lin",
+                    "age_minutes": 62,
+                    "body": "I'm in! Let's do this together 💪",
+                    "supports": 3
+                },
+                {
+                    "id": "c-maya-2",
+                    "author": "alex-rivera",
+                    "age_minutes": 58,
+                    "body": "Following! I'm training for mine in May.",
+                    "supports": 2
+                },
+                {
+                    "id": "c-maya-3",
+                    "author": "daniel-kim",
+                    "age_minutes": 55,
+                    "body": "You got this! Consistency is key.",
+                    "supports": 2
+                },
+                {
+                    "id": "c-maya-4",
+                    "author": "olivia-chen",
+                    "age_minutes": 31,
+                    "body": "Count me in! This will be my first 10k.",
+                    "supports": 1
+                },
+                {
+                    "id": "c-maya-5",
+                    "author": "erica-nolan",
+                    "age_minutes": 20,
+                    "body": "I'll be cheering you all on!",
+                    "supports": 1
+                }
+            ],
+            "offset_x": 0,
+            "offset_y": 6,
+            "flourish": "🏃‍♀️"
+        },
+        {
+            "id": "pi-hannah-10k",
+            "author": "hannah-cho",
+            "age_minutes": 130,
+            "content_type": "win",
+            "paper": "sticky",
+            "paper_color": "yellow",
+            "layout": "small",
+            "rotation": -2.4,
+            "attachment": "pin",
+            "pin_color": "teal",
+            "handwriting": "cursive",
+            "body": "Just finished a 10K this morning — new PR! 👟",
+            "reactions": {
+                "applaud": 14,
+                "celebrate": 7
+            },
+            "comments": [
+                {
+                    "id": "c-hannah-1",
+                    "author": "maya-johnson",
+                    "age_minutes": 110,
+                    "body": "Amazing pace! What was your time?",
+                    "supports": 1
+                },
+                {
+                    "id": "c-hannah-2",
+                    "author": "jordan-kim",
+                    "age_minutes": 90,
+                    "body": "Congrats! 🎉",
+                    "supports": 0
+                }
+            ],
+            "offset_x": -6,
+            "offset_y": 10,
+            "flourish": "👟"
+        },
+        {
+            "id": "pi-pete-hike",
+            "author": "petec",
+            "age_minutes": 170,
+            "content_type": "photo",
+            "paper": "polaroid",
+            "paper_color": "cream",
+            "layout": "photo",
+            "rotation": 1.6,
+            "attachment": "pin",
+            "pin_color": "sky",
+            "handwriting": "cursive",
+            "body": "Weekend hike ⛰️",
+            "photo": {
+                "src": "images/story/pete-misty-hike-m.jpg",
+                "full": "images/story/pete-misty-hike.jpg",
+                "alt": "Pete pausing on a misty mountain trail during a weekend hike"
+            },
+            "reactions": {
+                "inspired": 8,
+                "rooting": 3
+            },
+            "comments": [
+                {
+                    "id": "c-hike-1",
+                    "author": "erica-nolan",
+                    "age_minutes": 140,
+                    "body": "That fog is unreal. Where is this?",
+                    "supports": 1
+                }
+            ],
+            "offset_x": 5,
+            "offset_y": -4
+        },
+        {
+            "id": "pi-ethan-books",
+            "author": "ethan-park",
+            "age_minutes": 185,
+            "content_type": "question",
+            "paper": "torn",
+            "paper_color": "white",
+            "layout": "small",
+            "rotation": 2.2,
+            "attachment": "pin",
+            "pin_color": "sky",
+            "handwriting": "cursive",
+            "body": "Looking for UX design book recommendations!",
+            "reactions": {
+                "inspired": 2
+            },
+            "comments": [
+                {
+                    "id": "c-ethan-1",
+                    "author": "olivia-chen",
+                    "age_minutes": 160,
+                    "body": "Don't Make Me Think — still the classic.",
+                    "supports": 2
+                },
+                {
+                    "id": "c-ethan-2",
+                    "author": "priya-patel",
+                    "age_minutes": 150,
+                    "body": "The Design of Everyday Things changed how I see doors 😄",
+                    "supports": 3
+                },
+                {
+                    "id": "c-ethan-3",
+                    "author": "james-torres",
+                    "age_minutes": 120,
+                    "body": "Refactoring UI if you build product.",
+                    "supports": 1
+                },
+                {
+                    "id": "c-ethan-4",
+                    "author": "maya-johnson",
+                    "age_minutes": 90,
+                    "body": "Seconding Refactoring UI!",
+                    "supports": 0
+                },
+                {
+                    "id": "c-ethan-5",
+                    "author": "ben-thompson",
+                    "age_minutes": 60,
+                    "body": "About Face for interaction patterns.",
+                    "supports": 1
+                },
+                {
+                    "id": "c-ethan-6",
+                    "author": "hannah-cho",
+                    "age_minutes": 45,
+                    "body": "Articulating Design Decisions — great for stakeholder convos.",
+                    "supports": 2
+                },
+                {
+                    "id": "c-ethan-7",
+                    "author": "alex-rivera",
+                    "age_minutes": 30,
+                    "body": "Saving this whole thread 🙌",
+                    "supports": 0
+                }
+            ],
+            "offset_x": -4,
+            "offset_y": 12,
+            "flourish": "📚"
+        },
+        {
+            "id": "pi-quote-einstein",
+            "author": "james-torres",
+            "age_minutes": 210,
+            "content_type": "quote",
+            "paper": "quote",
+            "paper_color": "violet",
+            "layout": "small",
+            "rotation": 1.1,
+            "attachment": "pin",
+            "pin_color": "violet",
+            "handwriting": "cursive",
+            "body": "Creativity is intelligence having fun.",
+            "quote_attribution": "Albert Einstein",
+            "reactions": {
+                "inspired": 11
+            },
+            "comments": [],
+            "offset_x": 6,
+            "offset_y": -6,
+            "flourish": "✨"
+        },
+        {
+            "id": "pi-marcus-soccer",
+            "author": "marcus-lee",
+            "age_minutes": 65,
+            "content_type": "question",
+            "paper": "lined",
+            "paper_color": "white",
+            "layout": "small",
+            "rotation": -3.1,
+            "attachment": "clip",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Anyone up for a pickup soccer game this Sat? ⚽",
+            "reactions": {
+                "im_in": 4
+            },
+            "comments": [
+                {
+                    "id": "c-marcus-1",
+                    "author": "daniel-kim",
+                    "age_minutes": 50,
+                    "body": "In. Morning or afternoon?",
+                    "supports": 0
+                },
+                {
+                    "id": "c-marcus-2",
+                    "author": "jordan-kim",
+                    "age_minutes": 44,
+                    "body": "I'll bring a friend if that's cool.",
+                    "supports": 1
+                },
+                {
+                    "id": "c-marcus-3",
+                    "author": "nash-williams",
+                    "age_minutes": 20,
+                    "body": "Which field?",
+                    "supports": 0
+                },
+                {
+                    "id": "c-marcus-4",
+                    "author": "ethan-park",
+                    "age_minutes": 12,
+                    "body": "Count me in for the second half 😅",
+                    "supports": 1
+                }
+            ],
+            "offset_x": 0,
+            "offset_y": -8
+        },
+        {
+            "id": "pi-priya-goals",
+            "author": "priya-patel",
+            "age_minutes": 260,
+            "content_type": "goal",
+            "paper": "sticky",
+            "paper_color": "green",
+            "layout": "tall",
+            "rotation": 0.8,
+            "attachment": "pin",
+            "pin_color": "amber",
+            "handwriting": "cursive",
+            "title": "Q2 Learning Goals",
+            "body": "Holding myself to these publicly this quarter.",
+            "list_items": [
+                "Advanced Figma",
+                "Data storytelling",
+                "Public speaking"
+            ],
+            "reactions": {
+                "rooting": 6,
+                "inspired": 3
+            },
+            "comments": [
+                {
+                    "id": "c-priya-1",
+                    "author": "hannah-cho",
+                    "age_minutes": 200,
+                    "body": "Public accountability works. Rooting for you!",
+                    "supports": 2
+                }
+            ],
+            "offset_x": -5,
+            "offset_y": 4,
+            "flourish": "🎯"
+        },
+        {
+            "id": "pi-pete-dinner",
+            "author": "petec",
+            "age_minutes": 300,
+            "content_type": "photo",
+            "paper": "polaroid",
+            "paper_color": "cream",
+            "layout": "photo",
+            "rotation": -1.8,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Dinner with my favorite person ❤️",
+            "photo": {
+                "src": "images/story/pete-danielle-dinner-m.jpg",
+                "full": "images/story/pete-danielle-dinner.jpg",
+                "alt": "Pete and Danielle at a candlelit dinner"
+            },
+            "reactions": {
+                "rooting": 9,
+                "celebrate": 2
+            },
+            "comments": [],
+            "offset_x": 4,
+            "offset_y": 8
+        },
+        {
+            "id": "pi-jordan-mvp",
+            "author": "jordan-kim",
+            "age_minutes": 140,
+            "content_type": "win",
+            "paper": "sticky",
+            "paper_color": "peach",
+            "layout": "small",
+            "rotation": 2.8,
+            "attachment": "pin",
+            "pin_color": "teal",
+            "handwriting": "cursive",
+            "body": "Shipped our MVP! Huge thanks to everyone on the team. 🎉",
+            "reactions": {
+                "celebrate": 12,
+                "applaud": 8
+            },
+            "comments": [
+                {
+                    "id": "c-jordan-1",
+                    "author": "ben-thompson",
+                    "age_minutes": 100,
+                    "body": "Massive. What's the first-week goal?",
+                    "supports": 1
+                },
+                {
+                    "id": "c-jordan-2",
+                    "author": "sarah-lin",
+                    "age_minutes": 80,
+                    "body": "Congrats to the whole crew!",
+                    "supports": 0
+                }
+            ],
+            "offset_x": 5,
+            "offset_y": -10,
+            "flourish": "🚀"
+        },
+        {
+            "id": "pi-rams-tip",
+            "author": "erica-nolan",
+            "age_minutes": 340,
+            "content_type": "idea",
+            "paper": "kraft",
+            "paper_color": "kraft",
+            "layout": "standard",
+            "rotation": -0.6,
+            "attachment": "clip",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "title": "Design Tip 💡",
+            "body": "Good design is as little design as possible.",
+            "quote_attribution": "Dieter Rams",
+            "reactions": {
+                "inspired": 7
+            },
+            "comments": [],
+            "offset_x": -6,
+            "offset_y": 6,
+            "flourish": "💡"
+        },
+        {
+            "id": "pi-maya-note",
+            "author": "maya-johnson",
+            "age_minutes": 75,
+            "content_type": "moment",
+            "paper": "sticky",
+            "paper_color": "pink",
+            "layout": "small",
+            "rotation": 3.4,
+            "attachment": "pin",
+            "pin_color": "violet",
+            "handwriting": "cursive",
+            "body": "Note to self: Small steps every day. 🤍",
+            "reactions": {
+                "rooting": 5
+            },
+            "comments": [],
+            "offset_x": 7,
+            "offset_y": -5,
+            "flourish": "🤍"
+        },
+        {
+            "id": "pi-ben-mentor",
+            "author": "ben-thompson",
+            "age_minutes": 150,
+            "content_type": "question",
+            "paper": "torn",
+            "paper_color": "white",
+            "layout": "small",
+            "rotation": -2.7,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Looking for a product mentor in B2B SaaS.",
+            "reactions": {},
+            "comments": [
+                {
+                    "id": "c-ben-1",
+                    "author": "jordan-kim",
+                    "age_minutes": 120,
+                    "body": "DM me — happy to intro you to my old PM lead.",
+                    "supports": 1
+                },
+                {
+                    "id": "c-ben-2",
+                    "author": "priya-patel",
+                    "age_minutes": 95,
+                    "body": "The Product Builders circle here is a great start.",
+                    "supports": 2
+                }
+            ],
+            "offset_x": -5,
+            "offset_y": 9
+        },
+        {
+            "id": "pi-olivia-aurora",
+            "author": "olivia-chen",
+            "age_minutes": 380,
+            "content_type": "photo",
+            "paper": "polaroid",
+            "paper_color": "cream",
+            "layout": "photo",
+            "rotation": 2.1,
+            "attachment": "pin",
+            "pin_color": "red",
+            "handwriting": "cursive",
+            "body": "Northern lights from last night. Still can't believe it. 🌌",
+            "photo": {
+                "src": "images/cinematic/hero-aurora-m.jpg",
+                "full": "images/cinematic/hero-aurora.jpg",
+                "alt": "Green aurora borealis over a dark mountain ridge"
+            },
+            "reactions": {
+                "inspired": 15,
+                "celebrate": 4
+            },
+            "comments": [
+                {
+                    "id": "c-olivia-1",
+                    "author": "marcus-lee",
+                    "age_minutes": 300,
+                    "body": "Bucket list. Where was this?",
+                    "supports": 2
+                }
+            ],
+            "offset_x": 6,
+            "offset_y": -6
+        },
+        {
+            "id": "pi-alex-gym",
+            "author": "alex-rivera",
+            "age_minutes": 240,
+            "content_type": "project",
+            "paper": "lined",
+            "paper_color": "white",
+            "layout": "tall",
+            "rotation": -1.4,
+            "attachment": "clip",
+            "pin_color": "indigo",
+            "handwriting": "print",
+            "title": "Home gym on a budget",
+            "body": "Building a lightweight home gym on a budget. Here's the plan so far → adjustable dumbbells, a bench, resistance bands, and one big rule: no equipment that becomes a coat rack.",
+            "reactions": {
+                "inspired": 4,
+                "rooting": 2
+            },
+            "comments": [
+                {
+                    "id": "c-alex-1",
+                    "author": "hannah-cho",
+                    "age_minutes": 210,
+                    "body": "The coat rack rule is real 😂",
+                    "supports": 3
+                }
+            ],
+            "offset_x": -4,
+            "offset_y": 5,
+            "flourish": "🏋️"
+        },
+        {
+            "id": "pi-daniel-steps",
+            "author": "daniel-kim",
+            "age_minutes": 58,
+            "content_type": "idea",
+            "paper": "torn",
+            "paper_color": "aqua",
+            "layout": "standard",
+            "rotation": 1.9,
+            "attachment": "pin",
+            "pin_color": "teal",
+            "handwriting": "cursive",
+            "body": "Discipline is choosing between what you want now and what you want most.",
+            "quote_attribution": "unknown",
+            "reactions": {
+                "inspired": 6
+            },
+            "comments": [],
+            "offset_x": 5,
+            "offset_y": -9
+        },
+        {
+            "id": "pi-sarah-test",
+            "author": "sarah-lin",
+            "age_minutes": 320,
+            "content_type": "project",
+            "paper": "torn",
+            "paper_color": "blue",
+            "layout": "small",
+            "rotation": -2.2,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Test launched! Excited to hear what you all think. 🚀",
+            "reactions": {
+                "celebrate": 5,
+                "applaud": 3
+            },
+            "comments": [
+                {
+                    "id": "c-sarah-1",
+                    "author": "ethan-park",
+                    "age_minutes": 280,
+                    "body": "Link? I'll give feedback this week.",
+                    "supports": 1
+                }
+            ],
+            "offset_x": -7,
+            "offset_y": 6,
+            "flourish": "🚀"
+        },
+        {
+            "id": "pi-erica-grateful",
+            "author": "erica-nolan",
+            "age_minutes": 25,
+            "content_type": "moment",
+            "paper": "torn",
+            "paper_color": "cream",
+            "layout": "small",
+            "rotation": 2.6,
+            "attachment": "pin",
+            "pin_color": "amber",
+            "handwriting": "cursive",
+            "body": "Grateful for this community. You all inspire me every day. 🤍",
+            "reactions": {
+                "rooting": 8,
+                "applaud": 2
+            },
+            "comments": [],
+            "offset_x": 6,
+            "offset_y": -7,
+            "flourish": "🤍"
+        },
+        {
+            "id": "pi-nash-grateful",
+            "author": "nash-williams",
+            "age_minutes": 360,
+            "content_type": "moment",
+            "paper": "sticky",
+            "paper_color": "aqua",
+            "layout": "small",
+            "rotation": -3.4,
+            "attachment": "pin",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Grateful for this morning's quiet hour before the world wakes up.",
+            "reactions": {
+                "rooting": 3
+            },
+            "comments": [],
+            "offset_x": -5,
+            "offset_y": 8,
+            "flourish": "🌅"
+        },
+        {
+            "id": "pi-james-books",
+            "author": "james-torres",
+            "age_minutes": 190,
+            "content_type": "question",
+            "paper": "sticky",
+            "paper_color": "peach",
+            "layout": "small",
+            "rotation": 1.3,
+            "attachment": "pin",
+            "pin_color": "red",
+            "handwriting": "cursive",
+            "body": "Looking for book recommendations that changed the way you think.",
+            "reactions": {
+                "inspired": 3
+            },
+            "comments": [
+                {
+                    "id": "c-james-1",
+                    "author": "petec",
+                    "age_minutes": 150,
+                    "body": "Thinking in Systems by Donella Meadows. Short and it rewires you.",
+                    "supports": 4
+                }
+            ],
+            "offset_x": 4,
+            "offset_y": -8
+        },
+        {
+            "id": "pi-retreat-ideas",
+            "author": "olivia-chen",
+            "age_minutes": 420,
+            "content_type": "idea",
+            "paper": "kraft",
+            "paper_color": "kraft",
+            "layout": "tall",
+            "rotation": 0.0,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "title": "Ideas for Q2 retreat",
+            "body": "Add yours in the comments!",
+            "list_items": [
+                "Hiking & yoga",
+                "Skill shares",
+                "Town hall"
+            ],
+            "reactions": {
+                "inspired": 5
+            },
+            "comments": [
+                {
+                    "id": "c-retreat-1",
+                    "author": "erica-nolan",
+                    "age_minutes": 400,
+                    "body": "Skill shares got my vote.",
+                    "supports": 2
+                },
+                {
+                    "id": "c-retreat-2",
+                    "author": "marcus-lee",
+                    "age_minutes": 380,
+                    "body": "Morning trail run group?",
+                    "supports": 1
+                }
+            ],
+            "offset_x": -6,
+            "offset_y": 7,
+            "flourish": "🌲"
+        },
+        {
+            "id": "pi-pete-300",
+            "author": "petec",
+            "age_minutes": 480,
+            "content_type": "win",
+            "paper": "sticky",
+            "paper_color": "yellow",
+            "layout": "standard",
+            "rotation": -1.6,
+            "attachment": "pin",
+            "pin_color": "teal",
+            "handwriting": "cursive",
+            "body": "Crossed 300 miles for the year. The 5 a.m. starts are finally paying rent. 🏃",
+            "reactions": {
+                "applaud": 12,
+                "celebrate": 5
+            },
+            "comments": [
+                {
+                    "id": "c-pete300-1",
+                    "author": "hannah-cho",
+                    "age_minutes": 440,
+                    "body": "Ahead of pace! What's the year goal?",
+                    "supports": 1
+                }
+            ],
+            "offset_x": 5,
+            "offset_y": -6,
+            "flourish": "🏃"
+        },
+        {
+            "id": "pi-sarah-creative",
+            "author": "sarah-lin",
+            "age_minutes": 520,
+            "content_type": "project",
+            "paper": "lined",
+            "paper_color": "white",
+            "layout": "small",
+            "rotation": 2.4,
+            "attachment": "pin",
+            "pin_color": "violet",
+            "handwriting": "cursive",
+            "body": "New creative space is coming together. 🪴",
+            "reactions": {
+                "inspired": 4
+            },
+            "comments": [],
+            "offset_x": -4,
+            "offset_y": 10,
+            "flourish": "🪴"
+        },
+        {
+            "id": "pi-james-think",
+            "author": "james-torres",
+            "age_minutes": 560,
+            "content_type": "quote",
+            "paper": "quote",
+            "paper_color": "violet",
+            "layout": "small",
+            "rotation": -2.0,
+            "attachment": "pin",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Whether you think you can, or you think you can't — you're right.",
+            "quote_attribution": "Henry Ford",
+            "reactions": {
+                "inspired": 9
+            },
+            "comments": [],
+            "offset_x": 6,
+            "offset_y": -5
+        },
+        {
+            "id": "pi-pete-homeops",
+            "author": "petec",
+            "age_minutes": 600,
+            "content_type": "project",
+            "paper": "lined",
+            "paper_color": "white",
+            "layout": "tall",
+            "rotation": 1.0,
+            "attachment": "clip",
+            "pin_color": "indigo",
+            "handwriting": "print",
+            "title": "Home Operations Dashboard v2",
+            "body": "Moving automations off cloud triggers onto local WebSocket events. Latency dropped from seconds to milliseconds. Next: publish the write-up.",
+            "reactions": {
+                "inspired": 6,
+                "applaud": 4
+            },
+            "comments": [
+                {
+                    "id": "c-homeops-1",
+                    "author": "alex-rivera",
+                    "age_minutes": 560,
+                    "body": "Would read that write-up. Local-first is the way.",
+                    "supports": 2
+                }
+            ],
+            "offset_x": -5,
+            "offset_y": 4
+        },
+        {
+            "id": "pi-hannah-sunrise",
+            "author": "hannah-cho",
+            "age_minutes": 640,
+            "content_type": "photo",
+            "paper": "polaroid",
+            "paper_color": "cream",
+            "layout": "photo",
+            "rotation": -2.9,
+            "attachment": "pin",
+            "pin_color": "amber",
+            "handwriting": "cursive",
+            "body": "Sunrise from this morning's long run ☀️",
+            "photo": {
+                "src": "images/cinematic/story-clouds-m.jpg",
+                "full": "images/cinematic/story-clouds.jpg",
+                "alt": "Soft sunrise clouds over rolling hills"
+            },
+            "reactions": {
+                "inspired": 7,
+                "rooting": 2
+            },
+            "comments": [],
+            "offset_x": 4,
+            "offset_y": -7
+        },
+        {
+            "id": "pi-daniel-pmp",
+            "author": "daniel-kim",
+            "age_minutes": 700,
+            "content_type": "goal",
+            "paper": "sticky",
+            "paper_color": "blue",
+            "layout": "standard",
+            "rotation": 2.0,
+            "attachment": "pin",
+            "pin_color": "red",
+            "handwriting": "cursive",
+            "body": "Studying for the PMP certification. Six weeks out. Accountability welcome. 📚",
+            "reactions": {
+                "rooting": 7,
+                "im_in": 2
+            },
+            "joining_count": 2,
+            "comments": [
+                {
+                    "id": "c-pmp-1",
+                    "author": "petec",
+                    "age_minutes": 650,
+                    "body": "The practice-exam grind is worth it. Happy to share my study plan.",
+                    "supports": 3
+                }
+            ],
+            "offset_x": -6,
+            "offset_y": 6,
+            "flourish": "📚"
+        },
+        {
+            "id": "pi-erica-ebook",
+            "author": "erica-nolan",
+            "age_minutes": 760,
+            "content_type": "win",
+            "paper": "torn",
+            "paper_color": "peach",
+            "layout": "small",
+            "rotation": -1.1,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Published my first eBook! 📖",
+            "reactions": {
+                "celebrate": 10,
+                "applaud": 6
+            },
+            "comments": [
+                {
+                    "id": "c-ebook-1",
+                    "author": "james-torres",
+                    "age_minutes": 720,
+                    "body": "Huge congrats. What's it about?",
+                    "supports": 1
+                }
+            ],
+            "offset_x": 6,
+            "offset_y": -9,
+            "flourish": "📖"
+        },
+        {
+            "id": "pi-marcus-peak",
+            "author": "marcus-lee",
+            "age_minutes": 820,
+            "content_type": "photo",
+            "paper": "polaroid",
+            "paper_color": "cream",
+            "layout": "photo",
+            "rotation": 1.5,
+            "attachment": "tape",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Trail views from Saturday's climb 🥾",
+            "photo": {
+                "src": "images/cinematic/future-path-m.jpg",
+                "full": "images/cinematic/future-path.jpg",
+                "alt": "A mountain path winding toward a bright horizon"
+            },
+            "reactions": {
+                "inspired": 5
+            },
+            "comments": [],
+            "offset_x": -4,
+            "offset_y": 6
+        },
+        {
+            "id": "pi-priya-talk",
+            "author": "priya-patel",
+            "age_minutes": 880,
+            "content_type": "win",
+            "paper": "sticky",
+            "paper_color": "green",
+            "layout": "small",
+            "rotation": -2.6,
+            "attachment": "pin",
+            "pin_color": "teal",
+            "handwriting": "cursive",
+            "body": "Gave my first conference talk today. Hands shook. Did it anyway.",
+            "reactions": {
+                "applaud": 16,
+                "rooting": 5
+            },
+            "comments": [
+                {
+                    "id": "c-talk-1",
+                    "author": "maya-johnson",
+                    "age_minutes": 840,
+                    "body": "'Did it anyway' is the whole game. Proud of you!",
+                    "supports": 4
+                }
+            ],
+            "offset_x": 5,
+            "offset_y": -6,
+            "flourish": "🎤"
+        },
+        {
+            "id": "pi-ben-reading",
+            "author": "ben-thompson",
+            "age_minutes": 940,
+            "content_type": "goal",
+            "paper": "lined",
+            "paper_color": "white",
+            "layout": "standard",
+            "rotation": 0.9,
+            "attachment": "clip",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Goal: read 12 product books this year. Currently on #4 — Continuous Discovery Habits.",
+            "reactions": {
+                "inspired": 3,
+                "rooting": 2
+            },
+            "comments": [],
+            "offset_x": -5,
+            "offset_y": 8
+        },
+        {
+            "id": "pi-nash-lift",
+            "author": "nash-williams",
+            "age_minutes": 1000,
+            "content_type": "win",
+            "paper": "torn",
+            "paper_color": "cream",
+            "layout": "small",
+            "rotation": 3.0,
+            "attachment": "pin",
+            "pin_color": "violet",
+            "handwriting": "cursive",
+            "body": "First unassisted pull-up. Took four months. Worth it. 💪",
+            "reactions": {
+                "celebrate": 8,
+                "applaud": 4
+            },
+            "comments": [],
+            "offset_x": 4,
+            "offset_y": -8,
+            "flourish": "💪"
+        },
+        {
+            "id": "pi-olivia-course",
+            "author": "olivia-chen",
+            "age_minutes": 1060,
+            "content_type": "goal",
+            "paper": "sticky",
+            "paper_color": "pink",
+            "layout": "standard",
+            "rotation": -1.9,
+            "attachment": "pin",
+            "pin_color": "indigo",
+            "handwriting": "cursive",
+            "body": "Enrolled in a data visualization course. Week 1: learning to stop making pie charts. 📊",
+            "reactions": {
+                "inspired": 4,
+                "applaud": 2
+            },
+            "comments": [
+                {
+                    "id": "c-course-1",
+                    "author": "ethan-park",
+                    "age_minutes": 1020,
+                    "body": "The anti-pie-chart arc begins 😄",
+                    "supports": 2
+                }
+            ],
+            "offset_x": -6,
+            "offset_y": 5,
+            "flourish": "📊"
+        }
+    ],
+    "left_rail": {
+        "people_moving": [
+            {
+                "author": "hannah-cho",
+                "chip": "Win",
+                "chip_tint": "amber",
+                "text": "Just hit a new PR!",
+                "time": "2h"
+            },
+            {
+                "author": "marcus-lee",
+                "chip": "Question",
+                "chip_tint": "sky",
+                "text": "Anyone up for a game?",
+                "time": "1h"
+            },
+            {
+                "author": "priya-patel",
+                "chip": "Goal",
+                "chip_tint": "green",
+                "text": "Q2 learning goals",
+                "time": "4h"
+            },
+            {
+                "author": "nash-williams",
+                "chip": "Moment",
+                "chip_tint": "violet",
+                "text": "Grateful for this",
+                "time": "6h"
+            }
+        ],
+        "saved_notes": [
+            {
+                "title": "Design systems",
+                "chip": "Ideas",
+                "time": "2d",
+                "preview": "Good design is as little design as possible.",
+                "paper_color": "green"
+            },
+            {
+                "title": "Product mentor list",
+                "chip": "Project",
+                "time": "5d",
+                "preview": "People I want to learn from in B2B SaaS.",
+                "paper_color": "cream"
+            }
+        ],
+        "circles": [
+            {
+                "name": "Product Builders",
+                "members": "1.2k members",
+                "activity": "12 new posts"
+            },
+            {
+                "name": "Run Club",
+                "members": "860 members",
+                "activity": "5 new posts"
+            }
+        ],
+        "topics": [
+            {
+                "tag": "productivity",
+                "count": 128
+            },
+            {
+                "tag": "design",
+                "count": 96
+            },
+            {
+                "tag": "side-projects",
+                "count": 84
+            },
+            {
+                "tag": "health",
+                "count": 72
+            }
+        ]
+    },
+    "right_rail": {
+        "_note": "Break and Pulse are being folded into this rail (Pete, 2026-07-13): positive affirmations, a goal check-in nudge, and the community challenge. The old Trending/Recent wins/Circles modules were scratched.",
+        "pick_me_ups": [
+            {
+                "quote": "You don't have to be great to start, but you have to start to be great.",
+                "by": "Zig Ziglar"
+            },
+            {
+                "quote": "Rest isn't a reward. It's part of the process.",
+                "by": "Unknown"
+            },
+            {
+                "quote": "Small progress each day adds up to big results.",
+                "by": "Unknown"
+            },
+            {
+                "quote": "Progress isn't always loud. Sometimes it's just showing up.",
+                "by": "Unknown"
+            }
+        ],
+        "goal_checkin": {
+            "title": "How's your goal coming?",
+            "prompts": [
+                "You mentioned training for a run — how did this week go?",
+                "One small step today beats a big plan tomorrow. What's yours?",
+                "Haven't updated your goal in a bit? A two-line update keeps it alive.",
+                "Stuck? Share where you are — someone here has been there."
+            ]
+        },
+        "challenge": {
+            "kicker": "Weekend Challenge",
+            "title": "30-Minute Reset 🌿",
+            "body": "Step outside, move your body, and clear your mind.",
+            "joined": "1,248 people joined"
+        },
+        "poll": {
+            "question": "What's your go-to reset?",
+            "options": [
+                {
+                    "label": "Walk in nature",
+                    "pct": 42
+                },
+                {
+                    "label": "Good playlist",
+                    "pct": 26
+                },
+                {
+                    "label": "Coffee + quiet",
+                    "pct": 19
+                },
+                {
+                    "label": "Creative time",
+                    "pct": 13
+                }
+            ],
+            "votes": "1,893 votes"
+        },
+        "share_good": {
+            "title": "Share something good",
+            "body": "Brighten someone's day.",
+            "cta": "Create a post"
+        }
+    }
+}

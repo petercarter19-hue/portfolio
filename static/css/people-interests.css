@@ -1,0 +1,1778 @@
+/* =====================================================================
+   PEOPLE & INTERESTS — the living board (PS-FEAT-002)
+   /the-slate/people-interests · templates/the_slate_people_interests.html
+
+   A warm, tactile corkboard feed rendered over the site's summit-sky
+   theme. The global header + profile sub-header stay untouched; all of
+   this is page-scoped under .pi-*.
+
+   Board rules (from the approved mockups + AGENTS.md):
+   - The board is the ONE dominant object; rails stay narrow.
+   - Paper size/rotation/attachment are STORED per item (deterministic;
+     JS only reads them). Nothing re-randomizes on refresh.
+   - Handwriting (Caveat) is display text only — UI controls use Inter.
+   - Indigo is for active nav / primary actions, not a page wash.
+   ===================================================================== */
+
+.pi-page {
+    padding: 1.1rem 0 3rem;
+}
+
+.pi-container {
+    width: min(100% - 2.5rem, 100rem);
+    margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------
+   Feed strip: page title + the three feeds (Break / People & Interests /
+   News). Reuses the site's sf-tab pattern in a slim, single row.
+   --------------------------------------------------------------------- */
+.pi-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin: 0.35rem 0.25rem 1rem;
+}
+
+.pi-strip__copy h1 {
+    margin: 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    color: #16233c;
+    letter-spacing: 0.005em;
+}
+
+.pi-strip__copy p {
+    margin: 0.15rem 0 0;
+    max-width: 46ch;
+    font-size: 0.85rem;
+    color: #45566e;
+}
+
+.pi-strip__tabs {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.3rem;
+    background: rgb(255 255 255 / 62%);
+    border: 1px solid rgb(255 255 255 / 80%);
+    border-radius: 999px;
+    box-shadow: 0 0.6rem 1.6rem rgb(17 44 78 / 10%);
+    backdrop-filter: blur(10px) saturate(1.15);
+    -webkit-backdrop-filter: blur(10px) saturate(1.15);
+}
+
+.pi-strip__tabs .sf-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    padding: 0.42rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 640;
+    color: #43546c;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.pi-strip__tabs .sf-tab svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-strip__tabs .sf-tab:hover,
+.pi-strip__tabs .sf-tab:focus-visible {
+    color: #4f5bd5;
+    background: rgb(79 91 213 / 9%);
+}
+
+.pi-strip__tabs .sf-tab[aria-current="page"] {
+    color: #fff;
+    background: #4f5bd5;
+    box-shadow: 0 0.4rem 1rem rgb(79 91 213 / 35%);
+}
+
+.pi-strip__tabs .sf-tab--soon {
+    color: #8b98ab;
+    cursor: default;
+}
+
+.pi-strip__tabs .sf-tab--soon small {
+    padding: 0.08rem 0.42rem;
+    border-radius: 999px;
+    background: rgb(139 152 171 / 16%);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------
+   Three-column page layout. The board owns the width.
+   --------------------------------------------------------------------- */
+.pi-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+    align-items: start;
+}
+
+/* Phones and small tablets: the board leads; the supporting rails
+   continue below it as lightweight panels. */
+@media (max-width: 63.9375rem) {
+    .pi-boardwrap { order: -1; }
+}
+
+@media (min-width: 64rem) {
+    .pi-layout {
+        grid-template-columns: 13rem minmax(0, 1fr);
+    }
+
+    .pi-rail--right {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+        gap: 1.1rem;
+    }
+}
+
+@media (min-width: 84.5rem) {
+    .pi-layout {
+        grid-template-columns: 13.5rem minmax(0, 1fr) 13.5rem;
+    }
+
+    .pi-rail--right {
+        grid-column: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+    }
+}
+
+@media (min-width: 64rem) {
+    .pi-rail {
+        position: sticky;
+        top: 7.6rem;
+        max-height: calc(100vh - 8.6rem);
+        overflow: hidden auto;
+        scrollbar-width: thin;
+    }
+}
+
+.pi-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+}
+
+/* ---------------------------------------------------------------------
+   Rail cards (frosted glass, matching the site's ps-card recipe).
+   --------------------------------------------------------------------- */
+.pi-railcard {
+    padding: 0.95rem 1rem 0.85rem;
+    border-radius: 1.05rem;
+}
+
+.pi-railhead {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+}
+
+.pi-railhead svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    fill: none;
+    stroke: #4f5bd5;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-railhead h2 {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1c2b47;
+    letter-spacing: 0.01em;
+    text-shadow: none;
+}
+
+.pi-raillink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+    border: 0;
+    background: none;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: #4f5bd5;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.pi-raillink:hover,
+.pi-raillink:focus-visible {
+    text-decoration: underline;
+}
+
+/* Avatars: images for real profiles, tinted initials for sample members. */
+.pi-ava {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 50%;
+    font-size: 0.66rem;
+    font-weight: 750;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+.pi-ava--img {
+    object-fit: cover;
+    border: 2px solid rgb(255 255 255 / 85%);
+    box-shadow: 0 2px 6px rgb(17 44 78 / 18%);
+}
+
+.pi-ava--green  { background: linear-gradient(135deg, #2fa876, #23855c); }
+.pi-ava--blue   { background: linear-gradient(135deg, #3f6fe0, #2456c9); }
+.pi-ava--sky    { background: linear-gradient(135deg, #4ea3ff, #2f7fd6); }
+.pi-ava--violet { background: linear-gradient(135deg, #8b6fd8, #6d51bd); }
+.pi-ava--orange { background: linear-gradient(135deg, #e08a3c, #c9702a); }
+.pi-ava--indigo { background: linear-gradient(135deg, #5a66dd, #4f5bd5); }
+.pi-ava--you    { background: linear-gradient(135deg, #2ec8d3, #189aa8); font-size: 0.6rem; }
+
+.pi-chip {
+    display: inline-block;
+    padding: 0.06rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-style: normal;
+    font-weight: 750;
+    letter-spacing: 0.03em;
+}
+
+.pi-chip--amber  { background: rgb(215 163 62 / 16%); color: #93691e; }
+.pi-chip--green  { background: rgb(47 168 118 / 15%); color: #1d7350; }
+.pi-chip--sky    { background: rgb(78 163 255 / 15%); color: #2565ad; }
+.pi-chip--violet { background: rgb(139 111 216 / 16%); color: #5f43ad; }
+.pi-chip--indigo { background: rgb(79 91 213 / 13%); color: #4149bb; }
+
+/* People moving like you */
+.pi-people {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-people__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgb(28 43 71 / 7%);
+}
+
+.pi-people__row:first-child { border-top: 0; }
+
+.pi-people__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.14rem;
+    min-width: 0;
+    font-size: 0.78rem;
+    color: #45566e;
+}
+
+.pi-people__body strong {
+    font-size: 0.8rem;
+    color: #1c2b47;
+}
+
+.pi-people__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.pi-people__meta i { flex: none; }
+
+.pi-people__row small {
+    flex: none;
+    margin-left: auto;
+    font-size: 0.68rem;
+    color: #8b98ab;
+}
+
+/* Saved notes */
+.pi-saved {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-saved__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.pi-saved__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.pi-saved__head strong { font-size: 0.8rem; color: #1c2b47; }
+.pi-saved__head small { font-size: 0.68rem; color: #8b98ab; }
+
+.pi-saved__chip {
+    align-self: flex-start;
+    font-size: 0.66rem;
+    font-weight: 650;
+    color: #5b6c85;
+}
+
+.pi-saved__paper {
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.15rem 0.9rem 0.2rem 0.7rem;
+    font-family: Caveat, cursive;
+    font-size: 0.98rem;
+    line-height: 1.25;
+    color: #3d3a32;
+    box-shadow: 0 3px 8px rgb(60 46 20 / 14%);
+}
+
+.pi-saved__paper--green { background: linear-gradient(180deg, #e3f1c6, #d3e6ac); }
+.pi-saved__paper--cream { background: linear-gradient(180deg, #fbf6e8, #f3ead2); }
+
+/* Circles for you + Topics you follow (left rail) */
+.pi-circlelist {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-circlelist__row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgb(28 43 71 / 7%);
+}
+
+.pi-circlelist__row:first-child { border-top: 0; }
+
+.pi-circlelist__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.pi-circlelist__body strong { font-size: 0.8rem; color: #1c2b47; }
+.pi-circlelist__body small { font-size: 0.7rem; color: #8b98ab; }
+
+.pi-topics {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-topics li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid rgb(28 43 71 / 7%);
+}
+
+.pi-topics li:first-child { border-top: 0; }
+
+.pi-topics__tag {
+    font-size: 0.8rem;
+    font-weight: 620;
+    font-style: italic;
+    color: #33455f;
+}
+
+.pi-topics__tag i {
+    margin-right: 0.18rem;
+    color: #4f5bd5;
+    font-weight: 800;
+    font-style: normal;
+}
+
+.pi-topics__count {
+    padding: 0.08rem 0.5rem;
+    border-radius: 999px;
+    background: rgb(79 91 213 / 10%);
+    font-size: 0.68rem;
+    font-weight: 720;
+    color: #4149bb;
+}
+
+/* Community poll (right rail, from the retiring Break page) */
+.pi-poll__question {
+    margin: 0.1rem 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1c2b47;
+}
+
+.pi-poll__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-poll__opt {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.42rem 0.6rem;
+    border: 1px solid rgb(28 43 71 / 12%);
+    border-radius: 0.55rem;
+    background: rgb(255 255 255 / 55%);
+    overflow: hidden;
+    font-family: Inter, sans-serif;
+    cursor: pointer;
+    transition: border-color 150ms ease;
+}
+
+.pi-poll__opt:hover,
+.pi-poll__opt:focus-visible { border-color: rgb(79 91 213 / 45%); }
+
+.pi-poll__opt[aria-pressed="true"] {
+    border-color: rgb(79 91 213 / 60%);
+    background: rgb(79 91 213 / 8%);
+}
+
+.pi-poll__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: rgb(79 91 213 / 12%);
+    pointer-events: none;
+}
+
+.pi-poll__label {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.76rem;
+    font-weight: 620;
+    color: #33455f;
+    text-align: left;
+}
+
+.pi-poll__pct {
+    position: relative;
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 720;
+    color: #4149bb;
+}
+
+.pi-poll__foot {
+    margin: 0.5rem 0 0;
+    font-size: 0.68rem;
+    color: #8b98ab;
+}
+
+/* Share something good (right rail) */
+.pi-sharegood__body {
+    margin: 0.1rem 0 0.6rem;
+    font-size: 0.8rem;
+    color: #45566e;
+}
+
+.pi-sharegood__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.1rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+}
+
+/* Right rail — the Break/Pulse spirit: pick-me-up, goal check-in,
+   community challenge. */
+.pi-pickme__quote {
+    margin: 0.1rem 0 0.3rem;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #22344f;
+}
+
+.pi-pickme__by {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #8b98ab;
+}
+
+.pi-checkin__prompt {
+    margin: 0.1rem 0 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #38414f;
+}
+
+.pi-checkin__acts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+
+.pi-checkin__share {
+    min-height: 2.1rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+}
+
+.pi-challenge__name {
+    margin: 0 0 0.15rem;
+    font-size: 0.92rem;
+    font-weight: 720;
+    color: #1c2b47;
+}
+
+.pi-challenge__body {
+    margin: 0 0 0.55rem;
+    font-size: 0.79rem;
+    line-height: 1.45;
+    color: #45566e;
+}
+
+.pi-challenge__foot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+    font-size: 0.72rem;
+    color: #5b6c85;
+}
+
+.pi-facepile {
+    display: inline-flex;
+}
+
+.pi-facepile i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin-right: -0.35rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: linear-gradient(135deg, #7c86e8, #4f5bd5);
+    font-size: 0.55rem;
+    font-style: normal;
+    font-weight: 750;
+    color: #fff;
+}
+
+.pi-facepile i:last-child {
+    margin-right: 0.15rem;
+    background: rgb(79 91 213 / 18%);
+    color: #4149bb;
+}
+
+.pi-challenge__join {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+}
+
+.pi-challenge__join.is-joined {
+    background: rgb(36 163 106 / 12%);
+    border-color: rgb(36 163 106 / 45%);
+    color: #1d7350;
+}
+
+/* ---------------------------------------------------------------------
+   THE BOARD SURFACE — warm cork with a soft frame, floating over the sky.
+   Texture is pure CSS + inline SVG grain (no image download).
+   --------------------------------------------------------------------- */
+.pi-boardwrap {
+    min-width: 0;
+}
+
+.pi-board-surface {
+    position: relative;
+    padding: 1.15rem 1.15rem 1.6rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgb(122 88 46 / 35%);
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.12 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+        radial-gradient(120% 90% at 20% 0%, #d9b787 0%, #cda672 45%, #c1955e 100%);
+    background-size: 160px 160px, cover;
+    box-shadow:
+        inset 0 0 0 1px rgb(255 240 214 / 25%),
+        inset 0 2px 22px rgb(74 48 16 / 28%),
+        0 1.6rem 3.2rem rgb(48 34 12 / 24%);
+}
+
+.pi-noscript {
+    padding: 2rem 1rem;
+    font-size: 0.9rem;
+    color: #4b3a1f;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------------------
+   Composer — a wide paper strip taped to the top of the board.
+   --------------------------------------------------------------------- */
+.pi-composer {
+    position: relative;
+    margin-bottom: 1.15rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 0.35rem;
+    background: linear-gradient(180deg, #fffdf7, #f8f3e6);
+    box-shadow:
+        0 1px 0 rgb(255 255 255 / 65%) inset,
+        0 10px 22px rgb(56 38 12 / 26%);
+}
+
+/* Tape holding the composer to the board. */
+.pi-composer::before,
+.pi-composer::after {
+    content: "";
+    position: absolute;
+    top: -0.55rem;
+    width: 4.2rem;
+    height: 1.15rem;
+    background: linear-gradient(180deg, rgb(252 250 235 / 62%), rgb(240 234 208 / 52%));
+    box-shadow: 0 2px 5px rgb(56 38 12 / 18%);
+    border-left: 1px dashed rgb(120 100 60 / 20%);
+    border-right: 1px dashed rgb(120 100 60 / 20%);
+}
+
+.pi-composer::before { left: 8%; transform: rotate(-3deg); }
+.pi-composer::after { right: 8%; transform: rotate(2.5deg); }
+
+.pi-composer__row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+.pi-composer__opener {
+    flex: 1 1 12rem;
+    min-width: 0;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid rgb(122 96 52 / 22%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 75%);
+    font-family: Caveat, cursive;
+    font-size: 1.12rem;
+    color: #6d6250;
+    text-align: left;
+    cursor: text;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pi-composer__opener:hover,
+.pi-composer__opener:focus-visible {
+    border-color: rgb(79 91 213 / 45%);
+    box-shadow: 0 0 0 3px rgb(79 91 213 / 12%);
+}
+
+.pi-composer__types {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.pi-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.75rem;
+    border: 1px solid rgb(122 96 52 / 20%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 62%);
+    font-family: Inter, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 640;
+    color: #4b4334;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.pi-type svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-type:hover,
+.pi-type:focus-visible {
+    border-color: rgb(79 91 213 / 45%);
+    color: #4149bb;
+}
+
+.pi-type.is-active {
+    background: rgb(79 91 213 / 12%);
+    border-color: rgb(79 91 213 / 55%);
+    color: #4149bb;
+}
+
+.pi-composer__post {
+    margin-left: auto;
+    min-height: 2.3rem;
+    padding: 0 1.35rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+}
+
+.pi-composer__post:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.pi-composer__expanded {
+    margin-top: 0.7rem;
+    padding-top: 0.7rem;
+    border-top: 1px dashed rgb(122 96 52 / 25%);
+}
+
+.pi-composer__text {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgb(122 96 52 / 25%);
+    border-radius: 0.6rem;
+    background: rgb(255 255 255 / 85%);
+    font-family: Caveat, cursive;
+    font-size: 1.25rem;
+    line-height: 1.35;
+    color: #3d3a32;
+    resize: vertical;
+}
+
+.pi-composer__text:focus-visible {
+    outline: 2px solid #4f5bd5;
+    outline-offset: 1px;
+}
+
+.pi-composer__foot {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.45rem;
+}
+
+.pi-composer__count {
+    font-size: 0.74rem;
+    font-weight: 650;
+    color: #6d6250;
+}
+
+.pi-composer__count.is-limit { color: #b0483a; }
+
+.pi-composer__hint {
+    font-size: 0.74rem;
+    color: #6d6250;
+}
+
+.pi-composer__cancel {
+    margin-left: auto;
+    font-size: 0.76rem;
+}
+
+.pi-composer__error {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 620;
+    color: #b0483a;
+}
+
+.pi-composer__done {
+    margin: 0.55rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 640;
+    color: #1d7350;
+}
+
+/* ---------------------------------------------------------------------
+   THE BOARD GRID — deterministic collage. ~4 items across on desktop.
+   Row spans give intentional size variety; dense flow fills gaps.
+   --------------------------------------------------------------------- */
+.pi-board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: 5.4rem;
+    grid-auto-flow: dense;
+    gap: 1.25rem 1.15rem;
+}
+
+@media (max-width: 84.4375rem) {
+    .pi-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 47.9375rem) {
+    .pi-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 0.85rem; }
+}
+
+@media (max-width: 26.25rem) {
+    .pi-board { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Size vocabulary — layout_variant comes stored with each item. */
+.pi-item { grid-row: span 3; min-width: 0; }
+.pi-item--small { grid-row: span 2; }
+.pi-item--tall { grid-row: span 4; }
+.pi-item--photo { grid-row: span 4; }
+.pi-item--wide { grid-column: span 2; grid-row: span 3; }
+.pi-item--featured { grid-column: span 2; grid-row: span 4; }
+
+@media (max-width: 26.25rem) {
+    .pi-item--wide,
+    .pi-item--featured { grid-column: span 1; }
+}
+
+/* ---------------------------------------------------------------------
+   PAPER OBJECTS. The whole card opens the detail overlay via a
+   stretched button; rotation lives on the inner paper so focus rings
+   and layout stay rectangular and predictable.
+   --------------------------------------------------------------------- */
+.pi-card {
+    position: relative;
+    height: 100%;
+    min-width: 0;
+}
+
+.pi-card__paper {
+    /* Real-paper grain, shared by every family below. */
+    --pi-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.30 0 0 0 0 0.22 0 0 0 0 0.10 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E");
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.8rem 0.85rem 0.7rem;
+    /* Pinned at the top, bottom leaning off the board: a whisper of
+       rotateX sells the lift; the shadow stack does the rest. */
+    transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
+    transform-origin: 50% 0;
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    color: #3d3a32;
+    background-size: 9rem 9rem, auto;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 20%),
+        0 1px 2px rgb(56 38 12 / 22%),
+        0 9px 12px -6px rgb(56 38 12 / 22%),
+        0 22px 26px -12px rgb(56 38 12 / 36%);
+}
+
+/* The click target: one stretched, real button per card. */
+.pi-card__open {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    border: 0;
+    background: transparent;
+    border-radius: 0.4rem;
+    cursor: pointer;
+}
+
+.pi-card__open:focus-visible {
+    outline: 3px solid #4f5bd5;
+    outline-offset: 3px;
+}
+
+.pi-card:hover,
+.pi-card:focus-within {
+    z-index: 3;
+}
+
+.pi-card:hover .pi-card__paper,
+.pi-card:focus-within .pi-card__paper {
+    transform: perspective(38rem) rotateX(2.1deg) translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 4px)) rotate(calc(var(--pi-rot, 0deg) * 0.35));
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 18%),
+        0 2px 3px rgb(56 38 12 / 20%),
+        0 14px 18px -8px rgb(56 38 12 / 26%),
+        0 30px 36px -14px rgb(56 38 12 / 42%);
+}
+
+/* --- Paper families --- */
+.pi-card__paper--sticky {
+    border-radius: 0.18rem;
+}
+
+.pi-card__paper--sticky::after {
+    /* Folded bottom-right corner */
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    background: linear-gradient(315deg, rgb(56 38 12 / 18%) 48%, transparent 50%);
+    border-bottom-right-radius: 0.18rem;
+}
+
+.pi-paper--yellow { background-image: var(--pi-grain), linear-gradient(178deg, #fdf3a9 0%, #f9e47f 100%); }
+.pi-paper--green  { background-image: var(--pi-grain), linear-gradient(178deg, #e2f1c4 0%, #cfe39b 100%); }
+.pi-paper--blue   { background-image: var(--pi-grain), linear-gradient(178deg, #d8eafa 0%, #bcd9f0 100%); }
+.pi-paper--pink   { background-image: var(--pi-grain), linear-gradient(178deg, #fbdde4 0%, #f5c8d2 100%); }
+.pi-paper--cream  { background-image: var(--pi-grain), linear-gradient(178deg, #fbf6e8 0%, #f1e7cd 100%); }
+.pi-paper--violet { background-image: var(--pi-grain), linear-gradient(178deg, #e2d9f8 0%, #d0c3f0 100%); }
+.pi-paper--kraft  { background-image: var(--pi-grain), var(--pi-grain), linear-gradient(178deg, #e6cda6 0%, #d9b98c 100%); background-size: 9rem 9rem, 5rem 5rem, auto; }
+.pi-paper--white  { background-image: var(--pi-grain), linear-gradient(178deg, #fffefa 0%, #f4f0e4 100%); }
+.pi-paper--peach  { background-image: var(--pi-grain), linear-gradient(178deg, #fde4c8 0%, #f8d3ab 100%); }
+.pi-paper--aqua   { background-image: var(--pi-grain), linear-gradient(178deg, #d4f0ea 0%, #b9e4db 100%); }
+
+/* Torn scrap: ragged top + bottom edges. clip-path clips box-shadows,
+   so the lift comes from drop-shadows that follow the torn silhouette. */
+.pi-card__paper--torn {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 45%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 20%);
+    filter:
+        drop-shadow(0 1px 1px rgb(56 38 12 / 25%))
+        drop-shadow(0 9px 7px rgb(56 38 12 / 18%))
+        drop-shadow(0 20px 14px rgb(56 38 12 / 20%));
+    clip-path: polygon(
+        0% 3.5%, 6% 1%, 14% 3%, 24% 0.5%, 35% 2.5%, 47% 0.8%, 58% 3%,
+        70% 1%, 82% 2.8%, 92% 0.6%, 100% 2.8%,
+        100% 97%, 93% 99.4%, 83% 97.4%, 71% 99.6%, 58% 97.6%, 45% 99.2%,
+        33% 97.2%, 21% 99.5%, 10% 97.5%, 0% 99.2%
+    );
+}
+
+/* Lined notepad sheet with a torn spiral edge on the left. */
+.pi-card__paper--lined {
+    padding-left: 1.7rem;
+    background-image:
+        var(--pi-grain),
+        repeating-linear-gradient(
+            180deg,
+            transparent 0 1.5rem,
+            rgb(78 133 190 / 28%) 1.5rem calc(1.5rem + 1px)
+        ),
+        linear-gradient(178deg, #fffefa 0%, #f5f1e6 100%);
+    background-size: 9rem 9rem, auto, auto;
+    border-radius: 0.15rem;
+}
+
+.pi-card__paper--lined::before {
+    /* Punched spiral holes */
+    content: "";
+    position: absolute;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    left: 0.5rem;
+    width: 0.5rem;
+    background: radial-gradient(circle at 50% 50%, rgb(107 82 42 / 38%) 0.14rem, transparent 0.16rem);
+    background-size: 0.5rem 1.1rem;
+    background-repeat: repeat-y;
+}
+
+/* Kraft note card */
+.pi-card__paper--kraft {
+    border-radius: 0.3rem;
+}
+
+/* Quote fragment */
+.pi-card__paper--quote {
+    border-radius: 0.25rem;
+}
+
+.pi-quote__mark {
+    position: absolute;
+    top: 0.2rem;
+    left: 0.55rem;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 2.4rem;
+    line-height: 1;
+    color: rgb(95 67 173 / 45%);
+    pointer-events: none;
+}
+
+/* Polaroid photo card */
+.pi-card__paper--polaroid {
+    padding: 0.55rem 0.55rem 0.5rem;
+    background-image: var(--pi-grain), linear-gradient(178deg, #ffffff 0%, #f4f1ea 100%);
+    border-radius: 0.15rem;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 60%),
+        inset 0 -9px 12px -9px rgb(56 38 12 / 16%),
+        0 1px 2px rgb(56 38 12 / 24%),
+        0 10px 14px -6px rgb(56 38 12 / 26%),
+        0 26px 30px -12px rgb(56 38 12 / 40%);
+}
+
+.pi-photo {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: #e8e4d8;
+    box-shadow: inset 0 1px 4px rgb(30 24 14 / 35%);
+}
+
+.pi-photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, rgb(255 255 255 / 22%) 0%, rgb(255 255 255 / 6%) 28%, transparent 45%),
+        linear-gradient(0deg, rgb(30 24 14 / 10%) 0%, transparent 18%);
+    pointer-events: none;
+}
+
+.pi-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pi-card__paper--polaroid .pi-card__body {
+    flex: none;
+    margin-top: 0.45rem;
+    text-align: center;
+}
+
+/* --- Attachments: pins, tape, clips (decoration only) --- */
+.pi-pin {
+    position: absolute;
+    top: -0.5rem;
+    left: 50%;
+    z-index: 4;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-left: -0.52rem;
+    border-radius: 50%;
+    box-shadow:
+        inset -2px -3px 5px rgb(0 0 0 / 32%),
+        inset 2px 2px 4px rgb(255 255 255 / 55%),
+        0 4px 6px rgb(56 38 12 / 38%);
+    pointer-events: none;
+}
+
+.pi-pin--indigo { background: radial-gradient(circle at 35% 30%, #7c86e8, #4f5bd5 60%, #3a44a8); }
+.pi-pin--red    { background: radial-gradient(circle at 35% 30%, #ef8378, #e2574c 60%, #b23c33); }
+.pi-pin--teal   { background: radial-gradient(circle at 35% 30%, #5ec6c0, #2fa9a2 60%, #1f7f7a); }
+.pi-pin--amber  { background: radial-gradient(circle at 35% 30%, #e8c375, #d7a33e 60%, #a87c26); }
+.pi-pin--violet { background: radial-gradient(circle at 35% 30%, #b39ae8, #8b6fd8 60%, #6a4fb4); }
+.pi-pin--sky    { background: radial-gradient(circle at 35% 30%, #86c2ff, #4ea3ff 60%, #2f7fd6); }
+
+.pi-tape {
+    position: absolute;
+    top: -0.55rem;
+    left: 50%;
+    z-index: 4;
+    width: 3.6rem;
+    height: 1.05rem;
+    margin-left: -1.8rem;
+    transform: rotate(-2deg);
+    background: linear-gradient(180deg, rgb(252 250 235 / 60%), rgb(240 234 208 / 50%));
+    box-shadow: 0 2px 5px rgb(56 38 12 / 20%);
+    border-left: 1px dashed rgb(120 100 60 / 22%);
+    border-right: 1px dashed rgb(120 100 60 / 22%);
+    pointer-events: none;
+}
+
+.pi-clip {
+    position: absolute;
+    top: -0.7rem;
+    left: 12%;
+    z-index: 4;
+    width: 0.85rem;
+    height: 1.9rem;
+    border: 2.5px solid #9aa3ae;
+    border-top-left-radius: 0.45rem;
+    border-top-right-radius: 0.45rem;
+    border-bottom: 0;
+    box-shadow: 1px 2px 3px rgb(56 38 12 / 25%);
+    pointer-events: none;
+}
+
+/* --- Card content --- */
+.pi-card__head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.4rem;
+}
+
+.pi-card__head .pi-ava {
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.58rem;
+    box-shadow: 0 2px 4px rgb(56 38 12 / 22%);
+}
+
+.pi-card__who {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.pi-card__name {
+    font-family: Caveat, cursive;
+    font-size: 1.06rem;
+    font-weight: 700;
+    color: #33302a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pi-card__time {
+    flex: none;
+    margin-left: auto;
+    font-family: Inter, sans-serif;
+    font-size: 0.64rem;
+    font-weight: 620;
+    color: rgb(61 58 50 / 62%);
+}
+
+.pi-card__title {
+    margin: 0 0 0.15rem;
+    font-family: Caveat, cursive;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #33302a;
+}
+
+.pi-card__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--pi-clamp, 5);
+    font-family: Caveat, cursive;
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.28;
+    color: #3d3a32;
+    overflow-wrap: anywhere;
+}
+
+.pi-card--print .pi-card__body {
+    font-family: Inter, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 480;
+    line-height: 1.45;
+    color: #38414f;
+}
+
+.pi-item--small .pi-card__body { --pi-clamp: 3; font-size: 1.42rem; }
+.pi-item--standard .pi-card__body { --pi-clamp: 6; }
+.pi-item--tall .pi-card__body { --pi-clamp: 9; }
+.pi-item--featured .pi-card__body { --pi-clamp: 5; font-size: 1.5rem; }
+.pi-item--photo .pi-card__body { --pi-clamp: 2; font-size: 1.15rem; }
+
+.pi-card__list {
+    margin: 0.15rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: Caveat, cursive;
+    font-size: 1.22rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #3d3a32;
+}
+
+.pi-card__list li::before {
+    content: "•";
+    margin-right: 0.4rem;
+    color: rgb(61 58 50 / 55%);
+}
+
+.pi-card__attribution {
+    margin: 0.3rem 0 0;
+    font-family: Caveat, cursive;
+    font-size: 1.05rem;
+    color: rgb(61 58 50 / 72%);
+}
+
+.pi-card__foot {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Content-type label */
+.pi-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.14rem 0.6rem;
+    border-radius: 999px;
+    font-family: Inter, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 750;
+    letter-spacing: 0.02em;
+    background: rgb(255 255 255 / 62%);
+    color: #4b4334;
+    box-shadow: 0 1px 3px rgb(56 38 12 / 15%);
+}
+
+.pi-tag--win      { background: rgb(215 163 62 / 24%); color: #7d581a; }
+.pi-tag--goal     { background: rgb(47 168 118 / 20%); color: #1d7350; }
+.pi-tag--question { background: rgb(78 163 255 / 20%); color: #2565ad; }
+.pi-tag--idea     { background: rgb(139 111 216 / 20%); color: #5f43ad; }
+.pi-tag--project  { background: rgb(79 91 213 / 15%); color: #4149bb; }
+.pi-tag--photo    { background: rgb(46 200 211 / 18%); color: #157f88; }
+.pi-tag--moment   { background: rgb(224 138 60 / 18%); color: #96591c; }
+.pi-tag--quote    { background: rgb(139 111 216 / 20%); color: #5f43ad; }
+.pi-tag--note     { background: rgb(255 255 255 / 62%); color: #4b4334; }
+
+.pi-card__social {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    font-family: Inter, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 650;
+    color: rgb(61 58 50 / 72%);
+}
+
+.pi-card__social .pi-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.pi-card__social svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* "Only in this browser" preview badge for locally-saved posts. */
+.pi-card__local {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    background: rgb(46 200 211 / 16%);
+    font-family: Inter, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 720;
+    color: #157f88;
+}
+
+/* Hand-drawn flourish: a big, faded emoji doodle in the corner. */
+.pi-card__flourish {
+    position: absolute;
+    right: 0.55rem;
+    bottom: 1.9rem;
+    font-size: 1.7rem;
+    line-height: 1;
+    opacity: 0.55;
+    transform: rotate(8deg);
+    pointer-events: none;
+}
+
+.pi-item--featured .pi-card__flourish { font-size: 2.3rem; right: 0.9rem; bottom: 2.4rem; }
+.pi-card__paper--polaroid .pi-card__flourish { display: none; }
+
+/* Featured (goal) extras */
+.pi-card__joining {
+    margin-top: 0.35rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 650;
+    color: rgb(61 58 50 / 75%);
+}
+
+/* New post settling onto the board */
+@keyframes pi-settle {
+    0% { transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), calc(var(--pi-offy, 0px) - 14px)) rotate(var(--pi-rot, 0deg)) scale(1.03); opacity: 0; }
+    100% { transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg)) scale(1); opacity: 1; }
+}
+
+.pi-item--new .pi-card__paper {
+    animation: pi-settle 420ms cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+
+/* Loading skeletons — paper-shaped */
+.pi-skeleton {
+    border-radius: 0.2rem;
+    background: linear-gradient(100deg,
+        rgb(255 252 240 / 55%) 30%,
+        rgb(255 252 240 / 78%) 50%,
+        rgb(255 252 240 / 55%) 70%);
+    background-size: 200% 100%;
+    animation: pi-shimmer 1.4s ease infinite;
+    box-shadow: 0 8px 16px rgb(56 38 12 / 18%);
+}
+
+@keyframes pi-shimmer {
+    0% { background-position: 120% 0; }
+    100% { background-position: -80% 0; }
+}
+
+.pi-board__status {
+    margin: 0.9rem 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 620;
+    color: #5d4a28;
+}
+
+.pi-sentinel {
+    height: 1px;
+}
+
+/* ---------------------------------------------------------------------
+   POST DETAIL OVERLAY — white shell, original paper on the left,
+   comments column (own scroll) on the right.
+   --------------------------------------------------------------------- */
+.pi-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1300; /* above the sticky .global-header (1200) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+}
+
+.pi-modal[hidden] { display: none; }
+
+.pi-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(30 24 14 / 45%);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.pi-modal__shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    width: min(100%, 56rem);
+    max-height: min(calc(100vh - 2.5rem), 47rem);
+    border-radius: 1.1rem;
+    background: #fdfcf8;
+    box-shadow: 0 2rem 5rem rgb(20 14 4 / 45%);
+    overflow: hidden;
+    animation: pi-modal-in 240ms cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+
+@keyframes pi-modal-in {
+    0% { transform: translateY(14px) scale(0.975); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.pi-modal__close {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(28 43 71 / 8%);
+    color: #33455f;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.pi-modal__close:hover,
+.pi-modal__close:focus-visible { background: rgb(28 43 71 / 16%); }
+
+.pi-modal__close svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+/* Left: the post keeps its paper identity, unrotated and untruncated. */
+.pi-modal__post {
+    min-width: 0;
+    padding: 1.5rem 1.4rem;
+    overflow-y: auto;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.12 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(150deg, #cda672, #c1955e);
+    background-size: 160px 160px, cover;
+}
+
+.pi-modal__post .pi-card {
+    height: auto;
+}
+
+.pi-modal__post .pi-card__paper {
+    transform: none;
+    height: auto;
+    padding: 1rem 1.05rem 0.9rem;
+}
+
+.pi-modal__post .pi-card__body {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    font-size: 1.42rem;
+}
+
+.pi-modal__post .pi-card--print .pi-card__body { font-size: 0.92rem; }
+
+.pi-modal__post .pi-photo {
+    flex: none;
+    max-height: 20rem;
+}
+
+.pi-modal__post .pi-photo img { height: auto; max-height: 20rem; }
+
+/* Reactions row inside the modal post */
+.pi-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+
+.pi-reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid rgb(61 58 50 / 18%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 68%);
+    font-family: Inter, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 680;
+    color: #4b4334;
+    cursor: pointer;
+    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.pi-reaction:hover,
+.pi-reaction:focus-visible { transform: translateY(-1px); border-color: rgb(79 91 213 / 45%); }
+
+.pi-reaction.is-active {
+    background: rgb(79 91 213 / 14%);
+    border-color: rgb(79 91 213 / 55%);
+    color: #4149bb;
+}
+
+.pi-reaction__emoji { font-size: 0.95rem; line-height: 1; }
+
+.pi-modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.7rem;
+}
+
+.pi-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 0;
+    background: none;
+    padding: 0.2rem 0.1rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 660;
+    color: rgb(61 58 50 / 78%);
+    cursor: pointer;
+}
+
+.pi-action:hover,
+.pi-action:focus-visible { color: #4149bb; }
+
+.pi-action svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pi-action.is-active { color: #4149bb; }
+
+/* Right: comments column with its own internal scroll. */
+.pi-modal__comments {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-left: 1px solid rgb(28 43 71 / 9%);
+    background: #fdfcf8;
+}
+
+.pi-comments__head {
+    flex: none;
+    padding: 1rem 1.15rem 0.6rem;
+    border-bottom: 1px solid rgb(28 43 71 / 8%);
+}
+
+.pi-comments__head h2 {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 720;
+    color: #1c2b47;
+    text-shadow: none;
+}
+
+.pi-comments__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0.75rem 1.15rem;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    scrollbar-width: thin;
+}
+
+.pi-comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+}
+
+.pi-comment .pi-ava { width: 1.8rem; height: 1.8rem; font-size: 0.58rem; }
+
+.pi-comment__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.pi-comment__who {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+}
+
+.pi-comment__who strong { font-size: 0.78rem; color: #1c2b47; }
+.pi-comment__who small { font-size: 0.66rem; color: #8b98ab; }
+
+.pi-comment__text {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #38414f;
+    overflow-wrap: anywhere;
+}
+
+.pi-comment__support {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    border: 0;
+    background: none;
+    padding: 0.15rem 0.3rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 660;
+    color: #8b98ab;
+    cursor: pointer;
+}
+
+.pi-comment__support:hover,
+.pi-comment__support:focus-visible { color: #b0483a; }
+.pi-comment__support.is-active { color: #b0483a; }
+
+.pi-comments__empty {
+    padding: 1rem 0;
+    font-size: 0.8rem;
+    color: #8b98ab;
+    text-align: center;
+}
+
+.pi-comments__composer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.15rem 0.9rem;
+    border-top: 1px solid rgb(28 43 71 / 8%);
+    background: #fdfcf8;
+}
+
+.pi-comments__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid rgb(28 43 71 / 16%);
+    border-radius: 999px;
+    font-family: Inter, sans-serif;
+    font-size: 0.8rem;
+    color: #1c2b47;
+    background: #fff;
+}
+
+.pi-comments__input:focus-visible {
+    outline: 2px solid #4f5bd5;
+    outline-offset: 1px;
+}
+
+.pi-comments__send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    flex: none;
+    border: 0;
+    border-radius: 50%;
+    background: #4f5bd5;
+    color: #fff;
+    cursor: pointer;
+    transition: background 150ms ease, opacity 150ms ease;
+}
+
+.pi-comments__send:disabled { opacity: 0.45; cursor: not-allowed; }
+.pi-comments__send:hover:not(:disabled),
+.pi-comments__send:focus-visible { background: #4149bb; }
+
+.pi-comments__send svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.pi-comments__note {
+    padding: 0.35rem 1.15rem 0.75rem;
+    margin: 0;
+    font-size: 0.68rem;
+    color: #8b98ab;
+}
+
+/* Mobile: the overlay becomes a full-height bottom sheet. */
+@media (max-width: 47.9375rem) {
+    .pi-modal { padding: 0; align-items: flex-end; }
+
+    .pi-modal__shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+        width: 100%;
+        max-height: calc(100vh - 2.75rem);
+        border-radius: 1.1rem 1.1rem 0 0;
+    }
+
+    .pi-modal__post {
+        max-height: 46vh;
+        padding: 1.1rem 1rem;
+    }
+
+    .pi-modal__comments { border-left: 0; border-top: 1px solid rgb(28 43 71 / 9%); }
+
+    /* Oversized decorative pins step back on phones. */
+    .pi-pin { width: 0.85rem; height: 0.85rem; margin-left: -0.42rem; }
+}
+
+/* ---------------------------------------------------------------------
+   Accessibility + system preferences
+   --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .pi-card__paper,
+    .pi-reaction,
+    .pi-modal__shell,
+    .pi-item--new .pi-card__paper {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .pi-card:hover .pi-card__paper,
+    .pi-card:focus-within .pi-card__paper {
+        transform: perspective(38rem) rotateX(1.4deg) translate(var(--pi-offx, 0px), var(--pi-offy, 0px)) rotate(var(--pi-rot, 0deg));
+    }
+
+    .pi-skeleton { animation: none; }
+}
+
+@media (forced-colors: active) {
+    .pi-card__paper,
+    .pi-railcard,
+    .pi-composer,
+    .pi-modal__shell {
+        border: 1px solid CanvasText;
+    }
+
+    .pi-pin,
+    .pi-tape,
+    .pi-clip { display: none; }
+
+    .pi-strip__tabs .sf-tab[aria-current="page"] {
+        border: 2px solid Highlight;
+    }
+}
