@@ -186,6 +186,28 @@ git branch -d work/YYYY-MM-DD-short-task-name
 git fetch origin --prune
 ```
 
+Because a squash merge creates a new commit, Git may reject `git branch -d` even when the task branch's final tree is fully represented on `main`. In that case, do not immediately use `-D`. First verify all three conditions:
+
+1. The Azure pull request is completed successfully.
+2. Azure deleted the remote task branch.
+3. The local task branch has no file-content difference from updated `main`:
+
+```bash
+git fetch origin --prune
+git switch main
+git pull --ff-only
+git ls-remote --heads origin refs/heads/work/YYYY-MM-DD-short-task-name
+git diff --exit-code main work/YYYY-MM-DD-short-task-name
+```
+
+The `ls-remote` command must return no branch, and the `git diff` command must return no differences. Only then may the squashed local branch be removed with:
+
+```bash
+git branch -D work/YYYY-MM-DD-short-task-name
+```
+
+This narrow, verified squash-cleanup case is the only routine exception to the rule against `git branch -D`. If any difference remains, preserve the branch and investigate it.
+
 The agent that completes the release should update the GitHub mirror:
 
 ```bash
@@ -273,6 +295,8 @@ Before any such operation:
 5. Report the recovery reference afterward.
 
 Prefer `git branch -d` after a verified merge. Do not use `-D` merely because deletion is inconvenient.
+
+The verified squash-merge cleanup procedure in "Finishing a task" is an allowed exception because it requires a completed Azure PR, deleted remote branch, and an empty tree diff against updated `main`.
 
 Historical work from the July 14, 2026 consolidation is preserved under `archive/2026-07-14/*` tags, plus the earlier `archive/slate-board-v2` and `archive/chatbot-widget-mvp0` tags. Do not delete these tags without a separate preservation review.
 
