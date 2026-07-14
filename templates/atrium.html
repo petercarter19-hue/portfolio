@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Atrium | PeerSlate{% endblock %}
+
+{% block meta_description %}Enter the Living Triptych: one career seen through story, projects, and evidence.{% endblock %}
+
+{% block body_class %}living-triptych-page{% endblock %}
+
+{% block profile_band %}{% endblock %}
+
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-triptych.css') }}?v=arrival-1">
+{% endblock %}
+
+{% block content %}
+<section
+    class="triptych-atrium"
+    aria-labelledby="triptych-title"
+    data-triptych
+    data-phase="arrival"
+    data-active-panel=""
+>
+    <div class="triptych-atrium__architecture" aria-hidden="true">
+        <span class="triptych-atrium__arch triptych-atrium__arch--left"></span>
+        <span class="triptych-atrium__arch triptych-atrium__arch--right"></span>
+        <span class="triptych-atrium__horizon"></span>
+    </div>
+
+    <div class="triptych-installation">
+        <header class="triptych-identity">
+            <p class="triptych-identity__eyebrow">The Living Triptych</p>
+            <h1 id="triptych-title">{{ triptych.identity.name }}</h1>
+            <p class="triptych-identity__dimensions">
+                {% for dimension in triptych.identity.dimensions %}
+                    <span>{{ dimension }}.</span>
+                {% endfor %}
+            </p>
+            <span class="triptych-identity__rule" aria-hidden="true"></span>
+            <p class="triptych-identity__summary">{{ triptych.identity.summary }}</p>
+        </header>
+
+        <div class="triptych-panels" aria-label="Choose a dimension of {{ triptych.identity.name }}'s Slate">
+            <article
+                class="triptych-slab triptych-slab--story"
+                data-triptych-panel="story"
+                aria-labelledby="triptych-story-title"
+            >
+                <div class="triptych-slab__surface" aria-hidden="true"></div>
+                <div class="story-fragments" id="triptych-story-content">
+                    <div class="story-fragments__collage">
+                        {% for image in triptych.story.images %}
+                        <picture class="story-fragments__photo story-fragments__photo--{{ loop.index }}">
+                            {% if image.mobile %}
+                            <source media="(max-width: 47.9rem)" srcset="{{ url_for('static', filename=image.mobile) }}">
+                            {% endif %}
+                            <img
+                                src="{{ url_for('static', filename=image.src) }}"
+                                alt="{{ image.alt }}"
+                                {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                            >
+                        </picture>
+                        {% endfor %}
+                    </div>
+                    <div class="story-fragments__notes" aria-label="Personal values">
+                        {% for value in triptych.story['values'] %}
+                        <span class="story-fragments__note story-fragments__note--{{ loop.index }}">
+                            {{ value.label }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="triptych-slab__footer">
+                    <p class="triptych-slab__dimension">{{ triptych.story.dimension }}</p>
+                    <button
+                        class="triptych-slab__selector"
+                        type="button"
+                        data-triptych-selector="story"
+                        aria-pressed="false"
+                        aria-controls="triptych-story-content"
+                    >
+                        <span class="triptych-slab__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.7-4.1 2.9-6.2 6.5-6.2s5.8 2.1 6.5 6.2"/></svg>
+                        </span>
+                        <span id="triptych-story-title">{{ triptych.story.title }}</span>
+                    </button>
+                    <p class="triptych-slab__lead">{{ triptych.story.lead }}</p>
+                    <a class="triptych-slab__enter" href="{{ triptych.story.destination }}">
+                        Enter <span aria-hidden="true">→</span>
+                        <span class="sr-only">{{ triptych.story.title }}</span>
+                    </a>
+                </div>
+            </article>
+
+            <article
+                class="triptych-slab triptych-slab--projects"
+                data-triptych-panel="projects"
+                aria-labelledby="triptych-projects-title"
+            >
+                <div class="triptych-slab__surface" aria-hidden="true"></div>
+                <div class="project-fragments" id="triptych-projects-content">
+                    <svg class="project-fragments__diagram" viewBox="0 0 520 520" aria-hidden="true">
+                        <g class="project-fragments__grid">
+                            <path d="M0 52h520M0 104h520M0 156h520M0 208h520M0 260h520M0 312h520M0 364h520M0 416h520M0 468h520"/>
+                            <path d="M52 0v520M104 0v520M156 0v520M208 0v520M260 0v520M312 0v520M364 0v520M416 0v520M468 0v520"/>
+                        </g>
+                        <g class="project-fragments__flow">
+                            <rect x="72" y="88" width="112" height="72" rx="8"/>
+                            <rect x="336" y="88" width="112" height="72" rx="8"/>
+                            <rect x="204" y="216" width="112" height="72" rx="8"/>
+                            <path d="M184 124h152M128 160v92h76M392 160v92h-76M260 288v94"/>
+                            <circle cx="260" cy="382" r="34"/>
+                        </g>
+                    </svg>
+
+                    {% if triptych.projects.featured %}
+                    <div class="project-fragments__screen">
+                        <img
+                            src="{{ url_for('static', filename='images/projects/living-resume-build.jpg') }}"
+                            alt="Living Resume interface with a glass career chapter and evidence cards"
+                        >
+                        <span>{{ triptych.projects.featured_label }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="project-fragments__signals" aria-label="Featured project progress">
+                        {% for signal in triptych.projects.signals %}
+                        <span>
+                            <small>{{ signal.label }}</small>
+                            {{ signal.detail }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="triptych-slab__footer">
+                    <p class="triptych-slab__dimension">{{ triptych.projects.dimension }}</p>
+                    <button
+                        class="triptych-slab__selector"
+                        type="button"
+                        data-triptych-selector="projects"
+                        aria-pressed="false"
+                        aria-controls="triptych-projects-content"
+                    >
+                        <span class="triptych-slab__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z"/><path d="M4 7.4l8 4.7 8-4.7M12 12.1v9.1"/></svg>
+                        </span>
+                        <span id="triptych-projects-title">{{ triptych.projects.title }}</span>
+                    </button>
+                    <p class="triptych-slab__lead">{{ triptych.projects.lead }}</p>
+                    <a class="triptych-slab__enter" href="{{ triptych.projects.destination }}">
+                        Enter <span aria-hidden="true">→</span>
+                        <span class="sr-only">{{ triptych.projects.title }}</span>
+                    </a>
+                </div>
+            </article>
+
+            <article
+                class="triptych-slab triptych-slab--resume"
+                data-triptych-panel="resume"
+                aria-labelledby="triptych-resume-title"
+            >
+                <div class="triptych-slab__surface" aria-hidden="true"></div>
+                <div class="resume-fragments" id="triptych-resume-content">
+                    <div class="resume-fragments__heading">
+                        <p>Evidence. Impact. Growth.</p>
+                        <span>A career in chapters.</span>
+                    </div>
+
+                    <ol class="resume-fragments__timeline">
+                        {% for chapter in triptych.resume.chapters %}
+                        <li>
+                            <span class="resume-fragments__node" aria-hidden="true"></span>
+                            <time>{{ chapter.period }}</time>
+                            <strong>{{ chapter.title }}</strong>
+                            <small>{{ chapter.organization }}</small>
+                        </li>
+                        {% endfor %}
+                    </ol>
+
+                    <div class="resume-fragments__metrics" aria-label="Selected career evidence">
+                        {% for metric in triptych.resume.metrics %}
+                        <span>
+                            <strong>{{ metric.value }}</strong>
+                            <small>{{ metric.label }}</small>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="triptych-slab__footer">
+                    <p class="triptych-slab__dimension">{{ triptych.resume.dimension }}</p>
+                    <button
+                        class="triptych-slab__selector"
+                        type="button"
+                        data-triptych-selector="resume"
+                        aria-pressed="false"
+                        aria-controls="triptych-resume-content"
+                    >
+                        <span class="triptych-slab__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 2.8h8.5L19 7.3v13.9H6z"/><path d="M14.5 2.8v4.5H19M9 12h7M9 15.5h7"/></svg>
+                        </span>
+                        <span id="triptych-resume-title">{{ triptych.resume.title }}</span>
+                    </button>
+                    <p class="triptych-slab__lead">{{ triptych.resume.lead }}</p>
+                    <a class="triptych-slab__enter" href="{{ triptych.resume.destination }}">
+                        Enter <span aria-hidden="true">→</span>
+                        <span class="sr-only">{{ triptych.resume.title }}</span>
+                    </a>
+                </div>
+            </article>
+        </div>
+
+        <div class="triptych-pedestal" aria-hidden="true"></div>
+    </div>
+
+    <p class="triptych-status sr-only" data-triptych-status aria-live="polite">
+        Arrival. All three dimensions are visible.
+    </p>
+
+    <div class="triptych-stage-label" aria-hidden="true">
+        <span>01 — Arrival</span>
+        <em>The Living Triptych</em>
+    </div>
+
+    <div class="triptych-ask" aria-label="Ask the Slate">
+        <span class="triptych-ask__spark" aria-hidden="true">✦</span>
+        {% with
+            ai_owner_name=triptych.identity.first_name,
+            ai_label='Ask the Slate',
+            ai_placeholder="Ask anything about " ~ triptych.identity.first_name ~ "'s journey, projects, or impact.",
+            ai_input_id='atrium-ai-input'
+        %}
+            {% include "partials/portfolio_ai_search.html" %}
+        {% endwith %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/living-triptych.js') }}?v=arrival-1"></script>
+{% endblock %}

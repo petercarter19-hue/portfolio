@@ -1,0 +1,1342 @@
+/* =====================================================================
+   LIVING TRIPTYCH — 01 Arrival experiment
+
+   Route-scoped Foundation C implementation for /petec/atrium. The scene is
+   semantic DOM + CSS/SVG so content, navigation, and focus remain available
+   without JavaScript or cinematic effects.
+   ===================================================================== */
+
+body.living-triptych-page {
+    --lt-ink: #0a1b36;
+    --lt-cloud: #f6f8fc;
+    --lt-indigo: #4f5bd5;
+    --lt-azure: #4ea3ff;
+    --lt-cyan: #2ec8d3;
+    --lt-amber: #d7a33e;
+    --lt-story-deep: #5b350d;
+    --lt-project-deep: #071d49;
+    --lt-ease: cubic-bezier(.22, .8, .25, 1);
+    --lt-focus: #0b63e5;
+    color: var(--lt-ink);
+    background: #eef5fb;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body.living-triptych-page .site-sky {
+    display: none;
+}
+
+body.living-triptych-page .main-content {
+    min-height: 0;
+    overflow: clip;
+    background: transparent;
+}
+
+body.living-triptych-page .global-header {
+    background: rgb(247 251 255 / 92%);
+    border-bottom-color: rgb(113 151 197 / 24%);
+    box-shadow: 0 .5rem 2rem rgb(24 57 97 / 9%);
+    backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+body.living-triptych-page .platform-nav__links {
+    gap: clamp(.8rem, 1.65vw, 2rem);
+}
+
+body.living-triptych-page .platform-nav__links a {
+    font-size: clamp(.86rem, .8vw, .98rem);
+}
+
+body.living-triptych-page .footer {
+    position: relative;
+    z-index: 3;
+    color: #52647a;
+    background: rgb(246 250 254 / 92%);
+}
+
+.living-triptych-page .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.triptych-atrium {
+    --pointer-x: 50%;
+    --pointer-y: 38%;
+    position: relative;
+    z-index: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: calc(100svh - 4rem);
+    padding: clamp(.7rem, 1.4vh, 1.2rem) clamp(1.25rem, 3vw, 3.75rem) clamp(1rem, 2vh, 1.5rem);
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgb(255 255 255 / 90%) 0 7%, rgb(255 255 255 / 0%) 27%),
+        linear-gradient(180deg, rgb(247 251 255 / 96%) 0%, rgb(234 244 252 / 76%) 46%, rgb(223 236 247 / 88%) 100%);
+}
+
+.triptych-atrium::before,
+.triptych-atrium::after {
+    position: absolute;
+    z-index: -3;
+    content: "";
+    pointer-events: none;
+}
+
+.triptych-atrium::before {
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 44% at 50% 104%, rgb(255 255 255 / 88%), transparent 64%),
+        linear-gradient(90deg, rgb(118 160 195 / 10%) 1px, transparent 1px) 50% 0 / 8.2vw 100%,
+        linear-gradient(180deg, transparent 0 62%, rgb(255 255 255 / 64%) 62% 63%, transparent 63%);
+    opacity: .8;
+}
+
+.triptych-atrium::after {
+    right: -8%;
+    bottom: 4%;
+    left: -8%;
+    height: 33%;
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(ellipse at center, rgb(101 135 169 / 9%) 0 1px, transparent 1px 6.5%),
+        linear-gradient(180deg, rgb(255 255 255 / 22%), rgb(183 207 227 / 13%));
+    transform: perspective(800px) rotateX(68deg);
+    transform-origin: bottom;
+}
+
+.triptych-atrium__architecture {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.triptych-atrium__arch {
+    position: absolute;
+    top: -33%;
+    width: 64%;
+    height: 86%;
+    border: clamp(1.7rem, 3vw, 3.4rem) solid rgb(255 255 255 / 66%);
+    border-bottom: 0;
+    border-radius: 50% 50% 0 0;
+    box-shadow:
+        inset 0 0 2.4rem rgb(72 128 175 / 10%),
+        0 1.2rem 4rem rgb(96 133 166 / 8%);
+}
+
+.triptych-atrium__arch--left {
+    left: -31%;
+    transform: rotate(-5deg);
+}
+
+.triptych-atrium__arch--right {
+    right: -31%;
+    transform: rotate(5deg);
+}
+
+.triptych-atrium__horizon {
+    position: absolute;
+    right: 7%;
+    bottom: 24%;
+    left: 7%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(82 125 166 / 22%), transparent);
+    box-shadow: 0 0 2rem rgb(255 255 255 / 88%);
+}
+
+.triptych-installation {
+    position: relative;
+    width: min(100%, 94rem);
+    height: min(69vw, calc(100svh - 10.7rem));
+    min-height: 31rem;
+    max-height: 48rem;
+    margin: 0 auto;
+    perspective: 1800px;
+    transform-style: preserve-3d;
+}
+
+.triptych-panels {
+    position: absolute;
+    inset: 0 0 4%;
+    transform-style: preserve-3d;
+}
+
+.triptych-pedestal {
+    position: absolute;
+    right: 5%;
+    bottom: 1.8%;
+    left: 5%;
+    z-index: 0;
+    height: 10%;
+    border: 1px solid rgb(255 255 255 / 92%);
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgb(248 252 255 / 72%), rgb(129 166 199 / 20%));
+    box-shadow:
+        0 1rem 2.5rem rgb(45 79 112 / 18%),
+        inset 0 .4rem 1.4rem rgb(255 255 255 / 86%);
+    transform: translateZ(-80px) rotateX(62deg);
+    transform-origin: center;
+}
+
+.triptych-slab {
+    --slab-transform: translate3d(0, 0, 0);
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 76%);
+    border-radius: clamp(1.4rem, 2.2vw, 2.1rem);
+    box-shadow:
+        0 2rem 4.4rem rgb(20 46 79 / 18%),
+        inset .2rem 0 .65rem rgb(255 255 255 / 34%),
+        inset -.15rem 0 .65rem rgb(16 47 82 / 15%),
+        inset 0 0 0 1px rgb(255 255 255 / 28%);
+    transform: var(--slab-transform);
+    transform-style: preserve-3d;
+    transform-origin: 50% 92%;
+    transition:
+        transform 560ms var(--lt-ease),
+        filter 420ms var(--lt-ease),
+        box-shadow 420ms var(--lt-ease),
+        opacity 360ms ease;
+    will-change: transform;
+}
+
+.triptych-slab::before,
+.triptych-slab::after,
+.triptych-slab__surface {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: "";
+}
+
+.triptych-slab::before {
+    z-index: 7;
+    border: 1px solid rgb(255 255 255 / 46%);
+    border-radius: inherit;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        inset 1rem 0 1.6rem -1.5rem rgb(255 255 255 / 96%),
+        inset -1rem 0 1.6rem -1.5rem rgb(255 255 255 / 90%);
+}
+
+.triptych-slab::after {
+    z-index: 6;
+    background:
+        linear-gradient(112deg, transparent 0 36%, rgb(255 255 255 / 24%) 42%, transparent 49%),
+        radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgb(255 255 255 / 27%), transparent 28%);
+    mix-blend-mode: screen;
+    opacity: .58;
+    transition: opacity 360ms ease;
+}
+
+.triptych-slab__surface {
+    z-index: 0;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3' stitchTiles='stitch' type='fractalNoise'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    opacity: .2;
+}
+
+.triptych-slab--story {
+    top: 8%;
+    bottom: 3%;
+    left: 4.5%;
+    width: 31.5%;
+    z-index: 2;
+    color: #fffaf2;
+    background:
+        radial-gradient(circle at 30% 15%, rgb(255 231 173 / 42%), transparent 34%),
+        linear-gradient(145deg, rgb(155 96 20 / 76%), rgb(97 55 12 / 78%));
+    border-color: rgb(246 193 89 / 68%);
+    box-shadow:
+        0 2rem 4.4rem rgb(89 55 11 / 21%),
+        inset .22rem 0 .75rem rgb(255 224 153 / 46%),
+        inset -.18rem 0 .8rem rgb(72 40 5 / 28%);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    --slab-transform: translate3d(0, 0, 12px) rotateY(3.2deg);
+}
+
+.triptych-slab--projects {
+    top: 0;
+    bottom: 0;
+    left: 31.2%;
+    width: 39.4%;
+    z-index: 4;
+    color: #f3f7ff;
+    background:
+        radial-gradient(circle at 76% 24%, rgb(78 163 255 / 25%), transparent 34%),
+        linear-gradient(150deg, rgb(24 74 150 / 83%), rgb(5 25 66 / 90%));
+    border-color: rgb(91 164 255 / 70%);
+    box-shadow:
+        0 2.3rem 5.2rem rgb(5 28 69 / 27%),
+        0 0 1.6rem rgb(78 163 255 / 15%),
+        inset .24rem 0 .8rem rgb(131 190 255 / 38%),
+        inset -.2rem 0 .8rem rgb(3 19 51 / 34%);
+    backdrop-filter: blur(16px) saturate(1.22);
+    -webkit-backdrop-filter: blur(16px) saturate(1.22);
+    --slab-transform: translate3d(0, -1%, 42px);
+}
+
+.triptych-slab--resume {
+    top: 8%;
+    right: 4.5%;
+    bottom: 3%;
+    width: 31.5%;
+    z-index: 1;
+    color: var(--lt-ink);
+    background:
+        radial-gradient(circle at 26% 15%, rgb(255 255 255 / 92%), transparent 38%),
+        linear-gradient(145deg, rgb(255 255 255 / 76%), rgb(229 240 250 / 68%));
+    border-color: rgb(255 255 255 / 92%);
+    backdrop-filter: blur(22px) saturate(1.12);
+    -webkit-backdrop-filter: blur(22px) saturate(1.12);
+    --slab-transform: translate3d(0, 0, 5px) rotateY(-3.2deg);
+}
+
+/* Active slab depth. Pointer, keyboard, and touch all write this one state. */
+.triptych-atrium[data-active-panel="story"] .triptych-slab--story {
+    z-index: 10;
+    filter: saturate(1.06) brightness(1.03);
+    --slab-transform: translate3d(7%, -1.5%, 155px) rotateY(.5deg) scale(1.035);
+}
+
+.triptych-atrium[data-active-panel="story"] .triptych-slab--projects {
+    filter: saturate(.75) brightness(.83);
+    --slab-transform: translate3d(6%, 2%, -64px) rotateY(-1deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel="story"] .triptych-slab--resume {
+    filter: saturate(.7) brightness(.9);
+    --slab-transform: translate3d(7%, 1%, -90px) rotateY(-5deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel="projects"] .triptych-slab--projects {
+    z-index: 10;
+    filter: saturate(1.1) brightness(1.04);
+    --slab-transform: translate3d(0, -2.2%, 170px) scale(1.035);
+}
+
+.triptych-atrium[data-active-panel="projects"] .triptych-slab--story,
+.triptych-atrium[data-active-panel="projects"] .triptych-slab--resume {
+    filter: saturate(.72) brightness(.83);
+}
+
+.triptych-atrium[data-active-panel="projects"] .triptych-slab--story {
+    --slab-transform: translate3d(-4%, 2%, -78px) rotateY(5deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel="projects"] .triptych-slab--resume {
+    --slab-transform: translate3d(4%, 2%, -78px) rotateY(-5deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel="resume"] .triptych-slab--resume {
+    z-index: 10;
+    filter: saturate(1.04) brightness(1.025);
+    --slab-transform: translate3d(-7%, -1.5%, 155px) rotateY(-.5deg) scale(1.035);
+}
+
+.triptych-atrium[data-active-panel="resume"] .triptych-slab--projects {
+    filter: saturate(.7) brightness(.8);
+    --slab-transform: translate3d(-6%, 2%, -64px) rotateY(1deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel="resume"] .triptych-slab--story {
+    filter: saturate(.7) brightness(.84);
+    --slab-transform: translate3d(-7%, 1%, -90px) rotateY(5deg) scale(.94);
+}
+
+.triptych-atrium[data-active-panel] .triptych-slab::after {
+    opacity: .34;
+}
+
+.triptych-identity {
+    position: absolute;
+    top: 41%;
+    left: 50%;
+    z-index: 8;
+    width: min(34rem, 39%);
+    padding: clamp(1rem, 2vw, 1.65rem) clamp(1.1rem, 2.4vw, 2rem);
+    color: white;
+    text-align: center;
+    text-shadow: 0 .15rem 1rem rgb(2 13 36 / 48%);
+    background: linear-gradient(180deg, rgb(3 19 51 / 38%), rgb(3 19 51 / 20%));
+    border: 1px solid rgb(156 203 255 / 22%);
+    border-radius: 1.2rem;
+    box-shadow: 0 1rem 3rem rgb(2 15 43 / 16%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transform: translate3d(-50%, -50%, 190px);
+    transition: opacity 280ms ease, transform 440ms var(--lt-ease), visibility 280ms ease;
+    pointer-events: none;
+}
+
+.triptych-atrium[data-active-panel]:not([data-active-panel=""]) .triptych-identity {
+    visibility: hidden;
+    opacity: 0;
+    transform: translate3d(-50%, -47%, 90px) scale(.94);
+}
+
+.triptych-identity__eyebrow,
+.triptych-slab__dimension,
+.resume-fragments__heading p {
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-size: clamp(.58rem, .62vw, .72rem);
+    font-weight: 750;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.triptych-identity__eyebrow {
+    margin-bottom: .45rem;
+    color: #b7dcff;
+}
+
+.triptych-identity h1 {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(2.25rem, 3.7vw, 4.2rem);
+    font-weight: 400;
+    line-height: .98;
+    letter-spacing: -.025em;
+}
+
+.triptych-identity__dimensions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .2em .42em;
+    margin-top: .45rem;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(1.05rem, 1.65vw, 1.7rem);
+    line-height: 1.15;
+}
+
+.triptych-identity__rule {
+    display: block;
+    width: min(11rem, 60%);
+    height: 1px;
+    margin: .75rem auto;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 88%), transparent);
+}
+
+.triptych-identity__summary {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(.9rem, 1.05vw, 1.08rem);
+}
+
+.triptych-slab__footer {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: auto;
+    padding: clamp(.85rem, 1.5vw, 1.3rem) clamp(.8rem, 1.8vw, 1.55rem) clamp(1rem, 1.7vw, 1.45rem);
+    text-align: center;
+    text-shadow: 0 .1rem .75rem rgb(0 0 0 / 24%);
+}
+
+.triptych-slab--story .triptych-slab__footer,
+.triptych-slab--projects .triptych-slab__footer {
+    background: linear-gradient(180deg, transparent, rgb(3 14 34 / 28%) 28%, rgb(3 14 34 / 45%));
+}
+
+.triptych-slab--resume .triptych-slab__footer {
+    text-shadow: none;
+    background: linear-gradient(180deg, transparent, rgb(240 247 253 / 72%) 30%, rgb(244 249 253 / 88%));
+}
+
+.triptych-slab__dimension {
+    margin-bottom: .2rem;
+    opacity: .76;
+}
+
+.triptych-slab__selector {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: .62rem;
+    padding: .22rem .55rem;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: .8rem;
+    cursor: pointer;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(1.3rem, 1.75vw, 1.8rem);
+    line-height: 1.05;
+}
+
+.triptych-slab__selector:hover {
+    background: rgb(255 255 255 / 9%);
+}
+
+.triptych-slab--resume .triptych-slab__selector:hover {
+    background: rgb(79 91 213 / 8%);
+}
+
+.triptych-slab__selector:focus-visible,
+.triptych-slab__enter:focus-visible,
+.triptych-ask :focus-visible {
+    outline: 3px solid var(--lt-focus);
+    outline-offset: 3px;
+}
+
+.triptych-slab--projects .triptych-slab__selector:focus-visible,
+.triptych-slab--story .triptych-slab__selector:focus-visible,
+.triptych-slab--projects .triptych-slab__enter:focus-visible,
+.triptych-slab--story .triptych-slab__enter:focus-visible {
+    outline-color: #fff;
+}
+
+.triptych-slab__icon {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    opacity: .88;
+}
+
+.triptych-slab__icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.triptych-slab__lead {
+    max-width: 27ch;
+    margin-top: .2rem;
+    font-size: clamp(.73rem, .75vw, .86rem);
+    line-height: 1.4;
+    opacity: .85;
+}
+
+.triptych-slab__enter {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    margin-top: .25rem;
+    padding: .45rem .8rem;
+    border-radius: 999px;
+    font-size: clamp(.82rem, .78vw, .92rem);
+    font-weight: 650;
+}
+
+.triptych-slab__enter span[aria-hidden="true"] {
+    font-size: 1.25em;
+    transition: transform 180ms ease;
+}
+
+.triptych-slab__enter:hover span[aria-hidden="true"] {
+    transform: translateX(.2rem);
+}
+
+/* Story fragments */
+.story-fragments,
+.project-fragments,
+.resume-fragments {
+    position: relative;
+    z-index: 2;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.story-fragments {
+    padding: 7% 7% 0;
+}
+
+.story-fragments__collage {
+    position: absolute;
+    inset: 5% 7% 8%;
+}
+
+.story-fragments__photo {
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid rgb(255 236 200 / 56%);
+    border-radius: .35rem;
+    box-shadow: 0 .65rem 1.8rem rgb(53 29 5 / 28%);
+}
+
+.story-fragments__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(.18) saturate(.82) contrast(.96);
+}
+
+.story-fragments__photo--1 {
+    top: 1%;
+    left: 2%;
+    width: 42%;
+    height: 33%;
+    transform: rotate(-1.2deg);
+}
+
+.story-fragments__photo--2 {
+    top: 12%;
+    right: 1%;
+    width: 58%;
+    height: 42%;
+    transform: rotate(1.1deg);
+}
+
+.story-fragments__photo--3 {
+    bottom: 9%;
+    left: 0;
+    width: 49%;
+    height: 39%;
+    transform: rotate(.8deg);
+}
+
+.story-fragments__photo--4 {
+    right: 0;
+    bottom: 2%;
+    width: 48%;
+    height: 33%;
+    transform: rotate(-.7deg);
+}
+
+.story-fragments__notes {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.story-fragments__note {
+    position: absolute;
+    max-width: 9.5rem;
+    padding: .6rem .75rem;
+    color: #4f310d;
+    background: rgb(255 235 183 / 91%);
+    border: 1px solid rgb(110 69 14 / 13%);
+    box-shadow: 0 .6rem 1.3rem rgb(53 29 5 / 18%);
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(.72rem, .8vw, .95rem);
+    font-style: italic;
+    line-height: 1.1;
+}
+
+.story-fragments__note--1 {
+    top: 7%;
+    right: 6%;
+    transform: rotate(2deg);
+}
+
+.story-fragments__note--2 {
+    top: 42%;
+    left: 3%;
+    transform: rotate(-2.5deg);
+}
+
+.story-fragments__note--3 {
+    right: 5%;
+    bottom: 4%;
+    transform: rotate(1.4deg);
+}
+
+/* Project fragments */
+.project-fragments {
+    overflow: hidden;
+}
+
+.project-fragments::before {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        linear-gradient(90deg, transparent, rgb(78 163 255 / 8%), transparent),
+        repeating-linear-gradient(0deg, transparent 0 2.6rem, rgb(114 183 255 / 7%) 2.6rem calc(2.6rem + 1px));
+    content: "";
+    pointer-events: none;
+}
+
+.project-fragments__diagram {
+    position: absolute;
+    inset: -6% -8% auto;
+    width: 116%;
+    height: 88%;
+    opacity: .45;
+}
+
+.project-fragments__grid,
+.project-fragments__flow {
+    fill: none;
+    stroke: #9fcfff;
+    stroke-width: 1;
+}
+
+.project-fragments__grid {
+    opacity: .22;
+}
+
+.project-fragments__flow {
+    stroke-width: 1.6;
+}
+
+.project-fragments__screen {
+    position: absolute;
+    top: 17%;
+    right: 9%;
+    left: 18%;
+    z-index: 3;
+    overflow: hidden;
+    padding: .45rem;
+    background: rgb(5 20 51 / 72%);
+    border: 1px solid rgb(134 194 255 / 42%);
+    border-radius: .85rem;
+    box-shadow:
+        0 1.2rem 2.8rem rgb(2 14 38 / 48%),
+        0 0 2rem rgb(78 163 255 / 18%);
+    transform: perspective(900px) rotateY(-6deg) rotateX(1deg);
+}
+
+.project-fragments__screen img {
+    display: block;
+    width: 100%;
+    max-height: clamp(8rem, 16vh, 12rem);
+    object-fit: cover;
+    object-position: center top;
+    border-radius: .5rem;
+    opacity: .88;
+    filter: saturate(.75) hue-rotate(5deg) contrast(1.08);
+}
+
+.project-fragments__screen span {
+    display: block;
+    padding: .5rem .35rem .2rem;
+    overflow: hidden;
+    font-size: clamp(.55rem, .62vw, .72rem);
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-fragments__signals {
+    position: absolute;
+    right: 7%;
+    bottom: 5%;
+    left: 7%;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .45rem;
+}
+
+.project-fragments__signals span {
+    min-width: 0;
+    padding: .62rem .55rem;
+    overflow: hidden;
+    background: rgb(5 24 60 / 54%);
+    border: 1px solid rgb(136 195 255 / 26%);
+    border-radius: .55rem;
+    font-size: clamp(.5rem, .56vw, .66rem);
+    line-height: 1.25;
+    text-overflow: ellipsis;
+}
+
+.project-fragments__signals small {
+    display: block;
+    margin-bottom: .28rem;
+    color: #83c9ff;
+    font-size: .78em;
+    font-weight: 750;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+/* Resume fragments */
+.resume-fragments {
+    padding: 9% 10% 0 13%;
+}
+
+.resume-fragments__heading p {
+    color: #304f75;
+}
+
+.resume-fragments__heading span {
+    display: block;
+    margin-top: .32rem;
+    color: #52647a;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(.72rem, .78vw, .9rem);
+}
+
+.resume-fragments__timeline {
+    position: relative;
+    display: grid;
+    gap: clamp(.75rem, 1.1vh, 1.05rem);
+    margin-top: clamp(1rem, 2vh, 1.7rem);
+    padding-left: 1.35rem;
+    list-style: none;
+}
+
+.resume-fragments__timeline::before {
+    position: absolute;
+    top: .25rem;
+    bottom: .25rem;
+    left: .27rem;
+    width: 1px;
+    background: linear-gradient(180deg, var(--lt-indigo), rgb(78 163 255 / 30%));
+    content: "";
+}
+
+.resume-fragments__timeline li {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    line-height: 1.15;
+}
+
+.resume-fragments__node {
+    position: absolute;
+    top: .18rem;
+    left: -1.35rem;
+    width: .56rem;
+    height: .56rem;
+    border: 2px solid rgb(255 255 255 / 92%);
+    border-radius: 50%;
+    background: var(--lt-indigo);
+    box-shadow: 0 0 0 1px rgb(79 91 213 / 28%);
+}
+
+.resume-fragments__timeline time {
+    color: #5c6f88;
+    font-size: clamp(.52rem, .55vw, .64rem);
+    font-weight: 700;
+}
+
+.resume-fragments__timeline strong {
+    margin-top: .22rem;
+    overflow: hidden;
+    color: #173252;
+    font-size: clamp(.58rem, .62vw, .72rem);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resume-fragments__timeline small {
+    margin-top: .18rem;
+    overflow: hidden;
+    color: #5a6b80;
+    font-size: clamp(.48rem, .53vw, .62rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resume-fragments__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .38rem;
+    margin-top: clamp(.8rem, 1.6vh, 1.2rem);
+}
+
+.resume-fragments__metrics span {
+    min-width: 0;
+    padding: .48rem .35rem;
+    text-align: center;
+    background: rgb(255 255 255 / 46%);
+    border: 1px solid rgb(52 93 137 / 15%);
+    border-radius: .5rem;
+}
+
+.resume-fragments__metrics strong,
+.resume-fragments__metrics small {
+    display: block;
+}
+
+.resume-fragments__metrics strong {
+    color: #173d70;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(.7rem, .8vw, .95rem);
+}
+
+.resume-fragments__metrics small {
+    margin-top: .12rem;
+    overflow: hidden;
+    color: #68788d;
+    font-size: clamp(.42rem, .45vw, .52rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Stage annotation and signature Ask utility */
+.triptych-stage-label {
+    position: absolute;
+    bottom: clamp(1.35rem, 2.4vh, 2rem);
+    left: clamp(1.25rem, 3vw, 3.75rem);
+    z-index: 5;
+    display: grid;
+    gap: .1rem;
+    padding-left: 1rem;
+    color: #294564;
+    border-left: 1px solid #496887;
+}
+
+.triptych-stage-label span {
+    font-size: clamp(.68rem, .72vw, .84rem);
+    font-weight: 750;
+    letter-spacing: .04em;
+}
+
+.triptych-stage-label em {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(.75rem, .82vw, .96rem);
+}
+
+.triptych-ask {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    width: min(38rem, calc(100vw - 18rem));
+    min-width: 28rem;
+    align-items: center;
+    gap: .2rem;
+    margin: -.15rem auto 0;
+    padding: .25rem .35rem .25rem .65rem;
+    background: linear-gradient(180deg, rgb(255 255 255 / 90%), rgb(242 248 253 / 82%));
+    border: 1px solid rgb(255 255 255 / 94%);
+    border-radius: 999px;
+    box-shadow:
+        0 1.1rem 2.8rem rgb(35 68 102 / 17%),
+        inset 0 0 0 1px rgb(120 156 191 / 13%);
+    backdrop-filter: blur(18px) saturate(1.12);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+.triptych-ask__spark {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    color: #2c496a;
+    font-size: 1.15rem;
+}
+
+.triptych-ask .hero-ai-search {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+.triptych-ask .hero-ai-search__label,
+.triptych-ask .hero-ai-search__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.triptych-ask .hero-ai-search__box {
+    min-height: 3rem;
+    padding: .18rem;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.triptych-ask .hero-ai-search__box::before {
+    display: none;
+}
+
+.triptych-ask .hero-ai-search__input {
+    min-height: 2.65rem;
+    padding: 0 .75rem;
+    color: var(--lt-ink);
+    font-size: .88rem;
+}
+
+.triptych-ask .hero-ai-search__input::placeholder {
+    color: #65768b;
+}
+
+.triptych-ask .hero-ai-search__button {
+    min-width: 3.2rem;
+    min-height: 2.65rem;
+    padding: 0 .85rem;
+    color: white;
+    background: linear-gradient(180deg, #274e78, #0f2e52);
+    border-radius: 999px;
+    font-size: .75rem;
+}
+
+.triptych-ask .hero-ai-answer {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 1rem);
+    left: 0;
+    max-height: min(23rem, 55vh);
+    margin: 0;
+    overflow-y: auto;
+    color: var(--lt-ink);
+    background: rgb(248 252 255 / 97%);
+    border: 1px solid rgb(78 163 255 / 28%);
+    border-left: 3px solid var(--lt-cyan);
+    box-shadow: 0 1.5rem 4rem rgb(19 52 89 / 21%);
+}
+
+.triptych-ask .hero-ai-answer::before {
+    top: auto;
+    bottom: -7px;
+    border: 0;
+    border-right: 1px solid rgb(78 163 255 / 28%);
+    border-bottom: 1px solid rgb(78 163 255 / 28%);
+}
+
+.triptych-ask .hero-ai-answer__question {
+    color: #176a74;
+}
+
+.triptych-ask .hero-ai-answer__response {
+    color: var(--lt-ink);
+}
+
+@media (max-width: 74rem) {
+    body.portfolio-shell.living-triptych-page .platform-nav__links {
+        grid-area: links;
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .triptych-atrium {
+        min-height: calc(100svh - 7.2rem);
+        padding-inline: 1.5rem;
+    }
+
+    .triptych-installation {
+        height: min(78vw, calc(100svh - 13.2rem));
+        min-height: 34rem;
+    }
+
+    .triptych-slab--story {
+        left: 2%;
+        width: 34%;
+    }
+
+    .triptych-slab--projects {
+        left: 29.5%;
+        width: 42%;
+    }
+
+    .triptych-slab--resume {
+        right: 2%;
+        width: 34%;
+    }
+
+    .triptych-stage-label {
+        left: 1.5rem;
+    }
+
+    .triptych-ask {
+        width: min(36rem, calc(100vw - 15rem));
+    }
+}
+
+@media (max-width: 58rem) {
+    .triptych-atrium {
+        min-height: auto;
+        padding-bottom: 1.5rem;
+    }
+
+    .triptych-installation {
+        height: min(86vw, 45rem);
+        min-height: 38rem;
+    }
+
+    .triptych-identity {
+        width: 41%;
+    }
+
+    .triptych-stage-label {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        align-self: end;
+        margin: .6rem 0 1rem;
+    }
+
+    .triptych-ask {
+        width: min(36rem, 100%);
+        min-width: 0;
+        order: 3;
+    }
+}
+
+@media (max-width: 47.9rem) {
+    body.living-triptych-page .main-content {
+        overflow: visible;
+    }
+
+    .triptych-atrium {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.4rem 1rem 1.5rem;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 50% 4%, rgb(255 255 255 / 96%), transparent 22rem),
+            linear-gradient(180deg, #eff7fd, #dfeefa);
+    }
+
+    .triptych-atrium::after,
+    .triptych-atrium__architecture,
+    .triptych-pedestal {
+        display: none;
+    }
+
+    .triptych-installation {
+        display: flex;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        flex-direction: column;
+        gap: 1.25rem;
+        perspective: none;
+    }
+
+    .triptych-identity {
+        position: relative;
+        top: auto;
+        left: auto;
+        order: -1;
+        width: 100%;
+        padding: .75rem 1rem 1.1rem;
+        color: var(--lt-ink);
+        text-shadow: none;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        transform: none;
+    }
+
+    .triptych-atrium[data-active-panel]:not([data-active-panel=""]) .triptych-identity {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+    }
+
+    .triptych-identity__eyebrow {
+        color: #47688d;
+    }
+
+    .triptych-identity h1 {
+        font-size: clamp(2.65rem, 14vw, 4rem);
+    }
+
+    .triptych-identity__dimensions {
+        color: #263f5c;
+        font-size: clamp(1.15rem, 5.5vw, 1.55rem);
+    }
+
+    .triptych-identity__rule {
+        background: linear-gradient(90deg, transparent, rgb(10 27 54 / 42%), transparent);
+    }
+
+    .triptych-panels {
+        position: relative;
+        inset: auto;
+        display: grid;
+        gap: 1.25rem;
+        transform-style: flat;
+    }
+
+    .triptych-slab,
+    .triptych-slab--story,
+    .triptych-slab--projects,
+    .triptych-slab--resume,
+    .triptych-atrium[data-active-panel] .triptych-slab {
+        position: relative;
+        inset: auto;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        left: auto;
+        z-index: 1;
+        width: 100%;
+        min-height: 36rem;
+        filter: none;
+        transform: none;
+        transform-style: flat;
+    }
+
+    .triptych-atrium[data-active-panel="story"] .triptych-slab--story,
+    .triptych-atrium[data-active-panel="projects"] .triptych-slab--projects,
+    .triptych-atrium[data-active-panel="resume"] .triptych-slab--resume {
+        z-index: 2;
+        box-shadow:
+            0 1.6rem 3rem rgb(22 54 90 / 22%),
+            0 0 0 3px rgb(78 163 255 / 24%);
+    }
+
+    .triptych-slab--projects {
+        min-height: 39rem;
+    }
+
+    .triptych-slab--resume {
+        min-height: 34rem;
+    }
+
+    .triptych-slab__selector {
+        font-size: 1.65rem;
+    }
+
+    .triptych-slab__lead,
+    .triptych-slab__enter {
+        font-size: .88rem;
+    }
+
+    .project-fragments__screen img {
+        max-height: 11rem;
+    }
+
+    .resume-fragments__timeline strong,
+    .resume-fragments__timeline small,
+    .resume-fragments__metrics small {
+        white-space: normal;
+    }
+
+    .triptych-stage-label {
+        align-self: flex-start;
+        margin: .25rem 0 0;
+    }
+
+    .triptych-ask {
+        width: 100%;
+        min-width: 0;
+        padding-left: .35rem;
+    }
+
+    .triptych-ask__spark {
+        width: 1.6rem;
+    }
+
+    .triptych-ask .hero-ai-search__input {
+        min-width: 0;
+        padding-inline: .35rem;
+        font-size: .78rem;
+    }
+
+    .triptych-ask .hero-ai-search__button {
+        min-width: 2.8rem;
+        padding-inline: .7rem;
+    }
+}
+
+@media (max-width: 25rem) {
+    .triptych-atrium {
+        padding-inline: .7rem;
+    }
+
+    .project-fragments__signals {
+        grid-template-columns: 1fr;
+    }
+
+    .project-fragments__signals span:nth-child(n + 3) {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .triptych-slab,
+    .triptych-identity,
+    .triptych-slab__enter span[aria-hidden="true"] {
+        transition: none !important;
+    }
+
+    .triptych-slab::after {
+        background: linear-gradient(112deg, transparent, rgb(255 255 255 / 15%), transparent);
+    }
+}
+
+@media (forced-colors: active) {
+    .triptych-atrium,
+    .triptych-slab,
+    .triptych-identity,
+    .triptych-ask,
+    .project-fragments__screen,
+    .project-fragments__signals span,
+    .resume-fragments__metrics span {
+        color: CanvasText;
+        background: Canvas;
+        border-color: CanvasText;
+        box-shadow: none;
+        text-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .triptych-slab,
+    .triptych-atrium[data-active-panel] .triptych-slab {
+        filter: none;
+        transform: none;
+    }
+
+    .triptych-slab::before,
+    .triptych-slab::after,
+    .triptych-slab__surface,
+    .triptych-pedestal,
+    .triptych-atrium__architecture {
+        display: none;
+    }
+
+    .triptych-slab__selector:focus-visible,
+    .triptych-slab__enter:focus-visible,
+    .triptych-ask :focus-visible {
+        outline-color: Highlight;
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .triptych-slab--story {
+        background: #7d4b10;
+    }
+
+    .triptych-slab--projects {
+        background: #0b2a62;
+    }
+
+    .triptych-slab--resume,
+    .triptych-ask {
+        background: #f4f8fc;
+    }
+}
