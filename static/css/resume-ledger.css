@@ -1,0 +1,298 @@
+/* =====================================================================
+   Resume 2 — Experience Ledger
+   Warm ivory + olive dimensional ledger. Tokens/shadows/offsets follow the
+   PeerSlate Resume 2 spec §4 & §8.3. Additive: scoped under .ledger-page so
+   nothing here can touch the existing Living Résumé.
+   ===================================================================== */
+
+.ledger-page {
+  --canvas: #f3efe7;
+  --paper: #faf7f0;
+  --paper-near: #f5efe5;
+  --paper-middle: #f2ecdf;
+  --paper-deep: #e9e0d0;
+  --olive: #70763f;
+  --olive-strong: #5c6233;
+  --olive-soft: #e5e4cf;
+  --ink: #25231e;
+  --muted: #6e695f;
+  --line: #d8d0c4;
+
+  --radius-sheet: 22px;
+  --radius-card: 16px;
+
+  --shadow-sheet: 0 2px 4px rgba(45,36,23,.04), 0 18px 42px rgba(45,36,23,.10);
+  --shadow-card: 0 1px 2px rgba(45,36,23,.05), 0 8px 18px rgba(45,36,23,.08);
+  --shadow-focus: 0 3px 6px rgba(45,36,23,.07), 0 14px 28px rgba(45,36,23,.14);
+
+  /* Nearly-subconscious paper grain via SVG turbulence (no heavy PNG). */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body.resume-ledger-page,
+.ledger-page {
+  background:
+    radial-gradient(1200px 700px at 50% -8%, #f7f3ec, transparent 70%),
+    var(--noise),
+    var(--canvas);
+}
+
+.ledger-shell {
+  width: min(100%, 1160px);
+  margin-inline: auto;
+  padding: 2.5rem clamp(1rem, 4vw, 2.5rem) 5rem;
+}
+
+.ledger-topbar { display: flex; justify-content: center; margin-bottom: 2rem; }
+
+/* ---- Masthead ---- */
+.ledger-masthead { text-align: center; margin-bottom: 1.75rem; }
+.ledger-eyebrow {
+  font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--olive-strong); margin: 0 0 .5rem;
+}
+.ledger-name {
+  font-family: "Newsreader", Georgia, serif; font-weight: 600;
+  font-size: clamp(1.9rem, 4vw, 2.4rem); line-height: 1.1; margin: 0; color: var(--ink);
+}
+.ledger-tagline { margin: .55rem 0 0; color: var(--muted); font-size: 1rem; }
+.ledger-note {
+  margin: .35rem 0 0; color: var(--olive-strong); font-style: italic;
+  font-family: "Newsreader", Georgia, serif; font-size: 1.02rem;
+}
+
+/* ---- Career lens tabs ---- */
+.ledger-lenses {
+  display: inline-flex; gap: .25rem; padding: .3rem; margin: 0 auto 1.5rem;
+  background: rgba(255,255,255,.5); border: 1px solid var(--line); border-radius: 999px;
+  position: relative; left: 50%; transform: translateX(-50%);
+}
+.ledger-lens-tab {
+  border: 0; background: transparent; cursor: pointer;
+  padding: .5rem 1.1rem; border-radius: 999px; text-decoration: none;
+  font-size: .88rem; font-weight: 600; color: var(--muted);
+  transition: background-color .16s ease, color .16s ease;
+}
+.ledger-lens-tab:hover { color: var(--ink); background: rgba(112,118,63,.08); }
+.ledger-lens-tab.is-active { background: var(--olive); color: #fff; }
+.ledger-lens-tab:focus-visible { outline: 3px solid var(--olive); outline-offset: 2px; }
+
+/* ---- Paper stack ---- */
+.ledger-stack {
+  position: relative; isolation: isolate;
+  width: min(100%, 1040px); margin: 0 auto;
+}
+.ledger-stack__sheet,
+.ledger-stack__active {
+  border: 1px solid var(--line); border-radius: var(--radius-sheet);
+}
+.ledger-stack__sheet {
+  position: absolute; inset: 0; pointer-events: none;
+  box-shadow: 0 10px 24px rgba(45,36,23,.06);
+}
+.ledger-stack__sheet--deep   { z-index: 10; background: var(--paper-deep);   transform: translate(18px,18px) rotate(.38deg); }
+.ledger-stack__sheet--middle { z-index: 20; background: var(--paper-middle); transform: translate(12px,12px) rotate(-.28deg); }
+.ledger-stack__sheet--near   { z-index: 30; background: var(--paper-near);   transform: translate(6px,6px)  rotate(.18deg); }
+.ledger-stack__active {
+  position: relative; z-index: 40; overflow: clip;
+  background: linear-gradient(rgba(250,247,240,.985), rgba(250,247,240,.985)), var(--noise);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), var(--shadow-sheet);
+  padding: clamp(1.5rem, 3.5vw, 2.75rem);
+}
+
+/* ---- Section headings inside sheet ---- */
+.ledger-heading { margin-bottom: 1.5rem; }
+.ledger-heading h2 {
+  font-family: "Newsreader", Georgia, serif; font-weight: 600;
+  font-size: clamp(1.4rem, 2.6vw, 1.7rem); margin: 0; color: var(--ink);
+}
+.ledger-heading p { margin: .35rem 0 0; color: var(--muted); font-size: .96rem; }
+.ledger-heading--sub { margin: 2rem 0 1rem; }
+.ledger-heading--sub h3 {
+  font-family: "Newsreader", Georgia, serif; font-weight: 600; font-size: 1.15rem; margin: 0;
+}
+
+.ledger-chip {
+  display: inline-block; vertical-align: middle; margin-left: .5rem;
+  font-size: .62rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: .18em .6em; border-radius: 999px; background: var(--olive); color: #fff;
+}
+
+/* ---- Timeline rows (Scene 1 / 2) ---- */
+.ledger-timeline { list-style: none; margin: 0; padding: 0; }
+.ledger-row-wrap { position: relative; }
+.ledger-row {
+  position: relative; display: grid;
+  grid-template-columns: 150px 34px minmax(0,1fr) 30px;
+  align-items: start; gap: 18px; padding: 22px 20px;
+  border-radius: var(--radius-card); text-decoration: none; color: inherit;
+  transition: transform 170ms ease-out, background-color 170ms ease-out, box-shadow 170ms ease-out;
+}
+.ledger-row:hover,
+.ledger-row:focus-visible {
+  transform: translateY(-6px);
+  background: rgba(229,228,207,.7);
+  box-shadow: var(--shadow-focus);
+}
+.ledger-row:focus-visible { outline: 3px solid var(--olive); outline-offset: 3px; }
+.ledger-row__date { font-size: .82rem; font-weight: 600; color: var(--muted); padding-top: .35rem; }
+
+/* timeline rail + node */
+.ledger-row__rail { position: relative; display: flex; justify-content: center; }
+.ledger-row__rail::before {
+  content: ""; position: absolute; top: -22px; bottom: -44px; width: 2px;
+  background: var(--line);
+}
+.ledger-row-wrap:last-child .ledger-row__rail::before { bottom: 0; }
+.ledger-row__node {
+  position: relative; z-index: 1; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--olive); color: var(--olive-strong);
+}
+.ledger-row__node svg { width: 16px; height: 16px; }
+
+.ledger-row__body { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.ledger-row__title { font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+.ledger-row__employer { font-size: .9rem; color: var(--olive-strong); font-weight: 600; }
+.ledger-row__summary { font-size: .92rem; color: var(--muted); line-height: 1.5; margin-top: .15rem; }
+.ledger-row__tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.ledger-tag {
+  font-size: .72rem; font-weight: 600; color: var(--olive-strong);
+  background: var(--olive-soft); padding: .2em .7em; border-radius: 999px;
+}
+.ledger-row__chevron { color: var(--muted); padding-top: .4rem; }
+.ledger-row__chevron svg { width: 18px; height: 18px; transform: rotate(0deg); }
+
+/* ---- Roles lens (Scene 10) ---- */
+.ledger-roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 1.1rem; }
+.ledger-role-card {
+  display: flex; flex-direction: column; gap: .3rem; padding: 1.4rem;
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card); text-decoration: none; color: inherit;
+  transition: transform 170ms ease-out, box-shadow 170ms ease-out;
+}
+.ledger-role-card:hover, .ledger-role-card:focus-visible { transform: translateY(-5px); box-shadow: var(--shadow-focus); }
+.ledger-role-card:focus-visible { outline: 3px solid var(--olive); outline-offset: 3px; }
+.ledger-role-card.is-current { border-color: var(--olive); transform: translateY(-6px); }
+.ledger-role-card__icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--olive-soft); color: var(--olive-strong); }
+.ledger-role-card__icon svg { width: 18px; height: 18px; }
+.ledger-role-card h3 { font-size: 1.02rem; margin: .3rem 0 0; color: var(--ink); }
+.ledger-role-card__employer { font-weight: 600; color: var(--olive-strong); font-size: .88rem; margin: 0; }
+.ledger-role-card__period { color: var(--muted); font-size: .82rem; margin: 0; }
+.ledger-role-card__headline { color: var(--muted); font-size: .88rem; line-height: 1.45; margin: .5rem 0 0; }
+.ledger-role-card__meta { margin-top: auto; padding-top: .6rem; font-size: .78rem; color: var(--olive-strong); font-weight: 600; }
+
+/* ---- Impact lens (Scene 11) ---- */
+.ledger-summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 1rem; }
+.ledger-summary-stat {
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-card);
+  padding: 1.1rem; text-align: center; box-shadow: var(--shadow-card);
+}
+.ledger-summary-stat strong { display: block; font-family: "Newsreader", Georgia, serif; font-size: 1.9rem; color: var(--olive-strong); line-height: 1; }
+.ledger-summary-stat span { display: block; margin-top: .35rem; font-size: .78rem; color: var(--muted); }
+.ledger-outcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem; }
+.ledger-outcome-card { background: var(--olive-soft); border-radius: var(--radius-card); padding: 1.1rem; }
+.ledger-outcome-card strong { display: block; font-family: "Newsreader", Georgia, serif; font-size: 1.5rem; color: var(--olive-strong); }
+.ledger-outcome-card span { display: block; margin-top: .3rem; font-size: .85rem; color: var(--ink); }
+
+/* ---- Role dossier (Scenes 3–8) ---- */
+.dossier-topbar { margin-bottom: 1rem; }
+.dossier-back {
+  display: inline-flex; align-items: center; gap: .45rem; text-decoration: none;
+  font-size: .86rem; font-weight: 600; color: var(--olive-strong);
+  padding: .4rem .7rem; border-radius: 999px; transition: background-color .15s ease;
+}
+.dossier-back:hover { background: var(--olive-soft); }
+.dossier-back:focus-visible { outline: 3px solid var(--olive); outline-offset: 2px; }
+.dossier-back svg { width: 15px; height: 15px; transform: rotate(180deg); }
+
+.dossier-header { padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
+.dossier-title { font-family: "Newsreader", Georgia, serif; font-weight: 600; font-size: clamp(1.35rem,2.6vw,1.7rem); margin: 0; }
+.dossier-employer { color: var(--olive-strong); font-weight: 600; font-size: .92rem; margin: .4rem 0 0; }
+.dossier-summary { color: var(--muted); line-height: 1.55; margin: .7rem 0 0; max-width: 62ch; }
+.dossier-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: .8rem; margin-top: 1.25rem; }
+.dossier-metric { background: var(--paper-near); border: 1px solid var(--line); border-radius: 12px; padding: .8rem .9rem; }
+.dossier-metric strong { display: block; font-family: "Newsreader", Georgia, serif; font-size: 1.4rem; color: var(--olive-strong); line-height: 1; }
+.dossier-metric span { display: block; margin-top: .3rem; font-size: .76rem; color: var(--muted); }
+
+/* dossier tabs */
+.dossier-tabs { display: flex; flex-wrap: wrap; gap: .3rem; margin: 1.25rem 0 1.5rem; border-bottom: 1px solid var(--line); }
+.dossier-tab {
+  text-decoration: none; padding: .6rem .9rem; font-size: .88rem; font-weight: 600;
+  color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .15s ease, border-color .15s ease;
+}
+.dossier-tab:hover { color: var(--ink); }
+.dossier-tab.is-active { color: var(--olive-strong); border-bottom-color: var(--olive); }
+.dossier-tab:focus-visible { outline: 3px solid var(--olive); outline-offset: 2px; border-radius: 6px 6px 0 0; }
+
+.dossier-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.dossier-subhead { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--olive-strong); margin: 0 0 .7rem; }
+.dossier-list { margin: 0; padding-left: 1.1rem; color: var(--ink); }
+.dossier-list li { margin-bottom: .55rem; line-height: 1.5; font-size: .92rem; }
+.dossier-list--check { list-style: none; padding-left: 0; }
+.dossier-list--check li { position: relative; padding-left: 1.6rem; }
+.dossier-list--check li::before { content: "✓"; position: absolute; left: 0; color: var(--olive); font-weight: 700; }
+
+.dossier-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 1rem; }
+.dossier-program { background: var(--paper-near); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 1.2rem; }
+.dossier-program h4 { margin: 0 0 .6rem; font-size: 1rem; color: var(--ink); }
+.dossier-program p { margin: 0 0 .55rem; font-size: .86rem; line-height: 1.45; color: var(--muted); }
+.dossier-program p span { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--olive-strong); font-weight: 700; margin-bottom: .1rem; }
+
+.dossier-impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1rem; }
+.dossier-impact-stat { background: var(--paper-near); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 1.1rem; }
+.dossier-impact-stat strong { display: block; font-family: "Newsreader", Georgia, serif; font-size: 1.7rem; color: var(--olive-strong); line-height: 1; }
+.dossier-impact-stat__label { display: block; margin-top: .35rem; font-weight: 600; font-size: .9rem; color: var(--ink); }
+.dossier-impact-stat__context { display: block; margin-top: .4rem; font-size: .8rem; color: var(--muted); line-height: 1.45; }
+
+.dossier-evidence-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.dossier-evidence { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; gap: .9rem; align-items: start;
+  background: var(--paper-near); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; }
+.dossier-evidence__icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--olive-soft); color: var(--olive-strong); }
+.dossier-evidence__icon svg { width: 16px; height: 16px; }
+.dossier-evidence__title { display: block; font-weight: 600; font-size: .92rem; color: var(--ink); }
+.dossier-evidence__text { display: block; margin-top: .2rem; font-size: .82rem; color: var(--muted); line-height: 1.45; }
+.dossier-evidence__meta { display: flex; flex-wrap: wrap; gap: .3rem; justify-content: flex-end; max-width: 210px; }
+.dossier-evidence__tag { font-size: .68rem; font-weight: 600; color: var(--muted); background: rgba(216,208,196,.4); padding: .2em .6em; border-radius: 999px; white-space: nowrap; }
+.dossier-evidence__tag--trust { color: var(--olive-strong); background: var(--olive-soft); }
+
+.dossier-skill-tags { display: flex; flex-wrap: wrap; gap: .55rem; }
+.dossier-skill { display: inline-flex; align-items: center; gap: .45rem; background: var(--paper-near); border: 1px solid var(--line);
+  border-radius: 999px; padding: .5em 1em; font-size: .88rem; font-weight: 600; color: var(--ink); }
+.dossier-skill__count { display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; padding: 0 .3em;
+  border-radius: 999px; background: var(--olive); color: #fff; font-size: .72rem; }
+.dossier-skill-note { margin: 1.1rem 0 0; font-size: .82rem; color: var(--muted); font-style: italic; }
+.dossier-empty { color: var(--muted); font-style: italic; }
+
+.ledger-fallback-note { text-align: center; margin: 2rem 0 0; font-size: .88rem; color: var(--muted); }
+.ledger-fallback-note a { color: var(--olive-strong); font-weight: 600; }
+
+/* ---- Responsive (Scene 12) ---- */
+@media (max-width: 1000px) {
+  .dossier-cols { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+@media (max-width: 767px) {
+  .ledger-stack__sheet--deep,
+  .ledger-stack__sheet--middle { display: none; }
+  .ledger-stack__sheet--near { transform: translate(5px,7px) rotate(.12deg); }
+  .ledger-row { grid-template-columns: 26px minmax(0,1fr); gap: 12px; padding: 16px 4px; }
+  .ledger-row__date { grid-column: 1 / -1; padding: 0 0 0 38px; }
+  .ledger-row__rail { grid-row: 2; }
+  .ledger-row__body { grid-row: 2; }
+  .ledger-row__chevron { display: none; }
+  .dossier-evidence { grid-template-columns: 1fr; }
+  .dossier-evidence__meta { justify-content: flex-start; max-width: none; }
+}
+
+/* ---- Reduced motion (Scene 12 / §4.6) ---- */
+@media (prefers-reduced-motion: reduce) {
+  .ledger-row, .ledger-role-card, .ledger-lens, .dossier-panel {
+    transition-duration: 1ms !important;
+  }
+  .ledger-row:hover, .ledger-row:focus-visible,
+  .ledger-role-card:hover, .ledger-role-card:focus-visible { transform: none; }
+}

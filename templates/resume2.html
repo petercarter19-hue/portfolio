@@ -41,6 +41,11 @@
         <a href="#resume-development" data-resume-nav>Development</a>
     </nav>
 
+    <div class="resume2-view-switch" style="display:flex;justify-content:center;margin:0 auto 1.5rem;">
+        {% set resume_view_active = 'resume' %}
+        {% include "partials/resume_view_switcher.html" %}
+    </div>
+
     <header class="r2-identity-stage" aria-labelledby="resume2-title">
         <div class="r2-identity-card">
             <img

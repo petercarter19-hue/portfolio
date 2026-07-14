@@ -1452,6 +1452,244 @@ def living_resume_v2():
 
 
 # -------------------------------------------------------
+# RESUME 2 — EXPERIENCE LEDGER (additive, experimental)
+# A second, opt-in résumé experience reached from the "Resume 2"
+# switcher on the existing Living Résumé page. It reuses the same
+# approved public fixture (never a second hand-authored copy) and
+# renders it as a dimensional ivory/olive "experience ledger".
+# The current Living Résumé at /<slug>/resume2 is left untouched.
+# -------------------------------------------------------
+
+def _build_resume_ledger(profile_slug='petec'):
+    """Compose the Experience Ledger view-model from shared résumé data.
+
+    Deterministic selectors only. MICAP references are stripped everywhere
+    (redesigned-résumé content rule), dollar values are never summed across
+    roles (aggregation rule §6.4), and no private artifact/filename/download
+    ever reaches the template (privacy rule §9.3).
+    """
+    resume_data = _load_resume_profile(profile_slug)
+
+    def _has_micap(text):
+        return 'micap' in (text or '').lower()
+
+    metric_by_id = {m['id']: m for m in resume_data['metrics']}
+    skill_by_id = {
+        s['id']: s for s in resume_data['skills'] if s.get('public_display')
+    }
+    case_studies_by_role = {}
+    for case_study in resume_data.get('case_studies', []):
+        case_studies_by_role.setdefault(
+            case_study.get('related_role_id'), []
+        ).append(case_study)
+
+    # Icon + display period come from the shared living-résumé event list so
+    # the ledger and the existing résumé always agree on chronology.
+    role_event = {
+        event['source_id']: event
+        for event in resume_data['living_resume']['events']
+        if event['source'] == 'role'
+    }
+
+    ledger_roles = []
+    for role in resume_data['career_roles']:
+        event = role_event.get(role['id'], {})
+        period = event.get('display_period') or role.get('dates') or ''
+        is_current = 'present' in period.lower()
+
+        achievements = [
+            {
+                'id': item.get('id'),
+                'label': item.get('short_label', 'Impact outcome'),
+                'text': item['text'],
+            }
+            for item in role.get('accomplishments', [])
+            if not _has_micap(item.get('text'))
+        ]
+
+        metrics = [
+            {
+                'value': metric_by_id[mid]['value'],
+                'label': metric_by_id[mid]['label'],
+                'context': metric_by_id[mid].get('context'),
+            }
+            for mid in role.get('related_metric_ids', [])
+            if mid in metric_by_id
+            and mid != 'micap'
+            and not _has_micap(metric_by_id[mid].get('label'))
+        ]
+
+        skills = []
+        for skill_id in role.get('related_skill_ids', []):
+            skill = skill_by_id.get(skill_id)
+            if not skill:
+                continue
+            evidence_items = [
+                item for item in skill.get('evidence_items', [])
+                if not _has_micap(item.get('text'))
+            ]
+            skills.append({
+                'name': skill.get('display_name', skill_id),
+                'summary': skill.get('front_summary'),
+                'evidence_count': len(evidence_items),
+            })
+
+        programs = []
+        for case_study in case_studies_by_role.get(role['id'], []):
+            programs.append({
+                'title': case_study.get('title'),
+                'need': case_study.get('operational_need'),
+                'response': case_study.get('engineering_response'),
+                'outcome': case_study.get('verified_outcome'),
+                'evidence_count': len([
+                    mid for mid in case_study.get('related_metric_ids', [])
+                    if mid != 'micap'
+                ]),
+            })
+
+        # Evidence tab: traceable public claims only — résumé-verified
+        # statements and program case studies. No files, no download links.
+        evidence = [
+            {
+                'title': item['label'],
+                'kind': 'Résumé statement',
+                'trust': 'Supported',
+                'visibility': 'Public summary',
+                'text': item['text'],
+            }
+            for item in achievements
+        ] + [
+            {
+                'title': program['title'],
+                'kind': 'Program case study',
+                'trust': 'Supported',
+                'visibility': 'Public summary',
+                'text': program['outcome'] or program['need'],
+            }
+            for program in programs
+        ]
+
+        ledger_roles.append({
+            'id': role['id'],
+            'employer': role['employer'],
+            'title': role['title'],
+            'period': period,
+            'location': role.get('location'),
+            'summary': role.get('summary'),
+            'headline': role.get('headline_contribution'),
+            'theme': role.get('progression_theme'),
+            'focus_tags': role.get('focus_tags', []),
+            'icon': event.get('icon', 'briefcase'),
+            'is_current': is_current,
+            'responsibilities': role.get('responsibilities', []),
+            'achievements': achievements,
+            'metrics': metrics,
+            'skills': skills,
+            'programs': programs,
+            'evidence': evidence,
+        })
+
+    # Storyboard order: newest role at the top of the stack.
+    ledger_roles.reverse()
+
+    # Career span from earliest start year to the current/most-recent year.
+    start_years = []
+    end_years = []
+    for role_view in ledger_roles:
+        years = [int(token) for token in re.findall(r'\d{4}', role_view['period'])]
+        if years:
+            start_years.append(min(years))
+            end_years.append(max(years))
+    span_end = datetime.now().year if any(
+        r['is_current'] for r in ledger_roles
+    ) else (max(end_years) if end_years else datetime.now().year)
+    span_years = (span_end - min(start_years)) if start_years else 0
+
+    distinct_skills = {
+        skill_id
+        for role in resume_data['career_roles']
+        for skill_id in role.get('related_skill_ids', [])
+        if skill_id in skill_by_id
+    }
+
+    # Career outcome tiles: real, individually-sourced metrics (no summing,
+    # no self-scored proficiency percentages). GPA/MICAP excluded.
+    career_metrics = [
+        {
+            'value': metric['value'],
+            'label': metric['label'],
+            'context': metric.get('context'),
+        }
+        for metric in resume_data['metrics']
+        if metric['id'] not in {'micap', 'gpa'}
+        and not _has_micap(metric.get('label'))
+    ]
+
+    career = {
+        'roles': len(ledger_roles),
+        'programs': sum(len(r['programs']) for r in ledger_roles),
+        'skills': len(distinct_skills),
+        'evidence': sum(len(r['evidence']) for r in ledger_roles),
+        'span_years': span_years,
+        'metrics': career_metrics,
+    }
+
+    return resume_data, ledger_roles, career
+
+
+LEDGER_ROLE_TABS = [
+    ('overview', 'Overview'),
+    ('programs', 'Programs'),
+    ('impact', 'Impact'),
+    ('evidence', 'Evidence'),
+    ('skills', 'Skills'),
+]
+LEDGER_LENSES = ('timeline', 'roles', 'impact')
+
+
+@app.route('/<profile_slug>/resume-ledger')
+def profile_resume_ledger(profile_slug):
+    """Experimental dimensional Experience Ledger (Resume 2 switcher target).
+
+    Deep-link safe: ?role=<id>&tab=<name> opens a role dossier, ?view=<lens>
+    selects a career lens, all resolved server-side so refresh and shared
+    links restore the same state. Client JS only enhances the transitions.
+    """
+    resume_data, ledger_roles, career = _build_resume_ledger(profile_slug)
+    role_ids = {role['id'] for role in ledger_roles}
+
+    active_role = request.args.get('role')
+    if active_role not in role_ids:
+        active_role = None
+
+    valid_tabs = {key for key, _label in LEDGER_ROLE_TABS}
+    active_tab = request.args.get('tab')
+    if active_tab not in valid_tabs:
+        active_tab = 'overview'
+
+    active_lens = request.args.get('view')
+    if active_lens not in LEDGER_LENSES:
+        active_lens = 'timeline'
+
+    profile = resume_data['profile']
+    profile_name = (profile.get('name') or '').strip()
+    return render_template(
+        'resume_ledger.html',
+        resume=resume_data,
+        profile=profile,
+        profile_slug=profile_slug,
+        profile_first_name=profile_name.split()[0] if profile_name else 'Profile',
+        ledger_roles=ledger_roles,
+        career=career,
+        living_resume=resume_data.get('living_resume', {}),
+        role_tabs=LEDGER_ROLE_TABS,
+        active_role=active_role,
+        active_tab=active_tab,
+        active_lens=active_lens,
+    )
+
+
+# -------------------------------------------------------
 # MVP 1 — AI CHAT ROUTE
 # This is the new endpoint the chatbot calls.
 # The browser sends a POST request with a JSON body

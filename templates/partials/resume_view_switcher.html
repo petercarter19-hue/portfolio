@@ -1,0 +1,38 @@
+{# Route-backed Resume / Resume 2 switcher.
+
+   Shared by the Living Résumé (resume2.html) and the experimental
+   Experience Ledger (resume_ledger.html). Set `resume_view_active` to
+   'resume' or 'ledger' before including. Self-contained styles so it can
+   drop into either page without extra CSS wiring. #}
+<style>
+  .resume-view-switcher{display:inline-flex;gap:.25rem;padding:.28rem;border-radius:999px;
+    background:rgba(255,255,255,.55);border:1px solid rgba(37,35,30,.12);
+    box-shadow:0 1px 2px rgba(20,25,45,.06);backdrop-filter:blur(6px);
+    font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1;}
+  .resume-view-switcher__option{display:inline-flex;align-items:center;gap:.4rem;
+    padding:.5rem .9rem;border-radius:999px;text-decoration:none;font-size:.86rem;
+    font-weight:600;color:#3a4256;transition:background-color .15s ease,color .15s ease;
+    white-space:nowrap;}
+  .resume-view-switcher__option:hover{background:rgba(37,35,30,.06);}
+  .resume-view-switcher__option[data-active="true"]{background:#4f5bd5;color:#fff;
+    box-shadow:0 2px 6px rgba(79,91,213,.32);}
+  .resume-view-switcher__option:focus-visible{outline:3px solid #4f5bd5;outline-offset:2px;}
+  .resume-view-switcher__badge{font-size:.62rem;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:.14em .5em;border-radius:999px;
+    background:rgba(215,163,62,.2);color:#8a6a1f;}
+  .resume-view-switcher__option[data-active="true"] .resume-view-switcher__badge{
+    background:rgba(255,255,255,.25);color:#fff;}
+</style>
+<nav class="resume-view-switcher" aria-label="Résumé view">
+  <a class="resume-view-switcher__option"
+     href="{{ url_for('profile_resume2', profile_slug=profile_slug) }}"
+     {% if resume_view_active == 'resume' %}aria-current="page" data-active="true"{% endif %}>
+    Resume
+  </a>
+  <a class="resume-view-switcher__option resume-view-switcher__option--experimental"
+     href="{{ url_for('profile_resume_ledger', profile_slug=profile_slug) }}"
+     {% if resume_view_active == 'ledger' %}aria-current="page" data-active="true"{% endif %}>
+    Resume 2
+    <span class="resume-view-switcher__badge">Experimental</span>
+  </a>
+</nav>
