@@ -1,0 +1,490 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Basic browser and mobile-device setup -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Helps search engines understand the purpose of the website -->
+    <meta
+        name="description"
+        content="The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems."
+    >
+
+    <!-- Jinja block: each page can provide its own browser-tab title -->
+    <title>Projects | Pete Carter</title>
+
+    <!-- Google Fonts: Inter gives a clean, modern, technical look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Flask generates the correct path to static/css/style.css -->
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    <!-- Chatbot widget styles -->
+    <link
+        rel="stylesheet"
+        href="/static/css/chatbot.css"
+    >
+
+    
+</head>
+
+<body data-theme="command-gold" style="--site-circuit-image: url('/static/images/circuit-banner-option-2.png');">
+
+    <!-- Accessibility feature for keyboard and screen-reader users -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <!-- Shared site header and navigation -->
+    <header class="site-header">
+        <nav class="navbar" aria-label="Primary navigation">
+            <div class="nav-container">
+
+                <!--
+                    SITE MENU (far left)
+                    Placeholder for the future multi-tenant business menu.
+                    For now it only holds "Homepage"; more destinations will
+                    be added as the platform grows. The button toggles the
+                    dropdown below it — see the small script near the end
+                    of this file.
+                -->
+                <div class="nav-menu">
+                    <button
+                        class="nav-menu-btn"
+                        id="site-menu-btn"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        aria-controls="site-menu-dropdown"
+                        aria-label="Open site menu"
+                    >
+                        <!-- Hamburger icon -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" aria-hidden="true">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+
+                    <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
+                        <a href="/">PeerSlate Home</a>
+                        <a href="/petec">Pete Carter Portfolio</a>
+                        <div class="theme-preview" aria-label="Theme preview options">
+                            <p>Theme Preview</p>
+                            <button type="button" data-theme-option="command-gold">
+                                Command Gold
+                            </button>
+                            <button type="button" data-theme-option="modern-blue">
+                                Modern Blue
+                            </button>
+                            <button type="button" data-theme-option="slate-light">
+                                Slate Light
+                            </button>
+                            <button type="button" data-theme-option="secure-green">
+                                Secure Green
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pete's name and title (shifted right of the site menu) -->
+                <div class="nav-brand">
+                    <a href="/petec" class="nav-logo" aria-label="Return to homepage">
+                        <span class="nav-name">Pete Carter</span>
+                        <span class="nav-tagline">SYSTEMS ENGINEER</span>
+                    </a>
+                </div>
+
+                <!-- Right: navigation links + LinkedIn -->
+                <div class="nav-right">
+
+                    <!--
+                        aria-current="page" marks the link for the page the visitor
+                        is on. CSS uses it to keep the gold underline switched on,
+                        and screen readers announce "current page" for that link.
+                    -->
+                    <ul class="nav-links">
+                        <li><a href="/petec/work" aria-current="page">Projects</a></li>
+                        <li><a href="/petec/my-story" >My Story</a></li>
+                        <li><a href="/petec/resume" >Resume</a></li>
+                        <li><a href="/petec/contact" >Contact</a></li>
+                    </ul>
+
+                    <!-- Far right: LinkedIn profile link. -->
+                    <div class="nav-actions">
+
+                        <!--
+                            target="_blank" opens LinkedIn in a new tab so visitors
+                            don't lose the portfolio. rel="noopener noreferrer" is a
+                            security best practice for links that open new tabs.
+                        -->
+                        <a
+                            class="nav-linkedin"
+                            href="https://www.linkedin.com/in/pete-carter19"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="View Pete Carter on LinkedIn"
+                        >
+                            <!-- Official LinkedIn brand colors: #0A66C2 blue
+                                 rounded square with the "in" glyph in white.
+                                 Colors are hard-coded (not currentColor) so the
+                                 logo always matches LinkedIn's brand guidelines. -->
+                            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2"/>
+                                <path fill="#ffffff" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/>
+                            </svg>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </nav>
+    </header>
+
+    <!-- Each page inserts its unique content inside this Jinja block -->
+    <main id="main-content" class="main-content">
+        
+
+<section class="work-page" aria-labelledby="work-title">
+    <div class="site-container">
+        <div class="work-hero">
+            <div>
+                <p class="section-eyebrow">Projects</p>
+                <h1 id="work-title">Practical Builds With Engineering Purpose</h1>
+                <p>
+                    A concise look at portfolio projects that connect systems thinking,
+                    software development, automation, and AI-enabled engineering.
+                </p>
+            </div>
+
+            <div class="work-hero-panel" aria-label="Project focus">
+                <strong>Current Focus</strong>
+                <span>Interactive resume, verified AI assistant, requirements tools, and smart engineering dashboards.</span>
+            </div>
+        </div>
+
+        <div class="page-ai-after-hero" aria-label="Ask Pete AI">
+            <form class="hero-ai-search" data-hero-ai-search aria-label="Ask Pete AI">
+    <label class="hero-ai-search__label" for="hero-ai-input">
+        Ask Pete AI
+    </label>
+    <div class="hero-ai-search__box">
+        <input
+            id="hero-ai-input"
+            class="hero-ai-search__input"
+            type="text"
+            placeholder="Ask about Pete's experience, skills, projects, or results..."
+            autocomplete="off"
+            maxlength="240"
+        >
+        <button class="hero-ai-search__button" type="submit">
+            Ask
+        </button>
+    </div>
+    <p class="hero-ai-search__status" data-hero-ai-status aria-live="polite">
+        Answers use approved public portfolio evidence.
+    </p>
+    <div
+        class="hero-ai-answer"
+        data-hero-ai-answer
+        aria-live="polite"
+        hidden
+    ></div>
+</form>
+        </div>
+
+        <div class="work-project-selector" role="group" aria-label="Select project">
+            <button class="work-project-tab is-active" type="button" data-work-project="interactive-resume" aria-pressed="true">
+                <span>MVP Live / In Development</span>
+                Interactive Resume
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="traceability" aria-pressed="false">
+                <span>Planned Engineering Application</span>
+                Traceability Platform
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="requirements-ai" aria-pressed="false">
+                <span>Prototype Concept</span>
+                AI Requirements Reviewer
+            </button>
+            <button class="work-project-tab" type="button" data-work-project="home-dashboard" aria-pressed="false">
+                <span>Planned Private Integration</span>
+                Home Operations Dashboard
+            </button>
+        </div>
+
+        <div class="work-project-panels">
+            <article class="work-project-panel is-active" data-work-panel="interactive-resume" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Featured Build</p>
+                    <h2>Interactive Resume and Verified Career Assistant</h2>
+                    <p>
+                        A Flask portfolio feature that turns approved public resume data into a
+                        recruiter-focused, evidence-linked career dashboard with AI-assisted questions.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Structured resume data connected to recruiter filters, skills, roles, and metrics.</li>
+                                <li>Interactive evidence cards that keep claims tied to visible supporting details.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>What It Uses</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>Flask</span>
+                                <span>Jinja</span>
+                                <span>JavaScript</span>
+                                <span>JSON</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <aside class="work-project-side">
+                    <h3>Next Refinements</h3>
+                    <ul>
+                        <li>Replace the draft PDF with the final employer-facing resume.</li>
+                        <li>Add deeper project case studies as each build matures.</li>
+                    </ul>
+                    <button
+                        class="view-all-link work-ask-btn"
+                        type="button"
+                        data-ask-resume
+                        data-ask="Summarize Pete's interactive resume project using approved portfolio information. Focus on what it demonstrates to recruiters."
+                    >
+                        Ask Pete AI
+                        <span aria-hidden="true">-></span>
+                    </button>
+                </aside>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="traceability" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Engineering Tool Concept</p>
+                    <h2>Requirements Traceability Platform</h2>
+                    <p>
+                        A planned web application for linking requirements, verification methods,
+                        test cases, and evidence with clear bidirectional traceability.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Requirements discipline, verification thinking, and traceability structure.</li>
+                                <li>Ability to turn systems-engineering workflow into usable software.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>Flask</span>
+                                <span>PostgreSQL</span>
+                                <span>D3.js</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="requirements-ai" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">AI Engineering Tool Concept</p>
+                    <h2>AI-Assisted Requirements Reviewer</h2>
+                    <p>
+                        An LLM-powered tool concept for reviewing requirements for clarity,
+                        completeness, consistency, and verifiability with source-cited feedback.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Policy-aware AI thinking applied to engineering quality problems.</li>
+                                <li>Practical focus on traceable feedback instead of generic chatbot output.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Python</span>
+                                <span>OpenAI API</span>
+                                <span>LangChain</span>
+                                <span>FAISS</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+
+            <article class="work-project-panel" data-work-panel="home-dashboard" tabindex="-1">
+                <div class="work-project-main">
+                    <p class="section-eyebrow">Personal Automation Concept</p>
+                    <h2>Engineering Home Operations Dashboard</h2>
+                    <p>
+                        A planned secure dashboard for bringing Home Assistant data into a
+                        clean operational view with status, automation, and alerting patterns.
+                    </p>
+
+                    <div class="work-proof-grid">
+                        <section>
+                            <h3>What It Shows</h3>
+                            <ul>
+                                <li>Interest in automation, reliable status visibility, and practical system integration.</li>
+                                <li>Ability to think about user workflows, security boundaries, and maintainable interfaces.</li>
+                            </ul>
+                        </section>
+                        <section>
+                            <h3>Likely Stack</h3>
+                            <div class="project-tags">
+                                <span>Home Assistant</span>
+                                <span>REST API</span>
+                                <span>WebSocket</span>
+                                <span>Docker</span>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+
+    </main>
+
+    <!-- Shared footer displayed on every page -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
+        </div>
+    </footer>
+
+
+    <!-- ======================================================
+         CHATBOT WIDGET
+         Adds the shared chat panel to every page.
+         The top navigation button opens this panel.
+         ====================================================== -->
+
+    <button id="chat-toggle" aria-label="Open Pete's AI assistant">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Ask Pete AI</span>
+    </button>
+
+    <div
+        id="chat-panel"
+        role="dialog"
+        aria-label="Pete's Engineering Assistant"
+        aria-hidden="true"
+    >
+
+        <div id="chat-header">
+            <div id="chat-header-text">
+                <h3>Pete's Engineering Assistant</h3>
+                <p>Grounded in verified portfolio information</p>
+            </div>
+            <button id="chat-close" aria-label="Close chat">✕</button>
+        </div>
+
+        <div id="chat-messages">
+            <div class="chat-message bot-message">
+                Hi! I'm Pete's AI assistant. Ask me anything about his
+                background, experience, skills, or projects.
+            </div>
+        </div>
+
+        <div id="chat-suggestions">
+            <button class="suggestion-btn">What systems has Pete supported?</button>
+            <button class="suggestion-btn">Tell me about Pete's MBSE experience</button>
+            <button class="suggestion-btn">What certifications does Pete hold?</button>
+            <button class="suggestion-btn">Why is Pete moving toward AI-enabled systems?</button>
+        </div>
+
+        <div id="chat-input-area">
+            <input
+                type="text"
+                id="chat-input"
+                placeholder="Ask about Pete's background..."
+                autocomplete="off"
+            />
+            <button id="chat-send">Send</button>
+        </div>
+
+        <p id="chat-disclaimer">
+            AI responses are grounded in approved portfolio sources.
+        </p>
+
+    </div>
+
+    <!-- ======================================================
+         SITE MENU BEHAVIOR
+         Opens/closes the top-left dropdown, and closes it when
+         the visitor clicks anywhere else or presses Escape.
+         aria-expanded is kept in sync so screen readers always
+         know whether the menu is open.
+         ====================================================== -->
+    <script>
+        (function () {
+            const menuBtn = document.getElementById('site-menu-btn');
+            const menuDropdown = document.getElementById('site-menu-dropdown');
+
+            function closeMenu() {
+                menuDropdown.hidden = true;
+                menuBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            menuBtn.addEventListener('click', function (event) {
+                // stopPropagation keeps the document click listener below
+                // from instantly closing the menu we just opened.
+                event.stopPropagation();
+                const willOpen = menuDropdown.hidden;
+                menuDropdown.hidden = !willOpen;
+                menuBtn.setAttribute('aria-expanded', String(willOpen));
+            });
+
+            // Click anywhere outside the dropdown closes it.
+            document.addEventListener('click', function (event) {
+                if (!menuDropdown.hidden && !menuDropdown.contains(event.target) && event.target !== menuBtn) {
+                    closeMenu();
+                }
+            });
+
+            // Escape closes it and returns focus to the button.
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !menuDropdown.hidden) {
+                    closeMenu();
+                    menuBtn.focus();
+                }
+            });
+        })();
+    </script>
+
+    <script src="/static/js/theme-preview.js?v=theme-preview-1"></script>
+    <script src="/static/js/chatbot.js?v=resume-bridge-2"></script>
+    
+<script src="/static/js/work.js?v=work-projects-1"></script>
+
+
+</body>
+
+</html>

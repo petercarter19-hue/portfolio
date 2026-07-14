@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Basic browser and mobile-device setup -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Helps search engines understand the purpose of the website -->
+    <meta
+        name="description"
+        content="The engineering portfolio of Pete Carter, a systems engineer focused on digital engineering, MBSE, software automation, and AI-enabled systems."
+    >
+
+    <!-- Jinja block: each page can provide its own browser-tab title -->
+    <title>PeerSlate | Your Work, Your Story, Your Future</title>
+
+    <!-- Google Fonts: Inter gives a clean, modern, technical look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Flask generates the correct path to static/css/style.css -->
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    <!-- Chatbot widget styles -->
+    <link
+        rel="stylesheet"
+        href="/static/css/chatbot.css"
+    >
+
+    
+</head>
+
+<body data-theme="command-gold" style="--site-circuit-image: url('/static/images/circuit-banner-option-2.png');">
+
+    <!-- Accessibility feature for keyboard and screen-reader users -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <!-- Shared site header and navigation -->
+    <header class="site-header">
+        <nav class="navbar" aria-label="Primary navigation">
+            <div class="nav-container">
+
+                <!--
+                    SITE MENU (far left)
+                    Placeholder for the future multi-tenant business menu.
+                    For now it only holds "Homepage"; more destinations will
+                    be added as the platform grows. The button toggles the
+                    dropdown below it — see the small script near the end
+                    of this file.
+                -->
+                <div class="nav-menu">
+                    <button
+                        class="nav-menu-btn"
+                        id="site-menu-btn"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        aria-controls="site-menu-dropdown"
+                        aria-label="Open site menu"
+                    >
+                        <!-- Hamburger icon -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" aria-hidden="true">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+
+                    <div class="nav-menu-dropdown" id="site-menu-dropdown" hidden>
+                        <a href="/">PeerSlate Home</a>
+                        <a href="/petec">Pete Carter Portfolio</a>
+                        <div class="theme-preview" aria-label="Theme preview options">
+                            <p>Theme Preview</p>
+                            <button type="button" data-theme-option="command-gold">
+                                Command Gold
+                            </button>
+                            <button type="button" data-theme-option="modern-blue">
+                                Modern Blue
+                            </button>
+                            <button type="button" data-theme-option="slate-light">
+                                Slate Light
+                            </button>
+                            <button type="button" data-theme-option="secure-green">
+                                Secure Green
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pete's name and title (shifted right of the site menu) -->
+                <div class="nav-brand">
+                    <a href="/" class="nav-logo" aria-label="Return to homepage">
+                        <span class="nav-name">PeerSlate</span>
+                        <span class="nav-tagline">PROFESSIONAL PROFILES</span>
+                    </a>
+                </div>
+
+                <!-- Right: navigation links + LinkedIn -->
+                <div class="nav-right">
+
+                    <!--
+                        aria-current="page" marks the link for the page the visitor
+                        is on. CSS uses it to keep the gold underline switched on,
+                        and screen readers announce "current page" for that link.
+                    -->
+                    <ul class="nav-links">
+                        <li><a href="/petec/work" >Projects</a></li>
+                        <li><a href="/petec/my-story" >My Story</a></li>
+                        <li><a href="/petec/resume" >Resume</a></li>
+                        <li><a href="/petec/contact" >Contact</a></li>
+                    </ul>
+
+                    <!-- Far right: LinkedIn profile link. -->
+                    <div class="nav-actions">
+
+                        <!--
+                            target="_blank" opens LinkedIn in a new tab so visitors
+                            don't lose the portfolio. rel="noopener noreferrer" is a
+                            security best practice for links that open new tabs.
+                        -->
+                        <a
+                            class="nav-linkedin"
+                            href="https://www.linkedin.com/in/pete-carter19"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="View Pete Carter on LinkedIn"
+                        >
+                            <!-- Official LinkedIn brand colors: #0A66C2 blue
+                                 rounded square with the "in" glyph in white.
+                                 Colors are hard-coded (not currentColor) so the
+                                 logo always matches LinkedIn's brand guidelines. -->
+                            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2.5" fill="#0A66C2"/>
+                                <path fill="#ffffff" d="M8.34 18.34H5.67v-8h2.67v8zM7 9.17a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.17h-2.67v-4.18c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2v4.26h-2.67v-8h2.56v1.1h.04c.36-.68 1.23-1.39 2.53-1.39 2.7 0 3.2 1.78 3.2 4.09v4.2z"/>
+                            </svg>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </nav>
+    </header>
+
+    <!-- Each page inserts its unique content inside this Jinja block -->
+    <main id="main-content" class="main-content">
+        
+<div class="peerslate-page">
+    <section class="peerslate-hero" aria-labelledby="peerslate-title">
+        <div class="site-container peerslate-hero__grid">
+            <div class="peerslate-hero__copy">
+                <p class="section-eyebrow">PeerSlate</p>
+                <h1 id="peerslate-title">
+                    Your work, your story, your future.
+                </h1>
+                <p class="peerslate-hero__lead">
+                    PeerSlate helps professionals turn career history, project evidence,
+                    skills, and goals into interactive portfolio profiles that recruiters
+                    can explore through structured pages and AI-assisted questions.
+                </p>
+                <div class="peerslate-hero__actions">
+                    <a class="btn btn-primary" href="/petec/resume">
+                        View Pete's Interactive Example
+                    </a>
+                    <a class="btn btn-secondary" href="/petec/contact">
+                        Contact About PeerSlate
+                    </a>
+                </div>
+            </div>
+
+            <aside class="peerslate-demo-card" aria-label="PeerSlate profile preview">
+                <p class="peerslate-demo-card__label">Interactive Profile Preview</p>
+                <div class="peerslate-profile-preview">
+                    <div>
+                        <span>Professional Story</span>
+                        <strong>Evidence-backed career narrative</strong>
+                    </div>
+                    <div>
+                        <span>Skills</span>
+                        <strong>Linked to real accomplishments</strong>
+                    </div>
+                    <div>
+                        <span>AI Assistant</span>
+                        <strong>Answers from approved profile sources</strong>
+                    </div>
+                    <div>
+                        <span>Recruiter View</span>
+                        <strong>Role-specific evidence and fit</strong>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="peerslate-section" aria-labelledby="peerslate-problem-title">
+        <div class="site-container peerslate-two-column">
+            <div>
+                <p class="section-eyebrow">The Problem</p>
+                <h2 id="peerslate-problem-title">
+                    Resumes flatten people into keywords.
+                </h2>
+            </div>
+            <div class="peerslate-copy-stack">
+                <p>
+                    Traditional resumes are static, compressed, and difficult to explore.
+                    They rarely show how a person thinks, how their work connects, or what
+                    evidence supports each skill.
+                </p>
+                <p>
+                    PeerSlate is designed to make career information structured,
+                    searchable, interactive, and evidence-driven.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section peerslate-section--cards" aria-labelledby="peerslate-how-title">
+        <div class="site-container">
+            <div class="peerslate-section-heading">
+                <p class="section-eyebrow">How It Works</p>
+                <h2 id="peerslate-how-title">
+                    From career history to interactive profile.
+                </h2>
+            </div>
+            <div class="peerslate-card-grid">
+                <article class="peerslate-card">
+                    <span>01</span>
+                    <h3>Capture the story</h3>
+                    <p>
+                        Professionals add career history, projects, skills, education,
+                        accomplishments, and goals through guided profile sections.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>02</span>
+                    <h3>Structure the evidence</h3>
+                    <p>
+                        Skills, metrics, roles, and projects are connected so visitors can
+                        see what supports each claim.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>03</span>
+                    <h3>Make it searchable</h3>
+                    <p>
+                        A profile-specific AI assistant answers questions using only
+                        approved public information and states limits when needed.
+                    </p>
+                </article>
+                <article class="peerslate-card">
+                    <span>04</span>
+                    <h3>Help recruiters explore fit</h3>
+                    <p>
+                        Recruiters can view role-specific summaries, evidence, projects,
+                        and career direction instead of hunting through a static PDF.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section" aria-labelledby="peerslate-features-title">
+        <div class="site-container peerslate-feature-layout">
+            <div class="peerslate-section-heading">
+                <p class="section-eyebrow">Platform Direction</p>
+                <h2 id="peerslate-features-title">
+                    Built for professional evidence, not generic profiles.
+                </h2>
+            </div>
+            <div class="peerslate-feature-list">
+                <div>
+                    <h3>Interactive portfolios</h3>
+                    <p>Personal branded pages with projects, timelines, evidence, and career context.</p>
+                </div>
+                <div>
+                    <h3>AI profile assistants</h3>
+                    <p>Chat assistants grounded in approved profile documents and structured public content.</p>
+                </div>
+                <div>
+                    <h3>Recruiter-focused views</h3>
+                    <p>Role-based filters that connect skills, results, experience, and project evidence.</p>
+                </div>
+                <div>
+                    <h3>Evidence-backed skills</h3>
+                    <p>Skills are connected to accomplishments, project artifacts, metrics, and outcomes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="peerslate-section peerslate-section--final" aria-labelledby="peerslate-final-title">
+        <div class="site-container peerslate-final-card">
+            <p class="section-eyebrow">Starting Point</p>
+            <h2 id="peerslate-final-title">
+                Pete Carter's portfolio is the first working PeerSlate example.
+            </h2>
+            <p>
+                The current portfolio demonstrates the early platform concept:
+                structured resume data, interactive evidence, project storytelling,
+                and an AI assistant grounded in approved career information.
+            </p>
+            <div class="peerslate-hero__actions">
+                <a class="btn btn-primary" href="/petec/resume">
+                    Explore the Example
+                </a>
+                <a class="btn btn-secondary" href="/petec/work">
+                    View Projects
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+    </main>
+
+    <!-- Shared footer displayed on every page -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
+        </div>
+    </footer>
+
+
+    <!-- ======================================================
+         CHATBOT WIDGET
+         Adds the shared chat panel to every page.
+         The top navigation button opens this panel.
+         ====================================================== -->
+
+    <button id="chat-toggle" aria-label="Open Pete's AI assistant">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Ask Pete AI</span>
+    </button>
+
+    <div
+        id="chat-panel"
+        role="dialog"
+        aria-label="Pete's Engineering Assistant"
+        aria-hidden="true"
+    >
+
+        <div id="chat-header">
+            <div id="chat-header-text">
+                <h3>Pete's Engineering Assistant</h3>
+                <p>Grounded in verified portfolio information</p>
+            </div>
+            <button id="chat-close" aria-label="Close chat">✕</button>
+        </div>
+
+        <div id="chat-messages">
+            <div class="chat-message bot-message">
+                Hi! I'm Pete's AI assistant. Ask me anything about his
+                background, experience, skills, or projects.
+            </div>
+        </div>
+
+        <div id="chat-suggestions">
+            <button class="suggestion-btn">What systems has Pete supported?</button>
+            <button class="suggestion-btn">Tell me about Pete's MBSE experience</button>
+            <button class="suggestion-btn">What certifications does Pete hold?</button>
+            <button class="suggestion-btn">Why is Pete moving toward AI-enabled systems?</button>
+        </div>
+
+        <div id="chat-input-area">
+            <input
+                type="text"
+                id="chat-input"
+                placeholder="Ask about Pete's background..."
+                autocomplete="off"
+            />
+            <button id="chat-send">Send</button>
+        </div>
+
+        <p id="chat-disclaimer">
+            AI responses are grounded in approved portfolio sources.
+        </p>
+
+    </div>
+
+    <!-- ======================================================
+         SITE MENU BEHAVIOR
+         Opens/closes the top-left dropdown, and closes it when
+         the visitor clicks anywhere else or presses Escape.
+         aria-expanded is kept in sync so screen readers always
+         know whether the menu is open.
+         ====================================================== -->
+    <script>
+        (function () {
+            const menuBtn = document.getElementById('site-menu-btn');
+            const menuDropdown = document.getElementById('site-menu-dropdown');
+
+            function closeMenu() {
+                menuDropdown.hidden = true;
+                menuBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            menuBtn.addEventListener('click', function (event) {
+                // stopPropagation keeps the document click listener below
+                // from instantly closing the menu we just opened.
+                event.stopPropagation();
+                const willOpen = menuDropdown.hidden;
+                menuDropdown.hidden = !willOpen;
+                menuBtn.setAttribute('aria-expanded', String(willOpen));
+            });
+
+            // Click anywhere outside the dropdown closes it.
+            document.addEventListener('click', function (event) {
+                if (!menuDropdown.hidden && !menuDropdown.contains(event.target) && event.target !== menuBtn) {
+                    closeMenu();
+                }
+            });
+
+            // Escape closes it and returns focus to the button.
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !menuDropdown.hidden) {
+                    closeMenu();
+                    menuBtn.focus();
+                }
+            });
+        })();
+    </script>
+
+    <script src="/static/js/theme-preview.js?v=theme-preview-1"></script>
+    <script src="/static/js/chatbot.js?v=resume-bridge-2"></script>
+    
+
+</body>
+
+</html>
