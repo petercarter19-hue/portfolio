@@ -20,6 +20,7 @@ This is the durable registry of approved product concepts that are not yet fully
 | --- | --- | --- | --- | --- | --- | --- |
 | PS-FEAT-001 | Living Résumé Ledger → Career Constellation + Voice Builder | Validated | Signature | Foundation C; structured career data; evidence provenance; tenant isolation | Approve combined scrolling architecture and dynamic data contract, then prototype six fixture profiles | `PS-FEAT-001_Living_Resume_Voice_Blueprint.md` |
 | PS-EXP-002 | Slate Focus Stage — contextual 3D workspace | Experiment | Early prototype | PS-FEAT-001 structured relationship data; evidence visibility; tenant isolation; accessible fallback | Build a controlled read-only prototype with generic Ledger and Slate Board fixtures; test comprehension, evidence discovery, keyboard flow, and reduced-motion fallback before product adoption | `PS-EXP-002_Slate_Focus_Stage_Experiment.md` |
+| PS-FEAT-002 | People & Interests Living Board — corkboard feed + post detail overlay | In Progress | High | Existing header/sub-header chrome; PS-PLAT-008 schema (proposed); Azure Blob media pipeline (future) | Review the parallel build at /the-slate/people-interests, approve PS-PLAT-008, then decide replacement of the current /the-slate landing | `PS-FEAT-002_People_Interests_Feed.md` |
 
 ## Backlog Rules
 

@@ -15,6 +15,13 @@ import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 from db import get_connection, fetch_all_result_sets
 from peerslate_api import peerslate_api
+from people_interests_api import people_interests_api
+from services.people_interests_feed import (
+    GOAL_REACTION,
+    POST_BODY_MAX,
+    REACTION_TYPES,
+    people_interests_feed,
+)
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -62,6 +69,7 @@ limiter = Limiter(
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app.register_blueprint(peerslate_api)
+app.register_blueprint(people_interests_api)
 
 
 @app.after_request
@@ -829,6 +837,28 @@ def slate_feed_break():
     return render_template(
         'slate_break.html',
         database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+    )
+
+
+# PS-FEAT-002 (2026-07-13): the People & Interests living board — the
+# corkboard-style continuous social feed built from Pete's two approved
+# mockups. It lives on its OWN route as a parallel, reviewable experience;
+# the current /the-slate landing is untouched until this version is
+# approved to replace it. The board itself is rendered by
+# static/js/people-interests.js from /api/feed/people-interests (cursor
+# pagination); the supporting rails render server-side from the same
+# fixture file. Every non-Pete author is a representative sample member.
+@app.route('/the-slate/people-interests')
+def the_slate_people_interests():
+    return render_template(
+        'the_slate_people_interests.html',
+        initial_feed=people_interests_feed.get_page(limit=16),
+        feed_authors=people_interests_feed.authors,
+        left_rail=people_interests_feed.left_rail,
+        right_rail=people_interests_feed.right_rail,
+        reaction_types=list(REACTION_TYPES),
+        goal_reaction=GOAL_REACTION,
+        post_body_max=POST_BODY_MAX,
     )
 
 

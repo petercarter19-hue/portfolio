@@ -1,0 +1,294 @@
+{# ============================================================
+   PEOPLE & INTERESTS — the living board (PS-FEAT-002, 2026-07-13)
+   /the-slate/people-interests
+
+   A continuous corkboard social feed built from Pete's two approved
+   mockups. This page is a PARALLEL, reviewable experience: the
+   current /the-slate landing keeps working unchanged until this
+   version is approved to replace it.
+
+   Chrome: the global header + profile sub-header come from base.html
+   exactly as they are everywhere else (Pete's direction — do NOT
+   rebuild the mockup's own headers). The three feeds (Break Feed /
+   People & Interests / News Feed) live in the slim contextual feed
+   strip below, following the existing sf-tabs pattern. News Feed has
+   no page yet, so it renders as an honest "coming soon" chip.
+
+   Layout: left supporting rail · living board (dominant) · right
+   supporting rail. The rails render server-side from the same fixture
+   file the board API reads. The board itself is rendered by
+   static/js/people-interests.js from /api/feed/people-interests with
+   cursor pagination; the first page is embedded below as JSON so the
+   board paints without an extra round trip.
+
+   Every non-Pete author is a representative sample member (PeerSlate
+   is pre-launch — same convention as The Slate hub). Nothing here is
+   hardcoded to Pete inside reusable components; his content comes
+   from the fixture data like everyone else's.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}People &amp; Interests | The Slate | PeerSlate{% endblock %}
+
+{% block meta_description %}The People & Interests board — a living corkboard of goals, wins, questions, and moments from people moving like you.{% endblock %}
+
+{% block extra_head %}
+{# Caveat is the board's single handwriting face (readable at small
+   sizes). UI controls stay in Inter per the Design Bible. #}
+<link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap"
+    rel="stylesheet"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/people-interests.css') }}?v=pi-board-4"
+>
+{% endblock %}
+
+{% block content %}
+
+{% macro rail_avatar(author_key) %}
+    {% set author = feed_authors.get(author_key, {}) %}
+    {% if author.avatar %}
+        <img class="pi-ava pi-ava--img" src="{{ url_for('static', filename=author.avatar) }}" alt="" aria-hidden="true">
+    {% else %}
+        <span class="pi-ava pi-ava--{{ author.tint | default('blue') }}" aria-hidden="true">{{ author.initials | default('•') }}</span>
+    {% endif %}
+{% endmacro %}
+
+<section class="pi-page" aria-labelledby="pi-title">
+    <div class="pi-container">
+
+        <!-- ============ FEED STRIP: title + the three feeds ============ -->
+        <header class="pi-strip">
+            <div class="pi-strip__copy">
+                <h1 id="pi-title">People &amp; Interests</h1>
+                <p>The living board of goals, projects and moments from the people and topics you follow.</p>
+            </div>
+            <nav class="sf-tabs pi-strip__tabs" aria-label="Feeds">
+                <a class="sf-tab" href="{{ url_for('slate_feed_break') }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 2v3M12 2v3"/></svg>
+                    Break Feed
+                </a>
+                <a class="sf-tab" href="{{ url_for('the_slate_people_interests') }}" aria-current="page">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                    People &amp; Interests
+                </a>
+                {# News Feed doesn't exist yet — an honest preview chip, not a dead link. #}
+                <span class="sf-tab sf-tab--soon" aria-disabled="true" title="Coming soon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>
+                    News Feed
+                    <small>soon</small>
+                </span>
+            </nav>
+        </header>
+
+        <!-- ============ THREE-COLUMN LAYOUT ============ -->
+        <div class="pi-layout">
+
+            <!-- ---- LEFT SUPPORTING RAIL ---- -->
+            <aside class="pi-rail pi-rail--left" aria-label="People and saved notes">
+                <section class="ps-card pi-railcard" aria-labelledby="pi-moving-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                        <h2 id="pi-moving-title">People moving like you</h2>
+                    </header>
+                    <ul class="pi-people">
+                        {% for row in left_rail.people_moving %}
+                        {% set author = feed_authors.get(row.author, {}) %}
+                        <li class="pi-people__row">
+                            {{ rail_avatar(row.author) }}
+                            <span class="pi-people__body">
+                                <strong>{{ author.name }}</strong>
+                                <span class="pi-people__meta">
+                                    <i class="pi-chip pi-chip--{{ row.chip_tint }}">{{ row.chip }}</i>
+                                    {{ row.text }}
+                                </span>
+                            </span>
+                            <small>{{ row.time }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a class="pi-raillink" href="{{ url_for('the_slate') }}">View all people
+                        <i class="sf-chevron" aria-hidden="true"></i></a>
+                </section>
+
+                <section class="ps-card pi-railcard" aria-labelledby="pi-saved-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+                        <h2 id="pi-saved-title">Saved notes</h2>
+                    </header>
+                    <ul class="pi-saved">
+                        {% for note in left_rail.saved_notes %}
+                        <li class="pi-saved__row">
+                            <span class="pi-saved__head">
+                                <strong>{{ note.title }}</strong>
+                                <small>{{ note.time }}</small>
+                            </span>
+                            <span class="pi-saved__chip">{{ note.chip }}</span>
+                            <span class="pi-saved__paper pi-saved__paper--{{ note.paper_color }}">{{ note.preview }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a class="pi-raillink" href="{{ url_for('the_slate_my') }}">View all saved
+                        <i class="sf-chevron" aria-hidden="true"></i></a>
+                </section>
+            </aside>
+
+            <!-- ---- THE LIVING BOARD ---- -->
+            <div class="pi-boardwrap">
+                <div class="pi-board-surface">
+
+                    {# ---- Composer: a paper strip pinned to the top of the board ---- #}
+                    <section class="pi-composer" data-pi-composer aria-label="Share something to the board">
+                        <form class="pi-composer__form" data-pi-composer-form novalidate>
+                            <div class="pi-composer__row">
+                                <span class="pi-ava pi-ava--you" aria-hidden="true">You</span>
+                                <button type="button" class="pi-composer__opener" data-pi-composer-open aria-expanded="false">
+                                    Share something to the board&hellip;
+                                </button>
+                                <div class="pi-composer__types" role="group" aria-label="What are you sharing?">
+                                    <button class="pi-type" type="button" data-pi-type="photo" aria-pressed="false" title="Photo uploads arrive with PeerSlate accounts">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="M3.5 18l5-5 3.5 3.5L15.5 13l5 5"/></svg>
+                                        Photo
+                                    </button>
+                                    <button class="pi-type" type="button" data-pi-type="goal" aria-pressed="false">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/></svg>
+                                        Goal
+                                    </button>
+                                    <button class="pi-type" type="button" data-pi-type="project" aria-pressed="false">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg>
+                                        Project
+                                    </button>
+                                    <button class="pi-type" type="button" data-pi-type="idea" aria-pressed="false">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 4 10.5c-.8.7-1 1.5-1 2.5h-6c0-1-.2-1.8-1-2.5A6 6 0 0 1 12 3z"/></svg>
+                                        Idea
+                                    </button>
+                                </div>
+                                <button class="ps-btn ps-btn--primary pi-composer__post" type="submit" disabled>Post</button>
+                            </div>
+
+                            <div class="pi-composer__expanded" data-pi-composer-panel hidden>
+                                <label class="sf-hidden-label" for="pi-composer-text">What would you like to share? ({{ post_body_max }} characters max)</label>
+                                <textarea
+                                    id="pi-composer-text"
+                                    class="pi-composer__text"
+                                    rows="3"
+                                    maxlength="{{ post_body_max }}"
+                                    placeholder="A goal, a win, a question, an idea&hellip;"
+                                ></textarea>
+                                <div class="pi-composer__foot">
+                                    <span class="pi-composer__count" data-pi-count aria-live="polite">0 / {{ post_body_max }}</span>
+                                    <span class="pi-composer__hint" data-pi-photo-hint hidden>Photo uploads arrive with PeerSlate accounts &mdash; sharing as a note for now.</span>
+                                    <button class="ts-btn ts-btn--outline pi-composer__cancel" type="button" data-pi-composer-cancel>Cancel</button>
+                                </div>
+                                <p class="pi-composer__error" data-pi-error role="alert" hidden></p>
+                            </div>
+                        </form>
+                        <p class="pi-composer__done" data-pi-done role="status" aria-live="polite" hidden></p>
+                    </section>
+
+                    {# ---- The board grid: filled by people-interests.js ---- #}
+                    <div class="pi-board" data-pi-board aria-label="The living board" role="feed" aria-busy="false">
+                        <noscript>
+                            <p class="pi-noscript">The living board needs JavaScript. You can still browse the
+                            <a href="{{ url_for('the_slate') }}">People &amp; Progress feed</a>.</p>
+                        </noscript>
+                    </div>
+
+                    <div class="pi-sentinel" data-pi-sentinel aria-hidden="true"></div>
+                    <p class="pi-board__status" data-pi-status role="status" aria-live="polite"></p>
+                </div>
+            </div>
+
+            <!-- ---- RIGHT SUPPORTING RAIL ----
+                 The Break/Pulse spirit lives here now (Pete, 2026-07-13):
+                 a daily pick-me-up, a goal check-in nudge, and the community
+                 challenge. Those standalone pages are being retired. -->
+            <aside class="pi-rail pi-rail--right" aria-label="Encouragement and goal check-in">
+                <section class="ps-card pi-railcard pi-pickme" aria-labelledby="pi-pickme-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>
+                        <h2 id="pi-pickme-title">Today's pick-me-up</h2>
+                    </header>
+                    <blockquote class="pi-pickme__quote" data-pi-pickme-quote>{{ right_rail.pick_me_ups[0].quote }}</blockquote>
+                    <p class="pi-pickme__by" data-pi-pickme-by>&mdash; {{ right_rail.pick_me_ups[0].by }}</p>
+                    <button class="pi-raillink pi-raillink--btn" type="button" data-pi-pickme-next>Another one ✨</button>
+                    <script type="application/json" data-pi-pickme-data>{{ right_rail.pick_me_ups | tojson }}</script>
+                </section>
+
+                <section class="ps-card pi-railcard pi-checkin" aria-labelledby="pi-checkin-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/></svg>
+                        <h2 id="pi-checkin-title">{{ right_rail.goal_checkin.title }}</h2>
+                    </header>
+                    <p class="pi-checkin__prompt" data-pi-checkin-prompt>{{ right_rail.goal_checkin.prompts[0] }}</p>
+                    <div class="pi-checkin__acts">
+                        <button class="ps-btn ps-btn--primary pi-checkin__share" type="button" data-pi-checkin-share>Share an update</button>
+                        <button class="pi-raillink pi-raillink--btn" type="button" data-pi-celebrate>Celebrate a win 🎉</button>
+                    </div>
+                    <script type="application/json" data-pi-checkin-data>{{ right_rail.goal_checkin.prompts | tojson }}</script>
+                </section>
+
+                <section class="ps-card pi-railcard pi-challenge" aria-labelledby="pi-challenge-title">
+                    <header class="pi-railhead">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h13l-2 4 2 4H5z"/><path d="M5 4v17"/></svg>
+                        <h2 id="pi-challenge-title">{{ right_rail.challenge.kicker }}</h2>
+                    </header>
+                    <p class="pi-challenge__name">{{ right_rail.challenge.title }}</p>
+                    <p class="pi-challenge__body">{{ right_rail.challenge.body }}</p>
+                    <div class="pi-challenge__foot">
+                        <span class="pi-facepile" aria-hidden="true"><i>A</i><i>J</i><i>M</i><i>+</i></span>
+                        <small>{{ right_rail.challenge.joined }}</small>
+                    </div>
+                    <button class="ts-btn ts-btn--outline pi-challenge__join" type="button" data-pi-challenge-join aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:0.85rem;height:0.85rem;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;"><path d="M5 12.5l4 4 10-10"/></svg>
+                        <span>I'm in</span>
+                    </button>
+                </section>
+            </aside>
+
+        </div>
+    </div>
+</section>
+
+<!-- ============ POST DETAIL OVERLAY ============ -->
+<div class="pi-modal" data-pi-modal hidden>
+    <div class="pi-modal__backdrop" data-pi-modal-close aria-hidden="true"></div>
+    <div class="pi-modal__shell" role="dialog" aria-modal="true" aria-label="Post detail" data-pi-modal-shell tabindex="-1">
+        <button class="pi-modal__close" type="button" data-pi-modal-close aria-label="Close post">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <div class="pi-modal__post" data-pi-modal-post></div>
+        <div class="pi-modal__comments" data-pi-modal-comments>
+            <header class="pi-comments__head">
+                <h2>Comments <span data-pi-comment-count></span></h2>
+            </header>
+            <ul class="pi-comments__list" data-pi-comment-list></ul>
+            <form class="pi-comments__composer" data-pi-comment-form>
+                <label class="sf-hidden-label" for="pi-comment-input">Add a comment</label>
+                <input id="pi-comment-input" class="pi-comments__input" type="text" maxlength="300" placeholder="Add a comment&hellip;" autocomplete="off">
+                <button class="pi-comments__send" type="submit" aria-label="Send comment" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12L20 4l-4 16-4.5-6.5z"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ---- Data for the board renderer: first page + shared config ---- #}
+<script id="pi-initial-feed" type="application/json">{{ initial_feed | tojson }}</script>
+<script id="pi-config" type="application/json">{{ {
+    'reactions': reaction_types,
+    'goal_reaction': goal_reaction,
+    'post_body_max': post_body_max,
+    'feed_url': url_for('people_interests_api.get_people_interests_feed'),
+    'posts_url': url_for('people_interests_api.create_post'),
+    'static_base': url_for('static', filename=''),
+} | tojson }}</script>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/people-interests.js') }}?v=pi-board-4"></script>
+{% endblock %}
