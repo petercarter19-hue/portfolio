@@ -686,17 +686,18 @@
 
 .pi-board-surface {
     position: relative;
-    padding: 1.15rem 1.15rem 1.6rem;
-    border-radius: 1.1rem;
-    border: 1px solid rgb(122 88 46 / 35%);
-    background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.25 0 0 0 0 0.12 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
-        radial-gradient(120% 90% at 20% 0%, #d9b787 0%, #cda672 45%, #c1955e 100%);
-    background-size: 160px 160px, cover;
+    padding: 1.6rem 1.55rem 2rem;
+    /* Real framed cork board. The wood frame is a 9-slice border-image, so it
+       stays crisp and even on all four sides however tall the board grows; the
+       cork interior is a frameless crop of the same photo, sized to the full
+       width and tiled downward so it never distorts. */
+    border: 20px solid transparent;
+    border-image: url("../images/slate-backgrounds/cork-board-frame.jpg") 42 stretch;
+    border-radius: 10px;
+    background: url("../images/slate-backgrounds/cork-texture.jpg") center top / 100% auto repeat;
     box-shadow:
-        inset 0 0 0 1px rgb(255 240 214 / 25%),
-        inset 0 2px 22px rgb(74 48 16 / 28%),
-        0 1.6rem 3.2rem rgb(48 34 12 / 24%);
+        inset 0 2px 16px rgb(40 24 6 / 30%),
+        0 1.6rem 3.2rem rgb(48 34 12 / 26%);
 }
 
 .pi-noscript {
@@ -988,6 +989,16 @@
         0 30px 36px -14px rgb(56 38 12 / 42%);
 }
 
+/* box-shadow is clipped on torn scraps, so lift them on hover via a
+   matching drop-shadow bump instead. */
+.pi-card:hover .pi-card__paper--torn,
+.pi-card:focus-within .pi-card__paper--torn {
+    filter:
+        drop-shadow(0 2px 2px rgb(56 38 12 / 24%))
+        drop-shadow(0 10px 10px rgb(56 38 12 / 24%))
+        drop-shadow(0 20px 18px rgb(56 38 12 / 36%));
+}
+
 /* --- Paper families --- */
 .pi-card__paper--sticky {
     border-radius: 0.18rem;
@@ -1017,15 +1028,17 @@
 .pi-paper--aqua   { background-image: var(--pi-grain), linear-gradient(178deg, #d4f0ea 0%, #b9e4db 100%); }
 
 /* Torn scrap: ragged top + bottom edges. clip-path clips box-shadows,
-   so the lift comes from drop-shadows that follow the torn silhouette. */
+   so the lift comes from drop-shadows that follow the torn silhouette.
+   Tuned to match the sticky notes' elevated lift (drop-shadow can't take a
+   negative spread, so the deep layer uses a tighter blur to stay dense). */
 .pi-card__paper--torn {
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 45%),
         inset 0 -9px 12px -9px rgb(56 38 12 / 20%);
     filter:
-        drop-shadow(0 1px 1px rgb(56 38 12 / 25%))
-        drop-shadow(0 9px 7px rgb(56 38 12 / 18%))
-        drop-shadow(0 20px 14px rgb(56 38 12 / 20%));
+        drop-shadow(0 1px 2px rgb(56 38 12 / 24%))
+        drop-shadow(0 7px 8px rgb(56 38 12 / 24%))
+        drop-shadow(0 15px 14px rgb(56 38 12 / 32%));
     clip-path: polygon(
         0% 3.5%, 6% 1%, 14% 3%, 24% 0.5%, 35% 2.5%, 47% 0.8%, 58% 3%,
         70% 1%, 82% 2.8%, 92% 0.6%, 100% 2.8%,
@@ -1376,6 +1389,48 @@
 .pi-item--featured .pi-card__flourish { font-size: 2.3rem; right: 0.9rem; bottom: 2.4rem; }
 .pi-card__paper--polaroid .pi-card__flourish { display: none; }
 
+/* Reaction stickers — little emoji "pressed" onto the note so a post's
+   reactions read straight from the board. They sit on .pi-card (not the
+   paper) so the torn scraps' clip-path never crops the corner, and never
+   intercept the card's open click. */
+.pi-card__stickers {
+    position: absolute;
+    top: -0.6rem;
+    right: -0.35rem;
+    z-index: 5;
+    display: inline-flex;
+    transform: rotate(-5deg);
+    pointer-events: none;
+}
+
+.pi-sticker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    margin-left: -0.5rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ffffff, #f1ece0);
+    box-shadow:
+        0 3px 6px rgb(56 38 12 / 32%),
+        inset 0 1px 0 rgb(255 255 255 / 85%);
+    font-size: 0.92rem;
+    line-height: 1;
+}
+
+.pi-sticker:first-child { margin-left: 0; }
+
+.pi-sticker--land {
+    animation: pi-sticker-land 380ms cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+
+@keyframes pi-sticker-land {
+    0% { transform: translateY(-0.7rem) scale(1.8); opacity: 0; }
+    70% { opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 /* Featured (goal) extras */
 .pi-card__joining {
     margin-top: 0.35rem;
@@ -1543,6 +1598,7 @@
 }
 
 .pi-reaction {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -1556,6 +1612,25 @@
     color: #4b4334;
     cursor: pointer;
     transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+/* The emoji that lifts off a tapped reaction and fades above the row. */
+.pi-react-float {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 0.15rem;
+    font-size: 1.35rem;
+    line-height: 1;
+    pointer-events: none;
+    animation: pi-react-float 850ms ease-out both;
+}
+
+@keyframes pi-react-float {
+    0% { transform: translate(-50%, 0.2rem) scale(0.5); opacity: 0; }
+    25% { opacity: 1; }
+    60% { opacity: 1; }
+    100% { transform: translate(-50%, -2.4rem) scale(1.25); opacity: 0; }
 }
 
 .pi-reaction:hover,
@@ -1784,6 +1859,9 @@
 
     /* Oversized decorative pins step back on phones. */
     .pi-pin { width: 0.85rem; height: 0.85rem; margin-left: -0.42rem; }
+
+    /* Reaction stickers shrink a touch too. */
+    .pi-sticker { width: 1.35rem; height: 1.35rem; font-size: 0.82rem; margin-left: -0.45rem; }
 }
 
 /* ---------------------------------------------------------------------
@@ -1793,7 +1871,9 @@
     .pi-card__paper,
     .pi-reaction,
     .pi-modal__shell,
-    .pi-item--new .pi-card__paper {
+    .pi-item--new .pi-card__paper,
+    .pi-sticker--land,
+    .pi-react-float {
         animation: none !important;
         transition: none !important;
     }
@@ -1810,7 +1890,8 @@
     .pi-card__paper,
     .pi-railcard,
     .pi-composer,
-    .pi-modal__shell {
+    .pi-modal__shell,
+    .pi-sticker {
         border: 1px solid CanvasText;
     }
 
