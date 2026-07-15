@@ -31,6 +31,24 @@ load_dotenv()
 # Keep oversized prompts from consuming API budget or making the chat feel broken.
 MAX_CHAT_MESSAGE_LENGTH = 1000
 
+# Interview Workspace (Concept 1): request-size guards for the structured
+# review endpoint. Answers are longer than chat messages by design.
+MAX_INTERVIEW_ANSWER_LENGTH = 5000
+MAX_INTERVIEW_QUESTION_LENGTH = 300
+
+# Pete's verified slate evidence — FIXTURE data for the single-profile MVP.
+# Passed to the Concept 1 template and injected into the review prompt in
+# "My History" mode so the coach can only cite verified items. When real
+# multi-user profiles arrive, this comes from the profile's evidence store.
+INTERVIEW_SLATE_EVIDENCE = [
+    {'id': 'ev-36m-cor', 'metric': '$36M+', 'label': 'Contract oversight as COR across engineering services', 'tag': 'Leadership'},
+    {'id': 'ev-4-6m-nav', 'metric': '$4.6M', 'label': 'Navigation modernization led end to end as government POC', 'tag': 'Impact'},
+    {'id': 'ev-70-repair', 'metric': '70%', 'label': 'Repair and test improvement across depot and supply chains', 'tag': 'Impact'},
+    {'id': 'ev-cameo', 'metric': 'Cameo', 'label': 'SysML/MBSE modeling for navigation and avionics programs', 'tag': 'Technical'},
+    {'id': 'ev-52-missing', 'metric': '52%', 'label': 'Missing-part reduction via systemic process redesign', 'tag': 'Impact'},
+    {'id': 'ev-19m-flight', 'metric': '$19.2M', 'label': 'Redesign projects led with a 30+ engineer flight', 'tag': 'Leadership'},
+]
+
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
 if not ANTHROPIC_API_KEY:
     raise RuntimeError(
@@ -663,6 +681,22 @@ def interview_me():
             'INTERVIEW_PROGRESS_HISTORY', 'preview'
         ),  # preview | enabled | locked
     }
+
+    # CONCEPT 1 (2026-07-15): the Focused Coaching Workspace redesign runs
+    # behind a flag until parity is verified (docs: the
+    # PeerSlate_Interview_Concept1 handoff). ?concept1=1 previews the new
+    # page, ?classic=1 forces the current one, and INTERVIEW_CONCEPT1=on
+    # flips the default for a deployment without a code change.
+    concept1_default = os.environ.get('INTERVIEW_CONCEPT1', 'off') == 'on'
+    wants_concept1 = request.args.get('concept1') == '1' or (
+        concept1_default and request.args.get('classic') != '1'
+    )
+    if wants_concept1:
+        return render_template(
+            'interview_concept1.html',
+            interview_entitlements=entitlements,
+            interview_evidence=INTERVIEW_SLATE_EVIDENCE,
+        )
     return render_template('interview_me.html', interview_entitlements=entitlements)
 
 
@@ -1608,6 +1642,300 @@ def chat():
         # return a friendly error message instead of crashing
         print(f"Claude API error: {e}")
         return jsonify({'error': 'Something went wrong. Please try again.'}), 500
+
+
+# -------------------------------------------------------
+# INTERVIEW WORKSPACE — CONCEPT 1 structured coach endpoints
+# (2026-07-15). The review endpoint returns a SCHEMA-VALIDATED
+# structured review so the browser never renders a malformed or
+# partial score. The coach endpoint is the scoped Answer Workshop
+# chat (not the general Ask Pete assistant). Both keep the API key
+# on the server, exactly like /api/chat.
+# -------------------------------------------------------
+
+INTERVIEW_REVIEW_DIMENSIONS = ('relevance', 'structure', 'specificity', 'evidence', 'impact')
+INTERVIEW_ANNOTATION_TYPES = ('strong', 'needs-specificity', 'missing-evidence', 'clarity')
+
+
+def _clamp_score(value):
+    """Coerce a model-provided score to an int in 0-100 or raise ValueError."""
+    score = int(value)
+    if score < 0 or score > 100:
+        raise ValueError('score out of range')
+    return score
+
+
+def _strip_md(text):
+    """Remove markdown emphasis the model sometimes sneaks into plain text."""
+    return re.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', str(text)).strip()
+
+
+def _string_list(value, max_items):
+    """Validate a list of non-empty strings, trimmed and capped."""
+    if not isinstance(value, list):
+        raise ValueError('expected a list')
+    items = [_strip_md(item) for item in value if _strip_md(item)]
+    return items[:max_items]
+
+
+def validate_interview_review(raw, answer_length):
+    """Validate + normalize the model's review JSON.
+
+    Returns a clean dict the browser can trust, or raises ValueError.
+    Invalid annotations are DROPPED (the page then shows a general
+    review) — an offset pointing at the wrong text is worse than none.
+    """
+    if not isinstance(raw, dict):
+        raise ValueError('review is not an object')
+
+    review = {
+        'overallScore': _clamp_score(raw.get('overallScore')),
+        'verdict': _strip_md(raw.get('verdict', ''))[:80],
+        'encouragement': _strip_md(raw.get('encouragement', ''))[:300],
+        'strengths': _string_list(raw.get('strengths', []), 4),
+        'improvements': _string_list(raw.get('improvements', []), 4),
+        'improvedAnswer': str(raw.get('improvedAnswer', '')).strip()[:MAX_INTERVIEW_ANSWER_LENGTH],
+        'changesExplained': _string_list(raw.get('changesExplained', []), 6),
+    }
+    if not review['verdict']:
+        raise ValueError('verdict missing')
+
+    dimensions = raw.get('dimensions')
+    if not isinstance(dimensions, list):
+        raise ValueError('dimensions missing')
+    clean_dimensions = []
+    seen_keys = set()
+    for dim in dimensions:
+        if not isinstance(dim, dict):
+            continue
+        key = dim.get('key')
+        if key not in INTERVIEW_REVIEW_DIMENSIONS or key in seen_keys:
+            continue
+        clean_dimensions.append({
+            'key': key,
+            'score': _clamp_score(dim.get('score')),
+            'rationale': _strip_md(dim.get('rationale', ''))[:400],
+            'nextAction': _strip_md(dim.get('nextAction', ''))[:300],
+        })
+        seen_keys.add(key)
+    if len(clean_dimensions) != len(INTERVIEW_REVIEW_DIMENSIONS):
+        raise ValueError('incomplete dimensions')
+    order = {key: i for i, key in enumerate(INTERVIEW_REVIEW_DIMENSIONS)}
+    review['dimensions'] = sorted(clean_dimensions, key=lambda d: order[d['key']])
+
+    missing = []
+    for item in (raw.get('missingEvidence') or [])[:3]:
+        if not isinstance(item, dict):
+            continue
+        opportunity = _strip_md(item.get('opportunity', ''))
+        if not opportunity:
+            continue
+        missing.append({
+            'opportunity': opportunity[:400],
+            'suggestedUse': _strip_md(item.get('suggestedUse', ''))[:400],
+            'evidenceId': str(item.get('evidenceId', '')).strip()[:60],
+        })
+    review['missingEvidence'] = missing
+
+    annotations = []
+    for i, item in enumerate((raw.get('annotations') or [])[:12]):
+        try:
+            start = int(item.get('start'))
+            end = int(item.get('end'))
+            ann_type = item.get('type')
+            if ann_type not in INTERVIEW_ANNOTATION_TYPES:
+                continue
+            if start < 0 or end <= start or end > answer_length:
+                continue
+            annotations.append({
+                'id': 'ann-%d' % i,
+                'start': start,
+                'end': end,
+                'type': ann_type,
+                'label': str(item.get('label', '')).strip()[:60],
+                'explanation': _strip_md(item.get('explanation', ''))[:300],
+            })
+        except (TypeError, ValueError, AttributeError):
+            continue
+    review['annotations'] = annotations
+
+    return review
+
+
+def _extract_json_object(text):
+    """Pull the first JSON object out of a model reply (fences tolerated)."""
+    cleaned = text.strip()
+    cleaned = re.sub(r'^```(?:json)?\s*', '', cleaned)
+    cleaned = re.sub(r'\s*```$', '', cleaned)
+    start = cleaned.find('{')
+    end = cleaned.rfind('}')
+    if start == -1 or end <= start:
+        raise ValueError('no JSON object in reply')
+    return json.loads(cleaned[start:end + 1])
+
+
+@app.route('/api/interview/review', methods=['POST'])
+@limiter.limit('6 per minute')
+def interview_review():
+    data = request.get_json(silent=True) or {}
+    question = str(data.get('question') or '').strip()
+    answer = str(data.get('answer') or '').strip()
+    level = str(data.get('level') or 'mixed').strip()
+    basis = str(data.get('basis') or 'my-history').strip()
+
+    if not question or not answer:
+        return jsonify({'error': 'Both the question and your answer are required.'}), 400
+    if len(question) > MAX_INTERVIEW_QUESTION_LENGTH:
+        return jsonify({'error': 'That question is too long.'}), 400
+    if len(answer) > MAX_INTERVIEW_ANSWER_LENGTH:
+        return jsonify({'error': 'Please keep answers under 5,000 characters.'}), 400
+    if basis not in ('my-history', 'example-candidate'):
+        basis = 'my-history'
+    if level not in ('entry', 'experienced', 'management', 'leadership', 'mixed'):
+        level = 'mixed'
+
+    if basis == 'my-history':
+        evidence_lines = '\n'.join(
+            '- [%s] %s — %s' % (item['id'], item['metric'], item['label'])
+            for item in INTERVIEW_SLATE_EVIDENCE
+        )
+        grounding = (
+            'GROUNDING (My History): the ONLY verified evidence you may reference or suggest is listed below. '
+            'Never invent metrics, employers, titles, project names, dates, or outcomes. '
+            'If no listed evidence fits, say so in the missingEvidence opportunity instead of inventing one.\n'
+            + evidence_lines
+        )
+    else:
+        grounding = (
+            'GROUNDING (Example Candidate): suggestions may use realistic illustrative examples, '
+            'but every invented metric or example must be phrased as clearly illustrative '
+            '(for example: "an illustrative metric such as..."). Never imply it is the candidate\'s real history.'
+        )
+
+    system_prompt = (
+        'You are the PeerSlate interview coach: direct, specific, encouraging. '
+        'Praise must cite the actual behavior that earned it; criticism must include a fix; never shame a weak answer. '
+        'You score a candidate\'s interview answer against a transparent rubric and respond with JSON ONLY — '
+        'no prose before or after, no markdown fences.\n\n'
+        'The candidate is practicing at the "%s" experience level. Calibrate rubric expectations and coaching language to that level.\n\n'
+        '%s\n\n'
+        'Respond with exactly this JSON shape:\n'
+        '{"overallScore": <int 0-100>, "verdict": "<short phrase, max 6 words>", '
+        '"encouragement": "<1-2 encouraging but honest sentences>", '
+        '"dimensions": [{"key": "relevance|structure|specificity|evidence|impact", "score": <int 0-100>, '
+        '"rationale": "<plain-language reason for the score>", "nextAction": "<one concrete improvement step>"}] '
+        '(exactly these five keys, each once), '
+        '"strengths": ["<max 4 short bullets>"], "improvements": ["<max 4 short bullets>"], '
+        '"missingEvidence": [{"opportunity": "<what verified evidence would strengthen this and why>", '
+        '"suggestedUse": "<a sample sentence the candidate could close with>", "evidenceId": "<id from the list or empty>"}] (max 2), '
+        '"annotations": [{"start": <int>, "end": <int>, "type": "strong|needs-specificity|missing-evidence|clarity", '
+        '"label": "<2-4 words>", "explanation": "<one short sentence>"}] (max 6, character offsets into the EXACT answer text, non-overlapping), '
+        '"improvedAnswer": "<the answer rewritten in the candidate\'s own voice and first person — a credible 60-120 second spoken answer, '
+        'no corporate polish. STRICT: build it ONLY from facts already in the submitted answer plus the verified evidence list; '
+        'do not add new events, conversations, people, or outcomes. Where a detail is missing, leave a bracketed prompt like '
+        '[describe how the team responded] instead of inventing one>", '
+        '"changesExplained": ["<max 4 bullets: what changed and why>"]}\n\n'
+        'Keep it tight so the JSON never truncates: rationales under 25 words, bullets under 15 words, '
+        'improvedAnswer under 160 words. Output must be complete, valid JSON.'
+    ) % (level, grounding)
+
+    try:
+        response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=2400,
+            system=system_prompt,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': (
+                        'Interview question: "%s"\n\n'
+                        'The candidate\'s submitted answer (score THIS exact text; '
+                        'annotation offsets are character positions into it):\n%s'
+                    ) % (question, answer),
+                }
+            ],
+        )
+        raw_reply = response.content[0].text
+        review = validate_interview_review(_extract_json_object(raw_reply), len(answer))
+        return jsonify({'review': review})
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
+        # Never render a partial or malformed score as real feedback.
+        app.logger.warning('Interview review validation error: %s', e)
+        return jsonify({'error': 'The coach returned an unreadable review. Please try again.'}), 502
+    except Exception as e:
+        app.logger.error('Interview review API error: %s', e)
+        return jsonify({'error': 'The coach is unavailable right now. Please try again.'}), 500
+
+
+@app.route('/api/interview/coach', methods=['POST'])
+@limiter.limit('10 per minute')
+def interview_coach():
+    data = request.get_json(silent=True) or {}
+    question = str(data.get('question') or '').strip()[:MAX_INTERVIEW_QUESTION_LENGTH]
+    answer = str(data.get('answer') or '').strip()[:MAX_INTERVIEW_ANSWER_LENGTH]
+    message = str(data.get('message') or '').strip()
+    basis = str(data.get('basis') or 'my-history').strip()
+    keep_voice = bool(data.get('keep_voice', True))
+    review_summary = str(data.get('review_summary') or '').strip()[:120]
+
+    if not message:
+        return jsonify({'error': 'Ask the coach a question first.'}), 400
+    if len(message) > 400:
+        return jsonify({'error': 'Please keep coach questions under 400 characters.'}), 400
+    if not question or not answer:
+        return jsonify({'error': 'The coach needs the question and your answer for context.'}), 400
+
+    if basis == 'my-history':
+        evidence_lines = '\n'.join(
+            '- %s — %s' % (item['metric'], item['label']) for item in INTERVIEW_SLATE_EVIDENCE
+        )
+        grounding = (
+            'You may reference ONLY this verified evidence; never invent metrics, employers, or outcomes:\n'
+            + evidence_lines
+        )
+    else:
+        grounding = 'Any example you offer must be phrased as clearly illustrative and fictional.'
+
+    voice_rule = (
+        'Preserve the candidate\'s own voice and phrasing; suggest the smallest change that fixes the problem.'
+        if keep_voice else
+        'You may rephrase more freely, but keep first person and factual ownership.'
+    )
+
+    system_prompt = (
+        'You are the PeerSlate Interview Coach inside the Answer Workshop — specialized in interview strategy, '
+        'scoring, and confidence. You are scoped to ONE question and ONE submitted answer. '
+        'Be direct, specific, and encouraging; criticism always comes with a fix. %s\n\n%s\n\n'
+        'Context — interview question: "%s"\n'
+        'Candidate\'s submitted answer: "%s"\n%s'
+    ) % (
+        voice_rule,
+        grounding,
+        question,
+        answer,
+        ('Coach review verdict: %s' % review_summary) if review_summary else '',
+    )
+
+    try:
+        response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=300,
+            system=system_prompt,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': (
+                        f'{message}\n\n'
+                        'Answer in plain text, no markdown, at most 4 short sentences. '
+                        'If you suggest wording, quote the exact sentence to use.'
+                    ),
+                }
+            ],
+        )
+        return jsonify({'response': _strip_md(clean_chatbot_reply(response.content[0].text))})
+    except Exception as e:
+        app.logger.error('Interview coach API error: %s', e)
+        return jsonify({'error': 'The coach is unavailable right now. Please try again.'}), 500
 
 
 # -------------------------------------------------------
