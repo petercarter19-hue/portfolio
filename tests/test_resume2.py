@@ -261,7 +261,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="lr-page resume-v2 resume-consolidated"', response_text)
         self.assertIn(
-            'css/resume2.css?v=resume-consolidated-4',
+            'css/resume2.css?v=resume-readable-type-1',
             response_text,
         )
 

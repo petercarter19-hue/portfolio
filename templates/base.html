@@ -121,10 +121,8 @@
        The resume route keeps its own identical layer, so it hides this one. #}
     <div class="site-sky" aria-hidden="true"></div>
 
-    <!-- Global platform navigation, rebuilt 2026-07-06 to match Pete's
-         mockups: serif PeerSlate wordmark, five links (Home / Example
-         Slate / Slate Board / Interview Me / About), a Theme dropdown,
-         and a navy Sign In button. -->
+    <!-- Global platform navigation: the PeerSlate logo is the home link, so
+         the text navigation stays focused on the four distinct destinations. -->
     <header class="global-header">
         <nav class="platform-nav" aria-label="PeerSlate platform navigation">
             <div class="site-container platform-nav__inner">
@@ -154,7 +152,6 @@
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ url_for('home') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Home</a></li>
                     <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
                     {# About points at Pete's profile-shell About (/petec/about) so it
                        carries the same slim solid header + centred sub-header as the

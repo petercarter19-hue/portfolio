@@ -2991,7 +2991,7 @@
     background: transparent;
     color: #17345f;
     font: inherit;
-    font-size: 0.73rem;
+    font-size: 0.8rem;
     font-weight: 700;
     line-height: 1.15;
     padding: 0.65rem 0.7rem;
@@ -3080,7 +3080,7 @@
 .r2-section-heading > div > span {
     margin: 0;
     color: #3157d7;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     font-weight: 800;
     letter-spacing: 0.13em;
     line-height: 1.35;
@@ -3108,7 +3108,7 @@
 .r2-summary__tags {
     margin: 1.25rem 0 0;
     color: #3157d7;
-    font-size: 0.64rem;
+    font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 0.1em;
     line-height: 1.5;
@@ -3144,7 +3144,7 @@
     background: rgb(255 255 255 / 76%);
     color: #142c50;
     font: inherit;
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     font-weight: 750;
     padding: 0.7rem 1rem;
     text-decoration: none;
@@ -3195,7 +3195,7 @@
     gap: 0.7rem;
     margin: 0;
     color: #087d88;
-    font-size: 0.87rem;
+    font-size: 0.92rem;
     font-weight: 800;
     letter-spacing: 0.11em;
     text-transform: uppercase;
@@ -3212,7 +3212,7 @@
     display: block;
     margin-top: 1.15rem;
     color: #283f61;
-    font-size: 0.9rem;
+    font-size: 0.96rem;
     line-height: 1.55;
 }
 
@@ -3229,7 +3229,7 @@
     background: linear-gradient(135deg, rgb(231 250 251 / 92%), rgb(239 247 251 / 92%));
     color: #087684;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.79rem;
     font-weight: 700;
     line-height: 1.35;
     padding: 0.6rem 0.85rem;
@@ -3244,6 +3244,10 @@
 .resume-consolidated .r2-ai-card .hero-ai-search__box {
     border-color: rgb(48 129 171 / 20%);
     background: rgb(255 255 255 / 84%);
+}
+
+.resume-consolidated .r2-ai-card .hero-ai-search__status {
+    font-size: 0.82rem;
 }
 
 .resume-consolidated .r2-section {
@@ -3273,7 +3277,7 @@
     max-width: 46rem;
     margin: 0.8rem 0 0;
     color: var(--r2-muted);
-    font-size: 0.96rem;
+    font-size: 1rem;
     line-height: 1.6;
 }
 
@@ -3335,7 +3339,7 @@
 .r2-impact__item > span {
     min-height: 2.4em;
     color: #233c61;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
     line-height: 1.3;
 }
@@ -3343,7 +3347,7 @@
 .r2-impact__item small {
     margin-top: 0.35rem;
     color: #2d59df;
-    font-size: 0.61rem;
+    font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3382,12 +3386,12 @@
 }
 
 .r2-evidence-badge strong {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
 }
 
 .r2-evidence-badge small {
     color: var(--r2-muted);
-    font-size: 0.72rem;
+    font-size: 0.78rem;
 }
 
 .r2-skill-groups {
@@ -3403,7 +3407,7 @@
 .r2-skill-group > h3 {
     margin: 0 0 0.65rem;
     color: #0d7d88;
-    font-size: 0.77rem;
+    font-size: 0.82rem;
     font-weight: 800;
     letter-spacing: 0.015em;
 }
@@ -3468,13 +3472,13 @@
 }
 
 .r2-skill-card__copy strong {
-    font-size: 0.78rem;
+    font-size: 0.84rem;
     line-height: 1.25;
 }
 
 .r2-skill-card__copy small {
     color: var(--r2-muted);
-    font-size: 0.64rem;
+    font-size: 0.7rem;
     line-height: 1.4;
 }
 
@@ -3512,7 +3516,7 @@
 .r2-credential-panel header p {
     margin: 0;
     color: #3157d7;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -3531,7 +3535,7 @@
     border-radius: 999px;
     background: rgb(234 250 251 / 74%);
     color: #087985;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     font-weight: 800;
     padding: 0.45rem 0.7rem;
 }
@@ -3540,7 +3544,7 @@
     max-width: 48rem;
     margin: 1.15rem 0 0;
     color: var(--r2-muted);
-    font-size: 0.92rem;
+    font-size: 0.98rem;
     line-height: 1.6;
 }
 
@@ -3549,7 +3553,7 @@
 .r2-exp-card__full > h4 {
     margin: 1.2rem 0 0.65rem;
     color: #58708f;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     font-weight: 850;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -3569,7 +3573,7 @@
     gap: 0.7rem;
     border-top: 1px solid rgb(77 116 176 / 13%);
     color: #2b4264;
-    font-size: 0.83rem;
+    font-size: 0.9rem;
     line-height: 1.55;
     padding-top: 0.7rem;
 }
@@ -3587,7 +3591,7 @@
     display: block;
     margin-top: 0.2rem;
     color: #647792;
-    font-size: 0.68rem;
+    font-size: 0.74rem;
     font-weight: 700;
 }
 
@@ -3600,7 +3604,7 @@
     background: transparent;
     color: #203b65;
     font: inherit;
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     font-weight: 800;
     cursor: pointer;
 }
@@ -3686,7 +3690,7 @@
     border-radius: 999px;
     background: var(--r2-cyan);
     color: #fff;
-    font-size: 0.58rem;
+    font-size: 0.64rem;
     font-weight: 850;
     letter-spacing: 0.08em;
     padding: 0.38rem 0.6rem;
@@ -3703,7 +3707,7 @@
 
 .resume-consolidated .r2-exp-card__head small {
     color: #3157d7;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     font-weight: 850;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3722,7 +3726,7 @@
 .resume-consolidated .r2-exp-card__head > p {
     margin: 0.4rem 0 0;
     color: #2d58df;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 800;
     line-height: 1.35;
 }
@@ -3731,7 +3735,7 @@
 .resume-consolidated .r2-exp-summary {
     margin: 1.15rem 0 0;
     color: #4d6280;
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     line-height: 1.55;
 }
 
@@ -3764,7 +3768,7 @@
 .r2-exp-card__impacts small,
 .r2-exp-key-impact small {
     color: #657793;
-    font-size: 0.58rem;
+    font-size: 0.65rem;
     line-height: 1.35;
 }
 
@@ -3781,7 +3785,7 @@
 .resume-consolidated .r2-exp-bullets li {
     position: relative;
     color: #4a5f7c;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     line-height: 1.45;
     padding-left: 0.9rem;
 }
@@ -3809,7 +3813,7 @@
 
 .r2-exp-card__footer > span {
     color: #61748f;
-    font-size: 0.63rem;
+    font-size: 0.7rem;
     font-weight: 750;
 }
 
@@ -3820,7 +3824,7 @@
     background: rgb(255 255 255 / 83%);
     color: #16365f;
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.74rem;
     font-weight: 800;
     padding: 0.6rem 0.8rem;
     cursor: pointer;
@@ -3892,7 +3896,7 @@
 }
 
 .resume-consolidated .r2-exp-bullets li {
-    font-size: 0.78rem;
+    font-size: 0.84rem;
 }
 
 .resume-consolidated .r2-exp-ask {
@@ -3906,7 +3910,7 @@
     background: #0b9eaa;
     color: #fff;
     font: inherit;
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     font-weight: 800;
     padding: 0.72rem 1rem;
     cursor: pointer;
@@ -3965,7 +3969,7 @@
 .r2-credential-card > p {
     margin: 0.55rem 0 0;
     color: var(--r2-muted);
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     line-height: 1.5;
 }
 
@@ -3990,13 +3994,13 @@
 
 .r2-credential-card li strong {
     color: #183961;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     line-height: 1.3;
 }
 
 .r2-credential-card li small {
     color: #627590;
-    font-size: 0.61rem;
+    font-size: 0.68rem;
     line-height: 1.35;
 }
 
@@ -4005,7 +4009,7 @@
     border-radius: 999px;
     background: rgb(224 249 250 / 80%);
     color: #087b86;
-    font-size: 0.53rem;
+    font-size: 0.61rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     padding: 0.25rem 0.45rem;
@@ -4022,7 +4026,7 @@
 
 .r2-credential-card footer > span {
     color: #63748e;
-    font-size: 0.62rem;
+    font-size: 0.69rem;
     font-weight: 750;
 }
 
@@ -4033,7 +4037,7 @@
     background: rgb(255 255 255 / 76%);
     color: #17375f;
     font: inherit;
-    font-size: 0.67rem;
+    font-size: 0.73rem;
     font-weight: 800;
     cursor: pointer;
 }
@@ -4062,7 +4066,7 @@
     max-width: 46rem;
     margin-top: 0.4rem;
     color: var(--r2-muted);
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     line-height: 1.5;
 }
 
@@ -4096,7 +4100,7 @@
 .r2-credential-record__heading > p {
     margin: 0;
     color: #3157d7;
-    font-size: 0.59rem;
+    font-size: 0.66rem;
     font-weight: 850;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -4114,13 +4118,13 @@
     display: block;
     margin-top: 0.25rem;
     color: #3157d7;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
 }
 
 .r2-credential-record > p {
     margin: 0.7rem 0 0;
     color: var(--r2-muted);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     line-height: 1.5;
 }
 
@@ -4135,7 +4139,7 @@
     border: 1px solid var(--r2-line);
     border-radius: 999px;
     color: #385577;
-    font-size: 0.58rem;
+    font-size: 0.65rem;
     font-weight: 700;
     padding: 0.3rem 0.5rem;
 }
@@ -4150,7 +4154,7 @@
 
 .r2-credential-record__metrics li {
     color: #405572;
-    font-size: 0.67rem;
+    font-size: 0.73rem;
     line-height: 1.4;
 }
 
@@ -4390,7 +4394,7 @@
         flex-direction: column;
         justify-content: center;
         gap: 0.2rem;
-        font-size: 0.62rem;
+        font-size: 0.68rem;
     }
 
     .r2-content {

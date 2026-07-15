@@ -59,7 +59,7 @@ class NavigationTests(unittest.TestCase):
         self.assertIsNotNone(match)
         return json.loads(match.group(1))
 
-    def test_petes_slate_opens_the_canonical_resume_and_atrium_is_retired(self):
+    def test_petes_slate_opens_the_canonical_resume_and_redundant_home_is_omitted(self):
         for path in ('/', '/petec/resume'):
             with self.subTest(path=path):
                 links = self.parse_platform_links(path)
@@ -70,7 +70,7 @@ class NavigationTests(unittest.TestCase):
                     links_by_text["Pete's Slate"]['attributes']['href'],
                     '/petec/resume',
                 )
-                self.assertEqual(links_by_text['Home']['attributes']['href'], '/')
+                self.assertNotIn('Home', links_by_text)
 
         homepage_links = {
             link['text']: link for link in self.parse_platform_links('/')
@@ -79,10 +79,6 @@ class NavigationTests(unittest.TestCase):
             link['text']: link
             for link in self.parse_platform_links('/petec/resume')
         }
-        self.assertEqual(
-            homepage_links['Home']['attributes'].get('aria-current'),
-            'page',
-        )
         self.assertNotIn(
             'aria-current',
             homepage_links["Pete's Slate"]['attributes'],
@@ -91,7 +87,7 @@ class NavigationTests(unittest.TestCase):
             resume_links["Pete's Slate"]['attributes'].get('aria-current'),
             'page',
         )
-        self.assertNotIn('aria-current', resume_links['Home']['attributes'])
+        self.assertNotIn('Home', resume_links)
 
     def test_header_search_omits_retired_overview_and_projects_records(self):
         records = self.search_records()
