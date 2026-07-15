@@ -119,6 +119,23 @@ class Resume2Tests(unittest.TestCase):
                     response.data,
                 )
 
+    def test_azure_forwarded_https_scheme_is_used_for_canonical_metadata(self):
+        response = self.client.get(
+            '/petec/resume',
+            base_url='http://peerslate.com',
+            headers={'X-Forwarded-Proto': 'https'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'<link rel="canonical" href="https://peerslate.com/petec/resume">',
+            response.data,
+        )
+        self.assertIn(
+            b'<meta property="og:url" content="https://peerslate.com/petec/resume">',
+            response.data,
+        )
+
     def test_platform_experience_and_profile_evidence_routes_remain_public(self):
         for path in ('/experience', '/petec/skills'):
             with self.subTest(path=path):

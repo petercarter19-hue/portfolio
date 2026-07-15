@@ -11,6 +11,7 @@ from datetime import datetime, timedelta        # Lets the Slate Feed compute li
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 from db import get_connection, fetch_all_result_sets
@@ -38,6 +39,11 @@ if not ANTHROPIC_API_KEY:
 
 # Create the Flask app
 app = Flask(__name__)
+# Azure terminates HTTPS before forwarding the request to Gunicorn. Trust the
+# single platform proxy hop for the original scheme so external URLs, canonical
+# tags, and Open Graph metadata stay HTTPS in production while localhost keeps
+# its native HTTP scheme.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
 app.config.update(
     PEERSLATE_ALLOW_DEV_IDENTITY=(
         os.environ.get('PEERSLATE_ALLOW_DEV_IDENTITY', 'false').lower() == 'true'
