@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePersistentNavigation() {
         const readingLine = window.innerWidth <= 768 ? 170 : 150;
-        let activeSectionId = 'resume-overview';
+        let activeSectionId = 'summary';
 
         resumeSections.forEach((section) => {
             if (section.getBoundingClientRect().top <= readingLine) {
@@ -134,12 +134,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return selectedTab;
     }
 
-    function scrollToLedger(eventId) {
+    function scrollToLedger(eventId, origin = null) {
         const selectedTab = selectEvent(eventId, { focusTab: true });
-        document.getElementById('ledger').scrollIntoView({
-            behavior: reducedMotion.matches ? 'auto' : 'smooth',
-            block: 'start',
-        });
+        const ledger = document.getElementById('ledger');
+        if (ledger && ledger.querySelector('[data-ledger-event]')) {
+            ledger.scrollIntoView({
+                behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                block: 'start',
+            });
+            return selectedTab;
+        }
+
+        // The consolidated page keeps the constellation but folds the old
+        // stand-alone Ledger into Experience and Credentials. Constellation
+        // nodes therefore open the corresponding inline chapter/category.
+        const roleId = eventId.startsWith('role-') ? eventId.slice(5) : eventId;
+        const experienceCard = page.querySelector(`[data-r2-exp-card="${roleId}"]`);
+        if (experienceCard) {
+            const toggle = experienceCard.querySelector('[data-r2-exp-toggle]');
+            page.dispatchEvent(new CustomEvent('r2:open-experience', {
+                detail: { roleId, origin: origin || toggle },
+            }));
+            return origin || toggle;
+        }
+
+        if (eventId.startsWith('education-')) {
+            const credentialToggle = page.querySelector('[data-r2-credential-toggle="education"]');
+            if (credentialToggle) {
+                page.dispatchEvent(new CustomEvent('r2:open-credential', {
+                    detail: { categoryId: 'education', origin: origin || credentialToggle },
+                }));
+                return origin || credentialToggle;
+            }
+        }
+
+        const fallback = document.getElementById('experience') || document.getElementById('credentials');
+        if (fallback) {
+            fallback.scrollIntoView({
+                behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                block: 'start',
+            });
+        }
         return selectedTab;
     }
 
@@ -171,13 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     page.querySelectorAll('[data-constellation-target]').forEach((button) => {
         button.addEventListener('click', () => {
-            scrollToLedger(button.dataset.constellationTarget);
+            scrollToLedger(button.dataset.constellationTarget, button);
         });
     });
 
     page.querySelectorAll('[data-chapter-jump]').forEach((button) => {
         button.addEventListener('click', () => {
-            scrollToLedger(button.dataset.chapterJump);
+            scrollToLedger(button.dataset.chapterJump, button);
         });
     });
 
@@ -394,6 +429,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+    function restoreOrigin(origin, frameSelector = null) {
+        if (!origin) return;
+        window.requestAnimationFrame(() => {
+            origin.focus({ preventScroll: true });
+            const frameTarget = frameSelector
+                ? (origin.closest(frameSelector) || origin)
+                : origin;
+            const fits = frameTarget.getBoundingClientRect().height <= window.innerHeight - 140;
+            frameTarget.scrollIntoView({
+                behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                block: fits ? 'center' : 'start',
+            });
+        });
+    }
+
     /* ----- Skills & Evidence: chip → overlay evidence popup -----
        Clicking a skill chip highlights it and opens a compact pointer bubble
        beside that chip. The popup is moved to the document layer and fixed to
@@ -542,12 +592,74 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* ----- Skills: grouped overview -> one centered evidence panel ----- */
+    const skillsSection = page.querySelector('[data-r2-skills]');
+    if (skillsSection) {
+        const overview = skillsSection.querySelector('[data-r2-skill-overview]');
+        const toggles = Array.from(skillsSection.querySelectorAll('[data-r2-skill-toggle]'));
+        const panels = Array.from(skillsSection.querySelectorAll('[data-r2-skill-panel]'));
+        const status = skillsSection.querySelector('[data-r2-skill-status]');
+        let activeOrigin = null;
+
+        function announceSkill(text) {
+            if (status) status.textContent = text;
+        }
+
+        function closeSkill(options = {}) {
+            const returnTo = activeOrigin;
+            toggles.forEach((button) => button.setAttribute('aria-expanded', 'false'));
+            panels.forEach((panel) => { panel.hidden = true; });
+            if (overview) overview.hidden = false;
+            activeOrigin = null;
+            announceSkill('Skill overview restored.');
+            if (options.restoreFocus) restoreOrigin(returnTo, '.r2-skill-card');
+        }
+
+        function openSkill(button) {
+            const skillId = button.dataset.r2SkillToggle;
+            const panel = panels.find((candidate) => candidate.dataset.r2SkillPanel === skillId);
+            if (!panel) return;
+
+            toggles.forEach((candidate) => {
+                candidate.setAttribute('aria-expanded', String(candidate === button));
+            });
+            panels.forEach((candidate) => { candidate.hidden = candidate !== panel; });
+            if (overview) overview.hidden = true;
+            activeOrigin = button;
+
+            const heading = panel.querySelector('h3');
+            announceSkill(heading
+                ? `Showing evidence for ${heading.textContent.trim()}.`
+                : 'Showing selected skill evidence.');
+            panel.focus({ preventScroll: true });
+            window.requestAnimationFrame(() => {
+                panel.scrollIntoView({
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                    block: panel.getBoundingClientRect().height < window.innerHeight - 140 ? 'center' : 'start',
+                });
+            });
+        }
+
+        toggles.forEach((button) => {
+            button.addEventListener('click', () => openSkill(button));
+        });
+        skillsSection.querySelectorAll('[data-r2-skill-close]').forEach((button) => {
+            button.addEventListener('click', () => closeSkill({ restoreFocus: true }));
+        });
+        skillsSection.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !activeOrigin) return;
+            event.preventDefault();
+            closeSkill({ restoreFocus: true });
+        });
+    }
+
     /* ----- Experience: one open chapter, the others step aside ----- */
     const expSection = page.querySelector('[data-r2-exp]');
     if (expSection) {
         const stage = expSection.querySelector('[data-r2-exp-stage]');
         const cards = Array.from(expSection.querySelectorAll('[data-r2-exp-card]'));
         const status = expSection.querySelector('[data-r2-exp-status]');
+        let activeOrigin = null;
 
         function announce(text) {
             if (status) status.textContent = text;
@@ -561,8 +673,15 @@ document.addEventListener('DOMContentLoaded', () => {
             card.classList.toggle('is-open', state === 'open');
             card.classList.toggle('is-aside', state === 'aside');
             if (full) full.hidden = state !== 'open';
-            if (toggle) toggle.setAttribute('aria-expanded', String(state === 'open'));
-            if (label) label.textContent = state === 'open' ? 'Close chapter' : 'View chapter';
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(state === 'open'));
+                const action = state === 'open' ? 'Close' : 'View full';
+                toggle.setAttribute(
+                    'aria-label',
+                    `${action} ${card.dataset.r2ExpName || 'experience'} chapter`
+                );
+            }
+            if (label) label.textContent = state === 'open' ? 'Close Chapter' : 'View Full Chapter';
         }
 
         // Bring the just-opened chapter into a comfortable frame. Generic for
@@ -590,17 +709,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 580);
         }
 
-        function openChapter(card) {
+        function openChapter(card, origin = null) {
             stage.classList.add('is-expanded');
             cards.forEach((other) => setCardState(other, other === card ? 'open' : 'aside'));
+            activeOrigin = origin || activeOrigin || card.querySelector('[data-r2-exp-toggle]');
             announce('Showing the full ' + (card.dataset.r2ExpName || 'chapter') + ' record.');
+            const full = card.querySelector('.r2-exp-card__full');
+            if (full) full.focus({ preventScroll: true });
             frameOpenCard(card);
         }
 
-        function closeAll() {
+        function closeAll(options = {}) {
+            const returnTo = activeOrigin;
             stage.classList.remove('is-expanded');
             cards.forEach((card) => setCardState(card, 'rest'));
+            activeOrigin = null;
             announce('All chapters restored.');
+            if (options.restoreFocus) restoreOrigin(returnTo, '[data-r2-exp-card]');
         }
 
         cards.forEach((card) => {
@@ -609,10 +734,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggle.addEventListener('click', (event) => {
                     event.stopPropagation();
                     if (card.classList.contains('is-open')) {
-                        closeAll();
-                        toggle.focus();
+                        closeAll({ restoreFocus: true });
                     } else {
-                        openChapter(card);
+                        openChapter(card, toggle);
                     }
                 });
             }
@@ -622,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.addEventListener('click', (event) => {
                 if (!card.classList.contains('is-aside')) return;
                 if (event.target.closest('a, button')) return;
-                openChapter(card);
+                openChapter(card, card.querySelector('[data-r2-exp-toggle]'));
             });
         });
 
@@ -630,9 +754,91 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.key !== 'Escape') return;
             const open = cards.find((card) => card.classList.contains('is-open'));
             if (!open) return;
-            closeAll();
-            const toggle = open.querySelector('[data-r2-exp-toggle]');
-            if (toggle) toggle.focus();
+            closeAll({ restoreFocus: true });
+        });
+
+        page.querySelectorAll('[data-impact-role]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const roleId = button.dataset.impactRole;
+                const card = cards.find((candidate) => candidate.dataset.r2ExpCard === roleId);
+                if (!card) return;
+                openChapter(card, button);
+            });
+        });
+
+        page.addEventListener('r2:open-experience', (event) => {
+            const roleId = event.detail && event.detail.roleId;
+            const card = cards.find((candidate) => candidate.dataset.r2ExpCard === roleId);
+            if (!card) return;
+            openChapter(card, event.detail.origin);
+        });
+    }
+
+    /* ----- Credentials: four equal categories -> one centered detail ----- */
+    const credentialsSection = page.querySelector('[data-r2-credentials]');
+    if (credentialsSection) {
+        const overview = credentialsSection.querySelector('[data-r2-credential-overview]');
+        const toggles = Array.from(credentialsSection.querySelectorAll('[data-r2-credential-toggle]'));
+        const panels = Array.from(credentialsSection.querySelectorAll('[data-r2-credential-panel]'));
+        const status = credentialsSection.querySelector('[data-r2-credential-status]');
+        let activeOrigin = null;
+
+        function announceCredential(text) {
+            if (status) status.textContent = text;
+        }
+
+        function closeCredential(options = {}) {
+            const returnTo = activeOrigin;
+            toggles.forEach((button) => button.setAttribute('aria-expanded', 'false'));
+            panels.forEach((panel) => { panel.hidden = true; });
+            if (overview) overview.hidden = false;
+            activeOrigin = null;
+            announceCredential('Credential categories restored.');
+            if (options.restoreFocus) restoreOrigin(returnTo, '.r2-credential-card');
+        }
+
+        function openCredential(button, origin = button) {
+            const categoryId = button.dataset.r2CredentialToggle;
+            const panel = panels.find((candidate) => candidate.dataset.r2CredentialPanel === categoryId);
+            if (!panel) return;
+
+            toggles.forEach((candidate) => {
+                candidate.setAttribute('aria-expanded', String(candidate === button));
+            });
+            panels.forEach((candidate) => { candidate.hidden = candidate !== panel; });
+            if (overview) overview.hidden = true;
+            activeOrigin = origin;
+
+            const heading = panel.querySelector('h3');
+            announceCredential(heading
+                ? `Showing ${heading.textContent.trim()} details.`
+                : 'Showing selected credential details.');
+            panel.focus({ preventScroll: true });
+            window.requestAnimationFrame(() => {
+                panel.scrollIntoView({
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                    block: panel.getBoundingClientRect().height < window.innerHeight - 140 ? 'center' : 'start',
+                });
+            });
+        }
+
+        toggles.forEach((button) => {
+            button.addEventListener('click', () => openCredential(button));
+        });
+        page.addEventListener('r2:open-credential', (event) => {
+            const categoryId = event.detail && event.detail.categoryId;
+            const button = toggles.find(
+                (candidate) => candidate.dataset.r2CredentialToggle === categoryId
+            );
+            if (button) openCredential(button, event.detail.origin);
+        });
+        credentialsSection.querySelectorAll('[data-r2-credential-close]').forEach((button) => {
+            button.addEventListener('click', () => closeCredential({ restoreFocus: true }));
+        });
+        credentialsSection.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !activeOrigin) return;
+            event.preventDefault();
+            closeCredential({ restoreFocus: true });
         });
     }
 

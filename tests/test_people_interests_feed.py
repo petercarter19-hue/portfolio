@@ -48,8 +48,9 @@ class PeopleInterestsPageTests(unittest.TestCase):
         # The untouched global header and profile sub-header render as-is.
         self.assertIn("platform-nav", html)
         self.assertIn("profile-tabs", html)
-        # The three feeds live in the contextual strip.
-        self.assertIn("Break Feed", html)
+        # The current landing feed and honest News preview live in the
+        # contextual strip; Break remains a valid route outside this bar.
+        self.assertIn("People &amp; Interests", html)
         self.assertIn("News Feed", html)
 
     def test_existing_routes_unaffected(self):

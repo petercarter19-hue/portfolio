@@ -7,9 +7,10 @@
     "location": "Athens, Alabama | Huntsville Area",
     "email": "petercarter19@gmail.com",
     "email_url": "mailto:petercarter19@gmail.com",
-    "image_path": "images/profile-pete-danielle.png",
-    "image_alt": "Pete and Danielle Carter holding a SOLD sign in front of their home",
-    "summary": "Systems engineer with public resume evidence across requirements, MBSE, sustainment, contracting, project execution, and policy-compliant AI process improvement.",
+    "image_path": "images/story/pete-headshot.jpg",
+    "image_alt": "Professional portrait of Pete Carter",
+    "opening_eyebrow": "Engineer at heart. Leader in practice.",
+    "summary": "I build complex systems, lead through change, and turn complexity into clarity so teams can do their best work and deliver real impact.",
     "pdf_path": "files/pete-carter-resume.pdf",
     "contact_url": "/contact",
     "linkedin_url": "https://www.linkedin.com/in/pete-carter19",
@@ -68,21 +69,34 @@
     "last_updated": "July 2026",
     "default_event_id": "role-dod",
     "career_highlight_metric_ids": ["modernization", "missing-parts", "cam"],
+    "resume2_impact_metric_ids": ["engineers-led", "redesigns", "contract", "issue-time", "repair-test"],
+    "resume2_impact_metric_icons": {
+      "engineers-led": "users",
+      "redesigns": "repeat",
+      "contract": "file",
+      "issue-time": "chart",
+      "repair-test": "wrench"
+    },
     "career_highlight_skill_ids": ["cameo", "doors"],
     "resume2_skill_categories": [
       {
         "id": "systems-engineering",
-        "label": "Systems Engineering",
+        "label": "Systems & Digital Engineering",
         "source_category_ids": ["systems-digital"]
       },
       {
-        "id": "program-lifecycle",
-        "label": "Program & Lifecycle Management",
-        "source_category_ids": ["program-contract", "sustainment-logistics"]
+        "id": "program-technical",
+        "label": "Program & Technical Execution",
+        "source_category_ids": ["program-contract"]
+      },
+      {
+        "id": "sustainment-lifecycle",
+        "label": "Sustainment & Lifecycle",
+        "source_category_ids": ["sustainment-logistics"]
       },
       {
         "id": "digital-data-ai",
-        "label": "Digital, Data & AI",
+        "label": "Data, Automation & AI",
         "source_category_ids": ["tools-data", "ai-process", "web-development"]
       }
     ],
@@ -1310,6 +1324,7 @@
       "credential": "B.S. Electrical Engineering",
       "institution": "Kennesaw State University",
       "status": "Completed",
+      "credential_category": "education",
       "date": "July 2020",
       "detail": "Completed the engineering degree as a non-traditional student while building a new technical career path."
     },
@@ -1318,6 +1333,7 @@
       "credential": "M.S. Engineering Management",
       "institution": "University of Arkansas",
       "status": "Completed",
+      "credential_category": "education",
       "date": "May 2025",
       "detail": "Completed graduate work with a 4.0 GPA."
     },
@@ -1326,6 +1342,7 @@
       "credential": "A.S. Science",
       "institution": "Dalton State College",
       "status": "Completed",
+      "credential_category": "education",
       "date": "May 2018",
       "detail": "Early academic foundation that supported Pete's later engineering path."
     },
@@ -1334,6 +1351,9 @@
       "credential": "Project Management Professional",
       "institution": "Project Management Institute",
       "status": "Certified",
+      "credential_category": "certifications",
+      "related_skill_ids": ["project-management", "control-account-management", "evms", "contracting"],
+      "related_metric_ids": ["redesigns", "cam", "contract", "modernization"],
       "detail": "Public credential supporting project leadership, schedule, stakeholder, and execution discipline."
     },
     {
@@ -1341,6 +1361,8 @@
       "credential": "Systems Engineering Ph.D.",
       "institution": "University of South Alabama",
       "status": "Admitted",
+      "credential_category": "education",
+      "date": "Expected January 2027 start",
       "detail": "Admitted with expected January 2027 start; this is upcoming, not completed."
     },
     {
@@ -1348,6 +1370,7 @@
       "credential": "Microsoft Azure Fundamentals",
       "institution": "Microsoft Certified · AZ-900",
       "status": "In Progress",
+      "credential_category": "development",
       "detail": "Foundational cloud concepts and core Azure services."
     },
     {
@@ -1355,6 +1378,7 @@
       "credential": "Microsoft Azure AI Fundamentals",
       "institution": "Microsoft Certified · AI-901",
       "status": "In Progress",
+      "credential_category": "development",
       "detail": "Foundational AI and machine-learning concepts on Azure."
     },
     {
@@ -1362,6 +1386,7 @@
       "credential": "AWS Certified Cloud Practitioner",
       "institution": "Amazon Web Services · CLF-C02",
       "status": "In Progress",
+      "credential_category": "development",
       "detail": "Foundational AWS Cloud fluency across services, security, and pricing."
     }
   ],
@@ -1377,6 +1402,10 @@
       "headline_contribution": "Led public sustainment, contract, and redesign work with measurable readiness and process outcomes.",
       "summary": "Supported aircraft navigation, sustainment, modernization, readiness, and special-project activities across multiple military platforms. Coordinated engineering, supply, depot, contractor, program, and leadership organizations to resolve technical issues and improve operational supportability.",
       "current_role_public_note": "",
+      "resume2_preview_refs": [
+        {"source_type": "metric", "source_id": "engineers-led"},
+        {"source_type": "metric", "source_id": "issue-time"}
+      ],
       "accomplishments": [
         {
           "id": "dod-redesigns",
@@ -1488,6 +1517,10 @@
       "headline_contribution": "Connected sustainment, provisioning, MBSE, and control-account execution for complex defense and communications systems.",
       "summary": "Supported reliability, maintainability, sustainment, provisioning, depot analysis, integrated logistics support, control account management, and model-based systems-engineering activities for complex defense and communications systems.",
       "current_role_public_note": "",
+      "resume2_preview_refs": [
+        {"source_type": "metric", "source_id": "cam"},
+        {"source_type": "accomplishment", "source_id": "l3-ils", "value": "12", "label": "IPS elements"}
+      ],
       "accomplishments": [
         {
           "id": "l3-ils",
@@ -1573,6 +1606,10 @@
       "headline_contribution": "Supports public systems-engineering work involving requirements, architecture alignment, traceability, and Agile workflow coordination.",
       "summary": "Supports complex aerospace and defense systems-engineering activities involving requirements, architecture alignment, traceability, Agile workflow coordination, and cross-functional technical execution.",
       "current_role_public_note": "Current-role details are limited to approved, publicly shareable information.",
+      "resume2_preview_refs": [
+        {"source_type": "skill", "source_id": "doors", "value": "DOORS", "label": "Bidirectional traceability"},
+        {"source_type": "skill", "source_id": "mbse", "value": "MBSE", "label": "Architecture alignment"}
+      ],
       "accomplishments": [
         {
           "id": "ng-req-define",
@@ -1774,7 +1811,7 @@
       "details_ready": true,
       "publish_detail": true,
       "noindex": false,
-      "live_url": "/petec/resume2",
+      "live_url": "/petec/resume",
       "display_order": 1,
       "cta": "Enter the project",
       "case_study_sections": [

@@ -19,7 +19,7 @@
         return; // Malformed index: leave the input inert rather than crash.
     }
 
-    const askUrl = root.dataset.askUrl || '/petec';
+    const askUrl = root.dataset.askUrl || '/petec/resume';
     let items = [];   // rendered result rows
     let active = -1;  // keyboard-highlighted row index
 

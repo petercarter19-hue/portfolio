@@ -1,5 +1,5 @@
 {
-  "_comment": "Projects Board fixture for the /petec/work experience. This is a profile-scoped, editor-friendly view model: every card + detail-modal field lives here so a future edit UI (or the owner) can add/change projects without touching the template. Loaded by app.py `_load_project_board`. Fixture/demo content for the 'petec' profile only — reusable components must never hardcode any of this.",
+  "_comment": "Legacy Projects Board fixture retained as structured project and evidence data. Pete's public career experience now lives at /petec/resume#experience. This profile-scoped, editor-friendly view model keeps every card and detail field available for future editing without hardcoding fixture content into reusable components.",
   "profile_slug": "petec",
   "board": {
     "title": "Projects",
@@ -22,7 +22,7 @@
         "logo": { "kind": "brand", "alt": "PeerSlate logo" },
         "hero_device": { "kind": "photo", "src": "images/projects/peerslate-home.jpg", "fallback_theme": "platform", "alt": "The PeerSlate homepage hero" },
         "actions": {
-          "view_live": { "enabled": false, "url": "https://peerslate.com/petec", "note": "Ignored for now" },
+          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/resume", "note": "Ignored for now" },
           "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
           "roadmap": { "enabled": false, "url": "", "note": "Ignored for now" }
         },
@@ -76,7 +76,7 @@
           { "src": "images/background-templates/peerslate-editorial-field.jpg", "alt": "PeerSlate editorial field background", "caption": "Editorial glass system" }
         ],
         "links": [
-          { "label": "peerslate.com", "sub": "The live site", "url": "https://peerslate.com/petec", "kind": "web" },
+          { "label": "peerslate.com", "sub": "The live site", "url": "https://peerslate.com/petec/resume", "kind": "web" },
           { "label": "Microsoft Azure", "sub": "Hosting & pipeline", "url": "https://portal.azure.com", "kind": "cloud" },
           { "label": "GitHub", "sub": "Source repository", "url": "https://github.com/petercarter19-hue/portfolio", "kind": "code" }
         ],
@@ -215,7 +215,7 @@
         "logo": { "kind": "illustration", "theme": "resume", "alt": "Living Résumé" },
         "hero_device": { "kind": "photo", "src": "images/mockups/reume2.png", "fallback_theme": "resume", "alt": "The Living Résumé interface" },
         "actions": {
-          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/resume2", "note": "Ignored for now" },
+          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/resume", "note": "Ignored for now" },
           "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
           "roadmap": { "enabled": false, "url": "" }
         },
@@ -255,7 +255,7 @@
           { "src": "images/projects/living-resume-build.jpg", "alt": "Building the Living Résumé", "caption": "Build in progress" }
         ],
         "links": [
-          { "label": "View the résumé", "sub": "Live on the site", "url": "https://peerslate.com/petec/resume2", "kind": "web" },
+          { "label": "View the résumé", "sub": "Live on the site", "url": "https://peerslate.com/petec/resume", "kind": "web" },
           { "label": "GitHub", "sub": "Source repository", "url": "https://github.com/petercarter19-hue/portfolio", "kind": "code" }
         ],
         "notes": [

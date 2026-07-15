@@ -156,33 +156,6 @@ function initializeChatbot() {
         }
     }
 
-    // -------------------------------------------------------
-    // OVERVIEW SUB-HEADER ASK AI HANDOFF
-    // Match the Living Résumé pattern: the compact field is redundant while
-    // the full-width Ask Pete's Slate bar is visible. Once that bar leaves
-    // the viewport, the field fades into the sticky profile sub-header.
-    // -------------------------------------------------------
-
-    const overviewSubheaderAsk = document.querySelector('[data-overview-subheader-ask]');
-    const overviewAskBar = document.querySelector('.ps-askbar');
-
-    if (overviewSubheaderAsk) {
-        const setOverviewSubheaderAsk = function (visible) {
-            overviewSubheaderAsk.classList.toggle('is-visible', visible);
-            overviewSubheaderAsk.setAttribute('aria-hidden', String(!visible));
-        };
-
-        if (overviewAskBar && 'IntersectionObserver' in window) {
-            setOverviewSubheaderAsk(false);
-            const overviewAskWatcher = new IntersectionObserver(function (entries) {
-                setOverviewSubheaderAsk(!entries[0].isIntersecting);
-            });
-            overviewAskWatcher.observe(overviewAskBar);
-        } else {
-            setOverviewSubheaderAsk(true);
-        }
-    }
-
     closeBtn.addEventListener('click', function () {
         closeChat(true);
     });

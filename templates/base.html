@@ -112,7 +112,7 @@
        All of that CSS is scoped under this class in editorial-glass.css,
        so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
 
-    {% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
+    {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
@@ -142,16 +142,9 @@
                 </div>
 
                 <ul class="platform-nav__links">
-                    {# ATRIUM (2026-07-12): "The Living Triptych" — the
-                       experimental cinematic Overview. Kept as its own link
-                       (leftmost, front-door position) so Pete can judge this
-                       big swing live before it replaces anything. Route +
-                       page: app.py `atrium()` / templates/atrium.html. #}
-                    <li><a href="{{ url_for('atrium') }}" {% if request.path == '/atrium' %}aria-current="page"{% endif %}>Atrium</a></li>
-                    {# Pete's Slate always opens Pete's profile Overview. The
-                       cinematic PeerSlate landing experience remains available
-                       through the distinct Home link and the brand logo. #}
-                    <li><a href="{{ portfolio_home_url }}" {% if (is_portfolio_path or request.path in ['/portfolio', '/pete']) and request.path not in ['/petec/interview-me', '/petec/about'] %}aria-current="page"{% endif %}>Pete's Slate</a></li>
+                    {# Pete's Slate opens the single consolidated public résumé.
+                       The cinematic platform home remains a distinct destination. #}
+                    <li><a href="{{ portfolio_home_url }}" {% if is_portfolio_path %}aria-current="page"{% endif %}>Pete's Slate</a></li>
                     {# EXPERIENCE (2026-07-08): the cinematic homepage
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
@@ -207,12 +200,9 @@
             </div>
         </nav>
 
-        {# Keep the profile navigation inside the sticky global header so the
-           two navigation levels read as one connected piece of chrome.
-           Atrium (the Living Triptych Overview) is full-bleed cinematic and
-           carries its own in-slab navigation, so it opts out of the profile
-           tab strip just like the homepage. #}
-        {% if request.path not in ['/', '/atrium'] %}
+        {# Keep profile navigation inside the sticky global header so the two
+           navigation levels read as one connected piece of chrome. #}
+        {% if request.path != '/' %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>
@@ -325,10 +315,8 @@
        they stay correct on every host. site-search.js reads this block. #}
     <script id="nav-search-data" type="application/json">
     [
-        {"title": "Overview", "sub": "Pete's slate home", "href": "{{ portfolio_home_url }}", "keys": "home overview profile pete carter example slate"},
         {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
         {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
-        {"title": "Projects", "sub": "Practical builds with purpose", "href": "{{ portfolio_work_url }}", "keys": "projects work builds apps case studies traceability dashboard"},
         {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
         {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
         {"title": "Interview Me", "sub": "Interview practice studio", "href": "{{ portfolio_url('interview-me') }}", "keys": "interview practice questions star behavioral coach mock answer"},
@@ -341,7 +329,7 @@
         {"title": "Feed · People & Interests", "sub": "The living board of goals and moments", "href": "{{ url_for('the_slate') }}", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
-        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"},
+        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"}
     ]
     </script>
 
@@ -353,8 +341,8 @@
        Hidden on desktop via CSS. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=overview-handoff-2"></script>
-    <script src="{{ url_for('static', filename='js/site-search.js') }}?v=nav-search-1"></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-consolidated-1"></script>
+    <script src="{{ url_for('static', filename='js/site-search.js') }}?v=resume-consolidated-1"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
     {% block extra_scripts %}{% endblock %}
 

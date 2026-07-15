@@ -3,14 +3,13 @@
     a white band with the avatar, "Open to conversations" chip, serif
     name, blue title, specialty row, and a location/message/URL meta
     row — plus the "About Pete" card on the right. Below it, the tab
-    strip: Overview / Evidence / Projects / Slate Board / Resume
-    (+ My Slate, which the mockup folds into the story tab).
+    strip: My Story / Evidence / Slate Board / Resume.
     Renders on every /petec page under the global platform header.
 #}
 
 <section class="profile-header" aria-label="Pete Carter profile summary">
     <div class="site-container profile-header__inner">
-        <a class="profile-avatar" href="{{ portfolio_home_url }}" aria-label="Pete Carter profile overview">
+        <a class="profile-avatar" href="{{ portfolio_resume_url }}" aria-label="Pete Carter résumé">
             <img
                 src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
                 alt="Pete and Danielle Carter holding a SOLD sign in front of their home"

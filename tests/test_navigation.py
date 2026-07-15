@@ -1,4 +1,7 @@
+import json
+import re
 import unittest
+import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 
 from app import app
@@ -37,53 +40,77 @@ class NavigationTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def parse_platform_links(self, path):
-        response = self.client.get(path, base_url='http://localhost')
+    def parse_platform_links(self, path, base_url='http://localhost'):
+        response = self.client.get(path, base_url=base_url)
         self.assertEqual(response.status_code, 200)
         parser = PlatformNavigationParser()
         parser.feed(response.get_data(as_text=True))
         return parser.links
 
-    def test_petes_slate_and_home_are_distinct_destinations(self):
-        homepage_links = self.parse_platform_links('/')
-        profile_links = self.parse_platform_links('/petec')
-
-        homepage_by_text = {link['text']: link for link in homepage_links}
-        profile_by_text = {link['text']: link for link in profile_links}
-
-        self.assertEqual(
-            homepage_by_text["Pete's Slate"]['attributes']['href'],
-            '/petec',
+    def search_records(self, path='/', base_url='http://localhost'):
+        response = self.client.get(path, base_url=base_url)
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        match = re.search(
+            r'<script id="nav-search-data" type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL,
         )
+        self.assertIsNotNone(match)
+        return json.loads(match.group(1))
+
+    def test_petes_slate_opens_the_canonical_resume_and_atrium_is_retired(self):
+        for path in ('/', '/petec/resume'):
+            with self.subTest(path=path):
+                links = self.parse_platform_links(path)
+                links_by_text = {link['text']: link for link in links}
+
+                self.assertNotIn('Atrium', links_by_text)
+                self.assertEqual(
+                    links_by_text["Pete's Slate"]['attributes']['href'],
+                    '/petec/resume',
+                )
+                self.assertEqual(links_by_text['Home']['attributes']['href'], '/')
+
+        homepage_links = {
+            link['text']: link for link in self.parse_platform_links('/')
+        }
+        resume_links = {
+            link['text']: link
+            for link in self.parse_platform_links('/petec/resume')
+        }
         self.assertEqual(
-            profile_by_text["Pete's Slate"]['attributes']['href'],
-            '/petec',
-        )
-        self.assertEqual(homepage_by_text['Home']['attributes']['href'], '/')
-        self.assertEqual(profile_by_text['Home']['attributes']['href'], '/')
-        self.assertEqual(
-            homepage_by_text['Home']['attributes'].get('aria-current'),
+            homepage_links['Home']['attributes'].get('aria-current'),
             'page',
         )
         self.assertNotIn(
             'aria-current',
-            homepage_by_text["Pete's Slate"]['attributes'],
+            homepage_links["Pete's Slate"]['attributes'],
         )
         self.assertEqual(
-            profile_by_text["Pete's Slate"]['attributes'].get('aria-current'),
+            resume_links["Pete's Slate"]['attributes'].get('aria-current'),
             'page',
         )
-        self.assertNotIn('aria-current', profile_by_text['Home']['attributes'])
+        self.assertNotIn('aria-current', resume_links['Home']['attributes'])
 
-    def test_overview_renders_the_progressive_subheader_ai_field(self):
-        overview = self.client.get('/petec', base_url='http://localhost')
-        resume = self.client.get('/petec/resume2', base_url='http://localhost')
+    def test_header_search_omits_retired_overview_and_projects_records(self):
+        records = self.search_records()
+        titles = [record['title'] for record in records]
 
-        self.assertIn(b'data-overview-subheader-ask', overview.data)
-        self.assertIn(b'id="overview-subheader-ai-input"', overview.data)
-        self.assertNotIn(b'data-resume-subheader-ask', overview.data)
+        self.assertNotIn('Overview', titles)
+        self.assertNotIn('Projects', titles)
+        self.assertIn('Resume', titles)
+        resume = next(record for record in records if record['title'] == 'Resume')
+        self.assertEqual(resume['href'], '/petec/resume')
+
+    def test_resume_subheader_ai_field_replaces_the_retired_overview_field(self):
+        resume = self.client.get('/petec/resume', base_url='http://localhost')
+
+        self.assertEqual(resume.status_code, 200)
         self.assertIn(b'data-resume-subheader-ask', resume.data)
         self.assertIn(b'id="subheader-ai-input"', resume.data)
+        self.assertNotIn(b'data-overview-subheader-ask', resume.data)
+        self.assertNotIn(b'id="overview-subheader-ai-input"', resume.data)
 
     def test_every_canonical_slate_route_uses_the_standard_subheader_scope(self):
         for path in (
@@ -101,6 +128,44 @@ class NavigationTests(unittest.TestCase):
 
         homepage = self.client.get('/', base_url='http://localhost')
         self.assertNotIn(b'the-slate-page', homepage.data)
+
+    def test_sitemap_contains_only_current_canonical_public_routes(self):
+        response = self.client.get(
+            '/sitemap.xml',
+            base_url='https://peerslate.com',
+        )
+        self.assertEqual(response.status_code, 200)
+        root = ET.fromstring(response.get_data(as_text=True))
+        namespace = {'sitemap': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+        locations = [
+            item.text
+            for item in root.findall('sitemap:url/sitemap:loc', namespace)
+        ]
+        expected_paths = [
+            '/',
+            '/experience',
+            '/petec/my-story',
+            '/petec/skills',
+            '/petec/resume',
+            '/petec/slate-board',
+            '/petec/interview-me',
+            '/petec/about',
+            '/petec/hobbies',
+            '/petec/contact',
+            '/the-slate',
+            '/the-slate/my-slate',
+            '/the-slate/daily',
+            '/the-slate/pulse',
+            '/the-slate/break',
+            '/career-search',
+            '/my-network',
+            '/explore-profiles',
+            '/for-recruiters',
+        ]
+        self.assertEqual(
+            locations,
+            [f'https://peerslate.com{path}' for path in expected_paths],
+        )
 
 
 if __name__ == '__main__':

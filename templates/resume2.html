@@ -1,279 +1,230 @@
 {% extends "base.html" %}
 
-{% block title %}{{ resume.profile.name }} | Living Resume{% endblock %}
+{% block title %}{{ resume.profile.name }} | Living Résumé{% endblock %}
 
-{% block meta_description %}Explore {{ resume.profile.name }}'s cinematic Resume 2, Living Résumé Ledger, evidence, and Career Constellation.{% endblock %}
+{% block meta_description %}Explore {{ resume.profile.name }}'s evidence-backed career impact, skills, experience, and credentials.{% endblock %}
 
 {% block extra_head %}
 <script>
     document.querySelector('meta[name="viewport"]')
         .setAttribute('content', 'width=device-width, initial-scale=1.0');
 </script>
-{# Editorial-glass pass (2026-07-13): the résumé sky is now the shared
-   pale editorial field, so preload that instead of the retired
-   mountain image. #}
 <link
     rel="preload"
     as="image"
-    href="{{ url_for('static', filename='images/background-templates/peerslate-editorial-field.jpg') }}"
+    href="{{ url_for('static', filename=resume.profile.image_path) }}"
     type="image/jpeg"
 >
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
+<link rel="canonical" href="{{ url_for('profile_resume', profile_slug=profile_slug, _external=True) }}">
+<meta property="og:url" content="{{ url_for('profile_resume', profile_slug=profile_slug, _external=True) }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=solid-header-3">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume-cards-23">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume-consolidated-4">
 {% endblock %}
 
-{% block body_class %} living-resume-v2-page resume-v2-page{% endblock %}
+{% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% endblock %}
 
 {% block profile_band %}{% endblock %}
 
 {% block content %}
-<div class="lr-page resume-v2" id="living-resume-page">
+<div class="lr-page resume-v2 resume-consolidated" id="living-resume-page">
     {% include "partials/living_resume_icon_sprite.html" %}
-    <div class="resume2-story">
-    <nav class="lr-resume-dock" aria-label="Persistent résumé section index" aria-hidden="true" inert>
-        <a class="is-current" href="#resume-overview" data-resume-nav>Ledger</a>
-        <a href="#resume-experience" data-resume-nav>Experience</a>
-        <a href="#resume-education" data-resume-nav>Education</a>
-        <a href="#resume-skills" data-resume-nav>Skills</a>
-        <a href="#resume-development" data-resume-nav>Development</a>
-    </nav>
 
-    <div class="resume2-view-switch" style="display:flex;justify-content:center;margin:0 auto 1.5rem;">
-        {% set resume_view_active = 'resume' %}
-        {% include "partials/resume_view_switcher.html" %}
-    </div>
-
-    <header class="r2-identity-stage" aria-labelledby="resume2-title">
-        <div class="r2-identity-card">
-            <img
-                class="r2-portrait"
-                src="{{ url_for('static', filename=resume.profile.image_path) }}"
-                alt="{{ resume.profile.image_alt }}"
-            >
-            <div class="r2-identity-copy">
-                <p class="r2-eyebrow">Resume 2 · Evidence-backed profile</p>
-                <h1 id="resume2-title">{{ resume.profile.name }}</h1>
-                <p class="r2-role">{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' & ') }}</p>
-                <p class="r2-summary">{{ resume.profile.summary }}</p>
-                <address class="r2-contact-list">
-                    <span><svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>{{ resume.profile.location }}</span>
-                    <a href="{{ resume.profile.email_url }}"><svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>{{ resume.profile.email }}</a>
-                    <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>LinkedIn</a>
-                </address>
-                <div class="r2-identity-actions">
-                    <a class="r2-action r2-action--primary" href="{{ resume.profile.contact_url }}">Contact</a>
-                    <a class="r2-action" href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-                    <a class="r2-action" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">Résumé PDF</a>
-                    <button class="r2-action" type="button" data-share-resume>Share</button>
-                    <span class="r2-share-status" data-share-status aria-live="polite"></span>
-                </div>
+    <div class="r2-page-grid">
+        <nav class="r2-section-ribbon" aria-label="Résumé sections" data-r2-ribbon>
+            <div class="r2-section-ribbon__links">
+                <a class="is-current" href="#summary" data-resume-nav aria-current="location">
+                    <svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg>
+                    <span>Summary</span>
+                </a>
+                <a href="#impact" data-resume-nav>
+                    <svg aria-hidden="true"><use href="#lr-icon-chart"></use></svg>
+                    <span>Impact</span>
+                </a>
+                <a href="#skills" data-resume-nav>
+                    <svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>
+                    <span>Skills</span>
+                </a>
+                <a href="#experience" data-resume-nav>
+                    <svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg>
+                    <span>Experience</span>
+                </a>
+                <a href="#credentials" data-resume-nav>
+                    <svg aria-hidden="true"><use href="#lr-icon-award"></use></svg>
+                    <span>Credentials</span>
+                </a>
             </div>
-        </div>
-
-        <aside class="r2-quote-card" aria-label="Career perspective">
-            <span class="r2-quote-mark" aria-hidden="true">“</span>
-            <blockquote>{{ living_resume.quote }}</blockquote>
-            <small>— {{ resume.profile.name }}</small>
-        </aside>
-
-        {# data-hero-ai-takeover: when a question is asked, the intro block below
-           steps aside and the answer fills its place inside this same card
-           (chatbot.js toggles .is-conversing); the × restores the intro. #}
-        <aside class="r2-ai-card resume-ai-panel" aria-labelledby="r2-ai-title" data-hero-ai-takeover>
-            <div class="r2-ai-intro" data-r2-ai-intro>
-                <p class="r2-ai-kicker" id="r2-ai-title"><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>Ask {{ profile_first_name }} AI</p>
-                <span class="r2-ai-sub">The fastest way to explore this résumé. Every answer is grounded in approved public evidence.</span>
-                <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
-                    {% for question in resume.suggested_ai_questions.default %}
-                    <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
-                    {% endfor %}
-                </div>
-            </div>
-            {% include "partials/portfolio_ai_search.html" %}
-        </aside>
-    </header>
-
-    <section class="lr-timeline-shell r2-timeline-shell" aria-label="Career timeline">
-        <div class="lr-timeline-region" id="ledger-timeline">
-            <div class="lr-timeline" role="tablist" aria-label="{{ resume.profile.name }} career timeline" style="--lr-timeline-count: {{ ledger_events|length }};">
-                {% for event in ledger_events %}
-                {% set is_selected = event.id == living_resume.default_event_id %}
-                <button
-                    class="lr-timeline__event is-{{ event.kind|lower }}{% if is_selected %} is-selected{% endif %}"
-                    type="button"
-                    role="tab"
-                    id="timeline-tab-{{ event.id }}"
-                    aria-controls="ledger-panel-{{ event.id }}"
-                    aria-selected="{{ 'true' if is_selected else 'false' }}"
-                    data-ledger-event="{{ event.id }}"
-                    tabindex="{{ '0' if is_selected else '-1' }}"
-                    style="--orb: {{ event.orb_color }};"
-                >
-                    <span class="lr-timeline__marker" aria-hidden="true"><svg><use href="#lr-icon-{{ event.icon }}"></use></svg></span>
-                    <strong>{{ event.short_label }}</strong>
-                    <small>{{ event.timeline_detail }}</small>
-                    <span class="lr-timeline__kind">{{ event.kind }}</span>
+            <div class="r2-section-ribbon__actions">
+                <button type="button" data-chat-open>
+                    <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                    <span>Ask {{ profile_first_name }} AI</span>
                 </button>
-                {% endfor %}
+                <a href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">
+                    <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
+                    <span>Résumé PDF</span>
+                </a>
             </div>
-        </div>
-    </section>
+        </nav>
 
-    <div class="lr-resume-layout r2-ledger-layout">
-        <aside class="lr-ledger__rail r2-ledger-rail" aria-label="Living résumé sections">
-            <p class="r2-rail-kicker">Explore the story</p>
-            <nav>
-                <a class="is-current" href="#resume-overview" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-layout"></use></svg>Living Résumé</a>
-                <a href="#resume-experience" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg>Experience</a>
-                <a href="#resume-education" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-graduation"></use></svg>Education</a>
-                <a href="#resume-skills" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>Skills &amp; Evidence</a>
-                <a href="#resume-development" data-resume-nav><svg aria-hidden="true"><use href="#lr-icon-compass"></use></svg>Development</a>
-            </nav>
-            <p>Last updated<br><strong>{{ living_resume.last_updated }}</strong></p>
-        </aside>
+        <div class="r2-content">
+            <section class="r2-summary" id="summary" data-resume-section aria-labelledby="resume-title">
+                <span class="r2-anchor-alias" id="resume-overview" aria-hidden="true"></span>
+                <figure class="r2-summary__portrait">
+                    <img
+                        src="{{ url_for('static', filename=resume.profile.image_path) }}"
+                        alt="{{ resume.profile.image_alt }}"
+                        width="2000"
+                        height="1934"
+                    >
+                </figure>
 
-        <div class="lr-resume-flow r2-resume-flow">
-            <section class="lr-ledger r2-ledger" id="ledger" aria-label="Living résumé chapters">
-                <p class="r2-visually-hidden" data-ledger-status role="status" aria-live="polite" aria-atomic="true"></p>
-                <div class="lr-ledger__detail" id="ledger-detail">
-                    <div id="resume-overview" data-resume-section>
-                        {% for event in ledger_events %}
-                        {% set is_selected = event.id == living_resume.default_event_id %}
-                        <article
-                            class="lr-ledger-panel r2-ledger-panel{% if is_selected %} is-active{% endif %}"
-                            id="ledger-panel-{{ event.id }}"
-                            role="tabpanel"
-                            aria-labelledby="timeline-tab-{{ event.id }}"
-                            data-ledger-panel="{{ event.id }}"
-                            tabindex="0"
-                            {% if not is_selected %}hidden{% endif %}
-                        >
-                            <header class="r2-panel-header">
-                                <div>
-                                    <p>Living Résumé Ledger</p>
-                                    <h2>{{ event.title }}</h2>
-                                    <span>{{ event.display_period }} · {{ event.kind }}</span>
-                                </div>
-                                <strong>{{ event.subtitle }}</strong>
-                            </header>
-
-                            <p class="r2-panel-summary">{{ event.summary }}</p>
-
-                            <section class="r2-metrics" aria-labelledby="r2-outcomes-title-{{ event.id }}">
-                                <h3 id="r2-outcomes-title-{{ event.id }}">Key outcomes</h3>
-                                {% if event.outcomes %}
-                                <div class="r2-metric-grid">
-                                    {% set outcome_icons = ['users', 'repeat', 'file', 'chart', 'wrench'] %}
-                                    {% for outcome in event.outcomes %}
-                                    <button
-                                        class="lr-outcome lr-skill-flip r2-metric-card r2-outcome-flip{% if not outcome.value %} r2-metric-card--text{% endif %}"
-                                        type="button"
-                                        data-skill-flip
-                                        aria-expanded="false"
-                                        aria-label="{{ outcome.label }}. Reveal supporting evidence."
-                                    >
-                                        <span class="lr-skill-flip__inner">
-                                            <span class="lr-skill-flip__front r2-outcome-flip__front">
-                                                <svg aria-hidden="true"><use href="#lr-icon-{{ outcome_icons[loop.index0 % 5] }}"></use></svg>
-                                                {% if outcome.value %}<strong>{{ outcome.value }}</strong>{% endif %}
-                                                <span>{{ outcome.label }}</span>
-                                                <small>View evidence</small>
-                                            </span>
-                                            <span class="lr-skill-flip__back r2-outcome-flip__back" aria-hidden="true">
-                                                <strong>Supporting evidence</strong>
-                                                <span>{{ outcome.context or outcome.text }}</span>
-                                                <small>Click to return</small>
-                                            </span>
-                                        </span>
-                                    </button>
-                                    {% endfor %}
-                                </div>
-                                {% else %}
-                                <div class="r2-education-summary"><strong>{{ event.status }}</strong><span>{{ event.summary }}</span></div>
-                                {% endif %}
-                            </section>
-
-                            {# Evidence highlights (skills) and the "View full chapter
-                               details" record were removed from the Ledger overview
-                               card (2026-07-12, Pete): they duplicated the Skills &
-                               Evidence section and the Experience chapters below. The
-                               overview now stays a tight summary — headline, summary,
-                               and Key outcomes — and the panel min-height is reduced to
-                               match so the sections beneath move up. #}
-                        </article>
-                        {% endfor %}
+                <div class="r2-summary__identity">
+                    <p class="r2-eyebrow">{{ resume.profile.opening_eyebrow }}</p>
+                    <h1 id="resume-title">{{ resume.profile.name }}</h1>
+                    <p class="r2-summary__role">{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' & ') }}</p>
+                    <p class="r2-summary__tags">{{ resume.profile.positioning.split('|')|map('trim')|join(' · ') }}</p>
+                    <p class="r2-summary__intro">{{ resume.profile.summary }}</p>
+                    <div class="r2-summary__actions">
+                        <button class="r2-button r2-button--primary" type="button" data-chat-open>
+                            <svg aria-hidden="true"><use href="#lr-icon-sparkles"></use></svg>
+                            Ask {{ profile_first_name }} AI
+                        </button>
+                        <a class="r2-button" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">
+                            <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
+                            View Résumé
+                        </a>
+                        <a class="r2-button" href="{{ portfolio_contact_url }}">
+                            <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                            Contact
+                        </a>
                     </div>
+                </div>
+
+                <aside class="r2-ai-card resume-ai-panel" aria-labelledby="r2-ai-title" data-hero-ai-takeover>
+                    <div class="r2-ai-intro" data-r2-ai-intro>
+                        <p class="r2-ai-kicker" id="r2-ai-title">
+                            <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                            Ask {{ profile_first_name }} AI
+                        </p>
+                        <span class="r2-ai-sub">Explore {{ profile_first_name }}'s experience, skills, results, and professional background. Every answer is grounded in approved public evidence.</span>
+                        <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
+                            {% for question in resume.suggested_ai_questions.default[:3] %}
+                            <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% include "partials/portfolio_ai_search.html" %}
+                </aside>
+            </section>
+
+            <section class="r2-section r2-impact" id="impact" data-resume-section data-reveal aria-labelledby="impact-title">
+                <header class="r2-section-heading">
+                    <span>Career impact</span>
+                    <h2 id="impact-title">Measurable impact. Mission ready.</h2>
+                    <p>Approved public outcomes connected to the experience that produced them.</p>
+                </header>
+                <div class="r2-impact__panel">
+                    {% for metric in resume2_impact_metrics %}
+                    <button
+                        class="r2-impact__item"
+                        type="button"
+                        data-impact-role="{{ metric.source_role_id or '' }}"
+                        aria-label="{{ metric.value }} {{ metric.label }}. View supporting experience."
+                    >
+                        <svg aria-hidden="true"><use href="#lr-icon-{{ metric.resume2_icon }}"></use></svg>
+                        <strong>{{ metric.value }}</strong>
+                        <span>{{ metric.label }}</span>
+                        <small>View proof <span aria-hidden="true">→</span></small>
+                    </button>
+                    {% endfor %}
                 </div>
             </section>
 
-            <section class="r2-section r2-experience" id="resume-experience" data-reveal data-resume-section aria-labelledby="resume-experience-title" data-r2-exp>
-                {# Skills & Evidence spans full width ABOVE the Experience
-                   title; the title then drops down close to the chapter cards
-                   below it. #}
-                <section class="r2-section r2-skills r2-skills--top" id="resume-skills" data-reveal data-resume-section aria-labelledby="resume-skills-title">
-                    <header class="r2-section-heading">
-                        <span>04 / Claims connected to proof</span>
-                        <h2 id="resume-skills-title">Skills &amp; Evidence</h2>
-                        <p>Core capabilities with verified impact.</p>
-                    </header>
-                    <div class="r2-skillmap" data-skillmap>
-                        <div class="r2-skillmap__grid" role="list" aria-label="Evidence-backed skills">
-                            {% for skill in resume2_featured_skills %}
+            <section class="r2-section r2-skills" id="skills" data-resume-section data-reveal data-r2-skills aria-labelledby="skills-title">
+                <span class="r2-anchor-alias" id="resume-skills" aria-hidden="true"></span>
+                <header class="r2-section-heading r2-section-heading--split">
+                    <div>
+                        <span>Claims connected to proof</span>
+                        <h2 id="skills-title">Skills Backed by Evidence</h2>
+                        <p>Select a capability to inspect its strongest approved proof.</p>
+                    </div>
+                    <div class="r2-evidence-badge" aria-label="Evidence-backed public profile">
+                        <svg aria-hidden="true"><use href="#lr-icon-shield"></use></svg>
+                        <span><strong>Evidence-backed</strong><small>Approved. Relevant. Real.</small></span>
+                    </div>
+                </header>
+
+                <p class="r2-visually-hidden" data-r2-skill-status role="status" aria-live="polite" aria-atomic="true"></p>
+                <div class="r2-skill-groups" data-r2-skill-overview>
+                    {% for group in resume2_skill_groups %}
+                    <section class="r2-skill-group" aria-labelledby="skill-group-{{ group.id }}">
+                        <h3 id="skill-group-{{ group.id }}">{{ group.label }}</h3>
+                        <div class="r2-skill-group__cards">
+                            {% for skill in group.skills %}
                             <button
-                                class="r2-skillchip"
+                                class="r2-skill-card"
                                 type="button"
-                                role="listitem"
-                                data-skill-chip="{{ skill.id }}"
+                                data-r2-skill-toggle="{{ skill.id }}"
                                 aria-expanded="false"
-                                aria-controls="r2-skillpop"
-                                aria-label="{{ skill.display_name }}. Reveal supporting evidence."
+                                aria-controls="r2-skill-panel-{{ skill.id }}"
                             >
-                                <span class="r2-skillchip__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon }}"></use></svg></span>
-                                <span class="r2-skillchip__label">{{ skill.display_name }}</span>
+                                <span class="r2-skill-card__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon|default('shield') }}"></use></svg></span>
+                                <span class="r2-skill-card__copy">
+                                    <strong>{{ skill.display_name }}</strong>
+                                    <small>{{ skill.resume2_evidence_items|length }} proof record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }} · {{ skill.related_role_ids|length }} role{{ '' if skill.related_role_ids|length == 1 else 's' }}</small>
+                                </span>
+                                <span class="r2-skill-card__arrow" aria-hidden="true">→</span>
                             </button>
                             {% endfor %}
                         </div>
-
-                        <div class="r2-skillpop" id="r2-skillpop" role="dialog" aria-labelledby="r2-skillpop-title" aria-live="polite" hidden>
-                            <span class="r2-skillpop__tail" aria-hidden="true"></span>
-                            <div class="r2-skillpop__content">
-                                <button class="r2-skillpop__close" type="button" data-skillpop-close aria-label="Close skill details">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                </button>
-                                <h3 class="r2-skillpop__title" id="r2-skillpop-title" data-skillpop-title></h3>
-                                <p class="r2-skillpop__summary" data-skillpop-summary></p>
-                                <ul class="r2-skillpop__list" data-skillpop-list></ul>
-                                <button class="r2-skillpop__cta" type="button" data-skillpop-cta>
-                                    View full evidence <span class="r2-skillpop__arrow" aria-hidden="true">→</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <script type="application/json" data-skillmap-data>
-                            {
-                            {% for skill in resume2_featured_skills %}
-                                "{{ skill.id }}": {
-                                    "name": {{ skill.display_name|tojson }},
-                                    "summary": {{ (skill.front_summary or '')|tojson }},
-                                    "evidence": [{% for evidence in skill.resume2_evidence_items[:3] %}{{ evidence.text|tojson }}{{ ',' if not loop.last }}{% endfor %}],
-                                    "ask": {{ ('Walk me through the approved evidence behind ' ~ resume.profile.name ~ '’s ' ~ skill.display_name ~ ' capability.')|tojson }}
-                                }{{ ',' if not loop.last }}
-                            {% endfor %}
-                            }
-                        </script>
-                    </div>
-                </section>
-
-                <div class="r2-exp-intro-card">
-                    <header class="r2-section-heading">
-                        <span>02 / The work, in full context</span>
-                        <h2 id="resume-experience-title">Experience</h2>
-                        <p>A progression of impact across organizations, missions, and technical systems. Open any chapter to read the full record — the others step aside, never away.</p>
-                    </header>
+                    </section>
+                    {% endfor %}
                 </div>
+
+                <div class="r2-skill-panels">
+                    {% for group in resume2_skill_groups %}
+                        {% for skill in group.skills %}
+                        <article class="r2-skill-panel" id="r2-skill-panel-{{ skill.id }}" data-r2-skill-panel="{{ skill.id }}" tabindex="-1" hidden>
+                            <header>
+                                <span class="r2-skill-panel__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon|default('shield') }}"></use></svg></span>
+                                <div>
+                                    <p>{{ group.label }}</p>
+                                    <h3>{{ skill.display_name }}</h3>
+                                </div>
+                                <span class="r2-skill-panel__status">{{ skill.resume2_evidence_items|length }} proof record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }}</span>
+                            </header>
+                            <p class="r2-skill-panel__summary">{{ skill.front_summary }}</p>
+                            <h4>Strongest approved proof</h4>
+                            <ul class="r2-skill-panel__evidence">
+                                {% for evidence in skill.resume2_evidence_items[:3] %}
+                                <li>
+                                    <svg aria-hidden="true"><use href="#lr-icon-shield"></use></svg>
+                                    <span>{{ evidence.text }}<small>{{ evidence.employer }} · {{ evidence.date_range }}</small></span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="r2-skill-panel__actions">
+                                <a class="r2-button r2-button--primary" href="{{ portfolio_skills_url }}#skf-panel-{{ skill.id }}">View Full Evidence</a>
+                                <button class="r2-button" type="button" data-chat-open data-ask-resume data-ask="Explain the approved public evidence behind {{ resume.profile.name }}'s {{ skill.display_name }} capability.">Ask {{ profile_first_name }} About This</button>
+                            </div>
+                            <button class="r2-panel-close" type="button" data-r2-skill-close>Close Skill Evidence</button>
+                        </article>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="r2-section r2-experience" id="experience" data-resume-section data-reveal data-r2-exp aria-labelledby="experience-title">
+                <span class="r2-anchor-alias" id="resume-experience" aria-hidden="true"></span>
+                <span class="r2-anchor-alias" id="ledger" aria-hidden="true"></span>
+                <span class="r2-anchor-alias" id="ledger-timeline" aria-hidden="true"></span>
+                <header class="r2-section-heading">
+                    <span>The work, in context</span>
+                    <h2 id="experience-title">Experience</h2>
+                    <p>Scan each role, then open the full approved chapter when you want the detail.</p>
+                </header>
                 <p class="r2-visually-hidden" data-r2-exp-status role="status" aria-live="polite" aria-atomic="true"></p>
                 <div class="r2-exp-stage" data-r2-exp-stage>
                     {% for role in resume2_experience %}
@@ -282,152 +233,191 @@
                         id="r2-exp-card-{{ role.id }}"
                         data-r2-exp-card="{{ role.id }}"
                         data-r2-exp-name="{{ role.employer }}"
-                        style="--orb: {{ role.orb_color }};"
+                        style="--role-accent: {{ role.orb_color }};"
                     >
-                        <div class="r2-exp-card__head">
-                            <small>{{ role.dates }}</small>
-                            <h3>{{ role.employer }}</h3>
-                            <p class="r2-card-role">{{ role.title }}</p>
+                        <div class="r2-exp-card__visual">
+                            <span class="r2-exp-card__marker">{{ role.chapter_marker }}</span>
+                            <span class="r2-exp-card__number" aria-hidden="true">{{ role.chapter_number }}</span>
+                            <span class="r2-exp-card__selected">Selected chapter</span>
                         </div>
-                        <div class="r2-exp-card__preview">
-                            <p>{{ role.summary }}</p>
-                            <ul>
-                                {% for item in role.resume2_accomplishments[:4] %}
-                                <li>{{ item.text }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        <div class="r2-exp-card__full" id="r2-exp-full-{{ role.id }}" hidden>
-                            <p class="r2-exp-summary">{{ role.summary }}</p>
-                            {% if role.current_role_public_note %}
-                            <p class="r2-exp-note">{{ role.current_role_public_note }}</p>
-                            {% endif %}
-                            <h4>The full record</h4>
-                            <ul class="r2-exp-bullets">
-                                {% for item in role.resume2_accomplishments %}
-                                <li>{{ item.text }}</li>
-                                {% endfor %}
-                            </ul>
-                            <button class="r2-exp-ask" type="button" data-chat-open data-ask-resume data-ask="Summarize {{ resume.profile.name }}'s approved evidence from {{ role.employer }}.">
-                                <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
-                                Ask {{ profile_first_name }} AI about {{ role.employer }}
-                            </button>
-                        </div>
-                        <button
-                            class="r2-exp-toggle"
-                            type="button"
-                            data-r2-exp-toggle
-                            aria-expanded="false"
-                            aria-controls="r2-exp-full-{{ role.id }}"
-                        >
-                            <span data-r2-exp-label>View chapter</span> <span class="r2-exp-toggle__arrow" aria-hidden="true">→</span>
-                        </button>
-                    </article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <div class="r2-vertical-composition">
-            <section class="r2-section r2-education" id="resume-education" data-reveal data-resume-section aria-labelledby="resume-education-title">
-                <header class="r2-section-heading">
-                    <span>03 / The foundation</span>
-                    <h2 id="resume-education-title">Education</h2>
-                    <p>Learning milestones that changed the trajectory.</p>
-                </header>
-                <div class="r2-education-grid">
-                    {% set edu_accents = ['#4f5bd5', '#4ea3ff', '#2ec8d3', '#d7a33e'] %}
-                    {% for item in resume_degrees %}
-                    <article class="r2-education-card{% if loop.first %} is-primary{% endif %}" style="--edu-accent: {{ edu_accents[loop.index0 % 4] }};">
-                        <div class="r2-edu-statusline">
-                            <small class="r2-edu-status">{{ item.status }}</small>
-                            {% if item.date %}<span class="r2-edu-date">{{ item.date }}</span>{% endif %}
-                        </div>
-                        <h3>{{ item.credential }}</h3>
-                        <strong>{{ item.institution }}</strong>
-                        <p>{{ item.detail }}</p>
-                    </article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="r2-section r2-development" id="resume-development" data-reveal data-resume-section aria-labelledby="resume-development-title">
-                <header class="r2-section-heading">
-                    <span>05 / Growth is the next mission</span>
-                    <h2 id="resume-development-title">Development</h2>
-                    <p>Forward-looking credentials and learning already present in the approved profile.</p>
-                </header>
-                <div class="r2-development-row">
-                    {% for item in resume_development %}
-                    <article>
-                        <small>{{ item.status }}</small>
-                        <h3>{{ item.credential }}</h3>
-                        <strong>{{ item.institution }}</strong>
-                        <p>{{ item.detail }}</p>
-                    </article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="r2-section r2-certifications" id="resume-certifications" data-reveal data-resume-section aria-labelledby="resume-certifications-title">
-                <header class="r2-section-heading">
-                    <span>06 / Credentials earned</span>
-                    <h2 id="resume-certifications-title">Certifications</h2>
-                    <p>Earned professional credentials.</p>
-                </header>
-                <div class="r2-cert-grid">
-                    {% for item in resume_certifications %}
-                    <article class="r2-cert-card">
-                        <span class="r2-cert-badge" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
-                        </span>
-                        <div class="r2-cert-body">
-                            <small class="r2-cert-status">{{ item.status }}</small>
-                            <h3>{{ item.credential }}</h3>
-                            <strong>{{ item.institution }}</strong>
-                            <p>{{ item.detail }}</p>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <section class="r2-section r2-achievements" id="resume-achievements" data-reveal data-resume-section aria-labelledby="resume-achievements-title">
-                <header class="r2-section-heading">
-                    <span>07 / Recognition</span>
-                    <h2 id="resume-achievements-title">Achievements</h2>
-                    <p>Awards and recognition earned along the way.</p>
-                </header>
-                <ul class="r2-achieve-list">
-                    {% for item in resume_achievements %}
-                    <li class="r2-achieve-item{% if item.featured %} is-featured{% endif %}">
-                        <span class="r2-achieve-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.8 7 21l5-2.8 5 2.8-1.5-8.2"/></svg>
-                        </span>
-                        <div class="r2-achieve-body">
-                            <div class="r2-achieve-head">
-                                <h3>{{ item.title }}</h3>
-                                {% if item.year %}<span class="r2-achieve-year">{{ item.year }}</span>{% endif %}
+                        <div class="r2-exp-card__body">
+                            <header class="r2-exp-card__head">
+                                <small>{{ role.dates }}</small>
+                                <h3 id="r2-exp-title-{{ role.id }}">{{ role.employer }}</h3>
+                                <p>{{ role.title }}</p>
+                            </header>
+                            <div class="r2-exp-card__preview">
+                                <p>{{ role.summary }}</p>
+                                {% if role.resume2_selected_impacts %}
+                                <h4>Selected impact</h4>
+                                <div class="r2-exp-card__impacts">
+                                    {% for impact in role.resume2_selected_impacts %}
+                                    <span><strong>{{ impact.value }}</strong><small>{{ impact.label }}</small></span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <ul>
+                                    {% for item in role.resume2_accomplishments[:2] %}
+                                    <li>{{ item.text }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
-                            {% if item.org %}<strong>{{ item.org }}</strong>{% endif %}
-                            <p>{{ item.detail }}</p>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </section>
-            </div>
-        </div>
-    </div>
 
+                            <div
+                                class="r2-exp-card__full"
+                                id="r2-exp-full-{{ role.id }}"
+                                role="region"
+                                aria-labelledby="r2-exp-title-{{ role.id }}"
+                                tabindex="-1"
+                                hidden
+                            >
+                                <p class="r2-exp-summary">{{ role.summary }}</p>
+                                {% if role.current_role_public_note %}
+                                <p class="r2-exp-note">{{ role.current_role_public_note }}</p>
+                                {% endif %}
+                                {% if role.resume2_expanded_impacts %}
+                                <section class="r2-exp-key-impact" aria-label="Key impact">
+                                    {% for metric in role.resume2_expanded_impacts %}
+                                    <span><strong>{{ metric.value }}</strong><small>{{ metric.label }}</small></span>
+                                    {% endfor %}
+                                </section>
+                                {% endif %}
+                                <h4>The full record</h4>
+                                <ul class="r2-exp-bullets">
+                                    {% for item in role.resume2_full_record_bullets %}
+                                    <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <button
+                                    class="r2-exp-ask"
+                                    type="button"
+                                    data-chat-open
+                                    data-ask-resume
+                                    data-ask="Summarize {{ resume.profile.name }}'s approved public evidence from {{ role.employer }}, {{ role.title }}, {{ role.dates }}. Focus on {{ role.resume2_ai_context }}."
+                                >
+                                    <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                                    Ask {{ profile_first_name }} AI about {{ role.employer }}
+                                </button>
+                            </div>
+                        </div>
+                        <footer class="r2-exp-card__footer">
+                            <span>{{ role.resume2_accomplishments|length }} supporting records</span>
+                            <button
+                                class="r2-exp-toggle"
+                                type="button"
+                                data-r2-exp-toggle
+                                aria-label="View full {{ role.employer }} chapter"
+                                aria-expanded="false"
+                                aria-controls="r2-exp-full-{{ role.id }}"
+                            >
+                                <span data-r2-exp-label>View Full Chapter</span>
+                                <span class="r2-exp-toggle__arrow" aria-hidden="true">→</span>
+                            </button>
+                        </footer>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="r2-section r2-credentials" id="credentials" data-resume-section data-reveal data-r2-credentials aria-labelledby="credentials-title">
+                <span class="r2-anchor-alias" id="resume-education" aria-hidden="true"></span>
+                <span class="r2-anchor-alias" id="resume-development" aria-hidden="true"></span>
+                <span class="r2-anchor-alias" id="resume-certifications" aria-hidden="true"></span>
+                <span class="r2-anchor-alias" id="resume-achievements" aria-hidden="true"></span>
+                <header class="r2-section-heading r2-section-heading--credentials">
+                    <div>
+                        <span>Credentials earned and underway</span>
+                        <h2 id="credentials-title">Credentials</h2>
+                        <p>Education, certification, development, and recognition organized into clear categories.</p>
+                    </div>
+                    <a class="r2-button" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">View Résumé PDF <span aria-hidden="true">→</span></a>
+                </header>
+                <p class="r2-visually-hidden" data-r2-credential-status role="status" aria-live="polite" aria-atomic="true"></p>
+
+                <div class="r2-credential-overview" data-r2-credential-overview>
+                    {% for category in resume2_credential_categories %}
+                    <article class="r2-credential-card">
+                        <span class="r2-credential-card__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ category.icon }}"></use></svg></span>
+                        <h3>{{ category.title }}</h3>
+                        <p>{{ category.summary }}</p>
+                        <ul>
+                            {% for item in category['items'][:4] %}
+                            <li><strong>{{ item.credential }}</strong><small>{{ item.institution }}{% if item.date %} · {{ item.date }}{% endif %}</small><span>{{ item.status }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        <footer>
+                            <span>{{ category.count_label }}</span>
+                            <button
+                                type="button"
+                                data-r2-credential-toggle="{{ category.id }}"
+                                aria-label="Open {{ category.title }} category"
+                                aria-expanded="false"
+                                aria-controls="r2-credential-panel-{{ category.id }}"
+                            >Open category <span aria-hidden="true">→</span></button>
+                        </footer>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <div class="r2-credential-panels">
+                    {% for category in resume2_credential_categories %}
+                    <article class="r2-credential-panel" id="r2-credential-panel-{{ category.id }}" data-r2-credential-panel="{{ category.id }}" tabindex="-1" hidden>
+                        <header>
+                            <div>
+                                <p>Credential category</p>
+                                <h3>{{ category.title }}</h3>
+                                <span>{{ category.summary }}</span>
+                            </div>
+                            <button type="button" data-r2-credential-close aria-label="Close {{ category.title }}">×</button>
+                        </header>
+                        <div class="r2-credential-panel__records{% if category.id == 'education' %} is-timeline{% endif %}">
+                            {% for item in category['items'] %}
+                            <section class="r2-credential-record">
+                                <div class="r2-credential-record__heading">
+                                    <p>{% if item.date %}{{ item.date }} · {% endif %}{{ item.status }}</p>
+                                    <h4>{{ item.credential }}</h4>
+                                    <strong>{{ item.institution }}</strong>
+                                </div>
+                                <p>{{ item.detail }}</p>
+                                {% if item.related_skills %}
+                                <div class="r2-credential-record__skills" aria-label="Connected capabilities">
+                                    {% for skill in item.related_skills %}<span>{{ skill.display_name }}</span>{% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if item.supporting_metrics %}
+                                <ul class="r2-credential-record__metrics" aria-label="Supporting public evidence">
+                                    {% for metric in item.supporting_metrics %}
+                                    <li><strong>{{ metric.value }}</strong> {{ metric.label }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </section>
+                            {% endfor %}
+                        </div>
+                        <div class="r2-credential-panel__actions">
+                            <button class="r2-button r2-button--primary" type="button" data-chat-open data-ask-resume data-ask="Explain {{ resume.profile.name }}'s approved public {{ category.title|lower }} records.">Ask {{ profile_first_name }} AI</button>
+                        </div>
+                        <button class="r2-panel-close" type="button" data-r2-credential-close>Close {{ category.title }}</button>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
     </div>
 
     <div class="lr-chapter-transition" aria-hidden="true"><span></span></div>
     <!-- shared-career-constellation:start -->
     {% include "partials/career_constellation.html" %}
     <!-- shared-career-constellation:end -->
+
+    <section class="r2-story-transition" aria-labelledby="story-transition-title">
+        <p>Beyond the résumé</p>
+        <h2 id="story-transition-title">See the person behind the work.</h2>
+        <a class="r2-button r2-button--primary" href="{{ portfolio_story_url }}">Continue to My Story <span aria-hidden="true">→</span></a>
+    </section>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=constellation-fullstage-18"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume-consolidated-4"></script>
 {% endblock %}

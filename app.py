@@ -87,9 +87,9 @@ def prevent_stale_html(response):
 # SHARED NAVIGATION LINKS
 # @app.context_processor means Flask runs this function before
 # rendering ANY template, and every key in the dict it returns
-# (like portfolio_work_url) becomes a variable every template can
+# (like portfolio_resume_url) becomes a variable every template can
 # use directly - that's how base.html can write things like
-# {{ portfolio_work_url }} without each route passing it in by hand.
+# {{ portfolio_resume_url }} without each route passing it in by hand.
 #
 # This exists because the same portfolio lives at more than one
 # address: locally at /petec/..., and in production Pete's site
@@ -109,8 +109,8 @@ def shared_navigation_urls():
     if clean_host == 'pete.peerslate.com':
         portfolio_base_url = 'https://peerslate.com/petec'
 
-    # Builds a full portfolio link by joining the base URL above with a
-    # page name, e.g. portfolio_url('work') -> "/petec/work".
+    # Builds a full profile link by joining the base URL with a page name,
+    # e.g. portfolio_url('resume') -> "/petec/resume".
     def portfolio_url(path=''):
         if not path:
             return portfolio_base_url
@@ -132,16 +132,35 @@ def shared_navigation_urls():
         # the Experience page became the homepage; keep this pointing at
         # the page that actually hosts the #how-it-works anchor.
         'peerslate_home_url': url_for('peerslate_home'),
-        'portfolio_home_url': portfolio_url(),
-        'portfolio_work_url': portfolio_url('work'),
+        'portfolio_home_url': portfolio_url('resume'),
+        'portfolio_experience_url': f'{portfolio_url("resume")}#experience',
         'portfolio_skills_url': portfolio_url('skills'),
         'portfolio_story_url': portfolio_url('my-story'),
-        # Resume 2 is now the one canonical public resume experience.
-        'portfolio_resume_url': portfolio_url('resume2'),
+        'portfolio_resume_url': portfolio_url('resume'),
         'portfolio_contact_url': portfolio_url('contact'),
         'portfolio_hobbies_url': portfolio_url('hobbies'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
     }
+
+
+RETIRED_PORTFOLIO_PATHS = {
+    '/petec': '/petec/resume',
+    '/portfolio': '/petec/resume',
+    '/pete': '/petec/resume',
+    '/overview': '/petec/resume',
+    '/petec/overview': '/petec/resume',
+    '/resume': '/petec/resume',
+    '/resume2': '/petec/resume',
+    '/petec/resume2': '/petec/resume',
+    '/resume-ledger': '/petec/resume#experience',
+    '/petec/resume-ledger': '/petec/resume#experience',
+    '/work': '/petec/resume#experience',
+    '/petec/work': '/petec/resume#experience',
+    '/projects': '/petec/resume#experience',
+    '/petec/projects': '/petec/resume#experience',
+    '/atrium': '/',
+    '/petec/atrium': '/',
+}
 
 
 # -------------------------------------------------------
@@ -161,11 +180,29 @@ def keep_portfolio_on_canonical_path():
     # Case 1: someone visits the old pete.peerslate.com subdomain.
     # Permanently point them at the peerslate.com/petec/... version instead.
     if clean_host == 'pete.peerslate.com':
-        target_path = request.path
-        if target_path == '/':
-            target_path = '/petec'
-        elif not target_path.startswith('/petec'):
-            target_path = f'/petec{target_path}'
+        project_match = re.fullmatch(r'/(?:petec/)?work/([^/]+)', request.path)
+        if project_match:
+            projects = _load_profile_projects('petec') or []
+            project = next(
+                (item for item in projects if item.get('slug') == project_match.group(1)),
+                None,
+            )
+            if (
+                project is None
+                or not project.get('details_ready')
+                or not project.get('publish_detail')
+                or not project.get('case_study_sections')
+            ):
+                abort(404)
+            target_path = '/petec/resume#experience'
+        else:
+            target_path = RETIRED_PORTFOLIO_PATHS.get(request.path)
+        if target_path is None and request.path == '/':
+            target_path = '/petec/resume'
+        elif target_path is None:
+            target_path = request.path
+            if not target_path.startswith('/petec'):
+                target_path = f'/petec{target_path}'
 
         return redirect(f'https://peerslate.com{target_path}', code=302)
 
@@ -178,13 +215,12 @@ def keep_portfolio_on_canonical_path():
     # Case 3: old URLs from before the site was renamed/reorganized.
     # Anyone who still has one of these bookmarked gets sent to today's
     # equivalent page instead of hitting a dead link.
-    old_portfolio_paths = {'/pete', '/portfolio'}
+    if request.path in RETIRED_PORTFOLIO_PATHS:
+        return redirect(RETIRED_PORTFOLIO_PATHS[request.path], code=302)
+
     # /skills is a real page again (the Skills profile tab), so it now
     # canonicalizes to /petec/skills like every other portfolio section.
-    section_paths = {'/about', '/contact', '/hobbies', '/interview-me', '/my-story', '/resume', '/skills', '/slate-board', '/work'}
-
-    if request.path in old_portfolio_paths:
-        return redirect('/petec', code=302)
+    section_paths = {'/about', '/contact', '/hobbies', '/interview-me', '/my-story', '/skills', '/slate-board'}
 
     if request.path in section_paths:
         return redirect(f'/petec{request.path}', code=302)
@@ -364,84 +400,13 @@ def is_platform_hostname(hostname):
 def home():
     return render_template('experience.html')
 
-# Three URLs, one page: /petec is the current address, while /portfolio
-# and /pete are kept working as older addresses so no existing link breaks.
-# OVERVIEW OVERHAUL (2026-07-13): the profile Overview is now the five-scene
-# editorial page (overview.html) built from Pete's approved mockups. The
-# previous overview template (index.html) stays on disk for easy rollback.
-def build_overview_view_model():
-    """Assemble the five-scene Overview from the same approved fixtures the
-    résumé and story pages read. Every fact shown is real: fictional mockup
-    data (invented employers, scores, endorsements) is replaced here, and
-    the retired MICAP example is never included."""
-    data_dir = os.path.join(os.path.dirname(__file__), 'static', 'data')
-    with open(os.path.join(data_dir, 'resume_data.json'), 'r', encoding='utf-8') as f:
-        resume = json.load(f)
-
-    living = resume.get('living_resume', {})
-    metrics_by_id = {m['id']: m for m in resume.get('metrics', [])}
-    roles_by_id = {r['id']: r for r in resume.get('career_roles', [])}
-
-    def metric(mid):
-        m = metrics_by_id.get(mid, {})
-        return {'value': m.get('value', ''), 'label': m.get('label', '')}
-
-    chapters = []
-    for order, (rid, card_title, image) in enumerate((
-        ('northrop', 'Complex Systems, Engineered', 'images/cinematic/work-card-path.jpg'),
-        ('l3harris', 'Reliability & Digital Engineering', 'images/cinematic/together-summit-m.jpg'),
-        ('dod', 'Readiness & Technical Leadership', 'images/cinematic/future-path-m.jpg'),
-    ), start=1):
-        role = roles_by_id[rid]
-        chapters.append({
-            'number': f'{order:02d}',
-            'title': role['title'].split(' - ')[0],
-            'org': role['employer'],
-            'dates': role['dates'],
-            'card_title': card_title,
-            'summary': role['headline_contribution'],
-            'evidence_count': len(role.get('accomplishments', [])),
-            'image': image,
-        })
-
-    return {
-        'name': resume.get('profile', {}).get('name', 'Pete Carter'),
-        'chapters': chapters,
-        'ledger': [
-            {'value': len(resume.get('metrics', [])) - 1, 'label': 'Measured outcomes'},  # MICAP excluded
-            {'value': len(resume.get('skills', [])), 'label': 'Evidenced skills'},
-            {'value': len(resume.get('case_studies', [])), 'label': 'Case studies'},
-            {'value': len(resume.get('education', [])), 'label': 'Credentials'},
-        ],
-        'last_updated': living.get('last_updated', ''),
-        'impact': {
-            'headline': metric('contract'),
-            'strip': [metric('engineers-led'), metric('platforms'), metric('gpa')],
-        },
-        'ribbon_strip': [metric('contract'), metric('repair-test'), metric('modernization')],
-        'rail': {
-            'outcome': metric('modernization'),
-            'quote': living.get('quote', ''),
-        },
-        'dashboard_stats': [
-            {'value': '54', 'label': 'Avionics systems tracked', 'note': 'sustainment tracker'},
-            {'value': '9', 'label': 'Redesign efforts led', 'note': '$19.2M combined value'},
-            {'value': '35%', 'label': 'Faster issue-to-action', 'note': 'year over year'},
-            {'value': '70%', 'label': 'Repair & test improvement', 'note': 'verified outcome'},
-        ],
-        'pinned_projects': [
-            {'title': 'Interactive Résumé & Career Assistant', 'note': 'Flask + Claude · live on this site', 'pct': 92},
-            {'title': 'ARN-67 Glideslope Modernization', 'note': '$4.6M · government lead', 'pct': 88},
-            {'title': 'Sustainment Tracker · 54 systems', 'note': '35% faster issue-to-action', 'pct': 76},
-        ],
-    }
-
-
 @app.route('/petec')
 @app.route('/portfolio')
 @app.route('/pete')
+@app.route('/overview')
+@app.route('/petec/overview')
 def portfolio_home():
-    return render_template('overview.html', overview=build_overview_view_model())
+    return redirect('/petec/resume', code=302)
 
 @app.route('/peerslate')
 def peerslate_home():
@@ -456,109 +421,10 @@ def experience():
     return render_template('experience.html')
 
 
-# ATRIUM (2026-07-12): "The Living Triptych" — an experimental cinematic
-# Overview. Three overlapping glass slabs (My Story / Projects / Living
-# Résumé) presented as one sculptural installation. It lives on its own
-# link + route so Pete can evaluate this big swing live without touching
-# the production homepage; if it lands it can become the front door.
-# Design brief: docs/design/living-triptych/LIVING_TRIPTYCH_VISION.md
-def build_atrium_view_model():
-    """Assemble the three-slab Atrium view model from the SAME real fixtures
-    the résumé and story pages read, so nothing is hardcoded and the slab
-    component stays tenant-safe (AGENTS.md: never bake one profile's employers
-    or metrics into a reusable component). Pete is the demo profile here; the
-    same shape renders any persona in living_resume_fixtures.json."""
-    data_dir = os.path.join(os.path.dirname(__file__), 'static', 'data')
-    with open(os.path.join(data_dir, 'resume_data.json'), 'r', encoding='utf-8') as f:
-        resume = json.load(f)
-    with open(os.path.join(data_dir, 'story_data.json'), 'r', encoding='utf-8') as f:
-        story = json.load(f)
-
-    profile = resume.get('profile', {})
-    living = resume.get('living_resume', {})
-
-    # Résumé chapters — real roles, newest first, no invented data.
-    role_order = ['northrop', 'l3harris', 'dod']
-    roles_by_id = {r['id']: r for r in resume.get('career_roles', [])}
-    chapters = []
-    for rid in role_order:
-        r = roles_by_id.get(rid)
-        if not r:
-            continue
-        chapters.append({
-            'period': r.get('dates', ''),
-            'org': r.get('employer', ''),
-            'role': r.get('title', ''),
-        })
-
-    # Metrics — real values by id. MICAP is excluded on purpose (AGENTS.md
-    # forbids the MICAP example in redesigned résumé copy).
-    metric_ids = ['contract', 'platforms', 'repair-test', 'modernization']
-    metrics_by_id = {m['id']: m for m in resume.get('metrics', [])}
-    metrics = [
-        {'value': metrics_by_id[mid]['value'], 'label': metrics_by_id[mid]['label']}
-        for mid in metric_ids if mid in metrics_by_id
-    ]
-
-    # Story value chips — from the story page's own closing values.
-    values = [v.get('label', '') for v in story.get('closing_values', [])]
-
-    # A small, curated set of Pete's real photographs for the amber slab.
-    story_photos = [
-        {'src': 'images/story/pete-misty-hike-m.jpg', 'alt': 'Pete on a misty mountain hike'},
-        {'src': 'images/story/pete-danielle-bali-gates-m.jpg', 'alt': 'Pete and Danielle at the Bali gates'},
-        {'src': 'images/story/pete-hawaii-overlook-m.jpg', 'alt': 'Pete at a Hawaii overlook'},
-        {'src': 'images/story/pete-race-10k-m.jpg', 'alt': 'Pete finishing a 10K race'},
-    ]
-
-    name = profile.get('name', 'This Professional')
-    return {
-        'identity': {
-            'name': name,
-            'roles': ['Person', 'Builder', 'Engineer'],
-            'tagline': 'Three dimensions of one career.',
-        },
-        'dimensions': [
-            {
-                'key': 'story', 'eyebrow': 'Person',
-                'title': 'My Story', 'tagline': 'The life that shaped the work.',
-                'blurb': 'Who I am. Where I come from. The experiences that shaped me.',
-                'href': '/petec/my-story', 'value_chips': values, 'photos': story_photos,
-            },
-            {
-                'key': 'projects', 'eyebrow': 'Builder',
-                'title': 'Projects', 'tagline': 'Ideas engineered into working systems.',
-                'blurb': 'What I build. How I think. Impact through systems.',
-                'href': '/petec/work',
-                'pillars': ['Architecture', 'Data layer', 'Product flow', 'Impact loop'],
-                'cards': [
-                    {'title': 'Modular design', 'body': 'Decoupled services. Built to scale.'},
-                    {'title': 'Data intelligence', 'body': 'Turning data into decisions and impact.'},
-                    {'title': 'Measurable impact', 'body': 'Outcomes that matter. Systems that last.'},
-                ],
-            },
-            {
-                'key': 'resume', 'eyebrow': 'Engineer',
-                'title': 'Living Résumé', 'tagline': 'The record, connected to the evidence.',
-                'blurb': 'An evidence-backed career. Always current. Always you.',
-                'href': '/petec/resume2',
-                'kicker': 'Evidence. Impact. Growth.', 'sub': 'A career in chapters.',
-                'chapters': chapters, 'metrics': metrics,
-                'quote': living.get('quote', ''),
-            },
-        ],
-        'ask': {
-            'placeholder': 'Ask the Slate',
-            'helper': "Ask anything about {}'s journey, projects, or impact.".format(
-                story.get('owner_first_name') or name.split(' ')[0]
-            ),
-        },
-    }
-
-
 @app.route('/atrium')
+@app.route('/petec/atrium')
 def atrium():
-    return render_template('atrium.html', atrium=build_atrium_view_model())
+    return redirect(url_for('home'), code=302)
 
 
 @app.route('/_internal/design-system')
@@ -719,28 +585,22 @@ def _normalize_board_project(project):
     return project
 
 
-def _render_project_board(profile_slug):
-    board_data = _load_project_board(profile_slug)
-    if board_data is None:
-        abort(404)
-    return render_template(
-        'work.html',
-        board=board_data.get('board', {}),
-        projects=board_data.get('projects', []),
-    )
 
 
 @app.route('/work')
 @app.route('/petec/work')
+@app.route('/projects')
+@app.route('/petec/projects')
 def work():
-    return _render_project_board('petec')
+    return redirect('/petec/resume#experience', code=302)
 
 
 @app.route('/<profile_slug>/work')
 def profile_work(profile_slug):
     """Serve any registered profile's board (multi-tenant). Unknown profiles
     404 rather than falling back to another tenant's data."""
-    return _render_project_board(profile_slug)
+    _load_resume_profile(profile_slug)
+    return redirect(f'/{profile_slug}/resume#experience', code=302)
 
 
 @app.route('/petec/work/<slug>')
@@ -758,7 +618,7 @@ def project_case_study(slug):
         or not project.get('case_study_sections')
     ):
         abort(404)
-    return render_template('project_case_study.html', project=project, projects=projects)
+    return redirect('/petec/resume#experience', code=302)
 
 @app.route('/slate-board')
 @app.route('/petec/slate-board')
@@ -1222,6 +1082,11 @@ def _render_living_resume(
 
     ledger_events = [event for event in events if event.get('show_in_ledger')]
     constellation_events = [event for event in events if event.get('show_in_constellation')]
+    role_event_by_id = {
+        event['source_id']: event
+        for event in events
+        if event.get('source') == 'role'
+    }
 
     # Give each timeline node a distinct jewel color (and remember the
     # role colors/icons so the experience cards can echo them). The
@@ -1241,6 +1106,17 @@ def _render_living_resume(
         for metric_id in living_resume['career_highlight_metric_ids']
         if metric_id in metric_by_id
     ]
+    resume2_impact_metrics = []
+    resume2_impact_icons = living_resume.get('resume2_impact_metric_icons', {})
+    for metric_id in living_resume.get('resume2_impact_metric_ids', []):
+        metric = metric_by_id.get(metric_id)
+        if not metric:
+            continue
+        impact_metric = dict(metric)
+        related_role_ids = metric.get('related_role_ids', [])
+        impact_metric['source_role_id'] = related_role_ids[0] if related_role_ids else None
+        impact_metric['resume2_icon'] = resume2_impact_icons.get(metric_id, 'chart')
+        resume2_impact_metrics.append(impact_metric)
     career_highlight_skills = [
         skill_by_id[skill_id]
         for skill_id in living_resume['career_highlight_skill_ids']
@@ -1330,19 +1206,120 @@ def _render_living_resume(
     # a short preview slice, and the expanded chapter view shows all of
     # them (DoD has 13, L3Harris 9, Northrop 5 after filtering).
     resume2_experience = []
-    for role in resume_experience:
+    for chapter_index, role in enumerate(resume_experience, start=1):
         resume2_role = dict(role)
         resume2_role['resume2_accomplishments'] = [
             item
             for item in role['accomplishments']
             if 'micap' not in item['text'].lower()
         ]
+        role_event = role_event_by_id.get(role['id'], {})
+        resume2_role['chapter_number'] = f'{chapter_index:02d}'
+        resume2_role['chapter_marker'] = role_event.get('marker', role['employer'][:2].upper())
+        resume2_role['resume2_featured_metrics'] = role_event.get('metrics', [])
+
+        selected_impacts = []
+        accomplishments_by_id = {
+            item['id']: item
+            for item in resume2_role['resume2_accomplishments']
+        }
+        for preview_ref in role.get('resume2_preview_refs', []):
+            source_type = preview_ref.get('source_type')
+            source_id = preview_ref.get('source_id')
+            source = None
+            if source_type == 'metric':
+                source = metric_by_id.get(source_id)
+            elif source_type == 'skill':
+                source = skill_by_id.get(source_id)
+            elif source_type == 'accomplishment':
+                source = accomplishments_by_id.get(source_id)
+            if not source:
+                continue
+
+            default_value = (
+                source.get('value')
+                or source.get('display_name')
+                or source.get('short_label')
+            )
+            default_label = source.get('label') or 'Approved public evidence'
+            value = preview_ref.get('value', default_value)
+            label = preview_ref.get('label', default_label)
+            if not value or not label:
+                continue
+            selected_impacts.append({
+                'value': value,
+                'label': label,
+                'kind': source_type,
+                'source_id': source_id,
+            })
+            if len(selected_impacts) == 2:
+                break
+
+        if not selected_impacts:
+            selected_impacts = [
+                {
+                    'value': metric['value'],
+                    'label': metric['label'],
+                    'kind': 'metric',
+                    'source_id': metric['id'],
+                }
+                for metric in resume2_role['resume2_featured_metrics'][:2]
+            ]
+        if len(selected_impacts) < 2:
+            for skill_id in role.get('related_skill_ids', []):
+                skill = skill_by_id.get(skill_id)
+                if not skill:
+                    continue
+                selected_impacts.append({
+                    'value': skill['display_name'],
+                    'label': 'Evidence-backed capability',
+                    'kind': 'skill',
+                    'source_id': skill_id,
+                })
+                if len(selected_impacts) == 2:
+                    break
+        resume2_role['resume2_selected_impacts'] = selected_impacts
+        resume2_role['resume2_ai_context'] = '; '.join(
+            f"{impact['value']} {impact['label']}"
+            for impact in selected_impacts
+        )
+        expanded_impacts = [
+            {
+                'value': metric['value'],
+                'label': metric['label'],
+                'kind': 'metric',
+                'source_id': metric['id'],
+            }
+            for metric in resume2_role['resume2_featured_metrics']
+        ]
+        expanded_impact_keys = {
+            (impact['value'], impact['label'])
+            for impact in expanded_impacts
+        }
+        for impact in selected_impacts:
+            impact_key = (impact['value'], impact['label'])
+            if impact_key in expanded_impact_keys:
+                continue
+            expanded_impacts.append(impact)
+            expanded_impact_keys.add(impact_key)
+        resume2_role['resume2_expanded_impacts'] = expanded_impacts
+
+        full_record = [item['text'] for item in resume2_role['resume2_accomplishments']]
+        for responsibility in role.get('responsibilities', []):
+            if responsibility not in full_record:
+                full_record.append(responsibility)
+        resume2_role['resume2_full_record_bullets'] = full_record
         resume2_experience.append(resume2_role)
 
     resume2_skill_groups = []
+    resume2_featured_skill_ids = living_resume.get('resume2_featured_skill_ids', [])
+    resume2_skill_icons = living_resume.get('resume2_featured_skill_icons', {})
     for group_config in living_resume.get('resume2_skill_categories', []):
         group_skills = []
-        for skill in skill_by_id.values():
+        for skill_id in resume2_featured_skill_ids:
+            skill = skill_by_id.get(skill_id)
+            if not skill:
+                continue
             if skill.get('category_id') not in group_config['source_category_ids']:
                 continue
             resume2_skill = dict(skill)
@@ -1351,20 +1328,20 @@ def _render_living_resume(
                 for item in skill.get('evidence_items', [])
                 if 'micap' not in item['text'].lower()
             ]
+            resume2_skill['icon'] = resume2_skill_icons.get(skill_id, 'shield')
             if resume2_skill['resume2_evidence_items']:
                 group_skills.append(resume2_skill)
         if group_skills:
             resume2_skill_groups.append({
                 'id': group_config['id'],
                 'label': group_config['label'],
-                'skills': group_skills,
+                'skills': group_skills[:3],
             })
 
     # Resume 2 uses an explicitly ordered fixture list so the reusable card
     # component never hardcodes Pete-specific skills. Every public card must
     # retain one or more approved evidence records from the selected profile.
     resume2_featured_skills = []
-    resume2_skill_icons = living_resume.get('resume2_featured_skill_icons', {})
     for skill_id in living_resume.get('resume2_featured_skill_ids', []):
         skill = skill_by_id.get(skill_id)
         if not skill:
@@ -1381,6 +1358,88 @@ def _render_living_resume(
         if resume2_skill['resume2_evidence_items']:
             resume2_featured_skills.append(resume2_skill)
 
+    education_order = {
+        event.get('source_id'): index
+        for index, event in enumerate(living_resume.get('events', []))
+        if event.get('source') == 'education'
+    }
+
+    def _credential_item(item):
+        credential_item = dict(item)
+        credential_item['related_skills'] = [
+            skill_by_id[skill_id]
+            for skill_id in item.get('related_skill_ids', [])
+            if skill_id in skill_by_id
+        ]
+        credential_item['supporting_metrics'] = [
+            metric_by_id[metric_id]
+            for metric_id in item.get('related_metric_ids', [])
+            if metric_id in metric_by_id
+        ]
+        return credential_item
+
+    credential_records = sorted(
+        resume_data.get('education', []),
+        key=lambda item: education_order.get(item['id'], 999),
+    )
+    credential_categories = [
+        {
+            'id': 'education',
+            'title': 'Education',
+            'icon': 'graduation',
+            'summary': 'Academic foundations and advanced study that shaped the engineering path.',
+            'items': [
+                _credential_item(item)
+                for item in credential_records
+                if item.get('credential_category') == 'education'
+            ],
+        },
+        {
+            'id': 'certifications',
+            'title': 'Certifications',
+            'icon': 'award',
+            'summary': 'Professional certifications supporting disciplined execution and leadership.',
+            'items': [
+                _credential_item(item)
+                for item in credential_records
+                if item.get('credential_category') == 'certifications'
+            ],
+        },
+        {
+            'id': 'development',
+            'title': 'Professional Development',
+            'icon': 'direction',
+            'summary': 'Forward-looking learning supporting the next phase of the career.',
+            'items': [
+                _credential_item(item)
+                for item in credential_records
+                if item.get('credential_category') == 'development'
+            ],
+        },
+        {
+            'id': 'recognition',
+            'title': 'Recognition & Achievements',
+            'icon': 'sparkles',
+            'summary': 'Awards and selections recognizing leadership, engineering, and team impact.',
+            'items': [
+                {
+                    'id': item['id'],
+                    'credential': item['title'],
+                    'institution': item.get('org', ''),
+                    'status': 'Recognition',
+                    'date': item.get('year', ''),
+                    'detail': item.get('detail', ''),
+                    'related_skills': [],
+                    'supporting_metrics': [],
+                }
+                for item in resume_data.get('achievements', [])
+            ],
+        },
+    ]
+    for category in credential_categories:
+        count = len(category['items'])
+        category['count_label'] = f'{count} public record' + ('' if count == 1 else 's')
+
     profile_name = resume_data['profile']['name'].strip()
     profile_first_name = profile_name.split()[0] if profile_name else 'Profile'
 
@@ -1391,6 +1450,7 @@ def _render_living_resume(
         ledger_events=ledger_events,
         constellation_events=constellation_events,
         career_highlight_metrics=career_highlight_metrics,
+        resume2_impact_metrics=resume2_impact_metrics,
         career_highlight_skills=career_highlight_skills,
         constellation_skills=constellation_skills,
         constellation_evidence_metrics=constellation_evidence_metrics,
@@ -1404,6 +1464,7 @@ def _render_living_resume(
         featured_resume_skills=featured_resume_skills,
         resume2_skill_groups=resume2_skill_groups,
         resume2_featured_skills=resume2_featured_skills,
+        resume2_credential_categories=credential_categories,
         skill_lookup=skill_by_id,
         profile_slug=profile_slug,
         profile_first_name=profile_first_name,
@@ -1415,24 +1476,22 @@ def _render_living_resume(
 @app.route('/resume')
 def resume():
     """Send legacy resume bookmarks to the canonical Living Resume page."""
-    return redirect(url_for('profile_resume2', profile_slug='petec'), code=302)
+    return redirect(url_for('profile_resume', profile_slug='petec'), code=302)
 
 
 @app.route('/<profile_slug>/resume')
 def profile_resume(profile_slug):
-    # Validate the tenant-safe fixture before redirecting so unknown profile
-    # slugs still return 404 instead of silently falling back to Pete.
-    _load_resume_profile(profile_slug)
-    return redirect(url_for('profile_resume2', profile_slug=profile_slug), code=302)
-
-
-@app.route('/<profile_slug>/resume2')
-def profile_resume2(profile_slug):
     return _render_living_resume(
         profile_slug,
         template_name='resume2.html',
         resume_version=2,
     )
+
+
+@app.route('/<profile_slug>/resume2')
+def profile_resume2(profile_slug):
+    _load_resume_profile(profile_slug)
+    return redirect(url_for('profile_resume', profile_slug=profile_slug), code=302)
 
 
 @app.route('/_internal/living-resume-v2')
@@ -1451,242 +1510,11 @@ def living_resume_v2():
     )
 
 
-# -------------------------------------------------------
-# RESUME 2 — EXPERIENCE LEDGER (additive, experimental)
-# A second, opt-in résumé experience reached from the "Resume 2"
-# switcher on the existing Living Résumé page. It reuses the same
-# approved public fixture (never a second hand-authored copy) and
-# renders it as a dimensional ivory/olive "experience ledger".
-# The current Living Résumé at /<slug>/resume2 is left untouched.
-# -------------------------------------------------------
-
-def _build_resume_ledger(profile_slug='petec'):
-    """Compose the Experience Ledger view-model from shared résumé data.
-
-    Deterministic selectors only. MICAP references are stripped everywhere
-    (redesigned-résumé content rule), dollar values are never summed across
-    roles (aggregation rule §6.4), and no private artifact/filename/download
-    ever reaches the template (privacy rule §9.3).
-    """
-    resume_data = _load_resume_profile(profile_slug)
-
-    def _has_micap(text):
-        return 'micap' in (text or '').lower()
-
-    metric_by_id = {m['id']: m for m in resume_data['metrics']}
-    skill_by_id = {
-        s['id']: s for s in resume_data['skills'] if s.get('public_display')
-    }
-    case_studies_by_role = {}
-    for case_study in resume_data.get('case_studies', []):
-        case_studies_by_role.setdefault(
-            case_study.get('related_role_id'), []
-        ).append(case_study)
-
-    # Icon + display period come from the shared living-résumé event list so
-    # the ledger and the existing résumé always agree on chronology.
-    role_event = {
-        event['source_id']: event
-        for event in resume_data['living_resume']['events']
-        if event['source'] == 'role'
-    }
-
-    ledger_roles = []
-    for role in resume_data['career_roles']:
-        event = role_event.get(role['id'], {})
-        period = event.get('display_period') or role.get('dates') or ''
-        is_current = 'present' in period.lower()
-
-        achievements = [
-            {
-                'id': item.get('id'),
-                'label': item.get('short_label', 'Impact outcome'),
-                'text': item['text'],
-            }
-            for item in role.get('accomplishments', [])
-            if not _has_micap(item.get('text'))
-        ]
-
-        metrics = [
-            {
-                'value': metric_by_id[mid]['value'],
-                'label': metric_by_id[mid]['label'],
-                'context': metric_by_id[mid].get('context'),
-            }
-            for mid in role.get('related_metric_ids', [])
-            if mid in metric_by_id
-            and mid != 'micap'
-            and not _has_micap(metric_by_id[mid].get('label'))
-        ]
-
-        skills = []
-        for skill_id in role.get('related_skill_ids', []):
-            skill = skill_by_id.get(skill_id)
-            if not skill:
-                continue
-            evidence_items = [
-                item for item in skill.get('evidence_items', [])
-                if not _has_micap(item.get('text'))
-            ]
-            skills.append({
-                'name': skill.get('display_name', skill_id),
-                'summary': skill.get('front_summary'),
-                'evidence_count': len(evidence_items),
-            })
-
-        programs = []
-        for case_study in case_studies_by_role.get(role['id'], []):
-            programs.append({
-                'title': case_study.get('title'),
-                'need': case_study.get('operational_need'),
-                'response': case_study.get('engineering_response'),
-                'outcome': case_study.get('verified_outcome'),
-                'evidence_count': len([
-                    mid for mid in case_study.get('related_metric_ids', [])
-                    if mid != 'micap'
-                ]),
-            })
-
-        # Evidence tab: traceable public claims only — résumé-verified
-        # statements and program case studies. No files, no download links.
-        evidence = [
-            {
-                'title': item['label'],
-                'kind': 'Résumé statement',
-                'trust': 'Supported',
-                'visibility': 'Public summary',
-                'text': item['text'],
-            }
-            for item in achievements
-        ] + [
-            {
-                'title': program['title'],
-                'kind': 'Program case study',
-                'trust': 'Supported',
-                'visibility': 'Public summary',
-                'text': program['outcome'] or program['need'],
-            }
-            for program in programs
-        ]
-
-        ledger_roles.append({
-            'id': role['id'],
-            'employer': role['employer'],
-            'title': role['title'],
-            'period': period,
-            'location': role.get('location'),
-            'summary': role.get('summary'),
-            'headline': role.get('headline_contribution'),
-            'theme': role.get('progression_theme'),
-            'focus_tags': role.get('focus_tags', []),
-            'icon': event.get('icon', 'briefcase'),
-            'is_current': is_current,
-            'responsibilities': role.get('responsibilities', []),
-            'achievements': achievements,
-            'metrics': metrics,
-            'skills': skills,
-            'programs': programs,
-            'evidence': evidence,
-        })
-
-    # Storyboard order: newest role at the top of the stack.
-    ledger_roles.reverse()
-
-    # Career span from earliest start year to the current/most-recent year.
-    start_years = []
-    end_years = []
-    for role_view in ledger_roles:
-        years = [int(token) for token in re.findall(r'\d{4}', role_view['period'])]
-        if years:
-            start_years.append(min(years))
-            end_years.append(max(years))
-    span_end = datetime.now().year if any(
-        r['is_current'] for r in ledger_roles
-    ) else (max(end_years) if end_years else datetime.now().year)
-    span_years = (span_end - min(start_years)) if start_years else 0
-
-    distinct_skills = {
-        skill_id
-        for role in resume_data['career_roles']
-        for skill_id in role.get('related_skill_ids', [])
-        if skill_id in skill_by_id
-    }
-
-    # Career outcome tiles: real, individually-sourced metrics (no summing,
-    # no self-scored proficiency percentages). GPA/MICAP excluded.
-    career_metrics = [
-        {
-            'value': metric['value'],
-            'label': metric['label'],
-            'context': metric.get('context'),
-        }
-        for metric in resume_data['metrics']
-        if metric['id'] not in {'micap', 'gpa'}
-        and not _has_micap(metric.get('label'))
-    ]
-
-    career = {
-        'roles': len(ledger_roles),
-        'programs': sum(len(r['programs']) for r in ledger_roles),
-        'skills': len(distinct_skills),
-        'evidence': sum(len(r['evidence']) for r in ledger_roles),
-        'span_years': span_years,
-        'metrics': career_metrics,
-    }
-
-    return resume_data, ledger_roles, career
-
-
-LEDGER_ROLE_TABS = [
-    ('overview', 'Overview'),
-    ('programs', 'Programs'),
-    ('impact', 'Impact'),
-    ('evidence', 'Evidence'),
-    ('skills', 'Skills'),
-]
-LEDGER_LENSES = ('timeline', 'roles', 'impact')
-
-
 @app.route('/<profile_slug>/resume-ledger')
 def profile_resume_ledger(profile_slug):
-    """Experimental dimensional Experience Ledger (Resume 2 switcher target).
-
-    Deep-link safe: ?role=<id>&tab=<name> opens a role dossier, ?view=<lens>
-    selects a career lens, all resolved server-side so refresh and shared
-    links restore the same state. Client JS only enhances the transitions.
-    """
-    resume_data, ledger_roles, career = _build_resume_ledger(profile_slug)
-    role_ids = {role['id'] for role in ledger_roles}
-
-    active_role = request.args.get('role')
-    if active_role not in role_ids:
-        active_role = None
-
-    valid_tabs = {key for key, _label in LEDGER_ROLE_TABS}
-    active_tab = request.args.get('tab')
-    if active_tab not in valid_tabs:
-        active_tab = 'overview'
-
-    active_lens = request.args.get('view')
-    if active_lens not in LEDGER_LENSES:
-        active_lens = 'timeline'
-
-    profile = resume_data['profile']
-    profile_name = (profile.get('name') or '').strip()
-    return render_template(
-        'resume_ledger.html',
-        resume=resume_data,
-        profile=profile,
-        profile_slug=profile_slug,
-        profile_first_name=profile_name.split()[0] if profile_name else 'Profile',
-        ledger_roles=ledger_roles,
-        career=career,
-        living_resume=resume_data.get('living_resume', {}),
-        role_tabs=LEDGER_ROLE_TABS,
-        active_role=active_role,
-        active_tab=active_tab,
-        active_lens=active_lens,
-    )
+    """Retain old Ledger bookmarks without keeping a second public résumé."""
+    _load_resume_profile(profile_slug)
+    return redirect(f'/{profile_slug}/resume#experience', code=302)
 
 
 # -------------------------------------------------------
@@ -1813,8 +1641,8 @@ def sitemap_xml():
     # The canonical public pages worth indexing (redirect-only and
     # API routes are deliberately left out).
     public_paths = [
-        '/', '/petec', '/experience',
-        '/petec/my-story', '/petec/work', '/petec/skills', '/petec/resume2',
+        '/', '/experience',
+        '/petec/my-story', '/petec/skills', '/petec/resume',
         '/petec/slate-board', '/petec/interview-me', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',

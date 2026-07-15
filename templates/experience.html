@@ -123,10 +123,10 @@
                 and achieve the life and career you envision.
             </p>
             <div class="cinematic-hero__actions cine-fade" style="--fade-i: 5;">
-                <a class="cine-btn cine-btn--primary" href="{{ portfolio_home_url }}">Start Your Slate</a>
+                <a class="cine-btn cine-btn--primary" href="{{ portfolio_resume_url }}">Explore Pete's R&eacute;sum&eacute;</a>
                 <a class="cine-btn cine-btn--ghost" href="#your-work">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 5.8v12.4l10.2-6.2z"/></svg>
-                    Watch Overview
+                    Explore PeerSlate
                 </a>
             </div>
         </div>
@@ -158,7 +158,7 @@
             </p>
 
             <div class="connect-card-grid" aria-label="PeerSlate experience cards">
-                <a class="connect-card reveal" style="--reveal-i: 0;" href="{{ portfolio_home_url }}#ask-pete">
+                <a class="connect-card reveal" style="--reveal-i: 0;" href="{{ portfolio_resume_url }}">
                     <img src="{{ url_for('static', filename='images/cinematic/connect-ask.jpg') }}"
                          alt="Ask Pete AI &mdash; grounded career answers about Pete's background, skills, and projects, backed by approved evidence."
                          width="880" height="1100" loading="lazy" decoding="async">
@@ -214,7 +214,7 @@
                         <li>$36M program value</li>
                         <li>16 to 0 MICAPs &middot; 70% faster repair</li>
                     </ul>
-                    <a class="story-card__foot" href="{{ portfolio_work_url }}">
+                    <a class="story-card__foot" href="{{ portfolio_resume_url }}#experience">
                         <span class="story-card__meta">Projects &middot; Outcomes &middot; Impact</span>
                         <span class="story-card__go" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -329,8 +329,8 @@
                                 <button class="cine-btn cine-btn--primary" type="button" data-chat-open>
                                     Try Ask Pete AI
                                 </button>
-                                <a class="cine-btn cine-btn--ghost" href="{{ portfolio_home_url }}#ask-pete">
-                                    View on Slate
+                                <a class="cine-btn cine-btn--ghost" href="{{ portfolio_resume_url }}">
+                                    View Pete's R&eacute;sum&eacute;
                                 </a>
                             </div>
                         </div>
@@ -701,7 +701,7 @@
             ('impact',      'Impact',      'Create impact together.')
         ]) %}
         <div class="cinematic-outro reveal">
-            <a class="cine-btn cine-btn--primary" href="{{ portfolio_home_url }}">Start Your Slate</a>
+            <a class="cine-btn cine-btn--primary" href="{{ portfolio_resume_url }}">Explore Pete's R&eacute;sum&eacute;</a>
             <p class="cinematic-outro__note">Free while PeerSlate is in preview · See a real slate first</p>
         </div>
     {% endcall %}

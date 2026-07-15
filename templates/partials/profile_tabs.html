@@ -2,28 +2,18 @@
     Pete's profile tab strip, split out of profile_shell.html so pages can
     render content between the profile band and the tabs.
 
-    2026-07-08: LinkedIn logo removed and tabs tightened (kept). The Ask Pete
-    AI field that briefly lived here moved back to the dark ask bar above the
-    tabs on the Overview (Pete). The "My Slate" tab next to Overview is now
-    "My Story" so it doesn't clash with The Slate's own "My Slate". The
-    .profile-tabs__list wrapper is what the mobile bottom nav mirrors.
+    The four public destinations remain distinct from The Slate product
+    navigation. The list wrapper is what the mobile bottom nav mirrors.
 #}
-{% set is_resume_page = request.path.endswith('/resume2') or request.path == '/_internal/living-resume-v2' %}
-{% set is_overview_page = request.path in ['/petec', '/portfolio', '/pete'] %}
+{% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 <nav class="profile-tabs{% if is_resume_page %} profile-tabs--resume{% endif %}" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
         <div class="profile-tabs__list" data-mobile-tabsource>
-            <a class="profile-tab" href="{{ portfolio_home_url }}" {% if request.path in ['/petec', '/portfolio', '/pete'] %}aria-current="page"{% endif %}>
-                Overview
-            </a>
             <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
                 My Story
             </a>
             <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
                 Evidence
-            </a>
-            <a class="profile-tab" href="{{ portfolio_work_url }}" {% if request.path in ['/work', '/petec/work'] %}aria-current="page"{% endif %}>
-                Projects
             </a>
             <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
                 Slate Board
@@ -32,17 +22,15 @@
                 Resume
             </a>
         </div>
-        {% if is_resume_page or is_overview_page %}
-        {# Résumé + Overview use the same progressive Ask AI handoff: this
-           compact inline field remains hidden while the page's larger Ask AI
-           experience is visible, then takes its place in the sticky sub-header.
-           Each page receives a unique input id so its two AI forms never clash. #}
+        {% if is_resume_page %}
+        {# This compact field takes over in the sticky sub-header after the
+           résumé's larger opening assistant scrolls away. #}
         <div
-            class="profile-tabs__ask{% if is_resume_page %} profile-tabs__ask--resume{% else %} profile-tabs__ask--overview{% endif %}"
-            {% if is_resume_page %}data-resume-subheader-ask{% else %}data-overview-subheader-ask{% endif %}
+            class="profile-tabs__ask profile-tabs__ask--resume"
+            data-resume-subheader-ask
             aria-hidden="true"
         >
-            {% with ai_owner_name = profile_first_name | default('Pete'), ai_input_id = 'subheader-ai-input' if is_resume_page else 'overview-subheader-ai-input' %}
+            {% with ai_owner_name = profile_first_name | default('Pete'), ai_input_id = 'subheader-ai-input' %}
                 {% include "partials/portfolio_ai_search.html" %}
             {% endwith %}
         </div>

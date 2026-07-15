@@ -24,12 +24,15 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_public_resume_routes_render_living_resume_without_preview_labels(self):
-        response = self.client.get('/petec/resume2', base_url='http://localhost')
-        legacy_response = self.client.get('/petec/resume', base_url='http://localhost')
+        response = self.client.get('/petec/resume', base_url='http://localhost')
+        legacy_response = self.client.get(
+            '/petec/resume2',
+            base_url='http://localhost',
+        )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(legacy_response.status_code, 302)
-        self.assertTrue(legacy_response.location.endswith('/petec/resume2'))
+        self.assertIn(legacy_response.status_code, (301, 302, 307, 308))
+        self.assertEqual(legacy_response.headers['Location'], '/petec/resume')
         self.assertIn(b'Living R\xc3\xa9sum\xc3\xa9', response.data)
         self.assertIn(b'See how the work became the story.', response.data)
         self.assertNotIn(b'Internal preview', response.data)
@@ -50,29 +53,40 @@ class LivingResumePreviewTests(unittest.TestCase):
         javascript = (project_root / 'static/js/living-resume-v2.js').read_text(encoding='utf-8')
 
         for section_id in (
-            'resume-overview',
-            'resume-experience',
-            'resume-education',
-            'resume-skills',
-            'resume-development',
+            'summary',
+            'impact',
+            'skills',
+            'experience',
+            'credentials',
         ):
             self.assertIn(f'id="{section_id}"'.encode(), response.data)
             self.assertIn(f'href="#{section_id}"'.encode(), response.data)
 
-        # Skills & Evidence moved into the Experience header (above the
-        # chapter cards), so it now precedes Education in document order.
         ordered_sections = [
             response.data.index(f'id="{section_id}"'.encode())
             for section_id in (
-                'resume-overview',
-                'resume-experience',
-                'resume-skills',
-                'resume-education',
-                'resume-development',
+                'summary',
+                'impact',
+                'skills',
+                'experience',
+                'credentials',
             )
         ]
         self.assertEqual(ordered_sections, sorted(ordered_sections))
         self.assertGreater(response.data.index(b'id="constellation"'), ordered_sections[-1])
+
+        for legacy_alias in (
+            'resume-overview',
+            'resume-experience',
+            'resume-skills',
+            'resume-education',
+            'resume-development',
+            'resume-certifications',
+            'resume-achievements',
+            'ledger',
+            'ledger-timeline',
+        ):
+            self.assertIn(f'id="{legacy_alias}"'.encode(), response.data)
 
         self.assertIn(b'r2-ai-card resume-ai-panel', response.data)
         self.assertGreaterEqual(response.data.count(b'data-chat-open'), 3)
