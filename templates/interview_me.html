@@ -527,72 +527,11 @@
 
         {# Question data island — hidden. Drives New Question, the
            category/type filters, mock interviews, the workspace library,
-           and the session queue. Each item carries data-mode + data-topic. #}
+           and the session queue. Each item carries data-mode + data-topic.
+           The 60 questions live in a shared partial so the Concept 1
+           workspace variant reads the exact same bank. #}
         <div id="iv-qbank" hidden aria-hidden="true">
-            <ol id="iv-bank-star">
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Leadership">Tell me about a time you led a project from start to finish.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you had to meet a very tight deadline.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Conflict">Tell me about a time you disagreed with a supervisor.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Failure">Tell me about a time you failed at something important.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you persuaded someone to see things your way.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Teamwork">Tell me about a time you worked with a difficult team member.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you went above and beyond your role.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you made a decision with incomplete information.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you juggled several competing priorities.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you improved a process that wasn't working.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you dealt with an unhappy customer or stakeholder.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Learning">Tell me about a time you had to learn something new quickly.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Accountability">Tell me about a time you caught a mistake before it became a problem.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Learning">Tell me about a time you received tough feedback.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you had to deliver bad news.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Conflict">Tell me about a time you resolved a conflict between two other people.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Accountability">Tell me about a time you took ownership of a problem you didn't create.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Adaptability">Tell me about a time you had to adapt to a major change.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you set a challenging goal and achieved it.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you worked under significant pressure.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Leadership">Tell me about a time you mentored or coached someone.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you had to say no to a request.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Teamwork">Tell me about a time you built consensus across different teams.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you used data to make or defend a decision.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Pressure">Tell me about a time you handled an emergency or crisis.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Communication">Tell me about a time you explained something complex to a non-expert.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Decisions">Tell me about a time you took a calculated risk.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Failure">Tell me about a time you missed a deadline — and what you did next.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Adaptability">Tell me about a time you delivered with limited resources or budget.</button></li>
-                <li><button type="button" class="iq-item" data-mode="star" data-topic="Initiative">Tell me about a time you turned around a failing project or task.</button></li>
-            </ol>
-            <ol id="iv-bank-behavioral">
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">How do you prioritize when everything feels urgent?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Conflict">How do you handle disagreeing with a team decision?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How would you describe your leadership style?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">How do you keep stakeholders informed on long efforts?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">How do you work with someone whose style clashes with yours?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">What do you do when you don't know the answer?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you handle constant interruptions to planned work?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">How do you stay organized across multiple projects?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Initiative">What motivates you to do your best work?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you respond when priorities change at the last minute?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">How do you build trust when joining a new team?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">What's your approach to giving constructive feedback?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">How do you take criticism of your work?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you handle an underperforming teammate?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">What do you do first when a project starts slipping?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you decide when to escalate a problem?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you balance quality against speed?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">What's your process for making high-stakes decisions?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Adaptability">How do you handle ambiguity in requirements or direction?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">How do you keep learning and growing professionally?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Teamwork">What role do you naturally take in a team?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Pressure">How do you manage stress during crunch periods?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Conflict">How would you handle two managers giving conflicting direction?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">What would you do if you saw a colleague cutting corners?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you bring a hesitant group to a decision?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Leadership">How do you rebuild team morale after a setback?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Communication">How do you tailor communication to different audiences?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Accountability">What does accountability look like in your day-to-day work?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Decisions">How do you evaluate whether a project truly succeeded?</button></li>
-                <li><button type="button" class="iq-item" data-mode="behavioral" data-topic="Learning">Where do you want to grow in the next few years?</button></li>
-            </ol>
+            {% include 'partials/interview_question_bank.html' %}
         </div>
 
     </div>
