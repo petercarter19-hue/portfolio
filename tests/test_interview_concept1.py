@@ -38,8 +38,15 @@ class Concept1RouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_default_still_serves_classic_workspace(self):
+    def test_default_serves_concept1_workspace(self):
         response = self.client.get('/petec/interview-me', base_url='http://localhost')
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('data-ic1', html)
+        self.assertNotIn('data-ivw', html)
+
+    def test_classic_query_still_serves_classic_workspace(self):
+        response = self.client.get('/petec/interview-me?classic=1', base_url='http://localhost')
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn('data-ivw', html)

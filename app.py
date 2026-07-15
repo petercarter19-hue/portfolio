@@ -687,7 +687,7 @@ def interview_me():
     # PeerSlate_Interview_Concept1 handoff). ?concept1=1 previews the new
     # page, ?classic=1 forces the current one, and INTERVIEW_CONCEPT1=on
     # flips the default for a deployment without a code change.
-    concept1_default = os.environ.get('INTERVIEW_CONCEPT1', 'off') == 'on'
+    concept1_default = os.environ.get('INTERVIEW_CONCEPT1', 'on') == 'on'
     wants_concept1 = request.args.get('concept1') == '1' or (
         concept1_default and request.args.get('classic') != '1'
     )
