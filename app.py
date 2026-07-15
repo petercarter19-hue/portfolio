@@ -7,6 +7,7 @@ import os                                       # Lets us read file paths and en
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
+import hashlib                                  # Creates opaque, per-member browser storage scopes
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
@@ -15,6 +16,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 from db import get_connection, fetch_all_result_sets
+from identity import AuthenticationRequired, get_current_identity
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from services.people_interests_feed import (
@@ -647,13 +649,27 @@ def project_case_study(slug):
 @app.route('/slate-board')
 @app.route('/petec/slate-board')
 def slate_board():
-    # "My Slate Board" - Pete's goals, progress, badges, and shareable
-    # wins/thoughts. MVP is a fully designed static preview: the entries,
-    # goal percentages, and badges live in the template as sample content.
-    # A future pass adds real storage plus the draft/private/public flow.
+    # Browser-first note storage is always available. When the authenticated
+    # database UI is enabled, its local cache receives an opaque per-member
+    # scope before the page can read or render any private board state.
+    database_feature_enabled = app.config['PEERSLATE_DATABASE_UI_ENABLED']
+    database_ui_enabled = False
+    storage_scope = 'petec-preview'
+    if database_feature_enabled:
+        try:
+            identity = get_current_identity()
+        except AuthenticationRequired:
+            storage_scope = 'signed-out'
+        else:
+            database_ui_enabled = True
+            storage_scope = 'member-' + hashlib.sha256(
+                str(identity.user_key).encode('utf-8')
+            ).hexdigest()[:20]
+
     return render_template(
         'slate_board.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+        database_ui_enabled=database_ui_enabled,
+        board_storage_scope=storage_scope,
     )
 
 

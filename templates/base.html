@@ -38,7 +38,8 @@
                the screen — pixel-perfect desktop, handled natively. */
             var nativeResponsivePath = window.location.pathname === '/resume'
                 || window.location.pathname === '/_internal/living-resume-v2'
-                || /\/resume2?$/.test(window.location.pathname);
+                || /\/resume2?$/.test(window.location.pathname)
+                || /\/slate-board$/.test(window.location.pathname);
             if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')

@@ -1,447 +1,467 @@
-{# ============================================================
-   MY SLATE BOARD — rebuilt 2026-07-06 to match static/Mockup:
-   hero row (avatar + serif title + Share/Add buttons), four stat
-   cards with links, the white-card My Whiteboard (four named
-   columns of handwritten ink, every line linking to its card,
-   sticky notes at the column feet), What We're Tracking (progress
-   BARS per the mockup), Latest From the Board (three cards), and
-   the bottom row: Momentum line chart, shield Trophy Shelf, and
-   the Slate Assistant (wired to the real AI search).
-
-   MVP NOTE: fully designed static preview — entries, percentages,
-   and badges are sample content; Share/Add/Edit buttons are
-   visual. The assistant input IS live (same /api/chat as Ask
-   Pete AI).
-   ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}My Slate Board | Pete Carter{% endblock %}
+{% block title %}Slate Board | Pete Carter{% endblock %}
 
-{% block meta_description %}Pete Carter's Slate Board: live goals, progress, badges, and the wins he chooses to share publicly.{% endblock %}
+{% block meta_description %}A focused visual workspace for capturing ideas, planning goals, and turning them into action.{% endblock %}
 
 {% block extra_head %}
-<!-- Kalam: legible print-style marker handwriting for the whiteboard ink
-     (the original board look — readable printing, deliberately NOT cursive). -->
 <link
-    href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap"
     rel="stylesheet"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/slate-board.css') }}?v=concept-3"
 >
 {% endblock %}
 
-{% block content %}
+{% block body_class %} slate-board-redesign{% endblock %}
 
-<section
-    class="board-page"
-    aria-labelledby="board-title"
-    data-board-api="{{ 'true' if database_ui_enabled else 'false' }}"
+{% macro note_card(id, section, title, timeline, tag, tag_style, starred=false, overdue=false, description='', checklist='[]') %}
+<article
+    class="sb-note{% if starred %} is-starred{% endif %}"
+    draggable="true"
+    data-note-id="{{ id }}"
+    data-section="{{ section }}"
+    data-title="{{ title }}"
+    data-timeline="{{ timeline }}"
+    data-tag="{{ tag }}"
+    data-tag-style="{{ tag_style }}"
+    data-starred="{{ 'true' if starred else 'false' }}"
+    data-completed="false"
+    data-overdue="{{ 'true' if overdue else 'false' }}"
+    data-description="{{ description }}"
+    data-checklist='{{ checklist|safe }}'
 >
-    <div class="site-container">
-
-        <!-- ============ HERO ============ -->
-        <div class="bd-hero">
-            <img
-                class="bd-hero__avatar"
-                src="{{ url_for('static', filename='images/profile-pete-danielle.png') }}"
-                alt=""
-                aria-hidden="true"
-            >
-            <div class="bd-hero__copy">
-                <h1 id="board-title">My Slate Board</h1>
-                <p class="bd-hero__sub">Goals, wins, and the work in progress.</p>
-                <p class="bd-hero__name">Pete Carter</p>
-                <p class="bd-hero__meta">Systems Engineer &bull; Athens, AL &bull; Active Secret clearance</p>
-            </div>
-            <div class="bd-hero__actions">
-                <button class="ps-btn ps-btn--ghost" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
-                    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.3 10.8l6.4-3.6M8.3 13.2l6.4 3.6"/></svg>
-                    Share Board
-                </button>
-                <button class="ps-btn ps-btn--ink" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts">
-                    + Add to Board
-                </button>
-            </div>
-        </div>
-
-        <!-- ============ STAT CARDS ============ -->
-        <div class="bd-stats" aria-label="Board at a glance">
-            <article class="bd-stat">
-                <span class="bd-stat__icon ps-tint--green" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4V2M20 12h2"/></svg>
-                </span>
-                <div>
-                    <strong>4</strong>
-                    <span>Active Goals</span>
-                    <a class="ps-link" href="#bd-tracking">View all goals <i aria-hidden="true">&rarr;</i></a>
-                </div>
-            </article>
-            <article class="bd-stat">
-                <span class="bd-stat__icon ps-tint--blue" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
-                </span>
-                <div>
-                    <strong>6</strong>
-                    <span>Badges Earned</span>
-                    <a class="ps-link" href="#bd-trophies">View trophy shelf <i aria-hidden="true">&rarr;</i></a>
-                </div>
-            </article>
-            <article class="bd-stat">
-                <span class="bd-stat__icon ps-tint--sky" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
-                </span>
-                <div>
-                    <strong>3</strong>
-                    <span>Public Wins</span>
-                    <a class="ps-link" href="#bd-latest">View milestones <i aria-hidden="true">&rarr;</i></a>
-                </div>
-            </article>
-            <article class="bd-stat">
-                <span class="bd-stat__icon ps-tint--orange" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.6 7-7 0-3-1.6-5.4-3.2-7.2C14 6 13 4 13 2c-3 2-4.4 4.6-4.4 6.6-1-.8-1.7-2-2-3.1C5 7.5 5 10.5 5 15c0 4.4 3 7 7 7z"/></svg>
-                </span>
-                <div>
-                    <strong>21</strong>
-                    <span>Day Streak</span>
-                    <em class="bd-stat__note">Keep it going! &#128293;</em>
-                </div>
-            </article>
-        </div>
-
-        {# In-page tab strip removed 2026-07-12: base.html now renders the
-           shared profile sub-header in the global header on every page, so this
-           second copy was a duplicate sub-header unique to the Slate Board.
-           Removing it makes the Slate Board match the résumé and the rest of
-           the profile — one centred sub-header, in the header. #}
-
-        <!-- ============ MY WHITEBOARD ============ -->
-        {# Original single-whiteboard design (restored): a "Chalk it up"
-           compose bar to enter information, then ONE physical whiteboard
-           (silver frame, four dashed-quartered sections, marker tray). #}
-        <section class="board-whiteboard" id="bd-whiteboard" aria-labelledby="board-wall-title">
-            <div class="whiteboard__head">
-                <div>
-                    <h2 id="board-wall-title">My Whiteboard</h2>
-                    <p>Big picture thinking. Organized chaos &mdash; every line links to its card.</p>
-                </div>
-                {# Board style toggle: classic whiteboard or chalkboard.
-                   slate-board.js flips data-board-mode on .whiteboard and
-                   remembers the choice in this browser. #}
-                <div class="wb-mode" role="group" aria-label="Board style">
-                    <button class="wb-mode__btn is-active" type="button" data-board-mode="white" aria-pressed="true">Whiteboard</button>
-                    <button class="wb-mode__btn" type="button" data-board-mode="chalk" aria-pressed="false">Chalkboard</button>
-                </div>
-            </div>
-
-            {# Chalk It Up — WORKING: pick a section, write the goal, and it
-               inks straight onto that quarter of the board below. Entries
-               save in this browser (localStorage) until accounts exist. #}
-            <div class="board-compose" aria-label="Add a goal to the board">
-                <label class="board-compose__label" for="board-compose-input">Chalk it up</label>
-                <div class="board-compose__sections" role="group" aria-label="Choose a board section">
-                    <button class="board-compose__section is-active" type="button" data-wb-target="short">Short Term</button>
-                    <button class="board-compose__section" type="button" data-wb-target="long">Long Term</button>
-                    <button class="board-compose__section" type="button" data-wb-target="projects">Projects</button>
-                    <button class="board-compose__section" type="button" data-wb-target="work">Work</button>
-                </div>
-                <textarea
-                    id="board-compose-input"
-                    class="board-compose__input"
-                    rows="2"
-                    maxlength="90"
-                    placeholder="A goal, a win, a thought worth keeping..."
-                ></textarea>
-                <div class="board-compose__actions">
-                    <span class="board-compose__count" id="board-compose-count" aria-live="polite">0 / 90</span>
-                    <button class="ps-btn ps-btn--primary board-compose__btn" type="button" id="board-compose-add" disabled>Chalk It Up</button>
-                </div>
-                <p class="board-compose__note" id="board-compose-status" aria-live="polite">
-                    {% if database_ui_enabled %}
-                    New entries are saved privately to your authenticated PeerSlate Slate Board.
-                    {% else %}
-                    Your entries ink onto the board below and stay saved in this browser.
-                    Database storage remains off until PeerSlate authentication is enabled.
-                    {% endif %}
-                </p>
-            </div>
-
-            <div class="whiteboard">
-                <div class="whiteboard__surface">
-                    <section class="wb-section" data-wb="short" aria-label="Short Term">
-                        <h3 class="wb-heading wb-heading--green">Short Term</h3>
-                        <ul class="wb-list">
-                            <li style="--i: 0;"><a class="wb-ink wb-ink--green" href="#goal-pmp">Renew PMP &mdash; 39 of 60 PDUs</a></li>
-                            <li style="--i: 1;"><a class="wb-ink wb-ink--green" href="#goal-run">Hit 400 miles by October</a></li>
-                            <li style="--i: 2;"><a class="wb-ink wb-ink--green" href="#entry-draft">Publish the home-lab write-up</a></li>
-                            <li style="--i: 3;"><a class="wb-ink wb-ink--green" href="{{ portfolio_resume_url }}#experience">Automate the Cameo reporting pipeline</a></li>
-                        </ul>
-                    </section>
-
-                    <section class="wb-section" data-wb="long" aria-label="Long Term">
-                        <h3 class="wb-heading wb-heading--violet">Long Term</h3>
-                        <ul class="wb-list">
-                            <li style="--i: 1;"><a class="wb-ink wb-ink--violet" href="#goal-phd">Ph.D. &mdash; January 2027</a></li>
-                            <li style="--i: 2;"><a class="wb-ink wb-ink--violet" href="{{ peerslate_home_url }}">Grow PeerSlate</a></li>
-                            <li style="--i: 3;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_resume_url }}#experience">Requirements Traceability Platform</a></li>
-                            <li style="--i: 4;"><a class="wb-ink wb-ink--violet" href="{{ portfolio_resume_url }}#experience">AI Requirements Reviewer</a></li>
-                        </ul>
-                    </section>
-
-                    <section class="wb-section" data-wb="projects" aria-label="Projects">
-                        <h3 class="wb-heading wb-heading--blue">Projects</h3>
-                        <ul class="wb-list">
-                            <li style="--i: 2;"><a class="wb-ink wb-ink--blue" href="#goal-homeops">Home Ops Dashboard v2</a></li>
-                            <li style="--i: 3;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_resume_url }}#experience">Data Model Refactor</a></li>
-                            <li style="--i: 4;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_resume_url }}#experience">Customer Case Study Library</a></li>
-                            <li style="--i: 5;"><a class="wb-ink wb-ink--blue" href="{{ portfolio_url('interview-me') }}">Launch Interview Me Public Beta</a></li>
-                        </ul>
-                    </section>
-
-                    <section class="wb-section" data-wb="work" aria-label="Work">
-                        <h3 class="wb-heading wb-heading--red">Work</h3>
-                        <ul class="wb-list">
-                            <li style="--i: 3;"><a class="wb-ink wb-ink--red" href="{{ portfolio_story_url }}">Mentor two new engineers</a></li>
-                            <li style="--i: 4;"><a class="wb-ink wb-ink--red" href="{{ portfolio_resume_url }}">Quarterly roadmap alignment</a></li>
-                            <li style="--i: 5;"><a class="wb-ink wb-ink--red" href="{{ portfolio_resume_url }}">Peer review requirements</a></li>
-                            <li style="--i: 6;"><a class="wb-ink wb-ink--red" href="{{ portfolio_contact_url }}">Stakeholder syncs</a></li>
-                        </ul>
-                    </section>
-                </div>
-
-                {# Marker tray: one marker per ink color, plus the eraser. #}
-                <div class="whiteboard__tray" aria-hidden="true">
-                    <span class="wb-marker wb-marker--green"></span>
-                    <span class="wb-marker wb-marker--blue"></span>
-                    <span class="wb-marker wb-marker--violet"></span>
-                    <span class="wb-marker wb-marker--red"></span>
-                    <span class="wb-eraser"></span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============ WHAT WE'RE TRACKING ============ -->
-        <section class="ps-card ps-ov-block" id="bd-tracking" aria-labelledby="bd-tracking-title">
-            <div class="ps-ov-block__head">
-                <div>
-                    <h2 id="bd-tracking-title">What We're Tracking</h2>
-                    <p>Key progress across goals and projects.</p>
-                </div>
-                <a class="ps-link" href="#bd-whiteboard">View all tracking <span aria-hidden="true">&rarr;</span></a>
-            </div>
-            <div class="bd-goals">
-                <article class="goal-card" id="goal-phd" style="--ring: #2f6fe0;">
-                    <span class="goal-card__icon ps-tint--blue" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-                    </span>
-                    <h3>Ph.D. Systems Engineering</h3>
-                    <strong class="goal-card__pct">35%</strong>
-                    <span class="goal-bar" role="img" aria-label="35 percent complete"><i style="width: 35%;"></i></span>
-                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Jan 2027</time></p>
-                </article>
-                <article class="goal-card" id="goal-pmp" style="--ring: #1d9a5f;">
-                    <span class="goal-card__icon ps-tint--green" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
-                    </span>
-                    <h3>PMP Renewal PDUs</h3>
-                    <strong class="goal-card__pct">65%</strong>
-                    <span class="goal-bar" role="img" aria-label="65 percent complete"><i style="width: 65%;"></i></span>
-                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Sep 2026</time></p>
-                </article>
-                <article class="goal-card" id="goal-homeops" style="--ring: #7c4fd8;">
-                    <span class="goal-card__icon ps-tint--violet" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M7 10l2 2 4-4"/></svg>
-                    </span>
-                    <h3>Home Operations Dashboard</h3>
-                    <strong class="goal-card__pct">45%</strong>
-                    <span class="goal-bar" role="img" aria-label="45 percent complete"><i style="width: 45%;"></i></span>
-                    <p class="goal-status goal-status--progress"><i aria-hidden="true"></i>In progress <time>Target: Aug 2026</time></p>
-                </article>
-                <article class="goal-card" id="goal-run" style="--ring: #e0762f;">
-                    <span class="goal-card__icon ps-tint--orange" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M13 4a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M6 21l3-5 3 2 2-6-4-2 3-4 3 3h4"/></svg>
-                    </span>
-                    <h3>Run 500 Miles in 2026</h3>
-                    <strong class="goal-card__pct">62%</strong>
-                    <span class="goal-bar" role="img" aria-label="62 percent complete"><i style="width: 62%;"></i></span>
-                    <p class="goal-status"><i aria-hidden="true"></i>On track <time>Target: Dec 2026</time></p>
-                </article>
-            </div>
-        </section>
-
-        <!-- ============ LATEST FROM THE BOARD ============ -->
-        <section class="ps-card ps-ov-block" id="bd-latest" aria-labelledby="bd-latest-title">
-            <div class="ps-ov-block__head">
-                <div>
-                    <h2 id="bd-latest-title">Latest From the Board</h2>
-                    <p>Public wins, private thoughts, and work in progress.</p>
-                </div>
-                <a class="ps-link" href="#bd-whiteboard">View all activity <span aria-hidden="true">&rarr;</span></a>
-            </div>
-            <div class="bd-entries">
-                <article class="bd-entry" id="entry-public">
-                    <div class="bd-entry__top">
-                        <span class="ps-flag ps-flag--blue">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.4 3.8 5.1 3.8 8S14.5 21.6 12 20M12 4c-2.5 2.4-3.8 5.1-3.8 8S9.5 21.6 12 20"/></svg>
-                            Public Milestone
-                        </span>
-                        <time>Jul 2, 2026</time>
-                    </div>
-                    <h3>Crossed 300 Miles for the Year</h3>
-                    <p>Six months in and ahead of pace. The 5 a.m. starts are finally paying rent.</p>
-                    <div class="bd-entry__foot">
-                        <span>&#127760; Public</span>
-                        <a class="ps-link" href="#goal-run">View milestone <i aria-hidden="true">&rarr;</i></a>
-                    </div>
-                </article>
-                <article class="bd-entry" id="entry-private">
-                    <div class="bd-entry__top">
-                        <span class="ps-flag ps-flag--violet">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-                            Private Thought
-                        </span>
-                        <time>Jun 28, 2026</time>
-                    </div>
-                    <h3>On Research Directions</h3>
-                    <p>Digital-twin verification vs. MBSE-driven test generation &mdash; both pull toward the same question: how do you trust a model enough to ship against it?</p>
-                    <div class="bd-entry__foot">
-                        <span>&#128274; Private</span>
-                        <a class="ps-link" href="#goal-phd">View thought <i aria-hidden="true">&rarr;</i></a>
-                    </div>
-                </article>
-                <article class="bd-entry" id="entry-draft">
-                    <div class="bd-entry__top">
-                        <span class="ps-flag ps-flag--gray">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
-                            Draft Build Note
-                        </span>
-                        <time>Jun 21, 2026</time>
-                    </div>
-                    <h3>Home Dashboard v2</h3>
-                    <p>Moving automations off cloud triggers onto local WebSocket events. Latency dropped from seconds to milliseconds &mdash; write it up before publishing.</p>
-                    <div class="bd-entry__foot">
-                        <span>&#9998; Draft</span>
-                        <a class="ps-link" href="#goal-homeops">Open draft <i aria-hidden="true">&rarr;</i></a>
-                    </div>
-                </article>
-            </div>
-        </section>
-
-        <!-- ============ BOTTOM ROW ============ -->
-        <div class="bd-bottom">
-            <section class="ps-card bd-momentum" aria-labelledby="bd-momentum-title">
-                <div class="bd-card-head">
-                    <h2 id="bd-momentum-title">Momentum</h2>
-                    <span>90 days</span>
-                </div>
-                {# Static line chart of board activity (mockup). #}
-                <svg class="bd-chart" viewBox="0 0 300 120" role="img" aria-label="Board activity trending upward over the last 90 days">
-                    <g class="bd-chart__grid">
-                        <line x1="26" y1="12" x2="26" y2="96"/>
-                        <line x1="26" y1="96" x2="294" y2="96"/>
-                        <line x1="26" y1="68" x2="294" y2="68" stroke-dasharray="3 4"/>
-                        <line x1="26" y1="40" x2="294" y2="40" stroke-dasharray="3 4"/>
-                        <line x1="26" y1="12" x2="294" y2="12" stroke-dasharray="3 4"/>
-                    </g>
-                    <g class="bd-chart__labels">
-                        <text x="20" y="99">0</text>
-                        <text x="12" y="71">25</text>
-                        <text x="12" y="43">50</text>
-                        <text x="12" y="15">75</text>
-                        <text x="30" y="112">Apr 7</text>
-                        <text x="118" y="112">May 12</text>
-                        <text x="216" y="112">Jun 16</text>
-                        <text x="266" y="112">Jul 6</text>
-                    </g>
-                    <polyline class="bd-chart__line" points="30,78 58,70 86,74 114,58 142,62 170,44 198,50 226,36 254,40 282,24"/>
-                    <g class="bd-chart__dots">
-                        <circle cx="30" cy="78" r="2.6"/><circle cx="58" cy="70" r="2.6"/><circle cx="86" cy="74" r="2.6"/><circle cx="114" cy="58" r="2.6"/><circle cx="142" cy="62" r="2.6"/><circle cx="170" cy="44" r="2.6"/><circle cx="198" cy="50" r="2.6"/><circle cx="226" cy="36" r="2.6"/><circle cx="254" cy="40" r="2.6"/><circle cx="282" cy="24" r="2.6"/>
-                    </g>
-                </svg>
-                <p class="bd-foot">Consistency is compound interest. <span aria-hidden="true">&#9432;</span></p>
-            </section>
-
-            <section class="ps-card bd-trophies" id="bd-trophies" aria-labelledby="bd-trophies-title">
-                <div class="bd-card-head">
-                    <h2 id="bd-trophies-title">Trophy Shelf</h2>
-                    <span>Badges earned</span>
-                </div>
-                <div class="bd-shields">
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #1d3a8f;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L8 21l4-2 4 2-1-7.5"/></svg>
-                        </i>
-                        <strong>PMP<br>Certified</strong>
-                    </div>
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #0f8a80;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>
-                        </i>
-                        <strong>MBSE<br>Practitioner</strong>
-                    </div>
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #7a3ff2;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-11h-5z"/></svg>
-                        </i>
-                        <strong>Automation<br>Ace</strong>
-                    </div>
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #e05d33;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M13 4a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M6 21l3-5 3 2 2-6-4-2 3-4 3 3h4"/></svg>
-                        </i>
-                        <strong>300-Mile<br>Club</strong>
-                    </div>
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #1d9a5f;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
-                        </i>
-                        <strong>Mentor's<br>Mark</strong>
-                    </div>
-                    <div class="bd-shield">
-                        <i class="bd-shield__medal" style="--shield: #101f42;" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
-                        </i>
-                        <strong>Ph.D.<br>Bound</strong>
-                    </div>
-                </div>
-                <a class="ps-link" href="{{ portfolio_skills_url }}">View all badges <span aria-hidden="true">&rarr;</span></a>
-            </section>
-
-            <section class="ps-card bd-assistant" aria-labelledby="bd-assistant-title">
-                <div class="bd-assistant__head">
-                    <span class="bd-assistant__spark" aria-hidden="true">&#10022;</span>
-                    <h2 id="bd-assistant-title">Slate Assistant</h2>
-                    <span class="bd-beta">Beta</span>
-                </div>
-                <p class="bd-assistant__sub">Ask me anything about the board, goals, or progress.</p>
-                <div class="bd-assistant__chips">
-                    <button type="button" data-ask-prefill="What is Pete focused on right now, based on his goals?">What's the current focus?</button>
-                    <button type="button" data-ask-prefill="Summarize Pete's progress on his 2026 goals.">Summarize my progress</button>
-                    <button type="button" data-ask-prefill="What should Pete tackle next across his projects?">Suggest next best step</button>
-                </div>
-                <div class="bd-assistant__form">
-                    {% include "partials/portfolio_ai_search.html" %}
-                </div>
-            </section>
-        </div>
-
+    <button class="sb-note__open" type="button" aria-label="Open note: {{ title }}"></button>
+    <div class="sb-note__top">
+        <button
+            class="sb-note__complete"
+            type="button"
+            role="checkbox"
+            aria-checked="false"
+            aria-label="Mark {{ title }} complete"
+        ><span aria-hidden="true"></span></button>
+        <h3>{{ title }}</h3>
+        <button
+            class="sb-note__star"
+            type="button"
+            aria-pressed="{{ 'true' if starred else 'false' }}"
+            aria-label="{{ 'Remove important marker from' if starred else 'Mark as important:' }} {{ title }}"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 17.05 6.5 19.95l1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg>
+        </button>
     </div>
-</section>
+    <div class="sb-note__meta">
+        <span class="sb-note__timeline">{{ timeline }}</span>
+        <span class="sb-tag sb-tag--{{ tag_style }}">{{ tag }}</span>
+    </div>
+</article>
+{% endmacro %}
 
+{% block content %}
+<section
+    class="sb-page"
+    aria-labelledby="slate-board-title"
+    data-board-root
+    data-board-api="{{ 'true' if database_ui_enabled else 'false' }}"
+    data-board-storage-scope="{{ board_storage_scope }}"
+>
+    <div class="sb-workspace" data-board-workspace data-active-tool="select">
+        <header class="sb-workspace__header">
+            <div class="sb-workspace__heading">
+                <span class="sb-workspace__eyebrow" aria-hidden="true">Your future, in view</span>
+                <h1 id="slate-board-title">Slate Board</h1>
+                <p>Capture ideas. Plan your future. Take action.</p>
+            </div>
+            <div class="sb-workspace__actions">
+                <button class="sb-button sb-button--secondary" type="button" data-open-share>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="17.5" cy="6" r="2.4"/><circle cx="17.5" cy="18" r="2.4"/><path d="m8.2 10.9 7-3.7m-7 5.9 7 3.7"/></svg>
+                    <span>Share Board</span>
+                </button>
+                <button class="sb-button sb-button--primary" type="button" data-add-note>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>New Note</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="sb-canvas" data-board-canvas>
+            <div class="sb-scale" data-board-scale>
+                <div class="sb-columns" aria-label="Slate Board sections">
+                    <section class="sb-column sb-column--todo" data-column="todo" aria-labelledby="sb-title-todo">
+                        <h2 class="sb-column__heading" id="sb-title-todo">
+                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-todo" data-column-toggle>
+                                <span class="sb-column__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M5 4.5h14v15H5zM8.5 8h7M8.5 12h7M8.5 16h4"/><path d="m3.5 7 2-2"/></svg>
+                                </span>
+                                <span class="sb-column__title">To Do</span>
+                                <span class="sb-column__count" data-column-count>4</span>
+                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                            </button>
+                        </h2>
+                        <ol class="sb-note-list" id="sb-list-todo" data-note-list="todo">
+                            <li>{{ note_card('finish-system-design', 'todo', 'Finish system design', 'Due Apr 25', 'Work', 'work', overdue=true) }}</li>
+                            <li>{{ note_card('grocery-shopping', 'todo', 'Grocery shopping', 'Today', 'Personal', 'personal') }}</li>
+                            <li>{{ note_card('review-project-proposal', 'todo', 'Review project proposal', 'Due Apr 22', 'Work', 'work', overdue=true) }}</li>
+                            <li>{{ note_card('call-mom', 'todo', 'Call Mom', 'This week', 'Personal', 'personal') }}</li>
+                        </ol>
+                        <button class="sb-column__add" type="button" data-add-note data-section="todo">
+                            <span aria-hidden="true">+</span> Add note
+                        </button>
+                    </section>
+
+                    <section class="sb-column sb-column--short" data-column="short" aria-labelledby="sb-title-short">
+                        <h2 class="sb-column__heading" id="sb-title-short">
+                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-short" data-column-toggle>
+                                <span class="sb-column__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M14.5 4.5c2.8-.8 4.4-.5 5-.1.4.6.7 2.2-.1 5l-5.9 5.9-4.8-4.8 5.8-6Z"/><path d="m10 9-4.2.7-2.3 2.4 5.2.6M15 14l-.7 4.2-2.4 2.3-.6-5.2"/><circle cx="15.7" cy="8.3" r="1.2"/></svg>
+                                </span>
+                                <span class="sb-column__title">Short Term</span>
+                                <span class="sb-column__count" data-column-count>3</span>
+                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                            </button>
+                        </h2>
+                        <ol class="sb-note-list" id="sb-list-short" data-note-list="short">
+                            <li>{{ note_card('launch-portfolio', 'short', 'Launch new portfolio site', 'May 15', 'Goal', 'goal', starred=true, description='Redesign the site to align with my vision and showcase my work at a higher level.', checklist='["Design new homepage", "Build new sections", "Publish and share"]') }}</li>
+                            <li>{{ note_card('read-two-books', 'short', 'Read 2 books', 'This month', 'Growth', 'growth') }}</li>
+                            <li>{{ note_card('half-marathon', 'short', 'Run a half marathon', 'June 1', 'Health', 'health') }}</li>
+                        </ol>
+                        <button class="sb-column__add" type="button" data-add-note data-section="short">
+                            <span aria-hidden="true">+</span> Add note
+                        </button>
+                    </section>
+
+                    <section class="sb-column sb-column--long" data-column="long" aria-labelledby="sb-title-long">
+                        <h2 class="sb-column__heading" id="sb-title-long">
+                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-long" data-column-toggle>
+                                <span class="sb-column__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M12 3.5 7.5 9h2.2l-3.2 4h2.8L6 17.5h12L14.7 13h2.8l-3.2-4h2.2L12 3.5Z"/><path d="M12 17.5V21"/></svg>
+                                </span>
+                                <span class="sb-column__title">Long Term</span>
+                                <span class="sb-column__count" data-column-count>4</span>
+                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                            </button>
+                        </h2>
+                        <ol class="sb-note-list" id="sb-list-long" data-note-list="long">
+                            <li>{{ note_card('financial-independence', 'long', 'Financial independence', 'By age 45', 'Finance', 'finance', starred=true) }}</li>
+                            <li>{{ note_card('start-business', 'long', 'Start a business', 'In 2 years', 'Career', 'career') }}</li>
+                            <li>{{ note_card('second-home', 'long', 'Buy a second home', 'In 5 years', 'Lifestyle', 'lifestyle') }}</li>
+                            <li>{{ note_card('write-book', 'long', 'Write a book', 'In 3–5 years', 'Creative', 'creative') }}</li>
+                        </ol>
+                        <button class="sb-column__add" type="button" data-add-note data-section="long">
+                            <span aria-hidden="true">+</span> Add note
+                        </button>
+                    </section>
+
+                    <section class="sb-column sb-column--someday" data-column="someday" aria-labelledby="sb-title-someday">
+                        <h2 class="sb-column__heading" id="sb-title-someday">
+                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-someday" data-column-toggle>
+                                <span class="sb-column__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="m12 3 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 17.05 6.5 19.95l1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg>
+                                </span>
+                                <span class="sb-column__title">Someday</span>
+                                <span class="sb-column__count" data-column-count>3</span>
+                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                            </button>
+                        </h2>
+                        <ol class="sb-note-list" id="sb-list-someday" data-note-list="someday">
+                            <li>{{ note_card('travel-world', 'someday', 'Travel the world', 'No timeline', 'Adventure', 'adventure') }}</li>
+                            <li>{{ note_card('learn-guitar', 'someday', 'Learn to play guitar', 'Whenever', 'Creative', 'creative') }}</li>
+                            <li>{{ note_card('off-grid', 'someday', 'Live off the grid', 'Someday', 'Lifestyle', 'lifestyle') }}</li>
+                        </ol>
+                        <button class="sb-column__add" type="button" data-add-note data-section="someday">
+                            <span aria-hidden="true">+</span> Add note
+                        </button>
+                    </section>
+                </div>
+            </div>
+
+            <nav class="sb-tools" aria-label="Board tools">
+                <button class="is-active" type="button" data-tool="select" data-tooltip="Select" aria-label="Select tool" aria-pressed="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 3 12 8-5.4 1.6L10 18 6 3Z"/></svg>
+                </button>
+                <button type="button" data-tool="add" data-tooltip="Add note" aria-label="Add note tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+                <button type="button" data-tool="text" data-tooltip="Text note" aria-label="Text note tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M12 5v14M8.5 19h7"/></svg>
+                </button>
+                <button type="button" data-tool="shape" data-tooltip="Shape" aria-label="Shape tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
+                </button>
+                <button type="button" data-tool="note" data-tooltip="Sticky note" aria-label="Sticky note tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v11l-4.5 4.5H5z"/><path d="M14.5 20v-4.5H19"/></svg>
+                </button>
+                <button type="button" data-tool="connector" data-tooltip="Connector" aria-label="Connector tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18 18 5M12.5 5H18v5.5"/></svg>
+                </button>
+                <button type="button" data-tool="attachment" data-tooltip="Attachment" aria-label="Attachment tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.1-7.1"/></svg>
+                </button>
+                <button type="button" data-tool="image" data-tooltip="Image" aria-label="Image tool" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.4"/><path d="m5.5 17 4.2-4.2 3.1 3.1 2.2-2.2 3.5 3.3"/></svg>
+                </button>
+                <button type="button" data-tool="more" data-tooltip="Board overview" aria-label="Open board overview" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
+                </button>
+            </nav>
+
+            <div class="sb-zoom" role="group" aria-label="Board zoom and view controls">
+                <button type="button" data-zoom-out aria-label="Zoom out">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12h10"/></svg>
+                </button>
+                <output data-zoom-value aria-live="polite">100%</output>
+                <button type="button" data-zoom-in aria-label="Zoom in">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>
+                </button>
+                <span class="sb-zoom__divider" aria-hidden="true"></span>
+                <button type="button" data-open-stats aria-label="Open progress overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 5v7l5 3"/></svg>
+                </button>
+                <button type="button" data-fullscreen aria-label="Enter immersive board view">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H4v4.5M15.5 4H20v4.5M20 15.5V20h-4.5M8.5 20H4v-4.5"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <button class="sb-mobile-add" type="button" data-add-note aria-label="Add a new note">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+
+        <p class="sb-sr-only" id="sb-board-status" aria-live="polite">
+            {% if database_ui_enabled %}
+            Changes are saved privately to your authenticated Slate Board.
+            {% else %}
+            Your changes stay saved in this browser. Nothing is shared unless you choose to share it.
+            {% endif %}
+        </p>
+    </div>
+
+    <dialog class="sb-dialog sb-note-dialog" id="sb-note-dialog" aria-labelledby="sb-note-dialog-title">
+        <form class="sb-dialog__surface" id="sb-note-form" method="dialog">
+            <input type="hidden" id="sb-note-id">
+            <div class="sb-dialog__header">
+                <div>
+                    <span class="sb-dialog__eyebrow" id="sb-note-dialog-mode">New note</span>
+                    <h2 id="sb-note-dialog-title">Capture an idea</h2>
+                </div>
+                <div class="sb-dialog__header-actions">
+                    <button class="sb-dialog__star" id="sb-note-star" type="button" aria-pressed="false" aria-label="Mark note as important">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 17.05 6.5 19.95l1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg>
+                    </button>
+                    <button class="sb-icon-button" type="button" data-close-dialog aria-label="Close note editor">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sb-form-grid">
+                <label class="sb-field sb-field--wide" for="sb-note-title">
+                    <span>Title</span>
+                    <input id="sb-note-title" name="title" type="text" maxlength="120" required placeholder="What do you want to remember?">
+                </label>
+                <label class="sb-field sb-field--wide" for="sb-note-description">
+                    <span>Details</span>
+                    <textarea id="sb-note-description" name="description" rows="3" maxlength="800" placeholder="Add context, the why, or the next step..."></textarea>
+                </label>
+                <label class="sb-field" for="sb-note-section">
+                    <span>Section</span>
+                    <select id="sb-note-section" name="section">
+                        <option value="todo">To Do</option>
+                        <option value="short">Short Term</option>
+                        <option value="long">Long Term</option>
+                        <option value="someday">Someday</option>
+                    </select>
+                </label>
+                <label class="sb-field" for="sb-note-timeline">
+                    <span>Date or timeline</span>
+                    <input id="sb-note-timeline" name="timeline" type="text" maxlength="40" placeholder="Today, May 15, in 2 years...">
+                </label>
+                <label class="sb-field" for="sb-note-tag">
+                    <span>Tag</span>
+                    <input id="sb-note-tag" name="tag" type="text" list="sb-tag-options" maxlength="24" placeholder="Goal">
+                    <datalist id="sb-tag-options">
+                        <option value="Work"><option value="Personal"><option value="Goal"><option value="Growth">
+                        <option value="Health"><option value="Finance"><option value="Career"><option value="Creative">
+                        <option value="Lifestyle"><option value="Adventure">
+                    </datalist>
+                </label>
+                <fieldset class="sb-field sb-color-field">
+                    <legend>Note color</legend>
+                    <div class="sb-color-choices">
+                        <label><input type="radio" name="tagStyle" value="work"><span class="sb-color-choice sb-color-choice--work">Blue</span></label>
+                        <label><input type="radio" name="tagStyle" value="personal"><span class="sb-color-choice sb-color-choice--personal">Mint</span></label>
+                        <label><input type="radio" name="tagStyle" value="goal"><span class="sb-color-choice sb-color-choice--goal">Violet</span></label>
+                        <label><input type="radio" name="tagStyle" value="health"><span class="sb-color-choice sb-color-choice--health">Amber</span></label>
+                        <label><input type="radio" name="tagStyle" value="finance"><span class="sb-color-choice sb-color-choice--finance">Cyan</span></label>
+                    </div>
+                </fieldset>
+            </div>
+
+            <details class="sb-checklist" id="sb-checklist-section">
+                <summary>
+                    <span>Checklist</span>
+                    <span class="sb-checklist__count" data-checklist-count>0</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                </summary>
+                <div class="sb-subsection-head">
+                    <div>
+                        <p>Break the note into small, visible steps.</p>
+                    </div>
+                    <button type="button" data-add-checklist><span aria-hidden="true">+</span> Add item</button>
+                </div>
+                <div class="sb-checklist__items" id="sb-checklist-items"></div>
+            </details>
+
+            <details class="sb-note-more" id="sb-note-more">
+                <summary>
+                    <span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+                        Links, attachments &amp; comments
+                    </span>
+                    <svg class="sb-note-more__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                </summary>
+                <div class="sb-support-grid">
+                    <label class="sb-field" for="sb-note-link">
+                        <span>Related link</span>
+                        <input id="sb-note-link" name="link" type="url" maxlength="500" placeholder="https://">
+                    </label>
+                    <label class="sb-field sb-file-field" for="sb-note-attachment">
+                        <span>Attachment reference</span>
+                        <span class="sb-file-field__picker">
+                            <span class="sb-file-field__control">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.1-7.1"/></svg>
+                                <span id="sb-attachment-label">Choose a file</span>
+                            </span>
+                            <input
+                                id="sb-note-attachment"
+                                name="attachment"
+                                type="file"
+                                aria-label="Choose attachment reference"
+                                aria-describedby="sb-attachment-hint"
+                            >
+                        </span>
+                        <small class="sb-field__hint" id="sb-attachment-hint">The filename is remembered here; the file itself is never uploaded.</small>
+                    </label>
+                </div>
+
+                <details class="sb-comments" id="sb-comments">
+                    <summary>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14a3 3 0 0 1-3 3H9l-5 4V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg>
+                        Comments <span data-comment-count>0</span>
+                    </summary>
+                    <div class="sb-comments__thread" id="sb-comment-thread"></div>
+                    <div class="sb-comments__composer">
+                        <label class="sb-sr-only" for="sb-comment-input">Add a comment</label>
+                        <input id="sb-comment-input" type="text" maxlength="240" placeholder="Discuss this idea in context...">
+                        <button type="button" data-add-comment>Add comment</button>
+                    </div>
+                </details>
+            </details>
+
+            <div class="sb-dialog__footer">
+                <div class="sb-dialog__footer-start">
+                    <button class="sb-delete-button" id="sb-delete-note" type="button" hidden>Delete note</button>
+                    <span class="sb-private-note">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                        Private by default
+                    </span>
+                </div>
+                <div class="sb-dialog__footer-actions">
+                    <button class="sb-button sb-button--secondary" type="button" data-close-dialog>Cancel</button>
+                    <button class="sb-button sb-button--primary" type="submit">Save note</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="sb-dialog sb-stats-dialog" id="sb-stats-dialog" aria-labelledby="sb-stats-title">
+        <div class="sb-dialog__surface">
+            <div class="sb-dialog__header">
+                <div>
+                    <span class="sb-dialog__eyebrow">Board overview</span>
+                    <h2 id="sb-stats-title">Progress at a glance</h2>
+                </div>
+                <button class="sb-icon-button" type="button" data-close-dialog aria-label="Close board overview">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="sb-stats">
+                <div class="sb-stat"><strong data-stat-total>14</strong><span>Total Notes</span></div>
+                <div class="sb-stat sb-stat--completed"><strong data-stat-completed>0</strong><span>Completed</span></div>
+                <div class="sb-stat sb-stat--starred"><strong data-stat-starred>2</strong><span>Starred</span></div>
+                <div class="sb-stat sb-stat--overdue"><strong data-stat-overdue>2</strong><span>Overdue</span></div>
+            </div>
+            <div class="sb-overview-chart">
+                <div class="sb-donut" data-donut role="img" aria-label="Board notes by section">
+                    <span><strong data-donut-total>14</strong><small>notes</small></span>
+                </div>
+                <ul class="sb-legend">
+                    <li><span class="sb-legend__dot sb-legend__dot--todo"></span>To Do <strong data-legend-count="todo">4</strong></li>
+                    <li><span class="sb-legend__dot sb-legend__dot--short"></span>Short Term <strong data-legend-count="short">3</strong></li>
+                    <li><span class="sb-legend__dot sb-legend__dot--long"></span>Long Term <strong data-legend-count="long">4</strong></li>
+                    <li><span class="sb-legend__dot sb-legend__dot--someday"></span>Someday <strong data-legend-count="someday">3</strong></li>
+                </ul>
+            </div>
+            <div class="sb-dialog__footer sb-dialog__footer--end">
+                <button class="sb-button sb-button--primary" type="button" data-close-dialog>Back to board</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog class="sb-dialog sb-share-dialog" id="sb-share-dialog" aria-labelledby="sb-share-title">
+        <div class="sb-dialog__surface">
+            <div class="sb-dialog__header">
+                <div>
+                    <span class="sb-dialog__eyebrow">Share &amp; collaborate</span>
+                    <h2 id="sb-share-title">Share Board</h2>
+                </div>
+                <button class="sb-icon-button" type="button" data-close-dialog aria-label="Close sharing settings">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <p class="sb-share-dialog__lead">Invite others to view or edit this workspace.</p>
+            <form class="sb-invite" id="sb-invite-form">
+                <label class="sb-sr-only" for="sb-invite-person">Name or email</label>
+                <input id="sb-invite-person" type="text" maxlength="120" placeholder="Name or email">
+                <label class="sb-sr-only" for="sb-invite-permission">Permission</label>
+                <select id="sb-invite-permission">
+                    <option value="view">Can view</option>
+                    <option value="edit">Can edit</option>
+                </select>
+                <button class="sb-button sb-button--primary" type="submit">Add</button>
+            </form>
+            <div class="sb-invite-list" id="sb-invite-list" aria-live="polite"></div>
+            <div class="sb-collaboration-features">
+                <article>
+                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c.5-4 2.3-6 5-6s4.5 2 5 6M14 15c3.4 0 5.4 1.7 6 5"/></svg></span>
+                    <div><h3>Share Board</h3><p>Invite others to view or edit.</p></div>
+                </article>
+                <article>
+                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14a3 3 0 0 1-3 3H9l-5 4V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg></span>
+                    <div><h3>Comment on Notes</h3><p>Discuss ideas in context.</p></div>
+                </article>
+                <article>
+                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8a8 8 0 0 0-14.7-2L3 9m1-5v5h5M4 16a8 8 0 0 0 14.7 2L21 15m-1 5v-5h-5"/></svg></span>
+                    <div><h3>Real-time Updates</h3><p>See changes as they happen.</p></div>
+                </article>
+            </div>
+            <p class="sb-share-dialog__notice" id="sb-share-notice">
+                This preview keeps edits in your browser. Adding a person prepares the collaboration state but does not send an invitation.
+            </p>
+            <div class="sb-dialog__footer">
+                <button class="sb-button sb-button--secondary" type="button" data-copy-board-link>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>
+                    Copy page link
+                </button>
+                <button class="sb-button sb-button--primary" type="button" data-close-dialog>Done</button>
+            </div>
+        </div>
+    </dialog>
+</section>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/slate-board.js') }}?v=health-check-1"></script>
-<script>
-    // Assistant suggestion chips prefill the live AI search and submit.
-    (function () {
-        var input = document.getElementById('hero-ai-input');
-        var form = document.querySelector('[data-hero-ai-search]');
-        if (!input || !form) { return; }
-        document.querySelectorAll('[data-ask-prefill]').forEach(function (chip) {
-            chip.addEventListener('click', function () {
-                input.value = chip.dataset.askPrefill;
-                input.focus();
-                form.dispatchEvent(new Event('submit', { cancelable: true }));
-            });
-        });
-    })();
-</script>
+<script src="{{ url_for('static', filename='js/slate-board.js') }}?v=concept-3"></script>
 {% endblock %}
