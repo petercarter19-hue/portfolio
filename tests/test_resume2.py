@@ -136,6 +136,21 @@ class Resume2Tests(unittest.TestCase):
             response.data,
         )
 
+    def test_public_host_pins_canonical_metadata_to_https_without_proxy_header(self):
+        for base_url in ('http://peerslate.com', 'https://www.peerslate.com'):
+            with self.subTest(base_url=base_url):
+                response = self.client.get('/petec/resume', base_url=base_url)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(
+                    b'<link rel="canonical" href="https://peerslate.com/petec/resume">',
+                    response.data,
+                )
+                self.assertIn(
+                    b'<meta property="og:url" content="https://peerslate.com/petec/resume">',
+                    response.data,
+                )
+
     def test_platform_experience_and_profile_evidence_routes_remain_public(self):
         for path in ('/experience', '/petec/skills'):
             with self.subTest(path=path):

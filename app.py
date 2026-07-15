@@ -1448,6 +1448,18 @@ def _render_living_resume(
 
     profile_name = resume_data['profile']['name'].strip()
     profile_first_name = profile_name.split()[0] if profile_name else 'Profile'
+    resume_path = url_for('profile_resume', profile_slug=profile_slug)
+    if is_platform_hostname(request.host):
+        # Azure serves the public request to Flask over an internal HTTP hop
+        # without a forwarded-proto header. Pin public metadata to the one
+        # canonical HTTPS hostname instead of leaking that internal scheme.
+        canonical_resume_url = f'https://peerslate.com{resume_path}'
+    else:
+        canonical_resume_url = url_for(
+            'profile_resume',
+            profile_slug=profile_slug,
+            _external=True,
+        )
 
     return render_template(
         template_name,
@@ -1474,6 +1486,7 @@ def _render_living_resume(
         skill_lookup=skill_by_id,
         profile_slug=profile_slug,
         profile_first_name=profile_first_name,
+        canonical_resume_url=canonical_resume_url,
         resume_version=resume_version,
         is_internal_preview=is_internal_preview,
     )
