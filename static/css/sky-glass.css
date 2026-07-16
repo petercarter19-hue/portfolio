@@ -1,7 +1,7 @@
 /* =====================================================================
    SKY-GLASS — the site-wide light theme (2026-07-10, Pete's direction)
 
-   One fixed summit-sky scene now sits behind every page, with frosted
+   One fixed light-orbit scene now sits behind every page, with frosted
    glass surfaces floating over it — the same visual language as the
    Living Résumé. Two pages keep their own scenery and hide this layer:
    the Experience film (its own cinematic backdrops) and the résumé
@@ -15,15 +15,17 @@
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-        url("../images/background-templates/mountains.png") center top / cover no-repeat;
+        linear-gradient(180deg, rgb(255 255 255 / 5%) 0%, rgb(246 249 255 / 2%) 52%, rgb(228 238 255 / 10%) 100%),
+        url("../images/background-templates/2509b8db-4281-468c-a2cf-dba20ac3268b.png") center / cover no-repeat,
+        #f6f8fc;
 }
 
 @media (max-width: 48rem) {
     .site-sky {
         background:
-            linear-gradient(180deg, rgb(244 250 255 / 42%) 0%, rgb(236 246 255 / 26%) 40%, rgb(228 240 252 / 46%) 100%),
-            url("../images/background-templates/mountains.png") center top / cover no-repeat;
+            linear-gradient(180deg, rgb(255 255 255 / 4%) 0%, rgb(236 243 255 / 8%) 100%),
+            url("../images/background-templates/2509b8db-4281-468c-a2cf-dba20ac3268b.png") center / 100% 100% no-repeat,
+            #f6f8fc;
     }
 }
 

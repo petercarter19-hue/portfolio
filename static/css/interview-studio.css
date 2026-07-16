@@ -5,7 +5,7 @@
    ===================================================================== */
 
 body.interview-studio-page .site-sky { display: none; }
-body.interview-studio-page .main-content { overflow: clip; background: var(--ps-cloud-white); }
+body.interview-studio-page .main-content { overflow: clip; background: transparent; }
 body.interview-studio-page .footer { position: relative; }
 
 .is,
@@ -37,8 +37,8 @@ body.interview-studio-page .footer { position: relative; }
     z-index: -1;
     inset: 0;
     background:
-        linear-gradient(180deg, rgb(247 251 255 / 58%), rgb(239 247 255 / 34%) 44%, rgb(246 249 253 / 76%)),
-        url("../images/interview/interview-workspace-bg.jpg") center 22% / cover no-repeat,
+        linear-gradient(180deg, rgb(255 255 255 / 5%), rgb(239 247 255 / 3%) 44%, rgb(234 241 253 / 10%)),
+        url("../images/background-templates/2509b8db-4281-468c-a2cf-dba20ac3268b.png") center / cover no-repeat,
         var(--ps-cloud-white);
 }
 
@@ -968,8 +968,8 @@ body.interview-studio-page .footer { position: relative; }
 @media (max-width: 48rem) {
     .is__backdrop {
         background:
-            linear-gradient(180deg, rgb(247 251 255 / 66%), rgb(239 247 255 / 46%) 44%, rgb(246 249 253 / 84%)),
-            url("../images/interview/interview-workspace-bg-mobile.jpg") center top / cover no-repeat,
+            linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(236 243 255 / 8%)),
+            url("../images/background-templates/2509b8db-4281-468c-a2cf-dba20ac3268b.png") center / 100% 100% no-repeat,
             var(--ps-cloud-white);
     }
     .is__hero { flex-direction: column; gap: 0.9rem; }
