@@ -147,8 +147,8 @@
                         <button type="button" class="ai-chip" data-ask-prefill="What evidence supports Pete's systems-engineering experience?">
                             <span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Evidence
                         </button>
-                        <a class="ai-chip" href="{{ portfolio_url('interview-me') }}">
-                            <span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Me
+                        <a class="ai-chip" href="{{ interview_studio_url }}">
+                            <span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Studio
                         </a>
                         <button type="button" class="ai-chip" data-ask-prefill="What roles is Pete best matched to, based on his real experience?">
                             <span class="ai-chip__icon" aria-hidden="true">&#9737;</span> Match to Role
@@ -324,7 +324,7 @@
 <script>
     // Quick-ask chips on the hero pill: prefill the live AI input and submit
     // it, so each chip produces a real /api/chat answer (chatbot.js handles
-    // the request + rendering). "Interview Me" is a plain link, so skip it.
+    // the request + rendering). Interview Studio is a plain link, so skip it.
     (function () {
         var input = document.getElementById('home-ai-input');
         var form = document.querySelector('.hero-ai-panel [data-hero-ai-search]');

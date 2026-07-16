@@ -75,6 +75,21 @@
     --font-small: 0.875rem;                          /* Smaller supporting text size */
     --font-label: 0.75rem;                           /* Tiny label/eyebrow text size */
     --site-width: 1360px;                            /* Maximum width for aligned page content */
+
+    /* PeerSlate Foundation C semantic tokens. New application rooms use
+       these shared names instead of inventing a page-specific palette. */
+    --ps-ink-950: #0a1b36;
+    --ps-cloud-white: #f6f8fc;
+    --ps-product-indigo: #4f5bd5;
+    --ps-product-indigo-strong: #3f4ac4;
+    --ps-connection-azure: #4ea3ff;
+    --ps-ai-cyan: #2ec8d3;
+    --ps-evidence-amber: #d7a33e;
+    --ps-success: #24a36a;
+    --ps-warning: #d48727;
+    --ps-danger: #b23a2f;
+    --ps-font-display: "Newsreader", Georgia, serif;
+    --ps-font-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 /* Theme presets: each block below redefines the same variable names from
@@ -4426,12 +4441,10 @@ body[data-theme="modern-blue"] #chat-panel {
 }
 
 /* =========================================================
-   INTERVIEW ME (/petec/interview-me) — Interview Practice Studio.
-   Layout from Pete's mockup: hero + confidence card, four benefit
-   cards, a mode bar, the two-column studio (question / response /
-   coach feedback with score ring / suggested questions on the left;
-   evidence suggestions + STAR helper on the right), and the two
-   60-question banks below. static/js/interview.js runs the logic.
+   INTERVIEW STUDIO (/interview-studio) — interview practice workspace.
+   The legacy selectors below are dormant; the canonical workspace uses
+   static/css/interview-studio.css. They remain to avoid collateral changes
+   in the shared stylesheet during this focused migration.
    ========================================================= */
 
 .iv-page {

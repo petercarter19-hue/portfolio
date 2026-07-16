@@ -39,7 +39,8 @@
             var nativeResponsivePath = window.location.pathname === '/resume'
                 || window.location.pathname === '/_internal/living-resume-v2'
                 || /\/resume2?$/.test(window.location.pathname)
-                || /\/slate-board$/.test(window.location.pathname);
+                || /\/slate-board$/.test(window.location.pathname)
+                || window.location.pathname.indexOf('/interview-studio') === 0;
             if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
@@ -152,12 +153,9 @@
                        It replaced the separate "Slate Feed" and "Slate Board"
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
-                    <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>The Slate</a></li>
-                    <li><a href="{{ portfolio_url('interview-me') }}" {% if request.path in ['/interview-me', '/petec/interview-me'] %}aria-current="page"{% endif %}>Interview Me</a></li>
-                    {# About points at Pete's profile-shell About (/petec/about) so it
-                       carries the same slim solid header + centred sub-header as the
-                       rest of the profile — the bare /about alias stays working. #}
-                    <li><a href="{{ portfolio_url('about') }}" {% if request.path in ['/about', '/petec/about'] %}aria-current="page"{% endif %}>About</a></li>
+                    <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>
+                    <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>
+                    <li><a href="{{ url_for('peerslate_home') }}" {% if request.path == '/peerslate' %}aria-current="page"{% endif %}>About PeerSlate</a></li>
                 </ul>
 
                 <div class="platform-actions">
@@ -206,9 +204,9 @@
     </header>
 
     {# The profile band + tab strip frame the portfolio pages — EXCEPT
-       Slate Board and Interview Me, which the mockups treat as
+       Slate Board and Interview Studio, which the mockups treat as
        standalone top-level pages with their own heroes. #}
-    {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me', '/slate-board', '/interview-me'] %}
+    {% if is_portfolio_path and request.path not in ['/petec/slate-board', '/petec/interview-me', '/petec/interview-studio', '/slate-board', '/interview-me', '/interview-studio'] %}
         {# Pages with their own identity hero (the Living Résumé) empty this
            block so the profile band doesn't double Pete's name/photo; every
            other portfolio page keeps the band by default. #}
@@ -317,13 +315,13 @@
         {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
         {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
         {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
-        {"title": "Interview Me", "sub": "Interview practice studio", "href": "{{ portfolio_url('interview-me') }}", "keys": "interview practice questions star behavioral coach mock answer"},
+        {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "{{ interview_studio_url }}", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},
         {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
         {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
-        {"title": "The Slate", "sub": "Feed, goals, daily progress, paths", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
-        {"title": "The Slate · My Slate", "sub": "Your goal map", "href": "{{ url_for('the_slate_my') }}", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},
-        {"title": "The Slate · Daily Slate", "sub": "Log what moved forward today", "href": "{{ url_for('the_slate_daily') }}", "keys": "daily slate log progress today streak wins check-in updates"},
-        {"title": "The Slate · My Paths", "sub": "Paths and milestones on My Slate", "href": "{{ url_for('the_slate_my') }}#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},
+        {"title": "Community", "sub": "People, interests, goals, and progress", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
+        {"title": "Community · My Slate", "sub": "Your goal map", "href": "{{ url_for('the_slate_my') }}", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},
+        {"title": "Community · Daily Slate", "sub": "Log what moved forward today", "href": "{{ url_for('the_slate_daily') }}", "keys": "daily slate log progress today streak wins check-in updates"},
+        {"title": "Community · My Paths", "sub": "Paths and milestones on My Slate", "href": "{{ url_for('the_slate_my') }}#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},
         {"title": "Feed · People & Interests", "sub": "The living board of goals and moments", "href": "{{ url_for('the_slate') }}", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},

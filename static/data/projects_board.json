@@ -48,13 +48,13 @@
           "Living Résumé & Evidence",
           "Slate Board (goals & progress)",
           "AI Career Assistant",
-          "The Slate community feed",
-          "Interview Me studio",
+          "Community feed",
+          "Interview Studio",
           "Story & Résumé integration"
         ],
         "updates": [
           { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Projects experience + résumé polish", "body": "Shipped the Projects experience and tightened the résumé evidence cards for clearer, more scannable proof." },
-          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Interview Workspace redesign", "body": "Rebuilt Interview Me into a three-mode Interview Workspace: Interview Me, Interview You, and Video Me." },
+          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Interview Studio redesign", "body": "Rebuilt interview practice into one coaching studio with written practice, evidence-grounded model answers, and camera rehearsal." },
           { "date_label": "JUL 12", "date_iso": "2026-07-12", "title": "My Story reached its first MVP", "body": "Cinematic, editorial storytelling for My Story — the first fully realized narrative pass on the platform." },
           { "date_label": "JUL 12", "date_iso": "2026-07-12", "title": "Atrium ‘Living Triptych’ + career shapes", "body": "Launched the experimental Atrium overview and validated six different career shapes against the structured data model." },
           { "date_label": "JUL 11", "date_iso": "2026-07-11", "title": "Living Résumé reached its first MVP", "body": "The Living Résumé hit MVP on top of a new structured career-data contract that powers every résumé view." },
@@ -145,19 +145,19 @@
     {
       "id": "interview-experience",
       "slug": "interview-experience",
-      "title": "Interview Experience",
+      "title": "Interview Studio",
       "summary": "AI-powered mock interviews with feedback and coaching.",
       "status": "active",
       "status_label": "Active",
       "progress": 60,
       "tags": ["AI", "Interview", "Web"],
       "is_featured": false,
-      "card_image": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Workspace" },
+      "card_image": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Studio" },
       "detail": {
-        "logo": { "kind": "illustration", "theme": "interview", "alt": "Interview Experience" },
-        "hero_device": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Workspace" },
+        "logo": { "kind": "illustration", "theme": "interview", "alt": "Interview Studio" },
+        "hero_device": { "kind": "photo", "src": "images/projects/interview-workspace.jpg", "fallback_theme": "interview", "alt": "The PeerSlate Interview Studio" },
         "actions": {
-          "view_live": { "enabled": false, "url": "https://peerslate.com/petec/interview-me", "note": "Ignored for now" },
+          "view_live": { "enabled": false, "url": "https://peerslate.com/interview-studio", "note": "Ignored for now" },
           "github": { "enabled": true, "url": "https://github.com/petercarter19-hue/portfolio" },
           "roadmap": { "enabled": false, "url": "" }
         },
@@ -177,23 +177,23 @@
           { "name": "JavaScript", "key": "javascript" }
         ],
         "key_features": [
-          "Interview Me practice mode",
+          "Interview Studio practice mode",
           "Model answers & feedback",
           "Behavioral & STAR coaching",
           "Video Me studio (preview)"
         ],
         "updates": [
-          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Three-mode workspace", "body": "Reworked into Interview Me, Interview You, and Video Me modes." },
+          { "date_label": "JUL 13", "date_iso": "2026-07-13", "title": "Three-mode workspace", "body": "Reworked into Interview Me, Interview AI, and Video Me modes." },
           { "date_label": "JUL 05", "date_iso": "2026-07-05", "title": "Feedback loop", "body": "Added structured feedback after each practice answer." }
         ],
         "milestones": [
           { "title": "Practice studio MVP", "date_label": "JUL 05", "done": true },
-          { "title": "Interview Workspace", "date_label": "JUL 13", "done": true },
+          { "title": "Interview Studio", "date_label": "JUL 13", "done": true },
           { "title": "Video studio", "date_label": "TBD", "done": false }
         ],
         "media": [],
         "links": [
-          { "label": "Interview Me", "sub": "Try the studio", "url": "https://peerslate.com/petec/interview-me", "kind": "web" }
+          { "label": "Interview Studio", "sub": "Try the studio", "url": "https://peerslate.com/interview-studio", "kind": "web" }
         ],
         "notes": [
           { "body": "Keep the video studio feature-flagged until the experience is solid." }

@@ -99,6 +99,28 @@ class NavigationTests(unittest.TestCase):
         resume = next(record for record in records if record['title'] == 'Resume')
         self.assertEqual(resume['href'], '/petec/resume')
 
+    def test_global_product_names_and_links_use_the_new_information_architecture(self):
+        links = {
+            link['text']: link
+            for link in self.parse_platform_links('/interview-studio')
+        }
+        self.assertEqual(links['Community']['attributes']['href'], '/the-slate')
+        self.assertEqual(links['Interview Studio']['attributes']['href'], '/interview-studio')
+        self.assertEqual(links['About PeerSlate']['attributes']['href'], '/peerslate')
+        self.assertEqual(
+            links['Interview Studio']['attributes'].get('aria-current'),
+            'page',
+        )
+        self.assertNotIn('The Slate', links)
+        self.assertNotIn('Interview Me', links)
+        self.assertNotIn('About', links)
+
+        records = self.search_records('/interview-studio')
+        records_by_title = {record['title']: record for record in records}
+        self.assertEqual(records_by_title['Community']['href'], '/the-slate')
+        self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
+        self.assertNotIn('The Slate', records_by_title)
+
     def test_resume_subheader_ai_field_replaces_the_retired_overview_field(self):
         resume = self.client.get('/petec/resume', base_url='http://localhost')
 
@@ -144,7 +166,8 @@ class NavigationTests(unittest.TestCase):
             '/petec/skills',
             '/petec/resume',
             '/petec/slate-board',
-            '/petec/interview-me',
+            '/interview-studio',
+            '/peerslate',
             '/petec/about',
             '/petec/hobbies',
             '/petec/contact',

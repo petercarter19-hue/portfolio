@@ -27,7 +27,7 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}My Slate · The Slate | PeerSlate{% endblock %}
+{% block title %}My Slate · Community | PeerSlate{% endblock %}
 
 {% block meta_description %}My Slate: your personal goal map on PeerSlate — short-term and long-term goals, projects, ideas, and drafts, connected by shared keywords to people moving the same direction.{% endblock %}
 
@@ -571,7 +571,7 @@
             <section class="ts-reco">
                 <header class="ts-pp__colhead"><h4>Recommended for You</h4><a class="ps-link" href="{{ url_for('the_slate_daily') }}">View all</a></header>
                 <div class="ts-reco__grid">
-                    <a class="ts-reco__card" href="{{ portfolio_url('interview-me') }}">
+                    <a class="ts-reco__card" href="{{ interview_studio_url }}">
                         <span class="ts-reco__icon ps-tint--green" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h6M10 16h6"/></svg></span>
                         <span class="ts-reco__tag">Resource</span>
                         <strong>PMP Study Plan Template</strong>
@@ -583,7 +583,7 @@
                         <strong>How I Passed My PMP</strong>
                         <small>Real story from a PeerSlate member.</small>
                     </a>
-                    <a class="ts-reco__card" href="{{ portfolio_url('interview-me') }}">
+                    <a class="ts-reco__card" href="{{ interview_studio_url }}">
                         <span class="ts-reco__icon ps-tint--violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.2-1.5 2.4"/><path d="M12 17h.01" stroke-width="2.4"/><circle cx="12" cy="12" r="9.2"/></svg></span>
                         <span class="ts-reco__tag">Practice</span>
                         <strong>Top 20 PMP Practice Questions</strong>

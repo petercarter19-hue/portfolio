@@ -12,6 +12,7 @@ from datetime import datetime, timedelta        # Lets the Slate Feed compute li
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from itsdangerous import BadData, URLSafeTimedSerializer
 from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
@@ -33,29 +34,25 @@ load_dotenv()
 # Keep oversized prompts from consuming API budget or making the chat feel broken.
 MAX_CHAT_MESSAGE_LENGTH = 1000
 
-# Interview Workspace (Concept 1): request-size guards for the structured
-# review endpoint. Answers are longer than chat messages by design.
+# Interview Studio: request-size guards for the structured coaching
+# endpoints. Answers are longer than chat messages by design.
 MAX_INTERVIEW_ANSWER_LENGTH = 5000
 MAX_INTERVIEW_QUESTION_LENGTH = 300
-
-# Pete's verified slate evidence — FIXTURE data for the single-profile MVP.
-# Passed to the Concept 1 template and injected into the review prompt in
-# "My History" mode so the coach can only cite verified items. When real
-# multi-user profiles arrive, this comes from the profile's evidence store.
-INTERVIEW_SLATE_EVIDENCE = [
-    {'id': 'ev-36m-cor', 'metric': '$36M+', 'label': 'Contract oversight as COR across engineering services', 'tag': 'Leadership'},
-    {'id': 'ev-4-6m-nav', 'metric': '$4.6M', 'label': 'Navigation modernization led end to end as government POC', 'tag': 'Impact'},
-    {'id': 'ev-70-repair', 'metric': '70%', 'label': 'Repair and test improvement across depot and supply chains', 'tag': 'Impact'},
-    {'id': 'ev-cameo', 'metric': 'Cameo', 'label': 'SysML/MBSE modeling for navigation and avionics programs', 'tag': 'Technical'},
-    {'id': 'ev-52-missing', 'metric': '52%', 'label': 'Missing-part reduction via systemic process redesign', 'tag': 'Impact'},
-    {'id': 'ev-19m-flight', 'metric': '$19.2M', 'label': 'Redesign projects led with a 30+ engineer flight', 'tag': 'Leadership'},
-]
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
 if not ANTHROPIC_API_KEY:
     raise RuntimeError(
         'ANTHROPIC_API_KEY is not set. Add it to your .env file locally or your hosting environment variables in deployment.'
     )
+
+INTERVIEW_CONTEXT_MAX_AGE_SECONDS = 30 * 60
+INTERVIEW_CONTEXT_SIGNING_KEY = os.environ.get('INTERVIEW_CONTEXT_SIGNING_KEY') or hashlib.sha256(
+    ('peerslate-interview-context-v1:' + ANTHROPIC_API_KEY).encode('utf-8')
+).hexdigest()
+interview_context_serializer = URLSafeTimedSerializer(
+    INTERVIEW_CONTEXT_SIGNING_KEY,
+    salt='peerslate-interview-model-answer-v1',
+)
 
 # Create the Flask app
 app = Flask(__name__)
@@ -165,6 +162,10 @@ def shared_navigation_urls():
         'portfolio_resume_url': portfolio_url('resume'),
         'portfolio_contact_url': portfolio_url('contact'),
         'portfolio_hobbies_url': portfolio_url('hobbies'),
+        # Interview Studio is a platform product, not a Pete-only profile
+        # section. Keeping one route here prevents the global header and
+        # search index from rebuilding a profile-scoped /interview-me link.
+        'interview_studio_url': url_for('interview_studio'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
     }
 
@@ -184,9 +185,30 @@ RETIRED_PORTFOLIO_PATHS = {
     '/petec/work': '/petec/resume#experience',
     '/projects': '/petec/resume#experience',
     '/petec/projects': '/petec/resume#experience',
+    '/interview-me': '/interview-studio',
+    '/petec/interview-me': '/interview-studio',
+    '/petec/interview-studio': '/interview-studio',
     '/atrium': '/',
     '/petec/atrium': '/',
 }
+LEGACY_INTERVIEW_PATHS = {
+    '/interview-me',
+    '/petec/interview-me',
+    '/petec/interview-studio',
+}
+
+
+def _legacy_interview_redirect_target():
+    mode = request.args.get('mode')
+    entitlements = get_interview_entitlements()
+    mode_enabled = {
+        'me': entitlements['written_practice'],
+        'ai': entitlements['model_answers'],
+        'video': entitlements['video_studio'] != 'disabled',
+    }
+    if mode in mode_enabled and mode_enabled[mode]:
+        return url_for('interview_studio', mode=mode)
+    return url_for('interview_studio')
 
 
 # -------------------------------------------------------
@@ -221,6 +243,8 @@ def keep_portfolio_on_canonical_path():
             ):
                 abort(404)
             target_path = '/petec/resume#experience'
+        elif request.path in LEGACY_INTERVIEW_PATHS:
+            target_path = _legacy_interview_redirect_target()
         else:
             target_path = RETIRED_PORTFOLIO_PATHS.get(request.path)
         if target_path is None and request.path == '/':
@@ -242,11 +266,16 @@ def keep_portfolio_on_canonical_path():
     # Anyone who still has one of these bookmarked gets sent to today's
     # equivalent page instead of hitting a dead link.
     if request.path in RETIRED_PORTFOLIO_PATHS:
-        return redirect(RETIRED_PORTFOLIO_PATHS[request.path], code=302)
+        target = (
+            _legacy_interview_redirect_target()
+            if request.path in LEGACY_INTERVIEW_PATHS
+            else RETIRED_PORTFOLIO_PATHS[request.path]
+        )
+        return redirect(target, code=302)
 
     # /skills is a real page again (the Skills profile tab), so it now
     # canonicalizes to /petec/skills like every other portfolio section.
-    section_paths = {'/about', '/contact', '/hobbies', '/interview-me', '/my-story', '/skills', '/slate-board'}
+    section_paths = {'/about', '/contact', '/hobbies', '/my-story', '/skills', '/slate-board'}
 
     if request.path in section_paths:
         return redirect(f'/petec{request.path}', code=302)
@@ -673,47 +702,142 @@ def slate_board():
     )
 
 
-@app.route('/interview-me')
-@app.route('/petec/interview-me')
-def interview_me():
-    # INTERVIEW WORKSPACE (2026-07-13): the page is now a three-mode working
-    # application (Interview Me / Interview You / Video Me) wrapped around
-    # the original practice studio — every original control keeps its id so
-    # static/js/interview.js runs unchanged; static/js/interview-workspace.js
-    # adds the workspace chrome. All AI calls still hit the same /api/chat.
-    #
-    # Entitlement hooks (server-side, not browser-decided): the workspace
-    # will eventually sit behind a paywall. These flags come from the
-    # environment so a deployment can gate tiers without code changes.
-    # Nothing here fabricates billing — defaults keep today's behavior.
-    entitlements = {
-        'written_practice': True,   # current free behavior
-        'model_answers': True,      # current free behavior
-        'mock_interviews': True,    # current free behavior
-        'video_studio': os.environ.get(
-            'INTERVIEW_VIDEO_STUDIO', 'preview'
-        ),  # preview | enabled | locked
-        'progress_history': os.environ.get(
-            'INTERVIEW_PROGRESS_HISTORY', 'preview'
-        ),  # preview | enabled | locked
+def get_interview_entitlements():
+    """Resolve Interview Studio capability labels on the server.
+
+    The public portfolio currently offers written practice and grounded model
+    answers. Video remains a local browser rehearsal until authenticated
+    storage, retention, and processing services exist.
+    """
+    video_setting = os.environ.get('INTERVIEW_VIDEO_STUDIO', 'preview').strip().lower()
+    history_setting = os.environ.get('INTERVIEW_PROGRESS_HISTORY', 'preview').strip().lower()
+    # Preserve the legacy preview/enabled/locked deployment contract while
+    # reporting the narrower capabilities this implementation actually has.
+    video_studio = 'preview' if video_setting in {'preview', 'enabled'} else 'disabled'
+    progress_history = 'browser' if history_setting in {'preview', 'enabled', 'browser'} else 'disabled'
+
+    return {
+        'written_practice': True,
+        'model_answers': True,
+        'mock_interviews': True,
+        'video_studio': video_studio,
+        'progress_history': progress_history,
     }
 
-    # CONCEPT 1 (2026-07-15): the Focused Coaching Workspace redesign runs
-    # behind a flag until parity is verified (docs: the
-    # PeerSlate_Interview_Concept1 handoff). ?concept1=1 previews the new
-    # page, ?classic=1 forces the current one, and INTERVIEW_CONCEPT1=on
-    # flips the default for a deployment without a code change.
-    concept1_default = os.environ.get('INTERVIEW_CONCEPT1', 'on') == 'on'
-    wants_concept1 = request.args.get('concept1') == '1' or (
-        concept1_default and request.args.get('classic') != '1'
+
+def _interview_metric_tag(metric):
+    related_skills = set(metric.get('related_skill_ids') or [])
+    if related_skills & {
+        'project-management', 'contracting', 'control-account-management',
+        'leadership', 'people-leadership',
+    }:
+        return 'Leadership'
+    if related_skills & {
+        'mbse', 'cameo', 'systems-engineering', 'requirements-management',
+        'sysml-modeling', 'software-development', 'ai',
+    }:
+        return 'Technical'
+    return 'Impact'
+
+
+def _interview_evidence_from_profile(resume_data):
+    """Return a small, approved evidence set from one public profile fixture.
+
+    The selected IDs already drive the public Living Resume, so Interview
+    Studio never sends the complete profile record or hidden source notes to
+    the browser or model.
+    """
+    living_resume = resume_data.get('living_resume') or {}
+    selected_ids = []
+    for key in (
+        'career_highlight_metric_ids',
+        'constellation_evidence_metric_ids',
+        'constellation_outcome_metric_ids',
+    ):
+        for metric_id in living_resume.get(key) or []:
+            if metric_id not in selected_ids:
+                selected_ids.append(metric_id)
+
+    metrics = {
+        item.get('id'): item
+        for item in resume_data.get('metrics') or []
+        if item.get('id') and item.get('value') and item.get('label')
+    }
+    evidence = []
+    for metric_id in selected_ids:
+        metric = metrics.get(metric_id)
+        if not metric:
+            continue
+        evidence.append({
+            'id': metric_id,
+            'metric': str(metric['value']),
+            'label': str(metric['label']),
+            'summary': str(metric.get('context') or metric['label']),
+            'tag': _interview_metric_tag(metric),
+        })
+        if len(evidence) == 10:
+            break
+    return evidence
+
+
+def _interview_page_context(profile_slug='petec'):
+    resume_data = _load_resume_profile(profile_slug)
+    profile = dict(resume_data.get('profile') or {})
+    profile['role'] = (profile.get('positioning') or 'PeerSlate member').split('|', 1)[0].strip()
+    profile['first_name'] = (profile.get('name') or 'Candidate').split()[0]
+    return profile, _interview_evidence_from_profile(resume_data)
+
+
+def _render_interview_studio(initial_view='me'):
+    profile, evidence = _interview_page_context('petec')
+    entitlements = get_interview_entitlements()
+    if initial_view == 'history' and entitlements['progress_history'] == 'disabled':
+        return redirect(url_for('interview_studio'), code=302)
+
+    enabled_modes = []
+    if entitlements['written_practice']:
+        enabled_modes.append('me')
+    if entitlements['model_answers']:
+        enabled_modes.append('ai')
+    if entitlements['video_studio'] != 'disabled':
+        enabled_modes.append('video')
+
+    if initial_view != 'history' and not enabled_modes:
+        abort(404)
+
+    requested_mode = request.args.get('mode', initial_view)
+    if initial_view != 'history' and requested_mode in {'me', 'ai', 'video'} and requested_mode not in enabled_modes:
+        fallback_mode = enabled_modes[0]
+        target = url_for('interview_studio', mode=fallback_mode) if fallback_mode != 'me' else url_for('interview_studio')
+        return redirect(target, code=302)
+    if requested_mode not in enabled_modes:
+        requested_mode = enabled_modes[0] if enabled_modes else 'me'
+    return render_template(
+        'interview_studio.html',
+        interview_profile=profile,
+        interview_evidence=evidence,
+        interview_entitlements=entitlements,
+        interview_initial_view=initial_view,
+        interview_initial_mode=requested_mode,
     )
-    if wants_concept1:
-        return render_template(
-            'interview_concept1.html',
-            interview_entitlements=entitlements,
-            interview_evidence=INTERVIEW_SLATE_EVIDENCE,
-        )
-    return render_template('interview_me.html', interview_entitlements=entitlements)
+
+
+@app.route('/interview-studio')
+def interview_studio():
+    return _render_interview_studio('me')
+
+
+@app.route('/interview-studio/history')
+def interview_studio_history():
+    return _render_interview_studio('history')
+
+
+@app.route('/interview-me')
+@app.route('/petec/interview-me')
+@app.route('/petec/interview-studio')
+def interview_me():
+    """Keep old bookmarks working without retaining the retired workspace."""
+    return redirect(_legacy_interview_redirect_target(), code=302)
 
 
 @app.route('/skills')
@@ -1661,16 +1785,14 @@ def chat():
 
 
 # -------------------------------------------------------
-# INTERVIEW WORKSPACE — CONCEPT 1 structured coach endpoints
-# (2026-07-15). The review endpoint returns a SCHEMA-VALIDATED
-# structured review so the browser never renders a malformed or
-# partial score. The coach endpoint is the scoped Answer Workshop
-# chat (not the general Ask Pete assistant). Both keep the API key
-# on the server, exactly like /api/chat.
+# INTERVIEW STUDIO — structured coaching endpoints. Every model response is
+# validated before the browser sees it. Public profile evidence is selected
+# server-side and only minimal approved summaries enter a prompt or response.
 # -------------------------------------------------------
 
 INTERVIEW_REVIEW_DIMENSIONS = ('relevance', 'structure', 'specificity', 'evidence', 'impact')
-INTERVIEW_ANNOTATION_TYPES = ('strong', 'needs-specificity', 'missing-evidence', 'clarity')
+INTERVIEW_STAR_PARTS = ('situation', 'task', 'action', 'result')
+INTERVIEW_STAR_STATUSES = ('strong', 'present', 'partial', 'missing')
 
 
 def _clamp_score(value):
@@ -1681,6 +1803,13 @@ def _clamp_score(value):
     return score
 
 
+def _dimension_score(value):
+    score = int(value)
+    if score < 0 or score > 20:
+        raise ValueError('dimension score out of range')
+    return score
+
+
 def _strip_md(text):
     """Remove markdown emphasis the model sometimes sneaks into plain text."""
     return re.sub(r'\*{1,2}([^*]+)\*{1,2}', r'\1', str(text)).strip()
@@ -1688,19 +1817,14 @@ def _strip_md(text):
 
 def _string_list(value, max_items):
     """Validate a list of non-empty strings, trimmed and capped."""
-    if not isinstance(value, list):
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise ValueError('expected a list')
     items = [_strip_md(item) for item in value if _strip_md(item)]
     return items[:max_items]
 
 
-def validate_interview_review(raw, answer_length):
-    """Validate + normalize the model's review JSON.
-
-    Returns a clean dict the browser can trust, or raises ValueError.
-    Invalid annotations are DROPPED (the page then shows a general
-    review) — an offset pointing at the wrong text is worse than none.
-    """
+def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None):
+    """Validate and normalize one transparent, internally consistent review."""
     if not isinstance(raw, dict):
         raise ValueError('review is not an object')
 
@@ -1710,11 +1834,9 @@ def validate_interview_review(raw, answer_length):
         'encouragement': _strip_md(raw.get('encouragement', ''))[:300],
         'strengths': _string_list(raw.get('strengths', []), 4),
         'improvements': _string_list(raw.get('improvements', []), 4),
-        'improvedAnswer': str(raw.get('improvedAnswer', '')).strip()[:MAX_INTERVIEW_ANSWER_LENGTH],
-        'changesExplained': _string_list(raw.get('changesExplained', []), 6),
     }
-    if not review['verdict']:
-        raise ValueError('verdict missing')
+    if not review['verdict'] or not review['encouragement'] or not review['strengths'] or not review['improvements']:
+        raise ValueError('review summary is incomplete')
 
     dimensions = raw.get('dimensions')
     if not isinstance(dimensions, list):
@@ -1727,55 +1849,151 @@ def validate_interview_review(raw, answer_length):
         key = dim.get('key')
         if key not in INTERVIEW_REVIEW_DIMENSIONS or key in seen_keys:
             continue
+        rationale = _strip_md(dim.get('rationale', ''))[:400]
+        next_action = _strip_md(dim.get('nextAction', ''))[:300]
+        if not rationale or not next_action:
+            raise ValueError('dimension explanation is incomplete')
         clean_dimensions.append({
             'key': key,
-            'score': _clamp_score(dim.get('score')),
-            'rationale': _strip_md(dim.get('rationale', ''))[:400],
-            'nextAction': _strip_md(dim.get('nextAction', ''))[:300],
+            'score': _dimension_score(dim.get('score')),
+            'rationale': rationale,
+            'nextAction': next_action,
         })
         seen_keys.add(key)
     if len(clean_dimensions) != len(INTERVIEW_REVIEW_DIMENSIONS):
         raise ValueError('incomplete dimensions')
     order = {key: i for i, key in enumerate(INTERVIEW_REVIEW_DIMENSIONS)}
     review['dimensions'] = sorted(clean_dimensions, key=lambda d: order[d['key']])
+    if sum(item['score'] for item in review['dimensions']) != review['overallScore']:
+        raise ValueError('overall score does not equal dimension total')
 
-    missing = []
-    for item in (raw.get('missingEvidence') or [])[:3]:
+    star = raw.get('star')
+    if not isinstance(star, dict):
+        raise ValueError('STAR assessment missing')
+    clean_star = {}
+    for part in INTERVIEW_STAR_PARTS:
+        item = star.get(part)
+        if not isinstance(item, dict) or item.get('status') not in INTERVIEW_STAR_STATUSES:
+            raise ValueError('invalid STAR assessment')
+        reason = _strip_md(item.get('reason', ''))[:240]
+        if not reason:
+            raise ValueError('STAR reason missing')
+        clean_star[part] = {'status': item['status'], 'reason': reason}
+    review['star'] = clean_star
+
+    allowed_ids = set(allowed_evidence_ids or [])
+    suggestions = []
+    for item in (raw.get('evidenceSuggestions') or [])[:2]:
         if not isinstance(item, dict):
             continue
         opportunity = _strip_md(item.get('opportunity', ''))
-        if not opportunity:
+        suggested_use = _strip_md(item.get('suggestedUse', ''))
+        if not opportunity or not suggested_use:
             continue
-        missing.append({
+        evidence_id = str(item.get('evidenceId', '')).strip()[:80]
+        if not evidence_id:
+            continue
+        if evidence_id not in allowed_ids:
+            raise ValueError('review referenced unauthorized evidence')
+        suggestions.append({
             'opportunity': opportunity[:400],
-            'suggestedUse': _strip_md(item.get('suggestedUse', ''))[:400],
-            'evidenceId': str(item.get('evidenceId', '')).strip()[:60],
+            'suggestedUse': suggested_use[:400],
+            'evidenceId': evidence_id,
         })
-    review['missingEvidence'] = missing
-
-    annotations = []
-    for i, item in enumerate((raw.get('annotations') or [])[:12]):
-        try:
-            start = int(item.get('start'))
-            end = int(item.get('end'))
-            ann_type = item.get('type')
-            if ann_type not in INTERVIEW_ANNOTATION_TYPES:
-                continue
-            if start < 0 or end <= start or end > answer_length:
-                continue
-            annotations.append({
-                'id': 'ann-%d' % i,
-                'start': start,
-                'end': end,
-                'type': ann_type,
-                'label': str(item.get('label', '')).strip()[:60],
-                'explanation': _strip_md(item.get('explanation', ''))[:300],
-            })
-        except (TypeError, ValueError, AttributeError):
-            continue
-    review['annotations'] = annotations
+    review['evidenceSuggestions'] = suggestions
 
     return review
+
+
+def validate_interview_model_answer(raw, evidence_by_id):
+    if not isinstance(raw, dict):
+        raise ValueError('model answer is not an object')
+    status = str(raw.get('status') or '').strip().lower()
+    if status == 'insufficient':
+        return {
+            'status': 'insufficient',
+            'answer': 'PeerSlate does not have enough approved profile evidence to answer this question without guessing.',
+            'whyItWorks': ['Avoids unsupported claims and makes the evidence gap explicit.'],
+            'evidenceUsed': [],
+        }
+    if status != 'answered':
+        raise ValueError('model answer status is invalid')
+    answer = str(raw.get('answer') or '').strip()[:MAX_INTERVIEW_ANSWER_LENGTH]
+    why = _string_list(raw.get('whyItWorks', []), 4)
+    raw_evidence_ids = raw.get('evidenceIds') or []
+    if not isinstance(raw_evidence_ids, list):
+        raise ValueError('model answer evidence is not a list')
+    evidence_ids = [str(item) for item in raw_evidence_ids]
+    if not answer or not why:
+        raise ValueError('model answer is incomplete')
+    if len(evidence_ids) != len(set(evidence_ids)):
+        raise ValueError('duplicate evidence references')
+    if not evidence_ids:
+        raise ValueError('model answer has no approved evidence references')
+    if any(item not in evidence_by_id for item in evidence_ids):
+        raise ValueError('model answer referenced unauthorized evidence')
+    return {
+        'status': 'answered',
+        'answer': answer,
+        'whyItWorks': why,
+        'evidenceUsed': [evidence_by_id[item] for item in evidence_ids],
+    }
+
+
+def _sign_interview_model_context(profile_slug, question, level, family, model_answer):
+    return interview_context_serializer.dumps({
+        'profile_slug': profile_slug,
+        'question': question,
+        'level': level,
+        'family': family,
+        'answer': model_answer['answer'],
+        'evidence_ids': [item['id'] for item in model_answer['evidenceUsed']],
+    })
+
+
+def _load_interview_model_context(token):
+    if not isinstance(token, str) or not token or len(token) > 12000:
+        raise ValueError('model-answer context token is invalid')
+    try:
+        context = interview_context_serializer.loads(
+            token,
+            max_age=INTERVIEW_CONTEXT_MAX_AGE_SECONDS,
+        )
+    except BadData as error:
+        raise ValueError('model-answer context token is invalid or expired') from error
+    if not isinstance(context, dict):
+        raise ValueError('model-answer context is invalid')
+    required_text = ('profile_slug', 'question', 'level', 'family', 'answer')
+    if any(not isinstance(context.get(key), str) or not context[key] for key in required_text):
+        raise ValueError('model-answer context is incomplete')
+    evidence_ids = context.get('evidence_ids')
+    if not isinstance(evidence_ids, list) or any(not isinstance(item, str) for item in evidence_ids):
+        raise ValueError('model-answer context evidence is invalid')
+    if len(context['question']) > MAX_INTERVIEW_QUESTION_LENGTH or len(context['answer']) > MAX_INTERVIEW_ANSWER_LENGTH:
+        raise ValueError('model-answer context is too long')
+    return context
+
+
+def validate_interview_improvement(raw, evidence_by_id):
+    if not isinstance(raw, dict):
+        raise ValueError('improvement is not an object')
+    draft = str(raw.get('draft') or '').strip()[:MAX_INTERVIEW_ANSWER_LENGTH]
+    changes = _string_list(raw.get('changes', []), 4)
+    raw_evidence_ids = raw.get('evidenceIds') or []
+    if not isinstance(raw_evidence_ids, list) or any(not isinstance(item, str) for item in raw_evidence_ids):
+        raise ValueError('improvement evidence is not a list')
+    evidence_ids = raw_evidence_ids
+    if not draft or not changes:
+        raise ValueError('improvement is incomplete')
+    if len(evidence_ids) != len(set(evidence_ids)):
+        raise ValueError('duplicate evidence references')
+    if any(item not in evidence_by_id for item in evidence_ids):
+        raise ValueError('improvement referenced unauthorized evidence')
+    return {
+        'draft': draft,
+        'changes': changes,
+        'evidenceUsed': [evidence_by_id[item] for item in evidence_ids],
+    }
 
 
 def _extract_json_object(text):
@@ -1793,11 +2011,25 @@ def _extract_json_object(text):
 @app.route('/api/interview/review', methods=['POST'])
 @limiter.limit('6 per minute')
 def interview_review():
-    data = request.get_json(silent=True) or {}
+    if not get_interview_entitlements().get('written_practice'):
+        return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
+    if not request.is_json:
+        return jsonify({'error': 'Send interview requests as JSON.'}), 415
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Send one JSON object for the interview request.'}), 400
     question = str(data.get('question') or '').strip()
     answer = str(data.get('answer') or '').strip()
-    level = str(data.get('level') or 'mixed').strip()
-    basis = str(data.get('basis') or 'my-history').strip()
+    level = str(data.get('level') or 'experienced').strip()
+    family = str(data.get('family') or 'behavioral').strip()
+    competency = str(data.get('competency') or 'Communication').strip()[:80]
+    profile_slug = str(data.get('profile_slug') or 'petec').strip()
 
     if not question or not answer:
         return jsonify({'error': 'Both the question and your answer are required.'}), 400
@@ -1805,55 +2037,52 @@ def interview_review():
         return jsonify({'error': 'That question is too long.'}), 400
     if len(answer) > MAX_INTERVIEW_ANSWER_LENGTH:
         return jsonify({'error': 'Please keep answers under 5,000 characters.'}), 400
-    if basis not in ('my-history', 'example-candidate'):
-        basis = 'my-history'
     if level not in ('entry', 'experienced', 'management', 'leadership', 'mixed'):
-        level = 'mixed'
+        level = 'experienced'
+    if family not in ('situational', 'behavioral', 'mixed'):
+        family = 'behavioral'
+    if profile_slug not in RESUME_PROFILE_FILES:
+        return jsonify({'error': 'That interview profile is unavailable.'}), 404
 
-    if basis == 'my-history':
-        evidence_lines = '\n'.join(
-            '- [%s] %s — %s' % (item['id'], item['metric'], item['label'])
-            for item in INTERVIEW_SLATE_EVIDENCE
+    profile, evidence = _interview_page_context(profile_slug)
+    evidence_by_id = {item['id']: item for item in evidence}
+    evidence_lines = '\n'.join(
+        '- [%s] %s — %s: %s' % (
+            item['id'], item['metric'], item['label'], item['summary']
         )
-        grounding = (
-            'GROUNDING (My History): the ONLY verified evidence you may reference or suggest is listed below. '
-            'Never invent metrics, employers, titles, project names, dates, or outcomes. '
-            'If no listed evidence fits, say so in the missingEvidence opportunity instead of inventing one.\n'
-            + evidence_lines
-        )
-    else:
-        grounding = (
-            'GROUNDING (Example Candidate): suggestions may use realistic illustrative examples, '
-            'but every invented metric or example must be phrased as clearly illustrative '
-            '(for example: "an illustrative metric such as..."). Never imply it is the candidate\'s real history.'
-        )
+        for item in evidence
+    ) or '- No approved public evidence is available.'
+    grounding = (
+        'APPROVED PUBLIC PROFILE EVIDENCE: the ONLY evidence you may suggest is listed below. '
+        'Never invent metrics, employers, titles, projects, dates, duties, or outcomes. '
+        'If nothing fits, return no evidence suggestions.\n' + evidence_lines
+    )
 
     system_prompt = (
         'You are the PeerSlate interview coach: direct, specific, encouraging. '
         'Praise must cite the actual behavior that earned it; criticism must include a fix; never shame a weak answer. '
         'You score a candidate\'s interview answer against a transparent rubric and respond with JSON ONLY — '
         'no prose before or after, no markdown fences.\n\n'
-        'The candidate is practicing at the "%s" experience level. Calibrate rubric expectations and coaching language to that level.\n\n'
+        'The candidate is practicing at the "%s" experience level. The question family is "%s" and the explicit '
+        'competency is "%s". Calibrate the review to that context.\n\n'
         '%s\n\n'
         'Respond with exactly this JSON shape:\n'
         '{"overallScore": <int 0-100>, "verdict": "<short phrase, max 6 words>", '
         '"encouragement": "<1-2 encouraging but honest sentences>", '
-        '"dimensions": [{"key": "relevance|structure|specificity|evidence|impact", "score": <int 0-100>, '
+        '"dimensions": [{"key": "relevance|structure|specificity|evidence|impact", "score": <int 0-20>, '
         '"rationale": "<plain-language reason for the score>", "nextAction": "<one concrete improvement step>"}] '
         '(exactly these five keys, each once), '
+        '"star": {"situation": {"status": "strong|present|partial|missing", "reason": "<why>"}, '
+        '"task": {"status": "strong|present|partial|missing", "reason": "<why>"}, '
+        '"action": {"status": "strong|present|partial|missing", "reason": "<why>"}, '
+        '"result": {"status": "strong|present|partial|missing", "reason": "<why>"}}, '
         '"strengths": ["<max 4 short bullets>"], "improvements": ["<max 4 short bullets>"], '
-        '"missingEvidence": [{"opportunity": "<what verified evidence would strengthen this and why>", '
-        '"suggestedUse": "<a sample sentence the candidate could close with>", "evidenceId": "<id from the list or empty>"}] (max 2), '
-        '"annotations": [{"start": <int>, "end": <int>, "type": "strong|needs-specificity|missing-evidence|clarity", '
-        '"label": "<2-4 words>", "explanation": "<one short sentence>"}] (max 6, character offsets into the EXACT answer text, non-overlapping), '
-        '"improvedAnswer": "<the answer rewritten in the candidate\'s own voice and first person — a credible 60-120 second spoken answer, '
-        'no corporate polish. STRICT: build it ONLY from facts already in the submitted answer plus the verified evidence list; '
-        'do not add new events, conversations, people, or outcomes. Where a detail is missing, leave a bracketed prompt like '
-        '[describe how the team responded] instead of inventing one>", '
-        '"changesExplained": ["<max 4 bullets: what changed and why>"]}\n\n'
-        'Keep it tight so the JSON never truncates: rationales under 25 words, bullets under 15 words, '
-        'improvedAnswer under 160 words. Output must be complete, valid JSON.'
-    ) % (level, grounding)
+        '"evidenceSuggestions": [{"opportunity": "<why this approved evidence could strengthen a future draft>", '
+        '"suggestedUse": "<a truthful way to connect it, without claiming it is already in the answer>", '
+        '"evidenceId": "<exact id from the list>"}] (max 2)}.\n\n'
+        'Each dimension is worth 20 points and overallScore MUST equal the exact sum of the five dimension scores. '
+        'Keep rationales under 25 words and bullets under 15 words. Output complete, valid JSON.'
+    ) % (level, family, competency, grounding)
 
     try:
         response = client.messages.create(
@@ -1865,14 +2094,17 @@ def interview_review():
                     'role': 'user',
                     'content': (
                         'Interview question: "%s"\n\n'
-                        'The candidate\'s submitted answer (score THIS exact text; '
-                        'annotation offsets are character positions into it):\n%s'
+                        'The candidate\'s submitted answer (score this exact text):\n%s'
                     ) % (question, answer),
                 }
             ],
         )
         raw_reply = response.content[0].text
-        review = validate_interview_review(_extract_json_object(raw_reply), len(answer))
+        review = validate_interview_review(
+            _extract_json_object(raw_reply),
+            len(answer),
+            allowed_evidence_ids=evidence_by_id,
+        )
         return jsonify({'review': review})
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
         # Never render a partial or malformed score as real feedback.
@@ -1883,75 +2115,204 @@ def interview_review():
         return jsonify({'error': 'The coach is unavailable right now. Please try again.'}), 500
 
 
-@app.route('/api/interview/coach', methods=['POST'])
-@limiter.limit('10 per minute')
-def interview_coach():
-    data = request.get_json(silent=True) or {}
-    question = str(data.get('question') or '').strip()[:MAX_INTERVIEW_QUESTION_LENGTH]
-    answer = str(data.get('answer') or '').strip()[:MAX_INTERVIEW_ANSWER_LENGTH]
-    message = str(data.get('message') or '').strip()
-    basis = str(data.get('basis') or 'my-history').strip()
-    keep_voice = bool(data.get('keep_voice', True))
-    review_summary = str(data.get('review_summary') or '').strip()[:120]
+@app.route('/api/interview/improve', methods=['POST'])
+@limiter.limit('6 per minute')
+def interview_improve():
+    if not get_interview_entitlements().get('written_practice'):
+        return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
+    if not request.is_json:
+        return jsonify({'error': 'Send interview requests as JSON.'}), 415
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
 
-    if not message:
-        return jsonify({'error': 'Ask the coach a question first.'}), 400
-    if len(message) > 400:
-        return jsonify({'error': 'Please keep coach questions under 400 characters.'}), 400
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Send one JSON object for the interview request.'}), 400
+    raw_improvements = data.get('improvements') or []
+    raw_evidence_ids = data.get('evidence_ids') or []
+    if (
+        not isinstance(raw_improvements, list)
+        or any(not isinstance(item, str) for item in raw_improvements)
+        or not isinstance(raw_evidence_ids, list)
+        or any(not isinstance(item, str) for item in raw_evidence_ids)
+    ):
+        return jsonify({'error': 'Improvements and evidence IDs must be JSON lists of text values.'}), 400
+    question = str(data.get('question') or '').strip()
+    answer = str(data.get('answer') or '').strip()
+    profile_slug = str(data.get('profile_slug') or 'petec').strip()
+    improvements = _string_list(raw_improvements, 4)
+    selected_ids = raw_evidence_ids[:2]
+
     if not question or not answer:
-        return jsonify({'error': 'The coach needs the question and your answer for context.'}), 400
+        return jsonify({'error': 'The question and submitted answer are required.'}), 400
+    if len(question) > MAX_INTERVIEW_QUESTION_LENGTH or len(answer) > MAX_INTERVIEW_ANSWER_LENGTH:
+        return jsonify({'error': 'That interview content is too long.'}), 400
+    if profile_slug not in RESUME_PROFILE_FILES:
+        return jsonify({'error': 'That interview profile is unavailable.'}), 404
 
-    if basis == 'my-history':
-        evidence_lines = '\n'.join(
-            '- %s — %s' % (item['metric'], item['label']) for item in INTERVIEW_SLATE_EVIDENCE
+    _profile, evidence = _interview_page_context(profile_slug)
+    all_evidence = {item['id']: item for item in evidence}
+    if len(selected_ids) != len(set(selected_ids)) or any(item not in all_evidence for item in selected_ids):
+        return jsonify({'error': 'One of those evidence suggestions is unavailable.'}), 403
+    selected_evidence = {item: all_evidence[item] for item in selected_ids}
+    evidence_lines = '\n'.join(
+        '- [%s] %s — %s: %s' % (
+            item['id'], item['metric'], item['label'], item['summary']
         )
-        grounding = (
-            'You may reference ONLY this verified evidence; never invent metrics, employers, or outcomes:\n'
-            + evidence_lines
-        )
-    else:
-        grounding = 'Any example you offer must be phrased as clearly illustrative and fictional.'
-
-    voice_rule = (
-        'Preserve the candidate\'s own voice and phrasing; suggest the smallest change that fixes the problem.'
-        if keep_voice else
-        'You may rephrase more freely, but keep first person and factual ownership.'
-    )
+        for item in selected_evidence.values()
+    ) or '- No additional evidence was selected. Use only facts already present in the answer.'
 
     system_prompt = (
-        'You are the PeerSlate Interview Coach inside the Answer Workshop — specialized in interview strategy, '
-        'scoring, and confidence. You are scoped to ONE question and ONE submitted answer. '
-        'Be direct, specific, and encouraging; criticism always comes with a fix. %s\n\n%s\n\n'
-        'Context — interview question: "%s"\n'
-        'Candidate\'s submitted answer: "%s"\n%s'
-    ) % (
-        voice_rule,
-        grounding,
-        question,
-        answer,
-        ('Coach review verdict: %s' % review_summary) if review_summary else '',
-    )
+        'You are the PeerSlate Interview Coach. Rewrite a submitted answer as an editable draft while preserving '
+        'the candidate\'s first-person voice. You may use ONLY facts already in the answer and the explicitly selected '
+        'approved evidence below. Never invent metrics, roles, employers, actions, dates, technologies, conversations, '
+        'or outcomes. If a needed fact is absent, omit it or add a short bracketed prompt for the candidate to confirm. '
+        'Respond with JSON only: {"draft":"<60-120 second spoken answer>", '
+        '"changes":["<max 4 concrete changes>"], "evidenceIds":["<only selected ids actually used>"]}.\n\n'
+        'Selected evidence:\n%s'
+    ) % evidence_lines
+    improvement_notes = '\n'.join('- ' + item for item in improvements) or '- Make the answer clearer and more specific.'
 
     try:
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
-            max_tokens=300,
+            max_tokens=1300,
             system=system_prompt,
-            messages=[
-                {
-                    'role': 'user',
-                    'content': (
-                        f'{message}\n\n'
-                        'Answer in plain text, no markdown, at most 4 short sentences. '
-                        'If you suggest wording, quote the exact sentence to use.'
-                    ),
-                }
-            ],
+            messages=[{
+                'role': 'user',
+                'content': (
+                    'Question: %s\n\nSubmitted answer:\n%s\n\nCoach priorities:\n%s'
+                ) % (question, answer, improvement_notes),
+            }],
         )
-        return jsonify({'response': _strip_md(clean_chatbot_reply(response.content[0].text))})
-    except Exception as e:
-        app.logger.error('Interview coach API error: %s', e)
+        improvement = validate_interview_improvement(
+            _extract_json_object(response.content[0].text),
+            selected_evidence,
+        )
+        return jsonify({'improvement': improvement})
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        app.logger.warning('Interview improvement validation error: %s', error)
+        return jsonify({'error': 'The coach returned an unreadable draft. Please try again.'}), 502
+    except Exception as error:
+        app.logger.error('Interview improvement API error: %s', error)
         return jsonify({'error': 'The coach is unavailable right now. Please try again.'}), 500
+
+
+@app.route('/api/interview/model-answer', methods=['POST'])
+@limiter.limit('6 per minute')
+def interview_model_answer():
+    if not get_interview_entitlements().get('model_answers'):
+        return jsonify({'error': 'Interview AI is not available for this profile.'}), 403
+    if not request.is_json:
+        return jsonify({'error': 'Send interview requests as JSON.'}), 415
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Send one JSON object for the interview request.'}), 400
+    question = str(data.get('question') or '').strip()
+    profile_slug = str(data.get('profile_slug') or 'petec').strip()
+    level = str(data.get('level') or 'experienced').strip()
+    family = str(data.get('family') or 'behavioral').strip()
+    follow_up = str(data.get('follow_up') or '').strip()
+    prior_answer = ''
+
+    if follow_up:
+        try:
+            context = _load_interview_model_context(data.get('context_token'))
+        except ValueError as error:
+            return jsonify({'error': str(error)}), 400
+        profile_slug = context['profile_slug']
+        question = context['question']
+        level = context['level']
+        family = context['family']
+        prior_answer = context['answer']
+
+    if not question:
+        return jsonify({'error': 'Ask an interview question first.'}), 400
+    if len(question) > MAX_INTERVIEW_QUESTION_LENGTH or len(follow_up) > MAX_INTERVIEW_QUESTION_LENGTH:
+        return jsonify({'error': 'That interview question is too long.'}), 400
+    if profile_slug not in RESUME_PROFILE_FILES:
+        return jsonify({'error': 'That interview profile is unavailable.'}), 404
+    if level not in ('entry', 'experienced', 'management', 'leadership', 'mixed'):
+        level = 'experienced'
+    if family not in ('situational', 'behavioral', 'mixed'):
+        family = 'behavioral'
+
+    profile, evidence = _interview_page_context(profile_slug)
+    evidence_by_id = {item['id']: item for item in evidence}
+    evidence_lines = '\n'.join(
+        '- [%s] %s — %s: %s' % (
+            item['id'], item['metric'], item['label'], item['summary']
+        )
+        for item in evidence
+    ) or '- No approved public evidence is available.'
+    system_prompt = (
+        'You are generating an evidence-grounded interview model answer for the selected PeerSlate profile. '
+        'Write naturally in first person at the %s experience level for a %s question. Use ONLY approved evidence '
+        'below. Never invent accomplishments, metrics, duties, employers, dates, technologies, or outcomes. '
+        'If evidence is insufficient, do not attempt an answer. Do not award a score. '
+        'Respond with JSON only. For an answer use '
+        '{"status":"answered", "answer":"<natural 60-120 second answer>", '
+        '"whyItWorks":["<2-4 concise factors>"], "evidenceIds":["<ids actually used>"]}. '
+        'When the approved evidence cannot support the question, use '
+        '{"status":"insufficient", "answer":"", "whyItWorks":[], "evidenceIds":[]}.\n\n'
+        'Approved evidence:\n%s'
+    ) % (level, family, evidence_lines)
+    user_content = 'Interview question: %s' % question
+    if follow_up:
+        user_content += '\n\nPrior server-validated model answer:\n%s\n\nInterviewer follow-up: %s' % (
+            prior_answer,
+            follow_up,
+        )
+
+    try:
+        response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=1300,
+            system=system_prompt,
+            messages=[{'role': 'user', 'content': user_content}],
+        )
+        model_answer = validate_interview_model_answer(
+            _extract_json_object(response.content[0].text),
+            evidence_by_id,
+        )
+        context_token = _sign_interview_model_context(
+            profile_slug,
+            question,
+            level,
+            family,
+            model_answer,
+        )
+        return jsonify({
+            'modelAnswer': model_answer,
+            'contextToken': context_token,
+            'profile': {
+                'displayName': profile.get('name') or 'Candidate',
+                'firstName': profile.get('first_name') or 'Candidate',
+            },
+        })
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        app.logger.warning('Interview model-answer validation error: %s', error)
+        return jsonify({'error': 'The answer could not be validated against the profile evidence. Please try again.'}), 502
+    except Exception as error:
+        app.logger.error('Interview model-answer API error: %s', error)
+        return jsonify({'error': 'Interview AI is unavailable right now. Please try again.'}), 500
+
+
+@app.route('/api/interview/coach', methods=['POST'])
+@limiter.limit('10 per minute')
+def interview_coach():
+    return jsonify({
+        'error': 'This legacy coach endpoint has retired. Use the Interview Studio review and improve actions.'
+    }), 410
 
 
 # -------------------------------------------------------
@@ -2006,7 +2367,7 @@ def sitemap_xml():
     public_paths = [
         '/', '/experience',
         '/petec/my-story', '/petec/skills', '/petec/resume',
-        '/petec/slate-board', '/petec/interview-me', '/petec/about',
+        '/petec/slate-board', '/interview-studio', '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
         '/the-slate/pulse', '/the-slate/break',

@@ -163,9 +163,9 @@
                          alt="Ask Pete AI &mdash; grounded career answers about Pete's background, skills, and projects, backed by approved evidence."
                          width="880" height="1100" loading="lazy" decoding="async">
                 </a>
-                <a class="connect-card reveal" style="--reveal-i: 1;" href="{{ portfolio_url('interview-me') }}">
+                <a class="connect-card reveal" style="--reveal-i: 1;" href="{{ interview_studio_url }}">
                     <img src="{{ url_for('static', filename='images/cinematic/connect-interview.jpg') }}"
-                         alt="Interview Me &mdash; practice with AI, or have AI interview you, to build confidence with scenario-based questions."
+                         alt="Interview Studio &mdash; practice answers, learn from evidence-grounded coaching, and rehearse on camera."
                          width="880" height="1100" loading="lazy" decoding="async">
                 </a>
                 <a class="connect-card reveal" style="--reveal-i: 2;" href="{{ url_for('the_slate') }}">
@@ -294,7 +294,7 @@
     {# ==============================================================
        2B - ASK PETE AI / INTERVIEW ME - same mountain-sunrise world
        as Your Work, but with a sticky horizontal handoff: Ask Pete AI
-       glides left while Interview Me arrives from the right.
+       glides left while Interview Studio arrives from the right.
        ============================================================== #}
     <section class="cinematic-section cinematic-section--work cinematic-section--work-ai"
              id="work-ai"
@@ -313,7 +313,7 @@
                 </p>
             </div>
 
-            <div class="work-ai-window reveal" style="--reveal-i: 3;" aria-label="Ask Pete AI and Interview Me preview">
+            <div class="work-ai-window reveal" style="--reveal-i: 3;" aria-label="Ask Pete AI and Interview Studio preview">
                 <div class="work-ai-track" data-work-ai-track>
                     <article class="work-ai-panel work-ai-panel--ask" aria-label="Ask Pete AI preview">
                         <div class="work-ai-panel__lead">
@@ -378,25 +378,25 @@
                         </div>
                     </article>
 
-                    <article class="work-ai-panel work-ai-panel--interview" aria-label="Interview Me preview">
+                    <article class="work-ai-panel work-ai-panel--interview" aria-label="Interview Studio preview">
                         <div class="work-ai-panel__lead">
-                            <p class="work-ai-kicker">Interview Me</p>
+                            <p class="work-ai-kicker">Interview Studio</p>
                             <h3>Turn the Same Proof Into a Practiced Interview Story.</h3>
                             <p>
                                 The interview studio helps Pete rehearse answers with numbers, context,
                                 and a clear result before an employer asks the question live.
                             </p>
                             <div class="work-ai-actions">
-                                <a class="cine-btn cine-btn--primary" href="{{ portfolio_url('interview-me') }}">
-                                    Open Interview Me
+                                <a class="cine-btn cine-btn--primary" href="{{ interview_studio_url }}">
+                                    Open Interview Studio
                                 </a>
-                                <a class="cine-btn cine-btn--ghost" href="{{ portfolio_url('interview-me') }}">
+                                <a class="cine-btn cine-btn--ghost" href="{{ interview_studio_url }}">
                                     Practice a STAR answer
                                 </a>
                             </div>
                         </div>
 
-                        <div class="work-ai-demo-stack work-ai-demo-stack--interview" aria-label="Example Interview Me coaching">
+                        <div class="work-ai-demo-stack work-ai-demo-stack--interview" aria-label="Example Interview Studio coaching">
                             <div class="work-ai-example work-ai-example--primary">
                                 <div class="work-ai-question">
                                     <span>Practice question</span>

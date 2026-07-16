@@ -20,9 +20,9 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}The Slate | PeerSlate{% endblock %}
+{% block title %}Community | PeerSlate{% endblock %}
 
-{% block meta_description %}The Slate — where goals become progress, progress becomes proof, and proof connects people. Feed, goal map, daily log, and guided paths in one place.{% endblock %}
+{% block meta_description %}PeerSlate Community — where goals become progress, progress becomes proof, and proof connects people.{% endblock %}
 
 {% block content %}
 
@@ -238,7 +238,7 @@
                     <div class="ts-ai__panel" data-ts-ai>
                         <p class="ts-ai__msg" data-ts-ai-msg>You mentioned preparing for your PMP certification. Want to tackle one practice question today?</p>
                         <div class="ts-ai__acts">
-                            <a class="ps-btn ps-btn--primary ts-ai__go" data-ts-ai-go href="{{ portfolio_url('interview-me') }}">Answer 1 PMP Question</a>
+                            <a class="ps-btn ps-btn--primary ts-ai__go" data-ts-ai-go href="{{ interview_studio_url }}">Answer 1 PMP Question</a>
                             <button class="ts-btn ts-btn--outline" type="button" data-ts-ai-next>See other ideas</button>
                         </div>
                     </div>
@@ -250,7 +250,7 @@
                         {"msg": "Your portfolio path is 80% complete. Your next best step is to publish the home-lab write-up.", "label": "Open the path", "href": "{{ url_for('the_slate_my') }}#ts-mypaths"},
                         {"msg": "You're close to a weekly streak. Log one Daily Slate update today to keep it alive.", "label": "Log an update", "href": "{{ url_for('the_slate_daily') }}"},
                         {"msg": "Your running goal is ahead of pace. Want to connect with others in the Run 500 Club?", "label": "Visit the club", "href": "{{ url_for('the_slate_my') }}"},
-                        {"msg": "You mentioned preparing for your PMP certification. Want to tackle one practice question today?", "label": "Answer 1 PMP Question", "href": "{{ portfolio_url('interview-me') }}"}
+                        {"msg": "You mentioned preparing for your PMP certification. Want to tackle one practice question today?", "label": "Answer 1 PMP Question", "href": "{{ interview_studio_url }}"}
                     ]
                     </script>
                 </section>

@@ -9,7 +9,7 @@
 <header class="ts-head">
     <div class="ts-head__row">
         <div class="ts-head__copy">
-            <h1 id="ts-title">The Slate</h1>
+            <h1 id="ts-title">Community</h1>
             <p>Your goals, progress, paths, feed, and people &mdash; all connected in one place.</p>
         </div>
         {# Day-streak pill (mockups show it on Feed / Daily / Paths). Static
@@ -30,7 +30,7 @@
        links out to Pete's board (between Feed and My Slate). Slate Paths
        merged into My Slate. data-mobile-tabsource is mirrored by the mobile
        bottom nav. #}
-    <nav class="ts-tabs" aria-label="The Slate sections" data-mobile-tabsource>
+    <nav class="ts-tabs" aria-label="Community sections" data-mobile-tabsource>
         <a class="ts-tab" href="{{ url_for('the_slate') }}" {% if ts_active == 'feed' %}aria-current="page"{% endif %}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
             Slate Feed

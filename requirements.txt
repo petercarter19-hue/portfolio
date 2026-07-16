@@ -11,13 +11,14 @@
 #   1. source venv/bin/activate          (Mac/Linux)  or  venv\Scripts\activate  (Windows)
 #   2. pip install -r requirements.txt
 #
-# These three are the packages you actually import in app.py. Pip will
+# These are the packages the application imports or runs directly. Pip will
 # automatically pull in their smaller supporting packages (like jinja2 for
 # Flask, or httpx for anthropic) on its own — you don't need to list those
 # separately. The version numbers below are pinned to what's already
 # installed and tested in your current venv, so installs stay predictable.
 
 flask==3.1.3          # The web framework that runs the site and handles routes
+itsdangerous==2.2.0   # Signs short-lived Interview AI follow-up context tokens
 anthropic==0.112.0     # Claude API client, used by the /api/chat route
 python-dotenv==1.2.2   # Loads your ANTHROPIC_API_KEY from the .env file
 Flask-Limiter==4.1.1   # Adds basic abuse protection for the public chat endpoint
