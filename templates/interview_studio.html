@@ -169,7 +169,7 @@
                     </p>
 
                     <details class="is__reference" data-is-ai-reference hidden>
-                        <summary>Optional model-answer reference</summary>
+                        <summary>Optional best-practice example</summary>
                         <p data-is-ai-reference-text></p>
                     </details>
 
@@ -271,7 +271,7 @@
                         <ul class="is__dimensions" data-is-dimensions aria-label="Scoring dimensions"></ul>
 
                         <section class="is__evidence-suggestions" data-is-evidence-suggestions hidden>
-                            <h4>Proof you may have missed <span>Optional approved evidence for your next draft</span></h4>
+                            <h4>Relevant history you may have missed <span>Confirmed history that may strengthen your next draft</span></h4>
                             <div data-is-evidence-options></div>
                         </section>
 
@@ -331,6 +331,15 @@
                 {% if interview_initial_view == 'history' or interview_initial_mode != 'ai' %}hidden{% endif %}
             >
                 <article class="is__stage is__stage--ai">
+                    <fieldset class="is__mode" data-is-ai-mode-group>
+                        <legend class="is__section-label">Answer grounding</legend>
+                        <div class="is__mode-options" role="radiogroup" aria-label="Answer grounding mode">
+                            <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
+                            <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s history</span></label>
+                            <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="compare"><span>Compare</span></label>
+                        </div>
+                        <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
+                    </fieldset>
                     <form class="is__ai-form" data-is-ai-form>
                         <div class="is__ai-mark" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
@@ -350,27 +359,30 @@
 
                     <p class="is__grounding-note">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-                        Draft basis: <strong>{{ interview_profile.name }}’s approved public profile evidence</strong>. Verify the generated wording before using it.
+                        Draft basis: <strong>{{ interview_profile.name }}’s approved public history</strong>. Verify the generated wording before using it.
                     </p>
 
                     <div class="is__ai-loading" data-is-ai-loading hidden aria-live="polite">
-                        <span class="is__spinner" aria-hidden="true"></span> Building an approved-evidence draft…
+                        <span class="is__spinner" aria-hidden="true"></span> Building your draft…
                     </div>
                     <p class="is__error" data-is-ai-error hidden></p>
 
                     <section class="is__ai-answer is__feature-shell" data-is-ai-answer aria-labelledby="is-ai-answer-title">
                         <header>
                             <p class="is__section-label">AI synthesis</p>
-                            <h2 id="is-ai-answer-title">Approved-evidence answer workspace</h2>
+                            <h2 id="is-ai-answer-title">Answer workspace</h2>
                         </header>
 
                         <div class="is__feature-empty" data-is-ai-answer-empty>
                             <strong>Your answer workspace is open.</strong>
-                            <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every approved evidence source here for you to verify.</span>
+                            <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every source from the approved history here for you to verify.</span>
                         </div>
 
                         <div data-is-ai-answer-content hidden>
-                            <h2><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
+                            <p class="is__generic-flag" data-is-ai-generic hidden>
+                                Illustrative best-practice example — this is <strong>not</strong> {{ interview_profile.first_name }}&rsquo;s real history.
+                            </p>
+                            <h2 data-is-ai-answer-heading><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
                             <p class="is__ai-answer-text" data-is-ai-answer-text></p>
 
                             <div class="is__why">
@@ -378,8 +390,18 @@
                                 <ul data-is-ai-why></ul>
                             </div>
                             <div class="is__evidence-used">
-                                <h3>Evidence used</h3>
+                                <h3>Relevant history used</h3>
                                 <div data-is-ai-evidence></div>
+                            </div>
+
+                            <div class="is__compare" data-is-ai-compare hidden>
+                                <h3>Best-practice example, for comparison</h3>
+                                <p class="is__generic-flag">Illustrative only — study the structure, not the story.</p>
+                                <p class="is__ai-answer-text" data-is-ai-compare-text></p>
+                                <div class="is__why">
+                                    <h3>Structural lessons</h3>
+                                    <ul data-is-ai-compare-why></ul>
+                                </div>
                             </div>
 
                             <div class="is__actions is__actions--three">
@@ -559,7 +581,7 @@
         <div class="is__dialog-head"><h2 id="is-settings-title">Interview Studio settings</h2><button type="button" class="is__icon-button" aria-label="Close settings" data-is-settings-close>&times;</button></div>
         <div class="is__settings-body">
             <label><input type="checkbox" data-is-confirm-navigation checked> Confirm before replacing a non-empty draft</label>
-            <label><input type="checkbox" data-is-show-reference checked> Allow optional model-answer references</label>
+            <label><input type="checkbox" data-is-show-reference checked> Allow optional best-practice examples</label>
             <p>Typed drafts and completed-session history are stored in this browser only. AI review sends the active question and submitted answer to PeerSlate’s server for coaching.</p>
             <button class="is__button is__button--danger" type="button" data-is-clear-local>Clear browser drafts and history</button>
         </div>

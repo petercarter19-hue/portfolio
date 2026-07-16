@@ -1003,6 +1003,24 @@
     var aiAnswerContent = one('[data-is-ai-answer-content]');
     var aiLoading = one('[data-is-ai-loading]');
     var aiError = one('[data-is-ai-error]');
+    var modeGroup = one('[data-is-ai-mode-group]');
+    if (modeGroup) {
+        var modeNote = one('[data-is-ai-mode-note]');
+        var modeNotes = {
+            best_practice: 'A generic, clearly labeled example — no personal history is used.',
+            member_history: 'Grounded only in the approved public history.',
+            compare: 'Both answers, stacked — study the structural lessons.'
+        };
+        modeGroup.addEventListener('change', function (event) {
+            if (event.target.name !== 'is-ai-mode') return;
+            modeGroup.querySelectorAll('.is__mode-option').forEach(function (label) {
+                label.classList.toggle('is__mode-option--selected',
+                    label.querySelector('input').checked);
+            });
+            if (modeNote) modeNote.textContent = modeNotes[event.target.value] || '';
+        });
+    }
+
     var followUpForm = one('[data-is-follow-up-form]');
     var followUpInput = one('[data-is-follow-up]');
     var followUpSubmit = one('[data-is-follow-up-submit]');
@@ -1035,6 +1053,11 @@
         setHidden(aiError, true);
     }
 
+    function selectedAiMode() {
+        var checked = document.querySelector('[data-is-ai-mode-group] input[name="is-ai-mode"]:checked');
+        return checked ? checked.value : 'member_history';
+    }
+
     function renderModelAnswer(payload) {
         currentModelAnswer = payload.modelAnswer;
         currentModelContextToken = payload.contextToken || '';
@@ -1043,14 +1066,37 @@
         text(one('[data-is-ai-name]'), payload.profile.firstName || 'Candidate');
         text(one('[data-is-ai-answer-text]'), payload.modelAnswer.answer);
         renderList(one('[data-is-ai-why]'), payload.modelAnswer.whyItWorks);
+        var generic = !!payload.modelAnswer.generic;
+        var genericFlag = one('[data-is-ai-generic]');
+        if (genericFlag) setHidden(genericFlag, !generic);
+        var heading = one('[data-is-ai-answer-heading]');
+        if (heading) {
+            heading.textContent = generic
+                ? 'Best-practice example'
+                : (payload.profile.firstName || 'Candidate') + '\u2019s answer';
+        }
+        var compareBlock = one('[data-is-ai-compare]');
+        if (compareBlock) {
+            var hasCompare = !!(payload.bestPractice && payload.bestPractice.answer);
+            setHidden(compareBlock, !hasCompare);
+            if (hasCompare) {
+                text(one('[data-is-ai-compare-text]'), payload.bestPractice.answer);
+                renderList(one('[data-is-ai-compare-why]'), payload.bestPractice.whyItWorks);
+            }
+        }
         var evidenceHolder = one('[data-is-ai-evidence]');
         evidenceHolder.replaceChildren();
-        if (!payload.modelAnswer.evidenceUsed.length) {
+        if (generic) {
+            var flag = document.createElement('span');
+            flag.className = 'is__evidence-chip';
+            flag.textContent = 'Illustrative example — no personal history used';
+            evidenceHolder.appendChild(flag);
+        } else if (!payload.modelAnswer.evidenceUsed.length) {
             var none = document.createElement('span');
             none.className = 'is__evidence-chip';
             none.textContent = insufficient
-                ? 'No approved evidence matched this question; no model answer was produced'
-                : 'No approved evidence references returned — verify this draft';
+                ? 'There is no strong example in the approved history for this question yet — adding your own arrives with PeerSlate accounts. Try the best-practice example instead.'
+                : 'No approved history references returned — verify this draft';
             evidenceHolder.appendChild(none);
         } else {
             payload.modelAnswer.evidenceUsed.forEach(function (item) {
@@ -1068,7 +1114,7 @@
         setHidden(aiAnswerContent, false);
         followUpInput.disabled = insufficient;
         followUpSubmit.disabled = insufficient;
-        announce(insufficient ? 'More approved evidence is needed for that question.' : 'Approved-evidence model-answer draft ready.');
+        announce(insufficient ? 'No strong example exists in the approved history for that question yet.' : (payload.modelAnswer.generic ? 'Best-practice example ready.' : 'Draft grounded in approved history ready.'));
     }
 
     function requestModelAnswer(followUp) {
@@ -1095,7 +1141,8 @@
             follow_up: followUp || '',
             context_token: followUp ? currentModelContextToken : '',
             level: session.level,
-            family: session.family
+            family: session.family,
+            mode: followUp ? 'member_history' : selectedAiMode()
         }, controller.signal).then(function (payload) {
             if (requestId !== aiRequestId) return;
             aiController = null;

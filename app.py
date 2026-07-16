@@ -2366,6 +2366,12 @@ def interview_model_answer():
         level = 'experienced'
     if family not in ('situational', 'behavioral', 'mixed'):
         family = 'behavioral'
+    # PS-INTERVIEW-002 (v1.2): explicit grounding modes. member_history is
+    # the original behavior; best_practice is a clearly generic example;
+    # compare returns both so the member can study the structural lessons.
+    mode = str(data.get('mode') or 'member_history').strip()
+    if mode not in ('member_history', 'best_practice', 'compare'):
+        mode = 'member_history'
 
     profile, evidence = _interview_page_context(profile_slug)
     evidence_by_id = {item['id']: item for item in evidence}
@@ -2387,6 +2393,29 @@ def interview_model_answer():
         '{"status":"insufficient", "answer":"", "whyItWorks":[], "evidenceIds":[]}.\n\n'
         'Approved evidence:\n%s'
     ) % (level, family, evidence_lines)
+    best_practice_system = (
+        'You are writing a GENERIC best-practice interview example answer for a %s-level %s question. '
+        'This is an illustrative example only — it is NOT the history of any real person and must never '
+        'read as a specific verifiable career claim. Use a clearly generic scenario (for example "a '
+        'cross-functional project at a previous employer") with no real company names, no invented '
+        'precise metrics presented as fact, and no references to the PeerSlate profile. '
+        'Show strong structure (situation, task, action, result, reflection). Do not award a score. '
+        'Respond with JSON only: {"status":"answered", "answer":"<natural 60-120 second example>", '
+        '"whyItWorks":["<2-4 structural lessons this example demonstrates>"], "evidenceIds":[]}.'
+    ) % (level, family)
+
+    def _generate(system_text, empty_evidence=False):
+        api_response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=1300,
+            system=system_text,
+            messages=[{'role': 'user', 'content': user_content}],
+        )
+        return validate_interview_model_answer(
+            _extract_json_object(api_response.content[0].text),
+            {} if empty_evidence else evidence_by_id,
+        )
+
     user_content = 'Interview question: %s' % question
     if follow_up:
         user_content += '\n\nPrior server-validated model answer:\n%s\n\nInterviewer follow-up: %s' % (
@@ -2395,16 +2424,16 @@ def interview_model_answer():
         )
 
     try:
-        response = client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=1300,
-            system=system_prompt,
-            messages=[{'role': 'user', 'content': user_content}],
-        )
-        model_answer = validate_interview_model_answer(
-            _extract_json_object(response.content[0].text),
-            evidence_by_id,
-        )
+        best_practice_answer = None
+        if mode == 'best_practice':
+            model_answer = _generate(best_practice_system, empty_evidence=True)
+            model_answer['generic'] = True
+        elif mode == 'compare':
+            model_answer = _generate(system_prompt)
+            best_practice_answer = _generate(best_practice_system, empty_evidence=True)
+            best_practice_answer['generic'] = True
+        else:
+            model_answer = _generate(system_prompt)
         context_token = _sign_interview_model_context(
             profile_slug,
             question,
@@ -2412,14 +2441,18 @@ def interview_model_answer():
             family,
             model_answer,
         )
-        return jsonify({
+        payload = {
+            'mode': mode,
             'modelAnswer': model_answer,
             'contextToken': context_token,
             'profile': {
                 'displayName': profile.get('name') or 'Candidate',
                 'firstName': profile.get('first_name') or 'Candidate',
             },
-        })
+        }
+        if best_practice_answer is not None:
+            payload['bestPractice'] = best_practice_answer
+        return jsonify(payload)
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
         app.logger.warning('Interview model-answer validation error: %s', error)
         return jsonify({'error': 'The answer could not be validated against the profile evidence. Please try again.'}), 502

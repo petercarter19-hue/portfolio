@@ -462,3 +462,28 @@ class InterviewStudioAssetTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class InterviewV12ModeTests(unittest.TestCase):
+    """PS-INTERVIEW-002: grounding-mode control and v1.2 language."""
+
+    @classmethod
+    def setUpClass(cls):
+        app.config['TESTING'] = True
+        cls.html = app.test_client().get(
+            '/interview-studio').get_data(as_text=True)
+
+    def test_mode_control_present(self):
+        self.assertIn('data-is-ai-mode-group', self.html)
+        for value in ('best_practice', 'member_history', 'compare'):
+            self.assertIn(f'value="{value}"', self.html)
+
+    def test_generic_example_is_labeled(self):
+        self.assertIn('Illustrative best-practice example', self.html)
+        self.assertIn('data-is-ai-generic', self.html)
+
+    def test_v12_language(self):
+        self.assertIn('Relevant history you may have missed', self.html)
+        self.assertNotIn('Proof you may have missed', self.html)
+        self.assertNotIn('approved evidence for your next draft', self.html)
+        self.assertNotIn('model-answer reference', self.html)
