@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import unittest
 from unittest.mock import patch
 
@@ -16,6 +17,7 @@ class PeerSlateApiTests(unittest.TestCase):
             "PEERSLATE_ENABLE_DB_TEST_ROUTES": app.config.get("PEERSLATE_ENABLE_DB_TEST_ROUTES"),
             "PEERSLATE_DATABASE_UI_ENABLED": app.config.get("PEERSLATE_DATABASE_UI_ENABLED"),
             "PEERSLATE_LIVING_RESUME_DB_ENABLED": app.config.get("PEERSLATE_LIVING_RESUME_DB_ENABLED"),
+            "PEERSLATE_TRUST_EASYAUTH_HEADERS": app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS"),
         }
         app.config.update(
             TESTING=True,
@@ -24,6 +26,7 @@ class PeerSlateApiTests(unittest.TestCase):
             PEERSLATE_ENABLE_DB_TEST_ROUTES=False,
             PEERSLATE_DATABASE_UI_ENABLED=False,
             PEERSLATE_LIVING_RESUME_DB_ENABLED=False,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
         )
         self.client = app.test_client()
 
@@ -149,6 +152,77 @@ class PeerSlateApiTests(unittest.TestCase):
             404,
         )
 
+    @patch("identity.database_service.first_row")
+    def test_azure_hosting_does_not_automatically_trust_identity_headers(
+        self, first_row
+    ):
+        app.config.update(
+            TESTING=False,
+            PEERSLATE_ALLOW_DEV_IDENTITY=False,
+            PEERSLATE_DEV_USER_KEY=None,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
+        )
+        principal = {
+            "auth_typ": "aad",
+            "claims": [{"typ": "oid", "val": "untrusted-member"}],
+        }
+        encoded = base64.b64encode(json.dumps(principal).encode()).decode()
+
+        with patch.dict(os.environ, {"WEBSITE_INSTANCE_ID": "hosted-instance"}):
+            response = self.client.get(
+                "/api/dashboard", headers={"X-MS-CLIENT-PRINCIPAL": encoded}
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json()["message"], "Sign in is required.")
+        first_row.assert_not_called()
+
+    @patch("identity.database_service.first_row")
+    def test_testing_mode_does_not_automatically_trust_identity_headers(
+        self, first_row
+    ):
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_ALLOW_DEV_IDENTITY=False,
+            PEERSLATE_DEV_USER_KEY=None,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
+        )
+        principal = {
+            "auth_typ": "aad",
+            "claims": [{"typ": "oid", "val": "untrusted-test-member"}],
+        }
+        encoded = base64.b64encode(json.dumps(principal).encode()).decode()
+
+        response = self.client.get(
+            "/api/dashboard", headers={"X-MS-CLIENT-PRINCIPAL": encoded}
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json()["message"], "Sign in is required.")
+        first_row.assert_not_called()
+
+    @patch("identity.database_service.first_row")
+    def test_truthy_string_does_not_enable_identity_header_trust(self, first_row):
+        app.config.update(
+            TESTING=False,
+            PEERSLATE_ALLOW_DEV_IDENTITY=False,
+            PEERSLATE_DEV_USER_KEY=None,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS="true",
+        )
+        principal = {
+            "auth_typ": "aad",
+            "claims": [{"typ": "oid", "val": "untrusted-string-member"}],
+        }
+        encoded = base64.b64encode(json.dumps(principal).encode()).decode()
+
+        response = self.client.get(
+            "/api/dashboard", headers={"X-MS-CLIENT-PRINCIPAL": encoded}
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json()["message"], "Sign in is required.")
+        first_row.assert_not_called()
+
     @patch("peerslate_api.database_service.execute_procedure")
     def test_owner_living_resume_uses_server_identity_and_named_contract(self, execute):
         app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
@@ -183,6 +257,7 @@ class PeerSlateApiTests(unittest.TestCase):
     def test_easy_auth_subject_is_upserted_and_used_for_tenant_scope(
         self, execute, first_row
     ):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         principal = {
             "auth_typ": "aad",
             "claims": [

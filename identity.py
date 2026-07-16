@@ -2,7 +2,6 @@
 
 import base64
 import json
-import os
 from dataclasses import dataclass
 
 from flask import current_app, g, request
@@ -107,10 +106,12 @@ def get_current_identity():
         return cached_identity
 
     encoded_principal = request.headers.get("X-MS-CLIENT-PRINCIPAL")
+    # App Service hosting and Flask test mode do not prove that a request
+    # passed through a trusted authentication boundary. Accept Easy Auth
+    # headers only after that boundary has been configured and the explicit
+    # application flag has been enabled.
     trust_easy_auth = (
-        bool(os.getenv("WEBSITE_INSTANCE_ID"))
-        or current_app.testing
-        or current_app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS", False)
+        current_app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS", False) is True
     )
 
     if encoded_principal and trust_easy_auth:

@@ -14,7 +14,7 @@ The current public pages remain unchanged by default. Database-backed Board, Dai
 
 1. Azure App Service Easy Auth validates the member before the request reaches Flask.
 2. App Service injects `X-MS-CLIENT-PRINCIPAL`, containing Base64-encoded identity claims.
-3. `identity.py` accepts that header only in Azure, tests, or an explicit local simulation mode.
+3. `identity.py` accepts that header only when `PEERSLATE_TRUST_EASYAUTH_HEADERS=true`; Azure hosting and Flask test mode alone are not trusted boundaries.
 4. `dbo.usp_UpsertAppUserFromAuth` creates or updates the member and returns the database-owned `user_key`.
 5. API code uses that `user_key`; browser query strings and JSON bodies cannot select another tenant.
 6. `DatabaseService` calls an allow-listed stored-procedure-shaped name with parameter binding.
@@ -64,6 +64,7 @@ The dashboard's eight result sets are named: `user_summary`, `today_break_feed`,
 
 - Enable Azure App Service Authentication and require sign-in.
 - Permit Flask to trust Easy Auth headers only when requests cannot bypass App Service authentication.
+- Verify direct client-supplied `X-MS-CLIENT-PRINCIPAL` headers are removed or rejected, then explicitly set `PEERSLATE_TRUST_EASYAUTH_HEADERS=true`.
 - Keep `PEERSLATE_ALLOW_DEV_IDENTITY=false`.
 - Do not set `PEERSLATE_DEV_USER_KEY` as a production identity mechanism.
 
@@ -86,7 +87,7 @@ The local user is a fixture identity only. It does not prove production authenti
 | `PEERSLATE_LIVING_RESUME_DB_ENABLED` | `false` | Enables the owner/public Living Resume read APIs after PS-PLAT-006 and PS-PLAT-007 verification. |
 | `PEERSLATE_ENABLE_DB_TEST_ROUTES` | `false` | Enables temporary raw connectivity routes locally. Keep off in production. |
 | `PEERSLATE_ALLOW_DEV_IDENTITY` | `false` | Allows the configured development user. Never enable in production. |
-| `PEERSLATE_TRUST_EASYAUTH_HEADERS` | `false` | Allows intentional local Easy Auth simulation. Azure is detected automatically. |
+| `PEERSLATE_TRUST_EASYAUTH_HEADERS` | `false` | Explicitly enables Easy Auth header processing after the trusted boundary is configured and bypass-tested. Azure hosting is not sufficient by itself. |
 
 ## 7. Security Properties
 
