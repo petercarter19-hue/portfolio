@@ -4,10 +4,12 @@
 
 name: Build and deploy Python app to Azure Web App - peerslate-pete
 
+# DISABLED (2026-07-16, PS-RULES-001): Azure Pipelines is the ONLY
+# production deployment path (docs/AI_WORKFLOW.md, PEERSLATE_SITE_RULES.md
+# rule 79). This workflow is retained as history; the push trigger was
+# removed so a repository-settings change can never silently re-enable
+# GitHub deployment. Manual dispatch remains blocked by repo policy.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:

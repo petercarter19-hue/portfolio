@@ -1,0 +1,128 @@
+# PeerSlate Site Rules
+
+**Version:** 1.0  
+**Approved:** July 16, 2026  
+**Status:** Locked unless Peter Carter deliberately changes the Company & Product Bible
+
+These rules govern product copy, information architecture, data behavior, AI behavior, design, implementation, and release decisions. They apply to human contributors and AI coding agents.
+
+## 1. Product center
+
+1. The Journal is the canonical member-owned timeline and the center of the recurring product loop.
+2. A Feed post is a projection of a Journal record, not a second copy of the same information.
+3. Pages are views of one connected Slate. Do not create another source of truth for Story, Work, Resume, Projects, Slate Board, Feed, or Interview Studio.
+4. The primary member loop is: capture something real, understand it, review it, keep it private or share it, and receive more value from it later.
+5. The working professional is the primary user. Recruiters and hiring managers are secondary viewers of member-approved output.
+
+## 2. Privacy, ownership, and truth
+
+6. New captures, files, transcripts, AI drafts, interview sessions, goals, notes, and imported information are private by default.
+7. AI never publishes, broadens an audience, creates a permanent Story item, or changes a Resume without explicit member approval.
+8. The member is the final authority on facts, dates, roles, metrics, visibility, and publication.
+9. Never trust a browser-supplied user ID, profile slug, media path, or session identifier as proof of ownership. Resolve identity from the trusted server session and enforce authorization in the data layer.
+10. Every user-owned record must support inspection, correction, export, archive, and deletion.
+11. Public AI may retrieve only sources approved for the public audience. Owner AI may use only the private sources the authenticated member has permitted for that workflow.
+12. Never present AI interpretation, similarity, or a score as verified fact.
+13. Keep source and provenance relationships internally even when the interface uses simpler language such as “Sources,” “Supporting work,” or “Grounded in your Slate.”
+
+## 3. User-facing source language
+
+14. “Evidence” is not a top-level navigation item, public destination, or repeated marketing label.
+15. Replace user-facing “evidence-backed” language with context-appropriate language such as “Grounded in your Slate,” “Based on approved history,” “Sources used,” “Supporting work,” or “Relevant history.”
+16. Remove the public Evidence tab and fold supporting material into Work, Projects, Resume Creator, Interview Studio, and Ask AI.
+17. Internal provenance and support states may remain in the data model, audit trail, and trust logic. Do not delete trust infrastructure merely to remove the word from the interface.
+
+## 4. Journal rules
+
+18. Universal Capture supports text, voice, photo, video, and document input through one workflow.
+19. A member does not have to choose Journal, Project, Story, Resume, or Feed before describing what happened.
+20. Every Capture initially creates a private draft. AI may propose a type, title, connections, and audience, but the member approves each change.
+21. Journal entries may represent work, life, learning, progress, a challenge, a question, a reflection, a project update, a goal update, a milestone, or an ordinary moment.
+22. Journal filters are local filters, not new top-level destinations.
+23. Publishing a Journal entry may project it into the Feed, a public Journal, and a connected Project or Goal without duplication.
+24. Journal prompts must be private, dismissible, rate-limited, varied, and useful. Never use guilt, streak pressure, or urgency theater.
+
+## 5. Feed and community rules
+
+25. Community exists to make progress, questions, learning, unfinished work, and real life comfortable to share.
+26. The desktop Feed right rail contains one member-owned Note card only. Do not add quote rails, challenges, people recommendations, trends, polls, or decorative engagement furniture beside the Feed.
+27. The Note card may contain one quiet rotating Journal check-in and actions to Talk, Type, add to Journal, add to Slate Board, dismiss, or clear.
+28. Replace a single generic Encourage action with a small purposeful Respond system. Supported response intentions are Celebrate, Support, I relate, Ask, and Offer help.
+29. The primary post actions are Respond, Comment, and Save. “Follow progress” may appear only on a connected Project or Goal where following has a clear object.
+30. Do not place Ask Pete AI or another member-specific public assistant inside Community.
+31. Do not show public follower counts, reaction leaderboards, engagement rankings, or popularity pressure as primary status.
+32. Comments, replies, mentions, editing, deletion, moderation, mute, block, report, and audience controls must work before broad community growth.
+33. Polls are never filler. Do not seed, auto-generate, or place a poll merely to make a page look active. A future member-created poll requires a real question, a defined audience, and an approved product purpose.
+34. No job posts, job listing cards, hiring feeds, job recommendations, job marketplace, or sponsored jobs—ever.
+
+## 6. Private job-description analysis rules
+
+35. A member may upload an external job description privately to Ask AI for Qualification Alignment. This is document analysis, not a job post.
+36. PeerSlate must never publish, index, recommend, syndicate, or create a public listing from an uploaded job description.
+37. Qualification analysis is based on explicit basic/required qualifications, preferred qualifications, and other stated conditions—not generic skill similarity or keyword volume.
+38. Responsibilities remain separate from qualifications unless the source explicitly states that they are requirements.
+39. Results must show each qualification as Confirmed match, Partial match, Not found, or Needs clarification, with the member history used for the decision.
+40. Show Basic Qualification Coverage and Preferred Qualification Coverage separately. An optional overall Qualification Compatibility score must disclose its formula and must not be described as a hiring probability.
+41. Unknown member history is not a failure. Ask a focused question and offer to add the answer as a private Journal or Work draft after approval.
+42. Uploaded job descriptions are session-private by default, deletable, and never included in public Ask AI grounding.
+
+## 7. Resume and Career Constellation rules
+
+43. The Living Resume web view is the canonical professional presentation. The Resume PDF is an export generated from approved Slate records.
+44. Resume Creator belongs inside Work and supports multiple saved versions for different purposes or external roles.
+45. AI may propose selection, ordering, wording, and formatting; it may not invent responsibilities, metrics, dates, qualifications, or outcomes.
+46. Resume Creator must support editable drafts, clear source relationships, version names, target role or purpose, PDF export, DOCX export, and selection of a default public download.
+47. Projects, achievements, and promotions appear on the Career Constellation with roles as anchor nodes.
+48. Promotions are explicit career events. Never infer a promotion solely from a changed title without member confirmation.
+49. A Project may span roles; an Achievement may connect to a role, Project, outcome, or promotion.
+50. Career Constellation must have an accessible chronological/list alternative. No essential meaning may depend only on spatial position, animation, or color.
+
+## 8. Interview Studio rules
+
+51. Interview Me means the member answers and PeerSlate coaches the answer.
+52. Interview AI means the member requests a model response. It must provide an easy mode switch between “Best-practice example” and “Use my history,” with an optional compare view.
+53. A Best-practice example is generic and must never imply that the member performed the example.
+54. “Use my history” may use only confirmed, permitted member history and must display the relevant history used.
+55. When no strong relevant history exists, say so plainly and ask whether the member has an example to add. Offer Talk, Type, and Not now.
+56. New interview history is saved only as a private draft after member review. It must not silently alter the Journal, Work, Story, or Resume.
+57. Interview feedback includes: What worked, Improve next, one adaptive follow-up question, and Relevant history you may have missed.
+58. Preserve the member’s original answer and separate it from an AI-improved draft.
+59. Remove “Evidence-backed coaching,” “Proof you may have missed,” and ambiguous model-answer labels from the interface.
+
+## 9. AI experience rules
+
+60. PeerSlate should feel like one trusted intelligence with specialized workflows, not a collection of disconnected bots.
+61. Contextual AI appears where it is useful. A global Ask AI surface may exist, but normal tasks should not be forced through a generic chat window.
+62. AI prompts must be specific, optional, calm, and grounded in the member’s permitted context.
+63. AI must preserve the member’s natural voice and may not convert uncertainty or ordinary language into corporate performance copy by default.
+64. AI output remains a draft until accepted. Show the source set, audience, destination, and material uncertainty when relevant.
+65. Application code—not a model—controls authentication, authorization, ownership, publication, deletion, billing, audit history, and retention.
+
+## 10. Navigation and About rules
+
+66. About PeerSlate does not belong in the signed-in product navigation or a public member’s Slate navigation.
+67. Place “Why PeerSlate” or “About PeerSlate” in the logged-out marketing footer or a restrained marketing-only menu.
+68. The About page explains why PeerSlate exists, the problem of lost progress, the living Journal, the private-first model, AI boundaries, member control, and the long-term compounding value. It does not lead with recruiter exploration.
+69. Recommended signed-in domains are Home, Journal, Slate, Work, Studio, and Community, with persistent Capture and contextual/global AI.
+70. Recommended public member views are Journal, Story, Work, Slate, and Ask [Name] AI.
+71. Do not create top-level links for filters, temporary prototypes, unfinished concepts, or empty pages.
+
+## 11. Brand and interface rules
+
+72. Iris Foundry is the shared design system.
+73. Global tokens: canvas `#F7F4EE`, surface `#FFFFFF`, ink `#191821`, primary iris `#5A2D82`, champagne bronze `#B87422`, and success teal `#16705F`.
+74. Each major area receives one room accent: Overview/Iris, Resume/Bronze, Interview/Teal, Story/Plum, Slate Board/Amber, Community/Pine, and AI/Ultraviolet.
+75. Neutral by default, expressive at the focal point, semantic after interaction, and memorable by page.
+76. Do not replace every blue surface with purple, tint every card, add visible grain, use colored shadows globally, or create a neon/gaming aesthetic.
+77. Raise only items that can be acted on, selected, entered, or opened.
+78. Target WCAG 2.2 AA; support keyboard navigation, visible focus, screen readers, reduced motion, 200% zoom, long content, missing media, and mobile touch targets.
+
+## 12. Delivery and truthfulness rules
+
+79. Azure DevOps `origin/main` remains production and Azure Pipelines remains the only production deployment path unless the owner deliberately changes repository governance.
+80. One work package, one focused branch, one reviewable outcome.
+81. Before editing, inspect repository instructions, branch, status, remotes, worktrees, stashes, routes, templates, data access, migrations, tests, environment configuration, and current behavior.
+82. Do not hardcode Pete or Danielle into reusable product logic.
+83. Do not present mock data, a disabled control, or an unimplemented path as working.
+84. Every work package requires user stories, scope, acceptance criteria, privacy behavior, failure states, accessibility, tests, observability, rollout, rollback, verification evidence, and a handoff.
+85. Stop and report when the repository or Azure state conflicts with the approved plan. Do not silently invent a new architecture.

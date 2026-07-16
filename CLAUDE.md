@@ -3,6 +3,26 @@
 
 # Claude / Claude Code instructions
 
+## v1.2 governance — read BEFORE any product work (PS-RULES-001, 2026-07-16)
+
+1. `PeerSlate_Company_and_Product_Bible_v1.2.docx` (repo root) — the
+   authoritative product direction, Foundation Edition v1.2.
+2. `docs/PEERSLATE_SITE_RULES.md` — 85 locked rules for copy, IA, data,
+   AI, design, and delivery. They bind humans and AI agents alike.
+3. `docs/PEERSLATE_V12_IMPLEMENTATION_INSTRUCTIONS.md` — the approved
+   package program (PS-PLAN-002 → PS-CONSTELLATION-001) and delivery
+   method. One package, one branch, one reviewable outcome.
+4. `docs/INITIATIVE_CHECKLIST.md` — answer it in every package handoff.
+5. Status (2026-07-16): PS-PLAN-002 ✔, PS-RULES-001 ✔,
+   PS-BRAND-NAV-001 / PS-INTERVIEW-002 / PS-FEED-002 delivered as
+   public-safe slices; **PS-JOURNAL-002 is owner-held** ("hold off on
+   the journal"); PS-QUALIFY-001, PS-RESUME-001, PS-CONSTELLATION-001
+   are auth-gated for the private phase.
+
+The Bible governs product direction; the repository governs current
+implementation. When they conflict, report the conflict before coding.
+The guardrail suite `tests/test_site_rules.py` must stay green.
+
 - Treat `AGENTS.md` as the shared PeerSlate product and quality rules.
 - Treat `docs/AI_WORKFLOW.md` as the canonical Git, branch, handoff, pull-request, deployment, and cleanup workflow. Read it in full before repository work.
 - Read the four source-of-truth documents listed there before planning changes.
