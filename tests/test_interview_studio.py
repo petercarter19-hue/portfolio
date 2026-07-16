@@ -182,7 +182,7 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn('not uploaded, analyzed, or retained', html)
         self.assertIn('data-is-video-question-position', html)
         self.assertIn('data-is-video-transcript', html)
-        self.assertIn('same evidence-backed content review as Interview Me', html)
+        self.assertIn('same content review as Interview Me, grounded in the approved history', html)
         self.assertNotIn('fake replay', html.lower())
 
     def test_history_supports_real_session_detail_and_deletion(self):
