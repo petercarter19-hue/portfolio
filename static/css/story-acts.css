@@ -1590,3 +1590,68 @@ body.sa-js .sa-reveal.is-in {
         background: Highlight;
     }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: warm paper + ink chapters with gold timeline
+   markers; the dark act stages go true ink; photography stays natural.
+   ===================================================================== */
+body[data-theme="dark"] .story-acts,
+body[data-theme="dark"] .my-story-page {
+    --st-ink: #0b0c0e;
+    --st-muted: #55534e;
+    --st-indigo: #8a6500;
+    --st-azure: #d8a928;
+    --st-cyan: #bf8f17;
+    --st-amber: #d8a928;
+    --st-cloud: #faf9f5;
+    --st-night: #0b0c0e;
+}
+
+/* Dark chapter/stat/closing panels: ink instead of navy. */
+body[data-theme="dark"] .sc-closing,
+body[data-theme="dark"] .sc-stat.sc-var-dark {
+    background: linear-gradient(160deg, #17181b 0%, #0b0c0e 100%);
+}
+
+/* Eyebrows/kickers. */
+body[data-theme="dark"] .sc-eyebrow { color: #8a6500; }
+body[data-theme="dark"] .sc-dark .sc-eyebrow,
+body[data-theme="dark"] .sc-var-dark .sc-eyebrow,
+body[data-theme="dark"] .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-eyebrow { color: #e3b83a; }
+body[data-theme="dark"] #act-next .sc-paper .sc-eyebrow { color: #8a6500; }
+
+/* Handwriting notes, links, stats. */
+body[data-theme="dark"] .sc-hand { color: #3a3d42; }
+body[data-theme="dark"] .sc-stat-value { color: #0b0c0e; }
+body[data-theme="dark"] .sc-body { color: #3a3d42; }
+body[data-theme="dark"] .sc-chapter.sc-var-summit .sc-body { color: #3a3d42; }
+
+body[data-theme="dark"] .sc-expand-toggle { color: #8a6500; }
+body[data-theme="dark"] .sc-var-dark .sc-expand-toggle,
+body[data-theme="dark"] .sc-chapter:is(.sc-var-ember, .sc-var-systems, .sc-var-code) .sc-expand-toggle { color: #e3b83a; }
+
+/* Timeline spines + dots: gold. */
+body[data-theme="dark"] .sc-signal--path ol::before { background: linear-gradient(180deg, #d8a928, #bf8f17, #8a6500); }
+
+body[data-theme="dark"] .story-act--night :is(a, button):focus-visible,
+body[data-theme="dark"] .story-act--dusk :is(a, button):focus-visible { outline-color: #e3b83a; }
+
+body[data-theme="dark"] .sc-signal ol::before,
+body[data-theme="dark"] .sc-signal--path ol::before { background: linear-gradient(180deg, #d8a928, #bf8f17, #8a6500); }
+
+body[data-theme="dark"] .sc-signal li::before {
+    background: #d8a928;
+    border-color: #0b0c0e;
+    box-shadow: 0 0 0 2px rgb(216 169 40 / 25%);
+}
+
+body[data-theme="dark"] .story-values,
+body[data-theme="dark"] .story-values li,
+body[data-theme="dark"] .story-values a {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .story-values {
+    border-top-color: rgb(216 169 40 / 30%);
+}

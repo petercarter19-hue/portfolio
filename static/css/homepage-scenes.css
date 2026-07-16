@@ -1434,3 +1434,237 @@
 
     .home-v3 .hv-rc__steps { flex-direction: column; align-items: flex-start; }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: cinematic near-black voice hero with a single
+   gold action, then paper-white story bands, closed by the ink footer —
+   the alternating light/dark choreography from the reference poster.
+   Light theme above is untouched.
+   ===================================================================== */
+body[data-theme="dark"] .home-v3 {
+    --hv-indigo: #d8a928;
+    --hv-indigo-strong: #e3b83a;
+    --hv-indigo-soft: rgb(216 169 40 / 16%);
+    --hv-azure: #d8a928;
+    --hv-cyan: #d8a928;
+    --hv-amber: #d8a928;
+    --hv-ink: #fafaf7;
+    --hv-text: #e9e7e1;
+    --hv-muted: #b9b8b3;
+    --hv-line: #33353a;
+    --hv-surface: #17181b;
+    --hv-cloud: #0b0c0e;
+    --hv-green: #69ae92;
+    --hv-violet: #d8a928;
+    --hv-shadow-soft: 0 14px 40px rgb(0 0 0 / 40%);
+    --hv-shadow-lift: 0 24px 60px rgb(0 0 0 / 50%);
+    color: var(--hv-text);
+    background:
+        radial-gradient(90rem 44rem at 78% -6rem, rgb(216 169 40 / 7%), transparent 62%),
+        linear-gradient(180deg, #0b0c0e 0%, #101114 60%, #0b0c0e 100%);
+}
+
+/* Hero internals: graphite capture stage, gold signals. */
+body[data-theme="dark"] .home-v3 .hv-eyebrow {
+    background: rgb(216 169 40 / 14%);
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .home-v3 .hv-btn--ghost {
+    color: #e9e7e1;
+    border-color: #3a3d42;
+}
+
+body[data-theme="dark"] .home-v3 .hv-btn--ghost:hover { background: rgb(255 255 255 / 8%); }
+
+body[data-theme="dark"] .home-v3 .hv-btn--primary {
+    background: #d8a928;
+    color: #0b0c0e;
+    box-shadow: 0 12px 26px rgb(216 169 40 / 22%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-btn--primary:hover { background: #e3b83a; }
+
+body[data-theme="dark"] .home-v3 .hv-mic__ring {
+    background:
+        radial-gradient(closest-side, rgb(216 169 40 / 0%) 74%, rgb(216 169 40 / 18%) 84%, rgb(216 169 40 / 5%) 92%, transparent 100%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-mic__inner {
+    background: radial-gradient(circle at 50% 32%, #24262a 42%, #17181b 78%, #101114 100%);
+    border: 1px solid #3a3d42;
+    box-shadow: var(--hv-shadow-lift), inset 0 0 0 0.6rem rgb(255 255 255 / 4%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-mic:hover .hv-mic__inner,
+body[data-theme="dark"] .home-v3 .hv-mic:focus-visible .hv-mic__inner {
+    box-shadow: 0 28px 70px rgb(0 0 0 / 55%), inset 0 0 0 0.6rem rgb(216 169 40 / 10%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-mic__key {
+    background: rgb(255 255 255 / 8%);
+    border-color: #3a3d42;
+    color: #b9b8b3;
+}
+
+body[data-theme="dark"] .home-v3 .hv-mic__btn {
+    background: #d8a928;
+    color: #0b0c0e;
+    box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-chips li {
+    background: rgb(255 255 255 / 7%);
+    border-color: #33353a;
+    color: #d8d6d0;
+}
+
+body[data-theme="dark"] .home-v3 .hv-chip {
+    background: rgb(255 255 255 / 8%);
+    color: #d8d6d0;
+}
+
+body[data-theme="dark"] .home-v3 .hv-chip--amber,
+body[data-theme="dark"] .home-v3 .hv-chip--cyan {
+    background: rgb(216 169 40 / 16%);
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .home-v3 .hv-dest {
+    border-color: #26282c;
+}
+
+body[data-theme="dark"] .home-v3 .hv-dest__icon--indigo,
+body[data-theme="dark"] .home-v3 .hv-dest__icon--amber,
+body[data-theme="dark"] .home-v3 .hv-dest__icon--violet,
+body[data-theme="dark"] .home-v3 .hv-dest__icon--cyan {
+    background: rgb(216 169 40 / 14%);
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .home-v3 .hv-dest__icon--green {
+    background: rgb(105 174 146 / 16%);
+    color: #69ae92;
+}
+
+body[data-theme="dark"] .home-v3 .hv-dest__arrow { color: #66645f; }
+
+body[data-theme="dark"] .home-v3 .hv-week {
+    background: rgb(255 255 255 / 5%);
+    border: 1px solid #26282c;
+}
+
+body[data-theme="dark"] .home-v3 .hv-week__icon--green { background: rgb(105 174 146 / 16%); color: #69ae92; }
+body[data-theme="dark"] .home-v3 .hv-week__icon--amber,
+body[data-theme="dark"] .home-v3 .hv-week__icon--violet,
+body[data-theme="dark"] .home-v3 .hv-week__icon--cyan {
+    background: rgb(216 169 40 / 14%);
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .home-v3 a:focus-visible,
+body[data-theme="dark"] .home-v3 button:focus-visible {
+    outline: 2px solid #d8a928;
+}
+
+/* ---------- paper bands: Living Résumé + Story/Future scenes ----------
+   The mock-UI showcases inside these scenes are built light; the mono
+   composition keeps them as the light stages between dark hero and dark
+   footer, so their internals stay legible and the page alternates. */
+body[data-theme="dark"] .home-v3 .hv-resume,
+body[data-theme="dark"] .home-v3 .hv-story {
+    --hv-indigo: #8a6500;
+    --hv-indigo-strong: #6f5100;
+    --hv-indigo-soft: rgb(216 169 40 / 16%);
+    --hv-azure: #bf8f17;
+    --hv-cyan: #bf8f17;
+    --hv-amber: #d8a928;
+    --hv-ink: #0b0c0e;
+    --hv-text: #3a3d42;
+    --hv-muted: #66645f;
+    --hv-line: #ddd9d0;
+    --hv-surface: #ffffff;
+    --hv-cloud: #faf9f5;
+    --hv-green: #2f7a62;
+    --hv-violet: #8a6500;
+    --hv-shadow-soft: 0 14px 40px rgb(11 12 14 / 7%);
+    --hv-shadow-lift: 0 24px 60px rgb(11 12 14 / 11%);
+    background: #faf9f5;
+    color: var(--hv-text);
+}
+
+/* Paper-band buttons flip back to gold-on-light rules. */
+body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--primary,
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary {
+    background: #d8a928;
+    color: #0b0c0e;
+    box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
+}
+
+body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost,
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost {
+    color: #0b0c0e;
+    border-color: #cfc9bd;
+}
+
+body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost:hover,
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost:hover { background: #f1efea; }
+
+body[data-theme="dark"] .home-v3 .hv-resume .hv-eyebrow,
+body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow {
+    background: rgb(216 169 40 / 15%);
+    color: #6f5100;
+}
+
+/* PhD future card: ink panel with gold mark (was navy gradient). */
+body[data-theme="dark"] .home-v3 .hv-future__phd {
+    background: linear-gradient(120deg, #0b0c0e, #24262a);
+}
+
+/* Role dots in the mock résumé ledger: gold family instead of the
+   indigo→azure→cyan spectrum. */
+body[data-theme="dark"] .home-v3 .hv-rc__role-dot,
+body[data-theme="dark"] .home-v3 .hv-rc__roles li:nth-child(2) .hv-rc__role-dot,
+body[data-theme="dark"] .home-v3 .hv-rc__roles li:nth-child(3) .hv-rc__role-dot {
+    background: linear-gradient(180deg, #d8a928, #8a6500);
+}
+
+/* Week summary card: graphite slab in the dark hero (was white). */
+body[data-theme="dark"] .home-v3 .hv-week__summary {
+    background: rgb(255 255 255 / 7%);
+    border-color: #33353a;
+    color: #d8d6d0;
+}
+
+/* Chips inside the paper bands go back to warm light pills (the graphite
+   chip style above is for the dark hero only). */
+body[data-theme="dark"] .home-v3 .hv-resume .hv-chip,
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip {
+    background: #f1efea;
+    color: #55534e;
+}
+
+body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--amber,
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip--amber,
+body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--cyan,
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip--cyan {
+    background: rgb(216 169 40 / 16%);
+    color: #6f5100;
+}
+
+/* Acts timeline dots on paper. */
+body[data-theme="dark"] .home-v3 .hv-acts__item::before { background: #cfc9bd; }
+body[data-theme="dark"] .home-v3 .hv-acts__item--current::before { background: #d8a928; }
+
+/* Invitation band: ink closing statement (was a pale silver gradient
+   that read as a metallic strip between the paper band and ink footer). */
+body[data-theme="dark"] .home-v3 .hv-invite {
+    border-top: 1px solid #26282c;
+    background: #0b0c0e;
+    color: #fafaf7;
+}
+
+body[data-theme="dark"] .home-v3 .hv-invite__line { color: #fafaf7; }
+
+body[data-theme="dark"] .home-v3 .hv-future__phd-mark { color: #e3b83a; }

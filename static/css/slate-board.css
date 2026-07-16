@@ -3440,3 +3440,86 @@ body.slate-board-redesign {
         outline: 3px solid Highlight;
     }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: the whiteboard canvas STAYS light so the
+   handwriting stays legible (brief rule); the wall and app chrome warm
+   to paper/ink and every indigo/azure/cyan accent becomes signal gold.
+   Sticky-note and marker colors are user content and stay as they are.
+   ===================================================================== */
+body[data-theme="dark"] {
+    --sb-ink: #0b0c0e;
+    --sb-ink-soft: #55534e;
+    --sb-indigo: #8a6500;
+    --sb-azure: #d8a928;
+    --sb-cyan: #bf8f17;
+    --sb-amber: #d8a928;
+    --sb-cloud: #faf9f5;
+    --sb-wall: #f1efea;
+    --sb-line: #ddd9d0;
+}
+
+body[data-theme="dark"].slate-board-redesign {
+    background:
+        radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.10), transparent 26rem),
+        linear-gradient(180deg, #faf9f5 0%, #f1efea 60%, #ece9e2 100%);
+    color: var(--sb-ink);
+}
+
+body[data-theme="dark"] .sb-button:hover,
+body[data-theme="dark"] .sb-icon-button:hover,
+body[data-theme="dark"] .sb-view-toggle button:hover {
+    border-color: rgba(216, 169, 40, 0.65);
+}
+
+body[data-theme="dark"] .sb-button--primary {
+    border-color: #d8a928;
+    background: linear-gradient(135deg, #d8a928, #e3b83a);
+    color: #0b0c0e !important;
+    box-shadow: 0 12px 28px rgba(216, 169, 40, 0.25);
+}
+
+body[data-theme="dark"] .sb-button--primary:hover {
+    background: #e3b83a;
+}
+
+/* Category legend + progress donut: mono family (labels carry meaning). */
+body[data-theme="dark"] .sb-donut {
+    background: conic-gradient(#d8a928 0 25%, #24262a 25% 50%, #a89f8d 50% 75%, #8a6500 75% 100%);
+}
+
+body[data-theme="dark"] .sb-legend__dot--short { background: #d8a928; }
+body[data-theme="dark"] .sb-legend__dot--projects { background: #24262a; }
+body[data-theme="dark"] .sb-legend__dot--long { background: #a89f8d; }
+body[data-theme="dark"] .sb-legend__dot--work { background: #8a6500; }
+
+body[data-theme="dark"] .sb-share-modes h3,
+body[data-theme="dark"] .sb-share-preview-box h3 { color: #0b0c0e; }
+
+body[data-theme="dark"] .sb-reference-footer__mark {
+    background: linear-gradient(135deg, #d8a928 0 48%, #8a6500 49% 100%);
+    box-shadow: 4px 3px 0 -1px rgba(216, 169, 40, 0.5);
+}
+
+/* Marker handwriting + note chrome: ink-first mono. */
+body[data-theme="dark"] {
+    --sb-marker-blue: #0b0c0e;
+    --sb-marker-teal: #8a6500;
+    --sb-marker-amber: #a87108;
+}
+
+body[data-theme="dark"] .sb-column__title { color: var(--sb-marker-blue); }
+body[data-theme="dark"] .sb-column__chevron,
+body[data-theme="dark"] .sb-column__chevron path { stroke: #55534e; }
+body[data-theme="dark"] .sb-column__count { color: #66645f; }
+body[data-theme="dark"] .sb-sketch-dash { stroke: rgba(11, 12, 14, 0.32); }
+
+body[data-theme="dark"] .sb-note { border-color: rgba(178, 171, 158, 0.5); }
+body[data-theme="dark"] .sb-note.is-starred { border-color: rgba(216, 169, 40, 0.55); }
+body[data-theme="dark"] .sb-note h3 { color: #0b0c0e; }
+body[data-theme="dark"] .sb-note__summary { color: #3a3d42; }
+body[data-theme="dark"] .sb-note span { border-color: rgba(11, 12, 14, 0.35); }
+
+body[data-theme="dark"] .sb-button--share,
+body[data-theme="dark"] .sb-header-more { border-color: rgba(178, 171, 158, 0.55); }

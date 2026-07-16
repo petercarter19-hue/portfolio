@@ -248,3 +248,83 @@ body.slate-light .footer {
     content: "";
     pointer-events: none;
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD overrides (PS-THEME-001, 2026-07-16)
+   When the member toggles the mono theme (body[data-theme="dark"]), the
+   blue-orbit sky is replaced by flat warm paper and every frosted-glass
+   card becomes a planted mono card: solid white, 1px warm border, quiet
+   neutral shadow. The light theme above is untouched.
+   ===================================================================== */
+body[data-theme="dark"] .site-sky {
+    background: #faf9f5;
+}
+
+@media (max-width: 48rem) {
+    body[data-theme="dark"] .site-sky {
+        background: #faf9f5;
+    }
+}
+
+body[data-theme="dark"].slate-light {
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: 1px solid #ddd9d0;
+    --glass-shadow: 0 1px 2px rgb(11 12 14 / 5%), 0 14px 34px rgb(11 12 14 / 8%);
+    --glass-blur: none;
+}
+
+/* Profile band + tab strip: solid paper pieces under the ink header. */
+body[data-theme="dark"].slate-light .profile-header {
+    background: #ffffff;
+    border-bottom: 1px solid #ddd9d0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-theme="dark"].slate-light .profile-tabs {
+    background: rgb(250 249 245 / 96%);
+    border-bottom: 1px solid #e9e5dc;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Community (the-slate) sub-header: warm paper instead of blue tint. */
+body[data-theme="dark"].slate-light.the-slate-page .profile-tabs {
+    background: linear-gradient(180deg, rgb(245 243 238 / 92%), rgb(250 249 245 / 98%));
+    border-top: 1px solid #e2ddd2;
+}
+
+body[data-theme="dark"].slate-light.the-slate-page .profile-tab {
+    color: #66645f;
+}
+
+body[data-theme="dark"].slate-light.the-slate-page .profile-tab::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"].slate-light.the-slate-page .profile-tab:hover,
+body[data-theme="dark"].slate-light.the-slate-page .profile-tab:focus-visible,
+body[data-theme="dark"].slate-light.the-slate-page .profile-tab[aria-current="page"] {
+    color: #8a6500;
+}
+
+/* Heading halos exist to fight the busy sky photo — mono paper needs none. */
+body[data-theme="dark"].slate-light h1,
+body[data-theme="dark"].slate-light h2,
+body[data-theme="dark"].slate-light h3,
+body[data-theme="dark"].slate-light .section-eyebrow {
+    text-shadow: none;
+}
+
+/* Footer is the ink closing band (style.css owns its colors). */
+body[data-theme="dark"].slate-light .footer {
+    background: #0b0c0e;
+    border-top: 1px solid #26282c;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-theme="dark"] .sky-haze::before {
+    background: none;
+}

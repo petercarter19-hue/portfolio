@@ -414,3 +414,119 @@ body.feed-preview-page .main-content { isolation: auto; }
   border-color: var(--indigo);
   color: #fff;
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: indigo accents → signal gold on paper.
+   ===================================================================== */
+body[data-theme="dark"] {
+  --indigo: #8a6500;
+  --indigo-soft: rgb(216 169 40 / 14%);
+}
+
+body[data-theme="dark"] .nav-item.active,
+body[data-theme="dark"] .nav-item.active:hover { color: #6f5100; background: rgb(216 169 40 / 16%); }
+
+body[data-theme="dark"] .mic-btn {
+  border-color: rgb(216 169 40 / 45%);
+  background: rgb(216 169 40 / 14%);
+  color: #8a6500;
+}
+
+body[data-theme="dark"] .mic-btn:hover { background: rgb(216 169 40 / 22%); }
+
+body[data-theme="dark"] .rail-cta { background: rgb(216 169 40 / 15%); color: #6f5100; }
+body[data-theme="dark"] .rail-cta:hover { background: rgb(216 169 40 / 24%); }
+
+body[data-theme="dark"] .notice .symbol { background: rgb(216 169 40 / 15%); color: #8a6500; }
+
+body[data-theme="dark"] .listening-ring {
+  background: radial-gradient(circle, #d8a928 0 38%, #e3b83a 39% 50%, #f5e7b6 51% 62%, #fbf6e4 63%);
+  box-shadow: 0 20px 55px rgba(216, 169, 40, .3);
+  color: #0b0c0e;
+}
+
+body[data-theme="dark"] .audio-level i { background: linear-gradient(#e3b83a, #8a6500); }
+
+body[data-theme="dark"] .transcript-box.editable:focus {
+  border-color: #d8a928;
+  box-shadow: 0 0 0 3px rgba(216, 169, 40, .18);
+}
+
+body[data-theme="dark"] .privacy-option.selected,
+body[data-theme="dark"] .privacy-option.selected:hover { background: rgb(216 169 40 / 13%); }
+
+body[data-theme="dark"] .offer-help { color: #6f5100; background: rgb(216 169 40 / 15%); }
+body[data-theme="dark"] .offer-help:hover { background: rgb(216 169 40 / 24%); }
+
+body[data-theme="dark"] .comment-composer:focus-within {
+  border-color: #d8a928;
+  box-shadow: 0 0 0 3px rgba(216, 169, 40, .15);
+}
+
+/* The preview app declares its palette on #feed-app, so the mono remap
+   must land there too (body-level vars lose to the closer declaration). */
+body[data-theme="dark"] #feed-app {
+  --indigo: #8a6500;
+  --indigo-strong: #6f5100;
+  --indigo-soft: rgb(216 169 40 / 14%);
+  --azure: #d8a928;
+  --cyan: #bf8f17;
+  --amber: #d8a928;
+  --ink: #0b0c0e;
+  --text: #24262a;
+  --muted: #66645f;
+  --line: #ddd9d0;
+  --line-soft: #e9e5dc;
+  --cloud: #faf9f5;
+  --shadow-1: 0 10px 30px rgba(11, 12, 14, .06);
+  --shadow-2: 0 24px 70px rgba(11, 12, 14, .12);
+}
+
+body[data-theme="dark"] #feed-app .capture-fab {
+  background: #d8a928;
+  color: #0b0c0e;
+  box-shadow: 0 10px 26px rgba(216, 169, 40, .35);
+}
+
+/* Same fixes again at #feed-app specificity (the app's own rules carry
+   the ID prefix, which beats plain body-scoped overrides). */
+body[data-theme="dark"] #feed-app .nav-item.active,
+body[data-theme="dark"] #feed-app .nav-item.active:hover { color: #6f5100; background: rgb(216 169 40 / 16%); }
+
+body[data-theme="dark"] #feed-app .mic-btn {
+  border-color: rgb(216 169 40 / 45%);
+  background: rgb(216 169 40 / 14%);
+  color: #8a6500;
+}
+
+body[data-theme="dark"] #feed-app .mic-btn:hover { background: rgb(216 169 40 / 22%); }
+
+body[data-theme="dark"] #feed-app .rail-cta { background: rgb(216 169 40 / 15%); color: #6f5100; }
+body[data-theme="dark"] #feed-app .rail-cta:hover { background: rgb(216 169 40 / 24%); }
+
+body[data-theme="dark"] #feed-app .notice .symbol { background: rgb(216 169 40 / 15%); color: #8a6500; }
+
+body[data-theme="dark"] #feed-app .listening-ring {
+  background: radial-gradient(circle, #d8a928 0 38%, #e3b83a 39% 50%, #f5e7b6 51% 62%, #fbf6e4 63%);
+  box-shadow: 0 20px 55px rgba(216, 169, 40, .3);
+  color: #0b0c0e;
+}
+
+body[data-theme="dark"] #feed-app .audio-level i { background: linear-gradient(#e3b83a, #8a6500); }
+
+body[data-theme="dark"] #feed-app .transcript-box.editable:focus {
+  border-color: #d8a928;
+  box-shadow: 0 0 0 3px rgba(216, 169, 40, .18);
+}
+
+body[data-theme="dark"] #feed-app .privacy-option.selected,
+body[data-theme="dark"] #feed-app .privacy-option.selected:hover { background: rgb(216 169 40 / 13%); }
+
+body[data-theme="dark"] #feed-app .offer-help { color: #6f5100; background: rgb(216 169 40 / 15%); }
+body[data-theme="dark"] #feed-app .offer-help:hover { background: rgb(216 169 40 / 24%); }
+
+body[data-theme="dark"] #feed-app .comment-composer:focus-within {
+  border-color: #d8a928;
+  box-shadow: 0 0 0 3px rgba(216, 169, 40, .15);
+}

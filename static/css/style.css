@@ -2396,6 +2396,73 @@ body[data-theme="modern-blue"] {
     --slate-edge-lit: rgb(255 255 255 / 95%);
 }
 
+/* =========================================================
+   MONOCHROME & SIGNAL GOLD — the "dark theme" (PS-THEME-001, 2026-07-16)
+   An optional, member-toggled theme (header switch next to search), off
+   by default. Matches the approved reference poster: ink-black chrome,
+   warm paper pages, black editorial type, and ONE signal-gold accent.
+   No blues, no purples, no stone photo, no grain. Same variable names
+   as Modern Blue above, so components that read --bg/--surface/--text/
+   --accent re-theme automatically.
+   Contrast rules: bright gold #D8A928 is for buttons (with ink text),
+   underlines, icons, and large display accents only. Small/plain text
+   accents on light surfaces use text-safe gold-ink #8A6500 (5.4:1). */
+body[data-theme="dark"] {
+    --bg: #faf9f5;
+    --bg-elevated: #f1efea;
+    --surface: #ffffff;
+    --surface-soft: #f1efea;
+    --text: #0b0c0e;
+    --text-muted: #66645f;
+    --accent: #8a6500;
+    --accent-hover: #6f5100;
+    --accent-soft: rgb(216 169 40 / 15%);
+    --border: #ddd9d0;
+    --shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --nav-bg: rgb(11 12 14 / 96%);
+    --tab-active: #8a6500;
+    --button-primary-bg: #d8a928;
+    --button-primary-text: #0b0c0e;
+    --button-secondary-bg: #ffffff;
+    --button-secondary-text: #0b0c0e;
+    --color-page: #faf9f5;
+    --color-page-deep: #f1efea;
+    --color-section: #f5f3ee;
+    --color-card: #ffffff;
+    --color-card-elevated: #f7f5f0;
+    --color-card-hover: #f5efdd;
+    --color-gold: #d8a928;
+    --color-gold-bright: #e3b83a;
+    --color-gold-muted: #bf8f17;
+    --color-gold-dark: #8a6500;
+    --color-blue: #8a6500;
+    --color-cyan: #2f7a62;
+    --color-text-primary: #0b0c0e;
+    --color-text-secondary: #3a3d42;
+    --color-text-muted: #66645f;
+    --color-border: #ddd9d0;
+    --color-border-soft: #e9e5dc;
+    --color-border-gold: #d8a928;
+    --shadow-card: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --shadow-gold: 0 8px 22px rgb(216 169 40 / 22%);
+    --slate-grain: 0;
+    /* Sign In / ink chrome buttons: gold with ink text on the dark header. */
+    --ink-btn-bg: #d8a928;
+    --ink-btn-text: #0b0c0e;
+    --askbar-bg: #0b0c0e;
+}
+
+/* No stone photo in mono mode — flat warm paper, no texture/grain. */
+body[data-theme="dark"] {
+    background-image: none;
+    background-color: var(--bg);
+}
+
+body[data-theme="dark"]::before,
+body[data-theme="dark"]::after {
+    display: none;
+}
+
 /* WHITE SLATE — the "slate version of the mockup": exactly the Modern
    Blue palette, but the page is the real light stone photo with a
    white wash, and every bar/card is a pale stone slab. */
@@ -2616,6 +2683,95 @@ body[data-theme="modern-blue"] {
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* Dark theme toggle (PS-THEME-001): a small accessible switch next to the
+   header search box. Sun/moon icons bracket a pill track; the thumb slides
+   and the icons swap emphasis on state change. Deliberately tiny — this is
+   a header utility control, not a marketing element. */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.theme-toggle__icon {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: color 160ms ease, opacity 160ms ease;
+}
+
+.theme-toggle__icon--sun { opacity: 0.95; }
+.theme-toggle__icon--moon { opacity: 0.55; }
+
+.theme-toggle__track {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 19px;
+    background: color-mix(in srgb, var(--border) 55%, var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+
+.theme-toggle__thumb {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 15px;
+    height: 15px;
+    background: var(--surface);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+    transition: transform 160ms ease;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__track {
+    background: var(--ps-gold, #d8a928);
+    border-color: var(--ps-gold, #d8a928);
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__thumb {
+    transform: translateX(15px);
+    background: #0b0c0e;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle__icon--moon { opacity: 0.95; }
+.theme-toggle[aria-checked="true"] .theme-toggle__icon--sun { opacity: 0.55; }
+
+.theme-toggle:hover .theme-toggle__track,
+.theme-toggle:focus-visible .theme-toggle__track {
+    border-color: var(--accent);
+}
+
+.theme-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--ps-focus-ring, 0 0 0 3px var(--surface), 0 0 0 5px var(--accent));
+    border-radius: 999px;
+}
+
+@media (max-width: 1360px) {
+    .theme-toggle__icon { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle__thumb,
+    .theme-toggle__track,
+    .theme-toggle__icon {
+        transition: none;
+    }
 }
 
 /* Base profile band: clean flat surface using each theme's own colors —
@@ -3861,6 +4017,220 @@ body[data-theme="modern-blue"] #chat-disclaimer {
 
 body[data-theme="modern-blue"] #chat-panel {
     box-shadow: var(--slab-card-shadow), 0 0 30px rgb(40 45 60 / 14%);
+}
+
+/* Monochrome & Signal Gold shell (PS-THEME-001): mirrors the Modern Blue
+   shell rules above. Ink-black global chrome over paper pages; flat mono
+   elevation (1px borders + soft neutral shadows, no gloss, no grain). */
+body[data-theme="dark"] .hero::before {
+    background:
+        linear-gradient(90deg, rgb(250 249 245 / 82%) 0%, rgb(250 249 245 / 55%) 48%, rgb(250 249 245 / 82%) 100%),
+        radial-gradient(circle at 78% 14%, var(--accent-soft), transparent 28%);
+}
+
+body[data-theme="dark"] .hero,
+body[data-theme="dark"] .my-story-page,
+body[data-theme="dark"] .work-page,
+body[data-theme="dark"] .resume-page {
+    color: var(--text);
+}
+
+/* Ink header: off-white links, gold active underline (reference poster). */
+body[data-theme="dark"] .global-header {
+    background: #0b0c0e;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
+    border-bottom: 1px solid #26282c;
+}
+
+body[data-theme="dark"] .platform-nav__links a {
+    color: #e9e7e1;
+}
+
+body[data-theme="dark"] .platform-nav__links a:hover,
+body[data-theme="dark"] .platform-nav__links a:focus-visible {
+    color: #ffffff;
+}
+
+body[data-theme="dark"] .platform-nav__links a[aria-current="page"] {
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .platform-nav__links a[aria-current="page"]::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"] .platform-brand__logo img {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 45%));
+}
+
+/* Header search: solid white pill on the ink bar. */
+body[data-theme="dark"] .nav-search__input {
+    background: #ffffff;
+    border-color: #3a3d42;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .nav-search__input::placeholder { color: #66645f; }
+
+body[data-theme="dark"] .nav-search__input:focus {
+    border-color: #d8a928;
+    background: #ffffff;
+}
+
+body[data-theme="dark"] .nav-search__icon { stroke: #66645f; }
+
+/* Theme toggle on the ink bar. */
+body[data-theme="dark"] .theme-toggle { color: #b9b8b3; }
+
+body[data-theme="dark"] .theme-toggle__track {
+    background: #24262a;
+    border-color: #3a3d42;
+}
+
+body[data-theme="dark"] .theme-toggle[aria-checked="true"] .theme-toggle__track {
+    background: #d8a928;
+    border-color: #d8a928;
+}
+
+/* Ask AI header button + Sign In: gold is the one signal on the ink bar,
+   so Sign In takes it; Ask AI stays a quiet outline control. */
+body[data-theme="dark"] .nav-ask-ai {
+    color: #e9e7e1;
+    border-color: #3a3d42;
+    background: transparent;
+}
+
+/* Profile sub-header (second row): paper strip under the ink bar. */
+body[data-theme="dark"] .profile-tabs .profile-tab {
+    color: #66645f;
+    font-weight: 680;
+}
+
+body[data-theme="dark"] .profile-tabs .profile-tab:hover,
+body[data-theme="dark"] .profile-tabs .profile-tab:focus-visible,
+body[data-theme="dark"] .profile-tabs .profile-tab[aria-current="page"] {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .profile-tabs .profile-tab::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"] .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+body[data-theme="dark"] {
+    --slab-bar-shadow: 0 1px 2px rgb(11 12 14 / 5%);
+    --slab-card-shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --slab-control-shadow: 0 1px 2px rgb(11 12 14 / 6%), 0 6px 14px rgb(11 12 14 / 8%);
+    --slab-primary-shadow: 0 2px 4px rgb(11 12 14 / 10%), 0 12px 22px rgb(216 169 40 / 22%);
+    --slate-vein-strong: transparent;
+    --slate-vein-soft: transparent;
+    --slate-type-shadow: none;
+    --slate-accent-text-shadow: none;
+    --slate-linkedin-bg: #0b0c0e;
+    --slate-linkedin-mark: #fafaf7;
+    --pop-shadow: 0 4px 12px rgb(11 12 14 / 8%), 0 28px 72px rgb(11 12 14 / 16%);
+    --gilt-shadow: none;
+    --slab-hi: rgb(255 255 255 / 85%);
+    --slab-lo: rgb(11 12 14 / 6%);
+    --slab-hi-chip: rgb(255 255 255 / 88%);
+    --slab-lo-chip: rgb(11 12 14 / 5%);
+}
+
+body[data-theme="dark"] .profile-header {
+    box-shadow: 0 1px 2px rgb(11 12 14 / 5%);
+}
+
+body[data-theme="dark"] .profile-tabs {
+    box-shadow: var(--slab-bar-shadow);
+}
+
+body[data-theme="dark"] .resume-skill-button:focus-visible,
+body[data-theme="dark"] .resume-skill-card.is-popover-open .resume-skill-button,
+body[data-theme="dark"] .work-project-tab:hover,
+body[data-theme="dark"] .work-project-tab.is-active,
+body[data-theme="dark"] .resume-ai-suggestion:hover,
+body[data-theme="dark"] .btn-secondary:hover,
+body[data-theme="dark"] .resume-metric-card:hover,
+body[data-theme="dark"] .resume-metric-card.is-selected {
+    border-color: #d8a928;
+    filter: none;
+}
+
+/* Footer: the dark closing band from the reference poster. */
+body[data-theme="dark"] .footer {
+    background: #0b0c0e;
+    color: #b9b8b3;
+    border-top: 1px solid #26282c;
+}
+
+body[data-theme="dark"] .footer .footer-privacy { color: #b9b8b3; }
+body[data-theme="dark"] .footer p { color: #b9b8b3; }
+body[data-theme="dark"] .footer .footer-why-link { color: #e3b83a; }
+body[data-theme="dark"] .footer .footer-brand span { color: #fafaf7; }
+
+/* Chat assistant: graphite AI shell with gold accents (brief: AI surfaces
+   are black/graphite with off-white copy; gold marks the active tool). */
+body[data-theme="dark"] #chat-panel {
+    background: #17181b;
+    border: 1px solid #33353a;
+    color: #fafaf7;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 45%);
+}
+
+body[data-theme="dark"] #chat-header {
+    background: #0b0c0e;
+    color: #fafaf7;
+    border-bottom: 1px solid #33353a;
+}
+
+body[data-theme="dark"] #chat-header h3 { color: #fafaf7; }
+body[data-theme="dark"] #chat-header p { color: #b9b8b3; }
+
+body[data-theme="dark"] #chat-messages { background: transparent; }
+
+body[data-theme="dark"] #chat-input {
+    color: #fafaf7;
+    background: rgb(255 255 255 / 8%);
+    border-color: #3a3d42;
+}
+
+body[data-theme="dark"] #chat-input-area,
+body[data-theme="dark"] #chat-disclaimer {
+    background: rgb(255 255 255 / 4%);
+    color: #b9b8b3;
+}
+
+body[data-theme="dark"] #chat-send {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] #chat-toggle {
+    background: #d8a928;
+    color: #0b0c0e;
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .suggestion-btn {
+    background: rgb(255 255 255 / 6%);
+    color: #e9e7e1;
+    border-color: #3a3d42;
+}
+
+body[data-theme="dark"] .chat-message.bot-message {
+    background: rgb(255 255 255 / 7%);
+    color: #f1efe9;
+}
+
+/* Focus ring: gold, visible on both paper and ink surfaces. */
+body[data-theme="dark"] :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #faf9f5, 0 0 0 5px rgb(216 169 40 / 85%);
 }
 
 @media (max-width: 1180px) {
@@ -13656,6 +14026,69 @@ body[data-room="ultraviolet"] {
     --ps-page-accent-soft: #ece6fa;
 }
 
+/* =========================================================
+   MONOCHROME & SIGNAL GOLD — Iris-Foundry-token layer
+   (PS-THEME-001, 2026-07-16). Placed after every body[data-room=...]
+   block above so it wins when data-theme="dark" and data-room both sit
+   on <body> at once. Room accents collapse to one signal-gold accent —
+   the per-room hues stay a light-theme-only distinction. Note the page
+   canvas stays PAPER (the reference poster's inner pages are warm
+   white); only the chrome and cinematic stages go ink-black, via the
+   shell overrides in the theme section far above. */
+body[data-theme="dark"] {
+    --ps-canvas: #faf9f5;
+    --ps-surface: #ffffff;
+    --ps-surface-soft: #f1efea;
+    --ps-ink: #0b0c0e;
+    --ps-muted: #66645f;
+    --ps-border: #ddd9d0;
+    --ps-primary: #8a6500;
+    --ps-primary-strong: #6f5100;
+    --ps-primary-soft: #f5e7b6;
+    --ps-bronze: #d8a928;
+    --ps-bronze-strong: #8a6500;
+    --ps-success-teal: #2f7a62;
+    --ps-gold: #d8a928;
+    --ps-gold-hover: #e3b83a;
+    --ps-gold-active: #bf8f17;
+    --ps-gold-ink: #8a6500;
+    --ps-graphite: #24262a;
+    --ps-shadow-static: 0 1px 2px rgb(11 12 14 / 5%);
+    --ps-shadow-interactive: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --ps-shadow-focal: 0 4px 12px rgb(11 12 14 / 8%), 0 28px 72px rgb(11 12 14 / 16%);
+    --ps-shadow-dark: 0 18px 50px rgb(0 0 0 / 35%);
+    --ps-focus-ring: 0 0 0 3px var(--ps-canvas), 0 0 0 6px rgb(216 169 40 / 70%);
+    /* Room accents collapse to text-safe gold (single master accent). */
+    --ps-page-accent: #8a6500;
+    --ps-page-accent-strong: #6f5100;
+    --ps-page-accent-soft: #f5e7b6;
+}
+
+/* The global header keeps the room accent for its active link in the
+   light theme; in mono the header is ink, so the accent must be the
+   bright gold (handled in the shell section) — this guard just makes
+   sure the generic data-room hook cannot re-tint it. */
+body[data-theme="dark"][data-room] .platform-nav__links a[aria-current="page"] {
+    color: #e3b83a;
+}
+
+body[data-theme="dark"][data-room] .platform-nav__links a[aria-current="page"]::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"][data-room] .profile-tab[aria-current="page"] {
+    color: #8a6500;
+}
+
+body[data-theme="dark"][data-room] .profile-tab[aria-current="page"]::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"] .global-header,
+body[data-theme="dark"].slate-light .global-header {
+    background: #0b0c0e;
+}
+
 /* Shared chrome: warm the solid surfaces and let orientation states use
    the room accent. The blue orbit backdrop asset stays until a warm
    canvas asset is approved (recorded in PS-BRAND-NAV-001/08-decisions). */
@@ -13708,4 +14141,255 @@ body.ps-editorial-surface,
 .ps-btn--primary:focus-visible {
     background: var(--ps-page-accent-strong);
     border-color: var(--ps-page-accent-strong);
+}
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD — final shell overrides (PS-THEME-001)
+   Kept at the END of this file on purpose: the mono theme shares
+   specificity with many body.slate-light rules above, and source order
+   is what settles those ties. Everything here is scoped to
+   body[data-theme="dark"] and cannot affect the default theme.
+   ===================================================================== */
+body[data-theme="dark"].slate-light .platform-nav__links a { color: #e9e7e1; }
+body[data-theme="dark"].slate-light .platform-nav__links a:hover,
+body[data-theme="dark"].slate-light .platform-nav__links a:focus-visible { color: #ffffff; }
+body[data-theme="dark"].slate-light .platform-nav__links a[aria-current="page"] { color: #e3b83a; }
+body[data-theme="dark"].slate-light .platform-nav__links a[aria-current="page"]::after { background: #d8a928; }
+
+body[data-theme="dark"].slate-light .sign-in-btn,
+body[data-theme="dark"] .sign-in-btn {
+    color: #0b0c0e;
+    background: #d8a928;
+}
+
+body[data-theme="dark"] .sign-in-btn:hover,
+body[data-theme="dark"] .sign-in-btn:focus-visible {
+    filter: none;
+    background: #e3b83a;
+}
+
+/* Profile band card + avatar shadow: warm neutrals. */
+body[data-theme="dark"].slate-light .profile-header__inner {
+    background: #ffffff;
+    border-color: #ddd9d0;
+    box-shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 8%);
+}
+
+body[data-theme="dark"].slate-light .profile-avatar {
+    box-shadow: 0 10px 26px rgb(11 12 14 / 14%);
+}
+
+/* LinkedIn chip keeps its true brand mark (user-content rule) — only the
+   halo shadow warms. */
+
+/* Ask-bar chips + circular arrow button: white with ink text, neutral
+   shadows (were navy-tinted). */
+body[data-theme="dark"].slate-light .ps-askbar__chips button,
+body[data-theme="dark"].slate-light .ps-askbar__chips a {
+    color: #0b0c0e;
+    box-shadow: 0 3px 10px rgb(11 12 14 / 22%);
+}
+
+body[data-theme="dark"].slate-light .ps-askbar__chips button:hover,
+body[data-theme="dark"].slate-light .ps-askbar__chips a:hover {
+    box-shadow: 0 5px 14px rgb(11 12 14 / 28%);
+}
+
+body[data-theme="dark"].slate-light .ps-askbar .hero-ai-search__button {
+    color: #0b0c0e;
+    background: #d8a928;
+}
+
+body[data-theme="dark"].slate-light .ps-askbar .hero-ai-answer {
+    border-left-color: #d8a928;
+}
+
+body[data-theme="dark"].slate-light .ps-askbar .hero-ai-answer__question { color: #8a6500; }
+
+/* Gold arrow glyph in metric/stat icons (was recolored blue by the
+   modern-blue theme block near the top of the file). */
+body[data-theme="dark"] #arrow-gold path { fill: #d8a928; }
+
+/* Generic profile-tab active state on every variant. */
+body[data-theme="dark"].slate-light .profile-tab[aria-current="page"],
+body[data-theme="dark"].slate-light .profile-tabs .profile-tab[aria-current="page"] {
+    color: #8a6500;
+}
+
+body[data-theme="dark"].slate-light .profile-tab::after,
+body[data-theme="dark"].slate-light .profile-tabs .profile-tab::after {
+    background: #d8a928;
+}
+
+body[data-theme="dark"].slate-light .profile-tab,
+body[data-theme="dark"].slate-light .profile-tabs .profile-tab {
+    color: #66645f;
+}
+
+body[data-theme="dark"].slate-light .profile-tab:hover,
+body[data-theme="dark"].slate-light .profile-tab:focus-visible {
+    color: #8a6500;
+}
+
+/* Footer (slate-light variant paints its own glass above). */
+body[data-theme="dark"].slate-light .footer {
+    background: #0b0c0e;
+    color: #b9b8b3;
+}
+
+/* Mobile bottom tab bar: paper bar, gold active pill. */
+body[data-theme="dark"] .mobile-tabbar {
+    background: rgb(250 249 245 / 96%);
+    border-top: 1px solid #ddd9d0;
+    box-shadow: 0 -8px 22px rgb(11 12 14 / 10%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-theme="dark"] .mobile-tabbar__item { color: #66645f; }
+
+body[data-theme="dark"] .mobile-tabbar__item[aria-current="page"] {
+    color: #6f5100;
+    background: rgb(216 169 40 / 16%);
+}
+
+/* Header Ask AI compact button (phones). */
+body[data-theme="dark"] .nav-ask-ai {
+    border-color: #3a3d42;
+    background: rgb(255 255 255 / 6%);
+    color: #e9e7e1;
+}
+
+/* slate-light (applied to almost every page) re-declares the shared vars
+   AFTER the mono block far above — re-assert the mono palette here. */
+body[data-theme="dark"].slate-light {
+    --bg: #faf9f5;
+    --bg-elevated: #f1efea;
+    --surface: #ffffff;
+    --surface-soft: #f1efea;
+    --border: #ddd9d0;
+    --text: #0b0c0e;
+    --text-muted: #66645f;
+    --accent: #8a6500;
+    --accent-soft: rgb(216 169 40 / 15%);
+    --shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --tab-active: #8a6500;
+    --button-primary-bg: #d8a928;
+    --button-primary-text: #0b0c0e;
+    --askbar-bg: linear-gradient(135deg, #0b0c0e, #24262a);
+    background: #faf9f5;
+    color: var(--text);
+}
+
+/* My Story + Work pages remap the old dark palette to light blue late in
+   this file — remap it again to mono (ink text, gold accent). */
+body[data-theme="dark"].slate-light .my-story-page,
+body[data-theme="dark"].slate-light .work-page {
+    --color-text-primary: #0b0c0e;
+    --color-text-secondary: #3a3d42;
+    --color-text-muted: #66645f;
+    --color-text-dark: #0b0c0e;          /* text that sits ON the gold accent */
+    --color-gold: #8a6500;
+    --color-gold-bright: #d8a928;
+    --color-gold-muted: #6f5100;
+    --color-gold-dark: #5a4100;
+    --color-blue: #8a6500;
+    --color-cyan: #8a6500;
+    --color-card: #ffffff;
+    --color-card-elevated: #f5f3ee;
+    --color-card-hover: #f5efdd;
+    --color-border: #ddd9d0;
+    --color-border-soft: #e9e5dc;
+    --color-border-gold: #d8a928;
+    --shadow-card: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 8%);
+    --shadow-gold: 0 0 0 rgb(0 0 0 / 0%);
+}
+
+/* Logo pill: the light glass chip reads as a bright hole punched in the
+   ink header — swap to a quiet graphite pill (same geometry). */
+body[data-theme="dark"] .platform-brand__logo {
+    background: linear-gradient(135deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 4%));
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 14%),
+        0 0.4rem 1rem rgb(0 0 0 / 30%);
+}
+
+/* Floating Ask Pete AI chip: gold primary (the navy pill is the light
+   theme's language). */
+body[data-theme="dark"].slate-light #chat-toggle,
+body[data-theme="dark"].peerslate-home-page #chat-toggle,
+body[data-theme="dark"] #chat-toggle {
+    color: #0b0c0e;
+    background: #d8a928;
+    border: 1px solid #d8a928;
+    box-shadow: 0 12px 30px rgb(216 169 40 / 26%);
+}
+
+body[data-theme="dark"].slate-light #chat-toggle:hover,
+body[data-theme="dark"].slate-light #chat-toggle:focus-visible,
+body[data-theme="dark"].peerslate-home-page #chat-toggle:hover,
+body[data-theme="dark"].peerslate-home-page #chat-toggle:focus-visible,
+body[data-theme="dark"] #chat-toggle:hover,
+body[data-theme="dark"] #chat-toggle:focus-visible {
+    background: #e3b83a;
+    color: #0b0c0e;
+}
+
+/* Foundation-C central tokens (consumed by Interview Studio and other
+   application rooms): collapse to mono — gold action family, ink text,
+   paper canvas. */
+body[data-theme="dark"] {
+    --ps-cloud-white: #faf9f5;
+    --ps-ink-950: #0b0c0e;
+    --ps-product-indigo: #8a6500;
+    --ps-product-indigo-strong: #6f5100;
+    --ps-connection-azure: #d8a928;
+    --ps-ai-cyan: #bf8f17;
+    --ps-evidence-amber: #d8a928;
+}
+
+/* Marketing landing (/peerslate, the only page without slate-light):
+   mono remap of its --home-* palette. */
+body[data-theme="dark"] .peerslate-home-page,
+body[data-theme="dark"].peerslate-home-page {
+    --surface: #ffffff;
+    --surface-soft: #f5f3ee;
+    --border: #ddd9d0;
+    --text: #0b0c0e;
+    --text-muted: #66645f;
+    --accent: #8a6500;
+    --accent-soft: #f5e7b6;
+    --shadow: 0 12px 30px rgb(11 12 14 / 8%);
+    --home-bg: #faf9f5;
+    --home-bg-soft: #f1efea;
+    --home-surface: rgb(255 255 255 / 96%);
+    --home-surface-solid: #ffffff;
+    --home-surface-soft: #f7f5f0;
+    --home-text: #0b0c0e;
+    --home-muted: #66645f;
+    --home-soft: #8a8880;
+    --home-border: #ddd9d0;
+    --home-border-soft: #e9e5dc;
+    --home-blue: #8a6500;
+    --home-blue-hover: #6f5100;
+    --home-blue-faint: #f5e7b6;
+    --home-teal: #2f7a62;
+    --home-teal-soft: #e3f0eb;
+    --home-navy: #0b0c0e;
+    --home-navy-2: #24262a;
+    --home-shadow-sm: 0 4px 12px rgb(11 12 14 / 6%);
+    --home-shadow-md: 0 12px 30px rgb(11 12 14 / 8%);
+    --home-shadow-lg: 0 24px 64px rgb(11 12 14 / 14%);
+    --home-shadow-blue: 0 10px 24px rgb(216 169 40 / 26%);
+    color: var(--home-text);
+}
+
+body[data-theme="dark"].peerslate-home-page .global-header {
+    background: #0b0c0e;
+    border-bottom-color: #26282c;
+}
+
+body[data-theme="dark"] .peerslate-home-page,
+body[data-theme="dark"].peerslate-home-page {
+    background: var(--home-bg);
 }

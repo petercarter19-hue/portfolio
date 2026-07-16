@@ -3004,3 +3004,38 @@
         box-shadow: none;
     }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: ink type on warm paper, gold accents only.
+   ===================================================================== */
+body[data-theme="dark"] {
+    --lr-ink: #0b0c0e;
+    --lr-ink-soft: #66645f;
+    --lr-paper: #fdfcf9;
+    --lr-cloud: #f1efea;
+    --lr-line: #ddd9d0;
+    --lr-blue: #8a6500;
+    --lr-indigo: #8a6500;
+    --lr-cyan: #bf8f17;
+    --lr-amber: #d8a928;
+    --lr-night: #0b0c0e;
+}
+
+/* Constellation dark stage in mono: graphite scene, warm-gray paths,
+   off-white nodes, gold highlights (brief: nodes off-white, gold when
+   selected; green only for verified). */
+body[data-theme="dark"] .lr-constellation__scene {
+    border-color: #33353a;
+    background: radial-gradient(circle at 50% 18%, #24262a 0%, #17181b 55%, #0b0c0e 100%);
+}
+
+body[data-theme="dark"] .lr-constellation p { color: #b9b8b3; }
+body[data-theme="dark"] .lr-constellation em { color: #d8d6d0; }
+
+body[data-theme="dark"] .lr-constellation__legend {
+    color: #fafaf7;
+    background: rgb(11 12 14 / 55%);
+}
+
+body[data-theme="dark"] .lr-constellation__legend i.is-future { background: #d8a928; }

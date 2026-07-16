@@ -231,3 +231,44 @@
     backdrop-filter: blur(8px) saturate(1.15);
     -webkit-backdrop-filter: blur(8px) saturate(1.15);
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: ink type, gold accents; orb hues collapse to
+   the mono family via --orb below.
+   ===================================================================== */
+body[data-theme="dark"] .skf {
+    --skf-ink: #0b0c0e;
+    --skf-ink-soft: #55534e;
+}
+
+body[data-theme="dark"] .skf-open h1 span { color: #8a6500; }
+body[data-theme="dark"] .skf-orb { --orb: #d8a928; }
+
+body[data-theme="dark"] .skf-orb[aria-expanded="true"] .skf-orb__ball {
+    box-shadow:
+        0 0 0 0.26rem #ffffff,
+        0 0 0 0.55rem var(--orb, #d8a928),
+        0 0.7rem 1.8rem rgb(11 12 14 / 35%),
+        inset 0 0.2rem 0.5rem rgb(255 255 255 / 55%);
+}
+
+body[data-theme="dark"] .skf-orb__name {
+    color: #0b0c0e;
+    text-shadow: none;
+}
+
+body[data-theme="dark"] .skf-panel__inner li small { color: #8a6500; }
+
+body[data-theme="dark"] .skf-cta__btn {
+    color: #0b0c0e;
+    background: #d8a928;
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .skf-cta__btn:hover,
+body[data-theme="dark"] .skf-cta__btn:focus-visible {
+    background: #e3b83a;
+}
+
+body[data-theme="dark"] .skf-act__head { color: #66645f; }

@@ -116,6 +116,18 @@ These rules govern product copy, information architecture, data behavior, AI beh
 76. Do not replace every blue surface with purple, tint every card, add visible grain, use colored shadows globally, or create a neon/gaming aesthetic.
 77. Raise only items that can be acted on, selected, entered, or opened.
 78. Target WCAG 2.2 AA; support keyboard navigation, visible focus, screen readers, reduced motion, 200% zoom, long content, missing media, and mobile touch targets.
+78a. An optional member-toggled dark theme, "Monochrome & Signal Gold"
+     (PS-THEME-001, 2026-07-16), ships alongside Iris Foundry: ink
+     `#0B0C0E` chrome, warm paper `#FAF9F5` pages, one signal-gold
+     accent (`#D8A928` for actions/underlines/icons, text-safe
+     `#8A6500` for small text on light). It is off by default, applied
+     via `body[data-theme="dark"]` and the header switch, and persists
+     per browser. Under it, room accents collapse to gold and semantic
+     green/amber/red keep their meanings. Two standing exceptions: the
+     Slate Board writing canvas stays light for legible handwriting,
+     and member photography/sticky-note/avatar colors are never
+     recolored. The default (light) theme remains Iris Foundry,
+     untouched.
 
 ## 12. Delivery and truthfulness rules
 

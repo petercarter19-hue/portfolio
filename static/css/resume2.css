@@ -4563,3 +4563,325 @@
         box-shadow: none;
     }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: museum-paper résumé — ink type, warm paper,
+   one gold accent. Light theme above is untouched.
+   ===================================================================== */
+body[data-theme="dark"] .resume-v2 {
+    --r2-ink: #0b0c0e;
+    --r2-muted: #66645f;
+    --r2-indigo: #8a6500;
+    --r2-azure: #8a6500;
+    --r2-cyan: #8a6500;
+    --r2-amber: #8a6500;
+    --r2-cloud: #f1efea;
+}
+
+/* Primary action: signal gold with ink text (the one strong CTA). */
+body[data-theme="dark"] .r2-action {
+    color: #0b0c0e;
+    background: #ffffff;
+    border-color: #ddd9d0;
+}
+
+body[data-theme="dark"] .r2-action--primary {
+    color: #0b0c0e;
+    background: #d8a928;
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .r2-action:hover,
+body[data-theme="dark"] .r2-action:focus-visible {
+    background: #fffdf6;
+    box-shadow: 0 0.65rem 1.5rem rgb(11 12 14 / 12%);
+}
+
+body[data-theme="dark"] .r2-action--primary:hover,
+body[data-theme="dark"] .r2-action--primary:focus-visible {
+    color: #0b0c0e;
+    background: #e3b83a;
+    border-color: #e3b83a;
+}
+
+body[data-theme="dark"] .r2-identity-actions .r2-action:nth-child(3) {
+    color: #0b0c0e;
+    background: #fffaf0;
+    border-color: rgb(216 169 40 / 55%);
+}
+
+body[data-theme="dark"] .r2-quote-card {
+    background: #ffffff;
+}
+
+body[data-theme="dark"] .r2-quote-card::after {
+    background: linear-gradient(90deg, #d8a928, rgb(216 169 40 / 0%) 72%);
+}
+
+body[data-theme="dark"] .r2-quote-card blockquote {
+    color: #0b0c0e;
+}
+
+/* --- Mono theme: literal-color sweep (selectors found via hue audit) --- */
+body[data-theme="dark"] .resume-v2 {
+    background: #faf9f5;
+}
+
+body[data-theme="dark"] .resume-v2::before {
+    background: #faf9f5;
+}
+
+body[data-theme="dark"] .resume-consolidated {
+    --r2-ink: #0b0c0e;
+    --r2-indigo: #8a6500;
+    --r2-azure: #8a6500;
+    --edu-accent: #8a6500;
+}
+
+body[data-theme="dark"] .r2-experience-card,
+body[data-theme="dark"] .r2-education-grid article {
+    --role-accent: #8a6500;
+    --edu-accent: #8a6500;
+}
+
+/* Royal-blue accent text → text-safe gold. */
+body[data-theme="dark"] .r2-evidence-panel > article > span,
+body[data-theme="dark"] .r2-evidence-highlights > h3,
+body[data-theme="dark"] .r2-panel-header > strong,
+body[data-theme="dark"] .r2-exp-card__full h4,
+body[data-theme="dark"] .r2-development-row article > small,
+body[data-theme="dark"] .r2-development-row strong,
+body[data-theme="dark"] .r2-full-record > summary,
+body[data-theme="dark"] .r2-evidence-panel summary,
+body[data-theme="dark"] .r2-metric-card strong,
+body[data-theme="dark"] .r2-section-heading > div > span,
+body[data-theme="dark"] .r2-summary__role,
+body[data-theme="dark"] .r2-summary__tags,
+body[data-theme="dark"] .r2-cert-body strong,
+body[data-theme="dark"] .r2-achieve-body > strong,
+body[data-theme="dark"] .r2-credential-panel header p,
+body[data-theme="dark"] .resume-consolidated .r2-exp-card__head small,
+body[data-theme="dark"] .r2-credential-record__heading > p,
+body[data-theme="dark"] .r2-eyebrow {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .r2-card-role {
+    color: #66645f !important;
+}
+
+/* Navy body/heading text → ink & graphite. */
+body[data-theme="dark"] .r2-quote-card blockquote,
+body[data-theme="dark"] .r2-summary__intro,
+body[data-theme="dark"] .r2-exp-tags span,
+body[data-theme="dark"] .r2-cert-body p,
+body[data-theme="dark"] .r2-achieve-body > p {
+    color: #3a3d42;
+}
+
+body[data-theme="dark"] .r2-button {
+    color: #0b0c0e;
+    border-color: #ddd9d0;
+}
+
+body[data-theme="dark"] .r2-button--primary {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+/* Section ribbon (right rail): ink links, gold current, gold actions. */
+body[data-theme="dark"] .r2-section-ribbon {
+    border-color: #e2ddd2;
+}
+
+body[data-theme="dark"] .r2-section-ribbon a {
+    color: #3a3d42;
+}
+
+body[data-theme="dark"] .r2-section-ribbon a.is-current {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .r2-section-ribbon__actions {
+    border-color: #e2ddd2;
+}
+
+body[data-theme="dark"] .r2-section-ribbon__actions button,
+body[data-theme="dark"] .r2-section-ribbon__actions a {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .r2-summary__portrait {
+    background: #f1efea;
+}
+
+/* AI panel: teal accents → gold; Ask button gold with ink text. */
+body[data-theme="dark"] .r2-ai-kicker,
+body[data-theme="dark"] .resume-consolidated .r2-ai-kicker,
+body[data-theme="dark"] .r2-skill-group > h3,
+body[data-theme="dark"] .r2-ai-card .hero-ai-answer__question,
+body[data-theme="dark"] .r2-ai-card .hero-ai-answer__close:focus-visible {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .r2-ai-chip {
+    color: #6f5100;
+    border-color: rgb(216 169 40 / 45%);
+}
+
+body[data-theme="dark"] .r2-ai-chip:hover,
+body[data-theme="dark"] .r2-ai-chip:focus-visible {
+    background: #d8a928;
+    border-color: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .r2-ai-card .hero-ai-search__button {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .r2-ai-card .hero-ai-search:focus-within .hero-ai-search__box {
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .r2-ai-card .hero-ai-answer {
+    border-color: rgb(216 169 40 / 45%);
+}
+
+/* Flip-card back: ink panel instead of navy/teal gradient. */
+body[data-theme="dark"] .r2-outcome-flip__back {
+    background: linear-gradient(145deg, #17181b, #24262a);
+}
+
+body[data-theme="dark"] .r2-exp-toggle {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .r2-exp-toggle:hover,
+body[data-theme="dark"] .resume-consolidated .r2-exp-toggle:hover {
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .r2-exp-toggle:focus-visible {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .r2-credential-card footer button:hover {
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .resume-v2 .lr-constellation :is(a, button, summary):focus-visible {
+    outline: 3px solid #d8a928;
+}
+
+body[data-theme="dark"] .resume-consolidated .r2-exp-stage:not(.is-expanded) .r2-experience-card:focus-within {
+    border-color: #d8a928;
+}
+
+body[data-theme="dark"] .r2-education-grid .r2-edu-status,
+body[data-theme="dark"] .r2-edu-date {
+    color: #6f5100;
+}
+
+body[data-theme="dark"] .r2-achieve-year {
+    color: #66645f;
+}
+
+/* --- Mono theme: deep-content sweep (grouped, wins by order+specificity) --- */
+
+/* Skill cards + panels: gold icon chips, ink/graphite text. */
+body[data-theme="dark"] .r2-skill-card { border-color: #e2ddd2; }
+
+body[data-theme="dark"] .r2-skill-card__icon,
+body[data-theme="dark"] .r2-skill-panel__icon,
+body[data-theme="dark"] .r2-credential-card__icon {
+    color: #8a6500;
+    background: rgb(216 169 40 / 14%);
+}
+
+body[data-theme="dark"] .r2-skill-card__icon svg,
+body[data-theme="dark"] .r2-skill-panel__icon svg,
+body[data-theme="dark"] .r2-credential-card__icon svg {
+    color: #8a6500;
+    stroke: #8a6500;
+}
+
+body[data-theme="dark"] .r2-skill-card__arrow { color: #8a6500; }
+
+body[data-theme="dark"] .r2-skill-panel { border-color: rgb(216 169 40 / 45%); }
+body[data-theme="dark"] .r2-skill-panel header { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-skill-panel > header p { color: #8a6500; }
+
+body[data-theme="dark"] .r2-skill-panel__status {
+    color: #6f5100;
+    border-color: rgb(216 169 40 / 35%);
+}
+
+body[data-theme="dark"] .r2-skill-panel h4 { color: #66645f; }
+body[data-theme="dark"] .r2-skill-panel li { color: #3a3d42; }
+body[data-theme="dark"] .r2-skill-panel li svg { color: #8a6500; stroke: #8a6500; }
+body[data-theme="dark"] .r2-skill-panel li small { color: #66645f; }
+body[data-theme="dark"] .r2-panel-close { color: #3a3d42; border-color: #ddd9d0; }
+
+/* Experience cards. */
+body[data-theme="dark"] .r2-experience-card { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-exp-card__marker { color: #8a6500; border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-experience-card p { color: #3a3d42; }
+body[data-theme="dark"] .r2-experience-card strong { color: #0b0c0e; }
+body[data-theme="dark"] .r2-experience-card small { color: #66645f; }
+body[data-theme="dark"] .r2-experience-card li { color: #3a3d42; }
+body[data-theme="dark"] .r2-exp-summary { color: #3a3d42; }
+
+body[data-theme="dark"] .r2-exp-ask {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+/* Credential cards/panels/records. */
+body[data-theme="dark"] .r2-credential-card { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-credential-card strong { color: #0b0c0e; }
+body[data-theme="dark"] .r2-credential-card small { color: #66645f; }
+body[data-theme="dark"] .r2-credential-card span { color: #66645f; }
+
+body[data-theme="dark"] .r2-credential-card footer button {
+    color: #3a3d42;
+    border-color: #ddd9d0;
+}
+
+body[data-theme="dark"] .r2-credential-panel { border-color: rgb(216 169 40 / 45%); }
+body[data-theme="dark"] .r2-credential-panel button { color: #3a3d42; border-color: #ddd9d0; }
+body[data-theme="dark"] .r2-credential-record { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-credential-record strong { color: #8a6500; }
+body[data-theme="dark"] .r2-credential-record li { color: #3a3d42; }
+body[data-theme="dark"] .r2-credential-record span { color: #66645f; }
+
+/* Verified/status chips inside credentials: gold-soft, not teal. */
+body[data-theme="dark"] .r2-credential-card span[class*="status"],
+body[data-theme="dark"] .r2-credential-card .r2-cert-chip {
+    color: #6f5100;
+    background: rgb(216 169 40 / 16%);
+}
+
+/* Impact panel + evidence badges. */
+body[data-theme="dark"] .r2-impact__panel { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-impact__panel span { color: #3a3d42; }
+body[data-theme="dark"] .r2-impact__panel small { color: #8a6500; }
+body[data-theme="dark"] .r2-evidence-badge { border-color: #e2ddd2; }
+body[data-theme="dark"] .r2-ai-sub { color: #3a3d42; }
+
+/* Shared AI search box: warm border, gold button, ink text. */
+body[data-theme="dark"] .resume-v2 .hero-ai-search__box { border-color: rgb(216 169 40 / 45%); }
+body[data-theme="dark"] .resume-v2 .hero-ai-search__button { background: #d8a928; color: #0b0c0e; }
+body[data-theme="dark"] .resume-v2 .hero-ai-answer { border-color: rgb(216 169 40 / 40%); }
+body[data-theme="dark"] .r2-ai-card { border-color: #e2ddd2; }
+
+body[data-theme="dark"] .r2-section-heading span { color: #8a6500; }
+body[data-theme="dark"] .r2-section-heading h2 { color: #0b0c0e; }
+body[data-theme="dark"] .r2-section-heading p { color: #66645f; }
+
+body[data-theme="dark"] .r2-exp-card__visual {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--role-accent) 10%, #fbf9f2), rgb(250 248 242 / 95%));
+}

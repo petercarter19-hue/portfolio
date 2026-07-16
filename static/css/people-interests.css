@@ -2108,3 +2108,56 @@
         border: 2px solid Highlight;
     }
 }
+
+/* =====================================================================
+   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   body[data-theme="dark"]: indigo/azure app accents → signal gold; the
+   colored note papers and avatar gradients are user content and stay.
+   ===================================================================== */
+body[data-theme="dark"] .pi-strip__tabs .sf-tab[aria-current="page"],
+body[data-theme="dark"] .sf-tab[aria-current="page"] {
+    background: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .pi-navcard__link svg,
+body[data-theme="dark"] .pi-navcard__link svg path,
+body[data-theme="dark"] .pi-navcard__link svg rect,
+body[data-theme="dark"] .pi-navcard__link svg circle {
+    stroke: #8a6500;
+}
+
+body[data-theme="dark"] .pi-raillink,
+body[data-theme="dark"] .pi-raillink--btn,
+body[data-theme="dark"] .sf-chevron,
+body[data-theme="dark"] .pi-topics__tag i {
+    color: #8a6500;
+}
+
+body[data-theme="dark"] .pi-topics__count {
+    color: #6f5100;
+    background: rgb(216 169 40 / 14%);
+}
+
+body[data-theme="dark"] .pi-type.is-active,
+body[data-theme="dark"] .pi-opt.is-on {
+    border-color: #d8a928;
+    background: rgb(216 169 40 / 12%);
+    color: #6f5100;
+}
+
+body[data-theme="dark"] .pi-reaction.is-active { color: #8a6500; }
+
+body[data-theme="dark"] .pi-chip--sky { background: rgb(216 169 40 / 15%); color: #6f5100; }
+body[data-theme="dark"] .pi-tag--question { background: rgb(216 169 40 / 18%); color: #6f5100; }
+body[data-theme="dark"] .pi-tag--photo { background: rgb(216 169 40 / 14%); color: #8a6500; }
+
+body[data-theme="dark"] #pi-title,
+body[data-theme="dark"] .pi-strip__copy h1 { color: #0b0c0e; }
+body[data-theme="dark"] .pi-strip__copy p { color: #66645f; }
+body[data-theme="dark"] .pi-navcard__link,
+body[data-theme="dark"] .pi-saved strong,
+body[data-theme="dark"] #pi-saved-title,
+body[data-theme="dark"] #pi-circles-title,
+body[data-theme="dark"] #pi-topics-title { color: #0b0c0e; }
+body[data-theme="dark"] .pi-topics__tag { color: #3a3d42; }
