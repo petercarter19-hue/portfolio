@@ -5,8 +5,29 @@
 (function () {
   'use strict';
 
-  var ASSET_BASE = document.body.getAttribute('data-asset-base') || '/static/images/feed';
+  var APP_ROOT = document.getElementById('feed-app');
+  var ASSET_BASE = (APP_ROOT && APP_ROOT.getAttribute('data-asset-base')) || '/static/images/feed';
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* The site's sticky global header (nav + slim sub-header) owns the top of
+     every page; measure its real height so the community sidebar and Catch
+     Up rail stick exactly beneath it at every breakpoint. */
+  function syncHeaderHeight() {
+    var header = document.querySelector('.global-header');
+    if (header && APP_ROOT) {
+      APP_ROOT.style.setProperty('--site-header-h', header.offsetHeight + 'px');
+    }
+  }
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight);
+
+  /* style.css makes <body> the page's scroll container (overflow:hidden auto),
+     so window.scrollTo is a no-op here — scroll whichever container moves. */
+  function scrollFeedToTop() {
+    var behavior = REDUCED ? 'auto' : 'smooth';
+    window.scrollTo({ top: 0, behavior: behavior });
+    document.body.scrollTo({ top: 0, behavior: behavior });
+  }
 
   /* ---------- helpers ---------- */
 
@@ -558,7 +579,7 @@
     state.tab = 'forYou';
     state.view = 'feed';
     render();
-    window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+    scrollFeedToTop();
     announce('Published to ' + audienceLabel + '. Your update is at the top of the Feed, and the original wording stays inspectable in your Journal.');
   }
 
@@ -624,7 +645,7 @@
       state.detailPost = (postId === 'p-danielle-review') ? DETAIL_POST : (post || DETAIL_POST);
       state.view = 'detail';
       render();
-      window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+      scrollFeedToTop();
       announce('Conversation opened.');
       return;
     }

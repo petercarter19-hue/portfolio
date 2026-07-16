@@ -160,6 +160,17 @@
                         News Feed
                         <small>soon</small>
                     </span>
+                    {# Feed Preview (PS-FEED-001, 2026-07-16): a real, clickable
+                       design preview of the next Feed direction from the
+                       approved Feed Vision Handoff — sample data only, and
+                       clearly labeled as a preview on its own page. Unlike
+                       the "soon" chip above, this destination actually
+                       exists today. #}
+                    <a class="sf-tab sf-tab--preview" href="{{ url_for('feed_living_stream') }}" title="A preview of PeerSlate's next Feed design — sample data only">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg>
+                        Feed Preview
+                        <small>preview</small>
+                    </a>
                 </nav>
 
                 {# ---- Composer: a standalone card ABOVE the cork board, the way

@@ -161,6 +161,30 @@
     text-transform: uppercase;
 }
 
+/* Feed Preview tab (PS-FEED-001, 2026-07-16): styled distinctly from both
+   the active indigo tab and the disabled gray "soon" chip, since this one
+   is a real, clickable destination — just a labeled design preview. */
+.pi-strip__tabs .sf-tab--preview {
+    color: #8a6a1e;
+}
+
+.pi-strip__tabs .sf-tab--preview:hover,
+.pi-strip__tabs .sf-tab--preview:focus-visible {
+    color: #8a6a1e;
+    background: rgb(215 163 62 / 14%);
+}
+
+.pi-strip__tabs .sf-tab--preview small {
+    padding: 0.08rem 0.42rem;
+    border-radius: 999px;
+    background: rgb(215 163 62 / 18%);
+    color: #8a6a1e;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 /* ---------------------------------------------------------------------
    Three-column page layout. The board owns the width.
    --------------------------------------------------------------------- */

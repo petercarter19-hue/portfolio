@@ -1,31 +1,48 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>PeerSlate Feed — Living Stream prototype</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Newsreader:opsz,wght@6..72,400..800&display=swap">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/feed-living-stream.css') }}">
-<link rel="icon" href="{{ url_for('static', filename='images/peerslate-favicon.png') }}">
-</head>
-<body data-asset-base="{{ url_for('static', filename='images/feed') }}"
-      data-states-url="{{ url_for('feed_living_stream_states') }}">
+{# ============================================================
+   LIVING STREAM FEED — design preview (PS-FEED-001, 2026-07-16)
+   /feed-living-stream
 
+   The connected, clickable preview of PeerSlate's next Feed from the
+   approved Feed Vision Handoff v1. Fixture/demo data only — voice,
+   AI, and publishing are simulated in-page and nothing is saved.
+
+   Chrome rule (Pete, 2026-07-16): the site's global top navigation
+   bar is untouchable — this page extends base.html and renders the
+   exact same sticky header + slim sub-header as every other page.
+   Everything below that line is in-community chrome: the Feed's own
+   left rail, tabs, composer, and mobile bottom bar only navigate
+   within the community experience. All prototype styles are scoped
+   under #feed-app so they cannot restyle the global header.
+   ============================================================ #}
+{% extends "base.html" %}
+
+{% block title %}Feed Preview | PeerSlate{% endblock %}
+
+{% block meta_description %}A design preview of PeerSlate's next Feed — the Living Stream. Sample data only: voice capture, AI review, and publishing are simulated.{% endblock %}
+
+{% block body_class %}the-slate-page feed-preview-page{% endblock %}
+
+{% block extra_head %}
+<link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&display=swap"
+    rel="stylesheet"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=global-header-1"
+>
+{% endblock %}
+
+{% block content %}
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
-    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8"/><path d="M5.7 9.8V21h12.6V9.8"/><path d="M9.5 21v-6h5v6"/></symbol>
     <symbol id="i-journal" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12 8h4M12 12h4"/></symbol>
     <symbol id="i-feed" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14"/><circle cx="3" cy="6" r=".7" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r=".7" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
     <symbol id="i-work" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18M9 12v2h6v-2"/></symbol>
     <symbol id="i-studio" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 3 3 3-4 5 6"/></symbol>
     <symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/></symbol>
     <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4Z"/></symbol>
@@ -37,74 +54,67 @@
   </defs>
 </svg>
 
-<a class="skip-link" href="#feed-main">Skip to Feed</a>
+<div id="feed-app"
+     data-asset-base="{{ url_for('static', filename='images/feed') }}"
+     data-states-url="{{ url_for('feed_living_stream_states') }}">
 
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><span class="brand-name">PeerSlate</span></div>
-    <nav class="nav" aria-label="PeerSlate">
-      <a class="nav-item" href="/"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-home"/></svg><span>Home</span></a>
-      <div class="nav-section-label" aria-hidden="true">Slate</div>
-      <a class="nav-item" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>Journal</span></a>
-      <a class="nav-item active" href="{{ url_for('feed_living_stream') }}" aria-current="page"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-feed"/></svg><span>Feed</span></a>
-      <a class="nav-item" href="/slate-board"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-board"/></svg><span>Board</span></a>
-      <a class="nav-item" href="/work"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-work"/></svg><span>Work</span></a>
-      <a class="nav-item" href="/interview-studio"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-studio"/></svg><span>Studio</span></a>
-    </nav>
-    <div class="sidebar-bottom">
-      <a class="nav-item" href="#" data-inert title="Not part of this prototype"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-settings"/></svg><span>Settings</span></a>
-      <div class="user-row"><div class="avatar av-pc sm" aria-hidden="true">PC</div><div class="user-copy"><div class="author-name">Pete Carter</div><div class="author-meta">Founder</div></div></div>
-    </div>
-  </aside>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Community">
+      {# Capture is the community's primary action. It lived in the
+         mockup's own top bar; with the real site header in charge up
+         top, it moves here — first thing in the community rail. #}
+      <button class="btn primary sidebar-capture" type="button" data-open-voice>
+        <svg class="icon sm" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><use href="#i-mic"/></svg> Capture
+      </button>
+      <nav class="nav" aria-label="Community sections">
+        <div class="nav-section-label" aria-hidden="true">Slate</div>
+        <a class="nav-item" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>Journal</span></a>
+        <a class="nav-item active" href="{{ url_for('feed_living_stream') }}" aria-current="page"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-feed"/></svg><span>Feed</span></a>
+        <a class="nav-item" href="/slate-board"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-board"/></svg><span>Board</span></a>
+        <a class="nav-item" href="/work"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-work"/></svg><span>Work</span></a>
+        <a class="nav-item" href="/interview-studio"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-studio"/></svg><span>Studio</span></a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a class="nav-item" href="#" data-inert title="Not part of this preview"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-settings"/></svg><span>Settings</span></a>
+        <div class="user-row"><div class="avatar av-pc sm" aria-hidden="true">PC</div><div class="user-copy"><div class="author-name">Pete Carter</div><div class="author-meta">Founder</div></div></div>
+      </div>
+    </aside>
 
-  <header class="topbar">
-    <div class="search" aria-hidden="true"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#i-search"/></svg><span>Search people, posts, or projects</span><span class="kbd">⌘ K</span></div>
-    <div class="top-actions">
-      <button class="btn primary" type="button" data-open-voice><svg class="icon sm" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><use href="#i-mic"/></svg> Capture</button>
-      <button class="btn icon-only" type="button" data-inert aria-label="Notifications (not part of this prototype)"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-bell"/></svg></button>
-      <div class="avatar av-pc sm" aria-hidden="true">PC</div>
-    </div>
-  </header>
-
-  <div class="mobile-top">
-    <div class="mobile-brand">PeerSlate</div>
-    <div class="top-actions">
-      <button class="btn icon-only" type="button" data-inert aria-label="Search (not part of this prototype)"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-search"/></svg></button>
-      <div class="avatar av-pc xs" aria-hidden="true">PC</div>
+    <div class="main" id="feed-main">
+      <div class="main-inner no-rail" id="mainInner">
+        <div class="page-head">
+          <div>
+            <div class="page-title-row">
+              <h1 class="page-title" id="pageTitle">Feed</h1>
+              <span class="preview-badge">Design preview</span>
+            </div>
+            <p class="page-subtitle" id="pageSubtitle">What people are building, learning, and living.</p>
+            <p class="preview-note">A preview of PeerSlate's next Feed design. The people and posts here are sample data, and voice/AI/publish are simulated — nothing you do on this page is saved to a database, sent anywhere, or visible to anyone but you.</p>
+          </div>
+          <div class="feed-tabs" id="feedTabs" role="tablist" aria-label="Feed views">
+            <button class="feed-tab active" type="button" role="tab" id="tab-for-you" aria-selected="true" data-tab="forYou">For You</button>
+            <button class="feed-tab" type="button" role="tab" id="tab-following" aria-selected="false" tabindex="-1" data-tab="following">Following</button>
+          </div>
+        </div>
+        <div class="content-grid" id="contentGrid">
+          <section class="feed-column" id="feedColumn" role="tabpanel" aria-labelledby="tab-for-you" aria-live="off"></section>
+          <aside class="context-rail" id="contextRail" aria-label="Catch Up" hidden></aside>
+        </div>
+      </div>
     </div>
   </div>
 
-  <main class="main" id="feed-main">
-    <div class="main-inner no-rail" id="mainInner">
-      <div class="page-head">
-        <div>
-          <h1 class="page-title" id="pageTitle">Feed</h1>
-          <p class="page-subtitle" id="pageSubtitle">What people are building, learning, and living.</p>
-        </div>
-        <div class="feed-tabs" id="feedTabs" role="tablist" aria-label="Feed views">
-          <button class="feed-tab active" type="button" role="tab" id="tab-for-you" aria-selected="true" data-tab="forYou">For You</button>
-          <button class="feed-tab" type="button" role="tab" id="tab-following" aria-selected="false" tabindex="-1" data-tab="following">Following</button>
-        </div>
-      </div>
-      <div class="content-grid" id="contentGrid">
-        <section class="feed-column" id="feedColumn" role="tabpanel" aria-labelledby="tab-for-you" aria-live="off"></section>
-        <aside class="context-rail" id="contextRail" aria-label="Catch Up" hidden></aside>
-      </div>
-    </div>
-  </main>
-
-  <nav class="mobile-bottom" aria-label="PeerSlate">
-    <a class="mobile-nav" href="/"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-home"/></svg><span>Home</span></a>
+  <nav class="mobile-bottom" aria-label="Community sections">
     <a class="mobile-nav" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>Journal</span></a>
+    <a class="mobile-nav" href="/slate-board"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-board"/></svg><span>Board</span></a>
     <button class="mobile-nav" type="button" data-open-voice><span class="capture-fab"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><use href="#i-mic"/></svg></span><span>Capture</span></button>
     <a class="mobile-nav active" href="{{ url_for('feed_living_stream') }}" aria-current="page"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-feed"/></svg><span>Feed</span></a>
-    <button class="mobile-nav" type="button" data-inert aria-label="More (not part of this prototype)"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-settings"/></svg><span>More</span></button>
+    <button class="mobile-nav" type="button" data-inert aria-label="More (not part of this preview)"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-settings"/></svg><span>More</span></button>
   </nav>
+
+  <div id="overlayRoot"></div>
+  <div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
 </div>
 
-<div id="overlayRoot"></div>
-<div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
-
-<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}" defer></script>
-</body>
-</html>
+<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}?v=global-header-1" defer></script>
+{% endblock %}

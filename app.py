@@ -501,36 +501,36 @@ def design_system_preview():
 
 
 # PS-FEED-001 (2026-07-16): the Living Stream Feed prototype from the
-# approved Feed Vision Handoff v1. This is Fable's connected, clickable
-# visual target for the production Feed — fixture data only, no database,
-# no publication, and no changes to production navigation. It uses the
-# same internal-preview gate as the design system: always available on
-# local development hosts, opt-in for a deployed review environment with
-# ENABLE_FEED_PROTOTYPE=1 (or the existing design-system preview flag).
-def _feed_prototype_gate():
-    preview_enabled = (
-        os.environ.get('ENABLE_FEED_PROTOTYPE') == '1'
-        or os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
-    )
-    clean_host = request.host.split(':', 1)[0].lower().strip('[]')
-    is_local = clean_host in {'127.0.0.1', 'localhost', '::1'}
-    if not (is_local or preview_enabled):
-        abort(404)
-
-
-@app.route('/_internal/feed-living-stream')
+# approved Feed Vision Handoff v1. Publicly reachable and linked from real
+# navigation (2026-07-16, Pete) — the "Feed Preview" tab on the Community
+# board and the header search index both point here. It is still a
+# fixture/demo-data design preview, not a production data path: no
+# database, no publication, no real auth, no changes to the existing
+# Feed/Community board behavior. The page carries a visible preview
+# banner so visitors never mistake sample data for real functionality.
+@app.route('/feed-living-stream')
 def feed_living_stream():
-    """The connected Living Stream Feed prototype (mockups 01–16)."""
-    _feed_prototype_gate()
+    """The connected Living Stream Feed design preview (mockups 01–16)."""
     return render_template('feed_living_stream.html')
 
 
-@app.route('/_internal/feed-living-stream/states')
+@app.route('/feed-living-stream/states')
 def feed_living_stream_states():
     """The page/state map: every mockup state with a deep link into the
     prototype, for review against mockups/production/01–18."""
-    _feed_prototype_gate()
     return render_template('feed_living_stream_states.html')
+
+
+@app.route('/_internal/feed-living-stream')
+def feed_living_stream_legacy_redirect():
+    """The prototype's brief internal-preview address; kept as a redirect
+    so any bookmark from its first hour still lands correctly."""
+    return redirect(url_for('feed_living_stream'), code=302)
+
+
+@app.route('/_internal/feed-living-stream/states')
+def feed_living_stream_states_legacy_redirect():
+    return redirect(url_for('feed_living_stream_states'), code=302)
 
 
 @app.route('/about')
