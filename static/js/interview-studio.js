@@ -954,16 +954,33 @@
 
     /* Speech input */
     var activeRecognition = null;
+    function friendlySpeechError(code) {
+        if (code === 'not-allowed' || code === 'service-not-allowed') return 'Microphone permission was denied. Allow microphone access in your browser’s site settings, then try again.';
+        if (code === 'no-speech') return 'No speech was detected. Try again and speak clearly into your microphone.';
+        if (code === 'audio-capture') return 'No microphone was found, or it is being used by another app.';
+        if (code === 'network') return 'Dictation lost its network connection. Check your connection and try again.';
+        return 'Dictation stopped before it captured a transcript. Try again, or keep typing.';
+    }
+    function showMicError(kind, message) {
+        var errorTarget = one('[data-is-mic-error="' + kind + '"]');
+        if (!errorTarget) return;
+        text(errorTarget, message);
+        setHidden(errorTarget, false);
+    }
     function startDictation(kind, button) {
+        var errorTarget = one('[data-is-mic-error="' + kind + '"]');
         var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!Recognition) {
-            announce('Speech input is not supported in this browser. You can keep typing.');
+            var unsupported = 'Speech input is not supported in this browser. You can keep typing.';
+            announce(unsupported);
+            showMicError(kind, unsupported);
             return;
         }
         if (activeRecognition) {
             activeRecognition.stop();
             return;
         }
+        setHidden(errorTarget, true);
         var target = kind === 'ai' ? one('[data-is-ai-question]') : kind === 'video' ? one('[data-is-video-transcript]') : answer;
         var recognition = new Recognition();
         activeRecognition = recognition;
@@ -982,7 +999,13 @@
                 target.value = transcript;
             }
         };
-        recognition.onerror = function () { announce('Speech input stopped without a transcript. You can keep typing.'); };
+        recognition.onerror = function (event) {
+            var code = event && event.error;
+            if (code === 'aborted') return;
+            var message = friendlySpeechError(code);
+            announce(message);
+            showMicError(kind, message);
+        };
         recognition.onend = function () {
             activeRecognition = null;
             button.classList.remove('is-listening');

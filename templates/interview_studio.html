@@ -200,6 +200,7 @@
                                 <span data-is-autosave>Draft ready</span>
                                 <span id="is-answer-shortcut"><span data-is-word-count>0</span> words · Ctrl/Command + Enter to submit</span>
                             </div>
+                            <p class="is__error" data-is-mic-error="answer" hidden></p>
                         </div>
 
                         <p class="is__tip">
@@ -351,6 +352,7 @@
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
                             </button>
                         </div>
+                        <p class="is__error" data-is-mic-error="ai" hidden></p>
                         <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
                             Get Answer
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
@@ -503,6 +505,7 @@
                                 <button class="is__button is__button--primary" type="submit" data-is-video-review-content disabled>Submit transcript</button>
                             </div>
                         </div>
+                        <p class="is__error" data-is-mic-error="video" hidden></p>
                     </form>
 
                     <p class="is__privacy-note">This preview uses your browser’s local media APIs. The recording is not uploaded, analyzed, or retained by PeerSlate.</p>

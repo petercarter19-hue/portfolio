@@ -117,6 +117,7 @@ class InterviewStudioRouteTests(unittest.TestCase):
             self.assertIn(value, html)
         self.assertIn('data-is-mic="answer"', html)
         self.assertIn('data-is-answer-form', html)
+        self.assertIn('data-is-mic-error="answer" hidden', html)
 
     def test_answer_submission_and_feature_workspaces_are_visible_upfront(self):
         html = self.html()
@@ -132,6 +133,9 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn('data-is-video-result-empty', html)
         self.assertIn('data-is-video-transcript-form', html)
         self.assertIn('data-is-mic="video"', html)
+        self.assertIn('data-is-mic-error="video" hidden', html)
+        self.assertIn('data-is-mic="ai"', html)
+        self.assertIn('data-is-mic-error="ai" hidden', html)
 
     def test_client_submission_accepts_any_nonempty_answer_and_uses_a_real_form(self):
         script = (Path(__file__).parents[1] / 'static' / 'js' / 'interview-studio.js').read_text(encoding='utf-8')
@@ -139,6 +143,17 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn("if (!responseText)", script)
         self.assertNotIn('responseText.length < 8', script)
         self.assertIn("event.ctrlKey && !event.metaKey", script)
+
+    def test_dictation_failures_are_shown_visibly_not_only_announced(self):
+        script = (Path(__file__).parents[1] / 'static' / 'js' / 'interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn('function friendlySpeechError', script)
+        self.assertIn('function showMicError', script)
+        self.assertIn("data-is-mic-error", script)
+        self.assertIn("code === 'aborted'", script)
+        self.assertIn("code === 'not-allowed'", script)
+        self.assertIn("code === 'no-speech'", script)
+        self.assertIn("code === 'audio-capture'", script)
+        self.assertIn("code === 'network'", script)
 
     def test_question_bank_uses_family_and_competency_taxonomy(self):
         html = self.html()
