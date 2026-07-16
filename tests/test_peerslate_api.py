@@ -130,7 +130,7 @@ class PeerSlateApiTests(unittest.TestCase):
     def test_database_ui_is_off_by_default_and_private_when_enabled(self):
         board_preview = self.client.get("/slate-board")
         self.assertIn(b'data-board-api="false"', board_preview.data)
-        self.assertIn(b'stay saved in this browser', board_preview.data)
+        self.assertIn(b'stores changes only in this browser', board_preview.data)
 
         app.config["PEERSLATE_DATABASE_UI_ENABLED"] = True
         database_board = self.client.get("/slate-board")
@@ -138,7 +138,7 @@ class PeerSlateApiTests(unittest.TestCase):
         break_feed = self.client.get("/the-slate/break")
 
         self.assertIn(b'data-board-api="true"', database_board.data)
-        self.assertIn(b'saved privately', database_board.data)
+        self.assertIn(b'Saved privately', database_board.data)
         self.assertIn(b'data-database-ui="true"', daily_slate.data)
         self.assertIn(b'data-break-api="true"', break_feed.data)
 

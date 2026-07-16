@@ -212,6 +212,7 @@
     var formatOptions = formatSelect ? formatSelect.innerHTML : '';
 
     var answer = one('[data-is-answer]');
+    var answerForm = one('[data-is-answer-form]');
     var reviewButton = one('[data-is-review]');
     var autosave = one('[data-is-autosave]');
     var wordCount = one('[data-is-word-count]');
@@ -219,7 +220,11 @@
     var reviewingBlock = one('[data-is-reviewing]');
     var submittedBlock = one('[data-is-submitted]');
     var feedbackBlock = one('[data-is-feedback]');
+    var feedbackEmpty = one('[data-is-feedback-empty]');
+    var feedbackContent = one('[data-is-feedback-content]');
     var improveBlock = one('[data-is-improve-panel]');
+    var improveEmpty = one('[data-is-improve-empty]');
+    var improveContent = one('[data-is-improve-content]');
     var reviewError = one('[data-is-review-error]');
     var improveError = one('[data-is-improve-error]');
     var reviewController = null;
@@ -394,12 +399,19 @@
         session.reviewRecordId = '';
         session.attemptNumber = 1;
         setHidden(answeringBlock, false);
+        answer.readOnly = false;
+        answeringBlock.removeAttribute('aria-busy');
         setHidden(reviewingBlock, true);
         setHidden(submittedBlock, true);
-        setHidden(feedbackBlock, true);
-        setHidden(improveBlock, true);
+        setHidden(feedbackBlock, false);
+        setHidden(feedbackEmpty, false);
+        setHidden(feedbackContent, true);
+        setHidden(improveBlock, false);
+        setHidden(improveEmpty, false);
+        setHidden(improveContent, true);
         setHidden(reviewError, true);
         setHidden(improveError, true);
+        syncAnswerState();
     }
 
     function restoreDraft() {
@@ -447,7 +459,7 @@
         var value = answer.value.trim();
         var words = value ? value.split(/\s+/).length : 0;
         text(wordCount, words);
-        reviewButton.disabled = !writtenPracticeEnabled || value.length < 8;
+        reviewButton.disabled = !writtenPracticeEnabled || !value || Boolean(reviewController);
     }
 
     function saveDraft(showStatus) {
@@ -729,16 +741,28 @@
     }
 
     function submitReview() {
+        if (reviewController) return;
         var responseText = answer.value.trim();
-        if (responseText.length < 8) return;
+        if (!responseText) {
+            announce('Type or dictate an answer before submitting it for review.');
+            answer.focus();
+            return;
+        }
         saveDraft(false);
         session.currentAnswer = responseText;
         text(one('[data-is-submitted-text]'), responseText);
-        setHidden(answeringBlock, true);
+        setHidden(answeringBlock, false);
+        answer.readOnly = true;
+        answeringBlock.setAttribute('aria-busy', 'true');
+        reviewButton.disabled = true;
         setHidden(submittedBlock, false);
         setHidden(reviewingBlock, false);
-        setHidden(feedbackBlock, true);
-        setHidden(improveBlock, true);
+        setHidden(feedbackBlock, false);
+        setHidden(feedbackEmpty, false);
+        setHidden(feedbackContent, true);
+        setHidden(improveBlock, false);
+        setHidden(improveEmpty, false);
+        setHidden(improveContent, true);
         setHidden(reviewError, true);
         cancelPendingReview();
         reviewController = new AbortController();
@@ -758,9 +782,13 @@
         }, controller.signal).then(function (payload) {
             if (requestId !== reviewRequestId) return;
             reviewController = null;
+            answer.readOnly = false;
+            answeringBlock.removeAttribute('aria-busy');
+            syncAnswerState();
             setHidden(reviewingBlock, true);
             renderReview(payload.review);
-            setHidden(feedbackBlock, false);
+            setHidden(feedbackEmpty, true);
+            setHidden(feedbackContent, false);
             var record = {
                 id: reviewRecordId || 'attempt-' + Date.now() + '-' + session.attemptNumber,
                 createdAt: new Date().toISOString(),
@@ -787,17 +815,33 @@
             if (requestId !== reviewRequestId) return;
             reviewController = null;
             if (error.name === 'AbortError') return;
+            answer.readOnly = false;
+            answeringBlock.removeAttribute('aria-busy');
+            syncAnswerState();
             setHidden(reviewingBlock, true);
-            setHidden(feedbackBlock, false);
+            setHidden(feedbackEmpty, false);
+            setHidden(feedbackContent, true);
             text(reviewError, error.message + ' Your answer is still here.');
             setHidden(reviewError, false);
             announce('The review could not be completed. Your answer is safe.');
         });
     }
 
-    reviewButton.addEventListener('click', submitReview);
+    answerForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        submitReview();
+    });
+    answer.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || (!event.ctrlKey && !event.metaKey)) return;
+        event.preventDefault();
+        if (typeof answerForm.requestSubmit === 'function') answerForm.requestSubmit();
+        else submitReview();
+    });
     one('[data-is-cancel-review]').addEventListener('click', function () {
         cancelPendingReview();
+        answer.readOnly = false;
+        answeringBlock.removeAttribute('aria-busy');
+        syncAnswerState();
         setHidden(reviewingBlock, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
@@ -817,7 +861,10 @@
         syncAnswerState();
         text(autosave, 'New attempt — original preserved in History');
         setHidden(submittedBlock, true);
-        setHidden(feedbackBlock, true);
+        setHidden(feedbackEmpty, false);
+        setHidden(feedbackContent, true);
+        setHidden(improveEmpty, false);
+        setHidden(improveContent, true);
         setHidden(answeringBlock, false);
         answer.focus();
         announce('New attempt started. Your original answer and score remain in History.');
@@ -826,8 +873,8 @@
     one('[data-is-improve]').addEventListener('click', function () {
         if (!session.currentReview || !session.currentAnswer) return;
         var selectedIds = all('[data-is-evidence-choice]:checked').map(function (item) { return item.value; });
-        setHidden(feedbackBlock, true);
-        setHidden(improveBlock, false);
+        setHidden(improveEmpty, true);
+        setHidden(improveContent, false);
         setHidden(improveError, true);
         text(one('[data-is-original-answer]'), session.currentAnswer);
         var draft = one('[data-is-improved-draft]');
@@ -873,8 +920,7 @@
 
     one('[data-is-back-feedback]').addEventListener('click', function () {
         cancelPendingImprovement();
-        setHidden(improveBlock, true);
-        setHidden(feedbackBlock, false);
+        feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
     });
 
     one('[data-is-use-draft]').addEventListener('click', function () {
@@ -886,7 +932,8 @@
         answer.value = draft;
         saveDraft(false);
         syncAnswerState();
-        setHidden(improveBlock, true);
+        setHidden(improveEmpty, false);
+        setHidden(improveContent, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
         answer.focus();
@@ -917,7 +964,7 @@
             activeRecognition.stop();
             return;
         }
-        var target = kind === 'ai' ? one('[data-is-ai-question]') : answer;
+        var target = kind === 'ai' ? one('[data-is-ai-question]') : kind === 'video' ? one('[data-is-video-transcript]') : answer;
         var recognition = new Recognition();
         activeRecognition = recognition;
         recognition.lang = document.documentElement.lang || 'en-US';
@@ -928,7 +975,7 @@
         announce('Listening. Speak your answer now.');
         recognition.onresult = function (event) {
             var transcript = Array.prototype.map.call(event.results, function (result) { return result[0].transcript; }).join(' ').trim();
-            if (target === answer) {
+            if (target === answer || kind === 'video') {
                 target.value = (target.value.trim() ? target.value.trim() + ' ' : '') + transcript;
                 target.dispatchEvent(new Event('input', { bubbles: true }));
             } else {
@@ -939,7 +986,7 @@
         recognition.onend = function () {
             activeRecognition = null;
             button.classList.remove('is-listening');
-            button.setAttribute('aria-label', kind === 'ai' ? 'Dictate an interview question' : 'Dictate your answer');
+            button.setAttribute('aria-label', kind === 'ai' ? 'Dictate an interview question' : kind === 'video' ? 'Dictate your answer transcript' : 'Dictate your answer');
         };
         recognition.start();
     }
@@ -952,9 +999,13 @@
     var aiForm = one('[data-is-ai-form]');
     var aiQuestionInput = one('[data-is-ai-question]');
     var aiAnswerBlock = one('[data-is-ai-answer]');
+    var aiAnswerEmpty = one('[data-is-ai-answer-empty]');
+    var aiAnswerContent = one('[data-is-ai-answer-content]');
     var aiLoading = one('[data-is-ai-loading]');
     var aiError = one('[data-is-ai-error]');
     var followUpForm = one('[data-is-follow-up-form]');
+    var followUpInput = one('[data-is-follow-up]');
+    var followUpSubmit = one('[data-is-follow-up-submit]');
     var currentModelAnswer = null;
     var currentAiQuestion = '';
     var currentModelQuestion = '';
@@ -975,8 +1026,12 @@
         currentAiQuestion = '';
         currentModelQuestion = '';
         currentModelContextToken = '';
-        setHidden(aiAnswerBlock, true);
-        setHidden(followUpForm, true);
+        setHidden(aiAnswerBlock, false);
+        setHidden(aiAnswerEmpty, false);
+        setHidden(aiAnswerContent, true);
+        followUpInput.value = '';
+        followUpInput.disabled = true;
+        followUpSubmit.disabled = true;
         setHidden(aiError, true);
     }
 
@@ -1009,6 +1064,10 @@
         setHidden(aiLoading, true);
         setHidden(aiError, true);
         setHidden(aiAnswerBlock, false);
+        setHidden(aiAnswerEmpty, true);
+        setHidden(aiAnswerContent, false);
+        followUpInput.disabled = insufficient;
+        followUpSubmit.disabled = insufficient;
         announce(insufficient ? 'More approved evidence is needed for that question.' : 'Approved-evidence model-answer draft ready.');
     }
 
@@ -1021,7 +1080,13 @@
         aiController = new AbortController();
         var controller = aiController;
         var requestId = aiRequestId;
-        setHidden(aiAnswerBlock, Boolean(!followUp));
+        setHidden(aiAnswerBlock, false);
+        if (!followUp) {
+            setHidden(aiAnswerEmpty, false);
+            setHidden(aiAnswerContent, true);
+            followUpInput.disabled = true;
+            followUpSubmit.disabled = true;
+        }
         setHidden(aiError, true);
         setHidden(aiLoading, false);
         postJSON('/api/interview/model-answer', {
@@ -1043,7 +1108,16 @@
             setHidden(aiLoading, true);
             text(aiError, error.message);
             setHidden(aiError, false);
-            if (currentModelAnswer) setHidden(aiAnswerBlock, false);
+            if (currentModelAnswer) {
+                setHidden(aiAnswerEmpty, true);
+                setHidden(aiAnswerContent, false);
+                var followUpAvailable = currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);
+                followUpInput.disabled = !followUpAvailable;
+                followUpSubmit.disabled = !followUpAvailable;
+            } else {
+                setHidden(aiAnswerEmpty, false);
+                setHidden(aiAnswerContent, true);
+            }
             announce('Interview AI could not complete that answer.');
         });
     }
@@ -1057,17 +1131,17 @@
         resetAiAnswerForContextChange();
         requestModelAnswer('');
     });
-    one('[data-is-follow-up-open]').addEventListener('click', function () { setHidden(followUpForm, false); one('[data-is-follow-up]').focus(); });
+    one('[data-is-follow-up-open]').addEventListener('click', function () { followUpInput.focus(); });
     followUpForm.addEventListener('submit', function (event) {
         event.preventDefault();
-        var followUp = one('[data-is-follow-up]').value.trim();
+        var followUp = followUpInput.value.trim();
         if (!followUp) return;
         if (!currentModelContextToken) {
             announce('Generate an answer before asking a follow-up.');
             return;
         }
         requestModelAnswer(followUp);
-        one('[data-is-follow-up]').value = '';
+        followUpInput.value = '';
     });
     one('[data-is-ai-new]').addEventListener('click', function () {
         resetAiAnswerForContextChange();
@@ -1117,7 +1191,10 @@
     var stopRecord = one('[data-is-record-stop]');
     var discardRecord = one('[data-is-record-discard]');
     var videoResult = one('[data-is-video-result]');
+    var videoResultEmpty = one('[data-is-video-result-empty]');
+    var videoResultContent = one('[data-is-video-result-content]');
     var videoTranscript = one('[data-is-video-transcript]');
+    var videoTranscriptForm = one('[data-is-video-transcript-form]');
     var videoReviewContent = one('[data-is-video-review-content]');
 
     function setDeviceStatus(element, message, status) {
@@ -1199,8 +1276,6 @@
         if (!media.stream || !window.MediaRecorder) return;
         media.chunks = [];
         media.historyRecordId = '';
-        videoTranscript.value = '';
-        videoReviewContent.disabled = true;
         var mimeType = supportedMimeType();
         try {
             media.recorder = mimeType ? new MediaRecorder(media.stream, { mimeType: mimeType }) : new MediaRecorder(media.stream);
@@ -1218,7 +1293,9 @@
         setHidden(startRecord, true);
         setHidden(stopRecord, false);
         setHidden(discardRecord, false);
-        setHidden(videoResult, true);
+        setHidden(videoResult, false);
+        setHidden(videoResultEmpty, false);
+        setHidden(videoResultContent, true);
         media.timer = window.setInterval(function () {
             var seconds = Math.floor((Date.now() - media.startedAt) / 1000);
             text(one('[data-is-recording-time]'), formatDuration(seconds));
@@ -1247,6 +1324,8 @@
         setHidden(discardRecord, false);
         text(one('[data-is-video-duration]'), formatDuration(durationSeconds));
         setHidden(videoResult, false);
+        setHidden(videoResultEmpty, true);
+        setHidden(videoResultContent, false);
         setDeviceStatus(cameraStatus, 'Local recording complete', 'is-ready');
         setDeviceStatus(microphoneStatus, 'Audio captured locally', 'is-ready');
         media.historyRecordId = 'video-' + Date.now();
@@ -1280,7 +1359,9 @@
         startRecord.disabled = true;
         setHidden(stopRecord, true);
         setHidden(discardRecord, true);
-        setHidden(videoResult, true);
+        setHidden(videoResult, false);
+        setHidden(videoResultEmpty, false);
+        setHidden(videoResultContent, true);
         media.question = null;
         media.historyRecordId = '';
         videoTranscript.value = '';
@@ -1306,11 +1387,16 @@
         announce('Local recording and its browser record discarded.');
     });
     videoTranscript.addEventListener('input', function () {
-        videoReviewContent.disabled = !writtenPracticeEnabled || videoTranscript.value.trim().length < 8;
+        videoReviewContent.disabled = !writtenPracticeEnabled || !videoTranscript.value.trim();
     });
-    videoReviewContent.addEventListener('click', function () {
+    videoTranscriptForm.addEventListener('submit', function (event) {
+        event.preventDefault();
         var transcript = videoTranscript.value.trim();
-        if (!writtenPracticeEnabled || transcript.length < 8) return;
+        if (!writtenPracticeEnabled || !transcript) {
+            videoTranscript.focus();
+            announce('Type, paste, or dictate a transcript before submitting it for review.');
+            return;
+        }
         var recordedQuestion = media.question ? cloneQuestion(media.question) : cloneQuestion(currentQuestion());
         var recordId = media.historyRecordId;
         videoTranscript.value = '';

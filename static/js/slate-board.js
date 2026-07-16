@@ -1,5 +1,5 @@
-// Slate Board Concept 1 — note CRUD, completion, priority, drag/reorder,
-// progress, local collaboration preview, zoom, and responsive accordion.
+// Slate Board living whiteboard — note CRUD, private capture review,
+// completion, priority, drag/reorder, zoom, and responsive accordion.
 
 (function () {
     'use strict';
@@ -15,23 +15,30 @@
     var noteForm = document.getElementById('sb-note-form');
     var statsDialog = document.getElementById('sb-stats-dialog');
     var shareDialog = document.getElementById('sb-share-dialog');
+    var captureLayer = root.querySelector('[data-capture-layer]');
+    var captureForm = document.getElementById('sb-capture-form');
+    var captureTranscript = document.getElementById('sb-capture-transcript');
+    var proposalPanel = root.querySelector('[data-proposal-panel]');
+    var proposalList = root.querySelector('[data-proposal-list]');
+    var focusPanel = root.querySelector('[data-focus-panel]');
     var apiEnabled = root.dataset.boardApi === 'true';
 
-    var STORAGE_KEY = 'peerslateSlateBoardConcept1:'
-        + (root.dataset.boardStorageScope || 'petec-preview');
-    var STORAGE_VERSION = 2;
-    var SECTION_ORDER = ['todo', 'short', 'long', 'someday'];
+    var storageScope = root.dataset.boardStorageScope || 'petec-preview';
+    var STORAGE_KEY = 'peerslateSlateBoardLivingWhiteboardV2:' + storageScope;
+    var LEGACY_STORAGE_KEY = 'peerslateSlateBoardConcept1:' + storageScope;
+    var STORAGE_VERSION = 3;
+    var SECTION_ORDER = ['short', 'projects', 'long', 'work'];
     var SECTION_LABELS = {
-        todo: 'To Do',
         short: 'Short Term',
+        projects: 'Projects',
         long: 'Long Term',
-        someday: 'Someday'
+        work: 'Work'
     };
     var SECTION_COLORS = {
-        todo: '#93a0b3',
-        short: '#6757ce',
-        long: '#50ad91',
-        someday: '#e4bf3f'
+        short: '#4ea3ff',
+        projects: '#4f5bd5',
+        long: '#2ec8d3',
+        work: '#d7a33e'
     };
     var TAG_STYLES = {
         work: 'work',
@@ -75,6 +82,7 @@
 
     var state = loadState();
     var zoom = 100;
+    var history = [];
     var draggingId = null;
     var pointerDrag = null;
     var suppressCardClick = false;
@@ -85,12 +93,16 @@
     var deleteTimer = null;
     var pendingCreates = {};
     var remoteWriteQueues = {};
-    var mobileQuery = window.matchMedia('(max-width: 719px)');
+    var pendingProposals = [];
+    var proposalSourceText = '';
+    var panelReturnTarget = null;
+    var focusedNoteId = null;
+    var mobileQuery = window.matchMedia('(max-width: 759px)');
     var lastResponsiveMobile = null;
 
     function normalizeNote(raw) {
         raw = raw || {};
-        var section = SECTION_ORDER.indexOf(raw.section) >= 0 ? raw.section : 'todo';
+        var section = SECTION_ORDER.indexOf(raw.section) >= 0 ? raw.section : 'short';
         var title = typeof raw.title === 'string' && raw.title.trim()
             ? raw.title.trim().slice(0, 120)
             : 'Untitled note';
@@ -143,22 +155,82 @@
         try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); }
         catch (error) { saved = null; }
 
-        if (!saved || saved.version !== STORAGE_VERSION || !Array.isArray(saved.notes)) {
-            return { version: STORAGE_VERSION, notes: seedNotes.slice(), collaborators: [] };
+        if (!saved) {
+            try { saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY)); }
+            catch (error) { saved = null; }
         }
 
-        var notes = saved.notes.map(normalizeNote);
+        if (!saved || !Array.isArray(saved.notes)) {
+            return {
+                version: STORAGE_VERSION,
+                notes: seedNotes.slice(),
+                collaborators: [],
+                view: 'board'
+            };
+        }
+
+        var legacySections = {
+            todo: 'short',
+            short: 'projects',
+            long: 'long',
+            someday: 'work'
+        };
+        var notes = saved.notes.map(function (note) {
+            var migrated = Object.assign({}, note);
+            if (saved.version === 2 && legacySections[migrated.section]) {
+                migrated.section = legacySections[migrated.section];
+            }
+            return normalizeNote(migrated);
+        });
         return {
             version: STORAGE_VERSION,
             notes: notes,
-            collaborators: Array.isArray(saved.collaborators) ? saved.collaborators.slice(0, 20) : []
+            collaborators: Array.isArray(saved.collaborators) ? saved.collaborators.slice(0, 20) : [],
+            view: saved.view === 'list' ? 'list' : 'board'
         };
     }
 
     function saveState() {
         state.version = STORAGE_VERSION;
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-        catch (error) { announce('Your change is visible for this visit, but browser storage is unavailable.'); }
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            setSaveStatus(apiEnabled ? 'Saved locally; private sync pending' : 'Saved in this browser', 'saved');
+        } catch (error) {
+            setSaveStatus('Visible for this visit only', 'warning');
+            announce('Your change is visible for this visit, but browser storage is unavailable.');
+        }
+    }
+
+    function setSaveStatus(message, status) {
+        root.querySelectorAll('[data-save-status]').forEach(function (element) {
+            element.textContent = message;
+            element.dataset.status = status || 'saved';
+        });
+    }
+
+    function cloneNotes(notes) {
+        return JSON.parse(JSON.stringify(notes));
+    }
+
+    function pushHistory(label) {
+        history.push({ label: label, notes: cloneNotes(state.notes) });
+        if (history.length > 30) { history.shift(); }
+    }
+
+    function undoLastChange() {
+        if (apiEnabled) {
+            announce('Undo is limited to the browser-only baseline while private server sync is enabled.');
+            return;
+        }
+        var previous = history.pop();
+        if (!previous) {
+            announce('There is nothing to undo yet.');
+            return;
+        }
+        state.notes = previous.notes.map(normalizeNote);
+        saveState();
+        renderBoard();
+        announce('Undid ' + previous.label + '.');
     }
 
     function announce(message) {
@@ -229,6 +301,13 @@
         top.appendChild(star);
         article.appendChild(top);
 
+        if (note.description) {
+            var summary = document.createElement('p');
+            summary.className = 'sb-note__summary';
+            summary.textContent = note.description;
+            article.appendChild(summary);
+        }
+
         var meta = document.createElement('div');
         meta.className = 'sb-note__meta';
         var timeline = document.createElement('span');
@@ -259,6 +338,7 @@
             if (count) { count.textContent = String(notes.length); }
         });
         updateStats();
+        if (focusedNoteId && !findNote(focusedNoteId)) { closeFocusPanel(false); }
     }
 
     function updateStats() {
@@ -300,6 +380,321 @@
         if (element) { element.textContent = String(value); }
     }
 
+    function setBoardView(view, trigger, silent) {
+        var nextView = view === 'list' ? 'list' : 'board';
+        state.view = nextView;
+        workspace.dataset.boardViewState = nextView;
+        workspace.classList.toggle('is-list-view', nextView === 'list');
+        root.querySelectorAll('[data-board-view]').forEach(function (button) {
+            button.setAttribute('aria-pressed', String(button.dataset.boardView === nextView));
+        });
+        root.querySelectorAll('[data-toggle-board-view]').forEach(function (button) {
+            var listActive = nextView === 'list';
+            button.setAttribute('aria-pressed', String(listActive));
+            button.setAttribute('aria-label', listActive
+                ? 'Show physical whiteboard view'
+                : 'Show accessible list view');
+            var label = button.querySelector('span');
+            if (label) { label.textContent = listActive ? 'Board view' : 'List view'; }
+        });
+        if (nextView === 'list') { updateZoom(100, true); }
+        saveState();
+        if (!silent) {
+            announce(nextView === 'list'
+                ? 'Structured list view active. The same board records and actions remain available.'
+                : 'Physical whiteboard view active.');
+        }
+        if (trigger && typeof trigger.focus === 'function') { trigger.focus(); }
+    }
+
+    function updatePanelClass() {
+        var panelOpen = (proposalPanel && !proposalPanel.hidden) || (focusPanel && !focusPanel.hidden);
+        workspace.classList.toggle('has-panel', Boolean(panelOpen));
+    }
+
+    function stopListeningPreview() {
+        workspace.classList.remove('is-listening');
+        var listenButton = root.querySelector('[data-capture-listen]');
+        var stopButton = root.querySelector('[data-capture-stop]');
+        var stateLabel = root.querySelector('[data-capture-state]');
+        var trustLabel = root.querySelector('[data-capture-trust]');
+        if (listenButton) { listenButton.hidden = false; }
+        if (stopButton) { stopButton.hidden = true; }
+        if (stateLabel) { stateLabel.textContent = 'Ready'; }
+        if (trustLabel) {
+            trustLabel.textContent = 'Private draft. Nothing has been saved or shared yet.';
+        }
+    }
+
+    function openCaptureLayer(trigger) {
+        if (!captureLayer || !captureTranscript) { return; }
+        closeProposalPanel(false);
+        closeFocusPanel(false);
+        panelReturnTarget = trigger || panelReturnTarget || document.activeElement;
+        captureLayer.hidden = false;
+        workspace.classList.add('has-capture');
+        stopListeningPreview();
+        window.setTimeout(function () { captureTranscript.focus(); }, 0);
+        announce('Chalk It Up private draft opened. Type a thought or inspect the listening-state preview.');
+    }
+
+    function closeCaptureLayer(returnFocus) {
+        if (!captureLayer) { return; }
+        stopListeningPreview();
+        captureLayer.hidden = true;
+        workspace.classList.remove('has-capture');
+        if (returnFocus !== false && panelReturnTarget && typeof panelReturnTarget.focus === 'function') {
+            panelReturnTarget.focus();
+        }
+    }
+
+    function startListeningPreview() {
+        if (!captureTranscript) { return; }
+        if (!captureTranscript.value.trim()) {
+            captureTranscript.value = 'I need to finish the PMP by September. I want to study Saturday mornings, take two practice exams, and have Danielle review my plan.';
+        }
+        workspace.classList.add('is-listening');
+        var listenButton = root.querySelector('[data-capture-listen]');
+        var stopButton = root.querySelector('[data-capture-stop]');
+        var stateLabel = root.querySelector('[data-capture-state]');
+        var trustLabel = root.querySelector('[data-capture-trust]');
+        if (listenButton) { listenButton.hidden = true; }
+        if (stopButton) { stopButton.hidden = false; stopButton.focus(); }
+        if (stateLabel) { stateLabel.textContent = 'Listening preview'; }
+        if (trustLabel) {
+            trustLabel.textContent = 'Visual preview only. The microphone is not recording. Edit the sample or switch to typing.';
+        }
+        announce('Listening-state preview active. The microphone is not recording and nothing has been saved.');
+    }
+
+    function inferSection(text) {
+        var value = String(text || '').toLowerCase();
+        if (/project|build|launch|prototype|studio/.test(value)) { return 'projects'; }
+        if (/work|review|mbse|evidence|job|role/.test(value)) { return 'work'; }
+        if (/long term|future|ph\.?d|degree|community|mentor/.test(value)) { return 'long'; }
+        return 'short';
+    }
+
+    function buildProposals(text) {
+        var clean = String(text || '').replace(/\s+/g, ' ').trim();
+        if (/pmp|certification/i.test(clean)) {
+            return [
+                {
+                    typeLabel: 'G',
+                    title: 'PMP Certification',
+                    section: 'short',
+                    tag: 'Goal',
+                    tagStyle: 'goal',
+                    timeline: 'Target: September',
+                    description: clean,
+                    canSave: true
+                },
+                {
+                    typeLabel: 'M',
+                    title: 'Saturday study routine',
+                    section: 'short',
+                    tag: 'Milestone',
+                    tagStyle: 'growth',
+                    timeline: 'Saturday mornings',
+                    description: 'Proposed milestone linked to the PMP goal.',
+                    canSave: true
+                },
+                {
+                    typeLabel: 'M',
+                    title: 'Complete two practice exams',
+                    section: 'short',
+                    tag: 'Milestone',
+                    tagStyle: 'work',
+                    timeline: 'Before September',
+                    description: 'Proposed milestone linked to the PMP goal.',
+                    canSave: true
+                },
+                {
+                    typeLabel: 'P',
+                    title: 'Danielle reviews the plan',
+                    section: 'projects',
+                    tag: 'Proposed relationship',
+                    tagStyle: 'personal',
+                    timeline: 'Not invited',
+                    description: 'Relationship preview only. No invitation will be sent.',
+                    canSave: false
+                }
+            ];
+        }
+
+        return [{
+            typeLabel: 'N',
+            title: clean.length > 80 ? clean.slice(0, 77) + '...' : clean,
+            section: inferSection(clean),
+            tag: 'Private note',
+            tagStyle: 'work',
+            timeline: 'Captured now',
+            description: clean,
+            canSave: true
+        }];
+    }
+
+    function renderProposalList() {
+        if (!proposalList) { return; }
+        proposalList.replaceChildren();
+        pendingProposals.forEach(function (proposal, index) {
+            var article = document.createElement('article');
+            article.className = 'sb-proposal-item';
+
+            var type = document.createElement('span');
+            type.className = 'sb-proposal-item__type';
+            type.textContent = proposal.typeLabel;
+
+            var copy = document.createElement('div');
+            var title = document.createElement('strong');
+            title.textContent = proposal.title;
+            var detail = document.createElement('small');
+            detail.textContent = proposal.canSave
+                ? proposal.tag + ' - ' + SECTION_LABELS[proposal.section]
+                : proposal.tag + ' - no invitation or relationship will be saved';
+            copy.appendChild(title);
+            copy.appendChild(detail);
+
+            var remove = document.createElement('button');
+            remove.className = 'sb-proposal-item__remove';
+            remove.type = 'button';
+            remove.dataset.proposalRemove = String(index);
+            remove.setAttribute('aria-label', 'Remove proposal: ' + proposal.title);
+            remove.textContent = '×';
+
+            article.appendChild(type);
+            article.appendChild(copy);
+            article.appendChild(remove);
+            proposalList.appendChild(article);
+        });
+
+        var approve = root.querySelector('[data-approve-proposals]');
+        if (approve) {
+            var saveable = pendingProposals.filter(function (proposal) { return proposal.canSave; }).length;
+            approve.disabled = saveable === 0;
+            approve.textContent = saveable === 1
+                ? 'Approve 1 private item'
+                : 'Approve ' + saveable + ' private items';
+        }
+    }
+
+    function openProposalPanel() {
+        if (!proposalPanel) { return; }
+        closeCaptureLayer(false);
+        closeFocusPanel(false);
+        renderProposalList();
+        proposalPanel.hidden = false;
+        updatePanelClass();
+        var close = proposalPanel.querySelector('[data-close-proposal]');
+        if (close) { close.focus(); }
+        announce('Structured proposal review opened. Nothing has been saved, shared, or published.');
+    }
+
+    function closeProposalPanel(returnFocus) {
+        if (!proposalPanel) { return; }
+        proposalPanel.hidden = true;
+        updatePanelClass();
+        if (returnFocus !== false && panelReturnTarget && typeof panelReturnTarget.focus === 'function') {
+            panelReturnTarget.focus();
+        }
+    }
+
+    function reviewCapture(event) {
+        if (event) { event.preventDefault(); }
+        if (!captureTranscript) { return; }
+        var text = captureTranscript.value.trim();
+        if (!text) {
+            announce('Type or edit a private capture before reviewing it.');
+            captureTranscript.focus();
+            return;
+        }
+        stopListeningPreview();
+        proposalSourceText = text;
+        pendingProposals = buildProposals(text);
+        openProposalPanel();
+    }
+
+    function approveProposals() {
+        var saveable = pendingProposals.filter(function (proposal) { return proposal.canSave; });
+        if (!saveable.length) {
+            announce('No private record proposals remain to approve.');
+            return;
+        }
+        pushHistory('capture approval');
+        var addedIds = [];
+        saveable.forEach(function (proposal, index) {
+            var note = normalizeNote({
+                id: 'capture-' + Date.now() + '-' + index,
+                section: proposal.section,
+                title: proposal.title,
+                timeline: proposal.timeline,
+                tag: proposal.tag,
+                tagStyle: proposal.tagStyle,
+                description: proposal.description,
+                checklist: [],
+                comments: [],
+                starred: false,
+                completed: false,
+                overdue: false
+            });
+            state.notes.push(note);
+            addedIds.push(note.id);
+        });
+        saveState();
+        renderBoard();
+        closeProposalPanel(false);
+        captureTranscript.value = '';
+        pendingProposals = [];
+        proposalSourceText = '';
+        var firstControl = addedIds.length ? findCardControl(addedIds[0], '.sb-note__open') : null;
+        if (firstControl) { firstControl.focus(); }
+        announce('Added ' + addedIds.length + ' private browser ' + (addedIds.length === 1 ? 'item' : 'items') + '. No relationship was invited or published.');
+    }
+
+    function setFocusValue(selector, value) {
+        if (!focusPanel) { return; }
+        var element = focusPanel.querySelector(selector);
+        if (element) { element.textContent = value; }
+    }
+
+    function openFocusPanel(note, trigger) {
+        if (!focusPanel || !note) { return; }
+        closeCaptureLayer(false);
+        closeProposalPanel(false);
+        panelReturnTarget = trigger || document.activeElement;
+        focusedNoteId = note.id;
+        setFocusValue('[data-focus-eyebrow]', note.tag + ' - private');
+        setFocusValue('[data-focus-title]', note.title);
+        setFocusValue('[data-focus-description]', note.description || 'Open Edit note to add context, dates, evidence links, and next steps.');
+        setFocusValue('[data-focus-timeline]', note.timeline || 'Not set');
+        setFocusValue('[data-focus-section]', SECTION_LABELS[note.section]);
+
+        var progress = note.completed ? 100 : (note.id === 'peerslate-alpha' ? 64 : 30);
+        if (note.checklist.length) {
+            var complete = note.checklist.filter(function (item) { return item.completed; }).length;
+            progress = Math.round(complete / note.checklist.length * 100);
+        }
+        setFocusValue('[data-focus-progress]', progress + '%');
+        var bar = focusPanel.querySelector('[data-focus-progress-bar]');
+        if (bar) { bar.style.width = progress + '%'; }
+
+        focusPanel.hidden = false;
+        updatePanelClass();
+        var close = focusPanel.querySelector('[data-close-focus]');
+        if (close) { close.focus(); }
+        announce('Focus details opened for ' + note.title + '. Connected records are labeled as preview states.');
+    }
+
+    function closeFocusPanel(returnFocus) {
+        if (!focusPanel) { return; }
+        focusPanel.hidden = true;
+        focusedNoteId = null;
+        updatePanelClass();
+        if (returnFocus !== false && panelReturnTarget && typeof panelReturnTarget.focus === 'function') {
+            panelReturnTarget.focus();
+        }
+    }
+
     function openDialog(dialog, trigger) {
         if (!dialog) { return; }
         lastDialogTrigger = trigger || document.activeElement;
@@ -325,14 +720,14 @@
         document.getElementById('sb-note-id').value = note ? note.id : '';
         document.getElementById('sb-note-title').value = note ? note.title : '';
         document.getElementById('sb-note-description').value = note ? note.description : '';
-        document.getElementById('sb-note-section').value = note ? note.section : (section || 'todo');
+        document.getElementById('sb-note-section').value = note ? note.section : (section || 'short');
         document.getElementById('sb-note-timeline').value = note ? note.timeline : '';
         document.getElementById('sb-note-tag').value = note ? note.tag : '';
         document.getElementById('sb-note-link').value = note ? note.link : '';
 
         var starButton = document.getElementById('sb-note-star');
         starButton.setAttribute('aria-pressed', String(Boolean(note && note.starred)));
-        var style = note ? note.tagStyle : sectionDefaultStyle(section || 'todo');
+        var style = note ? note.tagStyle : sectionDefaultStyle(section || 'short');
         var color = noteForm.querySelector('input[name="tagStyle"][value="' + style + '"]')
             || noteForm.querySelector('input[name="tagStyle"]');
         if (color) { color.checked = true; }
@@ -361,9 +756,9 @@
     }
 
     function sectionDefaultStyle(section) {
-        if (section === 'short') { return 'goal'; }
+        if (section === 'projects') { return 'goal'; }
         if (section === 'long') { return 'finance'; }
-        if (section === 'someday') { return 'health'; }
+        if (section === 'work') { return 'health'; }
         return 'work';
     }
 
@@ -508,6 +903,7 @@
             attachment: attachment
         });
 
+        pushHistory(existing ? 'note edit' : 'note creation');
         if (existing) {
             var index = state.notes.indexOf(existing);
             state.notes.splice(index, 1, note);
@@ -541,6 +937,7 @@
             deleteTimer = window.setTimeout(resetDeleteButton, 3500);
             return;
         }
+        pushHistory('note deletion');
         state.notes = state.notes.filter(function (candidate) { return candidate.id !== note.id; });
         saveState();
         renderBoard();
@@ -555,6 +952,7 @@
     function toggleComplete(noteId) {
         var note = findNote(noteId);
         if (!note) { return; }
+        pushHistory('completion change');
         note.completed = !note.completed;
         saveState();
         renderBoard();
@@ -567,6 +965,7 @@
     function toggleStar(noteId) {
         var note = findNote(noteId);
         if (!note) { return; }
+        pushHistory('important marker change');
         note.starred = !note.starred;
         saveState();
         renderBoard();
@@ -588,17 +987,20 @@
     function handleTool(button) {
         var tool = button.dataset.tool;
         setActiveTool(tool);
-        if (tool === 'add' || tool === 'note' || tool === 'text') {
-            openEditor(null, 'todo', button, false);
-        } else if (tool === 'attachment' || tool === 'image') {
-            openEditor(null, 'todo', button, true);
+        if (tool === 'chalk') {
+            openCaptureLayer(button);
+        } else if (tool === 'add') {
+            openEditor(null, 'short', button, false);
         } else if (tool === 'more') {
             updateStats();
             openDialog(statsDialog, button);
-        } else if (tool === 'shape') {
-            announce('Shape tool selected. Notes remain the primary board objects in this preview.');
+        } else if (tool === 'draw') {
+            announce('Draw tool selected as a visual preview. Freehand strokes are not saved in this baseline.');
         } else if (tool === 'connector') {
-            announce('Connector tool selected. Open a note to add its related link.');
+            announce('Connect tool selected. Semantic relationships remain preview-only until canonical records are integrated.');
+        } else if (tool === 'undo') {
+            undoLastChange();
+            setActiveTool('select');
         } else {
             announce('Select tool active. Drag notes to organize them.');
         }
@@ -608,39 +1010,20 @@
         zoom = Math.max(50, Math.min(160, next));
         var ratio = zoom / 100;
         scaleElement.style.setProperty('--sb-scale', String(ratio));
-        var output = root.querySelector('[data-zoom-value]');
-        if (output) { output.value = zoom + '%'; output.textContent = zoom + '%'; }
+        root.querySelectorAll('[data-zoom-value]').forEach(function (output) {
+            output.value = zoom + '%';
+            output.textContent = zoom + '%';
+        });
         if (!silent) { announce('Board zoom ' + zoom + ' percent.'); }
-    }
-
-    function toggleFullscreen(button) {
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-            return;
-        }
-        if (workspace.classList.contains('is-immersive')) {
-            workspace.classList.remove('is-immersive');
-            button.setAttribute('aria-label', 'Enter immersive board view');
-            return;
-        }
-        if (workspace.requestFullscreen) {
-            workspace.requestFullscreen().catch(function () {
-                workspace.classList.add('is-immersive');
-                button.setAttribute('aria-label', 'Exit immersive board view');
-            });
-        } else {
-            workspace.classList.add('is-immersive');
-            button.setAttribute('aria-label', 'Exit immersive board view');
-        }
     }
 
     function applyResponsiveColumns() {
         workspace.classList.add('is-enhanced');
         var enteringMobile = mobileQuery.matches && lastResponsiveMobile !== true;
-        root.querySelectorAll('[data-column]').forEach(function (column) {
+        root.querySelectorAll('[data-column]').forEach(function (column, index) {
             var toggle = column.querySelector('[data-column-toggle]');
             if (mobileQuery.matches) {
-                if (enteringMobile) { column.classList.remove('is-open'); }
+                if (enteringMobile) { column.classList.toggle('is-open', index === 0); }
                 toggle.disabled = false;
                 toggle.setAttribute('aria-expanded', String(column.classList.contains('is-open')));
             } else {
@@ -655,6 +1038,14 @@
     function toggleMobileColumn(column) {
         if (!mobileQuery.matches) { return; }
         var open = !column.classList.contains('is-open');
+        if (open) {
+            root.querySelectorAll('[data-column]').forEach(function (candidate) {
+                if (candidate === column) { return; }
+                candidate.classList.remove('is-open');
+                var candidateToggle = candidate.querySelector('[data-column-toggle]');
+                if (candidateToggle) { candidateToggle.setAttribute('aria-expanded', 'false'); }
+            });
+        }
         column.classList.toggle('is-open', open);
         var toggle = column.querySelector('[data-column-toggle]');
         toggle.setAttribute('aria-expanded', String(open));
@@ -710,8 +1101,10 @@
         event.preventDefault();
         var moved = findNote(draggingId);
         var nextOrder = [];
+        pushHistory('note move');
         SECTION_ORDER.forEach(function (section) {
             var sectionList = root.querySelector('[data-note-list="' + section + '"]');
+            if (!sectionList) { return; }
             sectionList.querySelectorAll('.sb-note[data-note-id]').forEach(function (card) {
                 var note = findNote(card.dataset.noteId);
                 if (note) {
@@ -790,6 +1183,8 @@
         var moved = draggingId ? findNote(draggingId) : null;
         if (!moved || !list) { cancelDrag(); return; }
         var targetSection = list.dataset.noteList;
+        if (SECTION_ORDER.indexOf(targetSection) < 0) { cancelDrag(); return; }
+        pushHistory('note move');
         var reordered = state.notes.filter(function (note) { return note !== moved; });
         moved.section = targetSection;
         var insertAt = reordered.reduce(function (latest, note, index) {
@@ -921,8 +1316,12 @@
                 return api('/api/slate-items/' + current.apiId, {
                     method: 'PATCH',
                     body: JSON.stringify(apiPayload(current))
+                }).then(function (payload) {
+                    setSaveStatus('Saved privately', 'saved');
+                    return payload;
                 });
             }).catch(function () {
+                setSaveStatus('Browser copy only', 'warning');
                 announce('The board is updated here, but the private account copy could not be reached.');
             });
             return;
@@ -963,9 +1362,13 @@
                 return api('/api/slate-items/' + latest.apiId, {
                     method: 'PATCH',
                     body: JSON.stringify(apiPayload(latest))
+                }).then(function (patchPayload) {
+                    setSaveStatus('Saved privately', 'saved');
+                    return patchPayload;
                 });
             });
         }).catch(function () {
+            setSaveStatus('Browser copy only', 'warning');
             announce('The board is updated here, but the private account copy could not be reached.');
         }).finally(function () {
             delete pendingCreates[localId];
@@ -981,6 +1384,7 @@
                 body: JSON.stringify({ note: 'Archived from the Slate Board.' })
             });
         }).catch(function () {
+            setSaveStatus('Browser copy only', 'warning');
             announce('The note is removed here, but its private account copy could not be archived.');
         });
     }
@@ -994,6 +1398,7 @@
             });
             return Promise.all(createsInFlight).then(function () {
                 if (!items.length) {
+                    setSaveStatus('Saved privately', 'saved');
                     announce('Your private board is ready. New notes are saved privately.');
                     return;
                 }
@@ -1007,7 +1412,7 @@
                     state.notes.push(normalizeNote({
                         id: 'private-' + id,
                         apiId: id,
-                        section: SECTION_ORDER.indexOf(item.category) >= 0 ? item.category : 'todo',
+                        section: SECTION_ORDER.indexOf(item.category) >= 0 ? item.category : 'short',
                         title: item.title,
                         description: item.body,
                         timeline: item.target_date || '',
@@ -1020,9 +1425,11 @@
                 });
                 saveState();
                 renderBoard();
+                setSaveStatus('Saved privately', 'saved');
                 announce('Your private Slate Board is loaded.');
             });
         }).catch(function () {
+            setSaveStatus('Browser copy only', 'warning');
             announce('The private account board could not be reached. Your changes still stay saved in this browser.');
         });
     }
@@ -1033,9 +1440,91 @@
             suppressCardClick = false;
             return;
         }
+
+        var viewButton = event.target.closest('[data-board-view]');
+        if (viewButton) {
+            setBoardView(viewButton.dataset.boardView, viewButton, false);
+            return;
+        }
+
+        var viewToggle = event.target.closest('[data-toggle-board-view]');
+        if (viewToggle) {
+            setBoardView(state.view === 'list' ? 'board' : 'list', viewToggle, false);
+            return;
+        }
+
+        if (event.target.closest('[data-fit-view]')) {
+            updateZoom(100);
+            announce('Board fit reset to 100 percent.');
+            return;
+        }
+
+        if (event.target.closest('[data-capture-listen]')) {
+            startListeningPreview();
+            return;
+        }
+
+        if (event.target.closest('[data-capture-stop]')) {
+            stopListeningPreview();
+            if (captureTranscript) { captureTranscript.focus(); }
+            announce('Listening-state preview stopped. The editable private draft is still available.');
+            return;
+        }
+
+        if (event.target.closest('[data-capture-cancel]')) {
+            closeCaptureLayer(true);
+            announce('Private capture cancelled. Nothing was saved.');
+            return;
+        }
+
+        var proposalRemove = event.target.closest('[data-proposal-remove]');
+        if (proposalRemove) {
+            pendingProposals.splice(Number(proposalRemove.dataset.proposalRemove), 1);
+            renderProposalList();
+            announce('Proposal removed from this review.');
+            return;
+        }
+
+        if (event.target.closest('[data-approve-proposals]')) {
+            approveProposals();
+            return;
+        }
+
+        if (event.target.closest('[data-edit-capture]')) {
+            closeProposalPanel(false);
+            if (captureTranscript) { captureTranscript.value = proposalSourceText; }
+            openCaptureLayer(null);
+            return;
+        }
+
+        if (event.target.closest('[data-close-proposal]')) {
+            closeProposalPanel(true);
+            announce('Proposal review closed. Nothing was saved.');
+            return;
+        }
+
+        var currentFocus = event.target.closest('[data-open-current-focus]');
+        if (currentFocus) {
+            openFocusPanel(findNote(currentFocus.dataset.noteId), currentFocus);
+            return;
+        }
+
+        if (event.target.closest('[data-close-focus]')) {
+            closeFocusPanel(true);
+            return;
+        }
+
+        if (event.target.closest('[data-edit-focused-note]')) {
+            var focused = focusedNoteId ? findNote(focusedNoteId) : null;
+            var focusTrigger = panelReturnTarget;
+            closeFocusPanel(false);
+            if (focused) { openEditor(focused, null, focusTrigger, false); }
+            return;
+        }
+
         var addButton = event.target.closest('[data-add-note]');
         if (addButton) {
-            openEditor(null, addButton.dataset.section || 'todo', addButton, false);
+            openEditor(null, addButton.dataset.section || 'short', addButton, false);
             return;
         }
 
@@ -1054,7 +1543,7 @@
         var cardTarget = event.target.closest('.sb-note[data-note-id]');
         if (cardTarget) {
             var cardOpenButton = cardTarget.querySelector('.sb-note__open');
-            openEditor(findNote(cardTarget.dataset.noteId), null, cardOpenButton, false);
+            openFocusPanel(findNote(cardTarget.dataset.noteId), cardOpenButton);
             return;
         }
 
@@ -1091,9 +1580,6 @@
         if (event.target.closest('[data-zoom-out]')) { updateZoom(zoom - 10); return; }
         if (event.target.closest('[data-zoom-in]')) { updateZoom(zoom + 10); return; }
 
-        var fullscreen = event.target.closest('[data-fullscreen]');
-        if (fullscreen) { toggleFullscreen(fullscreen); return; }
-
         var copy = event.target.closest('[data-copy-board-link]');
         if (copy) { copyBoardLink(copy); }
     });
@@ -1123,6 +1609,7 @@
     });
 
     noteForm.addEventListener('submit', submitNote);
+    if (captureForm) { captureForm.addEventListener('submit', reviewCapture); }
     document.getElementById('sb-note-star').addEventListener('click', function (event) {
         var pressed = event.currentTarget.getAttribute('aria-pressed') === 'true';
         event.currentTarget.setAttribute('aria-pressed', String(!pressed));
@@ -1159,24 +1646,58 @@
     });
     document.getElementById('sb-invite-form').addEventListener('submit', addCollaborator);
 
-    document.addEventListener('fullscreenchange', function () {
-        var button = root.querySelector('[data-fullscreen]');
-        if (!button) { return; }
-        button.setAttribute('aria-label', document.fullscreenElement
-            ? 'Exit immersive board view'
-            : 'Enter immersive board view');
-    });
-
     document.addEventListener('keydown', function (event) {
         var active = document.activeElement;
         var typing = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
         var dialogOpen = root.querySelector('dialog[open]');
+
+        if (active === captureTranscript && (event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            reviewCapture(event);
+            return;
+        }
+
+        if (active && active.classList && active.classList.contains('sb-note__open')
+                && event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+            var card = active.closest('.sb-note[data-note-id]');
+            var note = card ? findNote(card.dataset.noteId) : null;
+            if (note) {
+                event.preventDefault();
+                var currentIndex = SECTION_ORDER.indexOf(note.section);
+                var direction = event.key === 'ArrowRight' ? 1 : -1;
+                var nextIndex = Math.max(0, Math.min(SECTION_ORDER.length - 1, currentIndex + direction));
+                if (nextIndex !== currentIndex) {
+                    pushHistory('keyboard section move');
+                    note.section = SECTION_ORDER[nextIndex];
+                    saveState();
+                    renderBoard();
+                    var movedControl = findCardControl(note.id, '.sb-note__open');
+                    if (movedControl) { movedControl.focus(); }
+                    announce('Moved ' + note.title + ' to ' + SECTION_LABELS[note.section] + '.');
+                    syncNoteToApi(note);
+                }
+            }
+            return;
+        }
+
+        if (event.key === 'Escape' && captureLayer && !captureLayer.hidden) {
+            event.preventDefault();
+            closeCaptureLayer(true);
+            return;
+        }
+        if (event.key === 'Escape' && proposalPanel && !proposalPanel.hidden) {
+            event.preventDefault();
+            closeProposalPanel(true);
+            return;
+        }
+        if (event.key === 'Escape' && focusPanel && !focusPanel.hidden) {
+            event.preventDefault();
+            closeFocusPanel(true);
+            return;
+        }
+
         if (!typing && !dialogOpen && event.key.toLowerCase() === 'n') {
             event.preventDefault();
-            openEditor(null, 'todo', root.querySelector('[data-add-note]'), false);
-        }
-        if (event.key === 'Escape' && workspace.classList.contains('is-immersive') && !document.fullscreenElement) {
-            workspace.classList.remove('is-immersive');
+            openEditor(null, 'short', root.querySelector('[data-add-note]'), false);
         }
     });
 
@@ -1190,6 +1711,7 @@
     renderCollaborators();
     applyResponsiveColumns();
     updateZoom(100, true);
+    setBoardView(state.view, null, true);
     setActiveTool('select');
     saveState();
     loadRemoteNotes();

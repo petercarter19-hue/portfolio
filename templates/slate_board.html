@@ -2,20 +2,33 @@
 
 {% block title %}Slate Board | Pete Carter{% endblock %}
 
-{% block meta_description %}A focused visual workspace for capturing ideas, planning goals, and turning them into action.{% endblock %}
+{% block meta_description %}A living whiteboard for capturing goals, connecting work, and moving the future forward.{% endblock %}
 
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link
-    href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap"
     rel="stylesheet"
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/slate-board.css') }}?v=concept-3"
+    href="{{ url_for('static', filename='css/slate-board.css') }}?v=living-whiteboard-6"
 >
 {% endblock %}
 
-{% block body_class %} slate-board-redesign{% endblock %}
+{% block body_class %} slate-board-redesign slate-board-living-whiteboard{% endblock %}
+
+{% macro board_icon(name) %}
+    {% if name == 'select' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 3 12 8-5.4 1.6L10 18 6 3Z"/></svg>
+    {% elif name == 'chalk' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3Z"/><path d="M6.5 11.5v.5a5.5 5.5 0 0 0 11 0v-.5M12 17.5V21M9 21h6"/></svg>
+    {% elif name == 'add' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    {% elif name == 'draw' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 9.8-9.8 3 3L7 20H4v-3Z"/><path d="m15.5 5.5 1.2-1.2a1.7 1.7 0 0 1 2.4 0l.6.6a1.7 1.7 0 0 1 0 2.4l-1.2 1.2"/></svg>
+    {% elif name == 'connect' %}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="m7.7 16.3 8.6-8.6"/></svg>
+    {% elif name == 'undo' %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="M5 12h8a6 6 0 0 1 6 6"/></svg>
+    {% elif name == 'more' %}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
+    {% endif %}
+{% endmacro %}
 
 {% macro note_card(id, section, title, timeline, tag, tag_style, starred=false, overdue=false, description='', checklist='[]') %}
 <article
@@ -23,35 +36,36 @@
     draggable="true"
     data-note-id="{{ id }}"
     data-section="{{ section }}"
-    data-title="{{ title }}"
-    data-timeline="{{ timeline }}"
-    data-tag="{{ tag }}"
+    data-title="{{ title|e }}"
+    data-timeline="{{ timeline|e }}"
+    data-tag="{{ tag|e }}"
     data-tag-style="{{ tag_style }}"
     data-starred="{{ 'true' if starred else 'false' }}"
     data-completed="false"
     data-overdue="{{ 'true' if overdue else 'false' }}"
-    data-description="{{ description }}"
+    data-description="{{ description|e }}"
     data-checklist='{{ checklist|safe }}'
 >
-    <button class="sb-note__open" type="button" aria-label="Open note: {{ title }}"></button>
+    <button class="sb-note__open" type="button" aria-label="Open focus details for {{ title|e }}"></button>
     <div class="sb-note__top">
         <button
             class="sb-note__complete"
             type="button"
             role="checkbox"
             aria-checked="false"
-            aria-label="Mark {{ title }} complete"
+            aria-label="Mark {{ title|e }} complete"
         ><span aria-hidden="true"></span></button>
         <h3>{{ title }}</h3>
         <button
             class="sb-note__star"
             type="button"
             aria-pressed="{{ 'true' if starred else 'false' }}"
-            aria-label="{{ 'Remove important marker from' if starred else 'Mark as important:' }} {{ title }}"
+            aria-label="{{ 'Remove important marker from' if starred else 'Mark as important:' }} {{ title|e }}"
         >
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 17.05 6.5 19.95l1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg>
         </button>
     </div>
+    {% if description %}<p class="sb-note__summary">{{ description }}</p>{% endif %}
     <div class="sb-note__meta">
         <span class="sb-note__timeline">{{ timeline }}</span>
         <span class="sb-tag sb-tag--{{ tag_style }}">{{ tag }}</span>
@@ -67,175 +81,313 @@
     data-board-api="{{ 'true' if database_ui_enabled else 'false' }}"
     data-board-storage-scope="{{ board_storage_scope }}"
 >
-    <div class="sb-workspace" data-board-workspace data-active-tool="select">
+    <div class="sb-room-glow sb-room-glow--left" aria-hidden="true"></div>
+    <div class="sb-room-glow sb-room-glow--right" aria-hidden="true"></div>
+
+    <div class="sb-workspace" data-board-workspace data-active-tool="select" data-board-view-state="board">
         <header class="sb-workspace__header">
             <div class="sb-workspace__heading">
-                <span class="sb-workspace__eyebrow" aria-hidden="true">Your future, in view</span>
                 <h1 id="slate-board-title">Slate Board</h1>
-                <p>Capture ideas. Plan your future. Take action.</p>
+                <p>Executive Planning Wall</p>
             </div>
             <div class="sb-workspace__actions">
-                <button class="sb-button sb-button--secondary" type="button" data-open-share>
+                <button class="sb-button sb-button--share" type="button" data-open-share>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="17.5" cy="6" r="2.4"/><circle cx="17.5" cy="18" r="2.4"/><path d="m8.2 10.9 7-3.7m-7 5.9 7 3.7"/></svg>
                     <span>Share Board</span>
                 </button>
-                <button class="sb-button sb-button--primary" type="button" data-add-note>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                    <span>New Note</span>
+                <button class="sb-icon-button sb-header-more" type="button" data-open-stats aria-label="Open board settings and overview">
+                    {{ board_icon('more') }}
                 </button>
             </div>
         </header>
 
-        <div class="sb-canvas" data-board-canvas>
-            <div class="sb-scale" data-board-scale>
-                <div class="sb-columns" aria-label="Slate Board sections">
-                    <section class="sb-column sb-column--todo" data-column="todo" aria-labelledby="sb-title-todo">
-                        <h2 class="sb-column__heading" id="sb-title-todo">
-                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-todo" data-column-toggle>
-                                <span class="sb-column__icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><path d="M5 4.5h14v15H5zM8.5 8h7M8.5 12h7M8.5 16h4"/><path d="m3.5 7 2-2"/></svg>
-                                </span>
-                                <span class="sb-column__title">To Do</span>
-                                <span class="sb-column__count" data-column-count>4</span>
-                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                            </button>
-                        </h2>
-                        <ol class="sb-note-list" id="sb-list-todo" data-note-list="todo">
-                            <li>{{ note_card('finish-system-design', 'todo', 'Finish system design', 'Due Apr 25', 'Work', 'work', overdue=true) }}</li>
-                            <li>{{ note_card('grocery-shopping', 'todo', 'Grocery shopping', 'Today', 'Personal', 'personal') }}</li>
-                            <li>{{ note_card('review-project-proposal', 'todo', 'Review project proposal', 'Due Apr 22', 'Work', 'work', overdue=true) }}</li>
-                            <li>{{ note_card('call-mom', 'todo', 'Call Mom', 'This week', 'Personal', 'personal') }}</li>
-                        </ol>
-                        <button class="sb-column__add" type="button" data-add-note data-section="todo">
-                            <span aria-hidden="true">+</span> Add note
-                        </button>
-                    </section>
-
-                    <section class="sb-column sb-column--short" data-column="short" aria-labelledby="sb-title-short">
-                        <h2 class="sb-column__heading" id="sb-title-short">
-                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-short" data-column-toggle>
-                                <span class="sb-column__icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><path d="M14.5 4.5c2.8-.8 4.4-.5 5-.1.4.6.7 2.2-.1 5l-5.9 5.9-4.8-4.8 5.8-6Z"/><path d="m10 9-4.2.7-2.3 2.4 5.2.6M15 14l-.7 4.2-2.4 2.3-.6-5.2"/><circle cx="15.7" cy="8.3" r="1.2"/></svg>
-                                </span>
-                                <span class="sb-column__title">Short Term</span>
-                                <span class="sb-column__count" data-column-count>3</span>
-                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                            </button>
-                        </h2>
-                        <ol class="sb-note-list" id="sb-list-short" data-note-list="short">
-                            <li>{{ note_card('launch-portfolio', 'short', 'Launch new portfolio site', 'May 15', 'Goal', 'goal', starred=true, description='Redesign the site to align with my vision and showcase my work at a higher level.', checklist='["Design new homepage", "Build new sections", "Publish and share"]') }}</li>
-                            <li>{{ note_card('read-two-books', 'short', 'Read 2 books', 'This month', 'Growth', 'growth') }}</li>
-                            <li>{{ note_card('half-marathon', 'short', 'Run a half marathon', 'June 1', 'Health', 'health') }}</li>
-                        </ol>
-                        <button class="sb-column__add" type="button" data-add-note data-section="short">
-                            <span aria-hidden="true">+</span> Add note
-                        </button>
-                    </section>
-
-                    <section class="sb-column sb-column--long" data-column="long" aria-labelledby="sb-title-long">
-                        <h2 class="sb-column__heading" id="sb-title-long">
-                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-long" data-column-toggle>
-                                <span class="sb-column__icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><path d="M12 3.5 7.5 9h2.2l-3.2 4h2.8L6 17.5h12L14.7 13h2.8l-3.2-4h2.2L12 3.5Z"/><path d="M12 17.5V21"/></svg>
-                                </span>
-                                <span class="sb-column__title">Long Term</span>
-                                <span class="sb-column__count" data-column-count>4</span>
-                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                            </button>
-                        </h2>
-                        <ol class="sb-note-list" id="sb-list-long" data-note-list="long">
-                            <li>{{ note_card('financial-independence', 'long', 'Financial independence', 'By age 45', 'Finance', 'finance', starred=true) }}</li>
-                            <li>{{ note_card('start-business', 'long', 'Start a business', 'In 2 years', 'Career', 'career') }}</li>
-                            <li>{{ note_card('second-home', 'long', 'Buy a second home', 'In 5 years', 'Lifestyle', 'lifestyle') }}</li>
-                            <li>{{ note_card('write-book', 'long', 'Write a book', 'In 3–5 years', 'Creative', 'creative') }}</li>
-                        </ol>
-                        <button class="sb-column__add" type="button" data-add-note data-section="long">
-                            <span aria-hidden="true">+</span> Add note
-                        </button>
-                    </section>
-
-                    <section class="sb-column sb-column--someday" data-column="someday" aria-labelledby="sb-title-someday">
-                        <h2 class="sb-column__heading" id="sb-title-someday">
-                            <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-someday" data-column-toggle>
-                                <span class="sb-column__icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24"><path d="m12 3 2.75 5.58 6.16.9-4.46 4.34 1.05 6.13L12 17.05 6.5 19.95l1.05-6.13L3.09 9.48l6.16-.9L12 3Z"/></svg>
-                                </span>
-                                <span class="sb-column__title">Someday</span>
-                                <span class="sb-column__count" data-column-count>3</span>
-                                <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                            </button>
-                        </h2>
-                        <ol class="sb-note-list" id="sb-list-someday" data-note-list="someday">
-                            <li>{{ note_card('travel-world', 'someday', 'Travel the world', 'No timeline', 'Adventure', 'adventure') }}</li>
-                            <li>{{ note_card('learn-guitar', 'someday', 'Learn to play guitar', 'Whenever', 'Creative', 'creative') }}</li>
-                            <li>{{ note_card('off-grid', 'someday', 'Live off the grid', 'Someday', 'Lifestyle', 'lifestyle') }}</li>
-                        </ol>
-                        <button class="sb-column__add" type="button" data-add-note data-section="someday">
-                            <span aria-hidden="true">+</span> Add note
-                        </button>
-                    </section>
+        <div class="sb-stage">
+            <aside class="sb-controls" aria-label="Board controls">
+                <div class="sb-controls__group">
+                    <p class="sb-controls__label">Board controls</p>
+                    <button type="button" data-tool="add" aria-pressed="false">
+                        <span class="sb-sticky-icon" aria-hidden="true"></span><span>Add to Board</span>
+                    </button>
+                    <button type="button" data-tool="add" aria-pressed="false">
+                        {{ board_icon('add') }}<span>Add note</span>
+                    </button>
+                    <button type="button" data-tool="draw" aria-pressed="false">
+                        {{ board_icon('draw') }}<span>Draw</span>
+                    </button>
+                    <button class="is-active" type="button" data-tool="select" aria-pressed="true">
+                        {{ board_icon('select') }}<span>Select</span>
+                    </button>
+                    <button type="button" data-tool="undo" aria-pressed="false">
+                        {{ board_icon('undo') }}<span>Undo</span>
+                    </button>
+                    <button type="button" data-tool="redo" aria-pressed="false" disabled>
+                        {{ board_icon('undo') }}<span>Redo</span>
+                    </button>
                 </div>
-            </div>
 
-            <nav class="sb-tools" aria-label="Board tools">
-                <button class="is-active" type="button" data-tool="select" data-tooltip="Select" aria-label="Select tool" aria-pressed="true">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 3 12 8-5.4 1.6L10 18 6 3Z"/></svg>
-                </button>
-                <button type="button" data-tool="add" data-tooltip="Add note" aria-label="Add note tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                </button>
-                <button type="button" data-tool="text" data-tooltip="Text note" aria-label="Text note tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12M12 5v14M8.5 19h7"/></svg>
-                </button>
-                <button type="button" data-tool="shape" data-tooltip="Shape" aria-label="Shape tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
-                </button>
-                <button type="button" data-tool="note" data-tooltip="Sticky note" aria-label="Sticky note tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v11l-4.5 4.5H5z"/><path d="M14.5 20v-4.5H19"/></svg>
-                </button>
-                <button type="button" data-tool="connector" data-tooltip="Connector" aria-label="Connector tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18 18 5M12.5 5H18v5.5"/></svg>
-                </button>
-                <button type="button" data-tool="attachment" data-tooltip="Attachment" aria-label="Attachment tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.1-7.1"/></svg>
-                </button>
-                <button type="button" data-tool="image" data-tooltip="Image" aria-label="Image tool" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.4"/><path d="m5.5 17 4.2-4.2 3.1 3.1 2.2-2.2 3.5 3.3"/></svg>
-                </button>
-                <button type="button" data-tool="more" data-tooltip="Board overview" aria-label="Open board overview" aria-pressed="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
-                </button>
-            </nav>
+                <div class="sb-controls__group sb-controls__view">
+                    <p class="sb-controls__label">View</p>
+                    <div class="sb-controls__zoom" role="group" aria-label="Board zoom">
+                        <button type="button" data-zoom-out aria-label="Zoom out"><span aria-hidden="true">-</span></button>
+                        <output data-zoom-value aria-live="polite">100%</output>
+                        <button type="button" data-zoom-in aria-label="Zoom in"><span aria-hidden="true">+</span></button>
+                    </div>
+                    <button class="sb-fit-button" type="button" data-fit-view>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+                        <span>Fit to view</span>
+                    </button>
+                    <button class="sb-fit-button" type="button" data-toggle-board-view aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                        <span>List view</span>
+                    </button>
+                </div>
 
-            <div class="sb-zoom" role="group" aria-label="Board zoom and view controls">
-                <button type="button" data-zoom-out aria-label="Zoom out">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12h10"/></svg>
-                </button>
-                <output data-zoom-value aria-live="polite">100%</output>
-                <button type="button" data-zoom-in aria-label="Zoom in">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>
-                </button>
-                <span class="sb-zoom__divider" aria-hidden="true"></span>
-                <button type="button" data-open-stats aria-label="Open progress overview">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 5v7l5 3"/></svg>
-                </button>
-                <button type="button" data-fullscreen aria-label="Enter immersive board view">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 4H4v4.5M15.5 4H20v4.5M20 15.5V20h-4.5M8.5 20H4v-4.5"/></svg>
-                </button>
+                <div class="sb-controls__group sb-controls__people">
+                    <p class="sb-controls__label">Connections preview <span>(4)</span></p>
+                    <ul aria-label="Connection presence preview">
+                        <li><span class="sb-person-avatar">PC</span><span>Peter Carter <small>(You)</small></span><i class="is-blue" aria-hidden="true"></i></li>
+                        <li><span class="sb-person-avatar">SR</span><span>Sarah Rivera</span><i class="is-indigo" aria-hidden="true"></i></li>
+                        <li><span class="sb-person-avatar">MK</span><span>Marcus Kim</span><i class="is-green" aria-hidden="true"></i></li>
+                        <li><span class="sb-person-avatar">JT</span><span>Jordan Taylor</span><i class="is-amber" aria-hidden="true"></i></li>
+                    </ul>
+                    <p class="sb-preview-label">Presence preview only</p>
+                </div>
+
+                <div class="sb-controls__group sb-controls__status">
+                    <div class="sb-status-line"><span class="sb-status-dot" aria-hidden="true"></span><span>Private working board</span></div>
+                    <div class="sb-status-line sb-status-line--saved">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                        <span data-save-status>{% if database_ui_enabled %}Saved privately{% else %}Saved in this browser{% endif %}</span>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="sb-board-wrap">
+                <div class="sb-frame">
+                    <span class="sb-frame__corner sb-frame__corner--tl" aria-hidden="true"></span>
+                    <span class="sb-frame__corner sb-frame__corner--tr" aria-hidden="true"></span>
+                    <span class="sb-frame__corner sb-frame__corner--bl" aria-hidden="true"></span>
+                    <span class="sb-frame__corner sb-frame__corner--br" aria-hidden="true"></span>
+
+                    <div class="sb-canvas" data-board-canvas>
+                        <div class="sb-enamel-sheen" aria-hidden="true"></div>
+                        <svg class="sb-board-sketches" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="sb-sketch-line" d="M600 34 C598 182 602 320 600 666"/>
+                            <path class="sb-sketch-line" d="M35 350 C290 347 405 353 600 350 C792 347 967 352 1166 350"/>
+                            <path class="sb-sketch-arrow" d="M220 286 C275 320 330 306 360 270"/>
+                            <path class="sb-sketch-arrow" d="M812 294 C880 301 925 270 948 232"/>
+                            <path class="sb-sketch-dash" d="M425 526 C495 500 540 466 575 418"/>
+                            <path class="sb-sketch-doodle" d="M92 504 C82 488 86 469 102 460 C119 451 139 458 146 475 C152 490 146 503 134 512 L130 527 L108 527 L104 513 C99 511 95 508 92 504 Z M108 535 L130 535 M111 542 L127 542 M99 457 L90 445 M118 450 L118 432 M140 456 L151 443 M86 478 L69 477"/>
+                            <path class="sb-sketch-arrow" d="M906 565 C950 609 999 613 1041 585 M1032 578 L1041 585 L1033 594"/>
+                            <path class="sb-sketch-alert" d="M1000 475 L996 515 M994 530 L993 533"/>
+                        </svg>
+
+                        <div class="sb-scale" data-board-scale>
+                            <div class="sb-columns" aria-label="Slate Board sections">
+                                <section class="sb-column sb-column--short" data-column="short" aria-labelledby="sb-title-short">
+                                    <h2 class="sb-column__heading" id="sb-title-short">
+                                        <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-short" data-column-toggle>
+                                            <span class="sb-column__title">Short Term</span>
+                                            <span class="sb-column__count" data-column-count>5</span>
+                                            <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                                        </button>
+                                    </h2>
+                                    <ol class="sb-note-list" id="sb-list-short" data-note-list="short">
+                                        <li>{{ note_card('study-pmp-certification', 'short', 'Study for the PMP certification', 'Target: September', 'Goal', 'goal', starred=true, description='Build a steady study rhythm and turn each practice result into the next clear step.', checklist='["Study Saturday mornings", "Complete two practice exams", "Review weak domains"]') }}</li>
+                                        <li>{{ note_card('pmp-practice-exams', 'short', 'Complete two practice exams', 'This month', 'Milestone', 'growth') }}</li>
+                                        <li>{{ note_card('review-board-plan', 'short', 'Review the Slate Board plan', 'Friday', 'Next action', 'work') }}</li>
+                                        <li>{{ note_card('schedule-pmp-study', 'short', 'Protect Saturday study time', 'Weekly', 'Next action', 'work') }}</li>
+                                        <li>{{ note_card('pmp-accountability', 'short', 'Review the plan with Danielle', 'September', 'Support', 'personal') }}</li>
+                                    </ol>
+                                    <button class="sb-column__add" type="button" data-add-note data-section="short"><span aria-hidden="true">+</span> Add note</button>
+                                </section>
+
+                                <section class="sb-column sb-column--projects" data-column="projects" aria-labelledby="sb-title-projects">
+                                    <h2 class="sb-column__heading" id="sb-title-projects">
+                                        <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-projects" data-column-toggle>
+                                            <span class="sb-column__title">Projects</span>
+                                            <span class="sb-column__count" data-column-count>5</span>
+                                            <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                                        </button>
+                                    </h2>
+                                    <ol class="sb-note-list" id="sb-list-projects" data-note-list="projects">
+                                        <li>{{ note_card('peerslate-alpha', 'projects', 'PeerSlate founding alpha', '64% in motion', 'Project', 'goal', starred=true, description='Connect capture, Journal, voice, evidence, and deliberate publishing into one member loop.', checklist='["Owner workspace", "Voice review", "Audience preview"]') }}</li>
+                                        <li>{{ note_card('living-journal', 'projects', 'Living Journal', 'Active', 'Connected project', 'finance') }}</li>
+                                        <li>{{ note_card('interview-studio-evaluation', 'projects', 'Interview Studio evaluation', 'Next review: Friday', 'Evaluation', 'creative') }}</li>
+                                        <li>{{ note_card('board-storyboard-review', 'projects', 'Review the full Board storyboard', 'In progress', 'Design', 'creative') }}</li>
+                                        <li>{{ note_card('accessible-list-path', 'projects', 'Validate the accessible list path', 'Before review', 'Quality', 'growth') }}</li>
+                                    </ol>
+                                    <button class="sb-column__add" type="button" data-add-note data-section="projects"><span aria-hidden="true">+</span> Add note</button>
+                                </section>
+
+                                <section class="sb-column sb-column--long" data-column="long" aria-labelledby="sb-title-long">
+                                    <h2 class="sb-column__heading" id="sb-title-long">
+                                        <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-long" data-column-toggle>
+                                            <span class="sb-column__title">Long Term</span>
+                                            <span class="sb-column__count" data-column-count>5</span>
+                                            <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                                        </button>
+                                    </h2>
+                                    <ol class="sb-note-list" id="sb-list-long" data-note-list="long">
+                                        <li>{{ note_card('systems-engineering-phd', 'long', 'Systems Engineering Ph.D. roadmap', 'Future direction', 'Goal', 'finance', starred=true, description='Keep education, research interests, and real systems work connected as the path develops.') }}</li>
+                                        <li>{{ note_card('expand-community', 'long', 'Expand the PeerSlate community', 'Long-range', 'Direction', 'personal') }}</li>
+                                        <li>{{ note_card('mentoring-program', 'long', 'Build a mentoring program', 'Explore next', 'People', 'health') }}</li>
+                                        <li>{{ note_card('evidence-network', 'long', 'Grow an evidence-backed network', 'Future direction', 'Community', 'personal') }}</li>
+                                        <li>{{ note_card('learning-paths', 'long', 'Launch guided learning paths', 'Future direction', 'Growth', 'growth') }}</li>
+                                    </ol>
+                                    <button class="sb-column__add" type="button" data-add-note data-section="long"><span aria-hidden="true">+</span> Add note</button>
+                                </section>
+
+                                <section class="sb-column sb-column--work" data-column="work" aria-labelledby="sb-title-work">
+                                    <h2 class="sb-column__heading" id="sb-title-work">
+                                        <button class="sb-column__header" type="button" aria-expanded="true" aria-controls="sb-list-work" data-column-toggle>
+                                            <span class="sb-column__title">Work</span>
+                                            <span class="sb-column__count" data-column-count>5</span>
+                                            <svg class="sb-column__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
+                                        </button>
+                                    </h2>
+                                    <ol class="sb-note-list" id="sb-list-work" data-note-list="work">
+                                        <li>{{ note_card('capture-mbse-milestone', 'work', 'Capture the MBSE milestone', 'This week', 'Evidence candidate', 'work', starred=true, description='Link the update to evidence and use it in interview practice while the details are fresh.') }}</li>
+                                        <li>{{ note_card('annual-review', 'work', 'Prepare the annual review', 'Next checkpoint', 'Reflection', 'health') }}</li>
+                                        <li>{{ note_card('resume-evidence', 'work', 'Update resume evidence', 'After review', 'Milestone', 'goal') }}</li>
+                                        <li>{{ note_card('integration-delay', 'work', 'Resolve data integration delays', 'Needs review', 'Blocker', 'health') }}</li>
+                                        <li>{{ note_card('approval-timing', 'work', 'Confirm approval timing', 'Waiting', 'Blocker', 'health') }}</li>
+                                    </ol>
+                                    <button class="sb-column__add" type="button" data-add-note data-section="work"><span aria-hidden="true">+</span> Add note</button>
+                                </section>
+                            </div>
+                        </div>
+
+                        <button class="sb-focus-anchor" type="button" data-open-current-focus data-note-id="peerslate-alpha">
+                            <span>Connected</span>
+                            <strong>progress</strong>
+                        </button>
+
+                        <div class="sb-board-corner-tools" role="group" aria-label="Quick board tools">
+                            <button type="button" data-tool="chalk" aria-label="Open Chalk It Up">{{ board_icon('chalk') }}</button>
+                            <button type="button" data-open-stats aria-label="Open board settings">{{ board_icon('more') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sb-marker-tray" aria-label="Marker tray and board shortcuts">
+                    <div class="sb-markers" aria-hidden="true">
+                        <span class="sb-marker sb-marker--ink"></span>
+                        <span class="sb-marker sb-marker--blue"></span>
+                        <span class="sb-marker sb-marker--red"></span>
+                    </div>
+                    <span class="sb-eraser" aria-hidden="true"><strong>PeerSlate</strong></span>
+                </div>
             </div>
         </div>
 
+        <footer class="sb-reference-footer" aria-label="Slate Board footer">
+            <span class="sb-reference-footer__brand"><span class="sb-reference-footer__mark" aria-hidden="true"></span><strong>PeerSlate</strong></span>
+            <span>&copy; 2026 PeerSlate, Inc. All rights reserved.</span>
+            <nav aria-label="Slate Board legal links"><a href="{{ url_for('peerslate_home') }}">About</a><a href="{{ url_for('contact') }}">Contact</a></nav>
+        </footer>
+
         <button class="sb-mobile-add" type="button" data-add-note aria-label="Add a new note">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            {{ board_icon('add') }}
+        </button>
+        <button class="sb-mobile-chalk" type="button" data-tool="chalk" aria-label="Open Chalk It Up">
+            {{ board_icon('chalk') }}
         </button>
 
         <p class="sb-sr-only" id="sb-board-status" aria-live="polite">
             {% if database_ui_enabled %}
-            Changes are saved privately to your authenticated Slate Board.
+            Your authenticated private Slate Board is loaded.
             {% else %}
-            Your changes stay saved in this browser. Nothing is shared unless you choose to share it.
+            This visual baseline stores changes only in this browser. Nothing is shared or published.
             {% endif %}
         </p>
+
+        <section class="sb-capture-layer" data-capture-layer aria-labelledby="sb-capture-title" hidden>
+            <form class="sb-capture-strip" id="sb-capture-form">
+                <div class="sb-capture-orb" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div class="sb-capture-copy">
+                    <div class="sb-capture-title-row">
+                        <h2 id="sb-capture-title">Chalk It Up</h2>
+                        <span class="sb-capture-state" data-capture-state>Ready</span>
+                    </div>
+                    <label class="sb-sr-only" for="sb-capture-transcript">Type or edit your private capture</label>
+                    <textarea id="sb-capture-transcript" rows="2" maxlength="800" placeholder="Say or type what happened, what you want to do, or what needs to move forward."></textarea>
+                    <div class="sb-waveform" data-waveform aria-hidden="true">
+                        {% for height in [8, 14, 20, 11, 24, 16, 9, 22, 13, 18, 8, 25, 14, 19, 10, 21, 12, 17, 8, 23, 13, 18, 10, 20] %}<span style="--wave-height: {{ height }}px"></span>{% endfor %}
+                    </div>
+                    <p class="sb-capture-trust" data-capture-trust>Private draft. Nothing has been saved or shared yet.</p>
+                </div>
+                <div class="sb-capture-actions">
+                    <button class="sb-button sb-button--dark" type="button" data-capture-listen>Preview listening state</button>
+                    <button class="sb-button sb-button--dark" type="button" data-capture-stop hidden>Stop listening</button>
+                    <button class="sb-button sb-button--secondary" type="submit" data-capture-review>Review draft</button>
+                    <button class="sb-button sb-button--quiet" type="button" data-capture-cancel>Cancel</button>
+                </div>
+            </form>
+        </section>
+
+        <aside class="sb-proposal-panel" data-proposal-panel role="dialog" aria-modal="false" aria-labelledby="sb-proposal-title" hidden>
+            <div class="sb-panel__header">
+                <div>
+                    <span class="sb-dialog__eyebrow">Private structured preview</span>
+                    <h2 id="sb-proposal-title">Review what PeerSlate understood</h2>
+                    <p>Confirm the records and destination before anything is added to this browser preview.</p>
+                </div>
+                <button class="sb-icon-button" type="button" data-close-proposal aria-label="Close proposal review">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="sb-proposal-source"><span>Source: typed or listening-state preview</span><span>Original wording preserved</span></div>
+            <div class="sb-proposal-list" data-proposal-list></div>
+            <fieldset class="sb-audience-options" aria-describedby="sb-proposal-audience-note">
+                <legend>Who can see this?</legend>
+                <label><input type="radio" name="proposalAudience" value="private" checked><span><strong>Keep private</strong><small>Add to this browser-only board</small></span></label>
+                <label class="is-disabled"><input type="radio" name="proposalAudience" value="share" disabled><span><strong>Share with selected people</strong><small>Requires the protected sharing service</small></span></label>
+                <label class="is-disabled"><input type="radio" name="proposalAudience" value="publish" disabled><span><strong>Publish selected items</strong><small>Requires an authenticated audience preview</small></span></label>
+            </fieldset>
+            <p class="sb-panel-note" id="sb-proposal-audience-note">This baseline can add private browser notes. It does not invoke AI, send invitations, or publish records.</p>
+            <div class="sb-panel__actions">
+                <button class="sb-button sb-button--primary" type="button" data-approve-proposals>Approve private items</button>
+                <button class="sb-button sb-button--secondary" type="button" data-edit-capture>Edit wording</button>
+                <button class="sb-button sb-button--quiet" type="button" data-close-proposal>Cancel</button>
+            </div>
+        </aside>
+
+        <aside class="sb-focus-panel" data-focus-panel role="dialog" aria-modal="false" aria-labelledby="sb-focus-title" hidden>
+            <div class="sb-panel__header">
+                <div>
+                    <span class="sb-dialog__eyebrow" data-focus-eyebrow>Selected item</span>
+                    <h2 id="sb-focus-title" data-focus-title>Board item</h2>
+                    <p data-focus-description>Select an item to inspect its context.</p>
+                </div>
+                <button class="sb-icon-button" type="button" data-close-focus aria-label="Close focus panel">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="sb-focus-progress">
+                <div><span>Progress</span><strong data-focus-progress>In motion</strong></div>
+                <div class="sb-focus-progress__track"><span data-focus-progress-bar></span></div>
+            </div>
+            <dl class="sb-focus-facts">
+                <div><dt>Timeline</dt><dd data-focus-timeline>Not set</dd></div>
+                <div><dt>Visibility</dt><dd>Only you</dd></div>
+                <div><dt>Section</dt><dd data-focus-section>Board</dd></div>
+                <div><dt>Source</dt><dd>Browser preview</dd></div>
+            </dl>
+            <div class="sb-focus-related">
+                <h3>Connected to this item</h3>
+                <article><span>J</span><div><strong>Recent Journal updates</strong><small>Progress and lessons can appear here after canonical integration.</small></div></article>
+                <article><span>M</span><div><strong>Recommended next milestone</strong><small>Fixture relationship - no record has been created.</small></div></article>
+                <article class="is-evidence"><span>E</span><div><strong>Implementation evidence</strong><small>Approved sources will appear here when connected.</small></div></article>
+                <article><span>AI</span><div><strong>Owner AI suggestion</strong><small>AI guidance is not active in this visual baseline.</small></div></article>
+            </div>
+            <div class="sb-panel__actions">
+                <button class="sb-button sb-button--dark" type="button" data-edit-focused-note>Edit note</button>
+                <button class="sb-button sb-button--secondary" type="button" disabled aria-describedby="sb-focus-ai-note">Ask AI</button>
+                <button class="sb-button sb-button--quiet" type="button" data-close-focus>Close</button>
+            </div>
+            <p class="sb-panel-note" id="sb-focus-ai-note">Connected records and Owner AI are shown as honest preview states until their protected services are integrated.</p>
+        </aside>
     </div>
 
     <dialog class="sb-dialog sb-note-dialog" id="sb-note-dialog" aria-labelledby="sb-note-dialog-title">
@@ -257,42 +409,31 @@
             </div>
 
             <div class="sb-form-grid">
-                <label class="sb-field sb-field--wide" for="sb-note-title">
-                    <span>Title</span>
-                    <input id="sb-note-title" name="title" type="text" maxlength="120" required placeholder="What do you want to remember?">
-                </label>
-                <label class="sb-field sb-field--wide" for="sb-note-description">
-                    <span>Details</span>
-                    <textarea id="sb-note-description" name="description" rows="3" maxlength="800" placeholder="Add context, the why, or the next step..."></textarea>
-                </label>
+                <label class="sb-field sb-field--wide" for="sb-note-title"><span>Title</span><input id="sb-note-title" name="title" type="text" maxlength="120" required placeholder="What do you want to remember?"></label>
+                <label class="sb-field sb-field--wide" for="sb-note-description"><span>Details</span><textarea id="sb-note-description" name="description" rows="3" maxlength="800" placeholder="Add context, the why, or the next step..."></textarea></label>
                 <label class="sb-field" for="sb-note-section">
                     <span>Section</span>
                     <select id="sb-note-section" name="section">
-                        <option value="todo">To Do</option>
                         <option value="short">Short Term</option>
+                        <option value="projects">Projects</option>
                         <option value="long">Long Term</option>
-                        <option value="someday">Someday</option>
+                        <option value="work">Work</option>
                     </select>
                 </label>
-                <label class="sb-field" for="sb-note-timeline">
-                    <span>Date or timeline</span>
-                    <input id="sb-note-timeline" name="timeline" type="text" maxlength="40" placeholder="Today, May 15, in 2 years...">
-                </label>
+                <label class="sb-field" for="sb-note-timeline"><span>Date or timeline</span><input id="sb-note-timeline" name="timeline" type="text" maxlength="40" placeholder="Today, May 15, in 2 years..."></label>
                 <label class="sb-field" for="sb-note-tag">
-                    <span>Tag</span>
+                    <span>Type or tag</span>
                     <input id="sb-note-tag" name="tag" type="text" list="sb-tag-options" maxlength="24" placeholder="Goal">
                     <datalist id="sb-tag-options">
-                        <option value="Work"><option value="Personal"><option value="Goal"><option value="Growth">
-                        <option value="Health"><option value="Finance"><option value="Career"><option value="Creative">
-                        <option value="Lifestyle"><option value="Adventure">
+                        <option value="To Do"><option value="Short Term"><option value="Long Term"><option value="Project"><option value="Work"><option value="Custom"><option value="Goal"><option value="Milestone"><option value="Evidence"><option value="Reflection">
                     </datalist>
                 </label>
                 <fieldset class="sb-field sb-color-field">
-                    <legend>Note color</legend>
+                    <legend>Sticky-note color</legend>
                     <div class="sb-color-choices">
                         <label><input type="radio" name="tagStyle" value="work"><span class="sb-color-choice sb-color-choice--work">Blue</span></label>
                         <label><input type="radio" name="tagStyle" value="personal"><span class="sb-color-choice sb-color-choice--personal">Mint</span></label>
-                        <label><input type="radio" name="tagStyle" value="goal"><span class="sb-color-choice sb-color-choice--goal">Violet</span></label>
+                        <label><input type="radio" name="tagStyle" value="goal"><span class="sb-color-choice sb-color-choice--goal">Indigo</span></label>
                         <label><input type="radio" name="tagStyle" value="health"><span class="sb-color-choice sb-color-choice--health">Amber</span></label>
                         <label><input type="radio" name="tagStyle" value="finance"><span class="sb-color-choice sb-color-choice--finance">Cyan</span></label>
                     </div>
@@ -300,168 +441,74 @@
             </div>
 
             <details class="sb-checklist" id="sb-checklist-section">
-                <summary>
-                    <span>Checklist</span>
-                    <span class="sb-checklist__count" data-checklist-count>0</span>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                </summary>
-                <div class="sb-subsection-head">
-                    <div>
-                        <p>Break the note into small, visible steps.</p>
-                    </div>
-                    <button type="button" data-add-checklist><span aria-hidden="true">+</span> Add item</button>
-                </div>
+                <summary><span>Checklist</span><span class="sb-checklist__count" data-checklist-count>0</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary>
+                <div class="sb-subsection-head"><p>Break the note into small, visible steps.</p><button type="button" data-add-checklist><span aria-hidden="true">+</span> Add item</button></div>
                 <div class="sb-checklist__items" id="sb-checklist-items"></div>
             </details>
 
             <details class="sb-note-more" id="sb-note-more">
-                <summary>
-                    <span>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
-                        Links, attachments &amp; comments
-                    </span>
-                    <svg class="sb-note-more__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-                </summary>
+                <summary><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Links, attachments &amp; comments</span><svg class="sb-note-more__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary>
                 <div class="sb-support-grid">
-                    <label class="sb-field" for="sb-note-link">
-                        <span>Related link</span>
-                        <input id="sb-note-link" name="link" type="url" maxlength="500" placeholder="https://">
-                    </label>
+                    <label class="sb-field" for="sb-note-link"><span>Related link</span><input id="sb-note-link" name="link" type="url" maxlength="500" placeholder="https://"></label>
                     <label class="sb-field sb-file-field" for="sb-note-attachment">
                         <span>Attachment reference</span>
-                        <span class="sb-file-field__picker">
-                            <span class="sb-file-field__control">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.1-7.1"/></svg>
-                                <span id="sb-attachment-label">Choose a file</span>
-                            </span>
-                            <input
-                                id="sb-note-attachment"
-                                name="attachment"
-                                type="file"
-                                aria-label="Choose attachment reference"
-                                aria-describedby="sb-attachment-hint"
-                            >
-                        </span>
+                        <span class="sb-file-field__picker"><span class="sb-file-field__control"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.6 7.6a5 5 0 0 1-7.1-7.1l7.1-7.1"/></svg><span id="sb-attachment-label">Choose a file</span></span><input id="sb-note-attachment" name="attachment" type="file" aria-label="Choose attachment reference" aria-describedby="sb-attachment-hint"></span>
                         <small class="sb-field__hint" id="sb-attachment-hint">The filename is remembered here; the file itself is never uploaded.</small>
                     </label>
                 </div>
-
                 <details class="sb-comments" id="sb-comments">
-                    <summary>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14a3 3 0 0 1-3 3H9l-5 4V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg>
-                        Comments <span data-comment-count>0</span>
-                    </summary>
+                    <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14a3 3 0 0 1-3 3H9l-5 4V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg>Comments <span data-comment-count>0</span></summary>
                     <div class="sb-comments__thread" id="sb-comment-thread"></div>
-                    <div class="sb-comments__composer">
-                        <label class="sb-sr-only" for="sb-comment-input">Add a comment</label>
-                        <input id="sb-comment-input" type="text" maxlength="240" placeholder="Discuss this idea in context...">
-                        <button type="button" data-add-comment>Add comment</button>
-                    </div>
+                    <div class="sb-comments__composer"><label class="sb-sr-only" for="sb-comment-input">Add a comment</label><input id="sb-comment-input" type="text" maxlength="240" placeholder="Discuss this idea in context..."><button type="button" data-add-comment>Add comment</button></div>
                 </details>
             </details>
 
             <div class="sb-dialog__footer">
                 <div class="sb-dialog__footer-start">
                     <button class="sb-delete-button" id="sb-delete-note" type="button" hidden>Delete note</button>
-                    <span class="sb-private-note">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-                        Private by default
-                    </span>
+                    <span class="sb-private-note"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Private by default</span>
                 </div>
-                <div class="sb-dialog__footer-actions">
-                    <button class="sb-button sb-button--secondary" type="button" data-close-dialog>Cancel</button>
-                    <button class="sb-button sb-button--primary" type="submit">Save note</button>
-                </div>
+                <div class="sb-dialog__footer-actions"><button class="sb-button sb-button--secondary" type="button" data-close-dialog>Cancel</button><button class="sb-button sb-button--primary" type="submit">Save note</button></div>
             </div>
         </form>
     </dialog>
 
     <dialog class="sb-dialog sb-stats-dialog" id="sb-stats-dialog" aria-labelledby="sb-stats-title">
         <div class="sb-dialog__surface">
-            <div class="sb-dialog__header">
-                <div>
-                    <span class="sb-dialog__eyebrow">Board overview</span>
-                    <h2 id="sb-stats-title">Progress at a glance</h2>
-                </div>
-                <button class="sb-icon-button" type="button" data-close-dialog aria-label="Close board overview">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
-                </button>
-            </div>
-            <div class="sb-stats">
-                <div class="sb-stat"><strong data-stat-total>14</strong><span>Total Notes</span></div>
-                <div class="sb-stat sb-stat--completed"><strong data-stat-completed>0</strong><span>Completed</span></div>
-                <div class="sb-stat sb-stat--starred"><strong data-stat-starred>2</strong><span>Starred</span></div>
-                <div class="sb-stat sb-stat--overdue"><strong data-stat-overdue>2</strong><span>Overdue</span></div>
-            </div>
+            <div class="sb-dialog__header"><div><span class="sb-dialog__eyebrow">Board overview</span><h2 id="sb-stats-title">Progress at a glance</h2></div><button class="sb-icon-button" type="button" data-close-dialog aria-label="Close board overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+            <p class="sb-dialog__lead">Details stay contextual so the whiteboard remains the opening focus.</p>
+            <div class="sb-stats"><div class="sb-stat"><strong data-stat-total>20</strong><span>Total notes</span></div><div class="sb-stat sb-stat--completed"><strong data-stat-completed>0</strong><span>Completed</span></div><div class="sb-stat sb-stat--starred"><strong data-stat-starred>4</strong><span>Important</span></div><div class="sb-stat sb-stat--overdue"><strong data-stat-overdue>0</strong><span>Needs review</span></div></div>
             <div class="sb-overview-chart">
-                <div class="sb-donut" data-donut role="img" aria-label="Board notes by section">
-                    <span><strong data-donut-total>14</strong><small>notes</small></span>
-                </div>
-                <ul class="sb-legend">
-                    <li><span class="sb-legend__dot sb-legend__dot--todo"></span>To Do <strong data-legend-count="todo">4</strong></li>
-                    <li><span class="sb-legend__dot sb-legend__dot--short"></span>Short Term <strong data-legend-count="short">3</strong></li>
-                    <li><span class="sb-legend__dot sb-legend__dot--long"></span>Long Term <strong data-legend-count="long">4</strong></li>
-                    <li><span class="sb-legend__dot sb-legend__dot--someday"></span>Someday <strong data-legend-count="someday">3</strong></li>
-                </ul>
+                <div class="sb-donut" data-donut role="img" aria-label="Board notes by section"><span><strong data-donut-total>20</strong><small>notes</small></span></div>
+                <ul class="sb-legend"><li><span class="sb-legend__dot sb-legend__dot--short"></span>Short Term <strong data-legend-count="short">5</strong></li><li><span class="sb-legend__dot sb-legend__dot--projects"></span>Projects <strong data-legend-count="projects">5</strong></li><li><span class="sb-legend__dot sb-legend__dot--long"></span>Long Term <strong data-legend-count="long">5</strong></li><li><span class="sb-legend__dot sb-legend__dot--work"></span>Work <strong data-legend-count="work">5</strong></li></ul>
             </div>
-            <div class="sb-dialog__footer sb-dialog__footer--end">
-                <button class="sb-button sb-button--primary" type="button" data-close-dialog>Back to board</button>
-            </div>
+            <div class="sb-dialog__footer sb-dialog__footer--end"><button class="sb-button sb-button--primary" type="button" data-close-dialog>Back to board</button></div>
         </div>
     </dialog>
 
     <dialog class="sb-dialog sb-share-dialog" id="sb-share-dialog" aria-labelledby="sb-share-title">
         <div class="sb-dialog__surface">
-            <div class="sb-dialog__header">
-                <div>
-                    <span class="sb-dialog__eyebrow">Share &amp; collaborate</span>
-                    <h2 id="sb-share-title">Share Board</h2>
-                </div>
-                <button class="sb-icon-button" type="button" data-close-dialog aria-label="Close sharing settings">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
-                </button>
+            <div class="sb-dialog__header"><div><span class="sb-dialog__eyebrow">Audience preview</span><h2 id="sb-share-title">Share or publish deliberately</h2></div><button class="sb-icon-button" type="button" data-close-dialog aria-label="Close sharing settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+            <p class="sb-share-dialog__lead">Sharing one item, sharing a curated board view, and publishing to a Slate are separate actions.</p>
+            <div class="sb-share-modes">
+                <article class="is-selected"><span class="sb-share-modes__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><h3>Keep private</h3><p>Default. Nothing leaves this browser preview.</p></div><span class="sb-share-modes__state">Active</span></article>
+                <article><span class="sb-share-modes__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M3 20c.5-4 2.3-6 5-6s4.5 2 5 6"/></svg></span><div><h3>Share an item</h3><p>Choose a person and exact permission.</p></div><span class="sb-share-modes__state">Preview</span></article>
+                <article><span class="sb-share-modes__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM9 9h6M9 13h6"/></svg></span><div><h3>Share a curated view</h3><p>Only selected records and placements.</p></div><span class="sb-share-modes__state">Preview</span></article>
+                <article><span class="sb-share-modes__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12M7 9l5-5 5 5M5 19h14"/></svg></span><div><h3>Publish to my Slate</h3><p>Public projection, never the private working board.</p></div><span class="sb-share-modes__state">Preview</span></article>
             </div>
-            <p class="sb-share-dialog__lead">Invite others to view or edit this workspace.</p>
-            <form class="sb-invite" id="sb-invite-form">
-                <label class="sb-sr-only" for="sb-invite-person">Name or email</label>
-                <input id="sb-invite-person" type="text" maxlength="120" placeholder="Name or email">
-                <label class="sb-sr-only" for="sb-invite-permission">Permission</label>
-                <select id="sb-invite-permission">
-                    <option value="view">Can view</option>
-                    <option value="edit">Can edit</option>
-                </select>
-                <button class="sb-button sb-button--primary" type="submit">Add</button>
-            </form>
-            <div class="sb-invite-list" id="sb-invite-list" aria-live="polite"></div>
-            <div class="sb-collaboration-features">
-                <article>
-                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c.5-4 2.3-6 5-6s4.5 2 5 6M14 15c3.4 0 5.4 1.7 6 5"/></svg></span>
-                    <div><h3>Share Board</h3><p>Invite others to view or edit.</p></div>
-                </article>
-                <article>
-                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14a3 3 0 0 1-3 3H9l-5 4V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></svg></span>
-                    <div><h3>Comment on Notes</h3><p>Discuss ideas in context.</p></div>
-                </article>
-                <article>
-                    <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8a8 8 0 0 0-14.7-2L3 9m1-5v5h5M4 16a8 8 0 0 0 14.7 2L21 15m-1 5v-5h-5"/></svg></span>
-                    <div><h3>Real-time Updates</h3><p>See changes as they happen.</p></div>
-                </article>
+            <div class="sb-share-preview-box">
+                <h3>Prepare a collaborator preview</h3>
+                <p>No invitation is sent from this visual baseline.</p>
+                <form class="sb-invite" id="sb-invite-form"><label class="sb-sr-only" for="sb-invite-person">Name or email</label><input id="sb-invite-person" type="text" maxlength="120" placeholder="Name or email"><label class="sb-sr-only" for="sb-invite-permission">Permission</label><select id="sb-invite-permission"><option value="view">Can view</option><option value="edit">Can edit</option></select><button class="sb-button sb-button--secondary" type="submit">Add to preview</button></form>
+                <div class="sb-invite-list" id="sb-invite-list" aria-live="polite"></div>
             </div>
-            <p class="sb-share-dialog__notice" id="sb-share-notice">
-                This preview keeps edits in your browser. Adding a person prepares the collaboration state but does not send an invitation.
-            </p>
-            <div class="sb-dialog__footer">
-                <button class="sb-button sb-button--secondary" type="button" data-copy-board-link>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>
-                    Copy page link
-                </button>
-                <button class="sb-button sb-button--primary" type="button" data-close-dialog>Done</button>
-            </div>
+            <p class="sb-share-dialog__notice" id="sb-share-notice">This preview keeps edits in your browser. It does not send invitations, grant access, or publish content.</p>
+            <div class="sb-dialog__footer"><button class="sb-button sb-button--secondary" type="button" data-copy-board-link><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.2-1.2"/></svg>Copy page link</button><button class="sb-button sb-button--primary" type="button" data-close-dialog>Done</button></div>
         </div>
     </dialog>
 </section>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/slate-board.js') }}?v=concept-3"></script>
+<script src="{{ url_for('static', filename='js/slate-board.js') }}?v=living-whiteboard-6"></script>
 {% endblock %}

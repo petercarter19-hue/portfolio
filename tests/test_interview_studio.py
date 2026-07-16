@@ -110,12 +110,35 @@ class InterviewStudioRouteTests(unittest.TestCase):
             'Behavioral',
             'Competency: Conflict',
             'STAR recommended',
-            'Review My Answer',
+            'Submit answer',
             'New Question',
             'Up next:',
         ):
             self.assertIn(value, html)
         self.assertIn('data-is-mic="answer"', html)
+        self.assertIn('data-is-answer-form', html)
+
+    def test_answer_submission_and_feature_workspaces_are_visible_upfront(self):
+        html = self.html()
+        self.assertIn('type="submit" data-is-review disabled', html)
+        self.assertIn('Ctrl/Command + Enter to submit', html)
+        self.assertNotIn('data-is-feedback hidden', html)
+        self.assertNotIn('data-is-improve-panel hidden', html)
+        self.assertNotIn('data-is-ai-answer hidden', html)
+        self.assertNotIn('data-is-video-result hidden', html)
+        self.assertIn('data-is-feedback-empty', html)
+        self.assertIn('data-is-improve-empty', html)
+        self.assertIn('data-is-ai-answer-empty', html)
+        self.assertIn('data-is-video-result-empty', html)
+        self.assertIn('data-is-video-transcript-form', html)
+        self.assertIn('data-is-mic="video"', html)
+
+    def test_client_submission_accepts_any_nonempty_answer_and_uses_a_real_form(self):
+        script = (Path(__file__).parents[1] / 'static' / 'js' / 'interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn("answerForm.addEventListener('submit'", script)
+        self.assertIn("if (!responseText)", script)
+        self.assertNotIn('responseText.length < 8', script)
+        self.assertIn("event.ctrlKey && !event.metaKey", script)
 
     def test_question_bank_uses_family_and_competency_taxonomy(self):
         html = self.html()

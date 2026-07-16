@@ -8,7 +8,7 @@
 
 {% block extra_head %}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=light-orbit-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=light-orbit-2">
 {% endblock %}
 
 {% block content %}
@@ -173,22 +173,32 @@
                         <p data-is-ai-reference-text></p>
                     </details>
 
-                    <div data-is-answering>
+                    <form data-is-answering data-is-answer-form>
                         <div class="is__composer">
                             <label for="is-answer">Your answer</label>
-                            <textarea
-                                id="is-answer"
-                                rows="5"
-                                maxlength="5000"
-                                placeholder="Type your answer here or use the microphone to dictate…"
-                                data-is-answer
-                            ></textarea>
-                            <button class="is__mic" type="button" aria-label="Dictate your answer" data-is-mic="answer">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
-                            </button>
+                            <div class="is__composer-input">
+                                <textarea
+                                    id="is-answer"
+                                    rows="5"
+                                    maxlength="5000"
+                                    placeholder="Type your answer here or use the microphone to dictate…"
+                                    aria-describedby="is-answer-shortcut"
+                                    required
+                                    data-is-answer
+                                ></textarea>
+                                <div class="is__composer-controls">
+                                    <button class="is__mic" type="button" aria-label="Dictate your answer" data-is-mic="answer">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                    </button>
+                                    <button class="is__button is__button--primary is__composer-submit" type="submit" data-is-review disabled>
+                                        Submit answer
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="is__composer-meta">
                                 <span data-is-autosave>Draft ready</span>
-                                <span><span data-is-word-count>0</span> words</span>
+                                <span id="is-answer-shortcut"><span data-is-word-count>0</span> words · Ctrl/Command + Enter to submit</span>
                             </div>
                         </div>
 
@@ -199,10 +209,6 @@
 
                         <div class="is__actions is__actions--spread">
                             <div class="is__actions-group">
-                                <button class="is__button is__button--primary" type="button" data-is-review disabled>
-                                    Review My Answer
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
-                                </button>
                                 <button class="is__button is__button--quiet" type="button" data-is-new-question>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
                                     New Question
@@ -213,7 +219,7 @@
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
                             </button>
                         </div>
-                    </div>
+                    </form>
 
                     <div class="is__reviewing" data-is-reviewing hidden aria-live="polite">
                         <span class="is__spinner" aria-hidden="true"></span>
@@ -226,11 +232,20 @@
                         <p data-is-submitted-text></p>
                     </div>
 
-                    <section class="is__feedback" data-is-feedback hidden aria-labelledby="is-feedback-title">
+                    <section class="is__feedback is__feature-shell" data-is-feedback aria-labelledby="is-feedback-title">
                         <header class="is__feedback-heading">
                             <p class="is__section-label">Coach review</p>
                             <h3 id="is-feedback-title">Your evidence-backed feedback</h3>
                         </header>
+
+                        <div class="is__feature-empty" data-is-feedback-empty>
+                            <strong>Your review space is ready.</strong>
+                            <span>Submit any nonempty answer above to see your score, STAR completeness, strengths, and next improvements here.</span>
+                        </div>
+
+                        <p class="is__error" data-is-review-error hidden></p>
+
+                        <div data-is-feedback-content hidden>
 
                         <div class="is__feedback-grid">
                             <div class="is__score-summary">
@@ -260,7 +275,6 @@
                             <div data-is-evidence-options></div>
                         </section>
 
-                        <p class="is__error" data-is-review-error hidden></p>
                         <div class="is__actions is__actions--spread">
                             <div class="is__actions-group">
                                 <button class="is__button is__button--primary" type="button" data-is-improve>Improve with Coach</button>
@@ -271,11 +285,17 @@
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                             </button>
                         </div>
+                        </div>
                     </section>
 
-                    <section class="is__improve" data-is-improve-panel hidden aria-labelledby="is-improve-title">
+                    <section class="is__improve is__feature-shell" data-is-improve-panel aria-labelledby="is-improve-title">
                         <p class="is__eyebrow">Keep your voice. Strengthen the proof.</p>
                         <h3 id="is-improve-title">Compare your answer with the coach-assisted draft.</h3>
+                        <div class="is__feature-empty" data-is-improve-empty>
+                            <strong>The improvement workspace stays in view.</strong>
+                            <span>After your coach review, choose “Improve with Coach” to compare your original answer with an editable, evidence-grounded draft.</span>
+                        </div>
+                        <div data-is-improve-content hidden>
                         <div class="is__compare">
                             <section>
                                 <h4>Original answer</h4>
@@ -296,6 +316,7 @@
                             <button class="is__button is__button--primary" type="button" data-is-use-draft>Use This Draft</button>
                             <button class="is__button" type="button" data-is-retry-out-loud>Retry Out Loud</button>
                             <button class="is__button is__button--quiet" type="button" data-is-back-feedback>Back to Feedback</button>
+                        </div>
                         </div>
                     </section>
                 </article>
@@ -337,30 +358,42 @@
                     </div>
                     <p class="is__error" data-is-ai-error hidden></p>
 
-                    <section class="is__ai-answer" data-is-ai-answer hidden aria-labelledby="is-ai-answer-title">
-                        <p class="is__section-label">AI synthesis</p>
-                        <h2 id="is-ai-answer-title"><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
-                        <p class="is__ai-answer-text" data-is-ai-answer-text></p>
+                    <section class="is__ai-answer is__feature-shell" data-is-ai-answer aria-labelledby="is-ai-answer-title">
+                        <header>
+                            <p class="is__section-label">AI synthesis</p>
+                            <h2 id="is-ai-answer-title">Approved-evidence answer workspace</h2>
+                        </header>
 
-                        <div class="is__why">
-                            <h3>Why this answer works</h3>
-                            <ul data-is-ai-why></ul>
-                        </div>
-                        <div class="is__evidence-used">
-                            <h3>Evidence used</h3>
-                            <div data-is-ai-evidence></div>
+                        <div class="is__feature-empty" data-is-ai-answer-empty>
+                            <strong>Your answer workspace is open.</strong>
+                            <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every approved evidence source here for you to verify.</span>
                         </div>
 
-                        <form class="is__follow-up" data-is-follow-up-form hidden>
+                        <div data-is-ai-answer-content hidden>
+                            <h2><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
+                            <p class="is__ai-answer-text" data-is-ai-answer-text></p>
+
+                            <div class="is__why">
+                                <h3>Why this answer works</h3>
+                                <ul data-is-ai-why></ul>
+                            </div>
+                            <div class="is__evidence-used">
+                                <h3>Evidence used</h3>
+                                <div data-is-ai-evidence></div>
+                            </div>
+
+                            <div class="is__actions is__actions--three">
+                                <button class="is__button" type="button" data-is-follow-up-open>Go to Follow-up</button>
+                                <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
+                                <button class="is__button" type="button" data-is-ai-new>New Question</button>
+                            </div>
+                        </div>
+
+                        <form class="is__follow-up" data-is-follow-up-form>
                             <label for="is-ai-follow-up">Ask a follow-up</label>
-                            <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up><button class="is__button is__button--primary" type="submit">Ask</button></div>
+                            <p>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
+                            <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up disabled><button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button></div>
                         </form>
-
-                        <div class="is__actions is__actions--three">
-                            <button class="is__button" type="button" data-is-follow-up-open>Ask a Follow-up</button>
-                            <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
-                            <button class="is__button" type="button" data-is-ai-new>New Question</button>
-                        </div>
                     </section>
                 </article>
             </section>
@@ -419,21 +452,36 @@
                         <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
                     </div>
 
-                    <section class="is__video-result" data-is-video-result hidden>
-                        <h3>Rehearsal saved in this browser session</h3>
-                        <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
-                        <div class="is__analysis-unavailable">
-                            <strong>Delivery analysis is not enabled yet.</strong>
-                            <span>PeerSlate will not show pace, pauses, filler words, clarity, or replay moments until a real processing service produces them.</span>
+                    <section class="is__video-result is__feature-shell" data-is-video-result aria-labelledby="is-video-result-title">
+                        <h3 id="is-video-result-title">Local rehearsal result</h3>
+                        <div class="is__feature-empty" data-is-video-result-empty>
+                            <strong>Your recording summary is ready for the first attempt.</strong>
+                            <span>After you stop recording, the duration and honest local-playback status will appear here. Nothing is uploaded.</span>
                         </div>
-                        <details class="is__video-content-review">
-                            <summary>Get content coaching from a transcript</summary>
-                            <p>Automatic transcription is not enabled. Type or paste what you said to use the same evidence-backed content review as Interview Me.</p>
-                            <label for="is-video-transcript">Answer transcript</label>
-                            <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" data-is-video-transcript></textarea>
-                            <button class="is__button is__button--primary" type="button" data-is-video-review-content disabled>Review transcript with Coach</button>
-                        </details>
+                        <div data-is-video-result-content hidden>
+                            <h3>Rehearsal saved in this browser session</h3>
+                            <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
+                            <div class="is__analysis-unavailable">
+                                <strong>Delivery analysis is not enabled yet.</strong>
+                                <span>PeerSlate will not show pace, pauses, filler words, clarity, or replay moments until a real processing service produces them.</span>
+                            </div>
+                        </div>
                     </section>
+
+                    <form class="is__video-content-review is__feature-shell" data-is-video-transcript-form>
+                        <h3>Get content coaching from a transcript</h3>
+                        <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same evidence-backed content review as Interview Me. You can use this before or after recording.</p>
+                        <label for="is-video-transcript">Answer transcript</label>
+                        <div class="is__transcript-composer">
+                            <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript></textarea>
+                            <div class="is__transcript-actions">
+                                <button class="is__mic" type="button" aria-label="Dictate your answer transcript" data-is-mic="video">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                </button>
+                                <button class="is__button is__button--primary" type="submit" data-is-video-review-content disabled>Submit transcript</button>
+                            </div>
+                        </div>
+                    </form>
 
                     <p class="is__privacy-note">This preview uses your browser’s local media APIs. The recording is not uploaded, analyzed, or retained by PeerSlate.</p>
                 </article>
@@ -557,5 +605,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-1" defer></script>
+<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-2" defer></script>
 {% endblock %}
