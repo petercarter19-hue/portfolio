@@ -34,14 +34,18 @@ _DATA_PATH = os.path.join(
 
 # One shared reaction vocabulary — positive only, defined exactly once.
 # The template embeds this for the browser; the API validates against it.
+# v1.2 Respond system (PS-FEED-002, site rules 28): five purposeful
+# intentions replace the older applause vocabulary. Defined exactly once;
+# the template embeds this for the browser and the API validates against it.
 REACTION_TYPES = (
-    {"key": "applaud", "label": "Applaud", "emoji": "\U0001F44F"},
     {"key": "celebrate", "label": "Celebrate", "emoji": "\U0001F389"},
-    {"key": "inspired", "label": "Inspired", "emoji": "\U0001F4A1"},
-    {"key": "rooting", "label": "Rooting for you", "emoji": "❤️"},
+    {"key": "support", "label": "Support", "emoji": "\U0001F4AA"},
+    {"key": "i_relate", "label": "I relate", "emoji": "\U0001F64B"},
+    {"key": "ask", "label": "Ask", "emoji": "\u2753"},
+    {"key": "offer_help", "label": "Offer help", "emoji": "\U0001F91D"},
 )
-# Context-specific reaction: goal posts can also collect "I'm in".
-GOAL_REACTION = {"key": "im_in", "label": "I'm in", "emoji": "✋"}
+# Goal posts keep "Offer help" emphasis rather than a separate vocabulary.
+GOAL_REACTION = {"key": "offer_help", "label": "Offer help", "emoji": "\U0001F91D"}
 
 REACTION_KEYS = frozenset(
     [reaction["key"] for reaction in REACTION_TYPES] + [GOAL_REACTION["key"]]

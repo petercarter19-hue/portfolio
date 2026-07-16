@@ -389,3 +389,28 @@ body.feed-preview-page .main-content { isolation: auto; }
      that space, and the same tabs stay reachable in the sub-header. */
   body.feed-preview-page #mobile-tabbar { display: none !important; }
 }
+
+/* PS-FEED-002 (v1.2): purposeful Respond tray replaces the single
+   Encourage action. Quiet, idempotent, no public leaderboards. */
+#feed-app .respond-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 10px 0 2px;
+}
+#feed-app .respond-option {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #45566F;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+#feed-app .respond-option:hover { background: #F5F7FC; }
+#feed-app .respond-option[aria-pressed="true"] {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}

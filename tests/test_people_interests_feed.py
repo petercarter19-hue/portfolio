@@ -230,24 +230,24 @@ class PeopleInterestsApiTests(unittest.TestCase):
     # ---- writes: reactions ----
 
     def test_reaction_add_and_remove_are_idempotent(self):
-        base = self.feed.get_post_detail("pi-hannah-10k")["reactions"].get("applaud", 0)
+        base = self.feed.get_post_detail("pi-hannah-10k")["reactions"].get("celebrate", 0)
         for _ in range(3):
             response = self.client.post(
                 "/api/feed/posts/pi-hannah-10k/reactions",
                 headers=SAME_ORIGIN,
-                json={"reaction_type": "applaud"},
+                json={"reaction_type": "celebrate"},
             )
             self.assertEqual(response.status_code, 200)
-        after_adds = response.get_json()["reactions"]["applaud"]
+        after_adds = response.get_json()["reactions"]["celebrate"]
         self.assertEqual(after_adds, base + 1)
 
         for _ in range(2):
             response = self.client.delete(
-                "/api/feed/posts/pi-hannah-10k/reactions/applaud",
+                "/api/feed/posts/pi-hannah-10k/reactions/celebrate",
                 headers=SAME_ORIGIN,
             )
             self.assertEqual(response.status_code, 200)
-        after_removes = response.get_json()["reactions"].get("applaud", 0)
+        after_removes = response.get_json()["reactions"].get("celebrate", 0)
         self.assertEqual(after_removes, base)
 
     def test_unsupported_reaction_rejected(self):
@@ -320,3 +320,28 @@ class PeopleInterestsFixtureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FeedV12RuleTests(unittest.TestCase):
+    """PS-FEED-002: rail cleanup, Respond vocabulary, no Ask AI in Community."""
+
+    @classmethod
+    def setUpClass(cls):
+        app.config["TESTING"] = True
+        cls.html = app.test_client().get("/the-slate").get_data(as_text=True)
+
+    def test_banned_rail_modules_removed(self):
+        for banned in ("pi-pickme", "pi-challenge", "pi-poll",
+                       "pi-sharegood", "Community poll", "Weekend Challenge"):
+            self.assertNotIn(banned, self.html)
+
+    def test_respond_vocabulary(self):
+        for intent in ("celebrate", "support", "i_relate", "ask", "offer_help"):
+            self.assertIn(intent, self.html)
+        self.assertNotIn('"applaud"', self.html)
+        self.assertNotIn("Rooting for you", self.html)
+
+    def test_no_ask_ai_inside_community(self):
+        self.assertNotIn("data-open-chat", self.html)
+        self.assertNotIn('id="chat-toggle"', self.html)
+        self.assertNotIn("Ask Pete AI", self.html)

@@ -221,15 +221,33 @@
       '</div></div>';
   }
 
+  var RESPOND_INTENTIONS = [
+    { key: 'celebrate', label: 'Celebrate' },
+    { key: 'support', label: 'Support' },
+    { key: 'i_relate', label: 'I relate' },
+    { key: 'ask', label: 'Ask' },
+    { key: 'offer_help', label: 'Offer help' }
+  ];
+
   function actionRowHTML(post) {
-    var primary = post.milestone ? 'Celebrate' : 'Encourage';
-    var reacted = !!state.reactions[post.id];
+    var chosen = state.reactions[post.id] || null;
+    var chosenLabel = null;
+    RESPOND_INTENTIONS.forEach(function (item) {
+      if (item.key === chosen) { chosenLabel = item.label; }
+    });
     var saved = !!state.saves[post.id];
+    var tray = RESPOND_INTENTIONS.map(function (item) {
+      return '<button class="respond-option" type="button" data-respond="' + esc(post.id) +
+        '" data-intent="' + item.key + '" aria-pressed="' + (chosen === item.key) + '">' +
+        esc(item.label) + '</button>';
+    }).join('');
     return '<div class="actions">' +
-      '<button class="action primary-action" type="button" data-react="' + esc(post.id) + '" aria-pressed="' + reacted + '">' + icon('spark', 'sm') + ' ' + primary + '</button>' +
+      '<button class="action primary-action" type="button" data-respond-toggle="' + esc(post.id) + '" aria-expanded="false" aria-pressed="' + (!!chosen) + '">' +
+      icon('spark', 'sm') + ' ' + (chosenLabel || 'Respond') + '</button>' +
       '<button class="action" type="button" data-comment="' + esc(post.id) + '">' + icon('comment', 'sm') + ' Comment</button>' +
       '<button class="action save" type="button" data-save="' + esc(post.id) + '" aria-pressed="' + saved + '">' + icon('bookmark', 'sm') + ' ' + (saved ? 'Saved' : 'Save') + '</button>' +
-      '</div>';
+      '</div>' +
+      '<div class="respond-tray" data-respond-tray="' + esc(post.id) + '" hidden role="group" aria-label="Respond with an intention">' + tray + '</div>';
   }
 
   function mediaHTML(post) {
@@ -321,7 +339,7 @@
 
   function detailHTML(post) {
     var comments = DETAIL_COMMENTS.concat(state.detailExtraComments).map(function (c, index) {
-      var actions = '<button class="comment-action" type="button" data-comment-react="' + index + '" aria-pressed="' + (!!c.reacted) + '">Encourage</button>' +
+      var actions = '<button class="comment-action" type="button" data-comment-react="' + index + '" aria-pressed="' + (!!c.reacted) + '">Support</button>' +
         '<button class="comment-action" type="button" data-comment-reply>Reply</button>' +
         (c.offerHelp ? '<button class="offer-help" type="button" data-offer-help="' + index + '" aria-pressed="' + (!!c.offered) + '">Offer help</button>' : '');
       return '<div class="comment">' + avatar(c.initials, c.color, 'sm') +
@@ -518,7 +536,7 @@
     return '<header class="modal-head"><h2 id="reviewTitle">' + heading + '</h2>' +
       '<button class="close" type="button" data-dismiss aria-label="Close">' + icon('close', '', '2') + '</button></header>' +
       '<div class="review-body"><div class="review-main">' +
-      '<label class="field-label" for="transcriptEdit">Original transcript</label>' +
+      '<label class="field-label" for="transcriptEdit">Transcript</label>' +
       '<textarea class="transcript-box editable" id="transcriptEdit" rows="4" data-autofocus>' + esc(state.draft.transcript) + '</textarea>' +
       '<div class="proposal"><div class="proposal-head">' + icon('spark', 'sm') + ' PeerSlate proposal · editable</div>' +
       '<h3>' + esc(proposalTitle) + '</h3><p>' + esc(PROPOSAL.copy) + '</p>' +
@@ -624,11 +642,24 @@
       el.innerHTML = (pressed ? '✓ ' : '+ ') + esc({ phoenix: 'Project Phoenix', goal: 'Goal', evidence: 'Evidence' }[key]);
       return;
     }
-    if (el.hasAttribute('data-react')) {
-      var id = el.getAttribute('data-react');
-      state.reactions[id] = !state.reactions[id];
-      el.setAttribute('aria-pressed', state.reactions[id] ? 'true' : 'false');
-      announce(state.reactions[id] ? 'Encouragement sent. Reactions stay quiet — no public counts.' : 'Encouragement removed.');
+    if (el.hasAttribute('data-respond-toggle')) {
+      var trayId = el.getAttribute('data-respond-toggle');
+      var tray = document.querySelector('[data-respond-tray="' + trayId + '"]');
+      if (tray) {
+        var open = tray.hidden;
+        tray.hidden = !open;
+        el.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      return;
+    }
+    if (el.hasAttribute('data-respond')) {
+      var respondId = el.getAttribute('data-respond');
+      var intent = el.getAttribute('data-intent');
+      state.reactions[respondId] = state.reactions[respondId] === intent ? null : intent;
+      render();
+      announce(state.reactions[respondId]
+        ? 'Response sent: ' + intent.replace('_', ' ') + '. Responses stay quiet — no public leaderboards.'
+        : 'Response removed.');
       return;
     }
     if (el.hasAttribute('data-save')) {

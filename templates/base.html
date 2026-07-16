@@ -188,10 +188,15 @@
                        phones the search box is hidden, so this compact button
                        keeps the assistant one tap away at all times. It opens
                        the chat panel (mobile-nav.js). #}
+                    {# v1.2 rule 30 (PS-FEED-002): no member-specific public AI
+                       assistant inside Community — the launcher is not
+                       rendered in pine rooms. #}
+                    {% if page_room != 'pine' %}
                     <button class="nav-ask-ai" type="button" data-open-chat aria-label="Ask Pete AI">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         <span>Ask AI</span>
                     </button>
+                    {% endif %}
 
                     <a class="sign-in-btn" href="#" aria-disabled="true">Sign In</a>
                 </div>
@@ -256,6 +261,7 @@
        Ask Pete AI button is on screen, then fades in once the visitor
        scrolls past it (chatbot.js watches that button and toggles the
        is-visible class), so long pages always keep the AI one click away. #}
+    {% if page_room != 'pine' %}
     <button id="chat-toggle" aria-label="Open Pete's AI assistant">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2"
@@ -308,6 +314,7 @@
             AI responses are grounded in approved portfolio sources.
         </p>
     </div>
+    {% endif %}
 
     {# Destination index for the header search — URLs come from Flask so
        they stay correct on every host. site-search.js reads this block. #}

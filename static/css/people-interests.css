@@ -225,7 +225,7 @@
            left rail lines up with the start of the page title, the right
            rail with its end — and the gap to the board grows on wide
            screens, shrinking as the page narrows (Pete, 2026-07-14). */
-        grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 52rem) minmax(13.5rem, 17rem);
+        grid-template-columns: minmax(13.5rem, 17rem) minmax(0, 60rem); /* v1.2: right rail held for the Journal Note card */
         justify-content: space-between;
     }
 
