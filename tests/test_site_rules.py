@@ -1,4 +1,4 @@
-"""PS-RULES-001 — automated guardrails for the v1.2 site rules.
+"""PS-RULES-001 — automated guardrails for the governing site rules.
 
 Pragmatic static checks (rules doc §12 / implementation instructions §5):
 they target production behavior and UI surfaces, not internal migration
@@ -90,14 +90,14 @@ class GovernanceDocsTests(unittest.TestCase):
     def test_authoritative_documents_are_in_the_repository(self):
         for rel in ('docs/PEERSLATE_SITE_RULES.md',
                     'docs/PEERSLATE_V12_IMPLEMENTATION_INSTRUCTIONS.md',
-                    'PeerSlate_Company_and_Product_Bible_v1.2.docx',
+                    'PeerSlate_Company_and_Product_Bible_v1.3.docx',
                     'docs/INITIATIVE_CHECKLIST.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
 
-    def test_claude_md_points_to_v12_governance(self):
+    def test_claude_md_points_to_current_governance(self):
         content = _read(os.path.join(ROOT, 'CLAUDE.md'))
         self.assertIn('PEERSLATE_SITE_RULES.md', content)
-        self.assertIn('PeerSlate_Company_and_Product_Bible_v1.2.docx',
+        self.assertIn('PeerSlate_Company_and_Product_Bible_v1.3.docx',
                       content)
 
 

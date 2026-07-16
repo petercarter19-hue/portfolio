@@ -3,15 +3,19 @@
 
 # Claude / Claude Code instructions
 
-## v1.2 governance — read BEFORE any product work (PS-RULES-001, 2026-07-16)
+## v1.3 governance — read BEFORE any product work (2026-07-16)
 
-1. `PeerSlate_Company_and_Product_Bible_v1.2.docx` (repo root) — the
-   authoritative product direction, Foundation Edition v1.2.
+1. `PeerSlate_Company_and_Product_Bible_v1.3.docx` (repo root) — the
+   authoritative product direction and implementation baseline. Version 1.2
+   remains in the repository as the prior decision record.
 2. `docs/PEERSLATE_SITE_RULES.md` — 85 locked rules for copy, IA, data,
    AI, design, and delivery. They bind humans and AI agents alike.
 3. `docs/PEERSLATE_V12_IMPLEMENTATION_INSTRUCTIONS.md` — the approved
-   package program (PS-PLAN-002 → PS-CONSTELLATION-001) and delivery
-   method. One package, one branch, one reviewable outcome.
+   corrective package program (PS-PLAN-002 → PS-CONSTELLATION-001) and
+   delivery method. Version 1.3 adds PS-PROFILE-001, PS-PHOTOS-001,
+   PS-CONNECT-001, and PS-LINKS-001; where the instructions conflict with
+   the v1.3 Bible, the Bible controls. One package, one branch, one
+   reviewable outcome.
 4. `docs/INITIATIVE_CHECKLIST.md` — answer it in every package handoff.
 5. Status (2026-07-16): PS-PLAN-002 ✔, PS-RULES-001 ✔,
    PS-BRAND-NAV-001 / PS-INTERVIEW-002 / PS-FEED-002 delivered as

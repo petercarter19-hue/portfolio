@@ -24,11 +24,12 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 
 ## Source of truth
 
-**v1.2 (2026-07-16):** `PeerSlate_Company_and_Product_Bible_v1.2.docx`
+**v1.3 (2026-07-16):** `PeerSlate_Company_and_Product_Bible_v1.3.docx`
 (repo root) and `docs/PEERSLATE_SITE_RULES.md` now govern product
 direction, language, navigation, Community behavior, AI behavior, and
 brand (Iris Foundry). Where older documents below conflict with them,
-v1.2 wins — report the conflict.
+v1.3 wins — report the conflict. Version 1.2 remains in the repository
+as the prior decision record.
 
 Before changing résumé or Slate Board code, read these repository documents in this order:
 
