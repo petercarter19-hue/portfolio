@@ -166,7 +166,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(len(parser.links), 4)
         self.assertEqual(
             [link['text'] for link in parser.links],
-            ['My Story', 'Evidence', 'Slate Board', 'Resume'],
+            ['My Story', 'Work', 'Slate Board', 'Resume'],
         )
         current_links = [
             link
@@ -323,7 +323,7 @@ class Resume2Tests(unittest.TestCase):
             rendered_skill_count,
         )
         self.assertIn(b'data-r2-skill-overview', response.data)
-        self.assertIn(b'View Full Evidence', response.data)
+        self.assertIn(b'See All Sources', response.data)
         self.assertIn(b'Ask Pete About This', response.data)
 
     def test_development_section_lists_every_forward_credential(self):
@@ -472,7 +472,7 @@ class Resume2Tests(unittest.TestCase):
                 parser.feed(response.get_data(as_text=True))
                 self.assertEqual(
                     [link['text'] for link in parser.links],
-                    ['My Story', 'Evidence', 'Slate Board', 'Resume'],
+                    ['My Story', 'Work', 'Slate Board', 'Resume'],
                 )
 
 

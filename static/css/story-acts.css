@@ -36,7 +36,7 @@ body.story-acts-page :is(h1, h2, h3) {
     --st-cloud: #f6f8fc;
     --st-night: #060b18;
     --st-card-radius: 0.85rem;
-    --st-display: "Newsreader", "Source Serif 4", Georgia, serif;
+    --st-display: "Newsreader", "Newsreader", Georgia, serif;
     --st-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
     --st-hand: "Caveat", "Segoe Script", cursive;
     position: relative;

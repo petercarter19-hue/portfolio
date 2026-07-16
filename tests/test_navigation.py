@@ -106,7 +106,9 @@ class NavigationTests(unittest.TestCase):
         }
         self.assertEqual(links['Community']['attributes']['href'], '/the-slate')
         self.assertEqual(links['Interview Studio']['attributes']['href'], '/interview-studio')
-        self.assertEqual(links['About PeerSlate']['attributes']['href'], '/peerslate')
+        # v1.2 (PS-BRAND-NAV-001): About left the header; the footer link
+        # 'Why PeerSlate' points at the same route instead.
+        self.assertNotIn('About PeerSlate', links)
         self.assertEqual(
             links['Interview Studio']['attributes'].get('aria-current'),
             'page',

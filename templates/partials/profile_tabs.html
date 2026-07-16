@@ -12,8 +12,12 @@
             <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
                 My Story
             </a>
-            <a class="profile-tab" href="{{ portfolio_skills_url }}" {% if request.path in ['/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
-                Evidence
+            {# v1.2 (PS-BRAND-NAV-001): Evidence is no longer a navigation
+               destination. The tab now opens Work (projects); the skills
+               page remains reachable from Work and Resume as
+               "Skills in practice". #}
+            <a class="profile-tab" href="{{ portfolio_url('projects') }}" {% if request.path in ['/work', '/projects', '/petec/work', '/petec/projects', '/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
+                Work
             </a>
             <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
                 Slate Board

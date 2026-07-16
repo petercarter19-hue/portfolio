@@ -2,7 +2,7 @@
 
 {% block title %}{{ resume.profile.name }} | Living Résumé{% endblock %}
 
-{% block meta_description %}Explore {{ resume.profile.name }}'s evidence-backed career impact, skills, experience, and credentials.{% endblock %}
+{% block meta_description %}Explore {{ resume.profile.name }}'s career impact, skills, experience, and credentials — grounded in approved work.{% endblock %}
 
 {% block extra_head %}
 <script>
@@ -108,7 +108,7 @@
                             <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
                             Ask {{ profile_first_name }} AI
                         </p>
-                        <span class="r2-ai-sub">Explore {{ profile_first_name }}'s experience, skills, results, and professional background. Every answer is grounded in approved public evidence.</span>
+                        <span class="r2-ai-sub">Explore {{ profile_first_name }}'s experience, skills, results, and professional background. Every answer is grounded in approved public history.</span>
                         <div class="r2-ai-suggestions" role="group" aria-label="Suggested questions">
                             {% for question in resume.suggested_ai_questions.default[:3] %}
                             <button type="button" class="r2-ai-chip" data-r2-ai-suggestion>{{ question }}</button>
@@ -136,7 +136,7 @@
                         <svg aria-hidden="true"><use href="#lr-icon-{{ metric.resume2_icon }}"></use></svg>
                         <strong>{{ metric.value }}</strong>
                         <span>{{ metric.label }}</span>
-                        <small>View proof <span aria-hidden="true">→</span></small>
+                        <small>See sources <span aria-hidden="true">→</span></small>
                     </button>
                     {% endfor %}
                 </div>
@@ -146,13 +146,13 @@
                 <span class="r2-anchor-alias" id="resume-skills" aria-hidden="true"></span>
                 <header class="r2-section-heading r2-section-heading--split">
                     <div>
-                        <span>Claims connected to proof</span>
-                        <h2 id="skills-title">Skills Backed by Evidence</h2>
-                        <p>Select a capability to inspect its strongest approved proof.</p>
+                        <span>Claims connected to sources</span>
+                        <h2 id="skills-title">Skills in Practice</h2>
+                        <p>Select a capability to see its featured achievement.</p>
                     </div>
-                    <div class="r2-evidence-badge" aria-label="Evidence-backed public profile">
+                    <div class="r2-evidence-badge" aria-label="Grounded in approved work">
                         <svg aria-hidden="true"><use href="#lr-icon-shield"></use></svg>
-                        <span><strong>Evidence-backed</strong><small>Approved. Relevant. Real.</small></span>
+                        <span><strong>Grounded in approved work</strong><small>Approved. Relevant. Real.</small></span>
                     </div>
                 </header>
 
@@ -173,7 +173,7 @@
                                 <span class="r2-skill-card__icon"><svg aria-hidden="true"><use href="#lr-icon-{{ skill.icon|default('shield') }}"></use></svg></span>
                                 <span class="r2-skill-card__copy">
                                     <strong>{{ skill.display_name }}</strong>
-                                    <small>{{ skill.resume2_evidence_items|length }} proof record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }} · {{ skill.related_role_ids|length }} role{{ '' if skill.related_role_ids|length == 1 else 's' }}</small>
+                                    <small>{{ skill.resume2_evidence_items|length }} source record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }} · {{ skill.related_role_ids|length }} role{{ '' if skill.related_role_ids|length == 1 else 's' }}</small>
                                 </span>
                                 <span class="r2-skill-card__arrow" aria-hidden="true">→</span>
                             </button>
@@ -193,10 +193,10 @@
                                     <p>{{ group.label }}</p>
                                     <h3>{{ skill.display_name }}</h3>
                                 </div>
-                                <span class="r2-skill-panel__status">{{ skill.resume2_evidence_items|length }} proof record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }}</span>
+                                <span class="r2-skill-panel__status">{{ skill.resume2_evidence_items|length }} source record{{ '' if skill.resume2_evidence_items|length == 1 else 's' }}</span>
                             </header>
                             <p class="r2-skill-panel__summary">{{ skill.front_summary }}</p>
-                            <h4>Strongest approved proof</h4>
+                            <h4>Featured achievement</h4>
                             <ul class="r2-skill-panel__evidence">
                                 {% for evidence in skill.resume2_evidence_items[:3] %}
                                 <li>
@@ -206,7 +206,7 @@
                                 {% endfor %}
                             </ul>
                             <div class="r2-skill-panel__actions">
-                                <a class="r2-button r2-button--primary" href="{{ portfolio_skills_url }}#skf-panel-{{ skill.id }}">View Full Evidence</a>
+                                <a class="r2-button r2-button--primary" href="{{ portfolio_skills_url }}#skf-panel-{{ skill.id }}">See All Sources</a>
                                 <button class="r2-button" type="button" data-chat-open data-ask-resume data-ask="Explain the approved public evidence behind {{ resume.profile.name }}'s {{ skill.display_name }} capability.">Ask {{ profile_first_name }} About This</button>
                             </div>
                             <button class="r2-panel-close" type="button" data-r2-skill-close>Close Skill Evidence</button>

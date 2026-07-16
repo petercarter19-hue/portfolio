@@ -1,31 +1,33 @@
 {# =====================================================
-   PEERSLATE MARKETING HOMEPAGE — rebuilt 2026-07-06 to match
-   static/Mockup exactly: serif hero with underlined keywords,
-   live-profile preview card + dark "Ask this Slate" pill, four
-   feature cards, How It Works steps, the Slate Boards feed, and
-   the "See a real example" band. Pete's portfolio (under /petec)
-   is the platform's first working example throughout. #}
+   WHY PEERSLATE — rewritten 2026-07-16 (PS-BRAND-NAV-001, Bible v1.2).
+   Mission-led marketing page in the approved eight-part order: why it
+   exists, the problem of lost progress, the living Journal, the
+   capture→understand→choose→compound loop, AI boundaries, private-first
+   ownership, what PeerSlate is/is not, and a working-professional-first
+   call to action. Recruiter value appears only as a late, secondary
+   outcome. Reached from the footer "Why PeerSlate" link (removed from
+   the top navigation per v1.2 rule 66). #}
 {% extends "base.html" %}
 
-{% block title %}PeerSlate | Your Work, Your Story, Your Future{% endblock %}
+{% block title %}Why PeerSlate | Your Work. Your Story. Your Future.{% endblock %}
 {% block body_class %}peerslate-home-page{% endblock %}
-{% block meta_description %}PeerSlate turns professional work history, project evidence, skills, and goals into interactive portfolio profiles with AI-assisted exploration.{% endblock %}
+{% block meta_description %}Why PeerSlate exists: meaningful work and life disappear between formal milestones. PeerSlate is a private-first living Journal that helps you capture, understand, and deliberately share what you build.{% endblock %}
 
 {# Open Graph / Twitter preview cards for pasted links. #}
 {% block extra_head %}
 <meta property="og:type" content="website">
-<meta property="og:title" content="PeerSlate | Your Work, Your Story, Your Future">
+<meta property="og:title" content="Why PeerSlate | Your Work. Your Story. Your Future.">
 <meta
     property="og:description"
-    content="Interactive professional profiles built from career evidence, projects, skills, and AI-assisted profile exploration."
+    content="A private-first living Journal for work and life — capture what happened, understand it, and choose what to share."
 >
 <meta property="og:image" content="{{ url_for('static', filename='images/peerslate-logo.png', _external=True) }}">
 <meta property="og:url" content="{{ request.url }}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PeerSlate | Your Work, Your Story, Your Future">
+<meta name="twitter:title" content="Why PeerSlate | Your Work. Your Story. Your Future.">
 <meta
     name="twitter:description"
-    content="Interactive professional profiles built from career evidence, projects, skills, and AI-assisted profile exploration."
+    content="A private-first living Journal for work and life — capture what happened, understand it, and choose what to share."
 >
 <meta name="twitter:image" content="{{ url_for('static', filename='images/peerslate-logo.png', _external=True) }}">
 {% endblock %}
@@ -37,15 +39,16 @@
     <section class="ps-hero" aria-labelledby="ps-hero-title">
         <div class="site-container ps-hero__grid">
             <div class="ps-hero__copy">
-                <p class="ps-eyebrow">Professional Profile Platform</p>
+                <p class="ps-eyebrow">Why PeerSlate</p>
                 <h1 id="ps-hero-title">
                     Your <span class="ps-underline">Work</span>.<br>
                     Your <span class="ps-underline">Story</span>.<br>
                     Your Future.
                 </h1>
                 <p class="ps-hero__lead">
-                    Build an evidence-backed career slate that recruiters can
-                    explore, understand, and trust&mdash;with the power of AI.
+                    Your career happens every day &mdash; and most of it
+                    disappears. PeerSlate exists so the real story of your
+                    work and your life stops vanishing between job titles.
                 </p>
                 <div class="ps-hero__actions">
                     <a class="ps-btn ps-btn--primary" href="{{ portfolio_resume_url }}">
@@ -89,7 +92,7 @@
                         </div>
                         <div class="preview-main__metrics">
                             <div><strong>12</strong><span>Milestones</span></div>
-                            <div><strong>36</strong><span>Pieces of Evidence</span></div>
+                            <div><strong>36</strong><span>Source Records</span></div>
                             <div><strong>21</strong><span>Skills</span></div>
                             <div><strong>6</strong><span>Badges</span></div>
                         </div>
@@ -145,7 +148,7 @@
                             <span class="ai-chip__icon" aria-hidden="true">&#9776;</span> Summarize
                         </button>
                         <button type="button" class="ai-chip" data-ask-prefill="What evidence supports Pete's systems-engineering experience?">
-                            <span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Evidence
+                            <span class="ai-chip__icon" aria-hidden="true">&#9635;</span> Show Sources
                         </button>
                         <a class="ai-chip" href="{{ interview_studio_url }}">
                             <span class="ai-chip__icon" aria-hidden="true">&#9673;</span> Interview Studio
@@ -159,8 +162,133 @@
         </div>
     </section>
 
+    <!-- ============ 2. THE PROBLEM ============ -->
+    <section class="ps-section" aria-labelledby="ps-problem-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">The problem</p>
+                <h2 id="ps-problem-title">Meaningful work and life disappear between formal milestones.</h2>
+                <p class="ps-section-sub">
+                    The breakthrough on a Tuesday afternoon. The hard conversation you handled well.
+                    The skill you finally understood. None of it fits on a r&eacute;sum&eacute; line,
+                    so it gets lost&mdash;and when you need it most, you are reconstructing your own
+                    story from memory.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 3. THE LIVING JOURNAL ============ -->
+    <section class="ps-section" aria-labelledby="ps-journal-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">The living Journal</p>
+                <h2 id="ps-journal-title">One record that compounds.</h2>
+                <p class="ps-section-sub">
+                    The Journal is your timeline&mdash;work and life, finished and unfinished.
+                    Everything you capture lives there once and connects everywhere it matters:
+                    your Story, your Work, your r&eacute;sum&eacute;, your goals.
+                    Enter once. Link everywhere. Publish deliberately.
+                </p>
+            </div>
+        </div>
+    </section>
+
+
     <!-- ============ FEATURE CARDS ============ -->
-    <section class="ps-section" aria-label="What PeerSlate does">
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="ps-section" id="how-it-works" aria-labelledby="ps-how-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">How It Works</p>
+                <h2 id="ps-how-title">Capture. Understand. Choose. Compound.</h2>
+            </div>
+            <ol class="ps-steps">
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">1</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
+                    </span>
+                    <h3>Capture something real</h3>
+                    <p>Say what happened&mdash;by voice or typing. It starts as a private draft, always.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">2</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h6M10 16h6"/></svg>
+                    </span>
+                    <h3>Let PeerSlate understand it</h3>
+                    <p>AI proposes a title, connections, and context. Proposals stay proposals until you approve them.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">3</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+                    </span>
+                    <h3>Choose what it becomes</h3>
+                    <p>Keep it private, share it with people you choose, or publish it. You set the audience every time.</p>
+                </li>
+                <li class="ps-step">
+                    <span class="ps-step__num" aria-hidden="true">4</span>
+                    <span class="ps-step__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
+                    </span>
+                    <h3>Get more from it later</h3>
+                    <p>Interview prep, a tailored r&eacute;sum&eacute;, your Story&mdash;drawn from the record you already built.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ============ 5. HOW AI HELPS ============ -->
+    <section class="ps-section" aria-labelledby="ps-ai-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">AI, on your side</p>
+                <h2 id="ps-ai-title">AI helps. It never takes over.</h2>
+                <p class="ps-section-sub">
+                    PeerSlate's AI clarifies, connects, and prepares&mdash;grounded only in the
+                    history you have approved. It never publishes for you, never widens an audience,
+                    never invents an accomplishment, and never converts your voice into corporate
+                    performance copy. Every AI output is a draft until you accept it.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 6. PRIVATE FIRST ============ -->
+    <section class="ps-section" aria-labelledby="ps-private-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">Private first</p>
+                <h2 id="ps-private-title">Yours by default. Public by decision.</h2>
+                <p class="ps-section-sub">
+                    Everything new is private. Sharing is a deliberate act with a clear
+                    audience&mdash;yourself, selected people, connections, community, or public.
+                    You can inspect, correct, export, archive, or delete anything you own, any time.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 7. WHAT PEERSLATE IS (AND IS NOT) ============ -->
+    <section class="ps-section" aria-labelledby="ps-isnot-title">
+        <div class="site-container">
+            <div class="ps-section-head ps-section-head--center">
+                <p class="ps-eyebrow">Plainly</p>
+                <h2 id="ps-isnot-title">What PeerSlate is&mdash;and is not.</h2>
+                <p class="ps-section-sub">
+                    A living record of your work and growth, with a community built around real
+                    progress. Not an engagement casino, a follower economy, a job board, or a place
+                    where AI performs your life for you. No trending tabs, no popularity scores,
+                    no filler.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="ps-section" aria-label="Views of one connected Slate">
         <div class="site-container ps-features">
             <a class="ps-feature" href="{{ portfolio_story_url }}">
                 <span class="ps-feature__icon ps-tint--blue" aria-hidden="true">
@@ -174,8 +302,8 @@
                 <span class="ps-feature__icon ps-tint--green" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M8.5 12.5l2.4 2.4 4.8-5"/></svg>
                 </span>
-                <h3>Evidence-Backed Skills</h3>
-                <p>Every claim is supported by real evidence&mdash;projects, results, and proof points.</p>
+                <h3>Skills in Practice</h3>
+                <p>Every claim is connected to the real work behind it&mdash;projects, results, and sources you can inspect.</p>
                 <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
             </a>
             <a class="ps-feature" href="{{ portfolio_resume_url }}">
@@ -190,56 +318,13 @@
                 <span class="ps-feature__icon ps-tint--sky" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
                 </span>
-                <h3>Recruiter View</h3>
-                <p>Recruiters can explore your slate, ask questions, and see how you fit their needs.</p>
+                <h3>For Recruiters, Later</h3>
+                <p>When you choose to publish, recruiters see only what you approved&mdash;and can explore it properly.</p>
                 <span class="ps-feature__arrow" aria-hidden="true">&rarr;</span>
             </a>
         </div>
     </section>
 
-    <!-- ============ HOW IT WORKS ============ -->
-    <section class="ps-section" id="how-it-works" aria-labelledby="ps-how-title">
-        <div class="site-container">
-            <div class="ps-section-head ps-section-head--center">
-                <p class="ps-eyebrow">How It Works</p>
-                <h2 id="ps-how-title">From experience to opportunity in four steps.</h2>
-            </div>
-            <ol class="ps-steps">
-                <li class="ps-step">
-                    <span class="ps-step__num" aria-hidden="true">1</span>
-                    <span class="ps-step__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/><path d="M12 6l6 6"/></svg>
-                    </span>
-                    <h3>Capture the Story</h3>
-                    <p>Add milestones, projects, roles, and insights that shaped your work.</p>
-                </li>
-                <li class="ps-step">
-                    <span class="ps-step__num" aria-hidden="true">2</span>
-                    <span class="ps-step__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h6M10 16h6"/></svg>
-                    </span>
-                    <h3>Structure the Evidence</h3>
-                    <p>Attach outcomes, metrics, documents, and proof that back it up.</p>
-                </li>
-                <li class="ps-step">
-                    <span class="ps-step__num" aria-hidden="true">3</span>
-                    <span class="ps-step__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
-                    </span>
-                    <h3>Make it Searchable</h3>
-                    <p>AI organizes your slate so skills, impact, and themes are easy to find.</p>
-                </li>
-                <li class="ps-step">
-                    <span class="ps-step__num" aria-hidden="true">4</span>
-                    <span class="ps-step__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
-                    </span>
-                    <h3>Help Recruiters Explore Fit</h3>
-                    <p>Recruiters can ask questions and evaluate your fit with confidence.</p>
-                </li>
-            </ol>
-        </div>
-    </section>
 
     <!-- ============ PROVEN IMPACT (real metrics) ============ -->
     {# Swapped in for the old sample "From the Slate Boards" cards: Pete's
@@ -253,7 +338,7 @@
                     <p class="ps-section-sub">Real, quantified outcomes from Pete's slate.</p>
                 </div>
                 <a class="ps-link" href="{{ portfolio_resume_url }}#impact">
-                    Explore the evidence <span aria-hidden="true">&rarr;</span>
+                    Explore the work <span aria-hidden="true">&rarr;</span>
                 </a>
             </div>
             <div class="ps-ov-metrics ps-home-metrics">
@@ -303,11 +388,12 @@
                     aria-hidden="true"
                 >
                 <div class="ps-example__copy">
-                    <p class="ps-eyebrow">See a Real Example</p>
-                    <h2 id="ps-example-title">Explore Pete Carter's Slate</h2>
+                    <p class="ps-eyebrow">Built for working professionals</p>
+                    <h2 id="ps-example-title">Start with what happened today.</h2>
                     <p>
-                        Pete's slate is the first working example on PeerSlate.
-                        See how a complete, evidence-backed profile comes to life.
+                        You do not need a career crisis to begin&mdash;just a moment worth
+                        remembering. Pete's Slate is the first working example: see how a
+                        complete living record comes to life.
                     </p>
                 </div>
                 <a class="ps-btn ps-btn--primary" href="{{ portfolio_resume_url }}">

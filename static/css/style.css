@@ -2317,13 +2317,13 @@ body[data-theme="modern-blue"] #arrow-gold path {
 
 /* =========================================================
    MOCKUP TYPE SYSTEM (2026-07-06, from static/Mockup/*.png)
-   Every heading on the site is set in Source Serif 4 — page
+   Every heading on the site is set in Newsreader — page
    titles, section heads, card titles, names — while body copy,
    labels, buttons, chips, and nav stay Inter. The whiteboard
    keeps its own handwriting face (Caveat).
    ========================================================= */
 :root {
-    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
     /* Dark "Ask" bar + navy chrome buttons from the mockups. */
     --askbar-bg: #101828;
     --ink-btn-bg: #101f42;
@@ -7952,10 +7952,10 @@ body.slate-light {
     --button-primary-bg: #0b63e5;
     --button-primary-text: #ffffff;
     --askbar-bg: linear-gradient(135deg, #0b1f3f, #16305e);
-    /* The overview mockup uses Source Serif 4 (moderate-contrast humanist
+    /* The overview mockup uses Newsreader (moderate-contrast humanist
        serif), NOT the homepage's Playfair — Playfair read far too thick /
        high-contrast on "Pete Carter" and the section headings. */
-    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
     background: #fdfdfe;
     color: var(--text);
 }
@@ -13590,3 +13590,122 @@ button.ts-react:hover { color: #d23b5e; }
 
 /* The round Ask button inside the bar keeps the accent fill (it sits on
    the dark bar, so a stone-on-stone button would vanish). */
+
+/* =====================================================================
+   IRIS FOUNDRY (v1.2, PS-BRAND-NAV-001, 2026-07-16)
+   Shared brand tokens + room-accent plumbing. Rooms are set as
+   data-room on <body> in base.html; components reference
+   --ps-page-accent instead of hardcoding a hue. Neutral by default,
+   expressive at the focal point — no global purple wash (Bible §15).
+   ===================================================================== */
+:root {
+    --ps-canvas: #f7f4ee;          /* warm ivory */
+    --ps-surface: #ffffff;
+    --ps-ink: #191821;
+    --ps-muted: #5d5766;           /* 6.5:1 on white, 5.6:1 on canvas */
+    --ps-border: #e6e0d4;          /* warm neutral */
+    --ps-primary: #5a2d82;         /* primary iris */
+    --ps-primary-strong: #46216a;
+    --ps-primary-soft: #efe9f6;
+    --ps-bronze: #b87422;          /* highlight only — not small text */
+    --ps-bronze-strong: #8a5410;   /* text-safe bronze (5.6:1 on white) */
+    --ps-success-teal: #16705f;
+    --ps-room-teal: #16705f;
+    --ps-room-plum: #7b3b62;
+    --ps-room-amber: #8f6410;
+    --ps-room-pine: #1f5c3d;
+    --ps-room-ultraviolet: #5b33c7;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: var(--ps-primary-soft);
+}
+
+body[data-room="bronze"] {
+    --ps-page-accent: var(--ps-bronze-strong);
+    --ps-page-accent-strong: #6d4009;
+    --ps-page-accent-soft: #f6ecdb;
+}
+
+body[data-room="teal"] {
+    --ps-page-accent: var(--ps-room-teal);
+    --ps-page-accent-strong: #0f5346;
+    --ps-page-accent-soft: #e2f0ec;
+}
+
+body[data-room="plum"] {
+    --ps-page-accent: var(--ps-room-plum);
+    --ps-page-accent-strong: #5f2c4b;
+    --ps-page-accent-soft: #f4e7ee;
+}
+
+body[data-room="amber"] {
+    --ps-page-accent: var(--ps-room-amber);
+    --ps-page-accent-strong: #6f4d0a;
+    --ps-page-accent-soft: #f7edd8;
+}
+
+body[data-room="pine"] {
+    --ps-page-accent: var(--ps-room-pine);
+    --ps-page-accent-strong: #164630;
+    --ps-page-accent-soft: #e3efe7;
+}
+
+body[data-room="ultraviolet"] {
+    --ps-page-accent: var(--ps-room-ultraviolet);
+    --ps-page-accent-strong: #4726a0;
+    --ps-page-accent-soft: #ece6fa;
+}
+
+/* Shared chrome: warm the solid surfaces and let orientation states use
+   the room accent. The blue orbit backdrop asset stays until a warm
+   canvas asset is approved (recorded in PS-BRAND-NAV-001/08-decisions). */
+.global-header,
+.peerslate-home-page .global-header,
+body.slate-light .global-header {
+    background: var(--ps-canvas);
+}
+
+body[data-room] .platform-nav__links a[aria-current="page"] {
+    color: var(--ps-page-accent);
+}
+
+body[data-room] .platform-nav__links a[aria-current="page"]::after {
+    background: var(--ps-page-accent);
+}
+
+body[data-room] .profile-tab[aria-current="page"] {
+    color: var(--ps-page-accent);
+}
+
+body[data-room] .profile-tab[aria-current="page"]::after {
+    background: var(--ps-page-accent);
+}
+
+body.ps-editorial-surface,
+.peerslate-home-page .main-content {
+    background-color: var(--ps-canvas);
+}
+
+.footer .footer-why-link {
+    color: var(--ps-page-accent);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.footer .footer-why-link:hover,
+.footer .footer-why-link:focus-visible {
+    text-decoration: underline;
+}
+
+/* Marketing primary buttons take the page's room accent (Iris on the
+   marketing pages) instead of legacy blue. */
+.ps-btn--primary {
+    background: var(--ps-page-accent);
+    border-color: var(--ps-page-accent);
+}
+
+.ps-btn--primary:hover,
+.ps-btn--primary:focus-visible {
+    background: var(--ps-page-accent-strong);
+    border-color: var(--ps-page-accent-strong);
+}

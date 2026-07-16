@@ -101,5 +101,23 @@ class GovernanceDocsTests(unittest.TestCase):
                       content)
 
 
+class NavigationLanguageTests(unittest.TestCase):
+    """PS-BRAND-NAV-001: Evidence and About stay out of the navigation."""
+
+    def test_no_evidence_label_in_navigation_templates(self):
+        for rel in ('templates/base.html',
+                    'templates/partials/profile_tabs.html'):
+            content = _read(os.path.join(ROOT, rel))
+            for line in content.splitlines():
+                if '>Evidence<' in line.replace(' ', ''):
+                    self.fail(f'Evidence nav label found in {rel}: {line.strip()}')
+
+    def test_about_peerslate_not_in_header_nav(self):
+        content = _read(os.path.join(ROOT, 'templates/base.html'))
+        nav = content.split('platform-nav__links')[1].split('</ul>')[0]
+        self.assertNotIn('About PeerSlate', nav)
+        self.assertIn('footer-why-link', content)
+
+
 if __name__ == '__main__':
     unittest.main()

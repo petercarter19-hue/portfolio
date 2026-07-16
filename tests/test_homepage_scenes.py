@@ -28,7 +28,7 @@ class HomepageSceneTests(unittest.TestCase):
 
     def test_shared_global_header_untouched(self):
         for expected in ('class="global-header"', "Pete's Slate", 'Community',
-                         'Interview Studio', 'About PeerSlate', 'Ask AI',
+                         'Interview Studio', 'Why PeerSlate', 'Ask AI',
                          'Sign In'):
             self.assertIn(expected, self.html)
 
@@ -47,7 +47,7 @@ class HomepageSceneTests(unittest.TestCase):
 
     def test_scene_headlines_present(self):
         self.assertIn('Say what happened.', self.html)
-        self.assertIn('backed by proof.', self.html)
+        self.assertIn('grounded in the real thing.', self.html)
         self.assertIn('Go beyond', self.html)
         self.assertIn('Enter once. Link everywhere. Publish deliberately.',
                       self.html)

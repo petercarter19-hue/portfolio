@@ -3,35 +3,37 @@
    previous homepage). Tokens follow the approved foundation: Product Indigo
    #4F5BD5, Connection Azure #4EA3FF, AI Cyan #2EC8D3, Evidence Amber #D7A33E,
    Midnight Ink #0A1B36, Cloud White #F6F8FC. Fonts are the site's existing
-   Inter + Source Serif 4 — no new font requests. No JavaScript. */
+   Inter + Newsreader — no new font requests. No JavaScript. */
 
 .home-v3 {
-    --hv-indigo: #4F5BD5;
-    --hv-indigo-strong: #3E49C6;
-    --hv-indigo-soft: #EEF0FF;
+    /* Iris Foundry (v1.2): Home is the Iris room — the accent trio maps
+       to the shared tokens instead of Foundation C indigo. */
+    --hv-indigo: var(--ps-primary, #5A2D82);
+    --hv-indigo-strong: var(--ps-primary-strong, #46216A);
+    --hv-indigo-soft: var(--ps-primary-soft, #EFE9F6);
     --hv-azure: #4EA3FF;
     --hv-cyan: #2EC8D3;
     --hv-amber: #D7A33E;
     --hv-ink: #0A1B36;
     --hv-text: #22334E;
     --hv-muted: #66778F;
-    --hv-line: #DDE4F0;
+    --hv-line: var(--ps-border, #E6E0D4);
     --hv-surface: #FFFFFF;
-    --hv-cloud: #F6F8FC;
+    --hv-cloud: var(--ps-canvas, #F7F4EE);
     --hv-green: #2B9B6D;
     --hv-violet: #8E63D8;
     --hv-shadow-soft: 0 14px 40px rgb(21 41 84 / 8%);
     --hv-shadow-lift: 0 24px 60px rgb(17 31 68 / 12%);
     --hv-radius-lg: 1.5rem;
     --hv-radius-md: 1rem;
-    --hv-serif: "Source Serif 4", Georgia, serif;
+    --hv-serif: "Newsreader", Georgia, serif;
 
     font-family: Inter, Arial, sans-serif;
     color: var(--hv-text);
     background:
-        radial-gradient(90rem 44rem at 78% -6rem, rgb(78 163 255 / 10%), transparent 62%),
-        radial-gradient(70rem 40rem at -12% 30rem, rgb(79 91 213 / 7%), transparent 60%),
-        linear-gradient(180deg, #F4F7FC 0%, #FBFCFE 46%, #F5F8FC 100%);
+        radial-gradient(90rem 44rem at 78% -6rem, rgb(90 45 130 / 7%), transparent 62%),
+        radial-gradient(70rem 40rem at -12% 30rem, rgb(184 116 34 / 5%), transparent 60%),
+        linear-gradient(180deg, #F7F4EE 0%, #FDFCF9 46%, #F6F3EC 100%);
     overflow-x: clip;
 }
 
@@ -49,7 +51,7 @@
     margin: 0 0 1.1rem;
     padding: 0.45rem 1rem;
     border-radius: 999px;
-    background: rgb(79 91 213 / 9%);
+    background: rgb(90 45 130 / 8%);
     color: var(--hv-indigo-strong);
     font-size: 0.85rem;
     font-weight: 650;
@@ -113,7 +115,7 @@
 .home-v3 .hv-btn--primary {
     background: var(--hv-indigo);
     color: #fff;
-    box-shadow: 0 12px 26px rgb(79 91 213 / 26%);
+    box-shadow: 0 12px 26px rgb(90 45 130 / 24%);
 }
 
 .home-v3 .hv-btn--primary:hover { background: var(--hv-indigo-strong); }
@@ -338,7 +340,7 @@
     height: 3.4rem;
     background: var(--hv-indigo);
     color: #fff;
-    box-shadow: 0 12px 26px rgb(79 91 213 / 32%);
+    box-shadow: 0 12px 26px rgb(90 45 130 / 30%);
 }
 
 .home-v3 .hv-mic__btn svg { width: 1.25rem; height: 1.25rem; }

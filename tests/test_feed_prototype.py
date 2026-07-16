@@ -92,7 +92,9 @@ class FeedPrototypeContentTests(unittest.TestCase):
         self.assertIn('platform-nav', self.html)
         self.assertIn("Pete's Slate", self.html)
         self.assertIn('Interview Studio', self.html)
-        self.assertIn('About PeerSlate', self.html)
+        # v1.2: About left the header; Why PeerSlate lives in the footer.
+        self.assertNotIn('>About PeerSlate</a>', self.html)
+        self.assertIn('Why PeerSlate', self.html)
 
 
 class FeedPrototypeDiscoverabilityTests(unittest.TestCase):

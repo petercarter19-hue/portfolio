@@ -4,13 +4,13 @@
    life chapters on a ribbon, serif number stats, a glass mosaic of life
    outside work, and the existing values / fun-facts / goals features
    restyled to float. Newsreader-class serif comes from the site's
-   Source Serif 4 display face.
+   Newsreader display face.
    ===================================================================== */
 
 .story-film {
     --sf-ink: #0a1b36;
     --sf-ink-soft: #43546c;
-    --sf-serif: "Source Serif 4", Georgia, serif;
+    --sf-serif: "Newsreader", Georgia, serif;
     --sf-content: 72rem;
     min-width: 0;
     padding-bottom: 6rem;

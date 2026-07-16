@@ -8,7 +8,7 @@
 {% block extra_head %}
 <meta
     name="description"
-    content="Pete Carter's systems engineering skills — MBSE, requirements, digital engineering, automation, and AI-enabled tools — each backed by resume evidence."
+    content="Pete Carter's systems engineering skills — MBSE, requirements, digital engineering, automation, and AI-enabled tools — each grounded in approved career history."
 >
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skills-cinematic.css') }}?v=sky-1">
 {% endblock %}
@@ -25,11 +25,11 @@
 
     <section class="sky-haze skf-open" aria-labelledby="skills-title">
         <p class="section-eyebrow">Skills &amp; Expertise</p>
-        <h1 id="skills-title">Skills backed<br><span>by evidence.</span></h1>
+        <h1 id="skills-title">Skills in<br><span>practice.</span></h1>
         <p class="skf-open__lead">
             Every skill below is tied to specific accomplishments from Pete's
-            approved career history &mdash; nothing is listed without proof behind
-            it. The bigger the orb, the more evidence stands behind the claim.
+            approved career history &mdash; nothing is listed without supporting work behind
+            it. The bigger the orb, the more approved history stands behind the claim.
             Select any skill to read it.
         </p>
     </section>
@@ -66,7 +66,7 @@
         {% for skill in category_skills %}
         <div class="skf-panel" id="skf-panel-{{ skill.id }}" data-skill-panel hidden>
             <div class="skf-panel__inner">
-                <p class="skf-panel__kicker">Résumé evidence</p>
+                <p class="skf-panel__kicker">Supporting work</p>
                 <h3>{{ skill.display_name }}</h3>
                 {% if skill.front_summary %}
                 <p class="skf-panel__summary">{{ skill.front_summary }}</p>

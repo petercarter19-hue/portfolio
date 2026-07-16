@@ -9,7 +9,7 @@
         <div class="hv-resume__copy">
             <p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span> Living R&eacute;sum&eacute;</p>
             <h2 class="hv-scene-title" id="hv-resume-title">
-                Your work, <em>backed by proof.</em>
+                Your work, <em>grounded in the real thing.</em>
             </h2>
             <p class="hv-scene-lede">
                 PeerSlate connects measurable impact, skills, experience, and
@@ -20,7 +20,7 @@
                 <a class="hv-btn hv-btn--primary" href="{{ portfolio_resume_url }}">
                     <span aria-hidden="true">&#10022;</span> Explore Pete&rsquo;s R&eacute;sum&eacute;
                 </a>
-                <a class="hv-btn hv-btn--ghost" href="{{ portfolio_skills_url }}">See the evidence</a>
+                <a class="hv-btn hv-btn--ghost" href="{{ portfolio_skills_url }}">See sources used</a>
             </div>
             <p class="hv-trust">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -58,8 +58,8 @@
 
                     <div class="hv-rc__panel">
                         <div class="hv-rc__panel-head">
-                            <h4>Skills backed by evidence</h4>
-                            <span class="hv-chip hv-chip--amber">Evidence-backed</span>
+                            <h4>Skills in practice</h4>
+                            <span class="hv-chip hv-chip--amber">Grounded in approved work</span>
                         </div>
                         <ul class="hv-rc__skills">
                             {% for skill in resume_preview.skills %}
@@ -97,7 +97,7 @@
 
                     <div class="hv-rc__panel hv-rc__panel--proof">
                         <div class="hv-rc__panel-head">
-                            <h4>Strongest approved proof</h4>
+                            <h4>Featured achievement</h4>
                             <span class="hv-chip hv-chip--amber">Supported</span>
                         </div>
                         <p class="hv-rc__proof-text">{{ resume_preview.proof.text }}</p>
@@ -133,7 +133,7 @@
                 <p class="hv-rc__steps-title">From career impact to <em>the story behind it.</em></p>
                 <ol class="hv-rc__steps-list">
                     <li><a href="{{ portfolio_resume_url }}"><span class="hv-rc__step-num" aria-hidden="true">1</span><span><strong>Impact</strong><span>Numbers that matter</span></span></a></li>
-                    <li><a href="{{ portfolio_skills_url }}"><span class="hv-rc__step-num" aria-hidden="true">2</span><span><strong>Evidence</strong><span>Inspect the proof</span></span></a></li>
+                    <li><a href="{{ portfolio_skills_url }}"><span class="hv-rc__step-num" aria-hidden="true">2</span><span><strong>Sources</strong><span>See supporting work</span></span></a></li>
                     <li><a href="{{ portfolio_experience_url }}"><span class="hv-rc__step-num" aria-hidden="true">3</span><span><strong>Experience</strong><span>See the career arc</span></span></a></li>
                     <li><a href="{{ portfolio_story_url }}"><span class="hv-rc__step-num" aria-hidden="true">4</span><span><strong>My Story</strong><span>Understand the person</span></span></a></li>
                 </ol>

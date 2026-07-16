@@ -44,7 +44,7 @@
     --r2-cyan: #2ec8d3;
     --r2-amber: #d7a33e;
     --r2-cloud: #f6f8fc;
-    --r2-display: "Newsreader", "Source Serif 4", Georgia, serif;
+    --r2-display: "Newsreader", "Newsreader", Georgia, serif;
     --r2-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
     position: relative;
     z-index: 1;

@@ -74,10 +74,10 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet"
     >
-    <!-- Source Serif 4: the serif display face from Pete's mockups — page
+    <!-- Newsreader: the Iris Foundry editorial serif (Bible v1.2) — page
          titles, section headings, names, and metric values site-wide. -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&display=swap"
         rel="stylesheet"
     >
     <link
@@ -108,7 +108,8 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+{% set _p = request.path %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
+<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
@@ -155,7 +156,8 @@
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>
                     <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>
-                    <li><a href="{{ url_for('peerslate_home') }}" {% if request.path == '/peerslate' %}aria-current="page"{% endif %}>About PeerSlate</a></li>
+                    {# The company/mission link moved to the footer as
+                       "Why PeerSlate" (v1.2 rule 66 / PS-BRAND-NAV-001). #}
                 </ul>
 
                 <div class="platform-actions">
@@ -243,9 +245,9 @@
                 >
                 <span>{{ platform_brand_name }}</span>
             </a>
-            <p>&copy; 2026 {{ platform_brand_name }} <span>|</span> Your Work. Your Story. Your Future.</p>
+            <p>&copy; 2026 {{ platform_brand_name }} <span>|</span> Your Work. Your Story. Your Future. <span>|</span> <a class="footer-why-link" href="{{ url_for('peerslate_home') }}">Why PeerSlate</a></p>
             {% else %}
-            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama</p>
+            <p>&copy; 2026 Pete Carter <span>|</span> Athens, Alabama <span>|</span> <a class="footer-why-link" href="{{ url_for('peerslate_home') }}">Why PeerSlate</a></p>
             {% endif %}
         </div>
     </footer>
@@ -312,7 +314,7 @@
     <script id="nav-search-data" type="application/json">
     [
         {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
-        {"title": "Evidence", "sub": "Skills backed by proof", "href": "{{ portfolio_skills_url }}", "keys": "skills evidence mbse sysml cameo doors expertise proof"},
+        {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "{{ portfolio_skills_url }}", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
         {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
         {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
         {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "{{ interview_studio_url }}", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},
@@ -326,7 +328,7 @@
         {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
         {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
         {"title": "Feed Preview · Living Stream", "sub": "A design preview of PeerSlate's next Feed — sample data only", "href": "{{ url_for('feed_living_stream') }}", "keys": "feed preview living stream design concept voice ai capture publish"},
-        {"title": "How PeerSlate Works", "sub": "The platform in four steps", "href": "{{ peerslate_home_url }}#how-it-works", "keys": "how it works peerslate platform landing about steps"}
+        {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
     ]
     </script>
 
