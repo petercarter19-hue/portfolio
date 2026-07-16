@@ -461,7 +461,6 @@ class Resume2Tests(unittest.TestCase):
             '/petec/my-story',
             '/petec/skills',
             '/petec/slate-board',
-            '/the-slate',
             '/experience',
         ):
             with self.subTest(path=path):
@@ -474,6 +473,10 @@ class Resume2Tests(unittest.TestCase):
                     [link['text'] for link in parser.links],
                     ['My Story', 'Work', 'Slate Board', 'Resume'],
                 )
+
+        community = self.client.get('/the-slate', base_url='http://localhost')
+        self.assertEqual(community.status_code, 200)
+        self.assertNotIn(b'class="profile-tabs', community.data)
 
 
 if __name__ == '__main__':

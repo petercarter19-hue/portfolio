@@ -40,7 +40,8 @@
                 || window.location.pathname === '/_internal/living-resume-v2'
                 || /\/resume2?$/.test(window.location.pathname)
                 || /\/slate-board$/.test(window.location.pathname)
-                || window.location.pathname.indexOf('/interview-studio') === 0;
+                || window.location.pathname.indexOf('/interview-studio') === 0
+                || window.location.pathname.indexOf('/the-slate') === 0;
             if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
                 if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
                     document.querySelector('meta[name="viewport"]')
@@ -150,10 +151,8 @@
                        candidate — full-screen scenic sections with glass
                        cards. Lives on its own link so Pete can compare it
                        with the current homepage before switching. #}
-                    {# THE SLATE (2026-07-08): one main link to the product hub.
-                       It replaced the separate "Slate Feed" and "Slate Board"
-                       links — both experiences now live inside The Slate's
-                       tabs (feed layers + My Slate goal map + Daily + Paths). #}
+                    {# Community is one canonical page with Feed and News Feed
+                       modes. Slate planning remains in Slate Board. #}
                     <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>
                     <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>
                     {# The company/mission link moved to the footer as
@@ -198,14 +197,14 @@
                     </button>
                     {% endif %}
 
-                    <a class="sign-in-btn" href="#" aria-disabled="true">Sign In</a>
+                    <button class="sign-in-btn" type="button" disabled title="Sign-in arrives with the protected backend">Sign In</button>
                 </div>
             </div>
         </nav>
 
         {# Keep profile navigation inside the sticky global header so the two
            navigation levels read as one connected piece of chrome. #}
-        {% if request.path != '/' %}
+        {% if request.path != '/' and not request.path.startswith('/the-slate') %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>
@@ -320,31 +319,22 @@
        they stay correct on every host. site-search.js reads this block. #}
     <script id="nav-search-data" type="application/json">
     [
-        {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
+        {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio personal life"},
         {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "{{ portfolio_skills_url }}", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
         {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
         {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
         {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "{{ interview_studio_url }}", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},
         {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
         {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
-        {"title": "Community", "sub": "People, interests, goals, and progress", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
-        {"title": "Community · My Slate", "sub": "Your goal map", "href": "{{ url_for('the_slate_my') }}", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},
-        {"title": "Community · Daily Slate", "sub": "Log what moved forward today", "href": "{{ url_for('the_slate_daily') }}", "keys": "daily slate log progress today streak wins check-in updates"},
-        {"title": "Community · My Paths", "sub": "Paths and milestones on My Slate", "href": "{{ url_for('the_slate_my') }}#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},
-        {"title": "Feed · People & Interests", "sub": "The living board of goals and moments", "href": "{{ url_for('the_slate') }}", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},
-        {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
-        {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},
-        {"title": "Feed Preview · Living Stream", "sub": "A design preview of PeerSlate's next Feed — sample data only", "href": "{{ url_for('feed_living_stream') }}", "keys": "feed preview living stream design concept voice ai capture publish"},
+        {"title": "Community · Feed", "sub": "Member progress, questions, and useful help", "href": "{{ url_for('the_slate') }}", "keys": "community feed journal updates progress questions respond comment save"},
+        {"title": "Community · News Feed", "sub": "Trusted news sources, when connected", "href": "{{ url_for('the_slate') }}?view=news", "keys": "community news feed sources attribution stories"},
+        {"title": "Slate Board", "sub": "Goals, paths, milestones, and today's next action", "href": "{{ portfolio_url('slate-board') }}", "keys": "slate board goals paths milestones daily check-in progress"},
         {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
     ]
     </script>
 
-    {# Mobile bottom nav (Pete): mirrors the page's primary tab strip — the
-       profile tabs (Overview / My Story / …) on portfolio pages, or The
-       Slate tabs (Slate Feed / My Slate / …) on the hub — so phone users can
-       jump between sections without scrolling back up. mobile-nav.js clones
-       the [data-mobile-tabsource] links into it and reveals it on scroll-up.
-       Hidden on desktop via CSS. #}
+    {# Mobile bottom navigation mirrors profile tabs on portfolio pages.
+       Community owns its two feed modes directly in the page header. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-consolidated-1"></script>

@@ -119,7 +119,8 @@ class NavigationTests(unittest.TestCase):
 
         records = self.search_records('/interview-studio')
         records_by_title = {record['title']: record for record in records}
-        self.assertEqual(records_by_title['Community']['href'], '/the-slate')
+        self.assertEqual(records_by_title['Community · Feed']['href'], '/the-slate')
+        self.assertEqual(records_by_title['Community · News Feed']['href'], '/the-slate?view=news')
         self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
         self.assertNotIn('The Slate', records_by_title)
 
@@ -132,19 +133,11 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn(b'data-overview-subheader-ask', resume.data)
         self.assertNotIn(b'id="overview-subheader-ai-input"', resume.data)
 
-    def test_every_canonical_slate_route_uses_the_standard_subheader_scope(self):
-        for path in (
-            '/the-slate',
-            '/the-slate/my-slate',
-            '/the-slate/daily',
-            '/the-slate/pulse',
-            '/the-slate/break',
-        ):
-            with self.subTest(path=path):
-                response = self.client.get(path, base_url='http://localhost')
-                self.assertEqual(response.status_code, 200)
-                self.assertIn(b'the-slate-page', response.data)
-                self.assertIn(b'class="profile-tabs', response.data)
+    def test_canonical_community_route_uses_its_own_compact_navigation_scope(self):
+        response = self.client.get('/the-slate', base_url='http://localhost')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'the-slate-page', response.data)
+        self.assertNotIn(b'class="profile-tabs', response.data)
 
         homepage = self.client.get('/', base_url='http://localhost')
         self.assertNotIn(b'the-slate-page', homepage.data)
@@ -174,10 +167,6 @@ class NavigationTests(unittest.TestCase):
             '/petec/hobbies',
             '/petec/contact',
             '/the-slate',
-            '/the-slate/my-slate',
-            '/the-slate/daily',
-            '/the-slate/pulse',
-            '/the-slate/break',
             '/career-search',
             '/my-network',
             '/explore-profiles',

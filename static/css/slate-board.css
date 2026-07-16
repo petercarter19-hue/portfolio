@@ -1850,8 +1850,6 @@ body.slate-board-redesign .footer {
 .sb-field input,
 .sb-field textarea,
 .sb-field select,
-.sb-invite input,
-.sb-invite select,
 .sb-comments__composer input,
 .sb-checklist__row input[type="text"] {
     width: 100%;
@@ -1874,8 +1872,6 @@ body.slate-board-redesign .footer {
 .sb-field input:focus,
 .sb-field textarea:focus,
 .sb-field select:focus,
-.sb-invite input:focus,
-.sb-invite select:focus,
 .sb-comments__composer input:focus,
 .sb-checklist__row input[type="text"]:focus {
     border-color: #6170df;
@@ -2310,38 +2306,6 @@ body.slate-board-redesign .footer {
     border: 1px solid #dfe4ec;
     border-radius: 14px;
     background: #f7f8fa;
-}
-
-.sb-invite {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 130px auto;
-    gap: 8px;
-    margin-top: 11px;
-}
-
-.sb-invite-list {
-    display: grid;
-    gap: 7px;
-    margin-top: 10px;
-}
-
-.sb-invite-person {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 9px;
-    padding: 9px 10px;
-    border: 1px solid #dfe4ec;
-    border-radius: 10px;
-    background: #fff;
-    font-size: 0.7rem;
-}
-
-.sb-invite-person button {
-    border: 0;
-    background: transparent;
-    color: #9c3144;
-    cursor: pointer;
 }
 
 .sb-share-dialog__notice {
@@ -2844,6 +2808,72 @@ body.slate-board-redesign {
     padding: 7px 30px;
     color: #8791a1;
     font-size: 0.53rem;
+}
+
+.sb-integrated-slate {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    width: min(100%, 1280px);
+    margin: 24px auto 14px;
+}
+
+.sb-integrated-slate__card {
+    padding: clamp(22px, 3vw, 34px);
+    border: 1px solid rgba(107, 125, 155, 0.2);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 12px 32px rgba(17, 34, 61, 0.06);
+}
+
+.sb-integrated-slate__eyebrow {
+    display: block;
+    color: var(--sb-indigo);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.sb-integrated-slate h2 {
+    max-width: 26rem;
+    margin: 0.6rem 0;
+    color: var(--sb-ink);
+    font-family: Newsreader, Georgia, serif;
+    font-size: clamp(1.55rem, 2.2vw, 2rem);
+    line-height: 1.08;
+}
+
+.sb-integrated-slate p {
+    max-width: 39rem;
+    margin: 0;
+    color: var(--sb-ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.sb-integrated-slate__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+@media (max-width: 759px) {
+    .sb-integrated-slate {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .sb-integrated-slate__card {
+        padding: 22px;
+    }
+
+    .sb-integrated-slate__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
 }
 
 .sb-reference-footer__brand {
@@ -3366,10 +3396,6 @@ body.slate-board-redesign {
 
     .sb-legend {
         width: 100%;
-    }
-
-    .sb-invite {
-        grid-template-columns: 1fr;
     }
 
     .sb-proposal-source {

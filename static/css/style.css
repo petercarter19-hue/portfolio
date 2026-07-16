@@ -2608,6 +2608,16 @@ body[data-theme="modern-blue"] {
     filter: brightness(1.15);
 }
 
+button.sign-in-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
+button.sign-in-btn:disabled:hover,
+button.sign-in-btn:disabled:focus-visible {
+    filter: none;
+}
+
 .sign-in-btn svg {
     width: 15px;
     height: 15px;

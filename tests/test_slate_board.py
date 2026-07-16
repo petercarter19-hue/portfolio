@@ -44,9 +44,9 @@ class SlateBoardLivingWhiteboardTests(unittest.TestCase):
                 self.assertIn('class="sb-workspace"', html)
                 self.assertIn('<h1 id="slate-board-title">Slate Board</h1>', html)
                 self.assertIn('<p>Executive Planning Wall</p>', html)
-                self.assertIn('<span>Share Board</span>', html)
+                self.assertIn('<span>Sharing</span>', html)
                 self.assertIn('class="sb-icon-button sb-header-more"', html)
-                self.assertIn('v=living-whiteboard-6', html)
+                self.assertIn('v=consolidated-slate-1', html)
 
                 self.assertNotIn('Capture ideas. Plan your future. Take action.', html)
                 self.assertNotIn('What We\'re Tracking', html)
@@ -58,8 +58,6 @@ class SlateBoardLivingWhiteboardTests(unittest.TestCase):
         for label in (
             'Board controls',
             'Add to Board',
-            'Add note',
-            'Draw',
             'Select',
             'Undo',
             'Redo',
@@ -69,10 +67,15 @@ class SlateBoardLivingWhiteboardTests(unittest.TestCase):
         ):
             self.assertIn(label, html)
 
-        self.assertIn('Connections preview <span>(4)</span>', html)
-        self.assertIn('Presence preview only', html)
         self.assertIn('Private working board', html)
         self.assertIn('data-save-status', html)
+        self.assertIn('Today on your Slate', html)
+        self.assertIn('Log today’s progress', html)
+        self.assertIn('Paths &amp; milestones', html)
+        self.assertNotIn('Connections preview <span>(4)</span>', html)
+        self.assertNotIn('Presence preview only', html)
+        self.assertNotIn('<span>Add note</span>', html)
+        self.assertNotIn('<span>Draw</span>', html)
         self.assertNotIn('Participants (4)', html)
         self.assertNotIn('All caught up', html)
 
@@ -150,24 +153,22 @@ class SlateBoardLivingWhiteboardTests(unittest.TestCase):
         self.assertIn('No invitation will be sent.', javascript)
         self.assertIn('No relationship was invited or published.', javascript)
 
-    def test_sharing_is_an_honest_preview_and_never_a_false_send_or_publish_action(self):
+    def test_sharing_states_are_honest_and_do_not_offer_false_send_or_publish_actions(self):
         html = self.board_html()
         javascript = Path('static/js/slate-board.js').read_text(encoding='utf-8')
 
-        self.assertIn('<h2 id="sb-share-title">Share or publish deliberately</h2>', html)
-        self.assertIn('Default. Nothing leaves this browser preview.', html)
-        self.assertIn('No invitation is sent from this visual baseline.', html)
-        self.assertIn('type="submit">Add to preview</button>', html)
+        self.assertIn('<h2 id="sb-share-title">Sharing is not connected yet</h2>', html)
+        self.assertIn('Default. Changes remain in this browser.', html)
+        self.assertIn('Requires the protected sharing service.', html)
+        self.assertIn('Not connected', html)
         self.assertIn(
-            'It does not send invitations, grant access, or publish content.',
+            'No invitations, access grants, or publishing occur from this page.',
             html,
         )
         self.assertNotIn('>Send invitation</button>', html)
         self.assertNotIn('>Publish board</button>', html)
-        self.assertIn(
-            'Collaboration preview added. Nothing has been sent;',
-            javascript,
-        )
+        self.assertNotIn('sb-invite-form', html)
+        self.assertNotIn('function addCollaborator()', javascript)
 
     def test_note_editor_preserves_taxonomy_and_private_defaults(self):
         html = self.board_html()

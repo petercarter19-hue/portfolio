@@ -1,11 +1,7 @@
-"""PS-FEED-001 — Living Stream Feed prototype route tests.
+"""Canonical Community Feed tests.
 
-The prototype is a public design preview (fixture data only). These tests
-pin: the public routes and legacy redirect, the visible preview-banner
-copy that keeps visitors from mistaking sample data for real
-functionality, the copy-deck language that defines the alpha Feed, the
-absence of banned filler concepts, the discoverability links added to
-real navigation, and the static assets the page depends on.
+Community has one page with exactly two modes: member Feed and News Feed.
+Old preview paths remain redirects only so existing bookmarks keep working.
 """
 
 import os
@@ -14,128 +10,114 @@ import unittest
 from app import app
 
 
-class FeedPrototypeRouteTests(unittest.TestCase):
+class CommunityRouteTests(unittest.TestCase):
     def setUp(self):
         app.config['TESTING'] = True
         self.client = app.test_client()
 
-    def test_prototype_route_is_public(self):
-        response = self.client.get(
-            '/feed-living-stream', base_url='https://peerslate.com')
+    def test_canonical_community_page_is_public(self):
+        response = self.client.get('/the-slate', base_url='https://peerslate.com')
         self.assertEqual(response.status_code, 200)
+        self.assertIn('Community Feed', response.get_data(as_text=True))
 
-    def test_states_route_is_public(self):
-        response = self.client.get(
-            '/feed-living-stream/states', base_url='https://peerslate.com')
-        self.assertEqual(response.status_code, 200)
+    def test_retired_preview_paths_redirect_in_one_hop(self):
+        for path, destination in (
+            ('/feed-living-stream', '/the-slate'),
+            ('/feed-living-stream/states', '/the-slate'),
+            ('/_internal/feed-living-stream', '/the-slate'),
+            ('/_internal/feed-living-stream/states', '/the-slate'),
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.location.endswith(destination))
 
-    def test_legacy_internal_path_redirects(self):
-        response = self.client.get('/_internal/feed-living-stream')
+    def test_voice_deep_link_is_preserved_when_retiring_old_address(self):
+        response = self.client.get('/feed-living-stream?state=voice')
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.endswith('/feed-living-stream'))
-
-    def test_legacy_internal_states_path_redirects(self):
-        response = self.client.get('/_internal/feed-living-stream/states')
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.endswith('/feed-living-stream/states'))
-
-    def test_states_map_route(self):
-        response = self.client.get('/feed-living-stream/states')
-        self.assertEqual(response.status_code, 200)
-        html = response.get_data(as_text=True)
-        self.assertIn('?state=voice', html)
-        self.assertIn('?state=publish', html)
-        self.assertIn('?state=error', html)
+        self.assertTrue(response.location.endswith('/the-slate?state=voice'))
 
 
-class FeedPrototypeContentTests(unittest.TestCase):
+class CommunityContentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         app.config['TESTING'] = True
-        cls.html = app.test_client().get('/feed-living-stream').get_data(as_text=True)
+        cls.client = app.test_client()
+        cls.html = cls.client.get('/the-slate').get_data(as_text=True)
 
-    def test_alpha_tabs_only(self):
-        self.assertIn('For You', self.html)
-        self.assertIn('Following', self.html)
+    def test_exactly_two_community_modes_are_visible(self):
+        self.assertIn('data-tab="feed">Feed</button>', self.html)
+        self.assertIn('data-tab="news">News Feed</button>', self.html)
+        self.assertEqual(self.html.count('data-tab="'), 2)
 
-    def test_copy_deck_language(self):
-        self.assertIn('Feed', self.html)
-        self.assertIn('What people are building, learning, and living.', self.html)
+    def test_removed_community_concepts_are_not_rendered(self):
+        for retired in ('Feed Preview', 'People &amp; Interests', 'My Slate', 'Daily Slate'):
+            self.assertNotIn(retired, self.html)
 
-    def test_preview_banner_present(self):
-        self.assertIn('Design preview', self.html)
-        self.assertIn('sample data', self.html)
-        self.assertIn('saved to a database', self.html)
+    def test_private_note_is_the_only_right_rail_module(self):
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), 'static', 'js', 'feed-living-stream.js'
+        )
+        with open(script_path, encoding='utf-8') as script_file:
+            script = script_file.read()
+        self.assertIn('Journal Note', script)
+        self.assertIn('Only you', script)
+        for banned in ('Catch Up', 'Weekend Challenge', 'Recommended for You'):
+            self.assertNotIn(banned, self.html + script)
 
-    def test_no_banned_filler_language(self):
-        # Scoped to the Feed experience itself (#feed-app onward). The
-        # global chrome from base.html is shared by every page and contains
-        # a pre-existing search keyword ("trending" on the Pulse entry)
-        # that is not part of this Feed design.
-        feed_app = self.html[self.html.index('id="feed-app"'):]
-        feed_app = feed_app[:feed_app.index('</script>')]
-        lowered = feed_app.lower()
-        for banned in ('trending', 'top creators', 'influencer',
-                       'thought leaders', 'boost your brand'):
-            self.assertNotIn(banned, lowered)
+    def test_private_note_moves_below_the_feed_on_narrow_viewports(self):
+        css_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), 'static', 'css', 'feed-living-stream.css'
+        )
+        with open(css_path, encoding='utf-8') as css_file:
+            css = css_file.read()
+        self.assertIn(
+            '.context-rail{display:block;position:static;margin-top:18px}',
+            css,
+        )
+        self.assertNotIn('.context-rail{display:none}', css)
 
-    def test_accessibility_landmarks(self):
+    def test_accessibility_and_shared_chrome_remain_intact(self):
         self.assertIn('role="tablist"', self.html)
         self.assertIn('aria-live="polite"', self.html)
         self.assertIn('Skip to main content', self.html)
-
-    def test_real_global_header_is_present(self):
-        """Pete's chrome rule (2026-07-16): the site's top navigation bar is
-        identical on every page — the preview must render the real global
-        header, not its own imitation of one."""
         self.assertIn('class="global-header"', self.html)
-        self.assertIn('platform-nav', self.html)
-        self.assertIn("Pete's Slate", self.html)
-        self.assertIn('Interview Studio', self.html)
-        # v1.2: About left the header; Why PeerSlate lives in the footer.
-        self.assertNotIn('>About PeerSlate</a>', self.html)
-        self.assertIn('Why PeerSlate', self.html)
+        self.assertNotIn('class="profile-tabs', self.html)
+
+    def test_respond_vocabulary_is_kept(self):
+        with open(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'js', 'feed-living-stream.js'),
+            encoding='utf-8',
+        ) as script_file:
+            script = script_file.read()
+        for label in ('Celebrate', 'Support', 'I relate', 'Ask', 'Offer help'):
+            self.assertIn(label, script)
 
 
-class FeedPrototypeDiscoverabilityTests(unittest.TestCase):
-    """The prototype must be reachable by browsing the real site, not only
-    by a direct link — per Pete's explicit request on 2026-07-16."""
-
+class CommunityDiscoverabilityTests(unittest.TestCase):
     def setUp(self):
         app.config['TESTING'] = True
         self.client = app.test_client()
 
-    def test_linked_from_header_search_index(self):
-        home_html = self.client.get('/').get_data(as_text=True)
-        self.assertIn('/feed-living-stream', home_html)
-        self.assertIn('Feed Preview', home_html)
+    def test_homepage_uses_canonical_community_links(self):
+        html = self.client.get('/').get_data(as_text=True)
+        self.assertIn('/the-slate?state=voice', html)
+        self.assertNotIn('/feed-living-stream', html)
 
-    def test_linked_from_community_feed_hub(self):
-        community_html = self.client.get('/the-slate').get_data(as_text=True)
-        self.assertIn('/feed-living-stream', community_html)
-        self.assertIn('Feed Preview', community_html)
+    def test_search_index_has_only_current_community_destinations(self):
+        html = self.client.get('/').get_data(as_text=True)
+        self.assertIn('Community · Feed', html)
+        self.assertIn('Community · News Feed', html)
+        for retired in ('Feed Preview', 'People &amp; Interests', 'Community · My Slate', 'Community · Daily Slate'):
+            self.assertNotIn(retired, html)
 
 
-class FeedPrototypeAssetTests(unittest.TestCase):
+class CommunityAssetTests(unittest.TestCase):
     ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def test_static_files_exist(self):
-        for rel in (
-            'static/css/feed-living-stream.css',
-            'static/js/feed-living-stream.js',
-        ):
-            self.assertTrue(
-                os.path.isfile(os.path.join(self.ROOT, rel)), rel)
-
-    def test_fixture_media_exists(self):
-        feed_dir = os.path.join(self.ROOT, 'static', 'images', 'feed')
-        for name in (
-            'work_whiteboard.jpg', 'surf_morning.jpg', 'keyboard_build.jpg',
-            'coffee_notes.jpg', 'office_prototype.jpg', 'whiteboard_close.jpg',
-            'dinner_served.jpg',
-        ):
-            self.assertTrue(
-                os.path.isfile(os.path.join(feed_dir, name)), name)
+        for rel in ('static/css/feed-living-stream.css', 'static/js/feed-living-stream.js'):
+            self.assertTrue(os.path.isfile(os.path.join(self.ROOT, rel)), rel)
 
 
 if __name__ == '__main__':

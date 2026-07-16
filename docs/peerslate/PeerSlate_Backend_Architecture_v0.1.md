@@ -1,14 +1,18 @@
 # PeerSlate Backend Architecture v0.1
 
-**Status:** Local implementation complete; production authentication and deployment not enabled
-**Date:** July 10, 2026
+**Status:** Local implementation complete; production authentication and deployment not enabled. Community/Board navigation update recorded July 16, 2026.
+**Date:** July 10, 2026 (updated July 16, 2026)
 **Scope:** Effort 6 database service, identity boundary, APIs, UI adapters, and verification
 
 ## 1. Implemented Outcome
 
 PeerSlate's Flask application now connects to the existing Azure SQL backend through a reusable service layer. API routes call stored procedures with bound parameters, derive tenant ownership from a trusted server-side identity, return named JSON structures, and keep raw database errors out of normal API responses.
 
-The current public pages remain unchanged by default. Database-backed Board, Daily Slate, and Break behavior is available only when `PEERSLATE_DATABASE_UI_ENABLED=true` and a trusted member identity is present.
+The current public pages remain browser-local by default. The separate Daily
+Slate and Break public surfaces are retired; their legacy routes redirect to
+the canonical Community page or Slate Board. Database-backed Board behavior is
+available only when `PEERSLATE_DATABASE_UI_ENABLED=true` and a trusted member
+identity is present. Community Journal/Feed/News services remain future work.
 
 ## 2. Runtime Flow
 
@@ -30,9 +34,9 @@ The current public pages remain unchanged by default. Database-backed Board, Dai
 | `identity.py` | Easy Auth claim decoding, stable subject selection, member upsert, and explicit local-development identity. |
 | `peerslate_api.py` | Authenticated dashboard, feed, save, poll, challenge, journal, Slate Board, badge, and achievement APIs. |
 | `app.py` | Application configuration, blueprint registration, feature flags, and temporary connectivity endpoints. |
-| `static/js/slate-board.js` | Browser-storage preview by default; private SQL-backed Board entries behind the database UI flag. |
-| `static/js/the-slate.js` | Browser-storage preview by default; private SQL-backed Daily Slate entries behind the database UI flag. |
-| `static/js/break-database.js` | Loads current Break cards and poll options; records challenge, vote, and save actions when enabled. |
+| `static/js/slate-board.js` | Browser-local Board by default; retains private SQL-backed Board integration behind the database UI flag. |
+| `static/js/feed-living-stream.js` | Canonical Community Feed and News Feed modes; private Journal Note is browser-local until its protected service is connected. |
+| `static/js/break-database.js` | Deferred adapter retained for the legacy Break domain; no current public surface mounts it. |
 
 ## 4. API Map
 
@@ -82,7 +86,7 @@ The local user is a fixture identity only. It does not prove production authenti
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `PEERSLATE_DATABASE_UI_ENABLED` | `false` | Enables SQL-backed Board, Daily Slate, and Break behavior. |
+| `PEERSLATE_DATABASE_UI_ENABLED` | `false` | Enables SQL-backed Slate Board behavior for an authenticated identity. |
 | `PEERSLATE_LIVING_RESUME_DB_ENABLED` | `false` | Enables the owner/public Living Resume read APIs after PS-PLAT-006 and PS-PLAT-007 verification. |
 | `PEERSLATE_ENABLE_DB_TEST_ROUTES` | `false` | Enables temporary raw connectivity routes locally. Keep off in production. |
 | `PEERSLATE_ALLOW_DEV_IDENTITY` | `false` | Allows the configured development user. Never enable in production. |
@@ -94,7 +98,7 @@ The local user is a fixture identity only. It does not prove production authenti
 - SQL values use positional binding.
 - Stored procedure and parameter identifiers are validated before statement construction.
 - Write routes require a non-simple same-origin header to reduce cross-site request risk.
-- New Board and Daily Slate records are private; publishing is not implied or automated.
+- New Board and future Journal records are private; publishing is not implied or automated.
 - Normal API errors do not return raw database exceptions.
 - `.env` and `.env.*` remain ignored by Git.
 - Temporary diagnostic routes are disabled by default.
@@ -144,4 +148,5 @@ Verified on July 10, 2026:
 - all required procedures were present;
 - nine live read APIs returned success;
 - preserved public pages returned HTTP 200;
-- Board, Break, and Daily Slate passed desktop and mobile checks without horizontal overflow.
+- Historical July 10 verification: Board, Break, and Daily Slate passed desktop and mobile checks without horizontal overflow.
+- July 16 verification: the canonical Community Feed/News page and Slate Board passed desktop, tablet, and mobile checks without horizontal overflow; see `docs/implementation-reports/PeerSlate_Community_and_Board_Audit_2026-07-16.md`.

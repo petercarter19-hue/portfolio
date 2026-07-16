@@ -1,17 +1,19 @@
-/* PS-FEED-001 — Living Stream Feed prototype (Fable).
-   Connected clickable states for the approved Feed Vision Handoff v1.
-   Everything here is fixture/demo data shaped like specs/feed_content_contract.json.
-   Nothing is persisted; publishing only updates the in-page fixture stream. */
+/* Canonical PeerSlate Community frontend.
+   The page keeps representative content and browser-only interactions honest
+   until the protected Journal, Feed, and News services are connected. */
 (function () {
   'use strict';
 
   var APP_ROOT = document.getElementById('feed-app');
   var ASSET_BASE = (APP_ROOT && APP_ROOT.getAttribute('data-asset-base')) || '/static/images/feed';
+  var BOARD_URL = (APP_ROOT && APP_ROOT.getAttribute('data-board-url')) || '/petec/slate-board';
+  var JOURNAL_NOTE_KEY = 'peerslateCommunityJournalNoteV1:petec-preview';
+  var JOURNAL_DRAFTS_KEY = 'peerslateJournalDraftsV1:petec-preview';
+  var BOARD_INBOX_KEY = 'peerslateSlateBoardInboxV1:petec-preview';
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* The site's sticky global header (nav + slim sub-header) owns the top of
-     every page; measure its real height so the community sidebar and Catch
-     Up rail stick exactly beneath it at every breakpoint. */
+  /* The site's sticky global header owns the top of every page. Measure its
+     real height so the private Journal Note rail sits beneath it on desktop. */
   function syncHeaderHeight() {
     var header = document.querySelector('.global-header');
     if (header && APP_ROOT) {
@@ -158,16 +160,6 @@
       copy: 'Would it help to test the flow with someone who has not seen the project before?', offerHelp: true }
   ];
 
-  var CATCH_UP = {
-    sub: 'Three meaningful updates since your last visit.',
-    items: [
-      { strong: 'Danielle simplified the Phoenix handoff.', span: 'She shared the decision that unlocked the prototype.' },
-      { strong: 'Marcus posted a personal morning reset.', span: 'A short surf video before his workday.' },
-      { strong: 'Aisha reflected on a difficult meeting.', span: 'Her takeaway: listen for the concern beneath the objection.' }
-    ],
-    listen: 'Listen · 1:18'
-  };
-
   var TRANSCRIPT_LIVE = '“I finally got the prototype to a place where the team understood the handoff without me explaining every screen…”';
   var TRANSCRIPT_FULL = 'I finally got the prototype to a place where the team understood the handoff without me explaining every screen. We stopped debating individual pages and mapped the actual handoff.';
 
@@ -179,6 +171,7 @@
 
   var SUBTITLES = {
     'default': 'What people are building, learning, and living.',
+    news: 'Trusted stories and useful context, kept separate from member updates.',
     gallery: 'Real work, real life, and the moments in between.',
     video: 'Photos and video should feel native—not bolted onto a text feed.',
     rail: 'A living view of the people and moments that matter to you.',
@@ -192,10 +185,10 @@
 
   var state = {
     composition: 'default',       // default | gallery | video | rail
-    tab: 'forYou',                // forYou | following
+    tab: 'feed',                  // feed | news
     view: 'feed',                 // feed | detail | loading | error
     detailPost: null,
-    draft: { transcript: TRANSCRIPT_FULL, audience: 'community', connections: { phoenix: true, goal: false, evidence: false } },
+    draft: { transcript: TRANSCRIPT_FULL, audience: 'community', connections: { phoenix: true, goal: false, source: false } },
     reactions: {},                // postId -> true
     saves: {},                    // postId -> true
     publishedPosts: [],           // fixture posts added through the publish flow
@@ -204,7 +197,6 @@
 
   var feedColumn = document.getElementById('feedColumn');
   var contextRail = document.getElementById('contextRail');
-  var mainInner = document.getElementById('mainInner');
   var pageTitle = document.getElementById('pageTitle');
   var pageSubtitle = document.getElementById('pageSubtitle');
   var overlayRoot = document.getElementById('overlayRoot');
@@ -292,18 +284,38 @@
     return '<article class="post' + (options.justPublished ? ' just-published' : '') + '" data-post="' + esc(post.id) + '">' +
       '<div class="post-head">' + avatar(post.initials, post.color) +
       '<div class="post-author"><div class="author-name">' + esc(post.name) + '</div><div class="author-meta">' + meta + '</div></div>' +
-      '<button class="more" type="button" data-inert aria-label="More options for this post (not part of this prototype)">···</button></div>' +
+      '<span class="more" aria-hidden="true">···</span></div>' +
       '<div class="post-body">' + body + '</div></article>';
   }
 
-  function catchUpRailHTML() {
-    var items = CATCH_UP.items.map(function (item) {
-      return '<div class="catch-item"><strong>' + esc(item.strong) + '</strong><span>' + esc(item.span) + '</span></div>';
-    }).join('');
-    return '<div class="rail-panel"><div class="rail-title"><h3>Catch Up</h3><div class="spark">' + icon('spark') + '</div></div>' +
-      '<p class="rail-sub">' + esc(CATCH_UP.sub) + '</p>' + items +
-      '<button class="rail-cta" type="button" data-inert>' + icon('mic', 'sm') + ' ' + esc(CATCH_UP.listen) + '</button></div>' +
-      '<div class="rail-note">' + icon('spark', 'sm') + ' <strong>AI summary</strong><br>Built only from posts you are allowed to see. Every summary links to its source.</div>';
+  function readStoredValue(key, fallback) {
+    try { return localStorage.getItem(key) || fallback; }
+    catch (error) { return fallback; }
+  }
+
+  function journalNoteRailHTML() {
+    return '<section class="rail-panel journal-note-card">' +
+      '<div class="rail-title"><div><span class="rail-kicker">Only you</span><h2>Journal Note</h2></div><div class="spark">' + icon('shield') + '</div></div>' +
+      '<p class="rail-prompt">Anything happen today you may want to remember?</p>' +
+      '<label class="sr-only" for="communityJournalNote">Private Journal Note</label>' +
+      '<textarea id="communityJournalNote" maxlength="1000" rows="8" placeholder="Write a private note…">' + esc(readStoredValue(JOURNAL_NOTE_KEY, '')) + '</textarea>' +
+      '<p class="rail-save-state" id="journalNoteStatus">Saved in this browser</p>' +
+      '<div class="rail-note-actions">' +
+        '<button class="btn primary" type="button" data-note-journal>Add to Journal</button>' +
+        '<button class="btn soft" type="button" data-note-board>Add to Slate Board</button>' +
+        '<button class="rail-clear" type="button" data-note-clear>Clear</button>' +
+      '</div>' +
+      '<p class="rail-service-note">Browser-only until sign-in and protected storage are connected.</p>' +
+      '</section>';
+  }
+
+  function newsHTML() {
+    return '<section class="news-state" aria-labelledby="news-state-title">' +
+      '<span class="news-state__eyebrow">News Feed</span>' +
+      '<h2 id="news-state-title">Ready for a trusted news source</h2>' +
+      '<p>This mode now has a permanent home in Community. No provider is connected yet, so PeerSlate is not showing invented headlines or stale sample stories.</p>' +
+      '<div class="news-state__requirements"><strong>Before launch</strong><span>Approve sources, attribution, licensing, freshness, moderation, and failure behavior.</span></div>' +
+      '</section>';
   }
 
   function skeletonHTML() {
@@ -319,7 +331,7 @@
     return composerHTML() +
       '<div class="empty-state"><div class="empty-illustration" aria-hidden="true"></div>' +
       '<h2>You’re caught up.</h2>' +
-      '<p>There are no new posts from the people you follow. Capture something from your week, or return to a saved conversation.</p>' +
+      '<p>There are no new member updates right now. Capture something from your week, or return to a saved conversation.</p>' +
       '<button class="btn primary" type="button" data-open-voice>' + icon('mic', 'sm', '1.9') + ' Talk about what happened</button></div>';
   }
 
@@ -333,7 +345,7 @@
       '<h2>We couldn’t refresh the Feed.</h2>' +
       '<p>Your drafts and captures are safe. Check the connection and try again. PeerSlate should never replace a real error with an empty success state.</p>' +
       '<button class="btn primary" type="button" data-retry>Try again</button> ' +
-      '<a class="btn" href="/the-slate/my-slate">Open my Journal</a>' +
+      '<a class="btn" href="' + BOARD_URL + '">Open Slate Board</a>' +
       '</div></div>' + postHTML(cached);
   }
 
@@ -379,19 +391,12 @@
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
       tab.setAttribute('tabindex', active ? '0' : '-1');
     });
-    feedColumn.setAttribute('aria-labelledby', state.tab === 'forYou' ? 'tab-for-you' : 'tab-following');
+    feedColumn.setAttribute('aria-labelledby', state.tab === 'feed' ? 'tab-feed' : 'tab-news');
   }
 
-  function setRail(visible) {
-    if (visible) {
-      contextRail.innerHTML = catchUpRailHTML();
-      contextRail.hidden = false;
-      mainInner.classList.remove('no-rail');
-    } else {
-      contextRail.hidden = true;
-      contextRail.innerHTML = '';
-      mainInner.classList.add('no-rail');
-    }
+  function setRail() {
+    contextRail.innerHTML = journalNoteRailHTML();
+    contextRail.hidden = false;
   }
 
   function render() {
@@ -399,7 +404,7 @@
     if (state.view === 'loading') {
       pageTitle.textContent = 'Feed';
       setSubtitle(state.subtitleKey || 'default');
-      setRail(false);
+      setRail();
       feedColumn.setAttribute('aria-busy', 'true');
       feedColumn.innerHTML = skeletonHTML();
       return;
@@ -408,25 +413,26 @@
     if (state.view === 'detail') {
       pageTitle.textContent = 'Conversation';
       setSubtitle('detail');
-      setRail(false);
+      setRail();
       feedColumn.innerHTML = detailHTML(state.detailPost || DETAIL_POST);
       return;
     }
     pageTitle.textContent = 'Feed';
     if (state.view === 'error') {
       setSubtitle('error');
-      setRail(false);
+      setRail();
       feedColumn.innerHTML = errorHTML();
       return;
     }
-    if (state.tab === 'following') {
-      setSubtitle('empty');
-      setRail(false);
-      feedColumn.innerHTML = emptyHTML();
+    if (state.tab === 'news') {
+      pageTitle.textContent = 'News Feed';
+      setSubtitle('news');
+      setRail();
+      feedColumn.innerHTML = newsHTML();
       return;
     }
     setSubtitle(state.composition);
-    setRail(state.composition === 'rail');
+    setRail();
     var posts = compositionPosts().map(function (post) {
       return postHTML(post, { justPublished: post === state.publishedPosts[0] && state.highlightPublished });
     }).join('');
@@ -532,7 +538,7 @@
       ? '<div class="notice" style="margin-top:16px"><div class="symbol">' + icon('shield', 'sm') + '</div>' +
         '<div><strong style="color:#263955">Confidentiality check</strong><br>No employer, customer, or restricted details were detected. You still make the final decision.</div></div>'
       : '';
-    var primaryLabel = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
+    var primaryLabel = state.draft.audience === 'private' ? 'Save privately' : 'Add update';
     return '<header class="modal-head"><h2 id="reviewTitle">' + heading + '</h2>' +
       '<button class="close" type="button" data-dismiss aria-label="Close">' + icon('close', '', '2') + '</button></header>' +
       '<div class="review-body"><div class="review-main">' +
@@ -550,7 +556,7 @@
       privacyOptionHTML('selected', 'Selected people', 'Choose exactly who can see it.') +
       '</div>' +
       '<div class="field-label" style="margin-top:18px">Also connect to</div>' +
-      '<div class="chip-row">' + connectChipHTML('phoenix', 'Project Phoenix') + connectChipHTML('goal', 'Goal') + connectChipHTML('evidence', 'Evidence') + '</div>' +
+      '<div class="chip-row">' + connectChipHTML('phoenix', 'Project Phoenix') + connectChipHTML('goal', 'Goal') + connectChipHTML('source', 'Source') + '</div>' +
       '</aside>' +
       '<footer class="review-footer"><span class="meta">Original wording and source remain inspectable.</span>' +
       '<button class="cancel-btn" type="button" data-keep-editing>Keep editing</button>' +
@@ -567,7 +573,7 @@
           option.classList.toggle('selected', option.querySelector('input').checked);
         });
         var primary = overlay.querySelector('[data-review-primary]');
-        primary.textContent = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
+        primary.textContent = state.draft.audience === 'private' ? 'Save privately' : 'Add update';
       }
     });
     overlay.addEventListener('input', function (event) {
@@ -594,11 +600,78 @@
     });
     state.highlightPublished = true;
     state.composition = 'default';
-    state.tab = 'forYou';
+    state.tab = 'feed';
     state.view = 'feed';
     render();
     scrollFeedToTop();
-    announce('Published to ' + audienceLabel + '. Your update is at the top of the Feed, and the original wording stays inspectable in your Journal.');
+    announce('Added to this browser session for ' + audienceLabel + '. Protected publishing is connected in the backend phase.');
+  }
+
+  function updateJournalNoteStatus(message) {
+    var status = document.getElementById('journalNoteStatus');
+    if (status) { status.textContent = message; }
+  }
+
+  function writeBrowserValue(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function readBrowserList(key) {
+    try {
+      var stored = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(stored) ? stored : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function currentJournalNote() {
+    var input = document.getElementById('communityJournalNote');
+    return input ? input.value.trim() : '';
+  }
+
+  function clearJournalNote() {
+    var input = document.getElementById('communityJournalNote');
+    if (input) { input.value = ''; }
+    writeBrowserValue(JOURNAL_NOTE_KEY, '');
+    updateJournalNoteStatus('Cleared');
+  }
+
+  function addJournalNoteTo(destination) {
+    var text = currentJournalNote();
+    if (!text) {
+      var input = document.getElementById('communityJournalNote');
+      if (input) { input.focus(); }
+      announce('Write a note first. It stays private in this browser.');
+      return;
+    }
+    var key = destination === 'board' ? BOARD_INBOX_KEY : JOURNAL_DRAFTS_KEY;
+    var items = readBrowserList(key);
+    items.unshift({
+      id: 'community-note-' + Date.now(),
+      title: text.slice(0, 80),
+      description: text,
+      createdAt: new Date().toISOString(),
+      source: 'community-journal-note'
+    });
+    if (!writeBrowserValue(key, JSON.stringify(items.slice(0, 50)))) {
+      updateJournalNoteStatus('Storage unavailable');
+      announce('Browser storage is unavailable, so the note was not moved.');
+      return;
+    }
+    clearJournalNote();
+    if (destination === 'board') {
+      updateJournalNoteStatus('Ready for Slate Board');
+      announce('Private note queued for Slate Board in this browser. Open Slate Board to add it.');
+    } else {
+      updateJournalNoteStatus('Added to private Journal drafts');
+      announce('Private Journal draft saved in this browser.');
+    }
   }
 
   /* ---------- events ---------- */
@@ -607,11 +680,9 @@
     var el = event.target.closest('button, a');
     if (!el) { return; }
 
-    if (el.hasAttribute('data-inert')) {
-      event.preventDefault();
-      announce('That control is not part of this prototype.');
-      return;
-    }
+    if (el.hasAttribute('data-note-clear')) { clearJournalNote(); announce('Private Journal Note cleared.'); return; }
+    if (el.hasAttribute('data-note-journal')) { addJournalNoteTo('journal'); return; }
+    if (el.hasAttribute('data-note-board')) { addJournalNoteTo('board'); return; }
     if (el.hasAttribute('data-open-voice')) { openVoiceOverlay(); return; }
     if (el.hasAttribute('data-open-composer')) {
       state.draft.transcript = '';
@@ -627,10 +698,10 @@
       return;
     }
     if (el.hasAttribute('data-dismiss')) { dismissOverlay('Closed. Nothing was saved.'); return; }
-    if (el.hasAttribute('data-keep-editing')) { dismissOverlay('Draft kept. Nothing was published.'); return; }
+    if (el.hasAttribute('data-keep-editing')) { dismissOverlay('Draft kept in this browser.'); return; }
     if (el.hasAttribute('data-review-primary')) {
       if (el.getAttribute('data-ai-step') === '1') { publishDraft(); }
-      else { openReviewOverlay(true, 'AI-assisted publish review. Check the proposal, confidentiality note, and audience, then decide.'); }
+      else { openReviewOverlay(true, 'AI-assisted review. Check the proposal, confidentiality note, and audience, then decide.'); }
       return;
     }
     if (el.hasAttribute('data-connect')) {
@@ -639,7 +710,7 @@
       var pressed = state.draft.connections[key];
       el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
       el.classList.toggle('project', pressed);
-      el.innerHTML = (pressed ? '✓ ' : '+ ') + esc({ phoenix: 'Project Phoenix', goal: 'Goal', evidence: 'Evidence' }[key]);
+      el.innerHTML = (pressed ? '✓ ' : '+ ') + esc({ phoenix: 'Project Phoenix', goal: 'Goal', source: 'Source' }[key]);
       return;
     }
     if (el.hasAttribute('data-respond-toggle')) {
@@ -658,7 +729,7 @@
       state.reactions[respondId] = state.reactions[respondId] === intent ? null : intent;
       render();
       announce(state.reactions[respondId]
-        ? 'Response sent: ' + intent.replace('_', ' ') + '. Responses stay quiet — no public leaderboards.'
+        ? 'Response selected for this browser session: ' + intent.replace('_', ' ') + '.'
         : 'Response removed.');
       return;
     }
@@ -667,7 +738,7 @@
       state.saves[saveId] = !state.saves[saveId];
       el.setAttribute('aria-pressed', state.saves[saveId] ? 'true' : 'false');
       el.innerHTML = icon('bookmark', 'sm') + ' ' + (state.saves[saveId] ? 'Saved' : 'Save');
-      announce(state.saves[saveId] ? 'Saved privately. Only you can see your saved posts.' : 'Removed from your saved posts.');
+      announce(state.saves[saveId] ? 'Saved in this browser only.' : 'Removed from saved posts.');
       return;
     }
     if (el.hasAttribute('data-comment')) {
@@ -695,7 +766,7 @@
       render();
       var nextInput = document.getElementById('replyInput');
       if (nextInput) { nextInput.focus(); }
-      announce('Reply added to the conversation.');
+      announce('Reply added for this browser session.');
       return;
     }
     if (el.hasAttribute('data-comment-reply')) {
@@ -718,16 +789,16 @@
       if (thread[helpIndex]) {
         thread[helpIndex].offered = !thread[helpIndex].offered;
         el.setAttribute('aria-pressed', thread[helpIndex].offered ? 'true' : 'false');
-        announce(thread[helpIndex].offered ? 'Offer to help sent to ' + thread[helpIndex].name + '.' : 'Offer to help withdrawn.');
+        announce(thread[helpIndex].offered ? 'Offer to help selected for this browser session.' : 'Offer to help withdrawn.');
       }
       return;
     }
     if (el.hasAttribute('data-play')) {
-      announce('Video playback is simulated in this prototype. Poster, duration, captions, and keyboard controls are shown; streaming arrives with the build phase.');
+      announce('Media playback needs the protected media service; no video is streamed in this frontend build.');
       return;
     }
     if (el.hasAttribute('data-play-voice')) {
-      announce('Voice note playback is simulated in this prototype.');
+      announce('Voice-note playback needs the protected media service.');
       return;
     }
     if (el.hasAttribute('data-retry')) {
@@ -753,15 +824,32 @@
     }
   });
 
+  document.addEventListener('input', function (event) {
+    if (event.target.id !== 'communityJournalNote') { return; }
+    if (writeBrowserValue(JOURNAL_NOTE_KEY, event.target.value)) {
+      updateJournalNoteStatus('Saved in this browser');
+    } else {
+      updateJournalNoteStatus('Storage unavailable');
+    }
+  });
+
+  function syncModeUrl(push) {
+    var url = new URL(window.location.href);
+    if (state.tab === 'news') { url.searchParams.set('view', 'news'); }
+    else { url.searchParams.delete('view'); }
+    window.history[push ? 'pushState' : 'replaceState']({}, '', url.pathname + url.search + url.hash);
+  }
+
   /* Tabs: click + roving arrow keys. */
   tabs.forEach(function (tab, index) {
     tab.addEventListener('click', function () {
       state.tab = tab.getAttribute('data-tab');
       state.view = 'feed';
+      syncModeUrl(true);
       render();
-      announce(state.tab === 'following'
-        ? 'Following. Posts from people you explicitly follow, newest first.'
-        : 'For You. Relevant posts from your connections, interests, and projects.');
+      announce(state.tab === 'news'
+        ? 'News Feed selected. No provider is connected yet.'
+        : 'Member Feed selected.');
     });
     tab.addEventListener('keydown', function (event) {
       var next = null;
@@ -780,11 +868,13 @@
     var initial = params.get('state') || 'default';
     var showLoadingFirst = true;
 
+    if (params.get('view') === 'news') { state.tab = 'news'; }
+
     switch (initial) {
       case 'gallery': state.composition = 'gallery'; break;
       case 'video': state.composition = 'video'; break;
       case 'rail': state.composition = 'rail'; break;
-      case 'empty': state.tab = 'following'; break;
+      case 'empty': state.tab = 'feed'; break;
       case 'detail': state.view = 'detail'; state.detailPost = DETAIL_POST; break;
       case 'error': state.view = 'error'; break;
       case 'loading':
@@ -825,4 +915,10 @@
 
   state.view = 'feed';
   applyInitialState();
+
+  window.addEventListener('popstate', function () {
+    state.tab = new URLSearchParams(window.location.search).get('view') === 'news' ? 'news' : 'feed';
+    state.view = 'feed';
+    render();
+  });
 })();

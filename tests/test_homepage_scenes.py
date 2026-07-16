@@ -95,8 +95,8 @@ class HomepageSceneTests(unittest.TestCase):
 
     def test_ctas_resolve_to_real_routes(self):
         for href in ('/petec/my-story', '/petec/skills', '/petec/resume',
-                     '/petec/slate-board', '/feed-living-stream',
-                     '/the-slate/my-slate', '/the-slate/daily',
+                     '/petec/slate-board', '/the-slate?state=voice',
+                     '/petec/slate-board#daily-check-in',
                      '/petec/projects', '/interview-studio'):
             self.assertIn('href="%s' % href, self.html)
             target = href.split('#')[0].split('?')[0]

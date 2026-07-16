@@ -26,6 +26,7 @@
     var storageScope = root.dataset.boardStorageScope || 'petec-preview';
     var STORAGE_KEY = 'peerslateSlateBoardLivingWhiteboardV2:' + storageScope;
     var LEGACY_STORAGE_KEY = 'peerslateSlateBoardConcept1:' + storageScope;
+    var COMMUNITY_INBOX_KEY = 'peerslateSlateBoardInboxV1:' + storageScope;
     var STORAGE_VERSION = 3;
     var SECTION_ORDER = ['short', 'projects', 'long', 'work'];
     var SECTION_LABELS = {
@@ -81,6 +82,7 @@
     );
 
     var state = loadState();
+    var importedCommunityNotes = importCommunityNotes();
     var zoom = 100;
     var history = [];
     var draggingId = null;
@@ -164,7 +166,6 @@
             return {
                 version: STORAGE_VERSION,
                 notes: seedNotes.slice(),
-                collaborators: [],
                 view: 'board'
             };
         }
@@ -185,7 +186,6 @@
         return {
             version: STORAGE_VERSION,
             notes: notes,
-            collaborators: Array.isArray(saved.collaborators) ? saved.collaborators.slice(0, 20) : [],
             view: saved.view === 'list' ? 'list' : 'board'
         };
     }
@@ -199,6 +199,30 @@
             setSaveStatus('Visible for this visit only', 'warning');
             announce('Your change is visible for this visit, but browser storage is unavailable.');
         }
+    }
+
+    function importCommunityNotes() {
+        var inbox = [];
+        try { inbox = JSON.parse(localStorage.getItem(COMMUNITY_INBOX_KEY) || '[]'); }
+        catch (error) { inbox = []; }
+        if (!Array.isArray(inbox) || !inbox.length) { return 0; }
+
+        inbox.forEach(function (item) {
+            var description = String(item && item.description || '').trim();
+            if (!description) { return; }
+            state.notes.push(normalizeNote({
+                id: String(item.id || ('community-note-' + Date.now())),
+                section: 'short',
+                title: String(item.title || description).slice(0, 120),
+                timeline: 'Today',
+                tag: 'Journal Note',
+                tagStyle: 'personal',
+                description: description
+            }));
+        });
+        try { localStorage.removeItem(COMMUNITY_INBOX_KEY); }
+        catch (error) { /* The next Board visit can retry the inbox. */ }
+        return inbox.length;
     }
 
     function setSaveStatus(message, status) {
@@ -711,6 +735,7 @@
 
     function openEditor(note, section, trigger, focusAttachment) {
         if (!noteDialog || !noteForm) { return; }
+        var dailyCheckin = !note && trigger && trigger.hasAttribute('data-daily-checkin');
         editingNoteId = note ? note.id : null;
         workingComments = note && Array.isArray(note.comments)
             ? note.comments.map(function (comment) { return Object.assign({}, comment); })
@@ -721,19 +746,19 @@
         document.getElementById('sb-note-title').value = note ? note.title : '';
         document.getElementById('sb-note-description').value = note ? note.description : '';
         document.getElementById('sb-note-section').value = note ? note.section : (section || 'short');
-        document.getElementById('sb-note-timeline').value = note ? note.timeline : '';
-        document.getElementById('sb-note-tag').value = note ? note.tag : '';
+        document.getElementById('sb-note-timeline').value = note ? note.timeline : (dailyCheckin ? 'Today' : '');
+        document.getElementById('sb-note-tag').value = note ? note.tag : (dailyCheckin ? 'Progress update' : '');
         document.getElementById('sb-note-link').value = note ? note.link : '';
 
         var starButton = document.getElementById('sb-note-star');
         starButton.setAttribute('aria-pressed', String(Boolean(note && note.starred)));
-        var style = note ? note.tagStyle : sectionDefaultStyle(section || 'short');
+        var style = note ? note.tagStyle : (dailyCheckin ? 'personal' : sectionDefaultStyle(section || 'short'));
         var color = noteForm.querySelector('input[name="tagStyle"][value="' + style + '"]')
             || noteForm.querySelector('input[name="tagStyle"]');
         if (color) { color.checked = true; }
 
-        document.getElementById('sb-note-dialog-mode').textContent = note ? 'Edit note' : 'New note';
-        document.getElementById('sb-note-dialog-title').textContent = note ? note.title : 'Capture an idea';
+        document.getElementById('sb-note-dialog-mode').textContent = note ? 'Edit note' : (dailyCheckin ? 'Today on your Slate' : 'New note');
+        document.getElementById('sb-note-dialog-title').textContent = note ? note.title : (dailyCheckin ? 'Log today’s progress' : 'Capture an idea');
         var deleteButton = document.getElementById('sb-delete-note');
         deleteButton.hidden = !note;
         resetDeleteButton();
@@ -1218,37 +1243,6 @@
         if (wasActive) { cancelDrag(); }
     }
 
-    function renderCollaborators() {
-        var list = document.getElementById('sb-invite-list');
-        list.replaceChildren();
-        state.collaborators.forEach(function (collaborator) {
-            var row = document.createElement('div');
-            row.className = 'sb-invite-person';
-            var name = document.createElement('strong');
-            name.textContent = String(collaborator.name || '').slice(0, 120);
-            var permission = document.createElement('span');
-            permission.textContent = collaborator.permission === 'edit' ? 'Can edit · preview' : 'Can view · preview';
-            row.appendChild(name);
-            row.appendChild(permission);
-            list.appendChild(row);
-        });
-    }
-
-    function addCollaborator(event) {
-        event.preventDefault();
-        var input = document.getElementById('sb-invite-person');
-        var permission = document.getElementById('sb-invite-permission');
-        var name = input.value.trim();
-        if (!name) { input.focus(); return; }
-        state.collaborators.push({ name: name.slice(0, 120), permission: permission.value });
-        state.collaborators = state.collaborators.slice(-20);
-        saveState();
-        renderCollaborators();
-        input.value = '';
-        document.getElementById('sb-share-notice').textContent =
-            'Collaboration preview added. Nothing has been sent; this board remains local to your browser.';
-    }
-
     function copyBoardLink(button) {
         var notice = document.getElementById('sb-share-notice');
         var text = window.location.href;
@@ -1566,7 +1560,6 @@
         }
 
         if (event.target.closest('[data-open-share]')) {
-            renderCollaborators();
             openDialog(shareDialog, event.target.closest('[data-open-share]'));
             return;
         }
@@ -1644,8 +1637,6 @@
         var radio = style && noteForm.querySelector('input[name="tagStyle"][value="' + style + '"]');
         if (radio) { radio.checked = true; }
     });
-    document.getElementById('sb-invite-form').addEventListener('submit', addCollaborator);
-
     document.addEventListener('keydown', function (event) {
         var active = document.activeElement;
         var typing = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
@@ -1708,11 +1699,13 @@
     }
 
     renderBoard();
-    renderCollaborators();
     applyResponsiveColumns();
     updateZoom(100, true);
     setBoardView(state.view, null, true);
     setActiveTool('select');
     saveState();
+    if (importedCommunityNotes) {
+        announce(importedCommunityNotes + (importedCommunityNotes === 1 ? ' private Community note was added to the Board.' : ' private Community notes were added to the Board.'));
+    }
     loadRemoteNotes();
 })();

@@ -1,4 +1,4 @@
-// story.js — My Slate (story page) interactivity, 2026-07-08.
+// story.js — story-page interactivity, 2026-07-08.
 // The "add a completed goal" feature on the journey timeline: the visitor
 // opts in (clicks "Add a completed goal"), types a finished goal, picks
 // Public or Private, and it lands on their timeline. Saved per-browser in

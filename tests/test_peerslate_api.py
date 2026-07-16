@@ -135,12 +135,11 @@ class PeerSlateApiTests(unittest.TestCase):
         app.config["PEERSLATE_DATABASE_UI_ENABLED"] = True
         database_board = self.client.get("/slate-board")
         daily_slate = self.client.get("/the-slate/daily")
-        break_feed = self.client.get("/the-slate/break")
 
         self.assertIn(b'data-board-api="true"', database_board.data)
         self.assertIn(b'Saved privately', database_board.data)
-        self.assertIn(b'data-database-ui="true"', daily_slate.data)
-        self.assertIn(b'data-break-api="true"', break_feed.data)
+        self.assertEqual(daily_slate.status_code, 302)
+        self.assertTrue(daily_slate.location.endswith('/petec/slate-board#daily-check-in'))
 
     def test_living_resume_database_routes_are_feature_flagged_off(self):
         self.assertEqual(self.client.get("/api/living-resume/me").status_code, 404)

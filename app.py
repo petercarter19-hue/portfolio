@@ -8,7 +8,7 @@ import glob                                     # Lets us find all files matchin
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 import hashlib                                  # Creates opaque, per-member browser storage scopes
-from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
+from datetime import datetime                   # Parses dated portfolio records
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -19,13 +19,6 @@ from dotenv import load_dotenv                  # Reads our secret API key from 
 from db import get_connection, fetch_all_result_sets
 from identity import AuthenticationRequired, get_current_identity
 from peerslate_api import peerslate_api
-from people_interests_api import people_interests_api
-from services.people_interests_feed import (
-    GOAL_REACTION,
-    POST_BODY_MAX,
-    REACTION_TYPES,
-    people_interests_feed,
-)
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -92,7 +85,6 @@ limiter = Limiter(
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app.register_blueprint(peerslate_api)
-app.register_blueprint(people_interests_api)
 
 
 @app.after_request
@@ -587,37 +579,29 @@ def design_system_preview():
     return render_template('design_system_preview.html')
 
 
-# PS-FEED-001 (2026-07-16): the Living Stream Feed prototype from the
-# approved Feed Vision Handoff v1. Publicly reachable and linked from real
-# navigation (2026-07-16, Pete) — the "Feed Preview" tab on the Community
-# board and the header search index both point here. It is still a
-# fixture/demo-data design preview, not a production data path: no
-# database, no publication, no real auth, no changes to the existing
-# Feed/Community board behavior. The page carries a visible preview
-# banner so visitors never mistake sample data for real functionality.
 @app.route('/feed-living-stream')
 def feed_living_stream():
-    """The connected Living Stream Feed design preview (mockups 01–16)."""
-    return render_template('feed_living_stream.html')
+    """Retired Feed address; preserve supported state deep links."""
+    target = url_for('the_slate')
+    if request.query_string:
+        target += '?' + request.query_string.decode('latin-1')
+    return redirect(target, code=302)
 
 
 @app.route('/feed-living-stream/states')
 def feed_living_stream_states():
-    """The page/state map: every mockup state with a deep link into the
-    prototype, for review against mockups/production/01–18."""
-    return render_template('feed_living_stream_states.html')
+    """Retired review-state index; Community now has one canonical page."""
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/_internal/feed-living-stream')
 def feed_living_stream_legacy_redirect():
-    """The prototype's brief internal-preview address; kept as a redirect
-    so any bookmark from its first hour still lands correctly."""
-    return redirect(url_for('feed_living_stream'), code=302)
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/_internal/feed-living-stream/states')
 def feed_living_stream_states_legacy_redirect():
-    return redirect(url_for('feed_living_stream_states'), code=302)
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/about')
@@ -976,122 +960,31 @@ def skills():
 
 
 # -------------------------------------------------------
-# THE SLATE (platform hub) + SLATE FEED layers
-# "The Slate" is the main product experience: one page with four
-# internal tabs — Slate Feed / My Slate / Daily Slate / Slate
-# Paths (from Pete's four 2026-07-08 mockups). The old separate
-# top-level "Slate Feed" and "Slate Board" nav links now live
-# inside it. The feed's deeper layers (Progress / Pulse / Break)
-# kept their own pages and simply moved under /the-slate/*; the
-# People layer is the hub's landing view. Old /slate-feed URLs
-# redirect so no bookmark or shared link ever breaks.
-#
-# The feed is built to aggregate events from EVERY member's
-# slate — each item in static/data/slate_feed.json names its
-# author, so when other profiles exist their events join the
-# same feed automatically. Today the only profile is Pete's, so
-# every card is pulled from his real Slate Board content and
-# links back to it.
+# COMMUNITY
+# One canonical page owns both member Feed and News Feed modes. Retired
+# experiments keep redirects so shared links do not break, but they no longer
+# render or register a second data path.
 # -------------------------------------------------------
 
 
 @app.route('/the-slate')
 def the_slate():
-    # THE SLATE LANDING = the People & Interests living board (2026-07-14,
-    # Pete): the approved corkboard feed replaced the old Slate Feed landing
-    # at this address. The previous landing template (the_slate_feed.html)
-    # stays on disk for easy rollback, and its hub links (Slate Board /
-    # My Slate / Daily Slate) now live in the board's feed strip.
-    return _render_people_interests_board()
+    return render_template('feed_living_stream.html')
 
 
 @app.route('/the-slate/my-slate')
 def the_slate_my():
-    # Tab 2 — My Slate: the user's personal goal map. Static preview
-    # content in the template (same convention as the Slate Board MVP).
-    return render_template('the_slate_my.html')
+    return redirect(url_for('slate_board') + '#paths-and-milestones', code=302)
 
 
 @app.route('/the-slate/daily')
 def the_slate_daily():
-    # Tab 3 — Daily Slate: the daily return hook ("What did you move
-    # forward today?"). The composer posts a real card (the-slate.js,
-    # stored per-browser) so the page demonstrates the loop end-to-end.
-    return render_template(
-        'the_slate_daily.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
+    return redirect(url_for('slate_board') + '#daily-check-in', code=302)
 
 
 @app.route('/the-slate/paths')
 def the_slate_paths():
-    # Slate Paths merged INTO My Slate (2026-07-08): the goal map, paths,
-    # daily check-in, and people/progress now live on one dashboard. This
-    # route redirects so old links (and url_for('the_slate_paths')) keep
-    # working.
-    return redirect(url_for('the_slate_my'), code=302)
-
-def relative_time_label(iso_timestamp, now):
-    # Turns a stored timestamp like "2026-07-02T09:15:00" into the live
-    # feed label a visitor expects ("2h ago", "5d ago"), computed fresh
-    # on every request — this is what keeps the feed feeling alive.
-    event_time = datetime.fromisoformat(iso_timestamp)
-    seconds = max(0, (now - event_time).total_seconds())
-
-    minutes = int(seconds // 60)
-    if minutes < 60:
-        return f"{max(1, minutes)}m ago"
-
-    hours = minutes // 60
-    if hours < 24:
-        return f"{hours}h ago"
-
-    days = hours // 24
-    if days < 7:
-        return f"{days}d ago"
-
-    weeks = days // 7
-    if weeks < 5:
-        return f"{weeks}w ago"
-
-    # Older than about a month: show the calendar date instead.
-    # (event_time.day avoids strftime's %-d, which breaks on Windows.)
-    return f"{event_time.strftime('%b')} {event_time.day}"
-
-
-def load_slate_feed():
-    feed_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'slate_feed.json')
-
-    with open(feed_path, 'r', encoding='utf-8') as f:
-        feed = json.load(f)
-
-    now = datetime.now()
-
-    # Newest events first, like any real activity feed.
-    feed['items'] = sorted(feed['items'], key=lambda item: item['timestamp'], reverse=True)
-
-    for item in feed['items']:
-        item['time_label'] = relative_time_label(item['timestamp'], now)
-        # Swap the author key ("petec") for the full author object so the
-        # template can read item.author.name / item.author.avatar directly.
-        item['author'] = feed['authors'][item['author']]
-
-    # Weekly Review: percent + the current Monday-to-Sunday range are
-    # computed here, not stored, so the card is always this week's.
-    review = feed['weekly_review']
-    review['percent'] = round(100 * review['actions_done'] / review['actions_planned'])
-    week_start = (now - timedelta(days=now.weekday())).date()
-    week_end = week_start + timedelta(days=6)
-    review['range_label'] = (
-        f"{week_start.strftime('%b')} {week_start.day} – "
-        f"{week_end.strftime('%b')} {week_end.day}"
-    )
-
-    keep_building = feed['keep_building']
-    keep_building['percent'] = round(100 * keep_building['done'] / keep_building['total'])
-
-    return feed
-
+    return redirect(url_for('slate_board') + '#paths-and-milestones', code=302)
 
 @app.route('/the-slate/progress')
 def slate_feed():
@@ -1103,53 +996,24 @@ def slate_feed():
 
 @app.route('/api/slate-feed')
 def slate_feed_api():
-    # The same feed as JSON — this is the seam where the page's data layer
-    # already works like a real multi-profile feed service.
-    return jsonify(load_slate_feed())
+    return jsonify({
+        "success": False,
+        "message": "This retired endpoint has no replacement until the canonical Feed service is available."
+    }), 410
 
 
 @app.route('/the-slate/pulse')
 def slate_feed_pulse():
-    # The Pulse view — the community's momentum at a glance: this-week
-    # stats, trending skills, rising goals, and what's moving right now.
-    # Static preview content for the MVP (no live cross-member data yet).
-    return render_template('slate_pulse.html')
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/break')
 def slate_feed_break():
-    # The Break view — the "step back and recharge" tab: an encouragement
-    # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
-    # the platform human, not just a metrics grind. Static preview for now.
-    return render_template(
-        'slate_break.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
-
-
-# PS-FEAT-002: the People & Interests living board — the corkboard-style
-# continuous social feed built from Pete's two approved mockups. Approved on
-# 2026-07-14 to BE The Slate landing (the_slate() above). The board is
-# rendered by static/js/people-interests.js from /api/feed/people-interests
-# (cursor pagination); the supporting rails render server-side from the same
-# fixture file. Every non-Pete author is a representative sample member.
-def _render_people_interests_board():
-    return render_template(
-        'the_slate_people_interests.html',
-        initial_feed=people_interests_feed.get_page(limit=16),
-        feed_authors=people_interests_feed.authors,
-        left_rail=people_interests_feed.left_rail,
-        right_rail=people_interests_feed.right_rail,
-        reaction_types=list(REACTION_TYPES),
-        goal_reaction=GOAL_REACTION,
-        post_body_max=POST_BODY_MAX,
-    )
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/people-interests')
 def the_slate_people_interests():
-    # The board launched at this address (2026-07-13) and became The Slate
-    # landing the next day — forward so any shared link keeps working.
     return redirect(url_for('the_slate'), code=302)
 
 
@@ -1159,17 +1023,17 @@ def the_slate_people_interests():
 # layer — its URL lands on The Slate itself.
 @app.route('/slate-feed')
 def slate_feed_legacy():
-    return redirect(url_for('slate_feed'), code=302)
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/slate-feed/pulse')
 def slate_feed_pulse_legacy():
-    return redirect(url_for('slate_feed_pulse'), code=302)
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/slate-feed/break')
 def slate_feed_break_legacy():
-    return redirect(url_for('slate_feed_break'), code=302)
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/slate-feed/people')
@@ -2523,8 +2387,7 @@ def sitemap_xml():
         '/petec/my-story', '/petec/skills', '/petec/resume',
         '/petec/slate-board', '/interview-studio', '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
-        '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
-        '/the-slate/pulse', '/the-slate/break',
+        '/the-slate',
         '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
     ]
     base = request.url_root.rstrip('/')
