@@ -1,0 +1,161 @@
+{# Scene 3 — My Story + Future (PS-HOME-STORY-001). Renders entirely from the
+   story_preview view model, which pulls approved cards by id from
+   static/data/story_data.json — the same source as the live My Story page.
+   Captions, act labels, and alt text are the live ones; the mockup's
+   illustrative captions ("First marathon — 2018" etc.) are intentionally
+   not used. #}
+<section class="hv-story" aria-labelledby="hv-story-title">
+    <div class="site-container hv-story__inner">
+
+        <div class="hv-story__copy">
+            <p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span> My Story + Slate</p>
+            <h2 class="hv-scene-title" id="hv-story-title">
+                Go beyond <em>the r&eacute;sum&eacute;.</em>
+            </h2>
+            <p class="hv-scene-lede">
+                Capture the path, values, decisions, and growth that shaped
+                the work. Not just what you&rsquo;ve done&mdash;but why it
+                matters, and where you&rsquo;re going next.
+            </p>
+            <div class="hv-actions">
+                <a class="hv-btn hv-btn--primary" href="{{ portfolio_story_url }}">
+                    <span aria-hidden="true">&#10022;</span> Explore My Story
+                </a>
+                <a class="hv-btn hv-btn--ghost" href="{{ portfolio_url('slate-board') }}">View the Slate Board</a>
+            </div>
+            <p class="hv-trust">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                Your story is living. You choose what becomes public.
+            </p>
+        </div>
+
+        {# Museum-style chapter guide. Non-interactive by design for this
+           preview; full titles always visible. #}
+        <ol class="hv-acts" aria-label="The four acts of My Story">
+            {% for act in story_preview.act_index %}
+            <li class="hv-acts__item{% if loop.first %} hv-acts__item--current{% endif %}">
+                <span class="hv-acts__num" aria-hidden="true">{{ act.number }}</span>
+                <span class="hv-acts__copy">
+                    <span class="hv-acts__eyebrow">{{ act.eyebrow }}</span>
+                    <span class="hv-acts__label">{{ act.label }}</span>
+                </span>
+            </li>
+            {% endfor %}
+        </ol>
+
+        <div class="hv-story__stage">
+
+            {# --- Act One: the Maui image + current chapter --- #}
+            <figure class="hv-maui">
+                <img src="{{ url_for('static', filename=story_preview.act_one.image.src) }}"
+                     srcset="{{ url_for('static', filename=story_preview.act_one.image.mobile) }} 760w, {{ url_for('static', filename=story_preview.act_one.image.src) }} 1600w"
+                     sizes="(max-width: 760px) 100vw, 40vw"
+                     alt="{{ story_preview.act_one.image.alt }}"
+                     width="1600" height="1200" loading="lazy">
+                <figcaption class="hv-maui__caption">
+                    <span class="hv-maui__badge">01 &middot; Act One</span>
+                    <span class="hv-maui__kicker">This is me now</span>
+                    <span class="hv-maui__title">The person behind the work.</span>
+                </figcaption>
+            </figure>
+
+            <article class="hv-now">
+                <p class="hv-rc__kicker">My Story &middot; Current chapter</p>
+                <h3 class="hv-now__title">{{ story_preview.act_one.purpose.title }}</h3>
+                <p class="hv-now__lede">
+                    An immediate introduction to what Pete is learning,
+                    building, exploring, and the life he is living right now.
+                </p>
+                <div class="hv-now__panel">
+                    <h4 class="hv-now__panel-title">Currently</h4>
+                    <ul class="hv-now__list">
+                        {% for item in story_preview.act_one.currently %}
+                        <li><strong>{{ item.label }}</strong> &mdash; {{ item.text }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <blockquote class="hv-now__quote">
+                    &ldquo;{{ story_preview.act_one.purpose.body }}&rdquo;
+                </blockquote>
+                <p class="hv-now__turning">
+                    <span class="hv-now__ghost" aria-hidden="true">{{ story_preview.act_one.turning.stat_ghost }}</span>
+                    <strong>{{ story_preview.act_one.turning.title }}</strong>
+                </p>
+            </article>
+
+            {# --- Act Two: chapter preview --- #}
+            <article class="hv-chapters">
+                <header class="hv-chapters__head">
+                    <h3 class="hv-chapters__title">How I became this person.</h3>
+                    <a class="hv-inline-link" href="{{ portfolio_story_url }}#act-becoming">Read the chapters <span aria-hidden="true">&rarr;</span></a>
+                </header>
+                <ul class="hv-chapters__grid">
+                    {% set chapter_lines = {
+                        'ch-pizza': 'Where leading people started.',
+                        'ch-36': 'I walked away from certainty to build a future I believed in.',
+                        'ch-airforce': 'Service. Systems. Responsibility.',
+                        'ch-industry': 'Systems effectiveness, integration, and test.'
+                    } %}
+                    {% for chapter in story_preview.act_two.chapters %}
+                    <li class="hv-chapter">
+                        <span class="hv-chapter__era">{{ chapter.era }}</span>
+                        <span class="hv-chapter__num" aria-hidden="true">{{ '%02d'|format(chapter.node|int) }}</span>
+                        <h4 class="hv-chapter__title">{{ chapter.title }}</h4>
+                        <p class="hv-chapter__line">{{ chapter_lines[chapter.id] }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </article>
+
+            {# --- Act Three: the Polaroids (real assets, live captions) --- #}
+            <div class="hv-polaroids" role="group" aria-label="Act Three — the life around the work">
+                {% set polaroid_captions = [
+                    ('100 miles. 10 days. One goal.', 'Pushed my body. Proved something to my mind.'),
+                    ('Places that changed me.', 'Ten countries and counting.'),
+                    ('Always get outside.', none)
+                ] %}
+                {% for polaroid in story_preview.act_three.polaroids %}
+                <figure class="hv-polaroid hv-polaroid--{{ loop.index }}">
+                    <img src="{{ url_for('static', filename=polaroid.image.mobile) }}"
+                         alt="{{ polaroid.image.alt }}"
+                         width="640" height="480" loading="lazy">
+                    <figcaption>
+                        <strong>{{ polaroid_captions[loop.index0][0] }}</strong>
+                        {% if polaroid_captions[loop.index0][1] %}<span>{{ polaroid_captions[loop.index0][1] }}</span>{% endif %}
+                    </figcaption>
+                </figure>
+                {% endfor %}
+            </div>
+
+            {# --- Act Four: still becoming --- #}
+            <article class="hv-future">
+                <header class="hv-future__head">
+                    <p class="hv-rc__kicker">04 &middot; Still becoming</p>
+                    <span class="hv-chip hv-chip--cyan">Future in view</span>
+                </header>
+                <h3 class="hv-future__title">{{ story_preview.act_four.closing.title }}</h3>
+                <p class="hv-future__lede">What Pete is focused on now&mdash;and the next chapter already in motion.</p>
+                <ul class="hv-future__list">
+                    {% for item in story_preview.act_four.focus %}
+                    <li>
+                        <span class="hv-future__mark" aria-hidden="true">{{ item.label[:1] }}</span>
+                        <span class="hv-rc__skill-copy">
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.text }}</span>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <a class="hv-future__phd" href="{{ portfolio_url('slate-board') }}">
+                    <span class="hv-future__phd-mark" aria-hidden="true">&#10022;</span>
+                    <span class="hv-rc__skill-copy">
+                        <strong>{{ story_preview.act_four.toward.title }}</strong>
+                        <span>University of South Alabama &middot; January 2027 &middot; Build. Teach. Contribute.</span>
+                    </span>
+                    <span class="hv-dest__arrow" aria-hidden="true">&rsaquo;</span>
+                </a>
+            </article>
+
+        </div>
+    </div>
+</section>

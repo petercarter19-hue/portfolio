@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{#  HOMEPAGE — three-scene overhaul (PS-HOME-STORY-001, 2026-07-16)
+    ============================================================
+    Voice-first hero → Living Résumé scene → My Story + Future scene →
+    final invitation band. Approved by Pete from three mockups; the
+    detailed My Story + Future brief lives in
+    docs/initiatives/PS-HOME-STORY-001/.
+
+    Rules kept: the shared global header/footer from base.html are reused
+    untouched; every CTA resolves through existing endpoints; all content
+    comes from the same server-side sources as the live My Story page and
+    résumé (see _build_home_context in app.py — no second copy of Pete's
+    content); no new JavaScript, fonts, or frameworks.
+
+    The previous cinematic homepage remains at /experience for comparison
+    and rollback.
+#}
+
+{% block title %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
+
+{% block meta_description %}Say what happened — PeerSlate helps make it useful. Capture moments, wins, lessons, and ideas by speaking or typing, and turn them into your Journal, your Story, and your Work.{% endblock %}
+
+{% block body_class %}peerslate-home-page home-v3-page{% endblock %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/homepage-scenes.css') }}?v=three-scenes-1"
+>
+{% endblock %}
+
+{% block content %}
+<div class="home-v3">
+    {% include "partials/homepage/_voice_hero.html" %}
+    {% include "partials/homepage/_living_resume_scene.html" %}
+    {% include "partials/homepage/_story_future_scene.html" %}
+    {% include "partials/homepage/_invite_band.html" %}
+</div>
+{% endblock %}

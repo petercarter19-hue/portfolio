@@ -448,12 +448,99 @@ def is_platform_hostname(hostname):
     clean_host = hostname.split(':', 1)[0].lower()
     return clean_host in {'peerslate.com', 'www.peerslate.com'}
 
-# The root URL ("/") is the cinematic Experience page (2026-07-10):
-# it won the side-by-side comparison against the old marketing homepage.
-# The previous marketing page remains reachable at /peerslate.
+# PS-HOME-STORY-001 (2026-07-16): the homepage is now the three-scene
+# overhaul approved by Pete — voice-first hero, Living Résumé scene, and
+# the My Story + Future scene — rendered from the SAME data sources as the
+# live My Story page and résumé (no second copy of Pete's content). The
+# previous cinematic page stays reachable at /experience for comparison
+# and one-line rollback; the old marketing page remains at /peerslate.
+def _load_home_json(filename):
+    path = os.path.join(os.path.dirname(__file__), 'static', 'data', filename)
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _build_home_context():
+    """Small, intentional preview view models for the homepage scenes.
+
+    Pulls specific approved cards by id from story_data.json and
+    resume_data.json so the homepage can never drift from the live
+    My Story and résumé content.
+    """
+    story = _load_home_json('story_data.json')
+    resume = _load_home_json('resume_data.json')
+
+    acts = {act['id']: act for act in story['acts']}
+
+    def story_card(act_id, card_id):
+        return next(c for c in acts[act_id]['cards'] if c['id'] == card_id)
+
+    story_preview = {
+        'act_index': [
+            {'number': act['number'], 'eyebrow': act['eyebrow'],
+             'label': act['nav_label']}
+            for act in story['acts']
+        ],
+        'act_one': {
+            'image': story_card('act-now', 'now-maui')['image'],
+            'purpose': story_card('act-now', 'now-purpose'),
+            'currently': story_card('act-now', 'now-currently')['list'],
+            'turning': story_card('act-now', 'now-turning'),
+        },
+        'act_two': {
+            'title': acts['act-becoming']['title'],
+            'chapters': [
+                story_card('act-becoming', cid)
+                for cid in ('ch-pizza', 'ch-36', 'ch-airforce', 'ch-industry')
+            ],
+        },
+        'act_three': {
+            'polaroids': [
+                story_card('act-life', cid)
+                for cid in ('life-race', 'life-bali', 'life-hawaii')
+            ],
+        },
+        'act_four': {
+            'closing': story_card('act-next', 'next-closing'),
+            'focus': story_card('act-next', 'next-focus')['list'],
+            'toward': story_card('act-next', 'next-toward'),
+        },
+    }
+
+    metrics = {m['id']: m for m in resume['metrics']}
+    skills = {s['id']: s for s in resume['skills']}
+    roles = {r['id']: r for r in resume['career_roles']}
+    education = {e['id']: e for e in resume['education']}
+    cameo_proof = skills['cameo']['evidence_items'][0]
+
+    resume_preview = {
+        'profile': resume['profile'],
+        'metrics': [
+            metrics[mid] for mid in
+            ('engineers-led', 'redesigns', 'contract', 'repair-test',
+             'issue-time')
+        ],
+        'skills': [
+            {
+                'name': skills[sid]['display_name'],
+                'proof_count': len(skills[sid]['evidence_items']),
+                'role_count': len({e['role_id'] for e in
+                                   skills[sid]['evidence_items']}),
+            }
+            for sid in ('systems-engineering', 'requirements-management',
+                        'mbse')
+        ],
+        'roles': [roles[rid] for rid in ('northrop', 'l3harris', 'dod')],
+        'proof': cameo_proof,
+        'credentials': [education['education-pmp'], education['education-ms']],
+    }
+
+    return {'story_preview': story_preview, 'resume_preview': resume_preview}
+
+
 @app.route('/')
 def home():
-    return render_template('experience.html')
+    return render_template('homepage.html', **_build_home_context())
 
 @app.route('/petec')
 @app.route('/portfolio')

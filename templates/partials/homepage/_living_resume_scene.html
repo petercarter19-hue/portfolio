@@ -1,0 +1,144 @@
+{# Scene 2 — Living Résumé. The preview card renders from resume_data.json —
+   the same approved source as the live résumé pages — so the homepage can
+   never drift from Pete's real, approved numbers. The mockup's tab strip
+   (Summary/Impact/…) is deliberately omitted: fake tabs would be dead
+   controls. The four-step strip links to the real destinations instead. #}
+<section class="hv-resume" aria-labelledby="hv-resume-title">
+    <div class="site-container hv-resume__inner">
+
+        <div class="hv-resume__copy">
+            <p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span> Living R&eacute;sum&eacute;</p>
+            <h2 class="hv-scene-title" id="hv-resume-title">
+                Your work, <em>backed by proof.</em>
+            </h2>
+            <p class="hv-scene-lede">
+                PeerSlate connects measurable impact, skills, experience, and
+                approved evidence&mdash;so every claim can be inspected, not
+                just read.
+            </p>
+            <div class="hv-actions">
+                <a class="hv-btn hv-btn--primary" href="{{ portfolio_resume_url }}">
+                    <span aria-hidden="true">&#10022;</span> Explore Pete&rsquo;s R&eacute;sum&eacute;
+                </a>
+                <a class="hv-btn hv-btn--ghost" href="{{ portfolio_skills_url }}">See the evidence</a>
+            </div>
+            <p class="hv-trust">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></svg>
+                Public r&eacute;sum&eacute; view. Only approved information is shown.
+            </p>
+        </div>
+
+        <div class="hv-resume__card">
+            <header class="hv-rc__head">
+                <img class="hv-rc__avatar"
+                     src="{{ url_for('static', filename=resume_preview.profile.image_path) }}"
+                     alt="{{ resume_preview.profile.image_alt }}"
+                     width="56" height="56" loading="lazy">
+                <div>
+                    <h3 class="hv-rc__name">{{ resume_preview.profile.name }}</h3>
+                    <p class="hv-rc__role">Systems Engineer &amp; Technical Leader</p>
+                </div>
+            </header>
+
+            <div class="hv-rc__grid">
+                <div class="hv-rc__col">
+                    <p class="hv-rc__kicker">Career impact</p>
+                    <p class="hv-rc__headline">Measurable impact. <em>Mission ready.</em></p>
+                    <ul class="hv-rc__metrics">
+                        {% for metric in resume_preview.metrics %}
+                        <li>
+                            <strong>{{ metric.value }}</strong>
+                            <span>{{ metric.label }}</span>
+                        </li>
+                        {% endfor %}
+                        <li class="hv-rc__metrics-note">
+                            <span>Approved public outcomes connected to the experience that produced them.</span>
+                        </li>
+                    </ul>
+
+                    <div class="hv-rc__panel">
+                        <div class="hv-rc__panel-head">
+                            <h4>Skills backed by evidence</h4>
+                            <span class="hv-chip hv-chip--amber">Evidence-backed</span>
+                        </div>
+                        <ul class="hv-rc__skills">
+                            {% for skill in resume_preview.skills %}
+                            <li>
+                                <span class="hv-rc__skill-mark" aria-hidden="true">{{ skill.name[:1] }}</span>
+                                <span class="hv-rc__skill-copy">
+                                    <strong>{{ skill.name }}</strong>
+                                    <span>{{ skill.proof_count }} proof record{{ 's' if skill.proof_count != 1 }} &middot; {{ skill.role_count }} role{{ 's' if skill.role_count != 1 }}</span>
+                                </span>
+                                <span class="hv-dest__arrow" aria-hidden="true">&rsaquo;</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="hv-rc__col">
+                    <div class="hv-rc__panel">
+                        <h4 class="hv-rc__panel-title">The Career Constellation</h4>
+                        <ol class="hv-rc__roles">
+                            {% for role in resume_preview.roles %}
+                            <li>
+                                <span class="hv-rc__role-dot" aria-hidden="true"></span>
+                                <span class="hv-rc__role-copy">
+                                    <strong>{{ role.employer }}</strong>
+                                    <span>{{ role.dates }} &middot; {{ role.title.split(' - ')[0].split(' / ')[0] }}</span>
+                                    <span class="hv-rc__tags">
+                                        {% for tag in role.focus_tags %}<span class="hv-chip">{{ tag }}</span>{% endfor %}
+                                    </span>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+
+                    <div class="hv-rc__panel hv-rc__panel--proof">
+                        <div class="hv-rc__panel-head">
+                            <h4>Strongest approved proof</h4>
+                            <span class="hv-chip hv-chip--amber">Supported</span>
+                        </div>
+                        <p class="hv-rc__proof-text">{{ resume_preview.proof.text }}</p>
+                        <p class="hv-rc__tags">
+                            <span class="hv-chip">{{ resume_preview.proof.employer }} &middot; {{ resume_preview.proof.date_range }}</span>
+                            <span class="hv-chip">MBSE</span>
+                            <span class="hv-chip">Cameo</span>
+                            <span class="hv-chip">SysML</span>
+                        </p>
+                    </div>
+
+                    <div class="hv-rc__panel">
+                        <div class="hv-rc__panel-head">
+                            <h4>Credentials &amp; education</h4>
+                            <span class="hv-rc__panel-note">Approved public records</span>
+                        </div>
+                        <ul class="hv-rc__creds">
+                            {% for cred in resume_preview.credentials %}
+                            <li>
+                                <span class="hv-rc__cred-mark" aria-hidden="true">{{ '4.0' if cred.id == 'education-ms' else cred.credential[:1] }}</span>
+                                <span class="hv-rc__skill-copy">
+                                    <strong>{{ cred.credential }}</strong>
+                                    <span>{{ cred.institution }}{% if cred.date %} &middot; {{ cred.date }}{% endif %}</span>
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="hv-rc__steps">
+                <p class="hv-rc__steps-title">From career impact to <em>the story behind it.</em></p>
+                <ol class="hv-rc__steps-list">
+                    <li><a href="{{ portfolio_resume_url }}"><span class="hv-rc__step-num" aria-hidden="true">1</span><span><strong>Impact</strong><span>Numbers that matter</span></span></a></li>
+                    <li><a href="{{ portfolio_skills_url }}"><span class="hv-rc__step-num" aria-hidden="true">2</span><span><strong>Evidence</strong><span>Inspect the proof</span></span></a></li>
+                    <li><a href="{{ portfolio_experience_url }}"><span class="hv-rc__step-num" aria-hidden="true">3</span><span><strong>Experience</strong><span>See the career arc</span></span></a></li>
+                    <li><a href="{{ portfolio_story_url }}"><span class="hv-rc__step-num" aria-hidden="true">4</span><span><strong>My Story</strong><span>Understand the person</span></span></a></li>
+                </ol>
+            </footer>
+        </div>
+
+    </div>
+</section>
