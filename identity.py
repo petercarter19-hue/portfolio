@@ -31,6 +31,15 @@ NAME_CLAIMS = (
     "name",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
 )
+GIVEN_NAME_CLAIMS = (
+    "given_name",
+    "givenname",
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+)
+
+# Entra emits these literal placeholders as the `name` claim for local
+# sign-ups that never collected a real name. Treat them as "no name at all".
+_PLACEHOLDER_NAMES = frozenset({"unknown", "unknownuser", "unknown user"})
 AUTH_PROVIDER = re.compile(r"^[a-z0-9][a-z0-9._-]{0,99}$")
 
 
@@ -83,6 +92,47 @@ def _first_claim(claims, accepted_types):
     return None
 
 
+def _meaningful_name(value):
+    """Return a stripped display name, or None when it is blank or a known
+    Entra placeholder ("unknown" / "unknownuser"). Comparison is
+    case-insensitive so "Unknown", "UNKNOWN", etc. are all rejected.
+    """
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    if not cleaned:
+        return None
+    if cleaned.casefold() in _PLACEHOLDER_NAMES:
+        return None
+    return cleaned
+
+
+def _resolve_display_name(claims, email):
+    """Pick the best human-readable display name, or None so the UI default
+    ("PeerSlate member") renders.
+
+    Order of preference:
+      1. A real `name` claim (not blank, not an Entra placeholder).
+      2. A real given-name claim.
+      3. The local-part of the email (before the '@').
+      4. None.
+    """
+    real_name = _meaningful_name(_first_claim(claims, NAME_CLAIMS))
+    if real_name:
+        return real_name
+
+    given_name = _meaningful_name(_first_claim(claims, GIVEN_NAME_CLAIMS))
+    if given_name:
+        return given_name
+
+    if email and "@" in email:
+        local_part = email.split("@", 1)[0].strip()
+        if local_part:
+            return local_part
+
+    return None
+
+
 def _bounded_identity_value(value, label, max_length, *, required=True):
     if value is None or not str(value).strip():
         if required:
@@ -126,7 +176,7 @@ def _easy_auth_identity(encoded_principal):
         _first_claim(claims, EMAIL_CLAIMS), "email", 254, required=False
     )
     display_name = _bounded_identity_value(
-        _first_claim(claims, NAME_CLAIMS) or email,
+        _resolve_display_name(claims, email),
         "display name",
         150,
         required=False,
