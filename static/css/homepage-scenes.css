@@ -1439,47 +1439,47 @@
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: cinematic near-black voice hero with a single
-   gold action, then paper-white story bands, closed by the ink footer —
-   the alternating light/dark choreography from the reference poster.
-   Light theme above is untouched.
+   LAYERED SLATE & NAVY & GOLD (PS-THEME-002 gray-and-navy revision,
+   2026-07-17). body[data-theme="dark"]: slate-gray page, the voice
+   capture stage and destination cards as NAVY objects with white type,
+   paper story bands, gold signals. Light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"] .home-v3 {
-    --hv-indigo: #d8a928;
-    --hv-indigo-strong: #e3b83a;
-    --hv-indigo-soft: rgb(216 169 40 / 16%);
-    --hv-azure: #d8a928;
-    --hv-cyan: #d8a928;
-    --hv-amber: #d8a928;
-    --hv-ink: #f7f9fc;
-    --hv-text: #e2e7f0;
-    --hv-muted: #afb9cb;
-    --hv-line: #34497b;
-    --hv-surface: #182c52;
-    --hv-cloud: #0a1730;
-    --hv-green: #69ae92;
-    --hv-violet: #d8a928;
-    --hv-shadow-soft: 0 14px 40px rgb(0 0 0 / 40%);
-    --hv-shadow-lift: 0 24px 60px rgb(0 0 0 / 50%);
+    --hv-indigo: #8a6500;
+    --hv-indigo-strong: #6f5100;
+    --hv-indigo-soft: rgb(216 169 40 / 18%);
+    --hv-azure: #8a6500;
+    --hv-cyan: #8a6500;
+    --hv-amber: #bf8f17;
+    --hv-ink: #16233b;
+    --hv-text: #33445f;
+    --hv-muted: #55647d;
+    --hv-line: #a3acbd;
+    --hv-surface: #254374;
+    --hv-cloud: #c7cdd8;
+    --hv-green: #2b9b6d;
+    --hv-violet: #8a6500;
+    --hv-shadow-soft: 0 14px 40px rgb(22 35 59 / 12%);
+    --hv-shadow-lift: 0 24px 60px rgb(22 35 59 / 18%);
     color: var(--hv-text);
     background:
-        radial-gradient(90rem 44rem at 78% -6rem, rgb(216 169 40 / 7%), transparent 62%),
-        linear-gradient(180deg, #0a1730 0%, #122242 60%, #0a1730 100%);
+        radial-gradient(90rem 44rem at 78% -6rem, rgb(216 169 40 / 8%), transparent 62%),
+        linear-gradient(180deg, #bec5d2 0%, #cbd1db 60%, #bec5d2 100%);
 }
 
-/* Hero internals: graphite capture stage, gold signals. */
+/* Hero internals: NAVY capture stage on the gray canvas, gold signals. */
 body[data-theme="dark"] .home-v3 .hv-eyebrow {
-    background: rgb(216 169 40 / 14%);
-    color: #e3b83a;
+    background: rgb(216 169 40 / 18%);
+    color: #6f5100;
 }
 
 body[data-theme="dark"] .home-v3 .hv-btn--ghost {
-    color: #e2e7f0;
-    border-color: #3b527f;
+    color: #33445f;
+    background: #ffffff;
+    border-color: #a3acbd;
 }
 
-body[data-theme="dark"] .home-v3 .hv-btn--ghost:hover { background: rgb(255 255 255 / 8%); }
+body[data-theme="dark"] .home-v3 .hv-btn--ghost:hover { background: #f5f7fc; }
 
 body[data-theme="dark"] .home-v3 .hv-btn--primary {
     background: #d8a928;
@@ -1495,19 +1495,25 @@ body[data-theme="dark"] .home-v3 .hv-mic__ring {
 }
 
 body[data-theme="dark"] .home-v3 .hv-mic__inner {
-    background: radial-gradient(circle at 50% 32%, #253a61 42%, #182c52 78%, #122242 100%);
-    border: 1px solid #3b527f;
-    box-shadow: var(--hv-shadow-lift), inset 0 0 0 0.6rem rgb(255 255 255 / 4%);
+    background: radial-gradient(circle at 50% 32%, #2e5190 42%, #254374 78%, #1f3a69 100%);
+    border: 1px solid #4a6bad;
+    box-shadow: 0 24px 60px rgb(22 35 59 / 30%), inset 0 0 0 0.6rem rgb(255 255 255 / 5%);
+    color: #f2f4f8;
 }
+
+/* The stage is a navy object — its type stays light even though the page
+   ink went dark. */
+body[data-theme="dark"] .home-v3 .hv-mic__inner :is(h1, h2, h3, p, strong) { color: #f2f4f8; }
+body[data-theme="dark"] .home-v3 .hv-mic__inner :is(small, span) { color: #c4ccda; }
 
 body[data-theme="dark"] .home-v3 .hv-mic:hover .hv-mic__inner,
 body[data-theme="dark"] .home-v3 .hv-mic:focus-visible .hv-mic__inner {
-    box-shadow: 0 28px 70px rgb(0 0 0 / 55%), inset 0 0 0 0.6rem rgb(216 169 40 / 10%);
+    box-shadow: 0 28px 70px rgb(22 35 59 / 32%), inset 0 0 0 0.6rem rgb(216 169 40 / 12%);
 }
 
 body[data-theme="dark"] .home-v3 .hv-mic__key {
     background: rgb(255 255 255 / 8%);
-    border-color: #3b527f;
+    border-color: #4a6bad;
     color: #afb9cb;
 }
 
@@ -1518,9 +1524,9 @@ body[data-theme="dark"] .home-v3 .hv-mic__btn {
 }
 
 body[data-theme="dark"] .home-v3 .hv-chips li {
-    background: rgb(255 255 255 / 7%);
-    border-color: #34497b;
-    color: #cbd3e0;
+    background: #ffffff;
+    border-color: #a3acbd;
+    color: #33445f;
 }
 
 body[data-theme="dark"] .home-v3 .hv-chip {
@@ -1534,9 +1540,14 @@ body[data-theme="dark"] .home-v3 .hv-chip--cyan {
     color: #e3b83a;
 }
 
+/* Destination cards: navy cards with light type on the gray canvas. */
 body[data-theme="dark"] .home-v3 .hv-dest {
-    border-color: #253c66;
+    border-color: #3e5c99;
+    color: #c4ccda;
 }
+
+body[data-theme="dark"] .home-v3 .hv-dest :is(strong, h3, h4) { color: #f2f4f8; }
+body[data-theme="dark"] .home-v3 .hv-dest :is(small, span, p) { color: #c4ccda; }
 
 body[data-theme="dark"] .home-v3 .hv-dest__icon--indigo,
 body[data-theme="dark"] .home-v3 .hv-dest__icon--amber,
@@ -1551,12 +1562,20 @@ body[data-theme="dark"] .home-v3 .hv-dest__icon--green {
     color: #69ae92;
 }
 
-body[data-theme="dark"] .home-v3 .hv-dest__arrow { color: #66645f; }
+body[data-theme="dark"] .home-v3 .hv-dest__arrow { color: #afbacd; }
 
 body[data-theme="dark"] .home-v3 .hv-week {
-    background: rgb(255 255 255 / 5%);
-    border: 1px solid #253c66;
+    background: #254374;
+    border: 1px solid #3e5c99;
+    color: #c4ccda;
 }
+
+body[data-theme="dark"] .home-v3 .hv-week :is(strong, h3) { color: #f2f4f8; }
+body[data-theme="dark"] .home-v3 .hv-week__title { color: #f2f4f8; }
+body[data-theme="dark"] .home-v3 .hv-week p { color: #c4ccda; }
+body[data-theme="dark"] .home-v3 .hv-week__label { color: #afbacd; }
+body[data-theme="dark"] .home-v3 .hv-week .hv-inline-link { color: #e3b83a; }
+body[data-theme="dark"] .home-v3 .hv-week .hv-inline-link:hover { color: #f0c95a; }
 
 body[data-theme="dark"] .home-v3 .hv-week__icon--green { background: rgb(105 174 146 / 16%); color: #69ae92; }
 body[data-theme="dark"] .home-v3 .hv-week__icon--amber,
@@ -1622,7 +1641,7 @@ body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow {
 
 /* PhD future card: ink panel with gold mark (was navy gradient). */
 body[data-theme="dark"] .home-v3 .hv-future__phd {
-    background: linear-gradient(120deg, #0a1730, #253a61);
+    background: linear-gradient(120deg, #0a1730, #2e5190);
 }
 
 /* Role dots in the mock résumé ledger: gold family instead of the
@@ -1636,7 +1655,7 @@ body[data-theme="dark"] .home-v3 .hv-rc__roles li:nth-child(3) .hv-rc__role-dot 
 /* Week summary card: graphite slab in the dark hero (was white). */
 body[data-theme="dark"] .home-v3 .hv-week__summary {
     background: rgb(255 255 255 / 7%);
-    border-color: #34497b;
+    border-color: #476aab;
     color: #cbd3e0;
 }
 
@@ -1663,8 +1682,8 @@ body[data-theme="dark"] .home-v3 .hv-acts__item--current::before { background: #
 /* Invitation band: ink closing statement (was a pale silver gradient
    that read as a metallic strip between the paper band and ink footer). */
 body[data-theme="dark"] .home-v3 .hv-invite {
-    border-top: 1px solid #253c66;
-    background: #0a1730;
+    border-top: 1px solid #3e5c99;
+    background: #16294f;
     color: #f7f9fc;
 }
 

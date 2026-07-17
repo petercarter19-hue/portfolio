@@ -250,57 +250,56 @@ body.slate-light .footer {
 }
 
 /* =====================================================================
-   LAYERED INK & SIGNAL GOLD overrides (PS-THEME-002, 2026-07-16)
-   When the member toggles the dark theme (body[data-theme="dark"]), the
-   blue-orbit sky becomes the near-black page canvas with a whisper of
-   gold atmosphere, and every frosted-glass card becomes a planted dark
-   card one layer lighter than the canvas: solid graphite, 1px hairline,
-   deep soft shadow. The light theme above is untouched.
+   LAYERED SLATE & NAVY overrides (PS-THEME-002 gray-and-navy revision,
+   2026-07-17). When the member toggles the dark theme, the blue-orbit
+   sky becomes the slate-gray page canvas, and every frosted-glass card
+   becomes a planted NAVY card: solid navy, 1px hairline, quiet shadow.
+   The light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"] .site-sky {
     background:
-        radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
-        linear-gradient(180deg, #0a1730 0%, #0e1d3a 40%, #0e1d3a 100%);
+        radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 6%), transparent 60%),
+        linear-gradient(180deg, #bec5d2 0%, #c7cdd8 40%, #c7cdd8 100%);
 }
 
 @media (max-width: 48rem) {
     body[data-theme="dark"] .site-sky {
-        background: #0e1d3a;
+        background: #c7cdd8;
     }
 }
 
 body[data-theme="dark"].slate-light {
-    --glass-bg: #1a2c4f;
-    --glass-bg-strong: #223a66;
-    --glass-border: 1px solid #2e4573;
-    --glass-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 40%);
+    --glass-bg: #254374;
+    --glass-bg-strong: #2e5190;
+    --glass-border: 1px solid #3e5c99;
+    --glass-shadow: 0 1px 2px rgb(22 35 59 / 14%), 0 14px 34px rgb(22 35 59 / 16%);
     --glass-blur: none;
 }
 
-/* Profile band + tab strip: layered graphite pieces under the ink header
-   — black on black, separated by hairlines and elevation. */
+/* Profile band + tab strip: navy chrome pieces under the navy header,
+   separated by hairlines before the gray canvas begins. */
 body[data-theme="dark"].slate-light .profile-header {
-    background: #132444;
-    border-bottom: 1px solid #253c66;
+    background: #1b3158;
+    border-bottom: 1px solid #3a5691;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 body[data-theme="dark"].slate-light .profile-tabs {
-    background: rgb(16 31 60 / 96%);
-    border-bottom: 1px solid #253c66;
+    background: rgb(22 41 79 / 97%);
+    border-bottom: 1px solid #3a5691;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 /* Community (the-slate) sub-header: same graphite strip. */
 body[data-theme="dark"].slate-light.the-slate-page .profile-tabs {
-    background: linear-gradient(180deg, rgb(16 31 60 / 92%), rgb(14 29 58 / 98%));
-    border-top: 1px solid #24375c;
+    background: linear-gradient(180deg, rgb(22 41 79 / 94%), rgb(22 41 79 / 98%));
+    border-top: 1px solid #35508a;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab {
-    color: #9aa5b8;
+    color: #afbacd;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab::after {
@@ -321,10 +320,10 @@ body[data-theme="dark"].slate-light .section-eyebrow {
     text-shadow: none;
 }
 
-/* Footer is the deepest well band (style.css owns its colors). */
+/* Footer is the navy chrome band (style.css owns its colors). */
 body[data-theme="dark"].slate-light .footer {
-    background: #081426;
-    border-top: 1px solid #253c66;
+    background: #16294f;
+    border-top: 1px solid #3a5691;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }

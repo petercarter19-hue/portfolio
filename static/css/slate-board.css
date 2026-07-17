@@ -3450,45 +3450,45 @@ body.slate-board-redesign {
    marker colors are user content and stay as they are.
    ===================================================================== */
 body[data-theme="dark"] {
-    --sb-ink: #f2f4f8;
-    --sb-ink-soft: #9aa5b8;
-    --sb-indigo: #e3b83a;
+    --sb-ink: #16233b;
+    --sb-ink-soft: #55647d;
+    --sb-indigo: #8a6500;
     --sb-azure: #d8a928;
     --sb-cyan: #bf8f17;
     --sb-amber: #d8a928;
-    --sb-cloud: #16294c;
-    --sb-wall: #132444;
-    --sb-line: #2e4573;
+    --sb-cloud: #bec5d2;
+    --sb-wall: #c2c9d5;
+    --sb-line: #a3acbd;
 }
 
 body[data-theme="dark"].slate-board-redesign {
     background:
-        radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.08), transparent 26rem),
-        linear-gradient(180deg, #0a1730 0%, #132444 60%, #0e1d3a 100%);
+        radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.1), transparent 26rem),
+        linear-gradient(180deg, #b9c1cf 0%, #c7cdd8 60%, #c2c9d5 100%);
     color: var(--sb-ink);
 }
 
 /* App chrome on the dark wall: the controls rail becomes a dark card one
    layer above the wall; the white whiteboard stays the bright layer. */
 body[data-theme="dark"] .sb-controls {
-    border-color: #2e4573;
-    background: linear-gradient(145deg, rgba(26, 44, 79, 0.96), rgba(20, 34, 62, 0.9));
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+    border-color: #3e5c99;
+    background: linear-gradient(145deg, rgba(26, 44, 79, 0.96), rgba(31, 58, 105, 0.9));
+    box-shadow: 0 16px 34px rgba(22, 35, 59, 0.2);
 }
 
 body[data-theme="dark"] .sb-controls__group {
-    border-bottom-color: #2e4573;
+    border-bottom-color: #3e5c99;
 }
 
 /* Rail typography + tools: light labels on the dark rail; the active/
    hovered tool takes the gold signal instead of the light theme's blue. */
-body[data-theme="dark"] .sb-controls__label { color: #9aa5b8; }
+body[data-theme="dark"] .sb-controls__label { color: #afbacd; }
 
 body[data-theme="dark"] .sb-controls button {
     color: #cbd3e0;
 }
 
-body[data-theme="dark"] .sb-controls button svg { color: #9aa5b8; }
+body[data-theme="dark"] .sb-controls button svg { color: #afbacd; }
 
 body[data-theme="dark"] .sb-controls button:hover,
 body[data-theme="dark"] .sb-controls button.is-active {
@@ -3519,10 +3519,10 @@ body[data-theme="dark"] .sb-controls .sb-fit-button svg { color: #1a1c22; }
 body[data-theme="dark"] .sb-controls__zoom output { color: #c4ccda; }
 
 body[data-theme="dark"] .sb-controls__people li { color: #cbd3e0; }
-body[data-theme="dark"] .sb-controls__people li small { color: #9aa5b8; }
-body[data-theme="dark"] .sb-preview-label { color: #9aa5b8; }
+body[data-theme="dark"] .sb-controls__people li small { color: #afbacd; }
+body[data-theme="dark"] .sb-preview-label { color: #afbacd; }
 
-body[data-theme="dark"] .sb-status-line { color: #9aa5b8; }
+body[data-theme="dark"] .sb-status-line { color: #afbacd; }
 body[data-theme="dark"] .sb-status-line--saved svg { color: #69ae92; }
 
 /* Header buttons on the dark wall (Share Board, More): white pills need

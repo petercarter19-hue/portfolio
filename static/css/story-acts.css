@@ -1613,7 +1613,7 @@ body[data-theme="dark"] .my-story-page {
 /* Dark chapter/stat/closing panels: ink instead of navy. */
 body[data-theme="dark"] .sc-closing,
 body[data-theme="dark"] .sc-stat.sc-var-dark {
-    background: linear-gradient(160deg, #182c52 0%, #0a1730 100%);
+    background: linear-gradient(160deg, #254374 0%, #0a1730 100%);
 }
 
 /* Eyebrows/kickers. */
@@ -1661,8 +1661,8 @@ body[data-theme="dark"] .story-values {
 /* Completed-goals stage: the light glass slab flips to a navy card so its
    flipped light type stays readable. */
 body[data-theme="dark"] .story-goals {
-    background: rgb(26 44 79 / 92%);
-    border-color: #2e4573;
+    background: rgb(37 67 116 / 92%);
+    border-color: #3e5c99;
     box-shadow: 0 1.25rem 3.5rem rgb(0 0 0 / 45%);
     backdrop-filter: none;
 }

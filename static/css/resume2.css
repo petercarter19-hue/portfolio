@@ -4590,7 +4590,7 @@ body[data-theme="dark"] .resume-v2 {
     --r2-cyan: #8a6500;
     --r2-amber: #8a6500;
     --r2-cloud: #f1efea;
-    --r2-shadow: 0 4px 14px rgb(0 0 0 / 45%), 0 30px 70px rgb(0 0 0 / 55%);
+    --r2-shadow: 0 4px 14px rgb(22 35 59 / 12%), 0 30px 70px rgb(22 35 59 / 18%);
 }
 
 /* The paper slabs: the glass washes of the light theme become SOLID warm
@@ -4653,16 +4653,16 @@ body[data-theme="dark"] .r2-quote-card blockquote {
 /* --- Dark theme: literal-color sweep (selectors found via hue audit) ---
    The page canvas behind the paper slabs: the fixed ::before backdrop
    (which carries the mountain photo in the light theme) becomes the
-   near-black stage with a whisper of gold atmosphere; the ::after wash
-   layer is switched off so it cannot gray the stage. */
+   slate-gray stage with a whisper of gold atmosphere; the ::after wash
+   layer is switched off so it cannot tint the stage. */
 body[data-theme="dark"] .resume-v2 {
-    background: #0e1d3a;
+    background: #c7cdd8;
 }
 
 body[data-theme="dark"] .resume-v2::before {
     background:
-        radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 6%), transparent 60%),
-        linear-gradient(180deg, #0a1730 0%, #0e1d3a 55%, #0a1730 100%);
+        radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 7%), transparent 60%),
+        linear-gradient(180deg, #bec5d2 0%, #c7cdd8 55%, #bec5d2 100%);
 }
 
 body[data-theme="dark"] .resume-v2::after {
@@ -4789,7 +4789,7 @@ body[data-theme="dark"] .r2-ai-card .hero-ai-answer {
 
 /* Flip-card back: ink panel instead of navy/teal gradient. */
 body[data-theme="dark"] .r2-outcome-flip__back {
-    background: linear-gradient(145deg, #182c52, #253a61);
+    background: linear-gradient(145deg, #254374, #2e5190);
 }
 
 body[data-theme="dark"] .r2-exp-toggle {

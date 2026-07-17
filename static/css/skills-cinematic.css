@@ -238,23 +238,23 @@
    accents; orb hues collapse to the gold family via --orb below.
    ===================================================================== */
 body[data-theme="dark"] .skills-film {
-    --skf-ink: #f2f4f8;
-    --skf-ink-soft: #9aa5b8;
+    --skf-ink: #16233b;
+    --skf-ink-soft: #55647d;
 }
 
-body[data-theme="dark"] .skf-open h1 span { color: #e3b83a; }
+body[data-theme="dark"] .skf-open h1 span { color: #8a6500; }
 body[data-theme="dark"] .skf-orb { --orb: #d8a928; }
 
 body[data-theme="dark"] .skf-orb[aria-expanded="true"] .skf-orb__ball {
     box-shadow:
-        0 0 0 0.26rem #0e1d3a,
+        0 0 0 0.26rem #c7cdd8,
         0 0 0 0.55rem var(--orb, #d8a928),
-        0 0.7rem 1.8rem rgb(0 0 0 / 55%),
+        0 0.7rem 1.8rem rgb(22 35 59 / 25%),
         inset 0 0.2rem 0.5rem rgb(255 255 255 / 30%);
 }
 
 body[data-theme="dark"] .skf-orb__name {
-    color: #f2f4f8;
+    color: #16233b;
     text-shadow: none;
 }
 
@@ -271,4 +271,4 @@ body[data-theme="dark"] .skf-cta__btn:focus-visible {
     background: #e3b83a;
 }
 
-body[data-theme="dark"] .skf-act__head { color: #9aa5b8; }
+body[data-theme="dark"] .skf-act__head { color: #afbacd; }

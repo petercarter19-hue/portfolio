@@ -3028,12 +3028,12 @@ body[data-theme="dark"] {
 /* Résumé sub-header strip: graphite layer between the ink header and the
    black stage (the light theme paints it pale blue). */
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume {
-    border-top: 1px solid #253c66;
+    border-top: 1px solid #3a5691;
     background: linear-gradient(180deg, rgb(16 31 60 / 92%), rgb(14 29 58 / 98%));
 }
 
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab {
-    color: #9aa5b8;
+    color: #afbacd;
 }
 
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab:hover,
@@ -3050,8 +3050,8 @@ body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab
    off-white nodes, gold highlights (brief: nodes off-white, gold when
    selected; green only for verified). */
 body[data-theme="dark"] .lr-constellation__scene {
-    border-color: #34497b;
-    background: radial-gradient(circle at 50% 18%, #253a61 0%, #182c52 55%, #0a1730 100%);
+    border-color: #476aab;
+    background: radial-gradient(circle at 50% 18%, #2e5190 0%, #254374 55%, #0a1730 100%);
 }
 
 body[data-theme="dark"] .lr-constellation p { color: #afb9cb; }
