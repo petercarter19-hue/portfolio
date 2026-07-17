@@ -416,8 +416,11 @@ body.feed-preview-page .main-content { isolation: auto; }
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: indigo accents → signal gold on paper.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: the feed keeps its white app sheet — one
+   deliberate paper layer floating in the dark shell (the prototype
+   hardcodes white surfaces + navy type throughout, so the sheet stays
+   coherent) — with indigo accents collapsed to signal gold.
    ===================================================================== */
 body[data-theme="dark"] {
   --indigo: #8a6500;

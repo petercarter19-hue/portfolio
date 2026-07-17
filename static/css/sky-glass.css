@@ -250,53 +250,57 @@ body.slate-light .footer {
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD overrides (PS-THEME-001, 2026-07-16)
-   When the member toggles the mono theme (body[data-theme="dark"]), the
-   blue-orbit sky is replaced by flat warm paper and every frosted-glass
-   card becomes a planted mono card: solid white, 1px warm border, quiet
-   neutral shadow. The light theme above is untouched.
+   LAYERED INK & SIGNAL GOLD overrides (PS-THEME-002, 2026-07-16)
+   When the member toggles the dark theme (body[data-theme="dark"]), the
+   blue-orbit sky becomes the near-black page canvas with a whisper of
+   gold atmosphere, and every frosted-glass card becomes a planted dark
+   card one layer lighter than the canvas: solid graphite, 1px hairline,
+   deep soft shadow. The light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"] .site-sky {
-    background: #faf9f5;
+    background:
+        radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
+        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 40%, #0e0f12 100%);
 }
 
 @media (max-width: 48rem) {
     body[data-theme="dark"] .site-sky {
-        background: #faf9f5;
+        background: #0e0f12;
     }
 }
 
 body[data-theme="dark"].slate-light {
-    --glass-bg: #ffffff;
-    --glass-bg-strong: #ffffff;
-    --glass-border: 1px solid #ddd9d0;
-    --glass-shadow: 0 1px 2px rgb(11 12 14 / 5%), 0 14px 34px rgb(11 12 14 / 8%);
+    --glass-bg: #17191e;
+    --glass-bg-strong: #1e2127;
+    --glass-border: 1px solid #262a31;
+    --glass-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 40%);
     --glass-blur: none;
 }
 
-/* Profile band + tab strip: solid paper pieces under the ink header. */
+/* Profile band + tab strip: layered graphite pieces under the ink header
+   — black on black, separated by hairlines and elevation. */
 body[data-theme="dark"].slate-light .profile-header {
-    background: #ffffff;
-    border-bottom: 1px solid #ddd9d0;
+    background: #101216;
+    border-bottom: 1px solid #26282c;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 body[data-theme="dark"].slate-light .profile-tabs {
-    background: rgb(250 249 245 / 96%);
-    border-bottom: 1px solid #e9e5dc;
+    background: rgb(16 18 22 / 96%);
+    border-bottom: 1px solid #26282c;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-/* Community (the-slate) sub-header: warm paper instead of blue tint. */
+/* Community (the-slate) sub-header: same graphite strip. */
 body[data-theme="dark"].slate-light.the-slate-page .profile-tabs {
-    background: linear-gradient(180deg, rgb(245 243 238 / 92%), rgb(250 249 245 / 98%));
-    border-top: 1px solid #e2ddd2;
+    background: linear-gradient(180deg, rgb(16 18 22 / 92%), rgb(14 15 18 / 98%));
+    border-top: 1px solid #1d2026;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab {
-    color: #66645f;
+    color: #a5a399;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab::after {
@@ -306,10 +310,10 @@ body[data-theme="dark"].slate-light.the-slate-page .profile-tab::after {
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab:hover,
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab:focus-visible,
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab[aria-current="page"] {
-    color: #8a6500;
+    color: #e3b83a;
 }
 
-/* Heading halos exist to fight the busy sky photo — mono paper needs none. */
+/* Heading halos exist to fight the busy sky photo — flat ink needs none. */
 body[data-theme="dark"].slate-light h1,
 body[data-theme="dark"].slate-light h2,
 body[data-theme="dark"].slate-light h3,
@@ -317,9 +321,9 @@ body[data-theme="dark"].slate-light .section-eyebrow {
     text-shadow: none;
 }
 
-/* Footer is the ink closing band (style.css owns its colors). */
+/* Footer is the deepest well band (style.css owns its colors). */
 body[data-theme="dark"].slate-light .footer {
-    background: #0b0c0e;
+    background: #060708;
     border-top: 1px solid #26282c;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

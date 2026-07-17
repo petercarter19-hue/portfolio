@@ -2397,59 +2397,64 @@ body[data-theme="modern-blue"] {
 }
 
 /* =========================================================
-   MONOCHROME & SIGNAL GOLD — the "dark theme" (PS-THEME-001, 2026-07-16)
+   LAYERED INK & SIGNAL GOLD — the dark theme (PS-THEME-002, 2026-07-16)
    An optional, member-toggled theme (header switch next to search), off
-   by default. Matches the approved reference poster: ink-black chrome,
-   warm paper pages, black editorial type, and ONE signal-gold accent.
-   No blues, no purples, no stone photo, no grain. Same variable names
-   as Modern Blue above, so components that read --bg/--surface/--text/
-   --accent re-theme automatically.
-   Contrast rules: bright gold #D8A928 is for buttons (with ink text),
-   underlines, icons, and large display accents only. Small/plain text
-   accents on light surfaces use text-safe gold-ink #8A6500 (5.4:1). */
+   by default. A TRUE dark theme: near-black layered surfaces (never pure
+   #000), off-white editorial type, and ONE signal-gold accent. Elevation
+   is expressed by lightening each layer, the standard dark-UI pattern:
+     well   #060708   (inset panels, footer, deep bands)
+     page   #0e0f12   (the canvas)
+     card   #17191e   (cards, rails, panels)
+     raised #1e2127   (nested cards, hover, popovers)
+   Paper (#f6f5f0 with ink text) survives as a deliberate POP layer for a
+   few feature moments — white layered between blacks — plus user content
+   (sticky notes, photos, the whiteboard canvas).
+   Contrast rules: bright gold #E3B83A is text-safe on every dark layer
+   (≈9:1 on ink); button gold #D8A928 always carries ink text; the old
+   text-safe gold-ink #8A6500 is only for text on the paper pop layer. */
 body[data-theme="dark"] {
-    --bg: #faf9f5;
-    --bg-elevated: #f1efea;
-    --surface: #ffffff;
-    --surface-soft: #f1efea;
-    --text: #0b0c0e;
-    --text-muted: #66645f;
-    --accent: #8a6500;
-    --accent-hover: #6f5100;
-    --accent-soft: rgb(216 169 40 / 15%);
-    --border: #ddd9d0;
-    --shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
+    --bg: #0e0f12;
+    --bg-elevated: #17191e;
+    --surface: #17191e;
+    --surface-soft: #14161a;
+    --text: #f4f3ef;
+    --text-muted: #a5a399;
+    --accent: #e3b83a;
+    --accent-hover: #f0c95a;
+    --accent-soft: rgb(216 169 40 / 14%);
+    --border: #262a31;
+    --shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
     --nav-bg: rgb(11 12 14 / 96%);
-    --tab-active: #8a6500;
+    --tab-active: #e3b83a;
     --button-primary-bg: #d8a928;
     --button-primary-text: #0b0c0e;
-    --button-secondary-bg: #ffffff;
-    --button-secondary-text: #0b0c0e;
-    --color-page: #faf9f5;
-    --color-page-deep: #f1efea;
-    --color-section: #f5f3ee;
-    --color-card: #ffffff;
-    --color-card-elevated: #f7f5f0;
-    --color-card-hover: #f5efdd;
+    --button-secondary-bg: #1e2127;
+    --button-secondary-text: #f4f3ef;
+    --color-page: #0e0f12;
+    --color-page-deep: #060708;
+    --color-section: #14161a;
+    --color-card: #17191e;
+    --color-card-elevated: #1e2127;
+    --color-card-hover: #232730;
     --color-gold: #d8a928;
     --color-gold-bright: #e3b83a;
     --color-gold-muted: #bf8f17;
     --color-gold-dark: #8a6500;
-    --color-blue: #8a6500;
-    --color-cyan: #2f7a62;
-    --color-text-primary: #0b0c0e;
-    --color-text-secondary: #3a3d42;
-    --color-text-muted: #66645f;
-    --color-border: #ddd9d0;
-    --color-border-soft: #e9e5dc;
+    --color-blue: #e3b83a;
+    --color-cyan: #5abf95;
+    --color-text-primary: #f4f3ef;
+    --color-text-secondary: #c6c4bc;
+    --color-text-muted: #a5a399;
+    --color-border: #262a31;
+    --color-border-soft: #1d2026;
     --color-border-gold: #d8a928;
-    --shadow-card: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
-    --shadow-gold: 0 8px 22px rgb(216 169 40 / 22%);
+    --shadow-card: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
+    --shadow-gold: 0 8px 22px rgb(216 169 40 / 18%);
     --slate-grain: 0;
     /* Sign In / ink chrome buttons: gold with ink text on the dark header. */
     --ink-btn-bg: #d8a928;
     --ink-btn-text: #0b0c0e;
-    --askbar-bg: #0b0c0e;
+    --askbar-bg: #060708;
 }
 
 /* No stone photo in mono mode — flat warm paper, no texture/grain. */
@@ -4019,12 +4024,12 @@ body[data-theme="modern-blue"] #chat-panel {
     box-shadow: var(--slab-card-shadow), 0 0 30px rgb(40 45 60 / 14%);
 }
 
-/* Monochrome & Signal Gold shell (PS-THEME-001): mirrors the Modern Blue
-   shell rules above. Ink-black global chrome over paper pages; flat mono
-   elevation (1px borders + soft neutral shadows, no gloss, no grain). */
+/* Layered Ink & Signal Gold shell (PS-THEME-002): mirrors the Modern Blue
+   shell rules above. Ink-black global chrome over layered near-black
+   pages; elevation = lighter surface + 1px hairline + deep soft shadow. */
 body[data-theme="dark"] .hero::before {
     background:
-        linear-gradient(90deg, rgb(250 249 245 / 82%) 0%, rgb(250 249 245 / 55%) 48%, rgb(250 249 245 / 82%) 100%),
+        linear-gradient(90deg, rgb(14 15 18 / 88%) 0%, rgb(14 15 18 / 62%) 48%, rgb(14 15 18 / 88%) 100%),
         radial-gradient(circle at 78% 14%, var(--accent-soft), transparent 28%);
 }
 
@@ -4100,20 +4105,41 @@ body[data-theme="dark"] .nav-ask-ai {
     background: transparent;
 }
 
-/* Profile sub-header (second row): paper strip under the ink bar. */
+/* Profile sub-header (second row): a raised graphite strip one layer
+   above the page, one below the ink bar — black on black layering. */
+body[data-theme="dark"] .profile-tabs {
+    background: #14161a;
+    border-bottom: 1px solid #26282c;
+}
+
 body[data-theme="dark"] .profile-tabs .profile-tab {
-    color: #66645f;
+    color: #a5a399;
     font-weight: 680;
 }
 
 body[data-theme="dark"] .profile-tabs .profile-tab:hover,
 body[data-theme="dark"] .profile-tabs .profile-tab:focus-visible,
 body[data-theme="dark"] .profile-tabs .profile-tab[aria-current="page"] {
-    color: #8a6500;
+    color: #e3b83a;
 }
 
 body[data-theme="dark"] .profile-tabs .profile-tab::after {
     background: #d8a928;
+}
+
+/* Sub-header Ask AI chip: the AI-teal pill collapses to the gold signal
+   family on the dark strip. */
+body[data-theme="dark"] .profile-tabs__ask-btn {
+    color: #e3b83a;
+    background: rgb(216 169 40 / 12%);
+    border-color: rgb(216 169 40 / 35%);
+}
+
+body[data-theme="dark"] .profile-tabs__ask-btn:hover,
+body[data-theme="dark"] .profile-tabs__ask-btn:focus-visible {
+    color: #0b0c0e;
+    background: #d8a928;
+    border-color: #d8a928;
 }
 
 body[data-theme="dark"] .btn-secondary {
@@ -4123,22 +4149,22 @@ body[data-theme="dark"] .btn-secondary {
 }
 
 body[data-theme="dark"] {
-    --slab-bar-shadow: 0 1px 2px rgb(11 12 14 / 5%);
-    --slab-card-shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
-    --slab-control-shadow: 0 1px 2px rgb(11 12 14 / 6%), 0 6px 14px rgb(11 12 14 / 8%);
-    --slab-primary-shadow: 0 2px 4px rgb(11 12 14 / 10%), 0 12px 22px rgb(216 169 40 / 22%);
+    --slab-bar-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+    --slab-card-shadow: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
+    --slab-control-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 6px 14px rgb(0 0 0 / 35%);
+    --slab-primary-shadow: 0 2px 4px rgb(0 0 0 / 45%), 0 12px 22px rgb(216 169 40 / 20%);
     --slate-vein-strong: transparent;
     --slate-vein-soft: transparent;
     --slate-type-shadow: none;
     --slate-accent-text-shadow: none;
     --slate-linkedin-bg: #0b0c0e;
     --slate-linkedin-mark: #fafaf7;
-    --pop-shadow: 0 4px 12px rgb(11 12 14 / 8%), 0 28px 72px rgb(11 12 14 / 16%);
+    --pop-shadow: 0 4px 12px rgb(0 0 0 / 45%), 0 28px 72px rgb(0 0 0 / 55%);
     --gilt-shadow: none;
-    --slab-hi: rgb(255 255 255 / 85%);
-    --slab-lo: rgb(11 12 14 / 6%);
-    --slab-hi-chip: rgb(255 255 255 / 88%);
-    --slab-lo-chip: rgb(11 12 14 / 5%);
+    --slab-hi: rgb(255 255 255 / 6%);
+    --slab-lo: rgb(0 0 0 / 45%);
+    --slab-hi-chip: rgb(255 255 255 / 7%);
+    --slab-lo-chip: rgb(0 0 0 / 40%);
 }
 
 body[data-theme="dark"] .profile-header {
@@ -4161,9 +4187,9 @@ body[data-theme="dark"] .resume-metric-card.is-selected {
     filter: none;
 }
 
-/* Footer: the dark closing band from the reference poster. */
+/* Footer: the deepest layer — a well below the page canvas. */
 body[data-theme="dark"] .footer {
-    background: #0b0c0e;
+    background: #060708;
     color: #b9b8b3;
     border-top: 1px solid #26282c;
 }
@@ -4227,10 +4253,11 @@ body[data-theme="dark"] .chat-message.bot-message {
     color: #f1efe9;
 }
 
-/* Focus ring: gold, visible on both paper and ink surfaces. */
+/* Focus ring: gold with an ink offset, visible on every dark layer and
+   on the paper pop layer alike. */
 body[data-theme="dark"] :where(a, button, input, textarea, select, [tabindex]):focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px #faf9f5, 0 0 0 5px rgb(216 169 40 / 85%);
+    box-shadow: 0 0 0 2px #0e0f12, 0 0 0 5px rgb(227 184 58 / 85%);
 }
 
 @media (max-width: 1180px) {
@@ -14027,41 +14054,55 @@ body[data-room="ultraviolet"] {
 }
 
 /* =========================================================
-   MONOCHROME & SIGNAL GOLD — Iris-Foundry-token layer
-   (PS-THEME-001, 2026-07-16). Placed after every body[data-room=...]
+   LAYERED INK & SIGNAL GOLD — Iris-Foundry-token layer
+   (PS-THEME-002, 2026-07-16). Placed after every body[data-room=...]
    block above so it wins when data-theme="dark" and data-room both sit
    on <body> at once. Room accents collapse to one signal-gold accent —
-   the per-room hues stay a light-theme-only distinction. Note the page
-   canvas stays PAPER (the reference poster's inner pages are warm
-   white); only the chrome and cinematic stages go ink-black, via the
-   shell overrides in the theme section far above. */
+   the per-room hues stay a light-theme-only distinction. The canvas is
+   the near-black page layer; cards sit one layer lighter; the paper pop
+   layer is reserved for deliberate feature moments. */
 body[data-theme="dark"] {
-    --ps-canvas: #faf9f5;
-    --ps-surface: #ffffff;
-    --ps-surface-soft: #f1efea;
-    --ps-ink: #0b0c0e;
-    --ps-muted: #66645f;
-    --ps-border: #ddd9d0;
-    --ps-primary: #8a6500;
-    --ps-primary-strong: #6f5100;
-    --ps-primary-soft: #f5e7b6;
+    --ps-canvas: #0e0f12;
+    --ps-surface: #17191e;
+    --ps-surface-soft: #14161a;
+    --ps-ink: #f4f3ef;
+    --ps-muted: #a5a399;
+    --ps-border: #262a31;
+    --ps-primary: #e3b83a;
+    --ps-primary-strong: #f0c95a;
+    --ps-primary-soft: rgb(216 169 40 / 16%);
     --ps-bronze: #d8a928;
-    --ps-bronze-strong: #8a6500;
-    --ps-success-teal: #2f7a62;
+    --ps-bronze-strong: #e3b83a;
+    --ps-success-teal: #5abf95;
     --ps-gold: #d8a928;
     --ps-gold-hover: #e3b83a;
     --ps-gold-active: #bf8f17;
-    --ps-gold-ink: #8a6500;
+    --ps-gold-ink: #e3b83a;
     --ps-graphite: #24262a;
-    --ps-shadow-static: 0 1px 2px rgb(11 12 14 / 5%);
-    --ps-shadow-interactive: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
-    --ps-shadow-focal: 0 4px 12px rgb(11 12 14 / 8%), 0 28px 72px rgb(11 12 14 / 16%);
-    --ps-shadow-dark: 0 18px 50px rgb(0 0 0 / 35%);
-    --ps-focus-ring: 0 0 0 3px var(--ps-canvas), 0 0 0 6px rgb(216 169 40 / 70%);
-    /* Room accents collapse to text-safe gold (single master accent). */
-    --ps-page-accent: #8a6500;
-    --ps-page-accent-strong: #6f5100;
-    --ps-page-accent-soft: #f5e7b6;
+    --ps-shadow-static: 0 1px 2px rgb(0 0 0 / 40%);
+    --ps-shadow-interactive: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
+    --ps-shadow-focal: 0 4px 12px rgb(0 0 0 / 45%), 0 28px 72px rgb(0 0 0 / 55%);
+    --ps-shadow-dark: 0 18px 50px rgb(0 0 0 / 60%);
+    --ps-focus-ring: 0 0 0 3px var(--ps-canvas), 0 0 0 6px rgb(227 184 58 / 75%);
+    /* Room accents collapse to dark-safe bright gold (single accent). */
+    --ps-page-accent: #e3b83a;
+    --ps-page-accent-strong: #f0c95a;
+    --ps-page-accent-soft: rgb(216 169 40 / 16%);
+}
+
+/* Primary marketing buttons in dark: button gold ALWAYS carries ink text
+   (the generic .ps-btn--primary below pairs the accent with white). */
+body[data-theme="dark"] .ps-btn--primary {
+    background: #d8a928;
+    border-color: #d8a928;
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .ps-btn--primary:hover,
+body[data-theme="dark"] .ps-btn--primary:focus-visible {
+    background: #e3b83a;
+    border-color: #e3b83a;
+    color: #0b0c0e;
 }
 
 /* The global header keeps the room accent for its active link in the
@@ -14077,7 +14118,7 @@ body[data-theme="dark"][data-room] .platform-nav__links a[aria-current="page"]::
 }
 
 body[data-theme="dark"][data-room] .profile-tab[aria-current="page"] {
-    color: #8a6500;
+    color: #e3b83a;
 }
 
 body[data-theme="dark"][data-room] .profile-tab[aria-current="page"]::after {
@@ -14168,15 +14209,15 @@ body[data-theme="dark"] .sign-in-btn:focus-visible {
     background: #e3b83a;
 }
 
-/* Profile band card + avatar shadow: warm neutrals. */
+/* Profile band card + avatar shadow: card layer over the page layer. */
 body[data-theme="dark"].slate-light .profile-header__inner {
-    background: #ffffff;
-    border-color: #ddd9d0;
-    box-shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 8%);
+    background: #17191e;
+    border-color: #262a31;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
 }
 
 body[data-theme="dark"].slate-light .profile-avatar {
-    box-shadow: 0 10px 26px rgb(11 12 14 / 14%);
+    box-shadow: 0 10px 26px rgb(0 0 0 / 50%);
 }
 
 /* LinkedIn chip keeps its true brand mark (user-content rule) — only the
@@ -14204,7 +14245,7 @@ body[data-theme="dark"].slate-light .ps-askbar .hero-ai-answer {
     border-left-color: #d8a928;
 }
 
-body[data-theme="dark"].slate-light .ps-askbar .hero-ai-answer__question { color: #8a6500; }
+body[data-theme="dark"].slate-light .ps-askbar .hero-ai-answer__question { color: #e3b83a; }
 
 /* Gold arrow glyph in metric/stat icons (was recolored blue by the
    modern-blue theme block near the top of the file). */
@@ -14213,7 +14254,7 @@ body[data-theme="dark"] #arrow-gold path { fill: #d8a928; }
 /* Generic profile-tab active state on every variant. */
 body[data-theme="dark"].slate-light .profile-tab[aria-current="page"],
 body[data-theme="dark"].slate-light .profile-tabs .profile-tab[aria-current="page"] {
-    color: #8a6500;
+    color: #e3b83a;
 }
 
 body[data-theme="dark"].slate-light .profile-tab::after,
@@ -14223,33 +14264,33 @@ body[data-theme="dark"].slate-light .profile-tabs .profile-tab::after {
 
 body[data-theme="dark"].slate-light .profile-tab,
 body[data-theme="dark"].slate-light .profile-tabs .profile-tab {
-    color: #66645f;
+    color: #a5a399;
 }
 
 body[data-theme="dark"].slate-light .profile-tab:hover,
 body[data-theme="dark"].slate-light .profile-tab:focus-visible {
-    color: #8a6500;
+    color: #e3b83a;
 }
 
 /* Footer (slate-light variant paints its own glass above). */
 body[data-theme="dark"].slate-light .footer {
-    background: #0b0c0e;
+    background: #060708;
     color: #b9b8b3;
 }
 
-/* Mobile bottom tab bar: paper bar, gold active pill. */
+/* Mobile bottom tab bar: ink bar, gold active pill. */
 body[data-theme="dark"] .mobile-tabbar {
-    background: rgb(250 249 245 / 96%);
-    border-top: 1px solid #ddd9d0;
-    box-shadow: 0 -8px 22px rgb(11 12 14 / 10%);
+    background: rgb(11 12 14 / 96%);
+    border-top: 1px solid #26282c;
+    box-shadow: 0 -8px 22px rgb(0 0 0 / 45%);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-body[data-theme="dark"] .mobile-tabbar__item { color: #66645f; }
+body[data-theme="dark"] .mobile-tabbar__item { color: #a5a399; }
 
 body[data-theme="dark"] .mobile-tabbar__item[aria-current="page"] {
-    color: #6f5100;
+    color: #e3b83a;
     background: rgb(216 169 40 / 16%);
 }
 
@@ -14261,47 +14302,47 @@ body[data-theme="dark"] .nav-ask-ai {
 }
 
 /* slate-light (applied to almost every page) re-declares the shared vars
-   AFTER the mono block far above — re-assert the mono palette here. */
+   AFTER the dark block far above — re-assert the dark palette here. */
 body[data-theme="dark"].slate-light {
-    --bg: #faf9f5;
-    --bg-elevated: #f1efea;
-    --surface: #ffffff;
-    --surface-soft: #f1efea;
-    --border: #ddd9d0;
-    --text: #0b0c0e;
-    --text-muted: #66645f;
-    --accent: #8a6500;
-    --accent-soft: rgb(216 169 40 / 15%);
-    --shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 10%);
-    --tab-active: #8a6500;
+    --bg: #0e0f12;
+    --bg-elevated: #17191e;
+    --surface: #17191e;
+    --surface-soft: #14161a;
+    --border: #262a31;
+    --text: #f4f3ef;
+    --text-muted: #a5a399;
+    --accent: #e3b83a;
+    --accent-soft: rgb(216 169 40 / 14%);
+    --shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
+    --tab-active: #e3b83a;
     --button-primary-bg: #d8a928;
     --button-primary-text: #0b0c0e;
-    --askbar-bg: linear-gradient(135deg, #0b0c0e, #24262a);
-    background: #faf9f5;
+    --askbar-bg: linear-gradient(135deg, #060708, #17191e);
+    background: #0e0f12;
     color: var(--text);
 }
 
 /* My Story + Work pages remap the old dark palette to light blue late in
-   this file — remap it again to mono (ink text, gold accent). */
+   this file — remap it again to layered ink (off-white text, gold accent). */
 body[data-theme="dark"].slate-light .my-story-page,
 body[data-theme="dark"].slate-light .work-page {
-    --color-text-primary: #0b0c0e;
-    --color-text-secondary: #3a3d42;
-    --color-text-muted: #66645f;
+    --color-text-primary: #f4f3ef;
+    --color-text-secondary: #c6c4bc;
+    --color-text-muted: #a5a399;
     --color-text-dark: #0b0c0e;          /* text that sits ON the gold accent */
-    --color-gold: #8a6500;
-    --color-gold-bright: #d8a928;
-    --color-gold-muted: #6f5100;
-    --color-gold-dark: #5a4100;
-    --color-blue: #8a6500;
-    --color-cyan: #8a6500;
-    --color-card: #ffffff;
-    --color-card-elevated: #f5f3ee;
-    --color-card-hover: #f5efdd;
-    --color-border: #ddd9d0;
-    --color-border-soft: #e9e5dc;
+    --color-gold: #e3b83a;
+    --color-gold-bright: #f0c95a;
+    --color-gold-muted: #d8a928;
+    --color-gold-dark: #bf8f17;
+    --color-blue: #e3b83a;
+    --color-cyan: #e3b83a;
+    --color-card: #17191e;
+    --color-card-elevated: #1e2127;
+    --color-card-hover: #232730;
+    --color-border: #262a31;
+    --color-border-soft: #1d2026;
     --color-border-gold: #d8a928;
-    --shadow-card: 0 2px 6px rgb(11 12 14 / 6%), 0 14px 34px rgb(11 12 14 / 8%);
+    --shadow-card: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
     --shadow-gold: 0 0 0 rgb(0 0 0 / 0%);
 }
 
@@ -14336,57 +14377,101 @@ body[data-theme="dark"] #chat-toggle:focus-visible {
 }
 
 /* Foundation-C central tokens (consumed by Interview Studio and other
-   application rooms): collapse to mono — gold action family, ink text,
-   paper canvas. */
+   application rooms): collapse to layered ink — gold action family,
+   near-black canvas. --ps-ink-950 stays true ink: it is the text color
+   on white inputs and on gold buttons, both of which keep their light
+   surfaces in dark mode. */
 body[data-theme="dark"] {
-    --ps-cloud-white: #faf9f5;
+    --ps-cloud-white: #0e0f12;
     --ps-ink-950: #0b0c0e;
-    --ps-product-indigo: #8a6500;
-    --ps-product-indigo-strong: #6f5100;
+    --ps-product-indigo: #e3b83a;
+    --ps-product-indigo-strong: #f0c95a;
     --ps-connection-azure: #d8a928;
     --ps-ai-cyan: #bf8f17;
     --ps-evidence-amber: #d8a928;
 }
 
 /* Marketing landing (/peerslate, the only page without slate-light):
-   mono remap of its --home-* palette. */
+   layered-ink remap of its --home-* palette. The navy bands of the light
+   theme become the deepest well layer so the page still alternates
+   canvas → card → well as you scroll. */
 body[data-theme="dark"] .peerslate-home-page,
 body[data-theme="dark"].peerslate-home-page {
-    --surface: #ffffff;
-    --surface-soft: #f5f3ee;
-    --border: #ddd9d0;
-    --text: #0b0c0e;
-    --text-muted: #66645f;
-    --accent: #8a6500;
-    --accent-soft: #f5e7b6;
-    --shadow: 0 12px 30px rgb(11 12 14 / 8%);
-    --home-bg: #faf9f5;
-    --home-bg-soft: #f1efea;
-    --home-surface: rgb(255 255 255 / 96%);
-    --home-surface-solid: #ffffff;
-    --home-surface-soft: #f7f5f0;
-    --home-text: #0b0c0e;
-    --home-muted: #66645f;
-    --home-soft: #8a8880;
-    --home-border: #ddd9d0;
-    --home-border-soft: #e9e5dc;
-    --home-blue: #8a6500;
-    --home-blue-hover: #6f5100;
-    --home-blue-faint: #f5e7b6;
-    --home-teal: #2f7a62;
-    --home-teal-soft: #e3f0eb;
-    --home-navy: #0b0c0e;
-    --home-navy-2: #24262a;
-    --home-shadow-sm: 0 4px 12px rgb(11 12 14 / 6%);
-    --home-shadow-md: 0 12px 30px rgb(11 12 14 / 8%);
-    --home-shadow-lg: 0 24px 64px rgb(11 12 14 / 14%);
-    --home-shadow-blue: 0 10px 24px rgb(216 169 40 / 26%);
+    --surface: #17191e;
+    --surface-soft: #14161a;
+    --border: #262a31;
+    --text: #f4f3ef;
+    --text-muted: #a5a399;
+    --accent: #e3b83a;
+    --accent-soft: rgb(216 169 40 / 16%);
+    --shadow: 0 12px 30px rgb(0 0 0 / 40%);
+    --home-bg: #0e0f12;
+    --home-bg-soft: #14161a;
+    --home-surface: rgb(23 25 30 / 96%);
+    --home-surface-solid: #17191e;
+    --home-surface-soft: #1e2127;
+    --home-text: #f4f3ef;
+    --home-muted: #a5a399;
+    --home-soft: #8a887f;
+    --home-border: #262a31;
+    --home-border-soft: #1d2026;
+    --home-blue: #d8a928;
+    --home-blue-hover: #e3b83a;
+    --home-blue-faint: rgb(216 169 40 / 14%);
+    --home-teal: #5abf95;
+    --home-teal-soft: rgb(47 122 98 / 22%);
+    --home-navy: #060708;
+    --home-navy-2: #17191e;
+    --home-shadow-sm: 0 4px 12px rgb(0 0 0 / 40%);
+    --home-shadow-md: 0 12px 30px rgb(0 0 0 / 45%);
+    --home-shadow-lg: 0 24px 64px rgb(0 0 0 / 55%);
+    --home-shadow-blue: 0 10px 24px rgb(216 169 40 / 24%);
     color: var(--home-text);
 }
 
 body[data-theme="dark"].peerslate-home-page .global-header {
     background: #0b0c0e;
     border-bottom-color: #26282c;
+}
+
+/* Marketing landing hardcodes a few light washes — re-paint them as dark
+   layers (canvas-tinted hero wash, raised ghost buttons). */
+body[data-theme="dark"].peerslate-home-page .ps-hero {
+    background: linear-gradient(180deg, #14161a 0%, #101216 46%, rgb(14 15 18 / 0) 100%);
+}
+
+body[data-theme="dark"].peerslate-home-page .ps-btn--ghost {
+    color: var(--home-text);
+    background: #1e2127;
+    border-color: var(--home-border);
+}
+
+/* Preview-card metrics strip stays a white pop layer inside the dark
+   card, so its type must stay ink; the AI suggestion chips become raised
+   dark chips under the dark ask bar. */
+body[data-theme="dark"].peerslate-home-page .preview-main__metrics {
+    background: #f6f5f0;
+    border-color: rgb(255 255 255 / 16%);
+}
+
+body[data-theme="dark"].peerslate-home-page .preview-main__metrics div + div {
+    border-left-color: #ddd9d0;
+}
+
+body[data-theme="dark"].peerslate-home-page .preview-main__metrics strong { color: #1a1c22; }
+body[data-theme="dark"].peerslate-home-page .preview-main__metrics span { color: #66645f; }
+
+body[data-theme="dark"].peerslate-home-page .ai-chip {
+    color: var(--home-text);
+    background: #1e2127;
+    border-color: #262a31;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+}
+
+body[data-theme="dark"].peerslate-home-page .ai-chip__icon { color: var(--home-muted); }
+
+body[data-theme="dark"].peerslate-home-page .ai-chip:hover {
+    border-color: #d8a928;
 }
 
 body[data-theme="dark"] .peerslate-home-page,

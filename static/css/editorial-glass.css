@@ -352,44 +352,50 @@ body.ps-editorial-surface .skf-orb__ball {
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD overrides (PS-THEME-001, 2026-07-16)
-   Mono theme (body[data-theme="dark"]): the editorial field becomes flat
-   warm paper and the glass finish becomes the planted mono card — solid
-   white, warm 1px border, quiet neutral shadow, no blur, no blue tint.
-   The light theme above is untouched.
+   LAYERED INK & SIGNAL GOLD overrides (PS-THEME-002, 2026-07-16)
+   Dark theme (body[data-theme="dark"]): the editorial field becomes the
+   near-black canvas and the glass finish becomes the planted dark card —
+   solid graphite one layer above the canvas, hairline border, deep quiet
+   shadow, no blur, no blue tint. The résumé keeps its paper-slab
+   document (resume2.css), so its fixed backdrop is painted here as the
+   same black stage. The light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"].ps-editorial-surface {
-    --ps-card-surface-top: #ffffff;
-    --ps-card-surface-mid: #ffffff;
-    --ps-card-surface-bottom: #ffffff;
+    --ps-card-surface-top: #17191e;
+    --ps-card-surface-mid: #17191e;
+    --ps-card-surface-bottom: #17191e;
 
-    --ps-card-border: #ddd9d0;
-    --ps-card-border-highlight: rgba(255, 255, 255, 0.9);
+    --ps-card-border: #262a31;
+    --ps-card-border-highlight: rgba(255, 255, 255, 0.08);
     --ps-card-border-active: #d8a928;
 
-    --ps-card-title: #0b0c0e;
-    --ps-card-body: #3a3d42;
-    --ps-card-muted: #66645f;
+    --ps-card-title: #f4f3ef;
+    --ps-card-body: #c6c4bc;
+    --ps-card-muted: #a5a399;
 
-    --ps-shadow-quiet: 0 1px 2px rgba(11, 12, 14, 0.05);
-    --ps-shadow-standard: 0 2px 6px rgba(11, 12, 14, 0.06), 0 14px 34px rgba(11, 12, 14, 0.08);
-    --ps-shadow-primary: 0 4px 12px rgba(11, 12, 14, 0.08), 0 28px 72px rgba(11, 12, 14, 0.14);
-    --ps-shadow-hover: 0 3px 8px rgba(11, 12, 14, 0.07), 0 18px 44px rgba(11, 12, 14, 0.12);
+    --ps-shadow-quiet: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --ps-shadow-standard: 0 2px 6px rgba(0, 0, 0, 0.35), 0 14px 34px rgba(0, 0, 0, 0.4);
+    --ps-shadow-primary: 0 4px 12px rgba(0, 0, 0, 0.45), 0 28px 72px rgba(0, 0, 0, 0.55);
+    --ps-shadow-hover: 0 3px 8px rgba(0, 0, 0, 0.4), 0 18px 44px rgba(0, 0, 0, 0.5);
     --ps-shadow-active:
         0 0 0 1px rgba(216, 169, 40, 0.55),
-        0 16px 42px rgba(11, 12, 14, 0.12);
+        0 16px 42px rgba(0, 0, 0, 0.5);
 
-    background-color: #faf9f5;
+    background-color: #0e0f12;
 }
 
 body[data-theme="dark"].ps-editorial-surface .site-sky {
-    background: #faf9f5;
+    background:
+        radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
+        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 40%, #0e0f12 100%);
 }
 
 body[data-theme="dark"].ps-editorial-surface .resume-v2::before,
 body[data-theme="dark"].ps-editorial-surface .lr-page::before,
 body[data-theme="dark"].ps-editorial-surface .story-act--day::before {
-    background: #faf9f5;
+    background:
+        radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 6%), transparent 60%),
+        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 55%, #0b0c0e 100%);
 }
 
 body[data-theme="dark"].ps-editorial-surface .r2-skillpop::after {
@@ -401,7 +407,7 @@ body[data-theme="dark"].ps-editorial-surface .r2-skillpop::after {
     body[data-theme="dark"].ps-editorial-surface .lr-page::before,
     body[data-theme="dark"].ps-editorial-surface .story-act--day::before,
     body[data-theme="dark"].ps-editorial-surface .resume-v2::before {
-        background: #faf9f5;
+        background: #0e0f12;
         background-image: none;
     }
 }
@@ -430,7 +436,7 @@ body[data-theme="dark"].ps-editorial-surface .pf-topic,
 body[data-theme="dark"].ps-editorial-surface .pf-side > *,
 body[data-theme="dark"].ps-editorial-surface .projects-section,
 body[data-theme="dark"].ps-editorial-surface .ps-glass-card {
-    background: #ffffff;
+    background: #17191e;
     border-color: var(--ps-card-border);
     box-shadow: var(--ps-shadow-standard);
     backdrop-filter: none;
@@ -447,7 +453,7 @@ body[data-theme="dark"].ps-editorial-surface .ps-metric,
 body[data-theme="dark"].ps-editorial-surface .ts-heat,
 body[data-theme="dark"].ps-editorial-surface .fun-fact-card,
 body[data-theme="dark"].ps-editorial-surface .ps-glass-card--compact {
-    background: #ffffff;
+    background: #17191e;
     box-shadow: var(--ps-shadow-quiet);
 }
 
@@ -465,7 +471,7 @@ body[data-theme="dark"].ps-editorial-surface .ps-card--selected,
 body[data-theme="dark"].ps-editorial-surface .ps-card[aria-selected="true"],
 body[data-theme="dark"].ps-editorial-surface [aria-selected="true"].ct-card {
     border-color: var(--ps-card-border-active);
-    background: #fffdf6;
+    background: #211e14;
     box-shadow: var(--ps-shadow-active);
 }
 
@@ -477,25 +483,25 @@ body[data-theme="dark"].ps-editorial-surface a.ct-card:focus-visible {
 }
 
 /* Skills constellation labels were lifted to light-blue for the navy
-   field; on mono paper they return to ink. */
+   field; on the black stage they become off-white with gold-lit orbs. */
 body[data-theme="dark"].ps-editorial-surface .skf-act__head {
-    color: #66645f;
+    color: #a5a399;
 }
 
 body[data-theme="dark"].ps-editorial-surface .skf-orb__name {
-    color: #0b0c0e;
+    color: #f4f3ef;
     text-shadow: none;
 }
 
 body[data-theme="dark"].ps-editorial-surface .skf-orb__ball {
     box-shadow:
-        inset 0 0 0 1px rgba(11, 12, 14, 0.22),
-        0 4px 24px rgba(216, 169, 40, 0.20);
+        inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+        0 4px 24px rgba(216, 169, 40, 0.22);
     background:
         radial-gradient(
             circle at 32% 28%,
-            rgba(255, 255, 255, 0.9),
-            rgba(216, 169, 40, 0.10) 60%,
-            rgba(11, 12, 14, 0.05)
+            rgba(255, 255, 255, 0.28),
+            rgba(216, 169, 40, 0.14) 60%,
+            rgba(0, 0, 0, 0.2)
         );
 }

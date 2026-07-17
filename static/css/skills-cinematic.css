@@ -233,32 +233,32 @@
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: ink type, gold accents; orb hues collapse to
-   the mono family via --orb below.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: off-white type on the black stage, gold
+   accents; orb hues collapse to the gold family via --orb below.
    ===================================================================== */
-body[data-theme="dark"] .skf {
-    --skf-ink: #0b0c0e;
-    --skf-ink-soft: #55534e;
+body[data-theme="dark"] .skills-film {
+    --skf-ink: #f4f3ef;
+    --skf-ink-soft: #a5a399;
 }
 
-body[data-theme="dark"] .skf-open h1 span { color: #8a6500; }
+body[data-theme="dark"] .skf-open h1 span { color: #e3b83a; }
 body[data-theme="dark"] .skf-orb { --orb: #d8a928; }
 
 body[data-theme="dark"] .skf-orb[aria-expanded="true"] .skf-orb__ball {
     box-shadow:
-        0 0 0 0.26rem #ffffff,
+        0 0 0 0.26rem #0e0f12,
         0 0 0 0.55rem var(--orb, #d8a928),
-        0 0.7rem 1.8rem rgb(11 12 14 / 35%),
-        inset 0 0.2rem 0.5rem rgb(255 255 255 / 55%);
+        0 0.7rem 1.8rem rgb(0 0 0 / 55%),
+        inset 0 0.2rem 0.5rem rgb(255 255 255 / 30%);
 }
 
 body[data-theme="dark"] .skf-orb__name {
-    color: #0b0c0e;
+    color: #f4f3ef;
     text-shadow: none;
 }
 
-body[data-theme="dark"] .skf-panel__inner li small { color: #8a6500; }
+body[data-theme="dark"] .skf-panel__inner li small { color: #e3b83a; }
 
 body[data-theme="dark"] .skf-cta__btn {
     color: #0b0c0e;
@@ -271,4 +271,4 @@ body[data-theme="dark"] .skf-cta__btn:focus-visible {
     background: #e3b83a;
 }
 
-body[data-theme="dark"] .skf-act__head { color: #66645f; }
+body[data-theme="dark"] .skf-act__head { color: #a5a399; }

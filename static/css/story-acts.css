@@ -1592,9 +1592,11 @@ body.sa-js .sa-reveal.is-in {
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: warm paper + ink chapters with gold timeline
-   markers; the dark act stages go true ink; photography stays natural.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: the act stages sit on the near-black canvas
+   (editorial-glass paints story-act--day::before); white chapter slabs
+   and warm scrapbook paper float on top as the light layers, with gold
+   timeline markers. Photography stays natural.
    ===================================================================== */
 body[data-theme="dark"] .story-acts,
 body[data-theme="dark"] .my-story-page {

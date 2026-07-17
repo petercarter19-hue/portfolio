@@ -4565,9 +4565,13 @@
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: museum-paper résumé — ink type, warm paper,
-   one gold accent. Light theme above is untouched.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: the résumé stays a museum-paper DOCUMENT —
+   ink type, warm paper, one gold accent — but the page around it drops
+   to the near-black canvas, so the paper sections read as white slabs
+   floating on black: the site's black/white/gold layering. Every rule
+   below that keeps ink-on-paper values is therefore still correct; the
+   card surfaces stay light on purpose. Light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"] .resume-v2 {
     --r2-ink: #0b0c0e;
@@ -4577,6 +4581,20 @@ body[data-theme="dark"] .resume-v2 {
     --r2-cyan: #8a6500;
     --r2-amber: #8a6500;
     --r2-cloud: #f1efea;
+    --r2-shadow: 0 4px 14px rgb(0 0 0 / 45%), 0 30px 70px rgb(0 0 0 / 55%);
+}
+
+/* The paper slabs: the glass washes of the light theme become SOLID warm
+   paper so the document pops crisply against the black stage and the ink
+   type inside keeps full contrast. */
+body[data-theme="dark"] .r2-summary__portrait,
+body[data-theme="dark"] .r2-summary__identity,
+body[data-theme="dark"] .resume-consolidated .r2-ai-card,
+body[data-theme="dark"] .resume-consolidated .r2-section {
+    background: #f6f5f0;
+    border-color: rgb(255 255 255 / 14%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 /* Primary action: signal gold with ink text (the one strong CTA). */
@@ -4623,13 +4641,23 @@ body[data-theme="dark"] .r2-quote-card blockquote {
     color: #0b0c0e;
 }
 
-/* --- Mono theme: literal-color sweep (selectors found via hue audit) --- */
+/* --- Dark theme: literal-color sweep (selectors found via hue audit) ---
+   The page canvas behind the paper slabs: the fixed ::before backdrop
+   (which carries the mountain photo in the light theme) becomes the
+   near-black stage with a whisper of gold atmosphere; the ::after wash
+   layer is switched off so it cannot gray the stage. */
 body[data-theme="dark"] .resume-v2 {
-    background: #faf9f5;
+    background: #0e0f12;
 }
 
 body[data-theme="dark"] .resume-v2::before {
-    background: #faf9f5;
+    background:
+        radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 6%), transparent 60%),
+        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 55%, #0b0c0e 100%);
+}
+
+body[data-theme="dark"] .resume-v2::after {
+    background: none;
 }
 
 body[data-theme="dark"] .resume-consolidated {

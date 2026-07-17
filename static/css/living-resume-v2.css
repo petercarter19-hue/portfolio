@@ -3006,8 +3006,11 @@
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: ink type on warm paper, gold accents only.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: the résumé document keeps ink type on warm
+   paper slabs (resume2.css floats them on the near-black canvas), so
+   these tokens intentionally stay paper-side; the page chrome around
+   the slabs goes dark below.
    ===================================================================== */
 body[data-theme="dark"] {
     --lr-ink: #0b0c0e;
@@ -3020,6 +3023,27 @@ body[data-theme="dark"] {
     --lr-cyan: #bf8f17;
     --lr-amber: #d8a928;
     --lr-night: #0b0c0e;
+}
+
+/* Résumé sub-header strip: graphite layer between the ink header and the
+   black stage (the light theme paints it pale blue). */
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume {
+    border-top: 1px solid #26282c;
+    background: linear-gradient(180deg, rgb(16 18 22 / 92%), rgb(14 15 18 / 98%));
+}
+
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab {
+    color: #a5a399;
+}
+
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab:hover,
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab:focus-visible,
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab[aria-current="page"] {
+    color: #e3b83a;
+}
+
+body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab::after {
+    background: #d8a928;
 }
 
 /* Constellation dark stage in mono: graphite scene, warm-gray paths,

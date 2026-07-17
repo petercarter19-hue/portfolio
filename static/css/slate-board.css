@@ -3442,29 +3442,102 @@ body.slate-board-redesign {
 }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
    body[data-theme="dark"]: the whiteboard canvas STAYS light so the
-   handwriting stays legible (brief rule); the wall and app chrome warm
-   to paper/ink and every indigo/azure/cyan accent becomes signal gold.
-   Sticky-note and marker colors are user content and stay as they are.
+   handwriting stays legible (brief rule) — a bright white board hung on
+   a near-black wall. The wall and app chrome drop to layered ink and
+   every indigo/azure/cyan accent becomes signal gold. Sticky-note and
+   marker colors are user content and stay as they are.
    ===================================================================== */
 body[data-theme="dark"] {
-    --sb-ink: #0b0c0e;
-    --sb-ink-soft: #55534e;
-    --sb-indigo: #8a6500;
+    --sb-ink: #f4f3ef;
+    --sb-ink-soft: #a5a399;
+    --sb-indigo: #e3b83a;
     --sb-azure: #d8a928;
     --sb-cyan: #bf8f17;
     --sb-amber: #d8a928;
-    --sb-cloud: #faf9f5;
-    --sb-wall: #f1efea;
-    --sb-line: #ddd9d0;
+    --sb-cloud: #14161a;
+    --sb-wall: #101216;
+    --sb-line: #262a31;
 }
 
 body[data-theme="dark"].slate-board-redesign {
     background:
-        radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.10), transparent 26rem),
-        linear-gradient(180deg, #faf9f5 0%, #f1efea 60%, #ece9e2 100%);
+        radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.08), transparent 26rem),
+        linear-gradient(180deg, #0b0c0e 0%, #101216 60%, #0e0f12 100%);
     color: var(--sb-ink);
+}
+
+/* App chrome on the dark wall: the controls rail becomes a dark card one
+   layer above the wall; the white whiteboard stays the bright layer. */
+body[data-theme="dark"] .sb-controls {
+    border-color: #262a31;
+    background: linear-gradient(145deg, rgba(26, 28, 34, 0.96), rgba(20, 22, 26, 0.9));
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+}
+
+body[data-theme="dark"] .sb-controls__group {
+    border-bottom-color: #262a31;
+}
+
+/* Rail typography + tools: light labels on the dark rail; the active/
+   hovered tool takes the gold signal instead of the light theme's blue. */
+body[data-theme="dark"] .sb-controls__label { color: #a5a399; }
+
+body[data-theme="dark"] .sb-controls button {
+    color: #d8d6d0;
+}
+
+body[data-theme="dark"] .sb-controls button svg { color: #a5a399; }
+
+body[data-theme="dark"] .sb-controls button:hover,
+body[data-theme="dark"] .sb-controls button.is-active {
+    border-color: rgba(216, 169, 40, 0.35);
+    background: rgba(216, 169, 40, 0.14);
+    color: #e3b83a;
+}
+
+body[data-theme="dark"] .sb-controls button.is-active svg,
+body[data-theme="dark"] .sb-controls button:hover svg { color: #e3b83a; }
+
+/* White mini-pills inside the rail (zoom, fit/list view) keep ink type —
+   they are small white layers on the dark rail. */
+body[data-theme="dark"] .sb-controls__zoom button,
+body[data-theme="dark"] .sb-controls .sb-fit-button {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: #f6f5f0;
+    color: #1a1c22;
+}
+
+body[data-theme="dark"] .sb-controls__zoom button:hover,
+body[data-theme="dark"] .sb-controls .sb-fit-button:hover {
+    background: #fffdf6;
+    color: #1a1c22;
+}
+
+body[data-theme="dark"] .sb-controls .sb-fit-button svg { color: #1a1c22; }
+body[data-theme="dark"] .sb-controls__zoom output { color: #c6c4bc; }
+
+body[data-theme="dark"] .sb-controls__people li { color: #d8d6d0; }
+body[data-theme="dark"] .sb-controls__people li small { color: #a5a399; }
+body[data-theme="dark"] .sb-preview-label { color: #a5a399; }
+
+body[data-theme="dark"] .sb-status-line { color: #a5a399; }
+body[data-theme="dark"] .sb-status-line--saved svg { color: #69ae92; }
+
+/* Header buttons on the dark wall (Share Board, More): white pills need
+   ink type — they inherit the flipped light ink otherwise. */
+body[data-theme="dark"] .sb-button,
+body[data-theme="dark"] .sb-icon-button,
+body[data-theme="dark"] .sb-header-more {
+    color: #1a1c22;
+}
+
+/* ON-CANVAS controls sit on the white board and must keep ink type (they
+   inherit the flipped light ink otherwise). */
+body[data-theme="dark"] .sb-canvas .sb-focus-anchor,
+body[data-theme="dark"] .sb-canvas .sb-column__add {
+    color: #1a1c22;
 }
 
 body[data-theme="dark"] .sb-button:hover,
@@ -3484,13 +3557,14 @@ body[data-theme="dark"] .sb-button--primary:hover {
     background: #e3b83a;
 }
 
-/* Category legend + progress donut: mono family (labels carry meaning). */
+/* Category legend + progress donut: mono family (labels carry meaning).
+   The graphite segment flips to off-white so it survives the dark rail. */
 body[data-theme="dark"] .sb-donut {
-    background: conic-gradient(#d8a928 0 25%, #24262a 25% 50%, #a89f8d 50% 75%, #8a6500 75% 100%);
+    background: conic-gradient(#d8a928 0 25%, #e9e7e1 25% 50%, #a89f8d 50% 75%, #8a6500 75% 100%);
 }
 
 body[data-theme="dark"] .sb-legend__dot--short { background: #d8a928; }
-body[data-theme="dark"] .sb-legend__dot--projects { background: #24262a; }
+body[data-theme="dark"] .sb-legend__dot--projects { background: #e9e7e1; }
 body[data-theme="dark"] .sb-legend__dot--long { background: #a89f8d; }
 body[data-theme="dark"] .sb-legend__dot--work { background: #8a6500; }
 

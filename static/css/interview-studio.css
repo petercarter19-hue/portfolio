@@ -1113,39 +1113,73 @@ body.interview-studio-page .footer { position: relative; }
 .is__compare { margin-top: 1.25rem; padding-top: 1.1rem; border-top: 1px solid var(--ps-border, #e6e0d4); }
 
 /* =====================================================================
-   MONOCHROME & SIGNAL GOLD (PS-THEME-001, 2026-07-16)
-   body[data-theme="dark"]: light control rail over a high-contrast
-   BLACK question/recording workspace; signal gold marks the current
-   question, timer, waveform, and the primary action. Semantic colors
-   (green strengths, amber improvements, red destructive) stay.
+   LAYERED INK & SIGNAL GOLD (PS-THEME-002, 2026-07-16)
+   body[data-theme="dark"]: dark control rail and cards on the near-black
+   canvas, with the question/recording workspace as the deepest BLACK
+   stage — black layered on black, separated by elevation; signal gold
+   marks the current question, timer, waveform, and the primary action.
+   Semantic colors (green strengths, amber improvements, red destructive)
+   stay.
    ===================================================================== */
 body[data-theme="dark"] .is {
-    --is-body: #3a3d42;
-    --is-muted: #66645f;
-    --is-border: #ddd9d0;
+    --is-body: #c6c4bc;
+    --is-muted: #a5a399;
+    --is-border: #262a31;
     --is-border-strong: rgb(216 169 40 / 55%);
-    --is-surface: #ffffff;
-    --is-surface-strong: #ffffff;
-    --is-shadow: 0 2px 6px rgb(11 12 14 / 6%), 0 20px 50px rgb(11 12 14 / 10%);
-    --is-shadow-soft: 0 8px 24px rgb(11 12 14 / 7%);
+    --is-surface: #17191e;
+    --is-surface-strong: #1e2127;
+    --is-shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 20px 50px rgb(0 0 0 / 45%);
+    --is-shadow-soft: 0 8px 24px rgb(0 0 0 / 40%);
 }
 
 body[data-theme="dark"] .is__backdrop {
-    background: #faf9f5;
+    background:
+        radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
+        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 45%, #0e0f12 100%);
 }
 
 body[data-theme="dark"] .is__stage,
 body[data-theme="dark"] .is__history-card {
-    background: #ffffff;
-    border: 1px solid #ddd9d0;
+    background: #17191e;
+    border: 1px solid #262a31;
     backdrop-filter: none;
 }
 
-/* The question/recording workspace is the black stage. */
+/* Masthead + chrome: ink-950 stays true ink for white surfaces, so every
+   element that sits on the dark canvas needs the off-white type pinned. */
+body[data-theme="dark"] .is__hero h1 { color: #f4f3ef; }
+
+body[data-theme="dark"] .is__profile {
+    color: #c6c4bc;
+    background: #17191e;
+    border-color: #262a31;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body[data-theme="dark"] .is__profile strong { color: #f4f3ef; }
+
+body[data-theme="dark"] .is__mode { color: #c6c4bc; }
+body[data-theme="dark"] .is__mode strong { color: #f4f3ef; }
+body[data-theme="dark"] .is__mode small { color: #a5a399; }
+
+body[data-theme="dark"] .is__control-button {
+    color: #f4f3ef;
+    border-color: #262a31;
+}
+
+body[data-theme="dark"] .is__select { border-color: #262a31; }
+body[data-theme="dark"] .is__select > span { color: #a5a399; }
+body[data-theme="dark"] .is__select select { color: #f4f3ef; }
+
+body[data-theme="dark"] .is__history-filters select { color: #f4f3ef; }
+
+/* The question/recording workspace is the black stage — the well layer
+   below the surrounding cards. */
 body[data-theme="dark"] .is__stage {
     background: linear-gradient(180deg, #101114 0%, #0b0c0e 100%);
     border-color: #26282c;
-    box-shadow: 0 18px 50px rgb(0 0 0 / 35%);
+    box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
     color: #d8d6d0;
 }
 
@@ -1295,18 +1329,18 @@ body[data-theme="dark"] .is__stage .is__feature-empty { color: #b9b8b3; }
 /* Active mode/history card: gold selection instead of the indigo tint. */
 body[data-theme="dark"] .is__mode[aria-selected="true"],
 body[data-theme="dark"] .is__history-link[aria-current="page"] {
-    color: #8a6500;
+    color: #e3b83a;
     background: linear-gradient(135deg, rgb(216 169 40 / 14%), rgb(216 169 40 / 6%));
     border-color: #d8a928;
     box-shadow: inset 0 0 0 1px rgb(216 169 40 / 16%);
 }
 
 body[data-theme="dark"] .is__mode[aria-selected="true"] strong,
-body[data-theme="dark"] .is__history-link[aria-current="page"] strong { color: #6f5100; }
+body[data-theme="dark"] .is__history-link[aria-current="page"] strong { color: #e3b83a; }
 
 @media (hover: hover) {
     body[data-theme="dark"] .is__mode:hover,
-    body[data-theme="dark"] .is__history-link:hover { color: #8a6500; }
+    body[data-theme="dark"] .is__history-link:hover { color: #e3b83a; }
 }
 
 /* Post-answer sections inside the black stage: readable headings, gold
