@@ -1122,12 +1122,12 @@ body.interview-studio-page .footer { position: relative; }
    stay.
    ===================================================================== */
 body[data-theme="dark"] .is {
-    --is-body: #c6c4bc;
-    --is-muted: #a5a399;
-    --is-border: #262a31;
+    --is-body: #c4ccda;
+    --is-muted: #9aa5b8;
+    --is-border: #2e4573;
     --is-border-strong: rgb(216 169 40 / 55%);
-    --is-surface: #17191e;
-    --is-surface-strong: #1e2127;
+    --is-surface: #1a2c4f;
+    --is-surface-strong: #223a66;
     --is-shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 20px 50px rgb(0 0 0 / 45%);
     --is-shadow-soft: 0 8px 24px rgb(0 0 0 / 40%);
 }
@@ -1135,58 +1135,58 @@ body[data-theme="dark"] .is {
 body[data-theme="dark"] .is__backdrop {
     background:
         radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
-        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 45%, #0e0f12 100%);
+        linear-gradient(180deg, #0a1730 0%, #0e1d3a 45%, #0e1d3a 100%);
 }
 
 body[data-theme="dark"] .is__stage,
 body[data-theme="dark"] .is__history-card {
-    background: #17191e;
-    border: 1px solid #262a31;
+    background: #1a2c4f;
+    border: 1px solid #2e4573;
     backdrop-filter: none;
 }
 
 /* Masthead + chrome: ink-950 stays true ink for white surfaces, so every
    element that sits on the dark canvas needs the off-white type pinned. */
-body[data-theme="dark"] .is__hero h1 { color: #f4f3ef; }
+body[data-theme="dark"] .is__hero h1 { color: #f2f4f8; }
 
 body[data-theme="dark"] .is__profile {
-    color: #c6c4bc;
-    background: #17191e;
-    border-color: #262a31;
+    color: #c4ccda;
+    background: #1a2c4f;
+    border-color: #2e4573;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-body[data-theme="dark"] .is__profile strong { color: #f4f3ef; }
+body[data-theme="dark"] .is__profile strong { color: #f2f4f8; }
 
-body[data-theme="dark"] .is__mode { color: #c6c4bc; }
-body[data-theme="dark"] .is__mode strong { color: #f4f3ef; }
-body[data-theme="dark"] .is__mode small { color: #a5a399; }
+body[data-theme="dark"] .is__mode { color: #c4ccda; }
+body[data-theme="dark"] .is__mode strong { color: #f2f4f8; }
+body[data-theme="dark"] .is__mode small { color: #9aa5b8; }
 
 body[data-theme="dark"] .is__control-button {
-    color: #f4f3ef;
-    border-color: #262a31;
+    color: #f2f4f8;
+    border-color: #2e4573;
 }
 
-body[data-theme="dark"] .is__select { border-color: #262a31; }
-body[data-theme="dark"] .is__select > span { color: #a5a399; }
-body[data-theme="dark"] .is__select select { color: #f4f3ef; }
+body[data-theme="dark"] .is__select { border-color: #2e4573; }
+body[data-theme="dark"] .is__select > span { color: #9aa5b8; }
+body[data-theme="dark"] .is__select select { color: #f2f4f8; }
 
-body[data-theme="dark"] .is__history-filters select { color: #f4f3ef; }
+body[data-theme="dark"] .is__history-filters select { color: #f2f4f8; }
 
 /* The question/recording workspace is the black stage — the well layer
    below the surrounding cards. */
 body[data-theme="dark"] .is__stage {
-    background: linear-gradient(180deg, #101114 0%, #0b0c0e 100%);
-    border-color: #26282c;
+    background: linear-gradient(180deg, #122242 0%, #0a1730 100%);
+    border-color: #253c66;
     box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
-    color: #d8d6d0;
+    color: #cbd3e0;
 }
 
 body[data-theme="dark"] .is__stage .is__progress-head { color: #e3b83a; }
 
 body[data-theme="dark"] .is__stage .is__progress,
-body[data-theme="dark"] .is__stage .is__progress::-webkit-progress-bar { background: #33353a; }
+body[data-theme="dark"] .is__stage .is__progress::-webkit-progress-bar { background: #34497b; }
 
 body[data-theme="dark"] .is__stage .is__progress::-webkit-progress-value {
     background: linear-gradient(90deg, #d8a928, #e3b83a);
@@ -1202,12 +1202,12 @@ body[data-theme="dark"] .is__stage .is__question-icon {
     border-color: rgb(216 169 40 / 30%);
 }
 
-body[data-theme="dark"] .is__stage .is__question-block h2 { color: #fafaf7; }
+body[data-theme="dark"] .is__stage .is__question-block h2 { color: #f7f9fc; }
 
 body[data-theme="dark"] .is__stage .is__chip {
-    color: #d8d6d0;
+    color: #cbd3e0;
     background: rgb(255 255 255 / 7%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
 body[data-theme="dark"] .is__stage .is__chip--family,
@@ -1223,13 +1223,13 @@ body[data-theme="dark"] .is__stage .is__chip--framework {
     border-color: rgb(105 174 146 / 28%);
 }
 
-body[data-theme="dark"] .is__stage .is__chip--time { color: #b9b8b3; }
+body[data-theme="dark"] .is__stage .is__chip--time { color: #afb9cb; }
 
 body[data-theme="dark"] .is__stage .is__intent,
 body[data-theme="dark"] .is__stage .is__grounding-note,
 body[data-theme="dark"] .is__stage .is__tip,
 body[data-theme="dark"] .is__stage .is__privacy-note {
-    color: #b9b8b3;
+    color: #afb9cb;
 }
 
 body[data-theme="dark"] .is__stage .is__intent svg,
@@ -1246,11 +1246,11 @@ body[data-theme="dark"] .is__stage .is__reference {
 }
 
 body[data-theme="dark"] .is__stage .is__reference summary { color: #e3b83a; }
-body[data-theme="dark"] .is__stage .is__reference p { color: #d8d6d0; }
+body[data-theme="dark"] .is__stage .is__reference p { color: #cbd3e0; }
 
 body[data-theme="dark"] .is__stage .is__composer {
     background: rgb(255 255 255 / 6%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
 body[data-theme="dark"] .is__stage .is__composer:focus-within {
@@ -1259,7 +1259,7 @@ body[data-theme="dark"] .is__stage .is__composer:focus-within {
 }
 
 body[data-theme="dark"] .is__stage .is__composer > label { color: #e3b83a; }
-body[data-theme="dark"] .is__stage .is__composer textarea { color: #fafaf7; }
+body[data-theme="dark"] .is__stage .is__composer textarea { color: #f7f9fc; }
 body[data-theme="dark"] .is__stage .is__composer textarea::placeholder { color: #8a8880; }
 
 body[data-theme="dark"] .is__stage .is__mic {
@@ -1268,30 +1268,30 @@ body[data-theme="dark"] .is__stage .is__mic {
 }
 
 body[data-theme="dark"] .is__stage .is__composer-meta {
-    color: #9b9992;
+    color: #909baf;
     border-top-color: rgb(255 255 255 / 10%);
 }
 
 body[data-theme="dark"] .is__stage .is__tip {
     background: rgb(255 255 255 / 5%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
 body[data-theme="dark"] .is__stage .is__button {
-    color: #fafaf7;
+    color: #f7f9fc;
     background: rgb(255 255 255 / 8%);
-    border-color: #3a3d42;
+    border-color: #3b527f;
 }
 
 body[data-theme="dark"] .is__stage .is__button--primary {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
     border-color: #d8a928;
     box-shadow: 0 8px 20px rgb(216 169 40 / 22%);
 }
 
 body[data-theme="dark"] .is__stage .is__button--primary:hover { background: #e3b83a; }
-body[data-theme="dark"] .is__stage .is__button--soft { color: #d8d6d0; background: rgb(255 255 255 / 6%); }
+body[data-theme="dark"] .is__stage .is__button--soft { color: #cbd3e0; background: rgb(255 255 255 / 6%); }
 body[data-theme="dark"] .is__stage .is__button--quiet { color: #e3b83a; background: transparent; border-color: transparent; }
 
 body[data-theme="dark"] .is__stage .is__button--danger {
@@ -1302,7 +1302,7 @@ body[data-theme="dark"] .is__stage .is__button--danger {
 
 body[data-theme="dark"] .is__stage .is__reviewing,
 body[data-theme="dark"] .is__stage .is__ai-loading {
-    color: #d8d6d0;
+    color: #cbd3e0;
     background: rgb(216 169 40 / 8%);
     border-color: rgb(216 169 40 / 24%);
 }
@@ -1314,17 +1314,17 @@ body[data-theme="dark"] .is__stage .is__spinner {
 
 body[data-theme="dark"] .is__stage .is__submitted {
     background: rgb(255 255 255 / 6%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
-body[data-theme="dark"] .is__stage .is__submitted > p:last-child { color: #fafaf7; }
+body[data-theme="dark"] .is__stage .is__submitted > p:last-child { color: #f7f9fc; }
 
 body[data-theme="dark"] .is__stage .is__feature-shell {
     background: rgb(255 255 255 / 5%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
-body[data-theme="dark"] .is__stage .is__feature-empty { color: #b9b8b3; }
+body[data-theme="dark"] .is__stage .is__feature-empty { color: #afb9cb; }
 
 /* Active mode/history card: gold selection instead of the indigo tint. */
 body[data-theme="dark"] .is__mode[aria-selected="true"],
@@ -1348,7 +1348,7 @@ body[data-theme="dark"] .is__history-link[aria-current="page"] strong { color: #
    their meaning, lifted for dark contrast. */
 body[data-theme="dark"] .is__stage h2,
 body[data-theme="dark"] .is__stage h3 {
-    color: #fafaf7;
+    color: #f7f9fc;
 }
 
 body[data-theme="dark"] .is__stage .is__section-label,
@@ -1358,11 +1358,11 @@ body[data-theme="dark"] .is__stage .is__eyebrow {
 
 body[data-theme="dark"] .is__stage .is__feedback-grid > * {
     background: rgb(255 255 255 / 6%);
-    border-color: #33353a;
+    border-color: #34497b;
 }
 
-body[data-theme="dark"] .is__stage .is__feedback-list h4 { color: #d8d6d0; }
+body[data-theme="dark"] .is__stage .is__feedback-list h4 { color: #cbd3e0; }
 body[data-theme="dark"] .is__stage .is__feedback-list--worked h4 { color: #69ae92; }
 body[data-theme="dark"] .is__stage .is__feedback-list--improve h4 { color: #d5a64a; }
-body[data-theme="dark"] .is__stage .is__feedback-list li { color: #d8d6d0; }
+body[data-theme="dark"] .is__stage .is__feedback-list li { color: #cbd3e0; }
 body[data-theme="dark"] .is__stage .is__error { color: #dd746b; }

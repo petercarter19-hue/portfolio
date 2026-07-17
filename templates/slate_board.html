@@ -507,8 +507,27 @@
         </div>
     </dialog>
 </section>
+
+{# ---- My Slate + Daily Slate (Pete, 2026-07-17): combined and stacked
+   below the whiteboard, so the Board page reads board → goal map → daily
+   momentum. The standalone /the-slate routes still render the same
+   partials. ---- #}
+<section class="sf-page ts-page ts-page--stacked" id="my-slate" aria-label="My Slate"
+    data-database-ui="{{ 'true' if database_ui_enabled else 'false' }}">
+    <div class="site-container">
+{% include "partials/my_slate_section.html" %}
+    </div>
+</section>
+
+<section class="sf-page ts-page ts-page--stacked" id="daily-slate" aria-label="Daily Slate"
+    data-database-ui="{{ 'true' if database_ui_enabled else 'false' }}">
+    <div class="site-container">
+{% include "partials/daily_slate_section.html" %}
+    </div>
+</section>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/slate-board.js') }}?v=living-whiteboard-6"></script>
+<script src="{{ url_for('static', filename='js/the-slate.js') }}?v=health-check-1"></script>
 {% endblock %}

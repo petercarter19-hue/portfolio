@@ -38,7 +38,8 @@
 }
 
 .home-v3 .site-container {
-    width: min(100% - 3rem, 82.5rem);
+    /* Wider stage on desktop (Pete, 2026-07-17). */
+    width: min(100% - 3rem, 90rem);
     margin-inline: auto;
 }
 
@@ -75,7 +76,7 @@
 
 .home-v3 .hv-scene-lede {
     margin: 0 0 1.8rem;
-    max-width: 30rem;
+    max-width: 33rem;
     font-size: 1.08rem;
     line-height: 1.65;
     color: var(--hv-muted);
@@ -191,11 +192,13 @@
 
 .home-v3 .hv-hero__inner {
     display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.18fr) minmax(0, 0.85fr);
+    /* Rebalanced with the wider container: the capture stage carries the
+       center, the destination rail breathes a little more. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.24fr) minmax(0, 0.92fr);
     grid-template-areas:
         "copy stage dest"
         "week week dest";
-    gap: clamp(1.5rem, 3vw, 3rem);
+    gap: clamp(1.5rem, 3.2vw, 3.5rem);
     align-items: start;
 }
 
@@ -1449,12 +1452,12 @@ body[data-theme="dark"] .home-v3 {
     --hv-azure: #d8a928;
     --hv-cyan: #d8a928;
     --hv-amber: #d8a928;
-    --hv-ink: #fafaf7;
-    --hv-text: #e9e7e1;
-    --hv-muted: #b9b8b3;
-    --hv-line: #33353a;
-    --hv-surface: #17181b;
-    --hv-cloud: #0b0c0e;
+    --hv-ink: #f7f9fc;
+    --hv-text: #e2e7f0;
+    --hv-muted: #afb9cb;
+    --hv-line: #34497b;
+    --hv-surface: #182c52;
+    --hv-cloud: #0a1730;
     --hv-green: #69ae92;
     --hv-violet: #d8a928;
     --hv-shadow-soft: 0 14px 40px rgb(0 0 0 / 40%);
@@ -1462,7 +1465,7 @@ body[data-theme="dark"] .home-v3 {
     color: var(--hv-text);
     background:
         radial-gradient(90rem 44rem at 78% -6rem, rgb(216 169 40 / 7%), transparent 62%),
-        linear-gradient(180deg, #0b0c0e 0%, #101114 60%, #0b0c0e 100%);
+        linear-gradient(180deg, #0a1730 0%, #122242 60%, #0a1730 100%);
 }
 
 /* Hero internals: graphite capture stage, gold signals. */
@@ -1472,15 +1475,15 @@ body[data-theme="dark"] .home-v3 .hv-eyebrow {
 }
 
 body[data-theme="dark"] .home-v3 .hv-btn--ghost {
-    color: #e9e7e1;
-    border-color: #3a3d42;
+    color: #e2e7f0;
+    border-color: #3b527f;
 }
 
 body[data-theme="dark"] .home-v3 .hv-btn--ghost:hover { background: rgb(255 255 255 / 8%); }
 
 body[data-theme="dark"] .home-v3 .hv-btn--primary {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
     box-shadow: 0 12px 26px rgb(216 169 40 / 22%);
 }
 
@@ -1492,8 +1495,8 @@ body[data-theme="dark"] .home-v3 .hv-mic__ring {
 }
 
 body[data-theme="dark"] .home-v3 .hv-mic__inner {
-    background: radial-gradient(circle at 50% 32%, #24262a 42%, #17181b 78%, #101114 100%);
-    border: 1px solid #3a3d42;
+    background: radial-gradient(circle at 50% 32%, #253a61 42%, #182c52 78%, #122242 100%);
+    border: 1px solid #3b527f;
     box-shadow: var(--hv-shadow-lift), inset 0 0 0 0.6rem rgb(255 255 255 / 4%);
 }
 
@@ -1504,25 +1507,25 @@ body[data-theme="dark"] .home-v3 .hv-mic:focus-visible .hv-mic__inner {
 
 body[data-theme="dark"] .home-v3 .hv-mic__key {
     background: rgb(255 255 255 / 8%);
-    border-color: #3a3d42;
-    color: #b9b8b3;
+    border-color: #3b527f;
+    color: #afb9cb;
 }
 
 body[data-theme="dark"] .home-v3 .hv-mic__btn {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
     box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
 }
 
 body[data-theme="dark"] .home-v3 .hv-chips li {
     background: rgb(255 255 255 / 7%);
-    border-color: #33353a;
-    color: #d8d6d0;
+    border-color: #34497b;
+    color: #cbd3e0;
 }
 
 body[data-theme="dark"] .home-v3 .hv-chip {
     background: rgb(255 255 255 / 8%);
-    color: #d8d6d0;
+    color: #cbd3e0;
 }
 
 body[data-theme="dark"] .home-v3 .hv-chip--amber,
@@ -1532,7 +1535,7 @@ body[data-theme="dark"] .home-v3 .hv-chip--cyan {
 }
 
 body[data-theme="dark"] .home-v3 .hv-dest {
-    border-color: #26282c;
+    border-color: #253c66;
 }
 
 body[data-theme="dark"] .home-v3 .hv-dest__icon--indigo,
@@ -1552,7 +1555,7 @@ body[data-theme="dark"] .home-v3 .hv-dest__arrow { color: #66645f; }
 
 body[data-theme="dark"] .home-v3 .hv-week {
     background: rgb(255 255 255 / 5%);
-    border: 1px solid #26282c;
+    border: 1px solid #253c66;
 }
 
 body[data-theme="dark"] .home-v3 .hv-week__icon--green { background: rgb(105 174 146 / 16%); color: #69ae92; }
@@ -1580,7 +1583,7 @@ body[data-theme="dark"] .home-v3 .hv-story {
     --hv-azure: #bf8f17;
     --hv-cyan: #bf8f17;
     --hv-amber: #d8a928;
-    --hv-ink: #0b0c0e;
+    --hv-ink: #0a1730;
     --hv-text: #3a3d42;
     --hv-muted: #66645f;
     --hv-line: #ddd9d0;
@@ -1598,13 +1601,13 @@ body[data-theme="dark"] .home-v3 .hv-story {
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--primary,
 body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
     box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost,
 body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost {
-    color: #0b0c0e;
+    color: #0a1730;
     border-color: #cfc9bd;
 }
 
@@ -1619,7 +1622,7 @@ body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow {
 
 /* PhD future card: ink panel with gold mark (was navy gradient). */
 body[data-theme="dark"] .home-v3 .hv-future__phd {
-    background: linear-gradient(120deg, #0b0c0e, #24262a);
+    background: linear-gradient(120deg, #0a1730, #253a61);
 }
 
 /* Role dots in the mock résumé ledger: gold family instead of the
@@ -1633,8 +1636,8 @@ body[data-theme="dark"] .home-v3 .hv-rc__roles li:nth-child(3) .hv-rc__role-dot 
 /* Week summary card: graphite slab in the dark hero (was white). */
 body[data-theme="dark"] .home-v3 .hv-week__summary {
     background: rgb(255 255 255 / 7%);
-    border-color: #33353a;
-    color: #d8d6d0;
+    border-color: #34497b;
+    color: #cbd3e0;
 }
 
 /* Chips inside the paper bands go back to warm light pills (the graphite
@@ -1660,11 +1663,11 @@ body[data-theme="dark"] .home-v3 .hv-acts__item--current::before { background: #
 /* Invitation band: ink closing statement (was a pale silver gradient
    that read as a metallic strip between the paper band and ink footer). */
 body[data-theme="dark"] .home-v3 .hv-invite {
-    border-top: 1px solid #26282c;
-    background: #0b0c0e;
-    color: #fafaf7;
+    border-top: 1px solid #253c66;
+    background: #0a1730;
+    color: #f7f9fc;
 }
 
-body[data-theme="dark"] .home-v3 .hv-invite__line { color: #fafaf7; }
+body[data-theme="dark"] .home-v3 .hv-invite__line { color: #f7f9fc; }
 
 body[data-theme="dark"] .home-v3 .hv-future__phd-mark { color: #e3b83a; }

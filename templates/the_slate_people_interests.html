@@ -78,11 +78,13 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
                         Slate Board
                     </a>
-                    <a class="pi-navcard__link" href="{{ url_for('the_slate_my') }}">
+                    {# My Slate + Daily Slate now live stacked on the Slate
+                       Board page (Pete, 2026-07-17) — link to the anchors. #}
+                    <a class="pi-navcard__link" href="{{ portfolio_url('slate-board') }}#my-slate">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 21h6M12 18v3"/><path d="M7.5 9.5h4M7.5 13h6"/></svg>
                         My Slate
                     </a>
-                    <a class="pi-navcard__link" href="{{ url_for('the_slate_daily') }}">
+                    <a class="pi-navcard__link" href="{{ portfolio_url('slate-board') }}#daily-slate">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
                         Daily Slate
                     </a>
@@ -154,22 +156,17 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.6-3 2.6-5 5.5-5s4.9 2 5.5 5"/><path d="M15.5 11.5a3 3 0 1 0-.6-5.9"/><path d="M16 15.2c2.5.4 4 2.1 4.5 4.8"/></svg>
                         People &amp; Interests
                     </a>
-                    {# News Feed doesn't exist yet — an honest preview chip, not a dead link. #}
-                    <span class="sf-tab sf-tab--soon" aria-disabled="true" title="Coming soon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>
-                        News Feed
-                        <small>soon</small>
-                    </span>
-                    {# Feed Preview (PS-FEED-001, 2026-07-16): a real, clickable
-                       design preview of the next Feed direction from the
-                       approved Feed Vision Handoff — sample data only, and
-                       clearly labeled as a preview on its own page. Unlike
-                       the "soon" chip above, this destination actually
-                       exists today. #}
-                    <a class="sf-tab sf-tab--preview" href="{{ url_for('feed_living_stream') }}" title="A preview of PeerSlate's next Feed design — sample data only">
+                    {# Feed (PS-FEED-001; badge removed 2026-07-17 per Pete):
+                       the clickable next-Feed design — sample data only, and
+                       the destination says so in one quiet line. #}
+                    <a class="sf-tab" href="{{ url_for('feed_living_stream') }}" title="PeerSlate's next Feed design — sample data only">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg>
-                        Feed Preview
-                        <small>preview</small>
+                        Feed
+                    </a>
+                    {# The Break — back as a community option (Pete, 2026-07-17). #}
+                    <a class="sf-tab" href="/the-slate/break">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h12v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Z"/><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2M7 4c0 1 .8 1 .8 2M11 4c0 1 .8 1 .8 2"/></svg>
+                        The Break
                     </a>
                 </nav>
 

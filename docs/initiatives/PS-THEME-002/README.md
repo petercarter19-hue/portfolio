@@ -1,5 +1,17 @@
 # PS-THEME-002 — Layered Ink & Signal Gold dark theme (delivered 2026-07-17)
 
+> **Navy revision (2026-07-17, owner-directed):** the neutral near-black
+> layer scale below was re-tinted into a clearly visible Midnight-Ink
+> navy the same day (owner: "I want the background navy blue") — well
+> `#081426`, chrome ink `#0A1730`, page `#0E1D3A`, card `#1A2C4F`,
+> raised `#223A66`, hover `#294578`, hairlines `#2E4573`/`#24375C` —
+> with the dark-layer text family cooled to match (`#F2F4F8` primary /
+> `#C4CCDA` secondary / `#9AA5B8` muted). Layer steps were widened so
+> navy cards read clearly against the navy canvas. Gold, the paper pop
+> layers, semantic colors, and every warm ink on paper are unchanged.
+> Shadows stay neutral black. Rule 78a records the current values; the
+> table below is the original ink revision, kept as the decision record.
+
 Supersedes the visual system of PS-THEME-001 ("Monochrome & Signal
 Gold"), which kept warm-paper pages under an ink header and therefore
 read as a light theme with dark chrome. Owner direction (2026-07-16):

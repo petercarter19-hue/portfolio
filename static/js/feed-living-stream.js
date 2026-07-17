@@ -85,6 +85,37 @@
       title: 'The meeting went better when I stopped trying to win it.',
       copy: 'The useful part was hearing what the other person was actually worried about. I’m writing that down before I forget it.',
       voice: true, voiceDuration: '1:12'
+    },
+    {
+      id: 'p-jordan-summit', initials: 'JL', color: 'jl', name: 'Jordan Lee',
+      kind: 'Personal moment', dot: 'amber', time: '6h', audience: 'Community',
+      title: 'Sunday reset, above the clouds.',
+      copy: 'No laptop, no notifications — just the trail. Monday me says thank you.',
+      image: 'mountain_walk.jpg', frame: 'polaroid', polaroidCaption: 'above the clouds · Sunday',
+      alt: 'A walker on a mountain ridge trail above a sea of clouds.'
+    },
+    {
+      id: 'p-alex-demo', initials: 'AK', color: 'ak', name: 'Alex Kim',
+      kind: 'Work update', dot: '', time: '7h', audience: 'Connections',
+      title: 'Two-minute demo of the new onboarding flow.',
+      copy: 'Recorded right after the standup — rough cut, real reactions.',
+      image: 'team_video.jpg', badge: 'Video', video: true, duration: '1:47', frame: 'film',
+      alt: 'A team gathered around a laptop recording a product demo.'
+    },
+    {
+      id: 'p-marcus-5k', initials: 'MR', color: 'mr', name: 'Marcus Rivera',
+      kind: 'Milestone', dot: 'green', time: '9h', audience: 'Community',
+      title: '5k before standup — a new personal record. 🎉',
+      copy: 'Three months ago I couldn’t run a mile without stopping. Small steps, every day.',
+      image: 'trail_run.jpg', badge: 'Milestone',
+      alt: 'A runner on a forest trail in early morning light.'
+    },
+    {
+      id: 'p-aisha-notes', initials: 'AP', color: 'ap', name: 'Aisha Patel',
+      kind: 'Personal moment', dot: 'amber', time: 'Yesterday', audience: 'Community',
+      title: 'Saturday morning: coffee, a pen, and zero meetings.',
+      image: 'coffee_notes.jpg', frame: 'polaroid', polaroidCaption: 'the good kind of planning',
+      alt: 'A coffee cup beside a notebook of handwritten weekend notes.'
     }
   ];
 
@@ -192,10 +223,17 @@
 
   var state = {
     composition: 'default',       // default | gallery | video | rail
-    tab: 'forYou',                // forYou | following
     view: 'feed',                 // feed | detail | loading | error
     detailPost: null,
-    draft: { transcript: TRANSCRIPT_FULL, audience: 'community', connections: { phoenix: true, goal: false, evidence: false } },
+    draft: {
+      transcript: TRANSCRIPT_FULL,
+      audience: 'community',
+      /* Connect-to targets are the member's own places (Pete, 2026-07-17). */
+      connections: { story: false, board: false, resume: false },
+      /* Attachments: photo/video/doc/audio, with member-chosen frames. */
+      attach: { photo: false, photoFrame: 'standard', video: false, videoFrame: 'standard', doc: false, audio: false, audioDuration: '0:41' },
+      aiStep: false
+    },
     reactions: {},                // postId -> true
     saves: {},                    // postId -> true
     publishedPosts: [],           // fixture posts added through the publish flow
@@ -208,7 +246,9 @@
   var pageTitle = document.getElementById('pageTitle');
   var pageSubtitle = document.getElementById('pageSubtitle');
   var overlayRoot = document.getElementById('overlayRoot');
-  var tabs = Array.prototype.slice.call(document.querySelectorAll('.feed-tab'));
+  /* The old For You / Following tablist is gone — the .feed-tab elements are
+     now plain links that switch between community views (People & Interests,
+     Feed, The Break). No JS needed for them. */
 
   /* ---------- render helpers (ported from the handoff build script) ---------- */
 
@@ -261,11 +301,26 @@
     if (!post.image) { return ''; }
     var badge = post.badge ? '<div class="media-badge">' + esc(post.badge) + '</div>' : '';
     if (post.video) {
-      return '<div class="media video"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge +
+      var video = '<div class="media video"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge +
         '<div class="media-overlay"></div>' +
         '<button class="play" type="button" data-play="' + esc(post.id) + '" aria-label="Play video: ' + esc(post.title) + ' (' + esc(post.duration) + ')"></button>' +
         '<div class="video-caption"><h3>' + esc(post.title) + '</h3><p>' + esc(post.copy || 'A real moment shared in the member’s own voice.') + '</p></div>' +
         '<div class="duration">' + esc(post.duration) + '</div></div>';
+      /* Film-strip frame (member-chosen option, never a default): the video
+         sits INSIDE a piece of film — sprocket holes above and below. */
+      if (post.frame === 'film') {
+        var holes = new Array(9 + 1).join('<i></i>');
+        return '<div class="filmstrip"><div class="film-holes" aria-hidden="true">' + holes + '</div>' +
+          video + '<div class="film-holes" aria-hidden="true">' + holes + '</div></div>';
+      }
+      return video;
+    }
+    /* Polaroid frame (member-chosen option, never a default): white instant-
+       photo mat with a handwritten caption in the thick bottom border. */
+    if (post.frame === 'polaroid') {
+      return '<figure class="polaroid"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' +
+        (post.polaroidCaption ? '<figcaption class="polaroid-caption">' + esc(post.polaroidCaption) + '</figcaption>' : '') +
+        '</figure>';
     }
     return '<div class="media landscape"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge + '</div>';
   }
@@ -296,11 +351,37 @@
       '<div class="post-body">' + body + '</div></article>';
   }
 
+  /* Sticky-note reminder pad (Pete, 2026-07-17): a yellow pad pinned at the
+     top of the right rail. Reminders live here for the session only, and
+     each one can be sent to the Slate Board too. */
+  var REMINDERS = [
+    { text: 'Reply to Danielle about the handoff checklist', board: false },
+    { text: 'Book the PMP exam window', board: true }
+  ];
+
+  function stickyPadHTML() {
+    var notes = REMINDERS.map(function (item, index) {
+      return '<li class="sticky-note-row">' +
+        '<span class="sticky-note-text">' + esc(item.text) + '</span>' +
+        '<button class="sticky-board-btn" type="button" data-reminder-board="' + index + '" aria-pressed="' + (!!item.board) + '">' +
+        (item.board ? '✓ On board' : '+ Board') + '</button></li>';
+    }).join('');
+    return '<div class="sticky-pad" aria-label="Reminders">' +
+      '<div class="sticky-pad-head"><h3>Reminders</h3><span class="sticky-pin" aria-hidden="true"></span></div>' +
+      '<ul class="sticky-list">' + notes + '</ul>' +
+      '<form class="sticky-add" data-reminder-form>' +
+      '<label class="sr-only" for="reminderInput">Add a reminder</label>' +
+      '<input id="reminderInput" placeholder="Add a reminder…" autocomplete="off">' +
+      '<button class="sticky-add-btn" type="submit" aria-label="Add reminder">+</button></form>' +
+      '<p class="sticky-hint">Reminders can also be added to your Slate Board.</p></div>';
+  }
+
   function catchUpRailHTML() {
     var items = CATCH_UP.items.map(function (item) {
       return '<div class="catch-item"><strong>' + esc(item.strong) + '</strong><span>' + esc(item.span) + '</span></div>';
     }).join('');
-    return '<div class="rail-panel"><div class="rail-title"><h3>Catch Up</h3><div class="spark">' + icon('spark') + '</div></div>' +
+    return stickyPadHTML() +
+      '<div class="rail-panel"><div class="rail-title"><h3>Catch Up</h3><div class="spark">' + icon('spark') + '</div></div>' +
       '<p class="rail-sub">' + esc(CATCH_UP.sub) + '</p>' + items +
       '<button class="rail-cta" type="button" data-inert>' + icon('mic', 'sm') + ' ' + esc(CATCH_UP.listen) + '</button></div>' +
       '<div class="rail-note">' + icon('spark', 'sm') + ' <strong>AI summary</strong><br>Built only from posts you are allowed to see. Every summary links to its source.</div>';
@@ -313,14 +394,6 @@
       '<div class="media landscape"></div></div></article>';
     return composerHTML('Loading your Feed…') + '<div class="date-label">Today</div>' +
       '<div class="skeleton" aria-hidden="true">' + post + post + post + '</div>';
-  }
-
-  function emptyHTML() {
-    return composerHTML() +
-      '<div class="empty-state"><div class="empty-illustration" aria-hidden="true"></div>' +
-      '<h2>You’re caught up.</h2>' +
-      '<p>There are no new posts from the people you follow. Capture something from your week, or return to a saved conversation.</p>' +
-      '<button class="btn primary" type="button" data-open-voice>' + icon('mic', 'sm', '1.9') + ' Talk about what happened</button></div>';
   }
 
   function errorHTML() {
@@ -372,16 +445,6 @@
     pageSubtitle.textContent = SUBTITLES[key] || SUBTITLES['default'];
   }
 
-  function setTabsVisual() {
-    tabs.forEach(function (tab) {
-      var active = (tab.getAttribute('data-tab') === state.tab);
-      tab.classList.toggle('active', active);
-      tab.setAttribute('aria-selected', active ? 'true' : 'false');
-      tab.setAttribute('tabindex', active ? '0' : '-1');
-    });
-    feedColumn.setAttribute('aria-labelledby', state.tab === 'forYou' ? 'tab-for-you' : 'tab-following');
-  }
-
   function setRail(visible) {
     if (visible) {
       contextRail.innerHTML = catchUpRailHTML();
@@ -395,7 +458,6 @@
   }
 
   function render() {
-    setTabsVisual();
     if (state.view === 'loading') {
       pageTitle.textContent = 'Feed';
       setSubtitle(state.subtitleKey || 'default');
@@ -419,14 +481,10 @@
       feedColumn.innerHTML = errorHTML();
       return;
     }
-    if (state.tab === 'following') {
-      setSubtitle('empty');
-      setRail(false);
-      feedColumn.innerHTML = emptyHTML();
-      return;
-    }
     setSubtitle(state.composition);
-    setRail(state.composition === 'rail');
+    /* The reminders + Catch Up rail is a standing part of the desktop feed
+       (Pete, 2026-07-17), not a special composition. */
+    setRail(true);
     var posts = compositionPosts().map(function (post) {
       return postHTML(post, { justPublished: post === state.publishedPosts[0] && state.highlightPublished });
     }).join('');
@@ -519,10 +577,33 @@
       '<span><strong>' + esc(title) + '</strong><span>' + esc(help) + '</span></span></label>';
   }
 
+  var CONNECT_LABELS = { story: 'My Story', board: 'Slate Board', resume: 'Resume' };
+
   function connectChipHTML(key, label) {
     var on = !!state.draft.connections[key];
     return '<button class="chip' + (on ? ' project' : '') + '" type="button" data-connect="' + key + '" aria-pressed="' + on + '">' +
       (on ? '✓ ' : '+ ') + esc(label) + '</button>';
+  }
+
+  /* Attachments row: photo / video / document / audio, all simulated. A
+     photo can wear the Polaroid frame and a video the film-strip frame —
+     member options, never defaults. */
+  function attachRowHTML() {
+    var a = state.draft.attach;
+    var out = '<div class="field-label" style="margin-top:16px">Add to this post</div><div class="attach-row">';
+    out += a.photo
+      ? '<span class="attach-chip">' + icon('image', 'sm') + ' Photo <label class="frame-opt"><input type="checkbox" data-frame="photo"' + (a.photoFrame === 'polaroid' ? ' checked' : '') + '> Polaroid frame</label><button class="attach-x" type="button" data-detach="photo" aria-label="Remove photo">✕</button></span>'
+      : '<button class="pill-btn" type="button" data-attach="photo">' + icon('image', 'sm') + ' Photo</button>';
+    out += a.video
+      ? '<span class="attach-chip">▶ Video <label class="frame-opt"><input type="checkbox" data-frame="video"' + (a.videoFrame === 'film' ? ' checked' : '') + '> Film-strip frame</label><button class="attach-x" type="button" data-detach="video" aria-label="Remove video">✕</button></span>'
+      : '<button class="pill-btn" type="button" data-attach="video">▶ Video</button>';
+    out += a.doc
+      ? '<span class="attach-chip">▤ Systems_notes.pdf<button class="attach-x" type="button" data-detach="doc" aria-label="Remove document">✕</button></span>'
+      : '<button class="pill-btn" type="button" data-attach="doc">▤ Document</button>';
+    out += a.audio
+      ? '<span class="attach-chip">' + icon('mic', 'sm') + ' Your recording · ' + esc(a.audioDuration) + '<button class="attach-x" type="button" data-detach="audio" aria-label="Remove audio">✕</button></span>'
+      : '<button class="pill-btn" type="button" data-attach="audio">' + icon('mic', 'sm') + ' Audio</button>';
+    return out + '</div>';
   }
 
   function reviewOverlayHTML(aiStep) {
@@ -533,14 +614,20 @@
         '<div><strong style="color:#263955">Confidentiality check</strong><br>No employer, customer, or restricted details were detected. You still make the final decision.</div></div>'
       : '';
     var primaryLabel = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
+    var audioRow = state.draft.attach.audio
+      ? '<div class="voice-player review-audio"><button class="voice-play" type="button" data-play-voice="draft" aria-label="Play your recording (' + esc(state.draft.attach.audioDuration) + ')">▶</button>' +
+        '<div class="wave" aria-hidden="true">' + new Array(38 + 1).join('<span></span>') + '</div><strong class="voice-time">' + esc(state.draft.attach.audioDuration) + '</strong></div>'
+      : '';
     return '<header class="modal-head"><h2 id="reviewTitle">' + heading + '</h2>' +
       '<button class="close" type="button" data-dismiss aria-label="Close">' + icon('close', '', '2') + '</button></header>' +
       '<div class="review-body"><div class="review-main">' +
-      '<label class="field-label" for="transcriptEdit">Transcript</label>' +
+      '<label class="field-label" for="transcriptEdit">What you said</label>' +
+      audioRow +
       '<textarea class="transcript-box editable" id="transcriptEdit" rows="4" data-autofocus>' + esc(state.draft.transcript) + '</textarea>' +
-      '<div class="proposal"><div class="proposal-head">' + icon('spark', 'sm') + ' PeerSlate proposal · editable</div>' +
+      '<div class="proposal"><div class="proposal-head">' + icon('spark', 'sm') + ' Suggested post · editable</div>' +
       '<h3>' + esc(proposalTitle) + '</h3><p>' + esc(PROPOSAL.copy) + '</p>' +
-      '<div class="chip-row"><span class="chip project">Project Phoenix</span><span class="chip">Work update</span><span class="chip ai">AI-assisted draft</span></div></div>' +
+      '<div class="chip-row"><span class="chip">Work update</span><span class="chip ai">AI-suggested draft</span></div></div>' +
+      attachRowHTML() +
       aiNote + '</div>' +
       '<aside class="review-side"><div class="field-label" id="audienceLabel">Who can see this?</div>' +
       '<div role="radiogroup" aria-labelledby="audienceLabel">' +
@@ -550,15 +637,16 @@
       privacyOptionHTML('selected', 'Selected people', 'Choose exactly who can see it.') +
       '</div>' +
       '<div class="field-label" style="margin-top:18px">Also connect to</div>' +
-      '<div class="chip-row">' + connectChipHTML('phoenix', 'Project Phoenix') + connectChipHTML('goal', 'Goal') + connectChipHTML('evidence', 'Evidence') + '</div>' +
+      '<div class="chip-row">' + connectChipHTML('story', 'My Story') + connectChipHTML('board', 'Slate Board') + connectChipHTML('resume', 'Resume') + '</div>' +
       '</aside>' +
-      '<footer class="review-footer"><span class="meta">Original wording and source remain inspectable.</span>' +
+      '<footer class="review-footer"><span class="meta">You can edit everything before it saves.</span>' +
       '<button class="cancel-btn" type="button" data-keep-editing>Keep editing</button>' +
       '<button class="btn primary" type="button" data-review-primary data-ai-step="' + (aiStep ? '1' : '0') + '">' + primaryLabel + '</button>' +
       '</footer></div>';
   }
 
   function openReviewOverlay(aiStep, announceText) {
+    state.draft.aiStep = !!aiStep;
     var overlay = openOverlay(reviewOverlayHTML(aiStep), 'reviewTitle');
     overlay.addEventListener('change', function (event) {
       if (event.target.name === 'audience') {
@@ -568,6 +656,14 @@
         });
         var primary = overlay.querySelector('[data-review-primary]');
         primary.textContent = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
+      }
+      if (event.target.hasAttribute('data-frame')) {
+        var kind = event.target.getAttribute('data-frame');
+        if (kind === 'photo') { state.draft.attach.photoFrame = event.target.checked ? 'polaroid' : 'standard'; }
+        if (kind === 'video') { state.draft.attach.videoFrame = event.target.checked ? 'film' : 'standard'; }
+        announce(event.target.checked
+          ? (kind === 'photo' ? 'Polaroid frame on.' : 'Film-strip frame on.')
+          : 'Standard frame.');
       }
     });
     overlay.addEventListener('input', function (event) {
@@ -583,22 +679,40 @@
       return;
     }
     var audienceLabel = { connections: 'Connections', community: 'Community', selected: 'Selected people' }[state.draft.audience] || 'Community';
-    var linked = state.draft.connections.phoenix ? ' &nbsp;·&nbsp; <strong>Linked to Project Phoenix</strong>' : '';
-    state.publishedPosts.unshift({
+    var linkedTo = Object.keys(state.draft.connections)
+      .filter(function (key) { return state.draft.connections[key]; })
+      .map(function (key) { return CONNECT_LABELS[key]; });
+    var linked = linkedTo.length ? ' &nbsp;·&nbsp; <strong>Linked to ' + esc(linkedTo.join(', ')) + '</strong>' : '';
+    var a = state.draft.attach;
+    var post = {
       id: 'p-published-' + (state.publishedPosts.length + 1),
       initials: 'PC', color: 'pc', name: 'Pete Carter',
       kind: 'Work update', dot: '', time: 'Just now', audience: audienceLabel,
       title: PROPOSAL.publishTitle,
       copy: PROPOSAL.copy,
-      linkline: '▣ &nbsp; From Pete’s Journal' + linked + ' &nbsp;·&nbsp; AI-assisted draft'
-    });
+      linkline: '▣ &nbsp; From Pete’s Journal' + linked +
+        (a.doc ? ' &nbsp;·&nbsp; 1 document attached' : '') + ' &nbsp;·&nbsp; AI-suggested draft'
+    };
+    if (a.video) {
+      post.image = 'team_video.jpg';
+      post.video = true;
+      post.duration = '1:47';
+      post.badge = 'Video';
+      if (a.videoFrame === 'film') { post.frame = 'film'; }
+      post.alt = 'Your attached video (simulated in this prototype).';
+    } else if (a.photo) {
+      post.image = 'mountain_walk.jpg';
+      post.alt = 'Your attached photo (simulated in this prototype).';
+      if (a.photoFrame === 'polaroid') { post.frame = 'polaroid'; post.polaroidCaption = 'from today'; }
+    }
+    if (a.audio) { post.voice = true; post.voiceDuration = a.audioDuration; }
+    state.publishedPosts.unshift(post);
     state.highlightPublished = true;
     state.composition = 'default';
-    state.tab = 'forYou';
     state.view = 'feed';
     render();
     scrollFeedToTop();
-    announce('Published to ' + audienceLabel + '. Your update is at the top of the Feed, and the original wording stays inspectable in your Journal.');
+    announce('Published to ' + audienceLabel + '. Your update is at the top of the Feed, and your original wording stays inspectable in your Journal.');
   }
 
   /* ---------- events ---------- */
@@ -615,6 +729,7 @@
     if (el.hasAttribute('data-open-voice')) { openVoiceOverlay(); return; }
     if (el.hasAttribute('data-open-composer')) {
       state.draft.transcript = '';
+      state.draft.attach.audio = false;
       openReviewOverlay(false, 'Review before saving. Type what happened — voice and text share the same review.');
       var edit = document.getElementById('transcriptEdit');
       if (edit) { edit.placeholder = 'Type what happened…'; edit.focus(); }
@@ -623,7 +738,36 @@
     if (el.hasAttribute('data-cancel-voice')) { dismissOverlay('Recording discarded. Nothing was saved.'); return; }
     if (el.hasAttribute('data-stop-voice')) {
       state.draft.transcript = TRANSCRIPT_FULL;
-      openReviewOverlay(false, 'Recording stopped. Review the transcript and proposal before anything is saved.');
+      /* The recording itself rides along with the draft as an audio
+         attachment the member can keep or remove. */
+      state.draft.attach.audio = true;
+      openReviewOverlay(false, 'Recording stopped. Your audio is attached — review everything before it saves.');
+      return;
+    }
+    if (el.hasAttribute('data-attach') || el.hasAttribute('data-detach')) {
+      var attachKind = el.getAttribute('data-attach') || el.getAttribute('data-detach');
+      var attaching = el.hasAttribute('data-attach');
+      state.draft.attach[attachKind] = attaching;
+      if (attachKind === 'photo' && !attaching) { state.draft.attach.photoFrame = 'standard'; }
+      if (attachKind === 'video' && !attaching) { state.draft.attach.videoFrame = 'standard'; }
+      openReviewOverlay(state.draft.aiStep);
+      announce(attaching
+        ? ({ photo: 'Photo attached (simulated). Choose the Polaroid frame if you like.',
+             video: 'Video attached (simulated). Choose the film-strip frame if you like.',
+             doc: 'Document attached (simulated).',
+             audio: 'Audio attached (simulated).' }[attachKind])
+        : 'Removed.');
+      return;
+    }
+    if (el.hasAttribute('data-reminder-board')) {
+      var remIndex = Number(el.getAttribute('data-reminder-board'));
+      if (REMINDERS[remIndex]) {
+        REMINDERS[remIndex].board = !REMINDERS[remIndex].board;
+        render();
+        announce(REMINDERS[remIndex].board
+          ? 'Reminder added to your Slate Board (simulated in this prototype).'
+          : 'Reminder removed from your Slate Board.');
+      }
       return;
     }
     if (el.hasAttribute('data-dismiss')) { dismissOverlay('Closed. Nothing was saved.'); return; }
@@ -639,7 +783,7 @@
       var pressed = state.draft.connections[key];
       el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
       el.classList.toggle('project', pressed);
-      el.innerHTML = (pressed ? '✓ ' : '+ ') + esc({ phoenix: 'Project Phoenix', goal: 'Goal', evidence: 'Evidence' }[key]);
+      el.innerHTML = (pressed ? '✓ ' : '+ ') + esc(CONNECT_LABELS[key]);
       return;
     }
     if (el.hasAttribute('data-respond-toggle')) {
@@ -753,24 +897,18 @@
     }
   });
 
-  /* Tabs: click + roving arrow keys. */
-  tabs.forEach(function (tab, index) {
-    tab.addEventListener('click', function () {
-      state.tab = tab.getAttribute('data-tab');
-      state.view = 'feed';
-      render();
-      announce(state.tab === 'following'
-        ? 'Following. Posts from people you explicitly follow, newest first.'
-        : 'For You. Relevant posts from your connections, interests, and projects.');
-    });
-    tab.addEventListener('keydown', function (event) {
-      var next = null;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { next = tabs[(index + 1) % tabs.length]; }
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { next = tabs[(index - 1 + tabs.length) % tabs.length]; }
-      if (event.key === 'Home') { next = tabs[0]; }
-      if (event.key === 'End') { next = tabs[tabs.length - 1]; }
-      if (next) { event.preventDefault(); next.focus(); next.click(); }
-    });
+  /* Enter in the reminder pad adds the reminder (session only, simulated). */
+  document.addEventListener('submit', function (event) {
+    if (!event.target.hasAttribute || !event.target.hasAttribute('data-reminder-form')) { return; }
+    event.preventDefault();
+    var input = document.getElementById('reminderInput');
+    var text = (input && input.value || '').trim();
+    if (!text) { if (input) { input.focus(); } return; }
+    REMINDERS.unshift({ text: text, board: false });
+    render();
+    var next = document.getElementById('reminderInput');
+    if (next) { next.focus(); }
+    announce('Reminder added to your pad. Nothing is saved beyond this page.');
   });
 
   /* ---------- deep-linkable states (?state=…) ---------- */
@@ -784,7 +922,6 @@
       case 'gallery': state.composition = 'gallery'; break;
       case 'video': state.composition = 'video'; break;
       case 'rail': state.composition = 'rail'; break;
-      case 'empty': state.tab = 'following'; break;
       case 'detail': state.view = 'detail'; state.detailPost = DETAIL_POST; break;
       case 'error': state.view = 'error'; break;
       case 'loading':

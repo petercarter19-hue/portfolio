@@ -11,6 +11,15 @@
     background: #dceefe;
 }
 
+/* 10% smaller résumé on desktop (Pete, 2026-07-17). Zoom is applied to
+   the CHILDREN, not .resume-v2 itself, so the fixed full-bleed ::before/
+   ::after backdrops keep covering the whole viewport. */
+@media (min-width: 861px) {
+    .resume-v2 > * {
+        zoom: 0.9;
+    }
+}
+
 .resume-v2::before {
     position: fixed;
     z-index: -2;
@@ -4574,7 +4583,7 @@
    card surfaces stay light on purpose. Light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"] .resume-v2 {
-    --r2-ink: #0b0c0e;
+    --r2-ink: #0a1730;
     --r2-muted: #66645f;
     --r2-indigo: #8a6500;
     --r2-azure: #8a6500;
@@ -4599,13 +4608,13 @@ body[data-theme="dark"] .resume-consolidated .r2-section {
 
 /* Primary action: signal gold with ink text (the one strong CTA). */
 body[data-theme="dark"] .r2-action {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #ffffff;
     border-color: #ddd9d0;
 }
 
 body[data-theme="dark"] .r2-action--primary {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
     border-color: #d8a928;
 }
@@ -4618,13 +4627,13 @@ body[data-theme="dark"] .r2-action:focus-visible {
 
 body[data-theme="dark"] .r2-action--primary:hover,
 body[data-theme="dark"] .r2-action--primary:focus-visible {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #e3b83a;
     border-color: #e3b83a;
 }
 
 body[data-theme="dark"] .r2-identity-actions .r2-action:nth-child(3) {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #fffaf0;
     border-color: rgb(216 169 40 / 55%);
 }
@@ -4638,7 +4647,7 @@ body[data-theme="dark"] .r2-quote-card::after {
 }
 
 body[data-theme="dark"] .r2-quote-card blockquote {
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 /* --- Dark theme: literal-color sweep (selectors found via hue audit) ---
@@ -4647,13 +4656,13 @@ body[data-theme="dark"] .r2-quote-card blockquote {
    near-black stage with a whisper of gold atmosphere; the ::after wash
    layer is switched off so it cannot gray the stage. */
 body[data-theme="dark"] .resume-v2 {
-    background: #0e0f12;
+    background: #0e1d3a;
 }
 
 body[data-theme="dark"] .resume-v2::before {
     background:
         radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 6%), transparent 60%),
-        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 55%, #0b0c0e 100%);
+        linear-gradient(180deg, #0a1730 0%, #0e1d3a 55%, #0a1730 100%);
 }
 
 body[data-theme="dark"] .resume-v2::after {
@@ -4661,7 +4670,7 @@ body[data-theme="dark"] .resume-v2::after {
 }
 
 body[data-theme="dark"] .resume-consolidated {
-    --r2-ink: #0b0c0e;
+    --r2-ink: #0a1730;
     --r2-indigo: #8a6500;
     --r2-azure: #8a6500;
     --edu-accent: #8a6500;
@@ -4709,13 +4718,13 @@ body[data-theme="dark"] .r2-achieve-body > p {
 }
 
 body[data-theme="dark"] .r2-button {
-    color: #0b0c0e;
+    color: #0a1730;
     border-color: #ddd9d0;
 }
 
 body[data-theme="dark"] .r2-button--primary {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 /* Section ribbon (right rail): ink links, gold current, gold actions. */
@@ -4762,12 +4771,12 @@ body[data-theme="dark"] .r2-ai-chip:hover,
 body[data-theme="dark"] .r2-ai-chip:focus-visible {
     background: #d8a928;
     border-color: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .r2-ai-card .hero-ai-search__button {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .r2-ai-card .hero-ai-search:focus-within .hero-ai-search__box {
@@ -4780,7 +4789,7 @@ body[data-theme="dark"] .r2-ai-card .hero-ai-answer {
 
 /* Flip-card back: ink panel instead of navy/teal gradient. */
 body[data-theme="dark"] .r2-outcome-flip__back {
-    background: linear-gradient(145deg, #17181b, #24262a);
+    background: linear-gradient(145deg, #182c52, #253a61);
 }
 
 body[data-theme="dark"] .r2-exp-toggle {
@@ -4794,7 +4803,7 @@ body[data-theme="dark"] .resume-consolidated .r2-exp-toggle:hover {
 
 body[data-theme="dark"] .r2-exp-toggle:focus-visible {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .r2-credential-card footer button:hover {
@@ -4858,19 +4867,19 @@ body[data-theme="dark"] .r2-panel-close { color: #3a3d42; border-color: #ddd9d0;
 body[data-theme="dark"] .r2-experience-card { border-color: #e2ddd2; }
 body[data-theme="dark"] .r2-exp-card__marker { color: #8a6500; border-color: #e2ddd2; }
 body[data-theme="dark"] .r2-experience-card p { color: #3a3d42; }
-body[data-theme="dark"] .r2-experience-card strong { color: #0b0c0e; }
+body[data-theme="dark"] .r2-experience-card strong { color: #0a1730; }
 body[data-theme="dark"] .r2-experience-card small { color: #66645f; }
 body[data-theme="dark"] .r2-experience-card li { color: #3a3d42; }
 body[data-theme="dark"] .r2-exp-summary { color: #3a3d42; }
 
 body[data-theme="dark"] .r2-exp-ask {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 /* Credential cards/panels/records. */
 body[data-theme="dark"] .r2-credential-card { border-color: #e2ddd2; }
-body[data-theme="dark"] .r2-credential-card strong { color: #0b0c0e; }
+body[data-theme="dark"] .r2-credential-card strong { color: #0a1730; }
 body[data-theme="dark"] .r2-credential-card small { color: #66645f; }
 body[data-theme="dark"] .r2-credential-card span { color: #66645f; }
 
@@ -4902,12 +4911,12 @@ body[data-theme="dark"] .r2-ai-sub { color: #3a3d42; }
 
 /* Shared AI search box: warm border, gold button, ink text. */
 body[data-theme="dark"] .resume-v2 .hero-ai-search__box { border-color: rgb(216 169 40 / 45%); }
-body[data-theme="dark"] .resume-v2 .hero-ai-search__button { background: #d8a928; color: #0b0c0e; }
+body[data-theme="dark"] .resume-v2 .hero-ai-search__button { background: #d8a928; color: #0a1730; }
 body[data-theme="dark"] .resume-v2 .hero-ai-answer { border-color: rgb(216 169 40 / 40%); }
 body[data-theme="dark"] .r2-ai-card { border-color: #e2ddd2; }
 
 body[data-theme="dark"] .r2-section-heading span { color: #8a6500; }
-body[data-theme="dark"] .r2-section-heading h2 { color: #0b0c0e; }
+body[data-theme="dark"] .r2-section-heading h2 { color: #0a1730; }
 body[data-theme="dark"] .r2-section-heading p { color: #66645f; }
 
 body[data-theme="dark"] .r2-exp-card__visual {

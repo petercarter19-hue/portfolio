@@ -116,24 +116,26 @@ These rules govern product copy, information architecture, data behavior, AI beh
 76. Do not replace every blue surface with purple, tint every card, add visible grain, use colored shadows globally, or create a neon/gaming aesthetic.
 77. Raise only items that can be acted on, selected, entered, or opened.
 78. Target WCAG 2.2 AA; support keyboard navigation, visible focus, screen readers, reduced motion, 200% zoom, long content, missing media, and mobile touch targets.
-78a. An optional member-toggled dark theme, "Layered Ink & Signal Gold"
-     (PS-THEME-002, 2026-07-16, superseding the PS-THEME-001 monochrome
-     interim), ships alongside Iris Foundry: true layered dark — well
-     `#060708`, page canvas `#0E0F12`, card `#17191E`, raised `#1E2127`
-     (never pure black; elevation = lighter layer + hairline `#262A31`),
-     off-white type (`#F4F3EF` primary, `#A5A399` muted), and one
+78a. An optional member-toggled dark theme, "Layered Navy & Signal
+     Gold" (PS-THEME-002, 2026-07-16; navy revision 2026-07-17,
+     superseding the PS-THEME-001 monochrome interim), ships alongside
+     Iris Foundry: layered visible navy in the Midnight Ink family —
+     well `#081426`, page canvas `#0E1D3A`, card `#1A2C4F`, raised
+     `#223A66` (never pure black; elevation = lighter layer + hairline
+     `#2E4573`),
+     cool off-white type (`#F2F4F8` primary, `#9AA5B8` muted), and one
      signal-gold accent (`#D8A928` buttons always with ink text,
      text-safe bright `#E3B83A` on dark, `#8A6500` only on the paper
      pop layer). Paper `#F6F5F0` survives as a deliberate pop layer:
-     the résumé document, the whiteboard canvas, and select feature
-     strips float as white slabs on the black stage. It is off by
-     default, applied via `body[data-theme="dark"]` and the header
-     switch, and persists per browser. Under it, room accents collapse
-     to gold and semantic green/amber/red keep their meanings. Two
-     standing exceptions: the Slate Board writing canvas stays light
-     for legible handwriting, and member photography/sticky-note/avatar
-     colors are never recolored. The default (light) theme remains Iris
-     Foundry, untouched.
+     the résumé document, the whiteboard canvas, the community app
+     sheet, and select feature strips float as white slabs on the navy
+     stage. It is off by default, applied via `body[data-theme="dark"]`
+     and the header switch, and persists per browser. Under it, room
+     accents collapse to gold and semantic green/amber/red keep their
+     meanings. Two standing exceptions: the Slate Board writing canvas
+     stays light for legible handwriting, and member photography/
+     sticky-note/avatar colors are never recolored. The default (light)
+     theme remains Iris Foundry, untouched.
 
 ## 12. Delivery and truthfulness rules
 

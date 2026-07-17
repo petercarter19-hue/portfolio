@@ -54,18 +54,28 @@ class FeedPrototypeContentTests(unittest.TestCase):
         app.config['TESTING'] = True
         cls.html = app.test_client().get('/feed-living-stream').get_data(as_text=True)
 
-    def test_alpha_tabs_only(self):
-        self.assertIn('For You', self.html)
-        self.assertIn('Following', self.html)
+    def test_community_switcher_tabs(self):
+        # 2026-07-17 (Pete, round 2): the Feed and The Break are one
+        # ecosystem — a prominent two-tab switcher flips between them, and
+        # the shared community sidebar appears on both. People & Interests
+        # left the switcher; For You / Following never returns.
+        self.assertIn('feed-switch', self.html)
+        self.assertIn('The Break', self.html)
+        self.assertIn('aria-label="Community sections"', self.html)
+        self.assertNotIn('People &amp; Interests', self.html)
+        self.assertNotIn('Following', self.html)
+        self.assertNotIn('For You', self.html)
 
     def test_copy_deck_language(self):
         self.assertIn('Feed', self.html)
         self.assertIn('What people are building, learning, and living.', self.html)
 
-    def test_preview_banner_present(self):
-        self.assertIn('Design preview', self.html)
-        self.assertIn('sample data', self.html)
-        self.assertIn('saved to a database', self.html)
+    def test_sample_data_note_present(self):
+        # 2026-07-17 (Pete): the loud "Design preview" badge is gone, but the
+        # truthfulness rule stands — one quiet line still says the page is
+        # sample data and saves nothing.
+        self.assertNotIn('Design preview', self.html)
+        self.assertIn('Sample data — nothing on this page is saved or shared.', self.html)
 
     def test_no_banned_filler_language(self):
         # Scoped to the Feed experience itself (#feed-app onward). The
@@ -80,7 +90,8 @@ class FeedPrototypeContentTests(unittest.TestCase):
             self.assertNotIn(banned, lowered)
 
     def test_accessibility_landmarks(self):
-        self.assertIn('role="tablist"', self.html)
+        # The old For You / Following tablist is now a labeled nav of links.
+        self.assertIn('aria-label="Community views"', self.html)
         self.assertIn('aria-live="polite"', self.html)
         self.assertIn('Skip to main content', self.html)
 

@@ -2402,10 +2402,10 @@ body[data-theme="modern-blue"] {
    by default. A TRUE dark theme: near-black layered surfaces (never pure
    #000), off-white editorial type, and ONE signal-gold accent. Elevation
    is expressed by lightening each layer, the standard dark-UI pattern:
-     well   #060708   (inset panels, footer, deep bands)
-     page   #0e0f12   (the canvas)
-     card   #17191e   (cards, rails, panels)
-     raised #1e2127   (nested cards, hover, popovers)
+     well   #081426   (inset panels, footer, deep bands)
+     page   #0e1d3a   (the canvas)
+     card   #1a2c4f   (cards, rails, panels)
+     raised #223a66   (nested cards, hover, popovers)
    Paper (#f6f5f0 with ink text) survives as a deliberate POP layer for a
    few feature moments — white layered between blacks — plus user content
    (sticky notes, photos, the whiteboard canvas).
@@ -2413,48 +2413,48 @@ body[data-theme="modern-blue"] {
    (≈9:1 on ink); button gold #D8A928 always carries ink text; the old
    text-safe gold-ink #8A6500 is only for text on the paper pop layer. */
 body[data-theme="dark"] {
-    --bg: #0e0f12;
-    --bg-elevated: #17191e;
-    --surface: #17191e;
-    --surface-soft: #14161a;
-    --text: #f4f3ef;
-    --text-muted: #a5a399;
+    --bg: #0e1d3a;
+    --bg-elevated: #1a2c4f;
+    --surface: #1a2c4f;
+    --surface-soft: #16294c;
+    --text: #f2f4f8;
+    --text-muted: #9aa5b8;
     --accent: #e3b83a;
     --accent-hover: #f0c95a;
     --accent-soft: rgb(216 169 40 / 14%);
-    --border: #262a31;
+    --border: #2e4573;
     --shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
-    --nav-bg: rgb(11 12 14 / 96%);
+    --nav-bg: rgb(10 23 48 / 96%);
     --tab-active: #e3b83a;
     --button-primary-bg: #d8a928;
-    --button-primary-text: #0b0c0e;
-    --button-secondary-bg: #1e2127;
-    --button-secondary-text: #f4f3ef;
-    --color-page: #0e0f12;
-    --color-page-deep: #060708;
-    --color-section: #14161a;
-    --color-card: #17191e;
-    --color-card-elevated: #1e2127;
-    --color-card-hover: #232730;
+    --button-primary-text: #0a1730;
+    --button-secondary-bg: #223a66;
+    --button-secondary-text: #f2f4f8;
+    --color-page: #0e1d3a;
+    --color-page-deep: #081426;
+    --color-section: #16294c;
+    --color-card: #1a2c4f;
+    --color-card-elevated: #223a66;
+    --color-card-hover: #294578;
     --color-gold: #d8a928;
     --color-gold-bright: #e3b83a;
     --color-gold-muted: #bf8f17;
     --color-gold-dark: #8a6500;
     --color-blue: #e3b83a;
     --color-cyan: #5abf95;
-    --color-text-primary: #f4f3ef;
-    --color-text-secondary: #c6c4bc;
-    --color-text-muted: #a5a399;
-    --color-border: #262a31;
-    --color-border-soft: #1d2026;
+    --color-text-primary: #f2f4f8;
+    --color-text-secondary: #c4ccda;
+    --color-text-muted: #9aa5b8;
+    --color-border: #2e4573;
+    --color-border-soft: #24375c;
     --color-border-gold: #d8a928;
     --shadow-card: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
     --shadow-gold: 0 8px 22px rgb(216 169 40 / 18%);
     --slate-grain: 0;
     /* Sign In / ink chrome buttons: gold with ink text on the dark header. */
     --ink-btn-bg: #d8a928;
-    --ink-btn-text: #0b0c0e;
-    --askbar-bg: #060708;
+    --ink-btn-text: #0a1730;
+    --askbar-bg: #081426;
 }
 
 /* No stone photo in mono mode — flat warm paper, no texture/grain. */
@@ -2750,7 +2750,7 @@ body[data-theme="modern-blue"] {
 
 .theme-toggle[aria-checked="true"] .theme-toggle__thumb {
     transform: translateX(15px);
-    background: #0b0c0e;
+    background: #0a1730;
 }
 
 .theme-toggle[aria-checked="true"] .theme-toggle__icon--moon { opacity: 0.95; }
@@ -4029,7 +4029,7 @@ body[data-theme="modern-blue"] #chat-panel {
    pages; elevation = lighter surface + 1px hairline + deep soft shadow. */
 body[data-theme="dark"] .hero::before {
     background:
-        linear-gradient(90deg, rgb(14 15 18 / 88%) 0%, rgb(14 15 18 / 62%) 48%, rgb(14 15 18 / 88%) 100%),
+        linear-gradient(90deg, rgb(14 29 58 / 88%) 0%, rgb(14 29 58 / 62%) 48%, rgb(14 29 58 / 88%) 100%),
         radial-gradient(circle at 78% 14%, var(--accent-soft), transparent 28%);
 }
 
@@ -4042,13 +4042,13 @@ body[data-theme="dark"] .resume-page {
 
 /* Ink header: off-white links, gold active underline (reference poster). */
 body[data-theme="dark"] .global-header {
-    background: #0b0c0e;
+    background: #0a1730;
     box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
-    border-bottom: 1px solid #26282c;
+    border-bottom: 1px solid #253c66;
 }
 
 body[data-theme="dark"] .platform-nav__links a {
-    color: #e9e7e1;
+    color: #e2e7f0;
 }
 
 body[data-theme="dark"] .platform-nav__links a:hover,
@@ -4071,8 +4071,8 @@ body[data-theme="dark"] .platform-brand__logo img {
 /* Header search: solid white pill on the ink bar. */
 body[data-theme="dark"] .nav-search__input {
     background: #ffffff;
-    border-color: #3a3d42;
-    color: #0b0c0e;
+    border-color: #3b527f;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .nav-search__input::placeholder { color: #66645f; }
@@ -4085,11 +4085,11 @@ body[data-theme="dark"] .nav-search__input:focus {
 body[data-theme="dark"] .nav-search__icon { stroke: #66645f; }
 
 /* Theme toggle on the ink bar. */
-body[data-theme="dark"] .theme-toggle { color: #b9b8b3; }
+body[data-theme="dark"] .theme-toggle { color: #afb9cb; }
 
 body[data-theme="dark"] .theme-toggle__track {
-    background: #24262a;
-    border-color: #3a3d42;
+    background: #253a61;
+    border-color: #3b527f;
 }
 
 body[data-theme="dark"] .theme-toggle[aria-checked="true"] .theme-toggle__track {
@@ -4100,20 +4100,20 @@ body[data-theme="dark"] .theme-toggle[aria-checked="true"] .theme-toggle__track 
 /* Ask AI header button + Sign In: gold is the one signal on the ink bar,
    so Sign In takes it; Ask AI stays a quiet outline control. */
 body[data-theme="dark"] .nav-ask-ai {
-    color: #e9e7e1;
-    border-color: #3a3d42;
+    color: #e2e7f0;
+    border-color: #3b527f;
     background: transparent;
 }
 
 /* Profile sub-header (second row): a raised graphite strip one layer
    above the page, one below the ink bar — black on black layering. */
 body[data-theme="dark"] .profile-tabs {
-    background: #14161a;
-    border-bottom: 1px solid #26282c;
+    background: #16294c;
+    border-bottom: 1px solid #253c66;
 }
 
 body[data-theme="dark"] .profile-tabs .profile-tab {
-    color: #a5a399;
+    color: #9aa5b8;
     font-weight: 680;
 }
 
@@ -4127,6 +4127,13 @@ body[data-theme="dark"] .profile-tabs .profile-tab::after {
     background: #d8a928;
 }
 
+/* Slate success confirmations: the light theme's deep green lifts to the
+   dark-safe verified green on navy cards. */
+body[data-theme="dark"] .ts-compose__done,
+body[data-theme="dark"] .ts-checkin__done {
+    color: #5abf95;
+}
+
 /* Sub-header Ask AI chip: the AI-teal pill collapses to the gold signal
    family on the dark strip. */
 body[data-theme="dark"] .profile-tabs__ask-btn {
@@ -4137,7 +4144,7 @@ body[data-theme="dark"] .profile-tabs__ask-btn {
 
 body[data-theme="dark"] .profile-tabs__ask-btn:hover,
 body[data-theme="dark"] .profile-tabs__ask-btn:focus-visible {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
     border-color: #d8a928;
 }
@@ -4157,8 +4164,8 @@ body[data-theme="dark"] {
     --slate-vein-soft: transparent;
     --slate-type-shadow: none;
     --slate-accent-text-shadow: none;
-    --slate-linkedin-bg: #0b0c0e;
-    --slate-linkedin-mark: #fafaf7;
+    --slate-linkedin-bg: #0a1730;
+    --slate-linkedin-mark: #f7f9fc;
     --pop-shadow: 0 4px 12px rgb(0 0 0 / 45%), 0 28px 72px rgb(0 0 0 / 55%);
     --gilt-shadow: none;
     --slab-hi: rgb(255 255 255 / 6%);
@@ -4189,75 +4196,75 @@ body[data-theme="dark"] .resume-metric-card.is-selected {
 
 /* Footer: the deepest layer — a well below the page canvas. */
 body[data-theme="dark"] .footer {
-    background: #060708;
-    color: #b9b8b3;
-    border-top: 1px solid #26282c;
+    background: #081426;
+    color: #afb9cb;
+    border-top: 1px solid #253c66;
 }
 
-body[data-theme="dark"] .footer .footer-privacy { color: #b9b8b3; }
-body[data-theme="dark"] .footer p { color: #b9b8b3; }
+body[data-theme="dark"] .footer .footer-privacy { color: #afb9cb; }
+body[data-theme="dark"] .footer p { color: #afb9cb; }
 body[data-theme="dark"] .footer .footer-why-link { color: #e3b83a; }
-body[data-theme="dark"] .footer .footer-brand span { color: #fafaf7; }
+body[data-theme="dark"] .footer .footer-brand span { color: #f7f9fc; }
 
 /* Chat assistant: graphite AI shell with gold accents (brief: AI surfaces
    are black/graphite with off-white copy; gold marks the active tool). */
 body[data-theme="dark"] #chat-panel {
-    background: #17181b;
-    border: 1px solid #33353a;
-    color: #fafaf7;
+    background: #182c52;
+    border: 1px solid #34497b;
+    color: #f7f9fc;
     box-shadow: 0 18px 50px rgb(0 0 0 / 45%);
 }
 
 body[data-theme="dark"] #chat-header {
-    background: #0b0c0e;
-    color: #fafaf7;
-    border-bottom: 1px solid #33353a;
+    background: #0a1730;
+    color: #f7f9fc;
+    border-bottom: 1px solid #34497b;
 }
 
-body[data-theme="dark"] #chat-header h3 { color: #fafaf7; }
-body[data-theme="dark"] #chat-header p { color: #b9b8b3; }
+body[data-theme="dark"] #chat-header h3 { color: #f7f9fc; }
+body[data-theme="dark"] #chat-header p { color: #afb9cb; }
 
 body[data-theme="dark"] #chat-messages { background: transparent; }
 
 body[data-theme="dark"] #chat-input {
-    color: #fafaf7;
+    color: #f7f9fc;
     background: rgb(255 255 255 / 8%);
-    border-color: #3a3d42;
+    border-color: #3b527f;
 }
 
 body[data-theme="dark"] #chat-input-area,
 body[data-theme="dark"] #chat-disclaimer {
     background: rgb(255 255 255 / 4%);
-    color: #b9b8b3;
+    color: #afb9cb;
 }
 
 body[data-theme="dark"] #chat-send {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] #chat-toggle {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
     border-color: #d8a928;
 }
 
 body[data-theme="dark"] .suggestion-btn {
     background: rgb(255 255 255 / 6%);
-    color: #e9e7e1;
-    border-color: #3a3d42;
+    color: #e2e7f0;
+    border-color: #3b527f;
 }
 
 body[data-theme="dark"] .chat-message.bot-message {
     background: rgb(255 255 255 / 7%);
-    color: #f1efe9;
+    color: #eef1f6;
 }
 
 /* Focus ring: gold with an ink offset, visible on every dark layer and
    on the paper pop layer alike. */
 body[data-theme="dark"] :where(a, button, input, textarea, select, [tabindex]):focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px #0e0f12, 0 0 0 5px rgb(227 184 58 / 85%);
+    box-shadow: 0 0 0 2px #0e1d3a, 0 0 0 5px rgb(227 184 58 / 85%);
 }
 
 @media (max-width: 1180px) {
@@ -10847,6 +10854,13 @@ a.ct-card:focus-visible {
     .iv-askai__row { flex-direction: column; }
 }
 
+/* Community keeps its own voice: no Ask Pete AI launcher anywhere under
+   The Slate (Pete, 2026-07-17) — the community is about the members, not
+   about asking Pete's profile assistant. */
+body.the-slate-page #chat-toggle {
+    display: none;
+}
+
 /* Floating Ask Pete AI launcher: the old gold ghost chip was the last
    piece of the retired gold language — restyle it as the site's navy
    pill (same family as the dark ask bar) on the light theme and the
@@ -14062,12 +14076,12 @@ body[data-room="ultraviolet"] {
    the near-black page layer; cards sit one layer lighter; the paper pop
    layer is reserved for deliberate feature moments. */
 body[data-theme="dark"] {
-    --ps-canvas: #0e0f12;
-    --ps-surface: #17191e;
-    --ps-surface-soft: #14161a;
-    --ps-ink: #f4f3ef;
-    --ps-muted: #a5a399;
-    --ps-border: #262a31;
+    --ps-canvas: #0e1d3a;
+    --ps-surface: #1a2c4f;
+    --ps-surface-soft: #16294c;
+    --ps-ink: #f2f4f8;
+    --ps-muted: #9aa5b8;
+    --ps-border: #2e4573;
     --ps-primary: #e3b83a;
     --ps-primary-strong: #f0c95a;
     --ps-primary-soft: rgb(216 169 40 / 16%);
@@ -14078,7 +14092,7 @@ body[data-theme="dark"] {
     --ps-gold-hover: #e3b83a;
     --ps-gold-active: #bf8f17;
     --ps-gold-ink: #e3b83a;
-    --ps-graphite: #24262a;
+    --ps-graphite: #253a61;
     --ps-shadow-static: 0 1px 2px rgb(0 0 0 / 40%);
     --ps-shadow-interactive: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
     --ps-shadow-focal: 0 4px 12px rgb(0 0 0 / 45%), 0 28px 72px rgb(0 0 0 / 55%);
@@ -14095,14 +14109,14 @@ body[data-theme="dark"] {
 body[data-theme="dark"] .ps-btn--primary {
     background: #d8a928;
     border-color: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .ps-btn--primary:hover,
 body[data-theme="dark"] .ps-btn--primary:focus-visible {
     background: #e3b83a;
     border-color: #e3b83a;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 /* The global header keeps the room accent for its active link in the
@@ -14127,7 +14141,7 @@ body[data-theme="dark"][data-room] .profile-tab[aria-current="page"]::after {
 
 body[data-theme="dark"] .global-header,
 body[data-theme="dark"].slate-light .global-header {
-    background: #0b0c0e;
+    background: #0a1730;
 }
 
 /* Shared chrome: warm the solid surfaces and let orientation states use
@@ -14191,7 +14205,7 @@ body.ps-editorial-surface,
    is what settles those ties. Everything here is scoped to
    body[data-theme="dark"] and cannot affect the default theme.
    ===================================================================== */
-body[data-theme="dark"].slate-light .platform-nav__links a { color: #e9e7e1; }
+body[data-theme="dark"].slate-light .platform-nav__links a { color: #e2e7f0; }
 body[data-theme="dark"].slate-light .platform-nav__links a:hover,
 body[data-theme="dark"].slate-light .platform-nav__links a:focus-visible { color: #ffffff; }
 body[data-theme="dark"].slate-light .platform-nav__links a[aria-current="page"] { color: #e3b83a; }
@@ -14199,7 +14213,7 @@ body[data-theme="dark"].slate-light .platform-nav__links a[aria-current="page"]:
 
 body[data-theme="dark"].slate-light .sign-in-btn,
 body[data-theme="dark"] .sign-in-btn {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
 }
 
@@ -14211,8 +14225,8 @@ body[data-theme="dark"] .sign-in-btn:focus-visible {
 
 /* Profile band card + avatar shadow: card layer over the page layer. */
 body[data-theme="dark"].slate-light .profile-header__inner {
-    background: #17191e;
-    border-color: #262a31;
+    background: #1a2c4f;
+    border-color: #2e4573;
     box-shadow: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
 }
 
@@ -14227,7 +14241,7 @@ body[data-theme="dark"].slate-light .profile-avatar {
    shadows (were navy-tinted). */
 body[data-theme="dark"].slate-light .ps-askbar__chips button,
 body[data-theme="dark"].slate-light .ps-askbar__chips a {
-    color: #0b0c0e;
+    color: #0a1730;
     box-shadow: 0 3px 10px rgb(11 12 14 / 22%);
 }
 
@@ -14237,7 +14251,7 @@ body[data-theme="dark"].slate-light .ps-askbar__chips a:hover {
 }
 
 body[data-theme="dark"].slate-light .ps-askbar .hero-ai-search__button {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
 }
 
@@ -14264,7 +14278,7 @@ body[data-theme="dark"].slate-light .profile-tabs .profile-tab::after {
 
 body[data-theme="dark"].slate-light .profile-tab,
 body[data-theme="dark"].slate-light .profile-tabs .profile-tab {
-    color: #a5a399;
+    color: #9aa5b8;
 }
 
 body[data-theme="dark"].slate-light .profile-tab:hover,
@@ -14274,20 +14288,20 @@ body[data-theme="dark"].slate-light .profile-tab:focus-visible {
 
 /* Footer (slate-light variant paints its own glass above). */
 body[data-theme="dark"].slate-light .footer {
-    background: #060708;
-    color: #b9b8b3;
+    background: #081426;
+    color: #afb9cb;
 }
 
 /* Mobile bottom tab bar: ink bar, gold active pill. */
 body[data-theme="dark"] .mobile-tabbar {
-    background: rgb(11 12 14 / 96%);
-    border-top: 1px solid #26282c;
+    background: rgb(10 23 48 / 96%);
+    border-top: 1px solid #253c66;
     box-shadow: 0 -8px 22px rgb(0 0 0 / 45%);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
-body[data-theme="dark"] .mobile-tabbar__item { color: #a5a399; }
+body[data-theme="dark"] .mobile-tabbar__item { color: #9aa5b8; }
 
 body[data-theme="dark"] .mobile-tabbar__item[aria-current="page"] {
     color: #e3b83a;
@@ -14296,29 +14310,29 @@ body[data-theme="dark"] .mobile-tabbar__item[aria-current="page"] {
 
 /* Header Ask AI compact button (phones). */
 body[data-theme="dark"] .nav-ask-ai {
-    border-color: #3a3d42;
+    border-color: #3b527f;
     background: rgb(255 255 255 / 6%);
-    color: #e9e7e1;
+    color: #e2e7f0;
 }
 
 /* slate-light (applied to almost every page) re-declares the shared vars
    AFTER the dark block far above — re-assert the dark palette here. */
 body[data-theme="dark"].slate-light {
-    --bg: #0e0f12;
-    --bg-elevated: #17191e;
-    --surface: #17191e;
-    --surface-soft: #14161a;
-    --border: #262a31;
-    --text: #f4f3ef;
-    --text-muted: #a5a399;
+    --bg: #0e1d3a;
+    --bg-elevated: #1a2c4f;
+    --surface: #1a2c4f;
+    --surface-soft: #16294c;
+    --border: #2e4573;
+    --text: #f2f4f8;
+    --text-muted: #9aa5b8;
     --accent: #e3b83a;
     --accent-soft: rgb(216 169 40 / 14%);
     --shadow: 0 2px 6px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 45%);
     --tab-active: #e3b83a;
     --button-primary-bg: #d8a928;
-    --button-primary-text: #0b0c0e;
-    --askbar-bg: linear-gradient(135deg, #060708, #17191e);
-    background: #0e0f12;
+    --button-primary-text: #0a1730;
+    --askbar-bg: linear-gradient(135deg, #081426, #1a2c4f);
+    background: #0e1d3a;
     color: var(--text);
 }
 
@@ -14326,21 +14340,21 @@ body[data-theme="dark"].slate-light {
    this file — remap it again to layered ink (off-white text, gold accent). */
 body[data-theme="dark"].slate-light .my-story-page,
 body[data-theme="dark"].slate-light .work-page {
-    --color-text-primary: #f4f3ef;
-    --color-text-secondary: #c6c4bc;
-    --color-text-muted: #a5a399;
-    --color-text-dark: #0b0c0e;          /* text that sits ON the gold accent */
+    --color-text-primary: #f2f4f8;
+    --color-text-secondary: #c4ccda;
+    --color-text-muted: #9aa5b8;
+    --color-text-dark: #0a1730;          /* text that sits ON the gold accent */
     --color-gold: #e3b83a;
     --color-gold-bright: #f0c95a;
     --color-gold-muted: #d8a928;
     --color-gold-dark: #bf8f17;
     --color-blue: #e3b83a;
     --color-cyan: #e3b83a;
-    --color-card: #17191e;
-    --color-card-elevated: #1e2127;
-    --color-card-hover: #232730;
-    --color-border: #262a31;
-    --color-border-soft: #1d2026;
+    --color-card: #1a2c4f;
+    --color-card-elevated: #223a66;
+    --color-card-hover: #294578;
+    --color-border: #2e4573;
+    --color-border-soft: #24375c;
     --color-border-gold: #d8a928;
     --shadow-card: 0 2px 6px rgb(0 0 0 / 35%), 0 14px 34px rgb(0 0 0 / 40%);
     --shadow-gold: 0 0 0 rgb(0 0 0 / 0%);
@@ -14360,7 +14374,7 @@ body[data-theme="dark"] .platform-brand__logo {
 body[data-theme="dark"].slate-light #chat-toggle,
 body[data-theme="dark"].peerslate-home-page #chat-toggle,
 body[data-theme="dark"] #chat-toggle {
-    color: #0b0c0e;
+    color: #0a1730;
     background: #d8a928;
     border: 1px solid #d8a928;
     box-shadow: 0 12px 30px rgb(216 169 40 / 26%);
@@ -14373,7 +14387,7 @@ body[data-theme="dark"].peerslate-home-page #chat-toggle:focus-visible,
 body[data-theme="dark"] #chat-toggle:hover,
 body[data-theme="dark"] #chat-toggle:focus-visible {
     background: #e3b83a;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 /* Foundation-C central tokens (consumed by Interview Studio and other
@@ -14382,8 +14396,8 @@ body[data-theme="dark"] #chat-toggle:focus-visible {
    on white inputs and on gold buttons, both of which keep their light
    surfaces in dark mode. */
 body[data-theme="dark"] {
-    --ps-cloud-white: #0e0f12;
-    --ps-ink-950: #0b0c0e;
+    --ps-cloud-white: #0e1d3a;
+    --ps-ink-950: #0a1730;
     --ps-product-indigo: #e3b83a;
     --ps-product-indigo-strong: #f0c95a;
     --ps-connection-azure: #d8a928;
@@ -14397,31 +14411,31 @@ body[data-theme="dark"] {
    canvas → card → well as you scroll. */
 body[data-theme="dark"] .peerslate-home-page,
 body[data-theme="dark"].peerslate-home-page {
-    --surface: #17191e;
-    --surface-soft: #14161a;
-    --border: #262a31;
-    --text: #f4f3ef;
-    --text-muted: #a5a399;
+    --surface: #1a2c4f;
+    --surface-soft: #16294c;
+    --border: #2e4573;
+    --text: #f2f4f8;
+    --text-muted: #9aa5b8;
     --accent: #e3b83a;
     --accent-soft: rgb(216 169 40 / 16%);
     --shadow: 0 12px 30px rgb(0 0 0 / 40%);
-    --home-bg: #0e0f12;
-    --home-bg-soft: #14161a;
-    --home-surface: rgb(23 25 30 / 96%);
-    --home-surface-solid: #17191e;
-    --home-surface-soft: #1e2127;
-    --home-text: #f4f3ef;
-    --home-muted: #a5a399;
+    --home-bg: #0e1d3a;
+    --home-bg-soft: #16294c;
+    --home-surface: rgb(26 44 79 / 96%);
+    --home-surface-solid: #1a2c4f;
+    --home-surface-soft: #223a66;
+    --home-text: #f2f4f8;
+    --home-muted: #9aa5b8;
     --home-soft: #8a887f;
-    --home-border: #262a31;
-    --home-border-soft: #1d2026;
+    --home-border: #2e4573;
+    --home-border-soft: #24375c;
     --home-blue: #d8a928;
     --home-blue-hover: #e3b83a;
     --home-blue-faint: rgb(216 169 40 / 14%);
     --home-teal: #5abf95;
     --home-teal-soft: rgb(47 122 98 / 22%);
-    --home-navy: #060708;
-    --home-navy-2: #17191e;
+    --home-navy: #081426;
+    --home-navy-2: #1a2c4f;
     --home-shadow-sm: 0 4px 12px rgb(0 0 0 / 40%);
     --home-shadow-md: 0 12px 30px rgb(0 0 0 / 45%);
     --home-shadow-lg: 0 24px 64px rgb(0 0 0 / 55%);
@@ -14430,19 +14444,19 @@ body[data-theme="dark"].peerslate-home-page {
 }
 
 body[data-theme="dark"].peerslate-home-page .global-header {
-    background: #0b0c0e;
-    border-bottom-color: #26282c;
+    background: #0a1730;
+    border-bottom-color: #253c66;
 }
 
 /* Marketing landing hardcodes a few light washes — re-paint them as dark
    layers (canvas-tinted hero wash, raised ghost buttons). */
 body[data-theme="dark"].peerslate-home-page .ps-hero {
-    background: linear-gradient(180deg, #14161a 0%, #101216 46%, rgb(14 15 18 / 0) 100%);
+    background: linear-gradient(180deg, #16294c 0%, #132444 46%, rgb(14 29 58 / 0) 100%);
 }
 
 body[data-theme="dark"].peerslate-home-page .ps-btn--ghost {
     color: var(--home-text);
-    background: #1e2127;
+    background: #223a66;
     border-color: var(--home-border);
 }
 
@@ -14463,8 +14477,8 @@ body[data-theme="dark"].peerslate-home-page .preview-main__metrics span { color:
 
 body[data-theme="dark"].peerslate-home-page .ai-chip {
     color: var(--home-text);
-    background: #1e2127;
-    border-color: #262a31;
+    background: #223a66;
+    border-color: #2e4573;
     box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
 }
 

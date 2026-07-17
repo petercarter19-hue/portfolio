@@ -552,7 +552,7 @@
     font-size: 0.8rem;
     font-weight: 620;
     font-style: italic;
-    color: #33455f;
+    color: #3b527f;
 }
 
 .pi-topics__tag i {
@@ -625,7 +625,7 @@
     min-width: 0;
     font-size: 0.76rem;
     font-weight: 620;
-    color: #33455f;
+    color: #3b527f;
     text-align: left;
 }
 
@@ -1008,7 +1008,7 @@
     border: 0;
     border-radius: 50%;
     background: rgb(28 43 71 / 8%);
-    color: #33455f;
+    color: #3b527f;
     cursor: pointer;
     transition: background 150ms ease;
 }
@@ -1740,7 +1740,7 @@
     border: 0;
     border-radius: 50%;
     background: rgb(28 43 71 / 8%);
-    color: #33455f;
+    color: #3b527f;
     cursor: pointer;
     transition: background 150ms ease;
 }
@@ -2119,7 +2119,7 @@
 body[data-theme="dark"] .pi-strip__tabs .sf-tab[aria-current="page"],
 body[data-theme="dark"] .sf-tab[aria-current="page"] {
     background: #d8a928;
-    color: #0b0c0e;
+    color: #0a1730;
 }
 
 body[data-theme="dark"] .pi-navcard__link svg,
@@ -2155,11 +2155,11 @@ body[data-theme="dark"] .pi-tag--question { background: rgb(216 169 40 / 18%); c
 body[data-theme="dark"] .pi-tag--photo { background: rgb(216 169 40 / 14%); color: #e3b83a; }
 
 body[data-theme="dark"] #pi-title,
-body[data-theme="dark"] .pi-strip__copy h1 { color: #f4f3ef; }
-body[data-theme="dark"] .pi-strip__copy p { color: #a5a399; }
+body[data-theme="dark"] .pi-strip__copy h1 { color: #f2f4f8; }
+body[data-theme="dark"] .pi-strip__copy p { color: #9aa5b8; }
 body[data-theme="dark"] .pi-navcard__link,
 body[data-theme="dark"] .pi-saved strong,
 body[data-theme="dark"] #pi-saved-title,
 body[data-theme="dark"] #pi-circles-title,
-body[data-theme="dark"] #pi-topics-title { color: #f4f3ef; }
-body[data-theme="dark"] .pi-topics__tag { color: #c6c4bc; }
+body[data-theme="dark"] #pi-topics-title { color: #f2f4f8; }
+body[data-theme="dark"] .pi-topics__tag { color: #c4ccda; }

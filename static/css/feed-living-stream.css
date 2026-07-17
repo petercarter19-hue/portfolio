@@ -34,8 +34,8 @@
   --radius-sm: 12px;
   --nav-w: 214px;
   --site-header-h: 64px;   /* the real global header's min-height */
-  --feed-w: 790px;
-  --rail-w: 300px;
+  --feed-w: 860px;         /* wider on desktop (Pete, 2026-07-17) */
+  --rail-w: 320px;
   --ease: cubic-bezier(.2,.8,.2,1);
   --serif: "Newsreader", Georgia, "Times New Roman", serif;
 
@@ -71,6 +71,46 @@
   .nav-item:hover { background:#F2F5FB; color:#3D4E6B; }
   .nav-item.active { color:#3C4BD6; background:#ECEFFF; }
   .nav-item.active:hover { background:#ECEFFF; color:#3C4BD6; }
+  /* The Break, embedded in the community shell: its bk-* styles come from
+     style.css; this just seats the block inside the feed's main column. */
+  .break-inner { width:min(100%, 1260px); }
+  .break-embed { display:block; margin-top:4px; }
+
+  /* Dark theme: the community app sheet deliberately stays LIGHT (one
+     coherent white layer in the dark shell), so the Break's planted cards
+     must keep their light tokens too — the site-wide dark card pass would
+     otherwise paint dark cards onto the white sheet with flipped type. */
+  body[data-theme="dark"] & .ps-card {
+    background: #ffffff;
+    border-color: rgba(116, 150, 215, 0.22);
+    box-shadow: 0 5px 14px rgba(34, 66, 120, 0.055), 0 18px 44px rgba(34, 66, 120, 0.09);
+  }
+
+  body[data-theme="dark"] & {
+    --ps-card-surface-top: rgba(255, 255, 255, 0.95);
+    --ps-card-surface-mid: rgba(248, 251, 255, 0.90);
+    --ps-card-surface-bottom: rgba(235, 242, 255, 0.82);
+    --ps-card-border: rgba(116, 150, 215, 0.22);
+    --ps-card-border-highlight: rgba(255, 255, 255, 0.92);
+    --ps-card-title: #0a1b36;
+    --ps-card-body: #42516a;
+    --ps-card-muted: #6f7d94;
+    --ps-shadow-quiet: 0 4px 12px rgba(34, 66, 120, 0.045), 0 14px 34px rgba(34, 66, 120, 0.075);
+    --ps-shadow-standard: 0 5px 14px rgba(34, 66, 120, 0.055), 0 18px 44px rgba(34, 66, 120, 0.09);
+    --ps-shadow-primary: 0 8px 20px rgba(34, 66, 120, 0.07), 0 24px 64px rgba(34, 66, 120, 0.13);
+    /* The shared body-level tokens the Break internals read (mood rows,
+       poll chips, soft buttons) — re-asserted to their light-sheet values. */
+    --surface: #ffffff;
+    --surface-soft: #f4f8fd;
+    --border: #d9e2ec;
+    --text: #061a3a;
+    --text-muted: #49617a;
+  }
+
+  .side-week { margin:18px 4px 0; padding:14px 15px; background:#F5F8FE; border:1px solid #E3E9F4; border-radius:14px; }
+  .side-week-title { margin:0 0 9px; font-size:10px; text-transform:uppercase; letter-spacing:1.35px; font-weight:800; color:#92A1B8; }
+  .side-week-list { list-style:none; margin:0; padding:0; display:grid; gap:7px; color:#5A6B85; font-size:12px; }
+  .side-week-list strong { color:#3C4BD6; font-weight:800; }
   .sidebar-bottom { position:absolute; bottom:19px; left:17px; right:17px; display:flex; flex-direction:column; gap:6px; }
   .user-row { display:flex; align-items:center; gap:10px; padding:10px 12px; }
   .avatar { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:800; font-size:12px; flex:0 0 auto; box-shadow:0 0 0 3px rgba(255,255,255,.9); }
@@ -86,7 +126,7 @@
   .btn.icon-only { width:42px; padding:0; }
 
   .main { min-width:0; padding:28px 42px 70px; }
-  .main-inner { width:min(100%, 1160px); margin:0 auto; }
+  .main-inner { width:min(100%, 1260px); margin:0 auto; }
   .main-inner.no-rail { width:min(100%, var(--feed-w)); }
   .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin:0 0 15px; }
   .page-title { font-family:var(--serif); font-size:43px; line-height:1; color:var(--ink); letter-spacing:-1.2px; margin:0; font-weight:600; }
@@ -94,11 +134,13 @@
   .page-title-row { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
   .preview-badge { display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px; background:#FBF3E3; color:#8A6A1E; font-family:Inter,Arial,sans-serif; font-size:12px; font-weight:750; letter-spacing:.2px; }
   .preview-note { margin:10px 0 0; max-width:640px; color:#8A99AE; font-size:12px; line-height:1.5; }
-  .feed-tabs { display:flex; gap:28px; border-bottom:1px solid var(--line); align-items:flex-end; }
-  .feed-tab { position:relative; padding:10px 0 14px; color:#75849B; font-size:13px; font-weight:760; background:none; border:0; }
-  .feed-tab:hover { color:#4C5C77; }
-  .feed-tab.active { color:var(--ink); }
-  .feed-tab.active:after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:3px; background:var(--indigo); border-radius:3px 3px 0 0; }
+  /* Feed ⇄ The Break: one ecosystem, one prominent segmented switcher
+     (Pete, 2026-07-17). Sits top-right of the page head on both views. */
+  .feed-switch { display:flex; gap:6px; padding:6px; background:#fff; border:1px solid var(--line); border-radius:17px; box-shadow:var(--shadow-1); }
+  .feed-switch__tab { display:inline-flex; align-items:center; gap:9px; min-height:46px; padding:0 20px; border-radius:12px; color:#5A6B85; font-size:14px; font-weight:760; text-decoration:none; white-space:nowrap; }
+  .feed-switch__tab:hover { background:#F2F5FB; color:#3D4E6B; }
+  .feed-switch__tab.active { background:var(--indigo); color:#fff; box-shadow:0 8px 18px rgba(79,91,213,.26); }
+  .feed-switch__tab.active:hover { background:var(--indigo-strong); color:#fff; }
   .content-grid { display:grid; grid-template-columns:minmax(0,var(--feed-w)) var(--rail-w); gap:36px; align-items:start; }
   .main-inner.no-rail .content-grid { grid-template-columns:minmax(0,1fr); }
   .feed-column { min-width:0; }
@@ -141,6 +183,21 @@
   .gallery { display:grid; grid-template-columns:1.25fr .75fr; grid-template-rows:1fr 1fr; gap:5px; height:360px; overflow:hidden; border-radius:18px; }
   .gallery .g1 { grid-row:1/3; }
   .gallery img { width:100%; height:100%; object-fit:cover; }
+
+  /* ---- Polaroid frame: a member-chosen way to share a picture. White
+     instant-photo mat, thick bottom border, handwritten caption, a small
+     tilt so it reads hand-placed rather than templated. ---- */
+  .polaroid { margin:6px auto 4px; padding:16px 16px 0; max-width:540px; background:#FDFDFB; border:1px solid #E7E4DA; border-radius:5px; box-shadow:0 3px 8px rgba(32,48,90,.10), 0 18px 40px rgba(32,48,90,.16); transform:rotate(-1.4deg); }
+  .polaroid img { width:100%; aspect-ratio:4/3.4; object-fit:cover; border-radius:2px; }
+  .polaroid-caption { padding:13px 6px 17px; font-family:"Caveat","Segoe Script",cursive; font-size:22px; line-height:1.15; color:#4A4335; text-align:center; }
+
+  /* ---- Film-strip frame: a member-chosen way to share a video. The video
+     sits INSIDE a piece of film — dark stock with sprocket holes running
+     above and below the picture. ---- */
+  .filmstrip { margin:6px 0 4px; padding:0 12px; background:#14161B; border-radius:12px; box-shadow:0 18px 40px rgba(10,16,30,.30); }
+  .film-holes { display:flex; justify-content:space-between; padding:8px 4px; }
+  .film-holes i { width:24px; height:13px; border-radius:3px; background:#F4F3EF; opacity:.9; }
+  .filmstrip .media.video { border-radius:4px; border-color:rgba(255,255,255,.14); }
   .post-linkline { margin-top:10px; display:flex; gap:8px; align-items:center; color:#728198; font-size:11px; }
   .post-linkline strong { color:#3E4E67; }
   .actions { margin-top:13px; display:flex; align-items:center; gap:25px; color:#66768D; font-size:12px; font-weight:700; }
@@ -165,6 +222,26 @@
   .wave span:nth-child(3n){height:23px}.wave span:nth-child(3n+1){height:11px}.wave span:nth-child(3n+2){height:17px}
   .voice-time { font-size:11px; color:#5d6b82; font-weight:700; }
   .context-rail { position:sticky; top:calc(var(--site-header-h) + 28px); display:flex; flex-direction:column; gap:16px; }
+
+  /* ---- Sticky-note reminder pad: pinned at the top of the right rail.
+     A pad of yellow notes with a dashed rule between reminders; each
+     reminder can also be sent to the Slate Board. ---- */
+  .sticky-pad { position:relative; padding:16px 16px 13px; background:linear-gradient(180deg,#FFF7BC 0%,#FFEE9E 100%); border:1px solid #EBDA85; border-radius:4px 4px 16px 4px; box-shadow:0 3px 7px rgba(120,96,10,.14), 0 16px 34px rgba(120,96,10,.20); transform:rotate(.7deg); }
+  .sticky-pad-head { display:flex; align-items:center; justify-content:space-between; margin:0 0 4px; }
+  .sticky-pad h3 { margin:0; font-family:"Caveat","Segoe Script",cursive; font-size:24px; line-height:1; color:#5A4A12; }
+  .sticky-pin { width:15px; height:15px; border-radius:50%; background:radial-gradient(circle at 34% 30%, #F6D468, #A97C12); box-shadow:0 2px 5px rgba(90,74,18,.45); }
+  .sticky-list { list-style:none; margin:0; padding:0; }
+  .sticky-note-row { display:flex; align-items:center; gap:9px; padding:9px 2px; border-bottom:1px dashed rgba(122,99,22,.35); }
+  .sticky-note-text { flex:1; min-width:0; color:#4A3D10; font-size:13px; line-height:1.4; font-weight:600; }
+  .sticky-board-btn { flex:0 0 auto; padding:4px 10px; border:1px solid rgba(122,99,22,.42); border-radius:999px; background:rgba(255,255,255,.6); color:#6B570F; font-size:11px; font-weight:750; white-space:nowrap; }
+  .sticky-board-btn:hover { background:rgba(255,255,255,.85); }
+  .sticky-board-btn[aria-pressed="true"] { background:#5A4A12; border-color:#5A4A12; color:#FFF7BC; }
+  .sticky-add { display:flex; gap:7px; margin-top:11px; }
+  .sticky-add input { flex:1; min-width:0; padding:8px 11px; border:1px solid rgba(122,99,22,.38); border-radius:10px; background:rgba(255,255,255,.68); color:#4A3D10; font-size:13px; }
+  .sticky-add input::placeholder { color:#8A7530; }
+  .sticky-add-btn { width:36px; border:1px solid rgba(122,99,22,.42); border-radius:10px; background:#F5D96B; color:#5A4A12; font-size:19px; font-weight:800; line-height:1; }
+  .sticky-add-btn:hover { background:#F0CE4D; }
+  .sticky-hint { margin:9px 2px 0; color:#8A7530; font-size:11px; line-height:1.4; }
   .rail-panel { background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:20px; padding:20px; box-shadow:var(--shadow-1); }
   .rail-title { display:flex; align-items:center; justify-content:space-between; margin:0 0 14px; }
   .rail-title h3 { font-family:var(--serif); font-size:21px; color:var(--ink); margin:0; font-weight:600; }
@@ -236,6 +313,18 @@
   button.chip.project:hover{background:#E2E7FF}
   .transcript-box.editable { width:100%; resize:vertical; }
   .transcript-box.editable:focus { border-color:#B9C2F5; outline:none; box-shadow:0 0 0 3px rgba(79,91,213,.14); }
+
+  /* ---- Composer attachments: photo / video / document / audio. Attached
+     items become chips with a remove ✕; photo and video chips carry their
+     frame option (Polaroid / film strip). ---- */
+  .review-audio { margin:0 0 10px; }
+  .attach-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .attach-row .pill-btn { height:34px; }
+  .attach-chip { display:inline-flex; align-items:center; gap:9px; padding:7px 8px 7px 12px; background:#F2F5FB; border:1px solid var(--line); border-radius:11px; color:#3D4E6B; font-size:12px; font-weight:700; }
+  .frame-opt { display:inline-flex; align-items:center; gap:5px; padding-left:9px; border-left:1px solid #D5DCE8; color:#5A6B85; font-size:11.5px; font-weight:600; cursor:pointer; }
+  .frame-opt input { accent-color:var(--indigo); }
+  .attach-x { border:0; background:none; color:#8A99AE; font-size:13px; line-height:1; padding:3px 5px; border-radius:7px; }
+  .attach-x:hover { color:#B74550; background:#F5E9EB; }
   .privacy-option{display:flex;align-items:flex-start;gap:10px;padding:11px 10px;border-radius:12px;margin-bottom:5px;cursor:pointer;position:relative}
   .privacy-option:hover{background:#F1F3FB}
   .privacy-option.selected{background:#EDEFFF}
@@ -391,13 +480,17 @@ body.feed-preview-page .main-content { isolation: auto; }
 }
 
 /* PS-FEED-002 (v1.2): purposeful Respond tray replaces the single
-   Encourage action. Quiet, idempotent, no public leaderboards. */
+   Encourage action. Quiet, idempotent, no public leaderboards. The
+   [hidden] guard keeps the closed state closed — display:flex used to
+   defeat the hidden attribute and the tray showed on every post. */
 #feed-app .respond-tray {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 10px 0 2px;
 }
+
+#feed-app .respond-tray[hidden] { display: none; }
 #feed-app .respond-option {
   min-height: 2.5rem;
   padding: 0 0.9rem;

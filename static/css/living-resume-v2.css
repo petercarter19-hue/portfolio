@@ -3013,7 +3013,7 @@
    the slabs goes dark below.
    ===================================================================== */
 body[data-theme="dark"] {
-    --lr-ink: #0b0c0e;
+    --lr-ink: #0a1730;
     --lr-ink-soft: #66645f;
     --lr-paper: #fdfcf9;
     --lr-cloud: #f1efea;
@@ -3022,18 +3022,18 @@ body[data-theme="dark"] {
     --lr-indigo: #8a6500;
     --lr-cyan: #bf8f17;
     --lr-amber: #d8a928;
-    --lr-night: #0b0c0e;
+    --lr-night: #0a1730;
 }
 
 /* Résumé sub-header strip: graphite layer between the ink header and the
    black stage (the light theme paints it pale blue). */
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume {
-    border-top: 1px solid #26282c;
-    background: linear-gradient(180deg, rgb(16 18 22 / 92%), rgb(14 15 18 / 98%));
+    border-top: 1px solid #253c66;
+    background: linear-gradient(180deg, rgb(16 31 60 / 92%), rgb(14 29 58 / 98%));
 }
 
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab {
-    color: #a5a399;
+    color: #9aa5b8;
 }
 
 body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab:hover,
@@ -3050,16 +3050,16 @@ body[data-theme="dark"].living-resume-v2-page .profile-tabs--resume .profile-tab
    off-white nodes, gold highlights (brief: nodes off-white, gold when
    selected; green only for verified). */
 body[data-theme="dark"] .lr-constellation__scene {
-    border-color: #33353a;
-    background: radial-gradient(circle at 50% 18%, #24262a 0%, #17181b 55%, #0b0c0e 100%);
+    border-color: #34497b;
+    background: radial-gradient(circle at 50% 18%, #253a61 0%, #182c52 55%, #0a1730 100%);
 }
 
-body[data-theme="dark"] .lr-constellation p { color: #b9b8b3; }
-body[data-theme="dark"] .lr-constellation em { color: #d8d6d0; }
+body[data-theme="dark"] .lr-constellation p { color: #afb9cb; }
+body[data-theme="dark"] .lr-constellation em { color: #cbd3e0; }
 
 body[data-theme="dark"] .lr-constellation__legend {
-    color: #fafaf7;
-    background: rgb(11 12 14 / 55%);
+    color: #f7f9fc;
+    background: rgb(10 23 48 / 55%);
 }
 
 body[data-theme="dark"] .lr-constellation__legend i.is-future { background: #d8a928; }

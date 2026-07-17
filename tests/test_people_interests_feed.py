@@ -48,10 +48,13 @@ class PeopleInterestsPageTests(unittest.TestCase):
         # The untouched global header and profile sub-header render as-is.
         self.assertIn("platform-nav", html)
         self.assertIn("profile-tabs", html)
-        # The current landing feed and honest News preview live in the
-        # contextual strip; Break remains a valid route outside this bar.
+        # The contextual strip switches between the community views —
+        # People & Interests, the Feed, and The Break (restored 2026-07-17;
+        # the "News Feed soon" placeholder chip retired with the real Feed
+        # tab in place).
         self.assertIn("People &amp; Interests", html)
-        self.assertIn("News Feed", html)
+        self.assertIn("The Break", html)
+        self.assertNotIn("News Feed", html)
 
     def test_existing_routes_unaffected(self):
         for path in ("/the-slate/break", "/the-slate/daily", "/the-slate/my-slate", "/the-slate/pulse"):

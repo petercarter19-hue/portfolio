@@ -260,19 +260,19 @@ body.slate-light .footer {
 body[data-theme="dark"] .site-sky {
     background:
         radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
-        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 40%, #0e0f12 100%);
+        linear-gradient(180deg, #0a1730 0%, #0e1d3a 40%, #0e1d3a 100%);
 }
 
 @media (max-width: 48rem) {
     body[data-theme="dark"] .site-sky {
-        background: #0e0f12;
+        background: #0e1d3a;
     }
 }
 
 body[data-theme="dark"].slate-light {
-    --glass-bg: #17191e;
-    --glass-bg-strong: #1e2127;
-    --glass-border: 1px solid #262a31;
+    --glass-bg: #1a2c4f;
+    --glass-bg-strong: #223a66;
+    --glass-border: 1px solid #2e4573;
     --glass-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 14px 34px rgb(0 0 0 / 40%);
     --glass-blur: none;
 }
@@ -280,27 +280,27 @@ body[data-theme="dark"].slate-light {
 /* Profile band + tab strip: layered graphite pieces under the ink header
    — black on black, separated by hairlines and elevation. */
 body[data-theme="dark"].slate-light .profile-header {
-    background: #101216;
-    border-bottom: 1px solid #26282c;
+    background: #132444;
+    border-bottom: 1px solid #253c66;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 body[data-theme="dark"].slate-light .profile-tabs {
-    background: rgb(16 18 22 / 96%);
-    border-bottom: 1px solid #26282c;
+    background: rgb(16 31 60 / 96%);
+    border-bottom: 1px solid #253c66;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 /* Community (the-slate) sub-header: same graphite strip. */
 body[data-theme="dark"].slate-light.the-slate-page .profile-tabs {
-    background: linear-gradient(180deg, rgb(16 18 22 / 92%), rgb(14 15 18 / 98%));
-    border-top: 1px solid #1d2026;
+    background: linear-gradient(180deg, rgb(16 31 60 / 92%), rgb(14 29 58 / 98%));
+    border-top: 1px solid #24375c;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab {
-    color: #a5a399;
+    color: #9aa5b8;
 }
 
 body[data-theme="dark"].slate-light.the-slate-page .profile-tab::after {
@@ -323,8 +323,8 @@ body[data-theme="dark"].slate-light .section-eyebrow {
 
 /* Footer is the deepest well band (style.css owns its colors). */
 body[data-theme="dark"].slate-light .footer {
-    background: #060708;
-    border-top: 1px solid #26282c;
+    background: #081426;
+    border-top: 1px solid #253c66;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }

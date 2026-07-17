@@ -1,12 +1,12 @@
 {# ============================================================
-   SLATE FEED — BREAK VIEW (/slate-feed/break)
-   Rebuilt 2026-07-07 to match Pete's Break mockup exactly: the
-   "step back and recharge" corner. Sage-green accent scoped to
-   the page (calming, distinct from Pulse's blue) — the whole
-   thing still rides the shared feed shell + design tokens, so it
-   adapts to Light and Dark Slate with no per-theme work.
+   THE BREAK (/the-slate/break)
+   Rebuilt 2026-07-17 (Pete): The Break and the Feed are ONE
+   ecosystem now — the same community shell (left sidebar, page
+   head, prominent Feed ⇄ The Break switcher), and you flip
+   between the two views. The old Slate-hub head and the
+   People & Progress / Pulse layer bar are gone.
 
-   Layout:
+   Content (unchanged from Pete's approved Break mockup):
      HERO   : "Good break. Better you." + cozy illustration
      CENTER : bento — Transformation (before/after) / Weekend
               Challenge / Community Poll / Local Discovery /
@@ -22,37 +22,52 @@
    ============================================================ #}
 {% extends "base.html" %}
 
-{% block title %}Break · Community | PeerSlate{% endblock %}
+{% block title %}The Break · Community | PeerSlate{% endblock %}
 
-{% block meta_description %}The Break view of the PeerSlate Slate Feed: step away, recharge, and come back with more you — transformation stories, challenges, polls, local discovery, and daily inspiration.{% endblock %}
+{% block meta_description %}The Break on PeerSlate: step away, recharge, and come back with more you — transformation stories, challenges, polls, local discovery, and daily inspiration.{% endblock %}
+
+{% block body_class %}the-slate-page break-page{% endblock %}
+
+{% block extra_head %}
+<link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&family=Caveat:wght@500;600&display=swap"
+    rel="stylesheet"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=global-header-1"
+>
+{% endblock %}
 
 {% block content %}
+{% include "partials/community_icons.html" %}
+
+<div id="feed-app" class="break-shell">
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Community">
+      {% set community_active = 'break' %}
+      {% include "partials/community_sidebar.html" %}
+    </aside>
+
+    <div class="main">
+      <div class="main-inner break-inner">
+        <div class="page-head">
+          <div>
+            <div class="page-title-row">
+              <h1 class="page-title">The Break</h1>
+            </div>
+            <p class="page-subtitle">Step away. Recharge. Come back with more you.</p>
+            <p class="preview-note">Sample data — nothing on this page is saved or shared.</p>
+          </div>
+          {% set community_active = 'break' %}
+          {% include "partials/community_switch.html" %}
+        </div>
 
 <section
-    class="sf-page ts-page bk-page bk-green"
-    aria-labelledby="ts-title"
+    class="bk-page bk-green break-embed"
+    aria-label="The Break"
     data-break-api="{{ 'true' if database_ui_enabled else 'false' }}"
 >
-    <div class="site-container">
-
-        {# The Slate shell (2026-07-08): Break is now a LAYER of the
-           hub's Slate Feed tab, not a standalone page. #}
-        {% set ts_active = 'feed' %}
-        {% include "partials/the_slate_head.html" %}
-
-        <!-- ============ TAB INTRO ============ -->
-        <div class="ts-intro">
-            <div class="ts-intro__copy">
-                <h2>Slate Feed</h2>
-                <p>Step away. Recharge. Come back with more you.</p>
-            </div>
-        </div>
-
-        <!-- ============ FEED LAYERS (Break active) ============ -->
-        {% set active = 'break' %}
-        <div class="ts-layerbar ps-card">
-            {% include "partials/slate_feed_tabs.html" %}
-        </div>
 
         <!-- ============ MAIN: CENTER + RIGHT RAIL ============ -->
         <div class="bk-layout">
@@ -275,7 +290,7 @@
                 <strong>Break well. Come back better.</strong>
                 <small>Balance today. Build tomorrow.</small>
             </div>
-            <a class="bk-btn bk-btn--outline" href="{{ url_for('slate_feed') }}">Explore more <span aria-hidden="true">&rarr;</span></a>
+            <a class="bk-btn bk-btn--outline" href="{{ url_for('feed_living_stream') }}">Back to the Feed <span aria-hidden="true">&rarr;</span></a>
             <span class="bk-band__art" aria-hidden="true">
                 <svg viewBox="0 0 120 44">
                     <path d="M6 30 h20 v6 a10 10 0 0 1 -20 0 Z" fill="#5f9e77"/>
@@ -289,8 +304,15 @@
             </span>
         </section>
 
-    </div>
 </section>
+
+      </div>
+    </div>
+  </div>
+
+  {% set community_active = 'break' %}
+  {% include "partials/community_mobile_nav.html" %}
+</div>
 
 {% endblock %}
 

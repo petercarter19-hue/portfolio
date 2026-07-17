@@ -3450,45 +3450,45 @@ body.slate-board-redesign {
    marker colors are user content and stay as they are.
    ===================================================================== */
 body[data-theme="dark"] {
-    --sb-ink: #f4f3ef;
-    --sb-ink-soft: #a5a399;
+    --sb-ink: #f2f4f8;
+    --sb-ink-soft: #9aa5b8;
     --sb-indigo: #e3b83a;
     --sb-azure: #d8a928;
     --sb-cyan: #bf8f17;
     --sb-amber: #d8a928;
-    --sb-cloud: #14161a;
-    --sb-wall: #101216;
-    --sb-line: #262a31;
+    --sb-cloud: #16294c;
+    --sb-wall: #132444;
+    --sb-line: #2e4573;
 }
 
 body[data-theme="dark"].slate-board-redesign {
     background:
         radial-gradient(circle at 82% 4%, rgba(216, 169, 40, 0.08), transparent 26rem),
-        linear-gradient(180deg, #0b0c0e 0%, #101216 60%, #0e0f12 100%);
+        linear-gradient(180deg, #0a1730 0%, #132444 60%, #0e1d3a 100%);
     color: var(--sb-ink);
 }
 
 /* App chrome on the dark wall: the controls rail becomes a dark card one
    layer above the wall; the white whiteboard stays the bright layer. */
 body[data-theme="dark"] .sb-controls {
-    border-color: #262a31;
-    background: linear-gradient(145deg, rgba(26, 28, 34, 0.96), rgba(20, 22, 26, 0.9));
+    border-color: #2e4573;
+    background: linear-gradient(145deg, rgba(26, 44, 79, 0.96), rgba(20, 34, 62, 0.9));
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
 }
 
 body[data-theme="dark"] .sb-controls__group {
-    border-bottom-color: #262a31;
+    border-bottom-color: #2e4573;
 }
 
 /* Rail typography + tools: light labels on the dark rail; the active/
    hovered tool takes the gold signal instead of the light theme's blue. */
-body[data-theme="dark"] .sb-controls__label { color: #a5a399; }
+body[data-theme="dark"] .sb-controls__label { color: #9aa5b8; }
 
 body[data-theme="dark"] .sb-controls button {
-    color: #d8d6d0;
+    color: #cbd3e0;
 }
 
-body[data-theme="dark"] .sb-controls button svg { color: #a5a399; }
+body[data-theme="dark"] .sb-controls button svg { color: #9aa5b8; }
 
 body[data-theme="dark"] .sb-controls button:hover,
 body[data-theme="dark"] .sb-controls button.is-active {
@@ -3516,13 +3516,13 @@ body[data-theme="dark"] .sb-controls .sb-fit-button:hover {
 }
 
 body[data-theme="dark"] .sb-controls .sb-fit-button svg { color: #1a1c22; }
-body[data-theme="dark"] .sb-controls__zoom output { color: #c6c4bc; }
+body[data-theme="dark"] .sb-controls__zoom output { color: #c4ccda; }
 
-body[data-theme="dark"] .sb-controls__people li { color: #d8d6d0; }
-body[data-theme="dark"] .sb-controls__people li small { color: #a5a399; }
-body[data-theme="dark"] .sb-preview-label { color: #a5a399; }
+body[data-theme="dark"] .sb-controls__people li { color: #cbd3e0; }
+body[data-theme="dark"] .sb-controls__people li small { color: #9aa5b8; }
+body[data-theme="dark"] .sb-preview-label { color: #9aa5b8; }
 
-body[data-theme="dark"] .sb-status-line { color: #a5a399; }
+body[data-theme="dark"] .sb-status-line { color: #9aa5b8; }
 body[data-theme="dark"] .sb-status-line--saved svg { color: #69ae92; }
 
 /* Header buttons on the dark wall (Share Board, More): white pills need
@@ -3549,7 +3549,7 @@ body[data-theme="dark"] .sb-view-toggle button:hover {
 body[data-theme="dark"] .sb-button--primary {
     border-color: #d8a928;
     background: linear-gradient(135deg, #d8a928, #e3b83a);
-    color: #0b0c0e !important;
+    color: #0a1730 !important;
     box-shadow: 0 12px 28px rgba(216, 169, 40, 0.25);
 }
 
@@ -3560,16 +3560,16 @@ body[data-theme="dark"] .sb-button--primary:hover {
 /* Category legend + progress donut: mono family (labels carry meaning).
    The graphite segment flips to off-white so it survives the dark rail. */
 body[data-theme="dark"] .sb-donut {
-    background: conic-gradient(#d8a928 0 25%, #e9e7e1 25% 50%, #a89f8d 50% 75%, #8a6500 75% 100%);
+    background: conic-gradient(#d8a928 0 25%, #e2e7f0 25% 50%, #a89f8d 50% 75%, #8a6500 75% 100%);
 }
 
 body[data-theme="dark"] .sb-legend__dot--short { background: #d8a928; }
-body[data-theme="dark"] .sb-legend__dot--projects { background: #e9e7e1; }
+body[data-theme="dark"] .sb-legend__dot--projects { background: #e2e7f0; }
 body[data-theme="dark"] .sb-legend__dot--long { background: #a89f8d; }
 body[data-theme="dark"] .sb-legend__dot--work { background: #8a6500; }
 
 body[data-theme="dark"] .sb-share-modes h3,
-body[data-theme="dark"] .sb-share-preview-box h3 { color: #0b0c0e; }
+body[data-theme="dark"] .sb-share-preview-box h3 { color: #0a1730; }
 
 body[data-theme="dark"] .sb-reference-footer__mark {
     background: linear-gradient(135deg, #d8a928 0 48%, #8a6500 49% 100%);
@@ -3578,7 +3578,7 @@ body[data-theme="dark"] .sb-reference-footer__mark {
 
 /* Marker handwriting + note chrome: ink-first mono. */
 body[data-theme="dark"] {
-    --sb-marker-blue: #0b0c0e;
+    --sb-marker-blue: #0a1730;
     --sb-marker-teal: #8a6500;
     --sb-marker-amber: #a87108;
 }
@@ -3591,7 +3591,7 @@ body[data-theme="dark"] .sb-sketch-dash { stroke: rgba(11, 12, 14, 0.32); }
 
 body[data-theme="dark"] .sb-note { border-color: rgba(178, 171, 158, 0.5); }
 body[data-theme="dark"] .sb-note.is-starred { border-color: rgba(216, 169, 40, 0.55); }
-body[data-theme="dark"] .sb-note h3 { color: #0b0c0e; }
+body[data-theme="dark"] .sb-note h3 { color: #0a1730; }
 body[data-theme="dark"] .sb-note__summary { color: #3a3d42; }
 body[data-theme="dark"] .sb-note span { border-color: rgba(11, 12, 14, 0.35); }
 

@@ -361,17 +361,17 @@ body.ps-editorial-surface .skf-orb__ball {
    same black stage. The light theme above is untouched.
    ===================================================================== */
 body[data-theme="dark"].ps-editorial-surface {
-    --ps-card-surface-top: #17191e;
-    --ps-card-surface-mid: #17191e;
-    --ps-card-surface-bottom: #17191e;
+    --ps-card-surface-top: #1a2c4f;
+    --ps-card-surface-mid: #1a2c4f;
+    --ps-card-surface-bottom: #1a2c4f;
 
-    --ps-card-border: #262a31;
+    --ps-card-border: #2e4573;
     --ps-card-border-highlight: rgba(255, 255, 255, 0.08);
     --ps-card-border-active: #d8a928;
 
-    --ps-card-title: #f4f3ef;
-    --ps-card-body: #c6c4bc;
-    --ps-card-muted: #a5a399;
+    --ps-card-title: #f2f4f8;
+    --ps-card-body: #c4ccda;
+    --ps-card-muted: #9aa5b8;
 
     --ps-shadow-quiet: 0 1px 2px rgba(0, 0, 0, 0.4);
     --ps-shadow-standard: 0 2px 6px rgba(0, 0, 0, 0.35), 0 14px 34px rgba(0, 0, 0, 0.4);
@@ -381,13 +381,13 @@ body[data-theme="dark"].ps-editorial-surface {
         0 0 0 1px rgba(216, 169, 40, 0.55),
         0 16px 42px rgba(0, 0, 0, 0.5);
 
-    background-color: #0e0f12;
+    background-color: #0e1d3a;
 }
 
 body[data-theme="dark"].ps-editorial-surface .site-sky {
     background:
         radial-gradient(70rem 36rem at 80% -6rem, rgb(216 169 40 / 5%), transparent 60%),
-        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 40%, #0e0f12 100%);
+        linear-gradient(180deg, #0a1730 0%, #0e1d3a 40%, #0e1d3a 100%);
 }
 
 body[data-theme="dark"].ps-editorial-surface .resume-v2::before,
@@ -395,7 +395,7 @@ body[data-theme="dark"].ps-editorial-surface .lr-page::before,
 body[data-theme="dark"].ps-editorial-surface .story-act--day::before {
     background:
         radial-gradient(80rem 40rem at 82% -8rem, rgb(216 169 40 / 6%), transparent 60%),
-        linear-gradient(180deg, #0b0c0e 0%, #0e0f12 55%, #0b0c0e 100%);
+        linear-gradient(180deg, #0a1730 0%, #0e1d3a 55%, #0a1730 100%);
 }
 
 body[data-theme="dark"].ps-editorial-surface .r2-skillpop::after {
@@ -407,7 +407,7 @@ body[data-theme="dark"].ps-editorial-surface .r2-skillpop::after {
     body[data-theme="dark"].ps-editorial-surface .lr-page::before,
     body[data-theme="dark"].ps-editorial-surface .story-act--day::before,
     body[data-theme="dark"].ps-editorial-surface .resume-v2::before {
-        background: #0e0f12;
+        background: #0e1d3a;
         background-image: none;
     }
 }
@@ -436,7 +436,7 @@ body[data-theme="dark"].ps-editorial-surface .pf-topic,
 body[data-theme="dark"].ps-editorial-surface .pf-side > *,
 body[data-theme="dark"].ps-editorial-surface .projects-section,
 body[data-theme="dark"].ps-editorial-surface .ps-glass-card {
-    background: #17191e;
+    background: #1a2c4f;
     border-color: var(--ps-card-border);
     box-shadow: var(--ps-shadow-standard);
     backdrop-filter: none;
@@ -453,7 +453,7 @@ body[data-theme="dark"].ps-editorial-surface .ps-metric,
 body[data-theme="dark"].ps-editorial-surface .ts-heat,
 body[data-theme="dark"].ps-editorial-surface .fun-fact-card,
 body[data-theme="dark"].ps-editorial-surface .ps-glass-card--compact {
-    background: #17191e;
+    background: #1a2c4f;
     box-shadow: var(--ps-shadow-quiet);
 }
 
@@ -485,11 +485,11 @@ body[data-theme="dark"].ps-editorial-surface a.ct-card:focus-visible {
 /* Skills constellation labels were lifted to light-blue for the navy
    field; on the black stage they become off-white with gold-lit orbs. */
 body[data-theme="dark"].ps-editorial-surface .skf-act__head {
-    color: #a5a399;
+    color: #9aa5b8;
 }
 
 body[data-theme="dark"].ps-editorial-surface .skf-orb__name {
-    color: #f4f3ef;
+    color: #f2f4f8;
     text-shadow: none;
 }
 
