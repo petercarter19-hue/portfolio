@@ -19,6 +19,7 @@ from dotenv import load_dotenv                  # Reads our secret API key from 
 from db import get_connection, fetch_all_result_sets
 from identity import AuthenticationRequired, get_current_identity
 from auth_routes import auth
+from owner_routes import owner
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from services.people_interests_feed import (
@@ -116,6 +117,7 @@ limiter = Limiter(
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app.register_blueprint(auth)
+app.register_blueprint(owner)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-owner-settings-1">
+{% endblock %}
+
+{% block content %}
+<main class="owner-app" id="main-content">
+    <section class="owner-app__panel" aria-labelledby="owner-settings-title">
+        <p class="owner-app__eyebrow">Private owner workspace</p>
+        <h1 id="owner-settings-title">Settings</h1>
+        <p>
+            Review the account information PeerSlate currently uses to identify you.
+        </p>
+
+        <dl class="owner-app__status" aria-label="Account information">
+            <div>
+                <dt>Display name</dt>
+                <dd>{{ member.display_name or 'PeerSlate member' }}</dd>
+            </div>
+            <div>
+                <dt>Email</dt>
+                <dd>{{ member.email or '—' }}</dd>
+            </div>
+            <div>
+                <dt>Account status</dt>
+                <dd>Signed in</dd>
+            </div>
+            <div>
+                <dt>Default audience</dt>
+                <dd>Private</dd>
+            </div>
+        </dl>
+
+        <p>
+            <strong>Upcoming:</strong> Profile, privacy, and sign-in preferences
+            will appear here as each becomes available.
+        </p>
+
+        <div class="owner-app__actions" aria-label="Owner settings actions">
+            <a class="owner-app__secondary" href="{{ url_for('auth.owner_workspace') }}">Back to workspace</a>
+        </div>
+
+        <form method="post" action="{{ auth_sign_out_url }}">
+            <button class="owner-app__sign-out" type="submit">Sign out</button>
+        </form>
+    </section>
+</main>
+{% endblock %}
