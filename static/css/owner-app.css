@@ -22,6 +22,10 @@
     box-shadow: 0 24px 70px rgba(10, 27, 54, 0.1);
 }
 
+.owner-app__panel--capture {
+    width: min(100%, 880px);
+}
+
 .owner-app__eyebrow {
     margin: 0 0 0.75rem;
     color: #4f5bd5;
@@ -94,6 +98,115 @@
     font-family: Inter, sans-serif;
 }
 
+.owner-app__message {
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    font: 700 0.95rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__message--error {
+    border: 1px solid rgba(168, 57, 57, 0.35);
+    background: rgba(168, 57, 57, 0.08);
+    color: #842d2d;
+}
+
+.owner-app__message--success {
+    border: 1px solid rgba(22, 112, 95, 0.35);
+    background: rgba(22, 112, 95, 0.08);
+    color: #0f5a4c;
+}
+
+.owner-app__capture-form {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.owner-app__capture-form label,
+.owner-app__captures h2 {
+    color: #0a1b36;
+    font-family: Inter, sans-serif;
+    font-weight: 800;
+}
+
+.owner-app__capture-form textarea {
+    width: 100%;
+    min-height: 11rem;
+    resize: vertical;
+    padding: 1rem;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 16px;
+    background: #fff;
+    color: #0a1b36;
+    font: 400 1rem/1.6 Inter, sans-serif;
+}
+
+.owner-app__capture-form textarea:focus-visible {
+    outline: 3px solid #2ec8d3;
+    outline-offset: 3px;
+}
+
+.owner-app__capture-form > p {
+    margin: 0;
+    color: #526078;
+    font: 400 0.88rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__capture-form .owner-app__primary {
+    justify-self: start;
+}
+
+.owner-app__captures {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+}
+
+.owner-app__captures h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.owner-app__capture-list {
+    display: grid;
+    gap: 1rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.owner-app__capture-list li {
+    padding: 1.15rem;
+    border-radius: 16px;
+    background: rgba(79, 91, 213, 0.07);
+}
+
+.owner-app__capture-list p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: 400 1rem/1.6 Inter, sans-serif;
+}
+
+.owner-app__capture-list time,
+.owner-app__capture-list span {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: #526078;
+    font: 700 0.78rem/1.4 Inter, sans-serif;
+}
+
+.owner-app__capture-list span::before {
+    content: "\00b7";
+    margin: 0 0.45rem;
+}
+
+.owner-app__empty {
+    margin: 1rem 0 0;
+    color: #526078;
+    font: 400 1rem/1.6 Inter, sans-serif;
+}
+
 .owner-app__status dt {
     color: #526078;
     font-size: 0.78rem;
@@ -115,6 +228,10 @@
 @media (max-width: 540px) {
     .owner-app__status {
         grid-template-columns: 1fr;
+    }
+
+    .owner-app__panel--capture {
+        padding-inline: 1.5rem;
     }
 }
 

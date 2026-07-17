@@ -14,6 +14,12 @@ from mssql_python import connect
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_DIR = ROOT / "SQL FIles" / "Migrations"
 VERIFY_PATH = ROOT / "SQL FIles" / "Verification" / "peerslate_platform_foundation_verify.sql"
+CAPTURE_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-CAPTURE-001_owner_isolation_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -26,6 +32,11 @@ MIGRATION_FILENAMES = (
     "PS-AUTH-001_identity_foundation.sql",
 )
 EXPECTED_MIGRATIONS = {name.split("_")[0] for name in MIGRATION_FILENAMES}
+APPROVED_OPTIONAL_MIGRATIONS = {
+    "PS-CAPTURE-001": (
+        MIGRATION_DIR / "proposed" / "PS-CAPTURE-001_captures.sql"
+    ),
+}
 EXPECTED_TABLES = {
     "schema_migrations",
     "audit_events",
@@ -82,10 +93,14 @@ def normalize_connection_string(connection_string: str) -> str:
     )
 
 
-def get_connection():
+def get_connection(env_path: Path | None = None):
     # Load the local secret only when an apply or verification connection is
     # actually requested. Plan-only mode never reads connection settings.
-    load_dotenv(ROOT / ".env")
+    resolved_env_path = env_path or ROOT / ".env"
+    if env_path is not None and not resolved_env_path.exists():
+        raise RuntimeError(f"Connection environment file is missing: {resolved_env_path}")
+    if resolved_env_path.exists():
+        load_dotenv(resolved_env_path, override=env_path is not None)
     connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
     if not connection_string:
         raise RuntimeError("AZURE_SQL_CONNECTIONSTRING is not configured.")
@@ -111,8 +126,16 @@ def forward_migrations() -> list[Path]:
     return paths
 
 
-def apply_migrations(paths: list[Path]) -> None:
-    with get_connection() as connection:
+def selected_optional_migrations(migration_ids: list[str]) -> list[Path]:
+    paths = [APPROVED_OPTIONAL_MIGRATIONS[item] for item in migration_ids]
+    missing = [path.name for path in paths if not path.exists()]
+    if missing:
+        raise RuntimeError("Missing migrations: " + ", ".join(missing) + ".")
+    return paths
+
+
+def apply_migrations(paths: list[Path], env_path: Path | None = None) -> None:
+    with get_connection(env_path) as connection:
         cursor = connection.cursor()
         for path in paths:
             print(f"Applying {path.name}...")
@@ -141,10 +164,11 @@ def validate_verification_results(result_sets: list[list[dict]]) -> list[str]:
         return ["The verification query returned an incomplete result."]
 
     migration_ids = {row["migration_id"] for row in result_sets[1]}
-    if migration_ids != EXPECTED_MIGRATIONS:
+    missing_migrations = EXPECTED_MIGRATIONS - migration_ids
+    if missing_migrations:
         failures.append(
-            "Migration ledger mismatch: expected "
-            + ", ".join(sorted(EXPECTED_MIGRATIONS))
+            "Migration ledger is missing required foundation records: "
+            + ", ".join(sorted(missing_migrations))
             + "."
         )
 
@@ -182,10 +206,10 @@ def validate_verification_results(result_sets: list[list[dict]]) -> list[str]:
     return failures
 
 
-def verify_foundation() -> None:
+def verify_foundation(env_path: Path | None = None) -> None:
     if not VERIFY_PATH.exists():
         raise RuntimeError(f"Verification script is missing: {VERIFY_PATH}")
-    with get_connection() as connection:
+    with get_connection(env_path) as connection:
         cursor = connection.cursor()
         cursor.execute(VERIFY_PATH.read_text(encoding="utf-8"))
         failures = validate_verification_results(fetch_result_sets(cursor))
@@ -195,6 +219,19 @@ def verify_foundation() -> None:
         raise RuntimeError("PeerSlate foundation verification failed.")
     print("Verified all eight migration records and all platform, career, and identity tables.")
     print("Verified tenant constraints, private profile defaults, and opt-in discovery defaults.")
+
+
+def verify_capture(env_path: Path | None = None) -> None:
+    if not CAPTURE_VERIFY_PATH.exists():
+        raise RuntimeError(f"Verification script is missing: {CAPTURE_VERIFY_PATH}")
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(CAPTURE_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-CAPTURE-001 owner-isolation verification failed.")
+    print("Verified PS-CAPTURE-001 with two synthetic owners and a full rollback.")
 
 
 def main() -> None:
@@ -207,14 +244,36 @@ def main() -> None:
     parser.add_argument(
         "--verify",
         action="store_true",
-        help="Run the read-only foundation verification after any requested apply.",
+        help="Run foundation checks and any selected migration verification.",
+    )
+    parser.add_argument(
+        "--migration",
+        action="append",
+        choices=sorted(APPROVED_OPTIONAL_MIGRATIONS),
+        default=[],
+        help=(
+            "Plan, apply, or verify an explicitly approved optional migration. "
+            "Repeat this flag to select more than one."
+        ),
+    )
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        help=(
+            "Use a specific local environment file for apply/verify. "
+            "The file is never read in plan-only mode."
+        ),
     )
     args = parser.parse_args()
-    paths = forward_migrations()
+    paths = (
+        selected_optional_migrations(args.migration)
+        if args.migration
+        else forward_migrations()
+    )
     if not paths:
         raise SystemExit("No PeerSlate platform migrations were found.")
 
-    print("PeerSlate migration order:")
+    print("PeerSlate migration plan:")
     for path in paths:
         print(f"- {path.name}")
 
@@ -223,9 +282,11 @@ def main() -> None:
         return
 
     if args.apply:
-        apply_migrations(paths)
+        apply_migrations(paths, args.env_file)
     if args.verify:
-        verify_foundation()
+        verify_foundation(args.env_file)
+        if "PS-CAPTURE-001" in args.migration:
+            verify_capture(args.env_file)
 
 
 if __name__ == "__main__":

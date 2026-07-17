@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-capture-001-1">
+{% endblock %}
+
+{% block content %}
+<div class="owner-app">
+    <section class="owner-app__panel owner-app__panel--capture" aria-labelledby="owner-capture-title">
+        <p class="owner-app__eyebrow">Private owner workspace</p>
+        <h1 id="owner-capture-title">Capture</h1>
+        <p>
+            Write down something real while it is fresh. New captures stay
+            private until you deliberately review and place them later.
+        </p>
+
+        {% if validation_message %}
+        <p class="owner-app__message owner-app__message--error" role="alert">
+            {{ validation_message }}
+        </p>
+        {% elif saved %}
+        <p class="owner-app__message owner-app__message--success" role="status">
+            Saved privately.
+        </p>
+        {% endif %}
+
+        <form class="owner-app__capture-form" method="post" action="{{ url_for('owner.capture') }}">
+            <label for="capture-body">What do you want to remember?</label>
+            <textarea
+                id="capture-body"
+                name="body"
+                rows="7"
+                maxlength="{{ max_body_length }}"
+                aria-describedby="capture-help"
+                required
+            ></textarea>
+            <p id="capture-help">
+                Text only for this first slice, up to {{ '{:,}'.format(max_body_length) }} characters.
+            </p>
+            <button class="owner-app__primary" type="submit">Save privately</button>
+        </form>
+
+        <section class="owner-app__captures" aria-labelledby="recent-captures-title">
+            <h2 id="recent-captures-title">Recent captures</h2>
+            {% if captures %}
+            <ol class="owner-app__capture-list">
+                {% for capture in captures %}
+                <li>
+                    <p>{{ capture.body }}</p>
+                    <time datetime="{{ capture.created_at_utc }}">{{ capture.created_at_utc }}</time>
+                    <span>Private</span>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="owner-app__empty">Nothing captured yet. Your first note will appear here.</p>
+            {% endif %}
+        </section>
+
+        <div class="owner-app__actions" aria-label="Capture actions">
+            <a class="owner-app__secondary" href="{{ url_for('auth.owner_workspace') }}">Back to workspace</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

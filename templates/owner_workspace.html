@@ -19,6 +19,7 @@
         </p>
 
         <div class="owner-app__actions" aria-label="Owner workspace destinations">
+            <a class="owner-app__primary" href="{{ url_for('owner.capture') }}">Capture</a>
             <a class="owner-app__primary" href="{{ url_for('slate_board') }}">Open My Slate</a>
             <a class="owner-app__secondary" href="{{ url_for('interview_studio') }}">Interview Studio</a>
             <a class="owner-app__secondary" href="{{ url_for('owner.settings') }}">Settings</a>
