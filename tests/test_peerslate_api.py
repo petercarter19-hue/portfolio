@@ -261,6 +261,7 @@ class PeerSlateApiTests(unittest.TestCase):
         principal = {
             "auth_typ": "aad",
             "claims": [
+                {"typ": "iss", "val": "https://example.ciamlogin.com/example/v2.0"},
                 {"typ": "oid", "val": "member-object-id"},
                 {"typ": "email", "val": "member@example.com"},
                 {"typ": "name", "val": "Example Member"},
@@ -280,6 +281,10 @@ class PeerSlateApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         upsert_parameters = first_row.call_args.args[1]
+        self.assertIn(
+            ("@AuthIssuer", "https://example.ciamlogin.com/example/v2.0"),
+            upsert_parameters,
+        )
         self.assertIn(("@AuthSubject", "member-object-id"), upsert_parameters)
         dashboard_parameters = execute.call_args.args[1]
         self.assertIn(("@UserKey", "aad:member-object-id"), dashboard_parameters)

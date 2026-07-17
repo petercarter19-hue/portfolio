@@ -1,0 +1,148 @@
+"""PeerSlate sign-in entry points and the protected owner workspace."""
+
+import re
+from urllib.parse import urlencode, urlsplit
+
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+
+from identity import AuthenticationRequired, get_current_identity, get_optional_identity
+from services.database_service import DatabaseServiceError
+
+
+auth = Blueprint("auth", __name__)
+AUTH_PROVIDER_NAME = re.compile(r"^[A-Za-z0-9._-]{1,50}$")
+
+
+def _auth_enabled():
+    return current_app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS", False) is True
+
+
+def _safe_return_path(candidate, default="/app"):
+    if not candidate or not isinstance(candidate, str):
+        return default
+    parsed = urlsplit(candidate)
+    if parsed.scheme or parsed.netloc or not candidate.startswith("/"):
+        return default
+    if candidate.startswith("//") or "\\" in candidate:
+        return default
+    return candidate
+
+
+def _easy_auth_path(action, return_path):
+    provider = current_app.config.get("PEERSLATE_AUTH_PROVIDER_NAME", "aad")
+    if not isinstance(provider, str) or not AUTH_PROVIDER_NAME.fullmatch(provider):
+        current_app.logger.error("PeerSlate authentication provider is invalid.")
+        return None
+
+    if action == "login":
+        query = urlencode({"post_login_redirect_uri": return_path})
+        return f"/.auth/login/{provider}?{query}"
+
+    query = urlencode({"post_logout_redirect_uri": return_path})
+    return f"/.auth/logout?{query}"
+
+
+def _render_auth_unavailable():
+    return (
+        render_template(
+            "auth_unavailable.html",
+            page_title="Sign in is not configured",
+        ),
+        503,
+    )
+
+
+@auth.get("/auth/sign-in")
+def sign_in():
+    return_path = _safe_return_path(request.args.get("return_to"))
+    if not _auth_enabled():
+        return _render_auth_unavailable()
+
+    login_path = _easy_auth_path("login", return_path)
+    if login_path is None:
+        return _render_auth_unavailable()
+    return redirect(login_path)
+
+
+@auth.post("/auth/sign-out")
+def sign_out():
+    if not _auth_enabled():
+        return _render_auth_unavailable()
+
+    expected_origin = request.host_url.rstrip("/")
+    origin = request.headers.get("Origin")
+    fetch_site = request.headers.get("Sec-Fetch-Site")
+    if (origin and origin.rstrip("/") != expected_origin) or (
+        fetch_site and fetch_site not in {"same-origin", "none"}
+    ):
+        return jsonify({"success": False, "message": "Cross-site sign out denied."}), 403
+
+    logout_path = _easy_auth_path("logout", "/")
+    if logout_path is None:
+        return _render_auth_unavailable()
+    return redirect(logout_path)
+
+
+@auth.get("/auth/session")
+def session_status():
+    try:
+        identity = get_optional_identity()
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate identity storage is unavailable.")
+        return jsonify({"signed_in": False, "available": False}), 503
+
+    if identity is None:
+        return jsonify({"signed_in": False, "available": _auth_enabled()})
+    return jsonify(
+        {
+            "signed_in": True,
+            "available": True,
+            "display_name": identity.display_name or "PeerSlate member",
+        }
+    )
+
+
+@auth.get("/app")
+def owner_workspace():
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return_path = _safe_return_path(request.full_path.rstrip("?"))
+        return redirect(url_for("auth.sign_in", return_to=return_path))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate owner workspace identity lookup failed.")
+        return _render_auth_unavailable()
+
+    return render_template(
+        "owner_workspace.html",
+        page_title="My PeerSlate",
+        member=identity,
+    )
+
+
+@auth.app_context_processor
+def shared_authentication_state():
+    try:
+        identity = get_optional_identity()
+        identity_storage_available = True
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate navigation identity lookup failed.")
+        identity = None
+        identity_storage_available = False
+
+    return {
+        "current_member": identity,
+        "auth_enabled": _auth_enabled(),
+        "identity_storage_available": identity_storage_available,
+        "auth_sign_in_url": url_for("auth.sign_in", return_to="/app"),
+        "auth_sign_out_url": url_for("auth.sign_out"),
+        "owner_workspace_url": url_for("auth.owner_workspace"),
+    }

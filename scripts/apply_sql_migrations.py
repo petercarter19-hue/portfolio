@@ -15,7 +15,17 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_DIR = ROOT / "SQL FIles" / "Migrations"
 VERIFY_PATH = ROOT / "SQL FIles" / "Verification" / "peerslate_platform_foundation_verify.sql"
 
-EXPECTED_MIGRATIONS = {f"PS-PLAT-{number:03d}" for number in range(1, 8)}
+MIGRATION_FILENAMES = (
+    "PS-PLAT-001_platform_governance.sql",
+    "PS-PLAT-002_profiles_entities_access.sql",
+    "PS-PLAT-003_evidence_ai.sql",
+    "PS-PLAT-004_connections_notifications.sql",
+    "PS-PLAT-005_tenant_integrity.sql",
+    "PS-PLAT-006_living_resume_domain.sql",
+    "PS-PLAT-007_living_resume_reads.sql",
+    "PS-AUTH-001_identity_foundation.sql",
+)
+EXPECTED_MIGRATIONS = {name.split("_")[0] for name in MIGRATION_FILENAMES}
 EXPECTED_TABLES = {
     "schema_migrations",
     "audit_events",
@@ -48,6 +58,7 @@ EXPECTED_TABLES = {
     "career_timeline_events",
     "voice_drafts",
     "content_approval_events",
+    "user_identities",
 }
 EXPECTED_PROGRAMMABLE_OBJECTS = {
     "usp_AppendAuditEvent",
@@ -55,6 +66,7 @@ EXPECTED_PROGRAMMABLE_OBJECTS = {
     "usp_GetPublicLivingResumeBySlug",
     "trg_audit_events_immutable",
     "trg_content_approval_events_immutable",
+    "usp_UpsertAppUserFromAuth",
 }
 
 
@@ -92,11 +104,11 @@ def get_connection():
 
 
 def forward_migrations() -> list[Path]:
-    return sorted(
-        path
-        for path in MIGRATION_DIR.glob("PS-PLAT-*.sql")
-        if not path.name.endswith("_rollback.sql")
-    )
+    paths = [MIGRATION_DIR / name for name in MIGRATION_FILENAMES]
+    missing = [path.name for path in paths if not path.exists()]
+    if missing:
+        raise RuntimeError("Missing migrations: " + ", ".join(missing) + ".")
+    return paths
 
 
 def apply_migrations(paths: list[Path]) -> None:
@@ -162,6 +174,10 @@ def validate_verification_results(result_sets: list[list[dict]]) -> list[str]:
         failures.append("One or more migrated member profiles are not private.")
     if counts.get("discovery_off_count") != counts.get("user_count"):
         failures.append("One or more members do not have discovery disabled by default.")
+    if counts.get("account_key_count") != counts.get("user_count"):
+        failures.append("One or more application users has no internal account UUID.")
+    if counts.get("identity_count", 0) < counts.get("mapped_auth_count", 0):
+        failures.append("One or more legacy authentication mappings was not migrated.")
 
     return failures
 
@@ -177,7 +193,7 @@ def verify_foundation() -> None:
         for failure in failures:
             print(f"FAILED: {failure}")
         raise RuntimeError("PeerSlate foundation verification failed.")
-    print("Verified all seven migration records and all 31 platform and career tables.")
+    print("Verified all eight migration records and all platform, career, and identity tables.")
     print("Verified tenant constraints, private profile defaults, and opt-in discovery defaults.")
 
 

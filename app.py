@@ -18,6 +18,7 @@ import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 from db import get_connection, fetch_all_result_sets
 from identity import AuthenticationRequired, get_current_identity
+from auth_routes import auth
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from services.people_interests_feed import (
@@ -30,6 +31,20 @@ from services.people_interests_feed import (
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
 load_dotenv()
+
+
+def _configured_trusted_hosts():
+    hosts = {"localhost", "127.0.0.1", "peerslate.com", ".peerslate.com"}
+    azure_hostname = os.environ.get("WEBSITE_HOSTNAME")
+    if azure_hostname:
+        hosts.add(azure_hostname.strip().lower())
+    configured_hosts = os.environ.get("PEERSLATE_TRUSTED_HOSTS", "")
+    hosts.update(
+        host.strip().lower()
+        for host in configured_hosts.split(",")
+        if host.strip()
+    )
+    return sorted(hosts)
 
 # Keep oversized prompts from consuming API budget or making the chat feel broken.
 MAX_CHAT_MESSAGE_LENGTH = 1000
@@ -62,6 +77,10 @@ app = Flask(__name__)
 # its native HTTP scheme.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
 app.config.update(
+    MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+    MAX_FORM_MEMORY_SIZE=500 * 1024,
+    MAX_FORM_PARTS=100,
+    TRUSTED_HOSTS=_configured_trusted_hosts(),
     PEERSLATE_ALLOW_DEV_IDENTITY=(
         os.environ.get('PEERSLATE_ALLOW_DEV_IDENTITY', 'false').lower() == 'true'
     ),
@@ -78,6 +97,11 @@ app.config.update(
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
     ),
+    PEERSLATE_AUTH_ISSUER=os.environ.get('PEERSLATE_AUTH_ISSUER'),
+    PEERSLATE_AUTH_PROVIDER_NAME=os.environ.get(
+        'PEERSLATE_AUTH_PROVIDER_NAME', 'aad'
+    ),
+    PEERSLATE_AUTH_HEADER_MAX_LENGTH=65536,
 )
 
 # MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
@@ -91,6 +115,7 @@ limiter = Limiter(
 # Create the Anthropic client.
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+app.register_blueprint(auth)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
 
@@ -103,6 +128,17 @@ def prevent_stale_html(response):
     cacheable — only text/html is marked no-cache."""
     if response.mimetype == 'text/html':
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault(
+        'Permissions-Policy',
+        'camera=(self), microphone=(self), geolocation=()',
+    )
+    if request.is_secure:
+        response.headers.setdefault(
+            'Strict-Transport-Security', 'max-age=31536000'
+        )
     return response
 
 

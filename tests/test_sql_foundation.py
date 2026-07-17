@@ -11,14 +11,22 @@ RUNNER = ROOT / "scripts" / "apply_sql_migrations.py"
 
 class SqlFoundationTests(unittest.TestCase):
     def setUp(self):
-        self.forward = sorted(
-            path
-            for path in MIGRATIONS.glob("PS-PLAT-*.sql")
-            if not path.name.endswith("_rollback.sql")
-        )
-        self.rollbacks = sorted(MIGRATIONS.glob("PS-PLAT-*_rollback.sql"))
+        self.forward = [
+            MIGRATIONS / name
+            for name in (
+                "PS-PLAT-001_platform_governance.sql",
+                "PS-PLAT-002_profiles_entities_access.sql",
+                "PS-PLAT-003_evidence_ai.sql",
+                "PS-PLAT-004_connections_notifications.sql",
+                "PS-PLAT-005_tenant_integrity.sql",
+                "PS-PLAT-006_living_resume_domain.sql",
+                "PS-PLAT-007_living_resume_reads.sql",
+                "PS-AUTH-001_identity_foundation.sql",
+            )
+        ]
+        self.rollbacks = sorted(MIGRATIONS.glob("PS-*-*_rollback.sql"))
 
-    def test_seven_ordered_forward_and_rollback_migrations_exist(self):
+    def test_eight_ordered_forward_and_rollback_migrations_exist(self):
         self.assertEqual(
             [path.name.split("_")[0] for path in self.forward],
             [
@@ -29,9 +37,10 @@ class SqlFoundationTests(unittest.TestCase):
                 "PS-PLAT-005",
                 "PS-PLAT-006",
                 "PS-PLAT-007",
+                "PS-AUTH-001",
             ],
         )
-        self.assertEqual(len(self.rollbacks), 7)
+        self.assertEqual(len(self.rollbacks), 8)
 
     def test_forward_migrations_are_transactional_and_recorded(self):
         for path in self.forward:
@@ -92,6 +101,19 @@ class SqlFoundationTests(unittest.TestCase):
         self.assertNotIn("usp_Ensure", sql)
         self.assertNotIn("usp_Upsert", sql)
 
+    def test_identity_foundation_separates_external_identity_and_private_account(self):
+        sql = (MIGRATIONS / "PS-AUTH-001_identity_foundation.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CREATE TABLE dbo.user_identities", sql)
+        self.assertIn("@AuthIssuer", sql)
+        self.assertIn("identity_fingerprint", sql)
+        self.assertIn("account_key uniqueidentifier", sql)
+        self.assertIn("N''private''", sql)
+        self.assertIn("INSERT dbo.connection_preferences", sql)
+        self.assertIn("INSERT @AuditResult", sql)
+        self.assertNotIn("WHERE email = @Email", sql)
+
     def test_verification_script_is_read_only(self):
         sql = VERIFY.read_text(encoding="utf-8").upper()
         for forbidden in ("INSERT ", "UPDATE ", "DELETE ", "DROP ", "ALTER ", "CREATE "):
@@ -120,6 +142,9 @@ class SqlFoundationTests(unittest.TestCase):
                 "profile_count": 2,
                 "private_profile_count": 2,
                 "discovery_off_count": 2,
+                "account_key_count": 2,
+                "mapped_auth_count": 2,
+                "identity_count": 2,
             }],
         ]
 
@@ -148,6 +173,9 @@ class SqlFoundationTests(unittest.TestCase):
                 "profile_count": 2,
                 "private_profile_count": 1,
                 "discovery_off_count": 1,
+                "account_key_count": 2,
+                "mapped_auth_count": 2,
+                "identity_count": 2,
             }],
         ]
 

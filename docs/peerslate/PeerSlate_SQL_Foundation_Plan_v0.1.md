@@ -1,6 +1,6 @@
 # PeerSlate SQL Foundation Plan v0.1
 
-**Status:** Implemented as additive migration scripts; production execution requires the verification sequence below
+**Status:** PS-PLAT-001 through PS-PLAT-007 and PS-AUTH-001 are applied and verified in production as of July 16, 2026
 **Date:** July 12, 2026
 **Scope:** Site-wide data foundations only; no page-specific Resume, Slate Board, Feed, Interview, or recruiter schema
 
@@ -100,6 +100,13 @@ Adds composite ownership constraints across entity relations, evidence, protecte
 
 Reason: a normal foreign key proves that a record exists. The composite constraints additionally prove that linked records belong to the same profile, preventing accidental cross-tenant relationships at the database boundary.
 
+### PS-AUTH-001 — External identity and first-account provisioning
+
+Adds an opaque account UUID, issuer-aware `user_identities`, account/onboarding
+state, and a transaction-safe authentication upsert that creates a private
+profile and opt-out connection preferences for each new member. Email is profile
+metadata, never the account-merge key.
+
 ## 4. Trust rules enforced in SQL
 
 - Every profile-owned row points to a tenant-owned profile or user.
@@ -139,7 +146,8 @@ Forward order:
 5. `PS-PLAT-005_tenant_integrity.sql`
 6. `PS-PLAT-006_living_resume_domain.sql`
 7. `PS-PLAT-007_living_resume_reads.sql`
-8. `peerslate_platform_foundation_verify.sql`
+8. `PS-AUTH-001_identity_foundation.sql`
+9. `peerslate_platform_foundation_verify.sql`
 
 The repository helper prints the plan by default and applies only with an explicit flag:
 
@@ -165,7 +173,7 @@ Each forward script:
 
 Before production application code uses these tables:
 
-1. Run all seven migrations against the configured Azure SQL database.
+1. Run all eight migrations against the configured Azure SQL database.
 2. Run the read-only foundation verification script.
 3. Confirm all migration IDs are present exactly once.
 4. Confirm every new foreign key is trusted.

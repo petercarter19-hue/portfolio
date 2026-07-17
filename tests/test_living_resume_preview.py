@@ -19,7 +19,7 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertIn(b'files/pete-carter-resume.pdf', response.data)
 
     def test_preview_remains_hidden_from_nonlocal_hosts(self):
-        response = self.client.get('/_internal/living-resume-v2', base_url='https://example.com')
+        response = self.client.get('/_internal/living-resume-v2', base_url='https://peerslate.com')
 
         self.assertEqual(response.status_code, 404)
 

@@ -1,0 +1,127 @@
+.owner-app {
+    box-sizing: border-box;
+    min-height: 70vh;
+    padding: clamp(7rem, 12vw, 10rem) 1.25rem 5rem;
+    background: #f6f8fc;
+    color: #0a1b36;
+}
+
+.owner-app *,
+.owner-app *::before,
+.owner-app *::after {
+    box-sizing: border-box;
+}
+
+.owner-app__panel {
+    width: min(100%, 760px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4rem);
+    border: 1px solid rgba(10, 27, 54, 0.14);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 24px 70px rgba(10, 27, 54, 0.1);
+}
+
+.owner-app__eyebrow {
+    margin: 0 0 0.75rem;
+    color: #4f5bd5;
+    font: 700 0.78rem/1.3 Inter, sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.owner-app h1 {
+    max-width: 13ch;
+    margin: 0;
+    font: 600 clamp(2.5rem, 7vw, 5rem)/0.96 Newsreader, serif;
+}
+
+.owner-app__panel > p:not(.owner-app__eyebrow) {
+    max-width: 58ch;
+    margin: 1.25rem 0 0;
+    font: 400 1.05rem/1.7 Inter, sans-serif;
+}
+
+.owner-app__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+.owner-app__primary,
+.owner-app__secondary,
+.owner-app__sign-out {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #4f5bd5;
+    border-radius: 999px;
+    font: 700 0.9rem/1 Inter, sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.owner-app__primary {
+    background: #4f5bd5;
+    color: #fff;
+}
+
+.owner-app__secondary,
+.owner-app__sign-out {
+    background: transparent;
+    color: #0a1b36;
+}
+
+.owner-app__status {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.owner-app__status div {
+    padding: 1rem;
+    border-radius: 16px;
+    background: rgba(79, 91, 213, 0.07);
+}
+
+.owner-app__status dt,
+.owner-app__status dd {
+    margin: 0;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__status dt {
+    color: #526078;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.owner-app__status dd {
+    margin-top: 0.35rem;
+    font-weight: 700;
+}
+
+.owner-app a:focus-visible,
+.owner-app button:focus-visible {
+    outline: 3px solid #2ec8d3;
+    outline-offset: 3px;
+}
+
+@media (max-width: 540px) {
+    .owner-app__status {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .owner-app *,
+    .owner-app *::before,
+    .owner-app *::after {
+        scroll-behavior: auto !important;
+    }
+}

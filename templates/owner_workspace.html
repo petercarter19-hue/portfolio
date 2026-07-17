@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-auth-001-1">
+{% endblock %}
+
+{% block content %}
+<main class="owner-app" id="main-content">
+    <section class="owner-app__panel" aria-labelledby="owner-workspace-title">
+        <p class="owner-app__eyebrow">Private owner workspace</p>
+        <h1 id="owner-workspace-title">
+            Welcome, {{ member.display_name or 'PeerSlate member' }}.
+        </h1>
+        <p>
+            This is your protected PeerSlate space. New captures and drafts stay
+            private until you deliberately approve and publish them.
+        </p>
+
+        <div class="owner-app__actions" aria-label="Owner workspace destinations">
+            <a class="owner-app__primary" href="{{ url_for('slate_board') }}">Open My Slate</a>
+            <a class="owner-app__secondary" href="{{ url_for('interview_studio') }}">Interview Studio</a>
+        </div>
+
+        <dl class="owner-app__status">
+            <div>
+                <dt>Account</dt>
+                <dd>Signed in</dd>
+            </div>
+            <div>
+                <dt>Default audience</dt>
+                <dd>Private</dd>
+            </div>
+        </dl>
+
+        <form method="post" action="{{ auth_sign_out_url }}">
+            <button class="owner-app__sign-out" type="submit">Sign out</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

@@ -1,7 +1,9 @@
 """Tenant-safe request identity for PeerSlate APIs."""
 
 import base64
+import binascii
 import json
+import re
 from dataclasses import dataclass
 
 from flask import current_app, g, request
@@ -9,22 +11,27 @@ from flask import current_app, g, request
 from services.database_service import database_service
 
 
-OBJECT_ID_CLAIMS = {
+OBJECT_ID_CLAIMS = (
     "oid",
-    "sub",
     "http://schemas.microsoft.com/identity/claims/objectidentifier",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
-}
-EMAIL_CLAIMS = {
+    "sub",
+)
+ISSUER_CLAIMS = (
+    "iss",
+    "http://schemas.microsoft.com/identity/claims/issuer",
+)
+EMAIL_CLAIMS = (
     "email",
     "emails",
     "preferred_username",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-}
-NAME_CLAIMS = {
+)
+NAME_CLAIMS = (
     "name",
     "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
-}
+)
+AUTH_PROVIDER = re.compile(r"^[a-z0-9][a-z0-9._-]{0,99}$")
 
 
 class AuthenticationRequired(RuntimeError):
@@ -35,52 +42,100 @@ class AuthenticationRequired(RuntimeError):
 class PeerSlateIdentity:
     user_key: str
     auth_provider: str
+    auth_issuer: str
     auth_subject: str
     email: str | None = None
     display_name: str | None = None
+    account_key: str | None = None
 
 
 def _decode_easy_auth_principal(encoded_principal):
+    max_header_length = current_app.config.get(
+        "PEERSLATE_AUTH_HEADER_MAX_LENGTH", 65536
+    )
+    if not isinstance(encoded_principal, str) or len(encoded_principal) > max_header_length:
+        raise AuthenticationRequired("The authentication identity is invalid.")
+
     try:
         padding = "=" * (-len(encoded_principal) % 4)
-        decoded = base64.b64decode(encoded_principal + padding)
+        decoded = base64.b64decode(encoded_principal + padding, validate=True)
         principal = json.loads(decoded.decode("utf-8"))
-    except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
+    except (binascii.Error, ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise AuthenticationRequired("The authentication identity is invalid.") from error
 
+    if not isinstance(principal, dict):
+        raise AuthenticationRequired("The authentication identity is invalid.")
     claims = principal.get("claims")
-    if not isinstance(claims, list):
+    if not isinstance(claims, list) or len(claims) > 250:
         raise AuthenticationRequired("The authentication identity has no claims.")
 
     return principal, claims
 
 
 def _first_claim(claims, accepted_types):
-    for claim in claims:
-        if not isinstance(claim, dict):
-            continue
-        if claim.get("typ") in accepted_types and claim.get("val"):
-            return str(claim["val"])
+    for accepted_type in accepted_types:
+        for claim in claims:
+            if not isinstance(claim, dict) or claim.get("typ") != accepted_type:
+                continue
+            value = claim.get("val")
+            if isinstance(value, (str, int)) and str(value).strip():
+                return str(value).strip()
     return None
+
+
+def _bounded_identity_value(value, label, max_length, *, required=True):
+    if value is None or not str(value).strip():
+        if required:
+            raise AuthenticationRequired(
+                f"The authentication identity has no stable {label}."
+            )
+        return None
+
+    clean_value = str(value).strip()
+    if len(clean_value) > max_length or any(ord(char) < 32 for char in clean_value):
+        if required:
+            raise AuthenticationRequired("The authentication identity is invalid.")
+        return None
+    return clean_value
 
 
 def _easy_auth_identity(encoded_principal):
     principal, claims = _decode_easy_auth_principal(encoded_principal)
-    provider = (
+    provider = _bounded_identity_value(
         principal.get("auth_typ")
         or request.headers.get("X-MS-CLIENT-PRINCIPAL-IDP")
-        or "appservice"
+        or "appservice",
+        "provider",
+        100,
     )
-    subject = _first_claim(claims, OBJECT_ID_CLAIMS)
-    if not subject:
-        raise AuthenticationRequired("The authentication identity has no stable subject.")
+    provider = provider.lower()
+    if not AUTH_PROVIDER.fullmatch(provider):
+        raise AuthenticationRequired("The authentication identity is invalid.")
 
-    email = _first_claim(claims, EMAIL_CLAIMS)
-    display_name = _first_claim(claims, NAME_CLAIMS) or email
+    issuer = _bounded_identity_value(
+        _first_claim(claims, ISSUER_CLAIMS)
+        or current_app.config.get("PEERSLATE_AUTH_ISSUER"),
+        "issuer",
+        500,
+    ).rstrip("/")
+    subject = _bounded_identity_value(
+        _first_claim(claims, OBJECT_ID_CLAIMS), "subject", 500
+    )
+
+    email = _bounded_identity_value(
+        _first_claim(claims, EMAIL_CLAIMS), "email", 254, required=False
+    )
+    display_name = _bounded_identity_value(
+        _first_claim(claims, NAME_CLAIMS) or email,
+        "display name",
+        150,
+        required=False,
+    )
     user = database_service.first_row(
         "usp_UpsertAppUserFromAuth",
         [
             ("@AuthProvider", provider),
+            ("@AuthIssuer", issuer),
             ("@AuthSubject", subject),
             ("@Email", email),
             ("@DisplayName", display_name),
@@ -94,9 +149,11 @@ def _easy_auth_identity(encoded_principal):
     return PeerSlateIdentity(
         user_key=user["user_key"],
         auth_provider=provider,
+        auth_issuer=issuer,
         auth_subject=subject,
         email=user.get("email"),
         display_name=user.get("display_name"),
+        account_key=(str(user["account_key"]) if user.get("account_key") else None),
     )
 
 
@@ -128,9 +185,17 @@ def get_current_identity():
         identity = PeerSlateIdentity(
             user_key=development_user_key,
             auth_provider="development",
+            auth_issuer="urn:peerslate:development",
             auth_subject=development_user_key,
             display_name="Local PeerSlate Test User",
         )
 
     g.peerslate_identity = identity
     return identity
+
+
+def get_optional_identity():
+    try:
+        return get_current_identity()
+    except AuthenticationRequired:
+        return None

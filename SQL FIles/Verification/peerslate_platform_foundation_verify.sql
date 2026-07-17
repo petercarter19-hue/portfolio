@@ -5,7 +5,7 @@ SELECT DB_NAME() AS database_name, SYSUTCDATETIME() AS checked_at_utc;
 
 SELECT migration_id, description, applied_at_utc, application_version
 FROM dbo.schema_migrations
-WHERE migration_id LIKE N'PS-PLAT-%'
+WHERE migration_id LIKE N'PS-PLAT-%' OR migration_id LIKE N'PS-AUTH-%'
 ORDER BY migration_id;
 
 SELECT expected.object_name,
@@ -21,7 +21,7 @@ FROM (VALUES
     (N'career_chapters'), (N'career_experiences'), (N'career_education'),
     (N'career_credentials'), (N'career_projects'), (N'career_achievements'),
     (N'career_skills'), (N'career_skill_links'), (N'career_timeline_events'),
-    (N'voice_drafts'), (N'content_approval_events')
+    (N'voice_drafts'), (N'content_approval_events'), (N'user_identities')
 ) AS expected(object_name)
 ORDER BY expected.object_name;
 
@@ -31,6 +31,7 @@ FROM (VALUES
     (N'usp_AppendAuditEvent'),
     (N'usp_GetOwnerLivingResume'),
     (N'usp_GetPublicLivingResumeBySlug'),
+    (N'usp_UpsertAppUserFromAuth'),
     (N'trg_audit_events_immutable'),
     (N'trg_content_approval_events_immutable')
 ) AS expected(object_name)
@@ -48,7 +49,8 @@ WHERE t.name IN
     N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents',
     N'career_chapters', N'career_experiences', N'career_education', N'career_credentials',
     N'career_projects', N'career_achievements', N'career_skills', N'career_skill_links',
-    N'career_timeline_events', N'voice_drafts', N'content_approval_events'
+    N'career_timeline_events', N'voice_drafts', N'content_approval_events',
+    N'user_identities'
 )
 GROUP BY t.name
 ORDER BY t.name;
@@ -66,7 +68,8 @@ WHERE fk.is_not_trusted = 1
       N'user_blocks', N'user_reports', N'notifications', N'notification_preferences', N'user_consents',
       N'career_chapters', N'career_experiences', N'career_education', N'career_credentials',
       N'career_projects', N'career_achievements', N'career_skills', N'career_skill_links',
-      N'career_timeline_events', N'voice_drafts', N'content_approval_events'
+      N'career_timeline_events', N'voice_drafts', N'content_approval_events',
+      N'user_identities'
   );
 
 SELECT cc.name AS disabled_or_untrusted_check,
@@ -79,4 +82,7 @@ SELECT
     (SELECT COUNT(*) FROM dbo.app_users) AS user_count,
     (SELECT COUNT(*) FROM dbo.member_profiles) AS profile_count,
     (SELECT COUNT(*) FROM dbo.member_profiles WHERE visibility = N'private') AS private_profile_count,
-    (SELECT COUNT(*) FROM dbo.connection_preferences WHERE discovery_opt_in = 0) AS discovery_off_count;
+    (SELECT COUNT(*) FROM dbo.connection_preferences WHERE discovery_opt_in = 0) AS discovery_off_count,
+    (SELECT COUNT(*) FROM dbo.app_users WHERE account_key IS NOT NULL) AS account_key_count,
+    (SELECT COUNT(*) FROM dbo.app_users WHERE auth_provider IS NOT NULL AND auth_subject IS NOT NULL) AS mapped_auth_count,
+    (SELECT COUNT(*) FROM dbo.user_identities) AS identity_count;

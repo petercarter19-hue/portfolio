@@ -232,7 +232,11 @@
                     </button>
                     {% endif %}
 
-                    <a class="sign-in-btn" href="#" aria-disabled="true">Sign In</a>
+                    {% if current_member %}
+                    <a class="sign-in-btn" href="{{ owner_workspace_url }}">My Slate</a>
+                    {% else %}
+                    <a class="sign-in-btn" href="{{ auth_sign_in_url }}">Sign In</a>
+                    {% endif %}
                 </div>
             </div>
         </nav>

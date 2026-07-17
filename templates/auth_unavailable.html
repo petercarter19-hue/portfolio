@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-auth-001-1">
+{% endblock %}
+
+{% block content %}
+<main class="owner-app" id="main-content">
+    <section class="owner-app__panel" aria-labelledby="auth-unavailable-title">
+        <p class="owner-app__eyebrow">PeerSlate account</p>
+        <h1 id="auth-unavailable-title">Sign in is not configured yet.</h1>
+        <p>
+            The application is ready to use Microsoft Entra External ID, but the
+            production identity provider still needs to be connected in Azure.
+        </p>
+        <a class="owner-app__secondary" href="{{ url_for('home') }}">Return home</a>
+    </section>
+</main>
+{% endblock %}
