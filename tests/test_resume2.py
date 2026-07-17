@@ -225,7 +225,9 @@ class Resume2Tests(unittest.TestCase):
     def test_resume2_uses_optimized_background_assets(self):
         project_root = Path(__file__).resolve().parents[1]
         source = project_root / 'static/images/background-templates/mountains.png'
-        asset_dir = project_root / 'static/images/mockups/resume2'
+        # Preserve Git's canonical path casing so this check works on the
+        # case-sensitive Linux agent used by Azure Pipelines.
+        asset_dir = project_root / 'static/images/Mockups/resume2'
 
         for filename in (
             'resume2-blue-mountain-background.avif',
