@@ -1,7 +1,7 @@
 # Handoff
 
-**Current state:** implementation and Azure SQL migration verified; PR 56 is
-active and application deployment is not yet live.
+**Current state:** released and verified in Azure production through PR 56,
+merge `af3547796966628da1672256a332e3b874750c7f`, and pipeline run 75.
 
 ## Canonical object
 
@@ -14,7 +14,7 @@ Each record belongs to one `member_profiles` owner resolved from trusted
 server-side identity. Only the owner route and owner-scoped procedures read it.
 All records in this slice are private; there is no publication step.
 
-## Implemented on the task branch
+## Implemented in production
 
 - Protected text composer and recent-capture list.
 - Required/max-length validation and controlled unavailable state.
@@ -39,10 +39,16 @@ then rolls them back. No fixture capture is shown as member data.
 
 The form has a label, hint, character limit, visible focus, accessible status
 and alert regions, responsive document flow, and no fake action controls.
-Final browser evidence is pending.
+Desktop/mobile browser checks, long-content wrapping, one main landmark, and the
+production sign-in boundary are verified.
 
-## Release gate
+## Release evidence and boundary
 
-Do not call this package complete until the migration verification, full tests,
-Azure PR/squash merge, exact pipeline, production auth boundary, signed-in
-owner isolation, and backup mirror are confirmed in `09-verification.md`.
+Azure SQL apply, synthetic two-owner isolation with full rollback, all 252
+tests, 8/8 guardrails, PR squash merge, exact Build/Deploy stages, App Service
+deployment record, and canonical auth redirect are confirmed in
+`09-verification.md`.
+
+No real member capture was added during release testing because archive/delete
+controls are deferred. This is an intentional test-data boundary, not a claim
+that a signed-in production POST was performed.

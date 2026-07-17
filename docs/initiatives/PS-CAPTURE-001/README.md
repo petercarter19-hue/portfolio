@@ -1,8 +1,8 @@
 # PS-CAPTURE-001 - Universal Capture, slice 1
 
-**Status:** Azure SQL applied and verified; PR 56 release verification in progress
+**Status:** Released to Azure production and verified
 
-**Branch:** `work/2026-07-17-owner-capture`
+**Release:** PR 56, squash merge `af3547796966628da1672256a332e3b874750c7f`
 
 **Product baseline:** PeerSlate Company and Product Bible v1.4
 

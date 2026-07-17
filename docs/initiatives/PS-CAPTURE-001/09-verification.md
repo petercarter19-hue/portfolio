@@ -46,10 +46,6 @@ in-memory warning remains unchanged.
 Settings prerequisite pipeline run 74 (`20260717.7`) succeeded for exact merge
 commit `086753f2e1df2fb02dfd55a51d41b35d12fcc431`.
 
-## Still required before completion
-
-- Azure PR, exact-commit pipeline Build/Deploy, and production verification.
-
 ## Migration attempt record
 
 The first approved apply attempt reached Azure SQL but failed during parsing
@@ -73,5 +69,34 @@ The corrected retry used the reviewed runner with `--migration PS-CAPTURE-001
 
 No connection string or private member content was printed or recorded.
 
-This file will be updated with final commands, counts, commit/PR identifiers,
-and live results before handoff.
+## Azure application release
+
+- Azure DevOps PR 56 reviewed source
+  `4cfbd8e234bb56b004eb0d6feece88eec3b6d969` against Settings baseline
+  `086753f2e1df2fb02dfd55a51d41b35d12fcc431`.
+- PR 56 completed with squash merge and remote branch deletion.
+- Production merge: `af3547796966628da1672256a332e3b874750c7f`.
+- Automatic pipeline run 75 (`20260717.8`) used that exact source version.
+- Build completed successfully at `2026-07-17T19:49:38Z`.
+- Deploy completed successfully at `2026-07-17T19:51:54Z`.
+- A redundant not-started manual fallback run 76 was canceled after the delayed
+  automatic trigger became visible; it never deployed.
+- App Service deployment history marks merge `af354779...`, build 75, and the
+  production slot active and complete.
+
+The first request after deployment returned the previous worker's 404 even
+though the exact deployment record was active. Restarting only the
+`peerslate-pete` App Service loaded the deployed route table. Final checks:
+
+```text
+Azure hostname /app/capture -> 302 /auth/sign-in?return_to=/app/capture
+https://peerslate.com/app/capture -> 302 /auth/sign-in?return_to=/app/capture
+https://peerslate.com/app/settings -> 302 /auth/sign-in?return_to=/app/settings
+https://peerslate.com/ -> 200
+```
+
+The in-app browser followed the production Capture route to the real PeerSlate
+member sign-in page. A real member capture was intentionally not created because
+this slice does not yet provide delete UI; the live stored procedures and
+owner-isolation behavior were instead verified with synthetic transactional
+data that was fully rolled back.
