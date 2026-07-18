@@ -1,60 +1,79 @@
-# =============================================================================
-# CURRENT_BASELINE.yaml  —  PeerSlate single source of authority  (PS-GOV-001)
-# =============================================================================
-# WHAT THIS FILE IS
-#   The ONE machine-readable record of "what is true right now" for PeerSlate.
-#   Every tool and person (Cowork/Claude, Claude Code, Codex, and humans) reads
-#   this first — via START_HERE.md — so nobody has to ask Pete where things stand.
-#
-# THE RULE
-#   Update this file on every production-changing merge. The guardrail test
-#   tests/test_governance_pointers.py FAILS THE BUILD if the paths below go
-#   stale (i.e. point at a file that does not exist). That is what keeps this
-#   honest over time instead of quietly rotting.
-# -----------------------------------------------------------------------------
-schema_version: 1
+# PeerSlate current authority record
+# Updated by PS-BASELINE-001 on 2026-07-18.
+# This is a verified snapshot, not a substitute for fetching origin before work.
+schema_version: 2
 updated_at: "2026-07-18"
 
-# --- Authority: where the real repository lives -----------------------------
-authoritative_remote: origin          # Azure DevOps. GitHub is a BACKUP MIRROR only.
-authoritative_branch: main
-production_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"   # origin/main at time of writing
-production_pipeline: 78                # last green Azure pipeline
-production_url: "https://peerslate.com"
+authority:
+  remote: origin
+  host: azure_devops
+  branch: main
+  verified_origin_main_commit: "ec6eae83feedff45d8fe87600e1031253cfd6021"
+  verified_pipeline: 79
+  production_url: "https://peerslate.com"
+  application_behavior_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"
+  note: "Pipeline 79 deployed the governance merge; d5dd7bd remains the last application-behavior change."
+
+mirror:
+  remote: github
+  role: backup_only
+  observed_main_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"
+  status: push_on_hold_and_behind_origin
+
+manager:
+  tool: "ChatGPT Work"
+  owner_decision_date: "2026-07-18"
+  responsibilities: "governance, sequencing, handoff review, merge readiness, and release verification"
+
+governing_documents:
+  bible:
+    version: "2.3"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
+  roadmap:
+    version: "2.3"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
+  sync_standard:
+    version: "1.1"
+    path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
+  document_control:
+    path: "docs/governance/DOCUMENT_CONTROL.md"
+  decisions:
+    path: "docs/governance/DECISIONS.md"
+  design_baseline:
+    path: "docs/governance/approved_owner_visual_baseline/"
+
 theme: deep_navy_gold
 
-# --- Governing documents (v2.3 adopted by the owner on 2026-07-18) ----------
-bible:
-  version: "2.3"
-  path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
-roadmap:
-  version: "2.3"
-  path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
-sync_standard:
-  version: "1.1"
-  path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
-design_baseline:
-  path: "docs/governance/approved_owner_visual_baseline/"
-
-# --- Program state ----------------------------------------------------------
 completed_packages:
-  - PS-AUTH-001              # external identity + sessions + two-owner isolation
-  - PS-OWNER-001-slice-1     # protected /app/settings
-  - PS-CAPTURE-001           # private text Capture source slice
-  - PS-THEME-001             # Deep Navy Gold (PR 58)
-  - PS-RULES-001             # locked site rules + guardrail tests
-  - PS-PLAN-002              # program plan
+  - PS-AUTH-001
+  - PS-OWNER-001-slice-1
+  - PS-CAPTURE-001
+  - PS-THEME-001
+  - PS-RULES-001
+  - PS-PLAN-002
+  - PS-GOV-001
+  - PS-BASELINE-001
+
 public_safe_slices:
   - PS-BRAND-NAV-001
   - PS-INTERVIEW-002
   - PS-FEED-002
-holds:
-  - PS-JOURNAL-001           # "hold off on the journal" — explicit owner decision
-active_packages:
-  - PS-GOV-001               # THIS package: repository authority + startup enforcement
-next_gate: "Merge and validate PS-GOV-001, then PS-BASELINE-001; then run the resume (Claude Code) and backend (Codex) lanes in parallel"
 
-# --- Prior authority versions kept as history (SUPERSEDED — do not follow) ---
+holds:
+  - PS-JOURNAL-001
+
+active_packages:
+  - id: PS-RESUME-PUBLIC-REFINE-001
+    owner: "Claude Code"
+    lane: public_experience
+    package_path: "docs/initiatives/PS-RESUME-PUBLIC-REFINE-001/README.md"
+  - id: PS-CAPTURE-002
+    owner: "ChatGPT Codex"
+    lane: backend_convergence
+    package_path: "docs/initiatives/PS-CAPTURE-002/README.md"
+
+next_gate: "Start both active packages from the same post-PS-BASELINE origin/main; Interview Studio waits for the separate PS-INTERVIEW-PUBLIC-GATE-001 gate."
+
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.2.docx"

@@ -88,17 +88,20 @@ class ProductBoundaryTests(unittest.TestCase):
 
 class GovernanceDocsTests(unittest.TestCase):
     def test_authoritative_documents_are_in_the_repository(self):
-        for rel in ('docs/PEERSLATE_SITE_RULES.md',
-                    'docs/PEERSLATE_V12_IMPLEMENTATION_INSTRUCTIONS.md',
-                    'PeerSlate_Company_and_Product_Bible_v1.3.docx',
-                    'docs/INITIATIVE_CHECKLIST.md'):
+        for rel in (
+                'docs/governance/CURRENT_BASELINE.yaml',
+                'docs/governance/DOCUMENT_CONTROL.md',
+                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx',
+                'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx',
+                'docs/PEERSLATE_SITE_RULES.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
 
     def test_claude_md_points_to_current_governance(self):
         content = _read(os.path.join(ROOT, 'CLAUDE.md'))
         self.assertIn('PEERSLATE_SITE_RULES.md', content)
-        self.assertIn('PeerSlate_Company_and_Product_Bible_v1.3.docx',
-                      content)
+        self.assertIn('CURRENT_BASELINE.yaml', content)
+        self.assertIn('DOCUMENT_CONTROL.md', content)
+        self.assertIn('Bible/Roadmap v2.3', content)
 
 
 class NavigationLanguageTests(unittest.TestCase):

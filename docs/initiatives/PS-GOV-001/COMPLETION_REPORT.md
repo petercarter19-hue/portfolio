@@ -1,43 +1,44 @@
-# PeerSlate Completion & Handoff Report — PS-GOV-001
+# PeerSlate Completion and Handoff Report — PS-GOV-001
 
 ## A. Status
-- **Package:** PS-GOV-001 — Repository authority, startup enforcement, owner translation
-- **Status:** In Build → **ready for PR** (local install complete; commit/push runs on Pete's machine)
-- **Branch and commit:** `work/2026-07-18-ps-gov-001` (created by `SETUP_PS_GOV_001.sh`); parent `origin/main @ d5dd7bd`
-- **PR / pipeline / environment:** Azure PR pending; pipeline will run `tests/` incl. the new guardrail
-- **Production state:** unchanged — no product code, routes, or data touched
+
+- **Package:** PS-GOV-001 — repository authority and startup enforcement
+- **Status:** Complete
+- **Branch and commit:** `work/2026-07-18-ps-gov-001` at `4cb0b0b914035ef395785ffb0a7f663685c48d50`; squash-merged to `origin/main @ ec6eae83feedff45d8fe87600e1031253cfd6021`
+- **PR / pipeline / environment:** Azure PR 59 completed; pipeline 79 succeeded
+- **Production state:** governance-only deployment; public and protected-route boundaries remained reachable
 
 ## B. What changed technically
-- Added **`START_HERE.md`** at repo root — the single mandatory entry point (sync → read baseline/state/initiatives → confirm ownership → branch).
-- Added the **MANDATORY PRE-WORK GATE** block to **`CLAUDE.md`** (read by Claude Code + Cowork) and **`AGENTS.md`** (read by Codex) so every tool is bound to the same procedure.
-- Added **`docs/governance/`**: `CURRENT_BASELINE.yaml` (machine-readable authority: commit, pipeline, theme, adopted docs, packages, holds, next gate), `CURRENT_STATE.md`, `ACTIVE_INITIATIVES.md` (three-lane parallel model + assignments), `AGENT_STARTUP_CHECKLIST.md`, the pointer-block reference, the **adopted Bible v2.3 + Roadmap v2.3 + Sync Standard v1.1**, and the approved owner visual baseline mockups.
-- Added **`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`** — the dual-layer closeout every future package uses.
-- Added **`docs/initiatives/PS-GOV-001/README.md`** and this report.
-- Added CI guardrail **`tests/test_governance_pointers.py`** (6 tests, standard-library only): START_HERE exists, both brain files carry the gate, required records exist, and every path named in `CURRENT_BASELINE.yaml` resolves (stale-pointer guard). **All 6 pass locally.**
-- Added **`.gitattributes`** (LF normalization — stops Windows/Mac line-ending churn) and ignored `tmp/` scratch.
+
+PS-GOV-001 added `START_HERE.md`, mandatory startup gates in `AGENTS.md` and `CLAUDE.md`, controlled governance records and adopted documents, the completion-report template, LF normalization, and a dependency-free CI pointer test. It did not change routes, application code, schemas, migrations, authentication, or product data.
 
 ## C. What this means in plain English
-Before this, each tool and each PC could start work with a different idea of "what's current," and there was no automatic way to catch it. Now there is one front door (`START_HERE.md`), one place that states the truth (`CURRENT_BASELINE.yaml`), and one test that **fails the build** if that truth goes stale. Any assistant on any machine reads the same thing and follows the same steps — no verbal handoff from you required.
+
+Every computer and coding tool now has the same front door and the same repository-owned record of what is current. Pete no longer has to recreate the handoff verbally for every session.
 
 ## D. What the website or member can do now
-Nothing changes for visitors — this is internal process only. `https://peerslate.com` is untouched.
+
+Member functionality did not change. The change reduces the risk that a future tool starts from an old branch, document, or ownership assumption.
 
 ## E. How this connects to PeerSlate
-This is the Roadmap v2.3 **first merge gate** (Appendix E / §20). It must land before the résumé and backend lanes are treated as fully aligned, because it is what lets three lanes run in parallel safely (one writer per branch, separate file ownership, shared authority).
+
+This closes the Roadmap v2.3 governance gate needed before public and backend lanes run safely in parallel. It protects the Capture-to-Moment model, private/public boundary, and current Deep Navy Gold direction from stale instructions.
 
 ## F. Verification and validation
-- **Automated:** `tests/test_governance_pointers.py` → 6/6 pass. Existing static `test_site_rules.py` checks unaffected. (App-import tests need Flask, which runs in Azure CI, not this sandbox.)
-- **Fresh-session test (R05):** simulated — a reader given only the repo can reach the current commit, adopted docs, active package, holds, and next gate via `START_HERE.md` → `CURRENT_BASELINE.yaml` with no verbal help. Recommend one real fresh-session confirmation after merge.
+
+- Azure PR 59 completed and pipeline 79 succeeded.
+- `origin/main` was verified at the PR 59 squash commit.
+- A fresh manager session followed `START_HERE.md` without a verbal state handoff and found the authority, active work, holds, and next gate.
+- Production probes after the merge returned the expected public responses and sign-in redirects for protected owner routes.
 
 ## G. Known gaps, risks, and exclusions
-- Not marked Complete until the Azure PR merges, the pipeline is green, and one real fresh-session test passes (R05).
-- The legacy "v1.3 governance" note in `CLAUDE.md` is demoted (superseded by the baseline) but not deleted — full cleanup belongs to PS-BASELINE-001.
-- `production_commit` in the baseline is a snapshot; it must be refreshed on every production-changing merge.
+
+The first version recorded a stale pre-merge snapshot and still described PS-GOV-001 as pending. PS-BASELINE-001 corrects that semantic drift and strengthens the guardrail. GitHub remains a behind, non-authoritative backup mirror.
 
 ## H. Clear next step
-Run `SETUP_PS_GOV_001.sh`, open the Azure PR (squash), let the pipeline pass, and merge. Then **PS-RESUME-PUBLIC-REFINE-001 (Claude Code)** and **PS-CAPTURE-002 (Codex)** may start in parallel on separate branches.
+
+Merge PS-BASELINE-001, then start PS-CAPTURE-002 and PS-RESUME-PUBLIC-REFINE-001 in parallel from the resulting `origin/main`.
 
 ## I. What Pete needs to do or decide
-1. Run `SETUP_PS_GOV_001.sh` (one command) to commit + push the branch.
-2. Open + merge the Azure PR after the pipeline is green.
-3. Delete the leftover `SETUP_PS_GOV_001.sh` and `.__cptest` afterward (both safe to remove).
+
+None.

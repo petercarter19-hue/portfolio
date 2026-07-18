@@ -1,25 +1,16 @@
-"""PS-GOV-001 — guardrails for the repository authority chain.
-
-These checks FAIL THE BUILD (requirement PS-GOV-001-R02) when the mandatory
-startup system is missing or when its document pointers go stale. That is what
-keeps every delivery lane — Cowork/Claude, Claude Code, Codex, and humans —
-starting from the same authority instead of relying on a verbal handoff.
-
-Deliberately dependency-free (standard library only) so it runs anywhere the
-existing suite runs, with no new package in requirements.txt.
-"""
+"""Dependency-free guardrails for PeerSlate's repository authority chain."""
 
 import os
 import re
 import unittest
 
-# Repo root = one directory up from tests/ (same pattern as test_site_rules.py).
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _read(*parts):
-    with open(os.path.join(ROOT, *parts), 'r', encoding='utf-8', errors='ignore') as f:
-        return f.read()
+    with open(os.path.join(ROOT, *parts), "r", encoding="utf-8", errors="ignore") as file:
+        return file.read()
 
 
 def _exists(*parts):
@@ -27,69 +18,116 @@ def _exists(*parts):
 
 
 class StartHereEntryPointTests(unittest.TestCase):
-    """PS-GOV-001-R01 — one mandatory entry point for every lane."""
+    """Every supported tool must enter through the same controlled startup."""
 
     def test_start_here_exists(self):
-        self.assertTrue(
-            _exists('START_HERE.md'),
-            'START_HERE.md must exist at the repository root',
-        )
+        self.assertTrue(_exists("START_HERE.md"))
 
-    def test_claude_md_requires_start_here(self):
-        body = _read('CLAUDE.md')
-        self.assertIn('START_HERE', body,
-                      'CLAUDE.md must point every session at START_HERE.md')
-        self.assertIn('MANDATORY PRE-WORK GATE', body,
-                      'CLAUDE.md must carry the mandatory pre-work gate block')
+    def test_brain_files_require_start_here_and_current_authority(self):
+        for filename in ("AGENTS.md", "CLAUDE.md"):
+            with self.subTest(filename=filename):
+                body = _read(filename)
+                self.assertIn("MANDATORY PRE-WORK GATE", body)
+                self.assertIn("START_HERE", body)
+                self.assertIn("CURRENT_BASELINE.yaml", body)
+                self.assertIn("DOCUMENT_CONTROL.md", body)
+                self.assertIn("ChatGPT Work", body)
+                self.assertNotIn("## v1.3 governance", body)
 
-    def test_agents_md_requires_start_here(self):
-        body = _read('AGENTS.md')
-        self.assertIn('START_HERE', body,
-                      'AGENTS.md must point every session at START_HERE.md')
-        self.assertIn('MANDATORY PRE-WORK GATE', body,
-                      'AGENTS.md must carry the mandatory pre-work gate block')
+    def test_startup_inspects_before_switching(self):
+        body = _read("START_HERE.md")
+        self.assertLess(body.index("git status --short --branch"), body.index("git switch main"))
+        self.assertIn("identify and preserve", body)
 
 
 class GovernanceRecordsTests(unittest.TestCase):
-    """PS-GOV-001-R02 — the required state/template records exist."""
+    """Required state, control, package, and closeout records must exist."""
 
     REQUIRED = (
-        ('docs', 'governance', 'CURRENT_BASELINE.yaml'),
-        ('docs', 'governance', 'CURRENT_STATE.md'),
-        ('docs', 'governance', 'ACTIVE_INITIATIVES.md'),
-        ('docs', 'governance', 'AGENT_STARTUP_CHECKLIST.md'),
-        ('docs', 'templates', 'OWNER_TECHNICAL_COMPLETION_REPORT.md'),
-        ('docs', 'initiatives', 'PS-GOV-001', 'README.md'),
+        ("docs", "governance", "CURRENT_BASELINE.yaml"),
+        ("docs", "governance", "CURRENT_STATE.md"),
+        ("docs", "governance", "ACTIVE_INITIATIVES.md"),
+        ("docs", "governance", "AGENT_STARTUP_CHECKLIST.md"),
+        ("docs", "governance", "DOCUMENT_CONTROL.md"),
+        ("docs", "governance", "DECISIONS.md"),
+        ("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-GOV-001", "README.md"),
+        ("docs", "initiatives", "PS-GOV-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-BASELINE-001", "README.md"),
+        ("docs", "initiatives", "PS-BASELINE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-CAPTURE-002", "README.md"),
+        ("docs", "initiatives", "PS-CAPTURE-002", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "README.md"),
+        ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
-        missing = [os.path.join(*p) for p in self.REQUIRED if not _exists(*p)]
-        self.assertEqual([], missing,
-                         f'Missing required governance records: {missing}')
+        missing = [os.path.join(*parts) for parts in self.REQUIRED if not _exists(*parts)]
+        self.assertEqual([], missing, f"Missing governance records: {missing}")
+
+    def test_completion_reports_have_owner_template_sections(self):
+        reports = [parts for parts in self.REQUIRED if parts[-1] == "COMPLETION_REPORT.md"]
+        for parts in reports:
+            body = _read(*parts)
+            with self.subTest(report=os.path.join(*parts)):
+                for letter in "ABCDEFGHI":
+                    self.assertRegex(body, rf"(?m)^## {letter}\.")
 
 
-class NoStalePointersTests(unittest.TestCase):
-    """PS-GOV-001-R02 — every path named in the baseline must resolve."""
+class BaselineCoherenceTests(unittest.TestCase):
+    """The baseline must resolve and agree with human-readable coordination."""
 
-    def _baseline_paths(self):
-        text = _read('docs', 'governance', 'CURRENT_BASELINE.yaml')
-        # Every  path: "..."  entry (bible, roadmap, sync_standard, design_baseline).
-        return re.findall(r'path:\s*"([^"]+)"', text)
+    @classmethod
+    def setUpClass(cls):
+        cls.baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        cls.state = _read("docs", "governance", "CURRENT_STATE.md")
+        cls.initiatives = _read("docs", "governance", "ACTIVE_INITIATIVES.md")
 
-    def test_baseline_pointers_resolve(self):
+    def test_every_baseline_path_resolves(self):
+        paths = re.findall(r'path:\s*"([^"]+)"', self.baseline)
+        self.assertGreaterEqual(len(paths), 8)
         stale = []
-        for rel in self._baseline_paths():
-            parts = rel.rstrip('/').split('/')  # tolerate trailing slash on dirs
+        for relative_path in paths:
+            parts = relative_path.rstrip("/").split("/")
             if not _exists(*parts):
-                stale.append(rel)
-        self.assertEqual([], stale,
-                         f'CURRENT_BASELINE.yaml points at missing paths: {stale}')
+                stale.append(relative_path)
+        self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
-    def test_baseline_names_the_adopted_versions(self):
-        text = _read('docs', 'governance', 'CURRENT_BASELINE.yaml')
-        self.assertIn('Bible_v2.3', text, 'Baseline must name the adopted Bible v2.3')
-        self.assertIn('Roadmap_v2.3', text, 'Baseline must name the adopted Roadmap v2.3')
+    def test_baseline_names_current_authority_and_manager(self):
+        self.assertIn("Bible_v2.3", self.baseline)
+        self.assertIn("Roadmap_v2.3", self.baseline)
+        self.assertIn('tool: "ChatGPT Work"', self.baseline)
+        self.assertIn("PS-GOV-001", self.baseline)
+        self.assertIn("PS-BASELINE-001", self.baseline)
+        self.assertIn("verified_pipeline: 79", self.baseline)
+
+    def test_active_package_paths_and_coordination_agree(self):
+        active_block = re.search(
+            r"(?ms)^active_packages:\s*$\n(.*?)(?=^[a-z_]+:|\Z)", self.baseline
+        )
+        self.assertIsNotNone(active_block)
+        active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
+        package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
+        self.assertEqual(
+            ["PS-RESUME-PUBLIC-REFINE-001", "PS-CAPTURE-002"], active_ids
+        )
+        self.assertEqual(len(active_ids), len(package_paths))
+        for package_id, relative_path in zip(active_ids, package_paths):
+            with self.subTest(package=package_id):
+                self.assertTrue(_exists(*relative_path.split("/")))
+                self.assertIn(package_id, self.initiatives)
+                self.assertIn(package_id, self.state)
+
+    def test_state_records_verified_snapshot_and_honest_boundaries(self):
+        for expected in (
+            "ec6eae83feedff45d8fe87600e1031253cfd6021",
+            "pipeline 79",
+            "ChatGPT Work",
+            "GitHub mirror is not current",
+            "No Capture correction",
+        ):
+            self.assertIn(expected, self.state)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

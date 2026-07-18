@@ -8,35 +8,27 @@
 
 # Claude / Claude Code instructions
 
-> **Note (2026-07-18):** The v1.3-era section below is kept for history. The live authority is `docs/governance/CURRENT_BASELINE.yaml`; when they differ, the baseline controls.
+The live authority is `docs/governance/CURRENT_BASELINE.yaml` and its referenced
+Bible/Roadmap v2.3 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
+an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
+language as current merely because it remains in repository history.
 
-## v1.3 governance — read BEFORE any product work (2026-07-16)
+ChatGPT Work is the owner-designated PeerSlate manager. Claude Code owns only
+the public-experience package explicitly assigned in
+`docs/governance/ACTIVE_INITIATIVES.md`. Before editing, read that initiative's
+README, confirm its reserved branch and files, and verify the exact `origin/main`
+base. Do not begin Interview Studio work while the résumé package is active
+unless the manager assigns a separate writer, branch, and non-overlapping files.
 
-1. `PeerSlate_Company_and_Product_Bible_v1.3.docx` (repo root) — the
-   authoritative product direction and implementation baseline. Version 1.2
-   remains in the repository as the prior decision record.
-2. `docs/PEERSLATE_SITE_RULES.md` — 85 locked rules for copy, IA, data,
-   AI, design, and delivery. They bind humans and AI agents alike.
-3. `docs/PEERSLATE_V12_IMPLEMENTATION_INSTRUCTIONS.md` — the approved
-   corrective package program (PS-PLAN-002 → PS-CONSTELLATION-001) and
-   delivery method. Version 1.3 adds PS-PROFILE-001, PS-PHOTOS-001,
-   PS-CONNECT-001, and PS-LINKS-001; where the instructions conflict with
-   the v1.3 Bible, the Bible controls. One package, one branch, one
-   reviewable outcome.
-4. `docs/INITIATIVE_CHECKLIST.md` — answer it in every package handoff.
-5. Status (2026-07-16): PS-PLAN-002 ✔, PS-RULES-001 ✔,
-   PS-BRAND-NAV-001 / PS-INTERVIEW-002 / PS-FEED-002 delivered as
-   public-safe slices; **PS-JOURNAL-002 is owner-held** ("hold off on
-   the journal"); PS-QUALIFY-001, PS-RESUME-001, PS-CONSTELLATION-001
-   are auth-gated for the private phase.
-
-The Bible governs product direction; the repository governs current
-implementation. When they conflict, report the conflict before coding.
-The guardrail suite `tests/test_site_rules.py` must stay green.
+The guardrail suites `tests/test_site_rules.py` and
+`tests/test_governance_pointers.py` must stay green.
 
 - Treat `AGENTS.md` as the shared PeerSlate product and quality rules.
+- Treat `docs/PEERSLATE_SITE_RULES.md` as binding where it does not conflict
+  with the current baseline, Bible, Roadmap, or Document Control record.
 - Treat `docs/AI_WORKFLOW.md` as the canonical Git, branch, handoff, pull-request, deployment, and cleanup workflow. Read it in full before repository work.
-- Read the four source-of-truth documents listed there before planning changes.
+- Read the current baseline, document-control record, and assigned initiative
+  package before planning changes.
 - Start in plan mode and inspect the repository before editing.
 - At the start of every session, inspect `git status`, the current branch, both remotes, and the latest commit before editing.
 - `origin` is Azure DevOps and the only source of truth. `github` is a backup mirror. There is no active remote named `azure`.

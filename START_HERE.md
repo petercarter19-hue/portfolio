@@ -5,13 +5,21 @@ This is the mandatory first file for every Cowork, Claude Code, Codex, human dev
 ## 1. Synchronize the authority
 
 ```bash
+git status --short --branch
+git branch --show-current
+git remote get-url origin
+git remote get-url github
 git fetch origin --prune
 git switch main
 git pull --ff-only origin main
 git status --short
 ```
 
-Stop if `main` does not fast-forward, the worktree is dirty, or `origin` is not the authoritative Azure DevOps remote. Do not copy a repository folder between computers as a synchronization method.
+Inspect before switching. If the checkout is dirty, contains an untracked file,
+or is already on another task branch, identify and preserve that work before any
+branch change. Use a clean task worktree when that is safer. Stop if `main` does
+not fast-forward or `origin` is not the authoritative Azure DevOps remote. Do
+not copy a repository folder between computers as a synchronization method.
 
 ## 2. Read in this order
 
@@ -23,9 +31,14 @@ Stop if `main` does not fast-forward, the worktree is dirty, or `origin` is not 
 6. The assigned initiative `README.md`
 7. Relevant architecture decisions and evidence linked by that initiative
 
+`docs/governance/DOCUMENT_CONTROL.md` records the authority order when an older
+repository document conflicts with the current Bible or Roadmap.
+
 ## 3. Confirm before writing
 
-Confirm the package ID, branch owner, files/domains reserved, migration owner, entry gate, current production commit, and next required evidence. Create a work branch from current `origin/main`.
+Confirm the package ID, manager, branch owner, files/domains reserved, migration
+owner, entry gate, current production baseline, and next required evidence.
+Create a work branch from current `origin/main`.
 
 Stop and report when authority, ownership, identity boundary, migration ownership, or current document version is unclear. Never guess.
 

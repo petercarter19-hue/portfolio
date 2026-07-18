@@ -29,12 +29,18 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 
 ## Source of truth
 
-**v1.3 (2026-07-16):** `PeerSlate_Company_and_Product_Bible_v1.3.docx`
-(repo root) and `docs/PEERSLATE_SITE_RULES.md` now govern product
-direction, language, navigation, Community behavior, AI behavior, and
-brand (Iris Foundry). Where older documents below conflict with them,
-v1.3 wins — report the conflict. Version 1.2 remains in the repository
-as the prior decision record.
+The current authority is the Bible, Roadmap, Sync Standard, and design baseline
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible + Roadmap v2.3 as of
+2026-07-18). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
+Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
+as decision history or supporting detail only. Where they conflict with v2.3,
+v2.3 wins and the conflict must be reported rather than implemented.
+
+**Manager assignment (owner decision, 2026-07-18):** ChatGPT Work is the
+PeerSlate coordination manager. It owns package sequencing, governance truth,
+handoff review, merge readiness, and release verification. ChatGPT Codex owns
+the backend convergence lane; Claude Code owns the public résumé and Interview
+Studio front-end lane. Each writer uses a separate task branch.
 
 Before changing résumé or Slate Board code, read these repository documents in this order:
 

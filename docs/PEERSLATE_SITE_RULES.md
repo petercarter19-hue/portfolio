@@ -2,7 +2,16 @@
 
 **Version:** 1.0  
 **Approved:** July 16, 2026  
-**Status:** Locked unless Peter Carter deliberately changes the Company & Product Bible
+**Status:** Subordinate implementation rules; current Bible/Roadmap v2.3 control conflicts
+
+> **Authority correction — 2026-07-18:** This file was written during the
+> v1.3/Iris program state. The Bible and Roadmap named in
+> `docs/governance/CURRENT_BASELINE.yaml` now control. In particular: Capture is
+> the private original/source intake; reviewed canonical Moment and governed
+> placement follow later; Journal UI is on hold; Deep Navy Gold is the approved
+> shared theme; and only the résumé refinement plus Interview public/private
+> gate are currently authorized public changes. Unconflicted privacy, ownership,
+> accessibility, data-rights, and truthfulness rules below remain binding.
 
 These rules govern product copy, information architecture, data behavior, AI behavior, design, implementation, and release decisions. They apply to human contributors and AI coding agents.
 

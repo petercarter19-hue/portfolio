@@ -1,42 +1,50 @@
-# PeerSlate — Active Initiatives & Lane Assignments
+# PeerSlate — Active Initiatives and Lane Assignments
 
-_Last updated: 2026-07-18. This is the coordination record for parallel work across
-three delivery lanes. Update it whenever a package changes owner or status._
+_Updated 2026-07-18 by PS-BASELINE-001._
 
-## How we run in parallel (the operating model)
-Three lanes run at once under **one writer per branch** and **separate file ownership**,
-so the lanes never collide. **Cowork / Claude is the manager:** it assigns work, keeps
-this file and `CURRENT_STATE.md` current, and reviews each lane's completion report
-before the next package starts.
+## Operating model
 
-| Lane | Owner (tool) | Branch prefix | Owns these files | Must NOT touch |
+**ChatGPT Work is the PeerSlate manager.** It owns package sequencing, governance truth, lane boundaries, handoff review, merge readiness, and release verification. Product implementation stays with one writer per branch.
+
+| Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| **Governance / orchestration** | Cowork / Claude (Pete's manager) | `work/YYYY-MM-DD-gov-*` | `START_HERE.md`, `docs/governance/*`, `CLAUDE.md`, `AGENTS.md`, guardrail tests | product routes, migrations, theme |
-| **Public experience (front-end)** | **Claude Code** | `work/YYYY-MM-DD-resume-*`, `work/YYYY-MM-DD-studio-*` | `templates/resume2.html`, `templates/interview_studio.html`, their CSS/JS, `tests/test_resume2.py`, `tests/test_interview_studio.py` | auth, DB, capture backend, migrations |
-| **Backend convergence (behind-the-scenes)** | **Codex / GPT** | `work/YYYY-MM-DD-capture-*`, `work/YYYY-MM-DD-moment-*` | capture / Moment / placement services, migrations, `dbo.*`, backend tests | public HTML templates, theme, nav |
+| Governance and orchestration | ChatGPT Work | PS-BASELINE-001 closeout | startup files, `docs/governance/*`, initiative controls, guardrail tests | product routes, migrations, public theme |
+| Backend convergence | ChatGPT Codex | PS-CAPTURE-002 | private Capture service/routes, `dbo.*`, migration, backend tests, minimal private Capture controls | public résumé/Studio templates, theme, global nav, auth rewrite |
+| Public experience | Claude Code | PS-RESUME-PUBLIC-REFINE-001 | public résumé template/CSS/JS and focused tests | auth, database, Capture, Interview Studio, global theme/nav |
 
-Rules that keep it safe (from Sync Standard v1.1 and `docs/AI_WORKFLOW.md`):
-- Start every branch from current `origin/main`. **Never work on `main`.**
-- **One writer per branch.** Do not continue or merge another agent's branch without an explicit handoff naming the branch and the exact full commit SHA.
-- Every package closes with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` (technical record **and** plain-English owner translation).
-- Merge through an **Azure pull request (squash)**; delete the source branch after merge.
+## Parallel start gate
 
-## Active now
-- **PS-GOV-001 — Repository authority + startup enforcement**
-  - Owner: Cowork / Claude · Branch: `work/2026-07-18-ps-gov-001` · Status: **In Build → ready for PR**
-  - Outcome: every tool and PC starts from one authority chain without a verbal handoff from Pete.
+The two product packages may start in parallel only after the PS-BASELINE-001 Azure squash merge is present on `origin/main`. Each writer must fetch, create its own branch from that exact current tip, and record the full base SHA in its first handoff.
 
-## Authorized next (in order)
-1. **PS-BASELINE-001** — close only the remaining audit gaps; refresh `CURRENT_STATE.md`. · Owner: Cowork/Claude + Pete.
-2. **PS-RESUME-PUBLIC-REFINE-001** — tighten the public résumé (fix repeated hierarchy, shorten the default scan), preserve meaning, no backend-source fork. · Owner: **Claude Code**. · Runs in parallel with #4.
-3. **PS-INTERVIEW-PUBLIC-GATE-001** — separate the public demo from authenticated private practice; progressive layering. · Owner: **Claude Code**. · Start only after route + identity boundaries are verified.
-4. **PS-CAPTURE-002** — capture lifecycle: correction / archive / delete / export over the existing private source. · Owner: **Codex**. · Separate branch + file lane from the résumé work.
-5. **PS-MOMENT-001 → PS-PLACEMENT-001** — reviewed canonical Moment boundary, then create-once / place-many via references (no copied text). · Owner: **Codex**.
+### PS-CAPTURE-002 — prepared for ChatGPT Codex
+
+- Branch when accepted: `work/2026-07-18-capture-002` (or the actual start date).
+- Source package: `docs/initiatives/PS-CAPTURE-002/README.md`.
+- Outcome: owner-scoped correction, archive/restore, explicit delete, and versioned per-capture export over PS-CAPTURE-001.
+- Exit gate: migration up/down evidence, negative authorization tests, no automatic publishing, focused and regression tests green, completion report reviewed.
+
+### PS-RESUME-PUBLIC-REFINE-001 — prepared for Claude Code
+
+- Branch when accepted: `work/2026-07-18-resume-public-refine` (or the actual start date).
+- Source package: `docs/initiatives/PS-RESUME-PUBLIC-REFINE-001/README.md`.
+- Outcome: less repeated hierarchy and a shorter default résumé scan using accessible progressive disclosure, with the same meaning and source data.
+- Exit gate: desktop/mobile/accessibility evidence, focused and site-rule tests green, completion report reviewed.
+
+## Sequenced after the parallel wave
+
+1. **PS-INTERVIEW-PUBLIC-GATE-001:** Claude Code, separate branch, only after the route and authenticated-private boundary is defined.
+2. **PS-MOMENT-001:** ChatGPT Codex, only after PS-CAPTURE-002 proves source lifecycle and revision behavior.
+3. **PS-PLACEMENT-001:** ChatGPT Codex, only after the canonical Moment boundary exists; placement stores references, not copied raw text.
 
 ## Held
-- **PS-JOURNAL-001 (Journal UI)** — on hold by explicit owner decision until restarted.
 
-## Do-not-do list (from Roadmap v2.3 §20)
-- No second résumé dataset; no private history on the public Studio route.
-- No raw-capture text duplicated straight into surfaces (follow Capture → review → canonical Moment → placement).
-- No auth rewrite; no Journal UI until restarted; no FitSlate / job feed / opaque fit score.
+- **PS-JOURNAL-001:** Journal UI remains on hold by explicit owner decision.
+
+## Shared rules
+
+- Fetch `origin`; never work directly on `main`.
+- One short-lived `work/YYYY-MM-DD-task-name` branch and one active writer per package.
+- Handoff requires the branch name and exact full commit SHA.
+- Merge through an Azure pull request with squash; delete the task branch afterward.
+- Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`.
+- Do not duplicate raw Capture text into surfaces, introduce a second résumé dataset, rewrite authentication, or claim private behavior the backend does not enforce.

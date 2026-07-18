@@ -1,35 +1,56 @@
 # PeerSlate — Current State
 
-_Last updated: 2026-07-18 · Sources: Roadmap v2.3 Appendix D + live repository inspection._
-_Supersede this file after every production-changing merge (rule PS-GOV-001-R02)._
+_Verified 2026-07-18 by PS-BASELINE-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
 
-## Production baseline
-- Authoritative remote: **origin** (Azure DevOps). GitHub is a backup mirror only.
-- Branch / commit: **main @ d5dd7bd** (`d5dd7bdacc52b7324cb679c6c936eb1ff517ab28`).
-- Pipeline: **78 green**. Live URL: **https://peerslate.com**. Theme: **Deep Navy Gold**.
-- Open PRs at baseline: none.
+## Verified production and repository baseline
 
-## What is real and reusable — do NOT rebuild
-- **Identity (PS-AUTH-001)** — email/password, email OTP, Google, Microsoft personal; owner bootstrap; opaque UUID; private-by-default; forged-header rejection; verified two-owner isolation.
-- **Owner Settings (PS-OWNER-001 slice 1)** — protected `/app/settings` with account information and sign-out.
-- **Private text Capture (PS-CAPTURE-001)** — protected composer, recent-owner list, `dbo.captures`, owner-resolving procedures, validation, audit-safe logs, tests, migration, production verification.
-- **Deep Navy Gold (PS-THEME-001 / PR 58)** — shared owner theme shipped without breaking Capture or Settings. Five approved owner storyboards are the controlling owner dark-theme visual baseline: `docs/governance/approved_owner_visual_baseline/`.
+- `origin` is Azure DevOps and the only source of truth. `github` is a backup mirror whose pushes are on hold.
+- The audit started from `origin/main @ ec6eae83feedff45d8fe87600e1031253cfd6021`, the squash merge of Azure PR 59 (PS-GOV-001).
+- Azure pipeline 79 succeeded for that commit. The last application-behavior change remains `d5dd7bdacc52b7324cb679c6c936eb1ff517ab28`; PR 59 changed governance only.
+- Production probes returned 200 for `/`, `/petec/resume`, and `/interview-studio`. `/petec/resume2` redirected to `/petec/resume`. `/app/capture` and `/app/settings` redirected unauthenticated requests to sign-in.
+- The approved shared theme is Deep Navy Gold.
+- There were no active Azure pull requests when the audit began.
 
-## On hold
-- **PS-JOURNAL-001 (Journal UI)** — explicit owner decision ("hold off on the journal"). Backend contracts may stay Journal-ready; no Journal UI work until the owner restarts it.
+## Real and reusable — do not rebuild
 
-## Phase status (Roadmap v2.3, evidence-based — polish is not proof)
-| Phase | Status | Next gate |
+- **Identity (PS-AUTH-001):** external identity, owner sessions, opaque owner IDs, and two-owner isolation.
+- **Owner Settings (PS-OWNER-001 slice 1):** protected `/app/settings` and sign-out.
+- **Private text Capture (PS-CAPTURE-001):** protected create/list experience backed by `dbo.captures`, owner-derived database procedures, validation, privacy-safe logging, migration evidence, and tests.
+- **Public résumé:** canonical `/petec/resume`, existing redirects, download path, Ask Pete AI hooks, and the shared résumé dataset.
+- **Interview Studio public slice:** a public browser-local practice experience. It is not an authenticated private history system.
+- **Deep Navy Gold (PS-THEME-001):** shared owner visual foundation and approved mockups under `docs/governance/approved_owner_visual_baseline/`.
+
+## Manager and delivery lanes
+
+ChatGPT Work is the owner-designated manager. It maintains repository truth, sequences packages, reviews handoffs, and verifies merges and releases. ChatGPT Codex owns backend convergence. Claude Code owns assigned public front-end work. Each package has one writer, one short-lived branch, and a separate file reservation.
+
+Two packages are prepared to start in parallel from the same post-baseline `origin/main`:
+
+1. **PS-CAPTURE-002 — ChatGPT Codex:** correction, archive/restore, explicit delete, and per-capture export over the existing private source.
+2. **PS-RESUME-PUBLIC-REFINE-001 — Claude Code:** shorten and clarify the public résumé's default scan through hierarchy and progressive disclosure without a data fork.
+
+Interview Studio refinement is deliberately not bundled into the résumé package. It waits for PS-INTERVIEW-PUBLIC-GATE-001 so its public/private route and identity boundary can be handled separately.
+
+## Roadmap position
+
+| Area | Evidence state | Next gate |
 |---|---|---|
-| 0 · Program reset / current-state audit | In Definition | Approve PS-GOV-001 + PS-BASELINE-001 |
-| 1 · Website + language consolidation | In Build | Release résumé refine, then Studio gate |
-| 2 · Identity / environments / delivery safety | In Verification | Close residual environment/secret/telemetry controls |
-| 3 · Canonical data / migrations / authz / media | In Build | Baseline + build PS-CAPTURE-002 |
-| 4 · Owner shell + viewer modes | In Build | Decide after Moment/placement, or in a parallel lane |
-| 5 · Universal Capture + private Journal | In Build | PS-CAPTURE-002 → PS-MOMENT-001 → PS-PLACEMENT-001 |
-| 6–12 | Planned / Not Assessed | Later, each separately gated |
+| Governance and baseline | Complete through PS-BASELINE-001 | Keep records synchronized at each handoff |
+| Public résumé | Shipped; refinement prepared | PS-RESUME-PUBLIC-REFINE-001 |
+| Interview Studio | Public slice shipped | Separate route/private-practice gate after résumé |
+| Capture | Private create/list shipped | PS-CAPTURE-002 lifecycle |
+| Canonical Moment | Not implemented | Start only after Capture lifecycle is verified |
+| Placement references | Not implemented | Start only after Moment boundary is verified |
+| Journal UI | On hold | Owner must explicitly restart it |
 
-## Test & release safety
-- Guardrail suites **`tests/test_site_rules.py`** and **`tests/test_governance_pointers.py`** must stay green.
-- Deployment is **Azure Pipelines only** (`azure-pipelines.yml`, `docs/AZURE_DEVOPS_DEPLOYMENT_RUNBOOK.md`). GitHub Actions deployment is intentionally disabled.
-- Never claim a change is live until the Azure pipeline succeeds and `https://peerslate.com` is verified.
+## Honest boundaries
+
+- No Capture correction, archive/restore, delete, or export is claimed live yet.
+- No canonical Moment or placement-reference model is implemented yet.
+- No private Interview Studio history is claimed on the public route.
+- No second résumé dataset, Journal UI, authentication rewrite, or public navigation/theme redesign is authorized in the active wave.
+- The GitHub mirror is not current and must not be used as a release source.
+
+## Required release evidence
+
+Both guardrail suites, package-focused tests, and the Azure pipeline must pass. A package is not “live” until its Azure squash merge is deployed and the affected production boundary is verified.
