@@ -1,13 +1,15 @@
 :root {
-    --lr-ink: #0a1b36;
+    /* Deep Navy Gold (2026-07-17): Living Résumé ledger palette onto the
+       shared navy + marigold. */
+    --lr-ink: #101b30;
     --lr-ink-soft: #43546c;
     --lr-paper: #fbfdff;
-    --lr-cloud: #eef4fb;
-    --lr-line: #cbd9ea;
-    --lr-blue: #2568e8;
-    --lr-indigo: #4f5bd5;
-    --lr-cyan: #2ec8d3;
-    --lr-amber: #d7a33e;
+    --lr-cloud: #eef2f8;
+    --lr-line: #cbd5e5;
+    --lr-blue: #203767;
+    --lr-indigo: #203767;
+    --lr-cyan: #2f5296;
+    --lr-amber: #b87900;
     --lr-night: #06162b;
     --lr-display: "Newsreader", Georgia, serif;
     --lr-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -198,7 +200,7 @@
 }
 
 .living-resume-v2-page .profile-tabs--resume .profile-tabs__ask .hero-ai-search:focus-within .hero-ai-search__box {
-    border-color: #2ec8d3;
+    border-color: #2f5296;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 90%),
         0 0 0 3px rgb(46 200 211 / 28%);
@@ -220,7 +222,7 @@
 .living-resume-v2-page .profile-tabs--resume .profile-tabs__ask .hero-ai-search__button {
     min-height: 2rem;
     padding: 0 0.9rem;
-    background: linear-gradient(180deg, #2ec8d3, #167b87);
+    background: linear-gradient(180deg, #2f5296, #1f3a69);
     border-radius: 999px;
     color: #04222a;
     font-size: 0.84rem;
@@ -236,7 +238,7 @@
     color: var(--lr-ink);
     background: linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(243 249 255 / 97%));
     border: 1px solid rgb(78 163 255 / 30%);
-    border-left: 3px solid #2ec8d3;
+    border-left: 3px solid #2f5296;
     border-radius: 1rem;
     box-shadow: 0 1rem 2.6rem rgb(23 64 116 / 18%);
 }

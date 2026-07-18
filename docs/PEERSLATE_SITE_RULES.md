@@ -109,10 +109,22 @@ These rules govern product copy, information architecture, data behavior, AI beh
 
 ## 11. Brand and interface rules
 
-72. Iris Foundry is the shared design system.
-73. Global tokens: canvas `#F7F4EE`, surface `#FFFFFF`, ink `#191821`, primary iris `#5A2D82`, champagne bronze `#B87422`, and success teal `#16705F`.
-74. Each major area receives one room accent: Overview/Iris, Resume/Bronze, Interview/Teal, Story/Plum, Slate Board/Amber, Community/Pine, and AI/Ultraviolet.
-75. Neutral by default, expressive at the focal point, semantic after interaction, and memorable by page.
+72. Deep Navy Gold is the shared light-theme design system
+    (PS-BRAND-NAV-002, 2026-07-17), replacing Iris Foundry. From the
+    PeerSlate Color Direction Study "Deep Navy Gold" direction: one
+    authoritative navy + marigold system applied consistently across
+    every room, rather than six competing room hues.
+73. Global tokens: canvas `#F6F7FA`, surface `#FFFFFF`, ink `#141A28`,
+    primary ink-navy `#203767` (strong `#132447`), marigold highlight
+    `#B87900` (text-safe `#8A5A00`, soft fill `#F4E4B4`), and success
+    teal `#1E725F`. Contrast (from the study): ink-on-canvas 16.2:1,
+    white-on-primary 11.6:1, primary-on-accent-soft 9.2:1.
+74. Navy is the single accent for primary actions, headings, active and
+    selected states across every room; marigold is the shared highlight
+    for evidence chips, progress, and small gold moments; teal is
+    reserved for success. The per-room `data-room` mechanism is retained
+    but all rooms now point at the one navy accent.
+75. Neutral by default, expressive at the focal point, semantic after interaction, and cohesive across the whole product.
 76. Do not replace every blue surface with purple, tint every card, add visible grain, use colored shadows globally, or create a neon/gaming aesthetic.
 77. Raise only items that can be acted on, selected, entered, or opened.
 78. Target WCAG 2.2 AA; support keyboard navigation, visible focus, screen readers, reduced motion, 200% zoom, long content, missing media, and mobile touch targets.

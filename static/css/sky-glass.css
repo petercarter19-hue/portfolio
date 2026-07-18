@@ -151,13 +151,13 @@ body.slate-light.the-slate-page .profile-tab {
 
 body.slate-light.the-slate-page .profile-tab::after {
     height: 2px;
-    background: #4f5bd5;
+    background: #203767;
 }
 
 body.slate-light.the-slate-page .profile-tab:hover,
 body.slate-light.the-slate-page .profile-tab:focus-visible,
 body.slate-light.the-slate-page .profile-tab[aria-current="page"] {
-    color: #4f5bd5;
+    color: #203767;
 }
 
 body.slate-light.the-slate-page .profile-tabs__ask-btn {

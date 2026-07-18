@@ -12,13 +12,14 @@
    Capture lives in the community sidebar instead. */
 
 #feed-app {
-  --indigo: #4F5BD5;
-  --indigo-strong: #3E49C6;
-  --indigo-soft: #EEF0FF;
-  --azure: #4EA3FF;
-  --cyan: #2EC8D3;
-  --amber: #D7A33E;
-  --ink: #0A1B36;
+  /* Deep Navy Gold (2026-07-17): feed onto the shared navy + marigold. */
+  --indigo: #203767;
+  --indigo-strong: #132447;
+  --indigo-soft: #E7ECF4;
+  --azure: #2f5296;
+  --cyan: #2f5296;
+  --amber: #B87900;
+  --ink: #101b30;
   --text: #1B2C47;
   --muted: #6F7F99;
   --line: #DDE4F0;
@@ -69,8 +70,8 @@
   .nav { display:flex; flex-direction:column; gap:6px; }
   .nav-item { display:flex; align-items:center; gap:12px; min-height:44px; padding:0 12px; border-radius:12px; color:#52637D; font-size:14px; font-weight:650; text-decoration:none; }
   .nav-item:hover { background:#F2F5FB; color:#3D4E6B; }
-  .nav-item.active { color:#3C4BD6; background:#ECEFFF; }
-  .nav-item.active:hover { background:#ECEFFF; color:#3C4BD6; }
+  .nav-item.active { color:#203767; background:#E7ECF4; }
+  .nav-item.active:hover { background:#E7ECF4; color:#203767; }
   /* The Break, embedded in the community shell: its bk-* styles come from
      style.css; this just seats the block inside the feed's main column. */
   .break-inner { width:min(100%, 1260px); }
@@ -110,7 +111,7 @@
   .side-week { margin:18px 4px 0; padding:14px 15px; background:#F5F8FE; border:1px solid #E3E9F4; border-radius:14px; }
   .side-week-title { margin:0 0 9px; font-size:10px; text-transform:uppercase; letter-spacing:1.35px; font-weight:800; color:#92A1B8; }
   .side-week-list { list-style:none; margin:0; padding:0; display:grid; gap:7px; color:#5A6B85; font-size:12px; }
-  .side-week-list strong { color:#3C4BD6; font-weight:800; }
+  .side-week-list strong { color:#203767; font-weight:800; }
   .sidebar-bottom { position:absolute; bottom:19px; left:17px; right:17px; display:flex; flex-direction:column; gap:6px; }
   .user-row { display:flex; align-items:center; gap:10px; padding:10px 12px; }
   .avatar { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:800; font-size:12px; flex:0 0 auto; box-shadow:0 0 0 3px rgba(255,255,255,.9); }
@@ -122,7 +123,7 @@
   .btn:hover { background:#F7F9FD; }
   .btn.primary { background:var(--indigo); border-color:var(--indigo); color:#fff; box-shadow:0 10px 24px rgba(79,91,213,.22); }
   .btn.primary:hover { background:var(--indigo-strong); border-color:var(--indigo-strong); }
-  .btn.soft { background:var(--indigo-soft); border-color:#DDE1FF; color:#4654D5; }
+  .btn.soft { background:var(--indigo-soft); border-color:#CDD8EA; color:#203767; }
   .btn.icon-only { width:42px; padding:0; }
 
   .main { min-width:0; padding:28px 42px 70px; }
@@ -283,13 +284,13 @@
   .close{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#75839A;display:grid;place-items:center}
   .close:hover { background:#F5F7FC; }
   .listening-body { padding:35px 38px 30px; text-align:center; }
-  .listening-ring { width:128px;height:128px;margin:0 auto 25px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#4F5BD5 0 38%,#7C86E8 39% 50%,#DFE3FF 51% 62%,#F5F6FF 63%);box-shadow:0 20px 55px rgba(79,91,213,.25);color:#fff; }
+  .listening-ring { width:128px;height:128px;margin:0 auto 25px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#203767 0 38%,#3a5aa0 39% 50%,#DFE6F5 51% 62%,#F5F7FC 63%);box-shadow:0 20px 55px rgba(32,55,103,.25);color:#fff; }
   .listening-title { font-size:21px;color:var(--ink);font-weight:800;margin:0 0 8px}
   .listening-help{color:#76869D;font-size:13px;margin:0 0 20px}
   .live-transcript{font-family:var(--serif);font-size:26px;line-height:1.45;color:#273852;max-width:620px;margin:0 auto 28px;min-height:112px}
   .live-transcript .cursor{display:inline-block;width:2px;height:27px;background:var(--indigo);vertical-align:-4px;margin-left:4px}
   .audio-level { height:46px; display:flex; align-items:center; justify-content:center; gap:5px; margin:0 0 28px; }
-  .audio-level i { display:block;width:4px;border-radius:3px;background:linear-gradient(#55C5D1,#4F5BD5); }
+  .audio-level i { display:block;width:4px;border-radius:3px;background:linear-gradient(#3a5aa0,#203767); }
   .audio-level i:nth-child(5n){height:38px}.audio-level i:nth-child(5n+1){height:14px}.audio-level i:nth-child(5n+2){height:27px}.audio-level i:nth-child(5n+3){height:21px}.audio-level i:nth-child(5n+4){height:33px}
   .modal-actions{display:flex;align-items:center;justify-content:center;gap:11px}
   .stop-btn{height:46px;padding:0 22px;border:0;border-radius:14px;background:var(--indigo);color:#fff;font-weight:800}

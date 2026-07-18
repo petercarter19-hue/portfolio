@@ -42,17 +42,19 @@ If any source document is missing, stop and report the missing path. Do not reco
 
 ## Approved design foundation
 
-- Foundation C is approved.
+- **Deep Navy Gold** is the approved shared light-theme system
+  (PS-BRAND-NAV-002, 2026-07-17), replacing Iris Foundry and the earlier
+  Foundation C indigo. One authoritative navy + marigold system applied
+  consistently across every room.
 - Newsreader is for cinematic/editorial headings.
 - Inter is for navigation, controls, forms, metadata, and product content.
 - Light-first, cinematic, premium glass UI.
-- Product Indigo `#4F5BD5`
-- Connection Azure `#4EA3FF`
-- AI Cyan `#2EC8D3`
-- Evidence Amber `#D7A33E`
-- Midnight Ink `#0A1B36`
-- Cloud White `#F6F8FC`
-- Pink, rose, magenta, and coral are not semantic UI accents.
+- Cloud White canvas `#F6F7FA`, surface `#FFFFFF`
+- Ink Navy text `#141A28`
+- Primary Navy `#203767` (strong `#132447`) — primary actions, headings, active/selected
+- Marigold `#B87900` (text-safe `#8A5A00`, soft `#F4E4B4`) — evidence chips, progress, gold highlights
+- Success Teal `#1E725F`
+- Pink, rose, magenta, coral, and purple/iris are not semantic UI accents.
 - Use generous vertical spacing and progressive disclosure. Do not force the experience above the fold.
 - One dominant product object per opening viewport.
 - Never use the retired résumé example. Never use the MICAP example in redesigned résumé fixtures or visible copy.

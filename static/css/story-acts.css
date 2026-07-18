@@ -29,10 +29,10 @@ body.story-acts-page :is(h1, h2, h3) {
 .story-acts {
     --st-ink: #0a1b36;
     --st-muted: #4c5d75;
-    --st-indigo: #4f5bd5;
+    --st-indigo: #203767;
     --st-azure: #4ea3ff;
-    --st-cyan: #2ec8d3;
-    --st-amber: #d7a33e;
+    --st-cyan: #2f5296;
+    --st-amber: #b87900;
     --st-cloud: #f6f8fc;
     --st-night: #060b18;
     --st-card-radius: 0.85rem;
@@ -471,7 +471,7 @@ body.story-acts-page :is(h1, h2, h3) {
     height: 2rem;
     place-items: center;
     color: #3d63c4;
-    background: rgb(79 91 213 / 9%);
+    background: rgb(32 55 103 / 9%);
     border-radius: 0.55rem;
 }
 
@@ -539,7 +539,7 @@ body.story-acts-page :is(h1, h2, h3) {
     right: 0.8rem;
     bottom: 0.3rem;
     z-index: 0;
-    color: rgb(79 91 213 / 30%);
+    color: rgb(32 55 103 / 30%);
     font-family: var(--st-display);
     font-size: clamp(4.25rem, 5.5vw, 6.5rem);
     font-weight: 500;
@@ -818,7 +818,7 @@ body.story-acts-page :is(h1, h2, h3) {
     margin-top: 0.9rem;
     padding: 0.6rem 1rem;
     color: #fff;
-    background: #167b87;
+    background: #1f3a69;
     border: 0;
     border-radius: 999px;
     cursor: pointer;
@@ -987,7 +987,7 @@ body.story-acts-page :is(h1, h2, h3) {
     bottom: 0.35rem;
     left: 0.27rem;
     width: 1px;
-    background: linear-gradient(180deg, #4ea3ff, #2ec8d3, #d7a33e);
+    background: linear-gradient(180deg, #4ea3ff, #2f5296, #b87900);
     content: "";
 }
 
@@ -1009,7 +1009,7 @@ body.story-acts-page :is(h1, h2, h3) {
     left: 0.27rem;
     width: 0.55rem;
     height: 0.55rem;
-    background: #2ec8d3;
+    background: #2f5296;
     border: 2px solid #173f82;
     border-radius: 50%;
     box-shadow: 0 0 0 2px rgb(46 200 211 / 20%);
@@ -1018,12 +1018,12 @@ body.story-acts-page :is(h1, h2, h3) {
 }
 
 .sc-signal--orbit li:nth-child(2)::before {
-    background: #d7a33e;
+    background: #b87900;
     box-shadow: 0 0 0 3px rgb(215 163 62 / 18%);
 }
 
 .sc-signal--path ol::before {
-    background: linear-gradient(180deg, #2ec8d3, #4ea3ff, #d7a33e);
+    background: linear-gradient(180deg, #2f5296, #4ea3ff, #b87900);
 }
 
 .sc-signal--waypoint {

@@ -38,3 +38,6 @@ Thumbs.db
 
 # Local AI/tool settings
 .claude/settings.local.json
+
+# Local design reference material (not app code)
+Design ideas/

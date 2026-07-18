@@ -46,13 +46,18 @@
 }
 
 .resume2-story {
-    --r2-ink: #0a1b36;
+    /* Deep Navy Gold (2026-07-17): the résumé's own palette moves off
+       Foundation-C periwinkle/teal onto the shared navy + marigold. Ink
+       stays a deep navy for the name; indigo/azure/cyan collapse to the
+       one navy primary (a slightly lighter navy for AI/secondary spots so
+       gradients keep depth); amber becomes marigold. */
+    --r2-ink: #101b30;
     --r2-muted: #43546c;
-    --r2-indigo: #4f5bd5;
-    --r2-azure: #4ea3ff;
-    --r2-cyan: #2ec8d3;
-    --r2-amber: #d7a33e;
-    --r2-cloud: #f6f8fc;
+    --r2-indigo: #203767;
+    --r2-azure: #2f5296;
+    --r2-cyan: #2f5296;
+    --r2-amber: #b87900;
+    --r2-cloud: #f6f7fa;
     --r2-display: "Newsreader", "Newsreader", Georgia, serif;
     --r2-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
     position: relative;
@@ -371,8 +376,8 @@
 .r2-ai-chip:hover,
 .r2-ai-chip:focus-visible {
     color: #fff;
-    background: #167b87;
-    border-color: #167b87;
+    background: #1f3a69;
+    border-color: #1f3a69;
 }
 
 /* The shared Ask AI form, recut for this card: pill input bar with a
@@ -428,7 +433,7 @@
 }
 
 .r2-ai-card .hero-ai-search:focus-within .hero-ai-search__box {
-    border-color: #2ec8d3;
+    border-color: #2f5296;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 90%),
         0 0 0 3px rgb(46 200 211 / 26%),
@@ -436,7 +441,7 @@
 }
 
 .r2-ai-card .hero-ai-search__button {
-    background: linear-gradient(180deg, #2ec8d3, #167b87);
+    background: linear-gradient(180deg, #2f5296, #1f3a69);
     border-radius: 999px;
     color: #04222a;
     font-weight: 850;
@@ -464,7 +469,7 @@
     color: var(--r2-ink);
     background: linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(243 249 255 / 97%));
     border: 1px solid rgb(78 163 255 / 30%);
-    border-bottom: 3px solid #2ec8d3;
+    border-bottom: 3px solid #2f5296;
     border-left: 1px solid rgb(78 163 255 / 30%);
     border-radius: 1.1rem;
     box-shadow:
@@ -815,7 +820,7 @@
     align-content: center;
     justify-items: center;
     color: #fff;
-    background: linear-gradient(145deg, #173f82, #167b87);
+    background: linear-gradient(145deg, #173f82, #1f3a69);
     border: 0;
     text-align: center;
 }
@@ -1138,8 +1143,8 @@
 .r2-exp-tags span {
     padding: 0.35rem 0.75rem;
     color: #24405f;
-    background: rgb(79 91 213 / 10%);
-    border: 1px solid rgb(79 91 213 / 24%);
+    background: rgb(32 55 103 / 10%);
+    border: 1px solid rgb(32 55 103 / 24%);
     border-radius: 999px;
     font: 650 0.74rem/1.2 var(--r2-ui);
 }
@@ -1152,7 +1157,7 @@
     margin-top: 1.5rem;
     padding: 0.65rem 1.1rem;
     color: #fff;
-    background: #167b87;
+    background: #1f3a69;
     border: 0;
     border-radius: 999px;
     cursor: pointer;
@@ -1277,9 +1282,9 @@
     min-height: 13rem;
     padding: 1.75rem 1.5rem 1.5rem;
     background:
-        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #4f5bd5) 9%, transparent), transparent 42%),
+        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #203767) 9%, transparent), transparent 42%),
         rgb(255 255 255 / 80%);
-    border: 1px solid color-mix(in srgb, var(--edu-accent, #4f5bd5) 30%, rgb(255 255 255 / 82%));
+    border: 1px solid color-mix(in srgb, var(--edu-accent, #203767) 30%, rgb(255 255 255 / 82%));
     border-radius: 1.2rem;
 }
 
@@ -1289,7 +1294,7 @@
     left: 0;
     width: 100%;
     height: 0.3rem;
-    background: linear-gradient(90deg, var(--edu-accent, #4f5bd5), color-mix(in srgb, var(--edu-accent, #4f5bd5) 25%, transparent));
+    background: linear-gradient(90deg, var(--edu-accent, #203767), color-mix(in srgb, var(--edu-accent, #203767) 25%, transparent));
     content: "";
 }
 
@@ -1298,9 +1303,9 @@
     width: 3rem;
     height: 3rem;
     place-items: center;
-    color: var(--edu-accent, #4f5bd5);
-    background: color-mix(in srgb, var(--edu-accent, #4f5bd5) 13%, white);
-    border: 1px solid color-mix(in srgb, var(--edu-accent, #4f5bd5) 35%, white);
+    color: var(--edu-accent, #203767);
+    background: color-mix(in srgb, var(--edu-accent, #203767) 13%, white);
+    border: 1px solid color-mix(in srgb, var(--edu-accent, #203767) 35%, white);
     border-radius: 0.9rem;
 }
 
@@ -1309,8 +1314,8 @@
     align-items: center;
     width: fit-content;
     padding: 0.32rem 0.75rem;
-    color: color-mix(in srgb, var(--edu-accent, #4f5bd5) 40%, #0a1b36);
-    background: color-mix(in srgb, var(--edu-accent, #4f5bd5) 13%, white);
+    color: color-mix(in srgb, var(--edu-accent, #203767) 40%, #0a1b36);
+    background: color-mix(in srgb, var(--edu-accent, #203767) 13%, white);
     border-radius: 999px;
     font-size: 0.7rem;
     letter-spacing: 0.08em;
@@ -1326,7 +1331,7 @@
 }
 
 .r2-edu-date {
-    color: color-mix(in srgb, var(--edu-accent, #4f5bd5) 60%, #0a1b36);
+    color: color-mix(in srgb, var(--edu-accent, #203767) 60%, #0a1b36);
     font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -1341,7 +1346,7 @@
     min-height: 26rem;
     padding: clamp(2rem, 3vw, 3.25rem);
     background:
-        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #4f5bd5) 12%, transparent), transparent 48%),
+        linear-gradient(160deg, color-mix(in srgb, var(--edu-accent, #203767) 12%, transparent), transparent 48%),
         linear-gradient(150deg, rgb(255 255 255 / 92%), rgb(240 246 255 / 80%));
 }
 
@@ -1801,7 +1806,7 @@
     color: var(--r2-ink);
     text-align: left;
     background: linear-gradient(145deg, rgb(255 255 255 / 92%), rgb(244 249 255 / 82%));
-    border: 1px solid rgb(79 91 213 / 14%);
+    border: 1px solid rgb(32 55 103 / 14%);
     border-radius: 0.85rem;
     box-shadow: 0 1px 2px rgb(16 42 92 / 6%), 0 6px 16px rgb(16 42 92 / 5%);
     cursor: pointer;
@@ -1810,7 +1815,7 @@
 
 .r2-skillchip:hover {
     transform: translateY(-1px);
-    border-color: rgb(79 91 213 / 32%);
+    border-color: rgb(32 55 103 / 32%);
     box-shadow: 0 2px 5px rgb(16 42 92 / 8%), 0 12px 26px rgb(16 42 92 / 9%);
 }
 
@@ -1844,7 +1849,7 @@
     color: var(--r2-indigo);
     background: linear-gradient(145deg, rgb(238 240 255 / 96%), rgb(228 236 255 / 90%));
     border-color: var(--r2-indigo);
-    box-shadow: inset 0 0 0 1px var(--r2-indigo), 0 10px 24px rgb(79 91 213 / 20%);
+    box-shadow: inset 0 0 0 1px var(--r2-indigo), 0 10px 24px rgb(32 55 103 / 20%);
 }
 
 .r2-skillchip[aria-expanded="true"] .r2-skillchip__label {
@@ -1870,7 +1875,7 @@
     max-height: calc(100vh - 1.5rem);
     padding: 1.15rem 1.25rem;
     background: linear-gradient(150deg, rgb(255 255 255 / 97%), rgb(238 245 255 / 93%));
-    border: 1px solid rgb(79 91 213 / 16%);
+    border: 1px solid rgb(32 55 103 / 16%);
     border-radius: 1.5rem;
     box-shadow: 0 26px 64px rgb(16 42 92 / 20%), 0 2px 8px rgb(16 42 92 / 8%);
     -webkit-backdrop-filter: blur(16px);
@@ -1916,8 +1921,8 @@
     width: 0.9rem;
     height: 0.9rem;
     background: rgb(252 253 255 / 98%);
-    border-top: 1px solid rgb(79 91 213 / 16%);
-    border-left: 1px solid rgb(79 91 213 / 16%);
+    border-top: 1px solid rgb(32 55 103 / 16%);
+    border-left: 1px solid rgb(32 55 103 / 16%);
     border-radius: 0.24rem 0 0 0;
     transform: translateX(-50%) rotate(45deg);
     transition: left 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -1947,7 +1952,7 @@
 
 .r2-skillpop__close:hover {
     color: var(--r2-ink);
-    background: rgb(79 91 213 / 10%);
+    background: rgb(32 55 103 / 10%);
 }
 
 .r2-skillpop__close svg {
@@ -2844,7 +2849,7 @@
     border-radius: 999px;
 }
 .r2-cert-body h3 { margin: 0.4rem 0 0.15rem; font-size: 1.1rem; }
-.r2-cert-body strong { display: block; color: #4f5bd5; font-size: 0.85rem; }
+.r2-cert-body strong { display: block; color: #203767; font-size: 0.85rem; }
 .r2-cert-body p { margin: 0.3rem 0 0; font-size: 0.82rem; line-height: 1.45; color: #42516a; }
 
 /* --- Achievements card ------------------------------------------------ */
@@ -2869,9 +2874,9 @@
     flex: none;
     width: 2.4rem;
     height: 2.4rem;
-    color: #4f5bd5;
+    color: #203767;
     background: rgb(240 243 255 / 80%);
-    border: 1px solid rgb(79 91 213 / 24%);
+    border: 1px solid rgb(32 55 103 / 24%);
     border-radius: 0.7rem;
 }
 .r2-achieve-item.is-featured .r2-achieve-icon {
@@ -2883,7 +2888,7 @@
 .r2-achieve-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
 .r2-achieve-head h3 { margin: 0; font-size: 0.98rem; line-height: 1.2; }
 .r2-achieve-year { flex: none; font-size: 0.72rem; font-weight: 700; color: #6f7d94; }
-.r2-achieve-body > strong { display: block; margin-top: 0.1rem; font-size: 0.78rem; color: #4f5bd5; }
+.r2-achieve-body > strong { display: block; margin-top: 0.1rem; font-size: 0.78rem; color: #203767; }
 .r2-achieve-body > p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.45; color: #42516a; }
 
 /* --- Narrow screens: everything returns to a single readable column --- */
@@ -2918,7 +2923,7 @@
     --r2-indigo: #405cf5;
     --r2-azure: #4ea3ff;
     --r2-cyan: #159eaa;
-    --r2-amber: #d7a33e;
+    --r2-amber: #b87900;
     --r2-cloud: #f6f8fc;
     --r2-line: rgb(77 116 176 / 21%);
     --r2-shadow: 0 1.4rem 3.6rem rgb(38 76 133 / 14%);
@@ -4181,7 +4186,7 @@
     position: absolute;
     inset: 0.35rem auto 0.35rem 0.75rem;
     width: 2px;
-    background: linear-gradient(#405cf5, #2ec8d3);
+    background: linear-gradient(#405cf5, #2f5296);
     content: "";
 }
 

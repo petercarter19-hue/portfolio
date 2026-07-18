@@ -80,11 +80,11 @@
        these shared names instead of inventing a page-specific palette. */
     --ps-ink-950: #0a1b36;
     --ps-cloud-white: #f6f8fc;
-    --ps-product-indigo: #4f5bd5;
+    --ps-product-indigo: #203767;
     --ps-product-indigo-strong: #3f4ac4;
     --ps-connection-azure: #4ea3ff;
-    --ps-ai-cyan: #2ec8d3;
-    --ps-evidence-amber: #d7a33e;
+    --ps-ai-cyan: #2f5296;
+    --ps-evidence-amber: #b87900;
     --ps-success: #24a36a;
     --ps-warning: #d48727;
     --ps-danger: #b23a2f;
@@ -3079,8 +3079,8 @@ body[data-theme="modern-blue"] {
 .profile-tabs__ask-btn:hover,
 .profile-tabs__ask-btn:focus-visible {
     color: #fff;
-    background: #167b87;
-    border-color: #167b87;
+    background: #1f3a69;
+    border-color: #1f3a69;
 }
 
 /* On the résumé sub-header the tabs are centred, so pin the launcher to the
@@ -3233,13 +3233,13 @@ body.portfolio-shell:not(.living-resume-v2-page) .profile-tab {
 
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tab::after {
     height: 2px;
-    background: #4f5bd5;
+    background: #203767;
 }
 
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tab:hover,
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tab:focus-visible,
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tab[aria-current="page"] {
-    color: #4f5bd5;
+    color: #203767;
 }
 
 /* Launcher pinned to the right of the now-centred tab strip. */
@@ -3293,10 +3293,10 @@ body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .h
 }
 
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search:focus-within .hero-ai-search__box {
-    border-color: #2ec8d3;
+    border-color: #2f5296;
     box-shadow:
         inset 0 1px 0 rgb(255 255 255 / 90%),
-        0 0 0 3px rgb(46 200 211 / 28%);
+        0 0 0 3px rgb(47 82 150 / 28%);
 }
 
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__input {
@@ -3315,9 +3315,9 @@ body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .h
 body.portfolio-shell:not(.living-resume-v2-page) .profile-tabs__ask--overview .hero-ai-search__button {
     min-height: 2rem;
     padding: 0 0.9rem;
-    background: linear-gradient(180deg, #2ec8d3, #167b87);
+    background: linear-gradient(180deg, #2f5296, #1f3a69);
     border-radius: 999px;
-    color: #04222a;
+    color: #ffffff;
     font-size: 0.78rem;
     font-weight: 850;
 }
@@ -3712,11 +3712,11 @@ body[data-theme="modern-blue"] .profile-tabs .profile-tab {
 body[data-theme="modern-blue"] .profile-tabs .profile-tab:hover,
 body[data-theme="modern-blue"] .profile-tabs .profile-tab:focus-visible,
 body[data-theme="modern-blue"] .profile-tabs .profile-tab[aria-current="page"] {
-    color: #4f5bd5;
+    color: #203767;
 }
 
 body[data-theme="modern-blue"] .profile-tabs .profile-tab::after {
-    background: #4f5bd5;
+    background: #203767;
 }
 
 body[data-theme="modern-blue"] .btn-secondary {
@@ -14003,68 +14003,82 @@ button.ts-react:hover { color: #d23b5e; }
    the dark bar, so a stone-on-stone button would vanish). */
 
 /* =====================================================================
-   IRIS FOUNDRY (v1.2, PS-BRAND-NAV-001, 2026-07-16)
-   Shared brand tokens + room-accent plumbing. Rooms are set as
-   data-room on <body> in base.html; components reference
-   --ps-page-accent instead of hardcoding a hue. Neutral by default,
-   expressive at the focal point — no global purple wash (Bible §15).
-   ===================================================================== */
+   DEEP NAVY GOLD (PS-BRAND-NAV-002, 2026-07-17)
+   The shared light-theme brand system, replacing Iris Foundry. From the
+   PeerSlate Color Direction Study "Deep Navy Gold" direction: cloud-white
+   canvas, ink-navy primary, marigold-gold highlight. One authoritative
+   system applied consistently across every room — navy for primary
+   actions, headings, and selected states; marigold for evidence chips,
+   progress, and small highlight moments; teal reserved for success.
+   The per-room mechanism stays (components read --ps-page-accent) but the
+   rooms now share the one navy accent instead of six competing hues.
+   Contrast (from the study): ink-on-canvas 16.2:1, white-on-primary
+   11.6:1, primary-on-accent-soft 9.2:1. The dark theme block far below
+   is scoped under body[data-theme="dark"] and is unaffected. */
 :root {
-    --ps-canvas: #f7f4ee;          /* warm ivory */
+    --ps-canvas: #f6f7fa;          /* cool cloud white */
     --ps-surface: #ffffff;
-    --ps-ink: #191821;
-    --ps-muted: #5d5766;           /* 6.5:1 on white, 5.6:1 on canvas */
-    --ps-border: #e6e0d4;          /* warm neutral */
-    --ps-primary: #5a2d82;         /* primary iris */
-    --ps-primary-strong: #46216a;
-    --ps-primary-soft: #efe9f6;
-    --ps-bronze: #b87422;          /* highlight only — not small text */
-    --ps-bronze-strong: #8a5410;   /* text-safe bronze (5.6:1 on white) */
-    --ps-success-teal: #16705f;
-    --ps-room-teal: #16705f;
-    --ps-room-plum: #7b3b62;
-    --ps-room-amber: #8f6410;
-    --ps-room-pine: #1f5c3d;
-    --ps-room-ultraviolet: #5b33c7;
+    --ps-ink: #141a28;             /* ink navy */
+    --ps-muted: #5b6472;           /* navy-tinted, 5.6:1 on canvas */
+    --ps-border: #dde2eb;          /* cool neutral */
+    --ps-primary: #203767;         /* deep ink navy */
+    --ps-primary-strong: #132447;
+    --ps-primary-soft: #e7ecf4;    /* navy tint for selected/soft fills */
+    --ps-bronze: #b87900;          /* marigold — highlight only, not small text */
+    --ps-bronze-strong: #8a5a00;   /* text-safe marigold (~5.2:1 on white) */
+    --ps-accent: #b87900;          /* alias: the marigold highlight */
+    --ps-accent-soft: #f4e4b4;     /* soft marigold fill (evidence chips) */
+    --ps-success-teal: #1e725f;
+    /* Room accents retained for the plumbing, all pointing at navy so the
+       system stays cohesive; marigold is the shared highlight via
+       --ps-bronze. */
+    --ps-room-teal: #203767;
+    --ps-room-plum: #203767;
+    --ps-room-amber: #203767;
+    --ps-room-pine: #203767;
+    --ps-room-ultraviolet: #203767;
     --ps-page-accent: var(--ps-primary);
     --ps-page-accent-strong: var(--ps-primary-strong);
     --ps-page-accent-soft: var(--ps-primary-soft);
 }
 
+/* Every room shares the navy accent for a single authoritative system.
+   Board and Résumé keep a marigold-soft highlight fill so their evidence/
+   goal chips still read gold, matching the study mockups. */
 body[data-room="bronze"] {
-    --ps-page-accent: var(--ps-bronze-strong);
-    --ps-page-accent-strong: #6d4009;
-    --ps-page-accent-soft: #f6ecdb;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: #f4e4b4;
 }
 
 body[data-room="teal"] {
-    --ps-page-accent: var(--ps-room-teal);
-    --ps-page-accent-strong: #0f5346;
-    --ps-page-accent-soft: #e2f0ec;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: var(--ps-primary-soft);
 }
 
 body[data-room="plum"] {
-    --ps-page-accent: var(--ps-room-plum);
-    --ps-page-accent-strong: #5f2c4b;
-    --ps-page-accent-soft: #f4e7ee;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: var(--ps-primary-soft);
 }
 
 body[data-room="amber"] {
-    --ps-page-accent: var(--ps-room-amber);
-    --ps-page-accent-strong: #6f4d0a;
-    --ps-page-accent-soft: #f7edd8;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: #f4e4b4;
 }
 
 body[data-room="pine"] {
-    --ps-page-accent: var(--ps-room-pine);
-    --ps-page-accent-strong: #164630;
-    --ps-page-accent-soft: #e3efe7;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: var(--ps-primary-soft);
 }
 
 body[data-room="ultraviolet"] {
-    --ps-page-accent: var(--ps-room-ultraviolet);
-    --ps-page-accent-strong: #4726a0;
-    --ps-page-accent-soft: #ece6fa;
+    --ps-page-accent: var(--ps-primary);
+    --ps-page-accent-strong: var(--ps-primary-strong);
+    --ps-page-accent-soft: var(--ps-primary-soft);
 }
 
 /* =========================================================

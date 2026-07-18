@@ -6,22 +6,24 @@
    Inter + Newsreader — no new font requests. No JavaScript. */
 
 .home-v3 {
-    /* Iris Foundry (v1.2): Home is the Iris room — the accent trio maps
-       to the shared tokens instead of Foundation C indigo. */
-    --hv-indigo: var(--ps-primary, #5A2D82);
-    --hv-indigo-strong: var(--ps-primary-strong, #46216A);
-    --hv-indigo-soft: var(--ps-primary-soft, #EFE9F6);
+    /* Deep Navy Gold (2026-07-17): Home shares the navy accent + marigold
+       highlight with the rest of the site. The trio maps to the shared
+       --ps-* tokens; decorative scene accents (azure/cyan/green) stay to
+       give the destination icons a little life. */
+    --hv-indigo: var(--ps-primary, #203767);
+    --hv-indigo-strong: var(--ps-primary-strong, #132447);
+    --hv-indigo-soft: var(--ps-primary-soft, #E7ECF4);
     --hv-azure: #4EA3FF;
     --hv-cyan: #2EC8D3;
-    --hv-amber: #D7A33E;
+    --hv-amber: #B87900;
     --hv-ink: #0A1B36;
     --hv-text: #22334E;
     --hv-muted: #66778F;
-    --hv-line: var(--ps-border, #E6E0D4);
+    --hv-line: var(--ps-border, #DDE2EB);
     --hv-surface: #FFFFFF;
-    --hv-cloud: var(--ps-canvas, #F7F4EE);
+    --hv-cloud: var(--ps-canvas, #F6F7FA);
     --hv-green: #2B9B6D;
-    --hv-violet: #8E63D8;
+    --hv-violet: #203767;
     --hv-shadow-soft: 0 14px 40px rgb(21 41 84 / 8%);
     --hv-shadow-lift: 0 24px 60px rgb(17 31 68 / 12%);
     --hv-radius-lg: 1.5rem;
@@ -31,9 +33,9 @@
     font-family: Inter, Arial, sans-serif;
     color: var(--hv-text);
     background:
-        radial-gradient(90rem 44rem at 78% -6rem, rgb(90 45 130 / 7%), transparent 62%),
-        radial-gradient(70rem 40rem at -12% 30rem, rgb(184 116 34 / 5%), transparent 60%),
-        linear-gradient(180deg, #F7F4EE 0%, #FDFCF9 46%, #F6F3EC 100%);
+        radial-gradient(90rem 44rem at 78% -6rem, rgb(32 55 103 / 7%), transparent 62%),
+        radial-gradient(70rem 40rem at -12% 30rem, rgb(184 121 0 / 5%), transparent 60%),
+        linear-gradient(180deg, #F6F7FA 0%, #FDFDFE 46%, #F2F4F8 100%);
     overflow-x: clip;
 }
 
@@ -52,7 +54,7 @@
     margin: 0 0 1.1rem;
     padding: 0.45rem 1rem;
     border-radius: 999px;
-    background: rgb(90 45 130 / 8%);
+    background: rgb(32 55 103 / 8%);
     color: var(--hv-indigo-strong);
     font-size: 0.85rem;
     font-weight: 650;
@@ -116,7 +118,7 @@
 .home-v3 .hv-btn--primary {
     background: var(--hv-indigo);
     color: #fff;
-    box-shadow: 0 12px 26px rgb(90 45 130 / 24%);
+    box-shadow: 0 12px 26px rgb(32 55 103 / 24%);
 }
 
 .home-v3 .hv-btn--primary:hover { background: var(--hv-indigo-strong); }
@@ -343,7 +345,7 @@
     height: 3.4rem;
     background: var(--hv-indigo);
     color: #fff;
-    box-shadow: 0 12px 26px rgb(90 45 130 / 30%);
+    box-shadow: 0 12px 26px rgb(32 55 103 / 30%);
 }
 
 .home-v3 .hv-mic__btn svg { width: 1.25rem; height: 1.25rem; }
