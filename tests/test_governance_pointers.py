@@ -59,6 +59,12 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-CAPTURE-002", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "README.md"),
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "README.md"),
+        ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
+        ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -99,7 +105,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn('tool: "ChatGPT Work"', self.baseline)
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
+        self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
+        self.assertIn("application_behavior_pipeline: 85", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -109,7 +117,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-RESUME-PUBLIC-REFINE-001", "PS-CAPTURE-002"], active_ids
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-MOMENT-001"], active_ids
         )
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
@@ -120,13 +128,13 @@ class BaselineCoherenceTests(unittest.TestCase):
 
     def test_state_records_verified_snapshot_and_honest_boundaries(self):
         for expected in (
-            "ec6eae83feedff45d8fe87600e1031253cfd6021",
-            "pipeline 79",
-            "89c8797b498a411f426e5e0efd042d0816996adf",
-            "pipeline 80",
+            "d88ca480a2cfcdc697d3bfffd219268c20368520",
+            "pipeline 83",
+            "65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd",
+            "pipeline 85",
             "ChatGPT Work",
             "GitHub mirror is not current",
-            "No Capture correction",
+            "Capture remains text-only",
         ):
             self.assertIn(expected, self.state)
 

@@ -27,3 +27,17 @@ This is an append-only operational decision record. The current Bible and Roadma
 - Archive is reversible through restore. Delete is explicit and irreversible for source text and its revisions; only a body-free audit tombstone may remain.
 - Export is a versioned, owner-scoped per-capture JSON contract in this package. Account-wide portability/deletion remains a later data-rights package.
 - Minimal controls inside the protected Capture page belong to the backend package. Public templates, global theme/navigation, authentication architecture, Journal UI, Moment, and placement are excluded.
+
+## 2026-07-18 — Close the first parallel wave
+
+- PS-RESUME-PUBLIC-REFINE-001 was manager-reviewed, squash-merged through Azure PR 62, deployed by successful pipeline 83, and verified at `/petec/resume`.
+- PS-CAPTURE-002 passed responsive mobile proof, isolated SQL apply/verify/rollback/reapply, production forward migration/verification, manager review, Azure PR 63, successful pipeline 85, and protected production-route checks.
+- The résumé and Capture task branches are released. Their local worktrees may remain only as preservation references until deliberate cleanup; they are not active writing lanes.
+
+## 2026-07-18 — Start the second parallel wave
+
+- Claude Code owns PS-INTERVIEW-PUBLIC-GATE-001. `/interview-studio` remains a public demonstration; `/interview-studio/history` is browser-local demonstration state. `/app/interview-studio` is the reserved future authenticated owner route and must not be simulated by the public package.
+- ChatGPT Codex owns PS-MOMENT-001. The required boundary is one pinned Capture source version → editable private proposal → explicit member confirmation → source-linked canonical Moment.
+- A Capture correction never silently rewrites a Moment. Moment confirmation never publishes or places content. PS-PLACEMENT-001 remains the next backend gate.
+- The two packages use separate branches and file reservations and may proceed in parallel after this manager setup is on current `origin/main` with a green pipeline.
+- Voice and other media intake remain later packages; the next backend work proves the review/canonicalization boundary using the shipped text source first.
