@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-moment-001-1">
+{% endblock %}
+
+{% block content %}
+<div class="owner-app owner-app--moment">
+    <section class="owner-app__panel owner-app__panel--moment" aria-labelledby="moment-review-title">
+        <p class="owner-app__eyebrow">Private owner workspace</p>
+        <div class="owner-app__moment-heading">
+            <div>
+                <h1 id="moment-review-title">
+                    {% if moment.status == 'confirmed' %}Confirmed Moment{% else %}Review as a Moment{% endif %}
+                </h1>
+                <p>
+                    {% if moment.status == 'confirmed' %}
+                    This member-approved Moment is private canonical content.
+                    {% else %}
+                    Review the pinned Capture source, then write the separate canonical fields you want to keep.
+                    {% endif %}
+                </p>
+            </div>
+            <span class="owner-app__moment-private">Private</span>
+        </div>
+
+        {% if validation_message %}
+        <p class="owner-app__message owner-app__message--error" role="alert">
+            {{ validation_message }}
+        </p>
+        {% elif success_message %}
+        <p class="owner-app__message owner-app__message--success" role="status">
+            {{ success_message }}
+        </p>
+        {% endif %}
+
+        <section class="owner-app__moment-source" aria-labelledby="moment-source-title">
+            <div class="owner-app__moment-section-heading">
+                <div>
+                    <p class="owner-app__moment-kicker">Pinned source · Read-only</p>
+                    <h2 id="moment-source-title">Selected Capture source</h2>
+                </div>
+                <span>
+                    {% if moment.source_revision_number %}
+                    Correction version {{ moment.source_revision_number }}
+                    {% else %}
+                    Original capture
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if moment.source_deleted %}
+            <div class="owner-app__moment-source-deleted" role="status">
+                <strong>Source deleted</strong>
+                <p>
+                    The Capture and its correction text were removed. This relationship keeps only a body-free source tombstone.
+                </p>
+                {% if moment.status != 'confirmed' %}
+                <p>This unconfirmed proposal cannot be confirmed.</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="owner-app__moment-source-text" aria-readonly="true">
+                {{ moment.source_body }}
+            </div>
+            {% if moment.newer_source_available %}
+            <p class="owner-app__moment-source-note" role="status">
+                A newer Capture correction exists. This Moment remains pinned to version {{ moment.source_revision_number }}.
+            </p>
+            {% endif %}
+            {% endif %}
+        </section>
+
+        <section class="owner-app__moment-proposal" aria-labelledby="moment-proposal-title">
+            <div class="owner-app__moment-section-heading">
+                <div>
+                    <p class="owner-app__moment-kicker">
+                        {% if moment.status == 'confirmed' %}Member-confirmed canonical content{% else %}Editable private proposal{% endif %}
+                    </p>
+                    <h2 id="moment-proposal-title">
+                        {% if moment.status == 'confirmed' %}Approved Moment fields{% else %}Proposed Moment fields{% endif %}
+                    </h2>
+                </div>
+                <span>Version {{ moment.current_version_number }}</span>
+            </div>
+
+            {% if moment.status == 'confirmed' %}
+            <dl class="owner-app__moment-confirmed">
+                <div>
+                    <dt>Type</dt>
+                    <dd>{{ moment.moment_kind|replace('_', ' ')|title }}</dd>
+                </div>
+                <div>
+                    <dt>Title</dt>
+                    <dd>{{ moment.title }}</dd>
+                </div>
+                <div>
+                    <dt>When</dt>
+                    <dd>
+                        {% if moment.occurred_precision == 'unknown' %}
+                        Date not set
+                        {% else %}
+                        {{ moment.occurred_on }} ({{ moment.occurred_precision }})
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Member-approved narrative</dt>
+                    <dd>{{ moment.narrative }}</dd>
+                </div>
+                {% if moment.why_it_matters %}
+                <div>
+                    <dt>Why it matters</dt>
+                    <dd>{{ moment.why_it_matters }}</dd>
+                </div>
+                {% endif %}
+            </dl>
+            <p class="owner-app__moment-confirmation-note">
+                Confirmed privately on {{ moment.confirmed_at_utc }}. Confirmation did not publish, place, share, create Journal content, or update another surface.
+            </p>
+            {% else %}
+            <form
+                class="owner-app__moment-form"
+                method="post"
+                action="{{ url_for('owner.save_moment_proposal', moment_key=moment.moment_key) }}"
+            >
+                <input type="hidden" name="expected_row_version" value="{{ moment.row_version_token }}">
+
+                <div class="owner-app__moment-field-row">
+                    <div>
+                        <label for="moment-kind">Moment type</label>
+                        <select id="moment-kind" name="moment_kind" required>
+                            {% for value, label in moment_kinds %}
+                            <option value="{{ value }}" {% if moment.moment_kind == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="moment-precision">Date precision</label>
+                        <select id="moment-precision" name="occurred_precision" required>
+                            {% for value, label in occurred_precisions %}
+                            <option value="{{ value }}" {% if moment.occurred_precision == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <label for="moment-title">Title</label>
+                <input
+                    id="moment-title"
+                    name="title"
+                    type="text"
+                    maxlength="{{ max_title_length }}"
+                    value="{{ moment.title or '' }}"
+                    required
+                >
+
+                <label for="moment-occurred-on">Date</label>
+                <input
+                    id="moment-occurred-on"
+                    name="occurred_on"
+                    type="date"
+                    value="{{ moment.occurred_on or '' }}"
+                    aria-describedby="moment-date-help"
+                >
+                <p id="moment-date-help" class="owner-app__moment-help">
+                    Leave blank only when Date not set is selected.
+                </p>
+
+                <label for="moment-narrative">Member-approved narrative</label>
+                <textarea
+                    id="moment-narrative"
+                    name="narrative"
+                    rows="8"
+                    maxlength="{{ max_narrative_length }}"
+                    required
+                >{{ moment.narrative or '' }}</textarea>
+                <p class="owner-app__moment-help">
+                    Write the canonical language you want PeerSlate to retain. The Capture source above remains separate and unchanged.
+                </p>
+
+                <label for="moment-why">Why it matters <span>(optional)</span></label>
+                <textarea
+                    id="moment-why"
+                    name="why_it_matters"
+                    rows="4"
+                    maxlength="{{ max_why_length }}"
+                >{{ moment.why_it_matters or '' }}</textarea>
+
+                <button class="owner-app__secondary" type="submit" {% if moment.source_deleted %}disabled{% endif %}>
+                    Save private proposal
+                </button>
+            </form>
+
+            <div class="owner-app__moment-decision">
+                <form
+                    method="post"
+                    action="{{ url_for('owner.confirm_moment', moment_key=moment.moment_key) }}"
+                >
+                    <input type="hidden" name="expected_row_version" value="{{ moment.row_version_token }}">
+                    <input type="hidden" name="expected_proposal_version" value="{{ moment.current_version_number }}">
+                    <label>
+                        <input name="confirm_moment" type="checkbox" value="confirm" required {% if not moment.can_confirm %}disabled{% endif %}>
+                        I confirm version {{ moment.current_version_number }} as my private canonical Moment.
+                    </label>
+                    {% if not moment.can_confirm and not moment.source_deleted %}
+                    <p class="owner-app__moment-field-note">Save valid required fields before confirmation becomes available.</p>
+                    {% endif %}
+                    <button class="owner-app__primary" type="submit" {% if not moment.can_confirm %}disabled{% endif %}>
+                        Confirm private Moment
+                    </button>
+                </form>
+
+                <details class="owner-app__moment-discard">
+                    <summary>Discard this proposal</summary>
+                    <p>This removes the unconfirmed proposal and its proposed versions. It does not delete the Capture.</p>
+                    <form
+                        method="post"
+                        action="{{ url_for('owner.discard_moment_proposal', moment_key=moment.moment_key) }}"
+                    >
+                        <input type="hidden" name="expected_row_version" value="{{ moment.row_version_token }}">
+                        <label>
+                            <input name="confirm_discard" type="checkbox" value="discard" required>
+                            I understand this removes the private proposal.
+                        </label>
+                        <button type="submit">Discard proposal</button>
+                    </form>
+                </details>
+            </div>
+            {% endif %}
+        </section>
+
+        <aside class="owner-app__moment-boundary" aria-label="Moment boundary">
+            <strong>Nothing leaves this private review.</strong>
+            <p>
+                This flow does not publish, place, share, create Journal content, update a résumé, or write to Story, Work, Projects, Feed, or Interview Studio.
+            </p>
+        </aside>
+
+        <div class="owner-app__actions">
+            <a class="owner-app__secondary" href="{{ url_for('owner.capture') }}">Back to Capture</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

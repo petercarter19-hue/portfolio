@@ -26,6 +26,12 @@ CAPTURE_LIFECYCLE_VERIFY_PATH = (
     / "Verification"
     / "PS-CAPTURE-002_lifecycle_verify.sql"
 )
+MOMENT_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-MOMENT-001_owner_isolation_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -44,6 +50,9 @@ APPROVED_OPTIONAL_MIGRATIONS = {
     ),
     "PS-CAPTURE-002": (
         MIGRATION_DIR / "proposed" / "PS-CAPTURE-002_capture_lifecycle.sql"
+    ),
+    "PS-MOMENT-001": (
+        MIGRATION_DIR / "proposed" / "PS-MOMENT-001_moments.sql"
     ),
 }
 EXPECTED_TABLES = {
@@ -261,6 +270,23 @@ def verify_capture_lifecycle(env_path: Path | None = None) -> None:
     )
 
 
+def verify_moment(env_path: Path | None = None) -> None:
+    if not MOMENT_VERIFY_PATH.exists():
+        raise RuntimeError(f"Verification script is missing: {MOMENT_VERIFY_PATH}")
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(MOMENT_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-MOMENT-001 owner-isolation verification failed.")
+    print(
+        "Verified PS-MOMENT-001 source pinning, two-owner isolation, "
+        "deletion tombstones, explicit private confirmation, no automatic "
+        "publication/placement, and full synthetic rollback."
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -316,6 +342,8 @@ def main() -> None:
             verify_capture(args.env_file)
         if "PS-CAPTURE-002" in args.migration:
             verify_capture_lifecycle(args.env_file)
+        if "PS-MOMENT-001" in args.migration:
+            verify_moment(args.env_file)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-capture-002-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-moment-001-1">
 {% endblock %}
 
 {% block content %}
@@ -79,6 +79,30 @@
                     {% endif %}
 
                     {% if not archived %}
+                    <details class="owner-app__capture-moment">
+                        <summary>Review as a Moment</summary>
+                        <p>
+                            Open an editable private proposal pinned to one exact source version. Nothing is published or placed.
+                        </p>
+                        <form
+                            method="post"
+                            action="{{ url_for('owner.create_moment_proposal', capture_key=capture.capture_key) }}"
+                        >
+                            <label for="moment-source-version-{{ loop.index }}">Capture source version</label>
+                            <select id="moment-source-version-{{ loop.index }}" name="source_revision_number">
+                                <option value="0" {% if not capture.revision_number %}selected{% endif %}>
+                                    Original capture
+                                </option>
+                                {% if capture.revision_number %}
+                                <option value="{{ capture.revision_number }}" selected>
+                                    Current correction version {{ capture.revision_number }}
+                                </option>
+                                {% endif %}
+                            </select>
+                            <button class="owner-app__secondary" type="submit">Open private proposal</button>
+                        </form>
+                    </details>
+
                     <details class="owner-app__capture-correction">
                         <summary>Correct this capture</summary>
                         <form

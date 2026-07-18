@@ -49,6 +49,17 @@ class DatabaseServiceTests(unittest.TestCase):
 
         self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
 
+    def test_moment_procedures_are_explicitly_allowlisted(self):
+        expected = {
+            "usp_CreateOrReopenMomentProposal",
+            "usp_GetMomentForOwner",
+            "usp_SaveMomentProposal",
+            "usp_ConfirmMoment",
+            "usp_DiscardMomentProposal",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -337,6 +337,331 @@
     outline-offset: 3px;
 }
 
+.owner-app__capture-moment {
+    margin-top: 1rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+    border-bottom: 1px solid rgba(10, 27, 54, 0.14);
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__capture-moment summary {
+    min-height: 44px;
+    color: #203767;
+    font: 800 0.9rem/1.4 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__capture-moment > p {
+    margin-top: 0.5rem;
+    color: #526078;
+    font-size: 0.9rem;
+}
+
+.owner-app__capture-moment form {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.owner-app__capture-moment label {
+    font: 700 0.88rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__capture-moment select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    color: #0a1b36;
+    font: 400 0.95rem/1.4 Inter, sans-serif;
+}
+
+.owner-app__capture-moment .owner-app__secondary {
+    justify-self: start;
+}
+
+.owner-app--moment {
+    background:
+        radial-gradient(circle at 80% 12%, rgba(184, 121, 0, 0.12), transparent 28rem),
+        #f6f8fc;
+}
+
+.owner-app__panel--moment {
+    width: min(100%, 980px);
+}
+
+.owner-app__moment-heading,
+.owner-app__moment-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.owner-app__moment-heading > div > p {
+    max-width: 62ch;
+    margin: 1rem 0 0;
+    color: #526078;
+    font: 400 1rem/1.65 Inter, sans-serif;
+}
+
+.owner-app__moment-private,
+.owner-app__moment-section-heading > span {
+    flex: 0 0 auto;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid rgba(138, 90, 0, 0.32);
+    border-radius: 999px;
+    background: #f4e4b4;
+    color: #6d4700;
+    font: 800 0.75rem/1.2 Inter, sans-serif;
+}
+
+.owner-app__moment-source,
+.owner-app__moment-proposal {
+    margin-top: 2rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid rgba(10, 27, 54, 0.15);
+    border-radius: 20px;
+}
+
+.owner-app__moment-source {
+    background: rgba(32, 55, 103, 0.05);
+}
+
+.owner-app__moment-proposal {
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(10, 27, 54, 0.06);
+}
+
+.owner-app__moment-kicker {
+    margin: 0 0 0.35rem;
+    color: #8a5a00;
+    font: 800 0.72rem/1.3 Inter, sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.owner-app__moment-section-heading h2 {
+    margin: 0;
+    color: #0a1b36;
+    font: 700 clamp(1.35rem, 3vw, 1.8rem)/1.15 Newsreader, serif;
+}
+
+.owner-app__moment-source-text {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border-left: 4px solid #b87900;
+    background: #fff;
+    color: #0a1b36;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: 400 1rem/1.7 Inter, sans-serif;
+}
+
+.owner-app__moment-source-note,
+.owner-app__moment-confirmation-note,
+.owner-app__moment-help {
+    margin: 0.75rem 0 0;
+    color: #526078;
+    font: 400 0.88rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__moment-source-deleted {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border: 1px solid rgba(168, 57, 57, 0.3);
+    border-radius: 14px;
+    background: rgba(168, 57, 57, 0.07);
+    color: #842d2d;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__moment-source-deleted p {
+    margin: 0.45rem 0 0;
+    line-height: 1.55;
+}
+
+.owner-app__moment-form {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.owner-app__moment-form label,
+.owner-app__moment-decision label,
+.owner-app__moment-discard label {
+    color: #0a1b36;
+    font: 700 0.88rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__moment-form label span {
+    color: #526078;
+    font-weight: 500;
+}
+
+.owner-app__moment-field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.owner-app__moment-field-row > div {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.owner-app__moment-form input,
+.owner-app__moment-form select,
+.owner-app__moment-form textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.85rem;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    color: #0a1b36;
+    font: 400 0.95rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__moment-form textarea {
+    resize: vertical;
+}
+
+.owner-app__moment-form input:focus-visible,
+.owner-app__moment-form select:focus-visible,
+.owner-app__moment-form textarea:focus-visible,
+.owner-app__capture-moment select:focus-visible,
+.owner-app__moment-decision input:focus-visible,
+.owner-app__moment-discard input:focus-visible {
+    outline: 3px solid #2f5296;
+    outline-offset: 3px;
+}
+
+.owner-app__moment-form .owner-app__secondary {
+    justify-self: start;
+    margin-top: 0.5rem;
+}
+
+.owner-app__moment-decision {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+}
+
+.owner-app__moment-decision > form,
+.owner-app__moment-discard form {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.owner-app__moment-decision label,
+.owner-app__moment-discard label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.owner-app__moment-decision input[type="checkbox"],
+.owner-app__moment-discard input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.15rem;
+    accent-color: #203767;
+}
+
+.owner-app__moment-decision .owner-app__primary {
+    justify-self: start;
+}
+
+.owner-app__moment-discard {
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__moment-discard summary {
+    min-height: 44px;
+    color: #842d2d;
+    font: 700 0.88rem/1.5 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__moment-discard p {
+    color: #526078;
+    font: 400 0.9rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__moment-discard button {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #842d2d;
+    border-radius: 999px;
+    background: transparent;
+    color: #842d2d;
+    font: 700 0.9rem/1 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__moment-confirmed {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0 0;
+}
+
+.owner-app__moment-confirmed div {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(10, 27, 54, 0.11);
+}
+
+.owner-app__moment-confirmed dt,
+.owner-app__moment-confirmed dd {
+    margin: 0;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__moment-confirmed dt {
+    color: #526078;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.owner-app__moment-confirmed dd {
+    margin-top: 0.45rem;
+    color: #0a1b36;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.owner-app__moment-boundary {
+    margin-top: 2rem;
+    padding: 1rem 1.15rem;
+    border-left: 4px solid #203767;
+    background: rgba(32, 55, 103, 0.06);
+    color: #0a1b36;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__moment-boundary p {
+    margin: 0.45rem 0 0;
+    color: #526078;
+    line-height: 1.55;
+}
+
+.owner-app__moment-form button:disabled,
+.owner-app__moment-decision button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 @media (max-width: 540px) {
     .owner-app__status {
         grid-template-columns: 1fr;
@@ -354,6 +679,29 @@
     .owner-app__capture-controls,
     .owner-app__capture-controls form,
     .owner-app__capture-controls .owner-app__secondary {
+        width: 100%;
+    }
+
+    .owner-app__capture-moment .owner-app__secondary {
+        width: 100%;
+    }
+
+    .owner-app__panel--moment {
+        padding-inline: 1.25rem;
+    }
+
+    .owner-app__moment-heading,
+    .owner-app__moment-section-heading {
+        flex-direction: column;
+    }
+
+    .owner-app__moment-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .owner-app__moment-decision .owner-app__primary,
+    .owner-app__moment-form .owner-app__secondary,
+    .owner-app__moment-discard button {
         width: 100%;
     }
 }

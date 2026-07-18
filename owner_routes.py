@@ -17,6 +17,14 @@ from flask import (
 
 from identity import AuthenticationRequired, get_current_identity
 from services.database_service import DatabaseServiceError, database_service
+from services.moment_service import (
+    MAX_MOMENT_NARRATIVE_LENGTH,
+    MAX_MOMENT_TITLE_LENGTH,
+    MAX_MOMENT_WHY_LENGTH,
+    MOMENT_KINDS,
+    OCCURRED_PRECISIONS,
+    validate_moment_proposal,
+)
 
 
 owner = Blueprint("owner", __name__)
@@ -37,6 +45,21 @@ CAPTURE_SUCCESS_MESSAGES = {
     "archived": "Capture archived. You can restore it from Archived captures.",
     "restored": "Capture restored to your active captures.",
     "deleted": "Capture and its correction history were permanently deleted.",
+    "moment-discarded": "Private Moment proposal discarded.",
+}
+MOMENT_VALIDATION_MESSAGES = {
+    "required": "Choose a type and add both a title and member-approved narrative.",
+    "too-long": "One or more proposed Moment fields is too long. Shorten it and try again.",
+    "date": "Choose a valid date or select Date not set.",
+    "changed": "That private Moment changed or is no longer available. Refresh and try again.",
+    "source-deleted": (
+        "The pinned Capture source was deleted. This unconfirmed proposal cannot be confirmed."
+    ),
+    "confirm-discard": "Confirm that you want to discard this private proposal.",
+}
+MOMENT_SUCCESS_MESSAGES = {
+    "saved": "Private proposal saved as a new version.",
+    "confirmed": "Moment confirmed privately. Nothing was published or placed.",
 }
 
 
@@ -105,6 +128,31 @@ def _prepare_capture_rows(rows):
     return prepared
 
 
+def _prepare_moment_row(row):
+    moment = dict(row)
+    moment["row_version_token"] = _row_version_token(moment.get("row_version"))
+    moment["current_version_number"] = int(
+        moment.get("current_version_number") or 0
+    )
+    moment["confirmed_version_number"] = int(
+        moment.get("confirmed_version_number") or 0
+    )
+    moment["source_revision_number"] = int(
+        moment.get("source_revision_number") or 0
+    )
+    moment["latest_source_revision_number"] = int(
+        moment.get("latest_source_revision_number") or 0
+    )
+    moment["source_deleted"] = moment.get("source_state") == "deleted"
+    moment["can_confirm"] = bool(moment.get("can_confirm")) and not moment[
+        "source_deleted"
+    ]
+    moment["newer_source_available"] = bool(
+        moment.get("newer_source_available")
+    )
+    return moment
+
+
 def _capture_action_context():
     try:
         identity = get_current_identity()
@@ -121,6 +169,31 @@ def _capture_action_context():
     if not capture_key or expected_row_version is None:
         return None, redirect(url_for("owner.capture", error="changed"))
     return (identity, capture_key, expected_row_version), None
+
+
+def _moment_action_context():
+    moment_key = _normalize_capture_key(request.view_args.get("moment_key"))
+    if not moment_key:
+        return None, ("Moment not found.", 404)
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return None, redirect(
+            url_for("auth.sign_in", return_to=f"/app/moments/{moment_key}/review")
+        )
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment identity lookup failed.")
+        return None, _render_owner_unavailable()
+
+    expected_row_version = _parse_expected_row_version(
+        request.form.get("expected_row_version", "")
+    )
+    if expected_row_version is None:
+        return None, redirect(
+            url_for("owner.review_moment", moment_key=moment_key, error="changed")
+        )
+    return (identity, moment_key, expected_row_version), None
 
 
 def _run_capture_state_change(procedure_name, changed):
@@ -232,6 +305,267 @@ def capture():
         max_body_length=MAX_CAPTURE_BODY_LENGTH,
         max_correction_note_length=MAX_CORRECTION_NOTE_LENGTH,
     )
+
+
+@owner.post("/app/capture/<capture_key>/moment-proposal")
+def create_moment_proposal(capture_key):
+    """Create or reopen one private proposal pinned to an exact source version."""
+    if not _is_same_origin_write():
+        return "Cross-site Moment requests are not allowed.", 403
+
+    normalized_capture_key = _normalize_capture_key(capture_key)
+    try:
+        source_revision_number = int(
+            request.form.get("source_revision_number", "")
+        )
+    except (TypeError, ValueError):
+        source_revision_number = -1
+    if not normalized_capture_key or source_revision_number < 0:
+        return redirect(url_for("owner.capture", error="changed"))
+
+    try:
+        identity = get_current_identity()
+        result = database_service.first_row(
+            "usp_CreateOrReopenMomentProposal",
+            [
+                ("@UserKey", identity.user_key),
+                ("@CaptureKey", normalized_capture_key),
+                ("@SourceRevisionNumber", source_revision_number),
+            ],
+        )
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/capture"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment proposal is unavailable.")
+        return _render_owner_unavailable()
+
+    if (
+        not result
+        or result.get("outcome") not in {"created", "existing"}
+        or not result.get("moment_key")
+    ):
+        return redirect(url_for("owner.capture", error="changed"))
+    return redirect(
+        url_for("owner.review_moment", moment_key=str(result["moment_key"]))
+    )
+
+
+@owner.get("/app/moments/<moment_key>/review")
+def review_moment(moment_key):
+    """Render one owner-scoped source and its separate private Moment proposal."""
+    normalized_moment_key = _normalize_capture_key(moment_key)
+    if not normalized_moment_key:
+        return "Moment not found.", 404
+
+    try:
+        identity = get_current_identity()
+        result = database_service.first_row(
+            "usp_GetMomentForOwner",
+            [
+                ("@UserKey", identity.user_key),
+                ("@MomentKey", normalized_moment_key),
+            ],
+        )
+    except AuthenticationRequired:
+        return redirect(
+            url_for(
+                "auth.sign_in",
+                return_to=f"/app/moments/{normalized_moment_key}/review",
+            )
+        )
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment review is unavailable.")
+        return _render_owner_unavailable()
+
+    if not result:
+        return "Moment not found.", 404
+
+    return render_template(
+        "owner_moment_review.html",
+        page_title="Review Moment",
+        moment=_prepare_moment_row(result),
+        validation_message=MOMENT_VALIDATION_MESSAGES.get(
+            request.args.get("error")
+        ),
+        success_message=MOMENT_SUCCESS_MESSAGES.get(request.args.get("changed")),
+        moment_kinds=MOMENT_KINDS,
+        occurred_precisions=OCCURRED_PRECISIONS,
+        max_title_length=MAX_MOMENT_TITLE_LENGTH,
+        max_narrative_length=MAX_MOMENT_NARRATIVE_LENGTH,
+        max_why_length=MAX_MOMENT_WHY_LENGTH,
+    )
+
+
+@owner.post("/app/moments/<moment_key>/save")
+def save_moment_proposal(moment_key):
+    """Save a new private proposal version under optimistic concurrency."""
+    if not _is_same_origin_write():
+        return "Cross-site Moment requests are not allowed.", 403
+
+    context, response = _moment_action_context()
+    if response is not None:
+        return response
+    identity, normalized_moment_key, expected_row_version = context
+
+    proposal, error_key = validate_moment_proposal(request.form)
+    if error_key:
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                error=error_key,
+            )
+        )
+
+    try:
+        result = database_service.first_row(
+            "usp_SaveMomentProposal",
+            [
+                ("@UserKey", identity.user_key),
+                ("@MomentKey", normalized_moment_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@MomentKind", proposal["moment_kind"]),
+                ("@Title", proposal["title"]),
+                ("@OccurredOn", proposal["occurred_on"]),
+                ("@OccurredPrecision", proposal["occurred_precision"]),
+                ("@Narrative", proposal["narrative"]),
+                ("@WhyItMatters", proposal["why_it_matters"]),
+            ],
+        )
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment save is unavailable.")
+        return _render_owner_unavailable()
+
+    if result and result.get("outcome") == "source_deleted":
+        error_key = "source-deleted"
+    elif not result or result.get("outcome") != "success":
+        error_key = "changed"
+    else:
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                changed="saved",
+            )
+        )
+    return redirect(
+        url_for(
+            "owner.review_moment",
+            moment_key=normalized_moment_key,
+            error=error_key,
+        )
+    )
+
+
+@owner.post("/app/moments/<moment_key>/confirm")
+def confirm_moment(moment_key):
+    """Explicitly confirm only the current valid private proposal version."""
+    if not _is_same_origin_write():
+        return "Cross-site Moment requests are not allowed.", 403
+
+    context, response = _moment_action_context()
+    if response is not None:
+        return response
+    identity, normalized_moment_key, expected_row_version = context
+    if request.form.get("confirm_moment") != "confirm":
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                error="required",
+            )
+        )
+    try:
+        expected_proposal_version = int(
+            request.form.get("expected_proposal_version", "")
+        )
+    except (TypeError, ValueError):
+        expected_proposal_version = 0
+    if expected_proposal_version < 1:
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                error="changed",
+            )
+        )
+
+    try:
+        result = database_service.first_row(
+            "usp_ConfirmMoment",
+            [
+                ("@UserKey", identity.user_key),
+                ("@MomentKey", normalized_moment_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@ExpectedProposalVersion", expected_proposal_version),
+            ],
+        )
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment confirmation is unavailable.")
+        return _render_owner_unavailable()
+
+    if result and result.get("outcome") == "source_deleted":
+        error_key = "source-deleted"
+    elif not result or result.get("outcome") != "success":
+        error_key = "changed"
+    else:
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                changed="confirmed",
+            )
+        )
+    return redirect(
+        url_for(
+            "owner.review_moment",
+            moment_key=normalized_moment_key,
+            error=error_key,
+        )
+    )
+
+
+@owner.post("/app/moments/<moment_key>/discard")
+def discard_moment_proposal(moment_key):
+    """Remove an unconfirmed private proposal after deliberate confirmation."""
+    if not _is_same_origin_write():
+        return "Cross-site Moment requests are not allowed.", 403
+
+    context, response = _moment_action_context()
+    if response is not None:
+        return response
+    identity, normalized_moment_key, expected_row_version = context
+    if request.form.get("confirm_discard") != "discard":
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                error="confirm-discard",
+            )
+        )
+
+    try:
+        result = database_service.first_row(
+            "usp_DiscardMomentProposal",
+            [
+                ("@UserKey", identity.user_key),
+                ("@MomentKey", normalized_moment_key),
+                ("@ExpectedRowVersion", expected_row_version),
+            ],
+        )
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Moment discard is unavailable.")
+        return _render_owner_unavailable()
+
+    if not result or result.get("outcome") != "success":
+        return redirect(
+            url_for(
+                "owner.review_moment",
+                moment_key=normalized_moment_key,
+                error="changed",
+            )
+        )
+    return redirect(url_for("owner.capture", changed="moment-discarded"))
 
 
 @owner.post("/app/capture/<capture_key>/correct")
