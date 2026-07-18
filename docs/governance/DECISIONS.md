@@ -41,3 +41,12 @@ This is an append-only operational decision record. The current Bible and Roadma
 - A Capture correction never silently rewrites a Moment. Moment confirmation never publishes or places content. PS-PLACEMENT-001 remains the next backend gate.
 - The two packages use separate branches and file reservations and may proceed in parallel after this manager setup is on current `origin/main` with a green pipeline.
 - Voice and other media intake remain later packages; the next backend work proves the review/canonicalization boundary using the shipped text source first.
+
+## 2026-07-18 — Close PS-MOMENT-001 and activate reference-only Placement
+
+- PS-MOMENT-001 passed corrected manager review, isolated SQL concurrency/rollback proof, production migration verification, Azure PR 66, pipeline 91 Build and Deploy, and protected production-route checks.
+- The confirmed Moment boundary is now reusable. A confirmed Moment remains private and does not itself publish, share, place, alter a résumé, or create Journal content.
+- PS-PLACEMENT-001 is the next Codex backend package. One explicit owner action may create a private reference from the exact confirmed Moment version to an existing owner-owned private/unpublished Slate destination.
+- The placement record stores keys, ownership, lifecycle, actor, and timestamps only. It must not copy Capture text, Moment narrative, destination content, or a purpose-specific presentation snapshot.
+- Creating or removing a placement must not create or edit the destination, change visibility/audience/publication, create an access grant, or update Story, Work, Project, résumé, Studio, Journal, Feed, or public pages.
+- Downstream consumption and purpose-specific wording remain separate later packages. Journal remains on hold.

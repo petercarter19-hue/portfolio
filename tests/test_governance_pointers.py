@@ -63,6 +63,10 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-PLACEMENT-001", "README.md"),
+        ("docs", "initiatives", "PS-PLACEMENT-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-BACKEND-NEXT-GATE-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-BACKEND-NEXT-GATE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
     )
@@ -107,7 +111,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-BASELINE-001", self.baseline)
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
-        self.assertIn("application_behavior_pipeline: 85", self.baseline)
+        self.assertIn("application_behavior_pipeline: 91", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -117,7 +121,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-MOMENT-001"], active_ids
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-PLACEMENT-001"], active_ids
         )
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
@@ -132,9 +136,12 @@ class BaselineCoherenceTests(unittest.TestCase):
             "pipeline 83",
             "65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd",
             "pipeline 85",
+            "43afd9353af1a0693aafab0c918f3dff92802376",
+            "pipeline 91",
             "ChatGPT Work",
             "GitHub mirror is not current",
             "Capture remains text-only",
+            "No placement-reference model is implemented yet",
         ):
             self.assertIn(expected, self.state)
 

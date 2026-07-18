@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated by PS-NEXT-WAVE-MANAGER-001 on 2026-07-18.
+# Updated by PS-BACKEND-NEXT-GATE-MANAGER-001 on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 2
 updated_at: "2026-07-18"
@@ -11,9 +11,9 @@ authority:
   manager_setup_merge_commit: "89c8797b498a411f426e5e0efd042d0816996adf"
   manager_setup_pipeline: 80
   production_url: "https://peerslate.com"
-  application_behavior_commit: "65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd"
-  application_behavior_pipeline: 85
-  note: "PR 62/pipeline 83 delivered the public resume refinement and PR 63/pipeline 85 delivered the private Capture lifecycle. This manager update changes governance only; fetch origin for the exact current tip."
+  application_behavior_commit: "43afd9353af1a0693aafab0c918f3dff92802376"
+  application_behavior_pipeline: 91
+  note: "PR 66/pipeline 91 delivered the private Capture-to-confirmed-Moment boundary after the production migration and verifier passed. This manager update changes governance only; fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -56,7 +56,9 @@ completed_packages:
   - PS-BASELINE-001
   - PS-RESUME-PUBLIC-REFINE-001
   - PS-CAPTURE-002
+  - PS-MOMENT-001
   - PS-NEXT-WAVE-MANAGER-001
+  - PS-BACKEND-NEXT-GATE-MANAGER-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -71,12 +73,12 @@ active_packages:
     owner: "Claude Code"
     lane: public_experience
     package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
-  - id: PS-MOMENT-001
+  - id: PS-PLACEMENT-001
     owner: "ChatGPT Codex"
     lane: backend_convergence
-    package_path: "docs/initiatives/PS-MOMENT-001/README.md"
+    package_path: "docs/initiatives/PS-PLACEMENT-001/README.md"
 
-next_gate: "Start PS-INTERVIEW-PUBLIC-GATE-001 and PS-MOMENT-001 in parallel from the same current origin/main after PS-NEXT-WAVE-MANAGER-001 merges and its Azure pipeline is green."
+next_gate: "Start PS-PLACEMENT-001 from the current origin/main only after PS-BACKEND-NEXT-GATE-MANAGER-001 squash-merges and its Azure pipeline is green. Claude Code may continue the separately approved Interview Studio design lane."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
