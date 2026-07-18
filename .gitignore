@@ -41,3 +41,9 @@ Thumbs.db
 
 # Local design reference material (not app code)
 Design ideas/
+
+# Local scratch/preview material (not app code)
+tmp/
+
+# Stray sandbox test artifact (safe to delete)
+.__cptest

@@ -1,0 +1,31 @@
+# .gitattributes
+# -----------------------------------------------------------------------------
+# This file tells Git how to treat the line endings and file types in THIS repo.
+# It travels with the repository, so every machine you clone to (all your PCs)
+# follows the same rules automatically. This is what stops the "every file shows
+# as modified" problem when you switch computers.
+# -----------------------------------------------------------------------------
+
+# For every file, let Git auto-detect whether it's text, and if it is text,
+# store it in the repository using LF ("\n") line endings AND check it out with
+# LF on disk too. "eol=lf" forces LF everywhere, on Windows included, which keeps
+# things consistent with your Linux/Azure deployment target.
+* text=auto eol=lf
+
+# -----------------------------------------------------------------------------
+# Binary files: mark these as binary so Git NEVER tries to "fix" their line
+# endings. (That's what was silently rewriting your resume PDF.) Binary files
+# are compared and stored byte-for-byte, untouched.
+# -----------------------------------------------------------------------------
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.zip   binary

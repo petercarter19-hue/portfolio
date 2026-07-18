@@ -1,5 +1,10 @@
 # PeerSlate Repository Instructions
 
+> **MANDATORY PRE-WORK GATE**
+> Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
+>
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible + Roadmap v2.3).
+
 ## Mandatory shared AI and Git workflow
 
 Before planning changes, editing files, or running Git write operations, read `docs/AI_WORKFLOW.md` in full. It is the canonical collaboration workflow for Peter, Codex, Claude, every computer, and every worktree.

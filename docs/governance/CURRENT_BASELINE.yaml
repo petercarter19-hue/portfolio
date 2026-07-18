@@ -1,0 +1,62 @@
+# =============================================================================
+# CURRENT_BASELINE.yaml  —  PeerSlate single source of authority  (PS-GOV-001)
+# =============================================================================
+# WHAT THIS FILE IS
+#   The ONE machine-readable record of "what is true right now" for PeerSlate.
+#   Every tool and person (Cowork/Claude, Claude Code, Codex, and humans) reads
+#   this first — via START_HERE.md — so nobody has to ask Pete where things stand.
+#
+# THE RULE
+#   Update this file on every production-changing merge. The guardrail test
+#   tests/test_governance_pointers.py FAILS THE BUILD if the paths below go
+#   stale (i.e. point at a file that does not exist). That is what keeps this
+#   honest over time instead of quietly rotting.
+# -----------------------------------------------------------------------------
+schema_version: 1
+updated_at: "2026-07-18"
+
+# --- Authority: where the real repository lives -----------------------------
+authoritative_remote: origin          # Azure DevOps. GitHub is a BACKUP MIRROR only.
+authoritative_branch: main
+production_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"   # origin/main at time of writing
+production_pipeline: 78                # last green Azure pipeline
+production_url: "https://peerslate.com"
+theme: deep_navy_gold
+
+# --- Governing documents (v2.3 adopted by the owner on 2026-07-18) ----------
+bible:
+  version: "2.3"
+  path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
+roadmap:
+  version: "2.3"
+  path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
+sync_standard:
+  version: "1.1"
+  path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
+design_baseline:
+  path: "docs/governance/approved_owner_visual_baseline/"
+
+# --- Program state ----------------------------------------------------------
+completed_packages:
+  - PS-AUTH-001              # external identity + sessions + two-owner isolation
+  - PS-OWNER-001-slice-1     # protected /app/settings
+  - PS-CAPTURE-001           # private text Capture source slice
+  - PS-THEME-001             # Deep Navy Gold (PR 58)
+  - PS-RULES-001             # locked site rules + guardrail tests
+  - PS-PLAN-002              # program plan
+public_safe_slices:
+  - PS-BRAND-NAV-001
+  - PS-INTERVIEW-002
+  - PS-FEED-002
+holds:
+  - PS-JOURNAL-001           # "hold off on the journal" — explicit owner decision
+active_packages:
+  - PS-GOV-001               # THIS package: repository authority + startup enforcement
+next_gate: "Merge and validate PS-GOV-001, then PS-BASELINE-001; then run the resume (Claude Code) and backend (Codex) lanes in parallel"
+
+# --- Prior authority versions kept as history (SUPERSEDED — do not follow) ---
+superseded_documents:
+  - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
+  - "PeerSlate_Company_and_Product_Bible_v1.2.docx"
+  - "PeerSlate_Company_and_Product_Bible_v1.3.docx"
+  - "PeerSlate_Company_and_Product_Bible_v1.4.docx"

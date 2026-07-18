@@ -1,7 +1,14 @@
 @AGENTS.md
 @docs/AI_WORKFLOW.md
 
+> **MANDATORY PRE-WORK GATE**
+> Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
+>
+> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible + Roadmap v2.3).** This supersedes any version-specific note below.
+
 # Claude / Claude Code instructions
+
+> **Note (2026-07-18):** The v1.3-era section below is kept for history. The live authority is `docs/governance/CURRENT_BASELINE.yaml`; when they differ, the baseline controls.
 
 ## v1.3 governance — read BEFORE any product work (2026-07-16)
 
