@@ -8,11 +8,11 @@ authority:
   remote: origin
   host: azure_devops
   branch: main
-  verified_origin_main_commit: "ec6eae83feedff45d8fe87600e1031253cfd6021"
-  verified_pipeline: 79
+  manager_setup_merge_commit: "89c8797b498a411f426e5e0efd042d0816996adf"
+  manager_setup_pipeline: 80
   production_url: "https://peerslate.com"
   application_behavior_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"
-  note: "Pipeline 79 deployed the governance merge; d5dd7bd remains the last application-behavior change."
+  note: "PR 60 and pipeline 80 delivered the manager setup; d5dd7bd remains the last application-behavior change. Fetch origin for the exact current tip."
 
 mirror:
   remote: github

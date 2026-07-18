@@ -3,9 +3,9 @@
 ## A. Status
 
 - **Package:** PS-BASELINE-001 — verified baseline and manager lane setup
-- **Status:** Complete in the task branch; active product lanes remain gated on Azure merge and green pipeline
-- **Branch and commit:** `work/2026-07-18-baseline-lane-setup`; exact handoff SHA is supplied with the Azure PR
-- **PR / pipeline / environment:** Azure PR and pipeline evidence are part of the manager handoff
+- **Status:** Complete
+- **Branch and commit:** `work/2026-07-18-baseline-lane-setup @ 3cf5914ad2d19cd60d4fa543b5889e208dea00a3`; squash merge `89c8797b498a411f426e5e0efd042d0816996adf`
+- **PR / pipeline / environment:** Azure PR 60 completed; automatic pipeline 80 succeeded on the squash merge
 - **Production state:** no application behavior change
 
 ## B. What changed technically
@@ -28,7 +28,8 @@ This closes the Roadmap v2.3 baseline gate and preserves the intended sequence: 
 
 - Repository, PR, pipeline, mirror, and production-route evidence is recorded in `01_VERIFIED_BASELINE.md`.
 - Governance pointer and Site Rules suites are run locally because they require no application dependencies.
-- Azure pipeline success is required before the two product lanes activate.
+- Automatic Azure pipeline 80 succeeded on the exact merge commit. A redundant manual run 81 was canceled after the automatic result was confirmed, before a second deployment completed.
+- Post-pipeline probes returned 200 for `/`, `/petec/resume`, and `/interview-studio`; `/petec/resume2` redirected to `/petec/resume`; `/app/capture` and `/app/settings` redirected unauthenticated requests to sign-in.
 - No authenticated real-member Capture behavior was exercised in this governance-only package.
 
 ## G. Known gaps, risks, and exclusions
@@ -40,7 +41,7 @@ This closes the Roadmap v2.3 baseline gate and preserves the intended sequence: 
 
 ## H. Clear next step
 
-After the Azure squash merge and green pipeline, start PS-CAPTURE-002 in ChatGPT Codex and PS-RESUME-PUBLIC-REFINE-001 in Claude Code in parallel. This unlocks backend lifecycle safety and public résumé clarity without file collisions.
+Start PS-CAPTURE-002 in ChatGPT Codex and PS-RESUME-PUBLIC-REFINE-001 in Claude Code in parallel from the current post-baseline `origin/main`. This unlocks backend lifecycle safety and public résumé clarity without file collisions.
 
 ## I. What Pete needs to do or decide
 

@@ -7,6 +7,7 @@ _Verified 2026-07-18 by PS-BASELINE-001. Repository facts are a snapshot; every 
 - `origin` is Azure DevOps and the only source of truth. `github` is a backup mirror whose pushes are on hold.
 - The audit started from `origin/main @ ec6eae83feedff45d8fe87600e1031253cfd6021`, the squash merge of Azure PR 59 (PS-GOV-001).
 - Azure pipeline 79 succeeded for that commit. The last application-behavior change remains `d5dd7bdacc52b7324cb679c6c936eb1ff517ab28`; PR 59 changed governance only.
+- PS-BASELINE-001 then squash-merged through Azure PR 60 at `89c8797b498a411f426e5e0efd042d0816996adf`; automatic pipeline 80 succeeded. That merge also changed governance only. Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - Production probes returned 200 for `/`, `/petec/resume`, and `/interview-studio`. `/petec/resume2` redirected to `/petec/resume`. `/app/capture` and `/app/settings` redirected unauthenticated requests to sign-in.
 - The approved shared theme is Deep Navy Gold.
 - There were no active Azure pull requests when the audit began.

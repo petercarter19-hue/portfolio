@@ -99,7 +99,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn('tool: "ChatGPT Work"', self.baseline)
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
-        self.assertIn("verified_pipeline: 79", self.baseline)
+        self.assertIn("manager_setup_pipeline: 80", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -122,6 +122,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         for expected in (
             "ec6eae83feedff45d8fe87600e1031253cfd6021",
             "pipeline 79",
+            "89c8797b498a411f426e5e0efd042d0816996adf",
+            "pipeline 80",
             "ChatGPT Work",
             "GitHub mirror is not current",
             "No Capture correction",
