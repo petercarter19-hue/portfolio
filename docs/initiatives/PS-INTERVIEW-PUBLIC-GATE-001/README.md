@@ -14,6 +14,19 @@ Make the existing Interview Studio an unmistakably honest public demonstration. 
 
 This package also improves progressive layering so the public Studio opens with one clear practice choice and reveals settings, history detail, secondary controls, and deeper explanation only when useful. It is a focused refinement, not a new Studio, authentication project, or backend persistence system.
 
+## Owner-approved Gate A decision — 2026-07-18
+
+Pete approved the manager recommendation to preserve the current interactive public experience while truth-labeling and simplifying it. The current package follows **Approach A**:
+
+- keep written practice, real coaching requests, Interview AI modes, comparison, browser-local history, and local camera rehearsal;
+- keep the current public route light-first Deep Navy Gold;
+- label Pete Carter as the named public demo profile rather than authenticated identity;
+- use **Interview Me**, **Interview AI**, and **Video Practice** as the current mode names;
+- exclude the optional worked-example tour from this implementation;
+- bank the scripted public demonstration and authenticated dark Studio as future design authority only, to be reconsidered after the private Studio exists and is verified.
+
+The controlling decision and design allocation are recorded in [05_OWNER_APPROVED_DESIGN_SCOPE.md](05_OWNER_APPROVED_DESIGN_SCOPE.md). Fable's next task is design only under [06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md](06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md); it does not authorize implementation.
+
 ## Route and identity decision
 
 - `/interview-studio` remains the public demonstration route.
@@ -55,6 +68,6 @@ If implementation requires another file, stop and ask the manager to reserve it 
 
 ## Required reading
 
-Follow `START_HERE.md`, then read the current governance records, Document Control, Bible/Roadmap/Sync Standard, `docs/PEERSLATE_SITE_RULES.md`, PS-INTERVIEW-002, [route and truth boundary](01_BOUNDARY_CONTRACT.md), [experience/accessibility contract](02_EXPERIENCE_ACCESSIBILITY.md), [validation plan](03_VALIDATION_PLAN.md), and [implementation sequence](04_IMPLEMENTATION_PLAN.md).
+Follow `START_HERE.md`, then read the current governance records, Document Control, Bible/Roadmap/Sync Standard, `docs/PEERSLATE_SITE_RULES.md`, PS-INTERVIEW-002, [route and truth boundary](01_BOUNDARY_CONTRACT.md), [experience/accessibility contract](02_EXPERIENCE_ACCESSIBILITY.md), [validation plan](03_VALIDATION_PLAN.md), [implementation sequence](04_IMPLEMENTATION_PLAN.md), [owner-approved design scope](05_OWNER_APPROVED_DESIGN_SCOPE.md), and [Fable design brief](06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md).
 
 Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` and the exact branch plus full commit SHA.

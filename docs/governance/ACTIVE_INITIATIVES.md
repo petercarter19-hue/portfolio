@@ -27,6 +27,7 @@ The two product packages may start in parallel only after PS-NEXT-WAVE-MANAGER-0
 
 - Branch when accepted: `work/2026-07-18-interview-public-gate-001` (or the actual start date).
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
+- Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A; the next action is Fable design only under the package's files `05` and `06`.
 - Outcome: an honest public demonstration with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 - Exit gate: public/private truth labels, progressive states, desktop/mobile/accessibility evidence, focused and site-rule tests green, completion report reviewed.
 
