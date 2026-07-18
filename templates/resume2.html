@@ -21,7 +21,7 @@
 <link rel="canonical" href="{{ canonical_resume_url }}">
 <meta property="og:url" content="{{ canonical_resume_url }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=solid-header-4">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume-readable-type-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume-refine-1">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% endblock %}
@@ -84,13 +84,19 @@
                     <p class="r2-eyebrow">{{ resume.profile.opening_eyebrow }}</p>
                     <h1 id="resume-title">{{ resume.profile.name }}</h1>
                     <p class="r2-summary__role">{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' & ') }}</p>
-                    <p class="r2-summary__tags">{{ resume.profile.positioning.split('|')|map('trim')|join(' · ') }}</p>
+                    {# The role line above already carries the first two positioning parts;
+                       the tags line shows only the remaining descriptors so the opening
+                       states the positioning once, not twice. #}
+                    {% set r2_positioning_extras = resume.profile.positioning.split('|')[2:]|map('trim')|select|list %}
+                    {% if r2_positioning_extras %}
+                    <p class="r2-summary__tags">{{ r2_positioning_extras|join(' · ') }}</p>
+                    {% endif %}
                     <p class="r2-summary__intro">{{ resume.profile.summary }}</p>
+                    {# Ask {{ profile_first_name }} AI is the dominant next action in this
+                       opening and is served by the inline AI panel plus the persistent
+                       section-ribbon control, so the identity keeps only the two distinct
+                       secondary actions and does not repeat the Ask button here. #}
                     <div class="r2-summary__actions">
-                        <button class="r2-button r2-button--primary" type="button" data-chat-open>
-                            <svg aria-hidden="true"><use href="#lr-icon-sparkles"></use></svg>
-                            Ask {{ profile_first_name }} AI
-                        </button>
                         <a class="r2-button" href="{{ url_for('static', filename=resume.profile.pdf_path) }}" target="_blank" rel="noopener noreferrer">
                             <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
                             View Résumé
@@ -256,11 +262,9 @@
                                     {% endfor %}
                                 </div>
                                 {% endif %}
-                                <ul>
-                                    {% for item in role.resume2_accomplishments[:2] %}
-                                    <li>{{ item.text }}</li>
-                                    {% endfor %}
-                                </ul>
+                                {# Default preview stays a scannable summary + selected impact.
+                                   The full accomplishment record (which already includes these
+                                   bullets) opens on request via "View Full Chapter" below. #}
                             </div>
 
                             <div
@@ -341,7 +345,9 @@
                         <h3>{{ category.title }}</h3>
                         <p>{{ category.summary }}</p>
                         <ul>
-                            {% for item in category['items'][:4] %}
+                            {# Preview the three strongest records per category; the full set
+                               opens on request via "Open category" below (progressive depth). #}
+                            {% for item in category['items'][:3] %}
                             <li><strong>{{ item.credential }}</strong><small>{{ item.institution }}{% if item.date %} · {{ item.date }}{% endif %}</small><span>{{ item.status }}</span></li>
                             {% endfor %}
                         </ul>

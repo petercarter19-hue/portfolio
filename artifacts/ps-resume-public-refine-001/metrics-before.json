@@ -1,0 +1,83 @@
+{
+  "1440x900": {
+    "innerWidth": 1440,
+    "scrollHeight": 5419,
+    "summaryHeight": 597,
+    "positions": {
+      "summary": 140,
+      "impact": 775,
+      "skills": 1289,
+      "experience": 1962,
+      "credentials": 2966,
+      "constellation": 4111,
+      "story_transition": 4982
+    },
+    "expCardHeights": [
+      735,
+      735,
+      735
+    ],
+    "credCardHeights": [
+      640,
+      640,
+      640,
+      640
+    ],
+    "chatOpenInSummary": 1,
+    "previewBullets": 3
+  },
+  "1920x1080": {
+    "innerWidth": 1920,
+    "scrollHeight": 5636,
+    "summaryHeight": 563,
+    "positions": {
+      "summary": 147,
+      "impact": 754,
+      "skills": 1336,
+      "experience": 2034,
+      "credentials": 3033,
+      "constellation": 4165,
+      "story_transition": 5180
+    },
+    "expCardHeights": [
+      707,
+      707,
+      707
+    ],
+    "credCardHeights": [
+      595,
+      595,
+      595,
+      595
+    ],
+    "chatOpenInSummary": 1,
+    "previewBullets": 3
+  },
+  "390x844": {
+    "innerWidth": 390,
+    "scrollHeight": 14219,
+    "summaryHeight": 1522,
+    "positions": {
+      "summary": 166,
+      "impact": 1740,
+      "skills": 2854,
+      "experience": 5317,
+      "credentials": 8339,
+      "constellation": 11035,
+      "story_transition": 13667
+    },
+    "expCardHeights": [
+      876,
+      898,
+      963
+    ],
+    "credCardHeights": [
+      633,
+      361,
+      559,
+      660
+    ],
+    "chatOpenInSummary": 1,
+    "previewBullets": 3
+  }
+}

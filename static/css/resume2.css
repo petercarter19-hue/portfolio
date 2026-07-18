@@ -2963,7 +2963,8 @@
     min-width: 0;
     grid-column: 1;
     grid-row: 1;
-    gap: clamp(1.5rem, 3vw, 3rem);
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter inter-section rhythm. */
+    gap: clamp(1.25rem, 2.2vw, 2.25rem);
 }
 
 .r2-section-ribbon {
@@ -3048,7 +3049,9 @@
     display: grid;
     width: 100%;
     max-width: none;
-    min-height: 37rem;
+    /* PS-RESUME-PUBLIC-REFINE-001: trim the opening floor so the identity
+       column no longer carries dead space beneath its content. */
+    min-height: 34rem;
     grid-template-columns: minmax(15rem, 0.86fr) minmax(20rem, 1.12fr) minmax(18rem, 0.92fr);
     align-items: stretch;
     gap: clamp(1rem, 1.7vw, 1.5rem);
@@ -3069,7 +3072,7 @@
 
 .r2-summary__portrait {
     overflow: hidden;
-    min-height: 37rem;
+    min-height: 34rem;
     background: #dce6f4;
 }
 
@@ -3112,7 +3115,8 @@
 }
 
 .r2-summary__role {
-    margin: 1.55rem 0 0;
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter identity stack. */
+    margin: 1.1rem 0 0;
     color: #315ce7;
     font-size: clamp(1.05rem, 1.7vw, 1.45rem);
     font-weight: 750;
@@ -3120,7 +3124,7 @@
 }
 
 .r2-summary__tags {
-    margin: 1.25rem 0 0;
+    margin: 0.85rem 0 0;
     color: #3157d7;
     font-size: 0.7rem;
     font-weight: 800;
@@ -3131,7 +3135,7 @@
 
 .r2-summary__intro {
     max-width: 38rem;
-    margin: 1rem 0 0;
+    margin: 0.9rem 0 0;
     color: #233b5e;
     font-family: var(--r2-display);
     font-size: clamp(1.05rem, 1.55vw, 1.3rem);
@@ -3144,7 +3148,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.65rem;
-    margin-top: 1.6rem;
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter action spacing. */
+    margin-top: 1.25rem;
 }
 
 .r2-button {
@@ -3194,7 +3199,7 @@
     position: relative;
     display: flex;
     min-width: 0;
-    min-height: 37rem;
+    min-height: 34rem;
     grid-area: auto;
     align-self: stretch;
     flex-direction: column;
@@ -3266,13 +3271,15 @@
 
 .resume-consolidated .r2-section {
     min-width: 0;
-    padding: clamp(1.65rem, 3vw, 3rem);
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter section padding. */
+    padding: clamp(1.5rem, 2.4vw, 2.4rem);
 }
 
 .resume-consolidated .r2-section-heading {
     display: block;
     max-width: 58rem;
-    margin: 0 0 clamp(1.35rem, 2.4vw, 2.4rem);
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter heading-to-content gap. */
+    margin: 0 0 clamp(1.1rem, 1.8vw, 1.8rem);
     text-align: left;
 }
 
@@ -3307,7 +3314,8 @@
 .r2-impact__item {
     display: flex;
     min-width: 0;
-    min-height: 11rem;
+    /* PS-RESUME-PUBLIC-REFINE-001: trim tile dead space. */
+    min-height: 9.5rem;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -3639,7 +3647,10 @@
     display: flex;
     overflow: hidden;
     min-width: 0;
-    min-height: 43rem;
+    /* PS-RESUME-PUBLIC-REFINE-001: default preview is now summary + selected
+       impact (bullets moved to the on-demand chapter), so the resting card no
+       longer needs the tall floor; content determines height. */
+    min-height: 34rem;
     flex-direction: column;
     flex: initial;
     padding: 0;
@@ -3747,7 +3758,7 @@
 
 .r2-exp-card__preview > p,
 .resume-consolidated .r2-exp-summary {
-    margin: 1.15rem 0 0;
+    margin: 0.9rem 0 0;
     color: #4d6280;
     font-size: 0.88rem;
     line-height: 1.55;
@@ -3961,12 +3972,13 @@
 .r2-credential-card {
     display: flex;
     min-width: 0;
-    min-height: 36rem;
+    /* PS-RESUME-PUBLIC-REFINE-001: trim category-card dead space. */
+    min-height: 31rem;
     flex-direction: column;
     border: 1px solid var(--r2-line);
     border-radius: 1.3rem;
     background: rgb(255 255 255 / 69%);
-    padding: 1.35rem;
+    padding: 1.15rem;
 }
 
 .r2-credential-card:nth-child(1) {
@@ -3974,7 +3986,7 @@
 }
 
 .r2-credential-card h3 {
-    margin: 1rem 0 0;
+    margin: 0.8rem 0 0;
     font-family: var(--r2-display);
     font-size: 1.55rem;
     line-height: 1.05;
@@ -3990,7 +4002,7 @@
 .r2-credential-card > ul {
     display: grid;
     gap: 0;
-    margin: 1.15rem 0 0;
+    margin: 0.9rem 0 0;
     padding: 0;
     list-style: none;
 }
@@ -3999,7 +4011,8 @@
     display: grid;
     gap: 0.16rem;
     border-top: 1px solid var(--r2-line);
-    padding: 0.8rem 0;
+    /* PS-RESUME-PUBLIC-REFINE-001: tighter preview rows. */
+    padding: 0.62rem 0;
 }
 
 .r2-credential-card > ul li:first-child {
@@ -4373,24 +4386,10 @@
         min-height: 0;
     }
 
+    /* PS-RESUME-PUBLIC-REFINE-001: the preview no longer carries a bullet
+       column, so it reads as a single-column summary + selected impact. */
     .r2-exp-card__preview {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 0 1.2rem;
-    }
-
-    .r2-exp-card__preview > p {
-        grid-column: 1 / -1;
-    }
-
-    .r2-exp-card__preview > h4,
-    .r2-exp-card__preview > .r2-exp-card__impacts {
-        grid-column: 1;
-    }
-
-    .r2-exp-card__preview > ul {
-        grid-column: 2;
-        grid-row: 2 / span 2;
+        display: block;
     }
 }
 

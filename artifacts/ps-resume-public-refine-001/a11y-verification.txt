@@ -1,0 +1,30 @@
+
+=== 26/27 checks passed ===
+
+[PASS] exp toggle default aria-expanded=false
+[PASS] exp full region hidden by default
+[PASS] exp preview has no bullet <ul>
+[PASS] exp toggle aria-expanded=true after open
+[PASS] exp full region visible after open
+[PASS] exp full chapter shows full-record bullets on demand  (bullets=7)
+[PASS] focus moved into opened chapter
+[PASS] exp toggle aria-expanded=false after Escape
+[PASS] focus restored to toggle after Escape
+[PASS] credential toggle default aria-expanded=false
+[PASS] credential toggle aria-expanded=true after open
+[PASS] education panel exposes the full 4-record set  (records=4)
+[PASS] skill toggle default aria-expanded=false
+[PASS] skill toggle aria-expanded=true after open
+[PASS] skill panel reveals approved proof points (<=3)  (evidence=3)
+[FAIL] canonical link intact
+[PASS] PDF/ATS path present
+[PASS] contact action present
+[PASS] Ask AI inline panel present
+[PASS] constellation present
+[PASS] 200%-zoom proxy: no horizontal page scroll
+[PASS] reduced-motion: chapter still opens
+[PASS] no-JS: sections present in logical order  ([2388, 5010, 5605, 7388, 8284, 9770])
+[PASS] no-JS: role summaries visible
+[PASS] no-JS: PDF/ATS fallback link visible
+[PASS] no-JS: contact visible
+[PASS] no-JS: skills overview names visible

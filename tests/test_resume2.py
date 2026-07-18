@@ -263,7 +263,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="lr-page resume-v2 resume-consolidated"', response_text)
         self.assertIn(
-            'css/resume2.css?v=resume-readable-type-1',
+            'css/resume2.css?v=resume-refine-1',
             response_text,
         )
 
@@ -476,6 +476,72 @@ class Resume2Tests(unittest.TestCase):
                     [link['text'] for link in parser.links],
                     ['My Story', 'Work', 'Slate Board', 'Resume'],
                 )
+
+    def test_opening_states_ask_ai_and_positioning_without_duplication(self):
+        # PS-RESUME-PUBLIC-REFINE-001: the opening identity keeps one dominant
+        # Ask AI surface (the inline panel) plus the persistent ribbon control,
+        # and states the positioning once instead of repeating it.
+        response = self.client.get('/petec/resume', base_url='http://localhost')
+        text = response.get_data(as_text=True)
+
+        summary_start = text.index('<section class="r2-summary"')
+        summary_end = text.index('id="impact"', summary_start)
+        summary_html = text[summary_start:summary_end]
+
+        # The Ask experience is the inline panel; the identity no longer repeats
+        # a chat-opening Ask button in its action row.
+        self.assertIn('r2-ai-card resume-ai-panel', summary_html)
+        self.assertNotIn('data-chat-open', summary_html)
+        # The two distinct secondary actions remain in the opening.
+        self.assertIn('View Résumé', summary_html)
+        self.assertIn('Contact', summary_html)
+
+        # Positioning is stated once: the role line keeps the first two parts,
+        # the tags line carries only the remaining descriptor (no repeat).
+        self.assertIn('Systems Engineer &amp; Technical Leader', summary_html)
+        self.assertIn('MBSE, Sustainment, and Requirements', summary_html)
+        self.assertNotIn('Systems Engineer · Technical Leader', summary_html)
+
+        # The persistent ribbon still offers Ask AI so the assistant stays one
+        # control away for the rest of the page.
+        ribbon_start = text.index('r2-section-ribbon__actions')
+        ribbon_html = text[ribbon_start:ribbon_start + 600]
+        self.assertIn('data-chat-open', ribbon_html)
+
+    def test_experience_preview_defers_bullets_to_the_on_demand_chapter(self):
+        # The default preview is a scannable summary + selected impact; the
+        # accomplishment bullets live only in the on-demand full chapter (they
+        # already render there), so no approved detail is removed from the DOM.
+        response = self.client.get('/petec/resume', base_url='http://localhost')
+        text = response.get_data(as_text=True)
+        exp_start = text.index('id="experience"')
+        exp_end = text.index('id="credentials"', exp_start)
+        exp_html = text[exp_start:exp_end]
+
+        self.assertEqual(exp_html.count('class="r2-exp-card__preview"'), 3)
+        # The only <ul> lists in the section are the three full-record lists;
+        # the previews carry no bullet list of their own.
+        self.assertEqual(exp_html.count('class="r2-exp-bullets"'), 3)
+        self.assertEqual(exp_html.count('<ul'), 3)
+
+    def test_credential_cards_preview_three_records_with_full_set_in_panel(self):
+        # Category cards preview the three strongest records; the complete set
+        # remains reachable in each category's inline panel.
+        response = self.client.get('/petec/resume', base_url='http://localhost')
+        text = response.get_data(as_text=True)
+        cred_start = text.index('id="credentials"')
+        overview_start = text.index('data-r2-credential-overview', cred_start)
+        panels_start = text.index('r2-credential-panels', overview_start)
+        cred_end = text.index(
+            '<!-- shared-career-constellation:start -->', panels_start
+        )
+        overview_html = text[overview_start:panels_start]
+        panels_html = text[panels_start:cred_end]
+
+        # Ph.D. is the fourth education record: absent from the 3-item preview,
+        # present in the full education panel.
+        self.assertNotIn('Systems Engineering Ph.D.', overview_html)
+        self.assertIn('Systems Engineering Ph.D.', panels_html)
 
 
 if __name__ == '__main__':
