@@ -20,6 +20,12 @@ CAPTURE_VERIFY_PATH = (
     / "Verification"
     / "PS-CAPTURE-001_owner_isolation_verify.sql"
 )
+CAPTURE_LIFECYCLE_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-CAPTURE-002_lifecycle_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -35,6 +41,9 @@ EXPECTED_MIGRATIONS = {name.split("_")[0] for name in MIGRATION_FILENAMES}
 APPROVED_OPTIONAL_MIGRATIONS = {
     "PS-CAPTURE-001": (
         MIGRATION_DIR / "proposed" / "PS-CAPTURE-001_captures.sql"
+    ),
+    "PS-CAPTURE-002": (
+        MIGRATION_DIR / "proposed" / "PS-CAPTURE-002_capture_lifecycle.sql"
     ),
 }
 EXPECTED_TABLES = {
@@ -234,6 +243,24 @@ def verify_capture(env_path: Path | None = None) -> None:
     print("Verified PS-CAPTURE-001 with two synthetic owners and a full rollback.")
 
 
+def verify_capture_lifecycle(env_path: Path | None = None) -> None:
+    if not CAPTURE_LIFECYCLE_VERIFY_PATH.exists():
+        raise RuntimeError(
+            f"Verification script is missing: {CAPTURE_LIFECYCLE_VERIFY_PATH}"
+        )
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(CAPTURE_LIFECYCLE_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-CAPTURE-002 lifecycle verification failed.")
+    print(
+        "Verified PS-CAPTURE-002 lifecycle, two-owner isolation, "
+        "no automatic publication, and full synthetic rollback."
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -287,6 +314,8 @@ def main() -> None:
         verify_foundation(args.env_file)
         if "PS-CAPTURE-001" in args.migration:
             verify_capture(args.env_file)
+        if "PS-CAPTURE-002" in args.migration:
+            verify_capture_lifecycle(args.env_file)
 
 
 if __name__ == "__main__":

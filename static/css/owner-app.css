@@ -167,6 +167,18 @@
     font-size: 1.35rem;
 }
 
+.owner-app__capture-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.owner-app__capture-heading a {
+    color: #203767;
+    font: 700 0.9rem/1.4 Inter, sans-serif;
+}
+
 .owner-app__capture-list {
     display: grid;
     gap: 1rem;
@@ -188,17 +200,117 @@
     font: 400 1rem/1.6 Inter, sans-serif;
 }
 
-.owner-app__capture-list time,
-.owner-app__capture-list span {
+.owner-app__capture-meta time,
+.owner-app__capture-meta span {
     display: inline-block;
     margin-top: 0.75rem;
     color: #526078;
     font: 700 0.78rem/1.4 Inter, sans-serif;
 }
 
-.owner-app__capture-list span::before {
+.owner-app__capture-meta span::before {
     content: "\00b7";
     margin: 0 0.45rem;
+}
+
+.owner-app__capture-original,
+.owner-app__capture-correction,
+.owner-app__capture-delete {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+    padding-top: 0.85rem;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__capture-original summary,
+.owner-app__capture-correction summary,
+.owner-app__capture-delete summary {
+    min-height: 44px;
+    color: #203767;
+    font: 700 0.9rem/1.4 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__capture-original p,
+.owner-app__capture-delete p {
+    margin-top: 0.75rem;
+}
+
+.owner-app__capture-correction form,
+.owner-app__capture-delete form {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.owner-app__capture-correction label,
+.owner-app__capture-delete label {
+    color: #0a1b36;
+    font: 700 0.88rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__capture-correction label span {
+    color: #526078;
+    font-weight: 500;
+}
+
+.owner-app__capture-correction textarea,
+.owner-app__capture-correction input[type="text"] {
+    width: 100%;
+    padding: 0.85rem;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    color: #0a1b36;
+    font: 400 0.95rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__capture-correction textarea {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+.owner-app__capture-correction textarea:focus-visible,
+.owner-app__capture-correction input[type="text"]:focus-visible,
+.owner-app__capture-delete input[type="checkbox"]:focus-visible {
+    outline: 3px solid #2f5296;
+    outline-offset: 3px;
+}
+
+.owner-app__capture-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.owner-app__capture-controls form {
+    margin: 0;
+}
+
+.owner-app__capture-delete label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.owner-app__capture-delete input[type="checkbox"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.15rem;
+    accent-color: #203767;
+}
+
+.owner-app__capture-delete button {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #842d2d;
+    border-radius: 999px;
+    background: transparent;
+    color: #842d2d;
+    font: 700 0.9rem/1 Inter, sans-serif;
+    cursor: pointer;
 }
 
 .owner-app__empty {
@@ -232,6 +344,17 @@
 
     .owner-app__panel--capture {
         padding-inline: 1.5rem;
+    }
+
+    .owner-app__capture-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .owner-app__capture-controls,
+    .owner-app__capture-controls form,
+    .owner-app__capture-controls .owner-app__secondary {
+        width: 100%;
     }
 }
 

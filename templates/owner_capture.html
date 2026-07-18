@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-capture-001-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-capture-002-1">
 {% endblock %}
 
 {% block content %}
@@ -19,6 +19,10 @@
         {% if validation_message %}
         <p class="owner-app__message owner-app__message--error" role="alert">
             {{ validation_message }}
+        </p>
+        {% elif success_message %}
+        <p class="owner-app__message owner-app__message--success" role="status">
+            {{ success_message }}
         </p>
         {% elif saved %}
         <p class="owner-app__message owner-app__message--success" role="status">
@@ -43,19 +47,138 @@
         </form>
 
         <section class="owner-app__captures" aria-labelledby="recent-captures-title">
-            <h2 id="recent-captures-title">Recent captures</h2>
+            <div class="owner-app__capture-heading">
+                <h2 id="recent-captures-title">
+                    {% if archived %}Archived captures{% else %}Recent captures{% endif %}
+                </h2>
+                {% if archived %}
+                <a href="{{ url_for('owner.capture') }}">View active captures</a>
+                {% else %}
+                <a href="{{ url_for('owner.capture', view='archived') }}">View archived captures</a>
+                {% endif %}
+            </div>
             {% if captures %}
             <ol class="owner-app__capture-list">
                 {% for capture in captures %}
                 <li>
-                    <p>{{ capture.body }}</p>
-                    <time datetime="{{ capture.created_at_utc }}">{{ capture.created_at_utc }}</time>
-                    <span>Private</span>
+                    <p class="owner-app__capture-text">{{ capture.current_body }}</p>
+                    <div class="owner-app__capture-meta">
+                        <time datetime="{{ capture.created_at_utc }}">{{ capture.created_at_utc }}</time>
+                        <span>Private</span>
+                        {% if capture.revision_count %}
+                        <span>Version {{ capture.revision_number }}</span>
+                        {% endif %}
+                        {% if archived %}<span>Archived</span>{% endif %}
+                    </div>
+
+                    {% if capture.revision_count %}
+                    <details class="owner-app__capture-original">
+                        <summary>Original capture</summary>
+                        <p>{{ capture.original_body }}</p>
+                    </details>
+                    {% endif %}
+
+                    {% if not archived %}
+                    <details class="owner-app__capture-correction">
+                        <summary>Correct this capture</summary>
+                        <form
+                            method="post"
+                            action="{{ url_for('owner.correct_capture', capture_key=capture.capture_key) }}"
+                        >
+                            <input
+                                type="hidden"
+                                name="expected_row_version"
+                                value="{{ capture.row_version_token }}"
+                            >
+                            <label for="capture-correction-{{ loop.index }}">Corrected text</label>
+                            <textarea
+                                id="capture-correction-{{ loop.index }}"
+                                name="body"
+                                rows="5"
+                                maxlength="{{ max_body_length }}"
+                                required
+                            >{{ capture.current_body }}</textarea>
+                            <label for="capture-correction-note-{{ loop.index }}">
+                                Correction note <span>(optional)</span>
+                            </label>
+                            <input
+                                id="capture-correction-note-{{ loop.index }}"
+                                name="correction_note"
+                                type="text"
+                                maxlength="{{ max_correction_note_length }}"
+                            >
+                            <button class="owner-app__secondary" type="submit">
+                                Save new version
+                            </button>
+                        </form>
+                    </details>
+                    {% endif %}
+
+                    <div class="owner-app__capture-controls">
+                        <a
+                            class="owner-app__secondary"
+                            href="{{ url_for('owner.export_capture', capture_key=capture.capture_key) }}"
+                        >Export JSON</a>
+                        {% if archived %}
+                        <form
+                            method="post"
+                            action="{{ url_for('owner.restore_capture', capture_key=capture.capture_key) }}"
+                        >
+                            <input
+                                type="hidden"
+                                name="expected_row_version"
+                                value="{{ capture.row_version_token }}"
+                            >
+                            <button class="owner-app__secondary" type="submit">Restore</button>
+                        </form>
+                        {% else %}
+                        <form
+                            method="post"
+                            action="{{ url_for('owner.archive_capture', capture_key=capture.capture_key) }}"
+                        >
+                            <input
+                                type="hidden"
+                                name="expected_row_version"
+                                value="{{ capture.row_version_token }}"
+                            >
+                            <button class="owner-app__secondary" type="submit">Archive</button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <details class="owner-app__capture-delete">
+                        <summary>Delete permanently</summary>
+                        <p>
+                            This removes the original capture and every correction.
+                            It cannot be undone.
+                        </p>
+                        <form
+                            method="post"
+                            action="{{ url_for('owner.delete_capture', capture_key=capture.capture_key) }}"
+                        >
+                            <input
+                                type="hidden"
+                                name="expected_row_version"
+                                value="{{ capture.row_version_token }}"
+                            >
+                            <label>
+                                <input name="confirm_delete" type="checkbox" value="delete" required>
+                                I understand this permanently deletes this capture.
+                            </label>
+                            <button type="submit">Delete permanently</button>
+                        </form>
+                    </details>
                 </li>
                 {% endfor %}
             </ol>
             {% else %}
-            <p class="owner-app__empty">Nothing captured yet. Your first note will appear here.</p>
+            <p class="owner-app__empty">
+                {% if archived %}
+                Nothing is archived.
+                {% else %}
+                Nothing captured yet. Your first note will appear here.
+                {% endif %}
+            </p>
             {% endif %}
         </section>
 

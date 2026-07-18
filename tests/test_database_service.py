@@ -1,6 +1,6 @@
 import unittest
 
-from services.database_service import DatabaseService
+from services.database_service import ALLOWED_PROCEDURES, DatabaseService
 
 
 class DatabaseServiceTests(unittest.TestCase):
@@ -36,6 +36,18 @@ class DatabaseServiceTests(unittest.TestCase):
         result = self.service.last_result("usp_AddSlateItem")
 
         self.assertEqual(result, [{"saved_id": 42}])
+
+    def test_capture_lifecycle_procedures_are_explicitly_allowlisted(self):
+        expected = {
+            "usp_GetCaptureForOwner",
+            "usp_CorrectCapture",
+            "usp_ArchiveCapture",
+            "usp_RestoreCapture",
+            "usp_DeleteCapture",
+            "usp_ExportCaptureForOwner",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
 
 
 if __name__ == "__main__":
