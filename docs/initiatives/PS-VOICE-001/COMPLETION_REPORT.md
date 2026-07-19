@@ -1,5 +1,10 @@
 # PeerSlate Completion & Handoff Report
 
+> Historical implementation handoff. The original sections below describe the
+> pre-release branch state. Section J is the controlling release closeout, and
+> the accepted visual correction evidence is in
+> `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/COMPLETION_REPORT.md`.
+
 ## A. Status
 
 - Package: PS-VOICE-001 - Private Voice Capture
@@ -134,3 +139,25 @@ ChatGPT Work should fetch the exact pushed branch/SHA, rerun the focused/governa
 ## I. What Pete needs to do or decide
 
 Review the protected Voice Capture visual evidence with ChatGPT Work and either accept it as meeting/exceeding the homepage Voice walkthrough or request specific revisions before merge. No credential or production action is required from Pete at this handoff.
+
+## J. Controlling release closeout - 2026-07-19
+
+- The original backend package released through Azure PR 75 at
+  `eede8565d703a466bd788962d494e8b385b53409`; pipeline 105 passed Build and
+  Deploy. Production infrastructure, SQL, private Blob/RBAC, managed-identity
+  Speech, and Pete's signed-in functional Voice validation passed.
+- Pete withdrew the first visual execution. Claude Code completed the bounded
+  visual correction, self-certified `Pass`, and relinquished exact tip
+  `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`.
+- Pete and ChatGPT Work accepted the corrected desktop/mobile implementation at
+  V3 on 2026-07-19. Azure PR 80 squash-merged it at
+  `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 (`20260719.21`)
+  passed Build and Deploy.
+- Production `/` and the Voice walkthrough returned 200; `/app/capture`
+  returned the expected signed-out 302 to sign-in; and production served the
+  accepted Voice CSS/JavaScript signatures. No new post-deploy authenticated
+  screenshot is claimed because the available verification browser had no
+  signed-in member session.
+- Final package status: **Complete, deployed, live, visually accepted, and
+  closed**. Future destinations, attachments, AI drafting, audience changes,
+  sharing, and publication remain separate later packages.

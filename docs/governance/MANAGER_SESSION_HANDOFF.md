@@ -1,9 +1,8 @@
 # PeerSlate Manager Session Handoff
 
-_Prepared 2026-07-18 and updated 2026-07-19 for portable package management,
-self-managed delivery lanes, the reopened Voice visual gate, Interview Gate 2.4
-review, and Capture Media planning. Repository and branch facts are a snapshot;
-fetch `origin` before acting._
+_Prepared 2026-07-18 and updated 2026-07-19 after the completed Voice visual
+release, with Interview Gate 2.4 review and Capture Media planning still active.
+Repository and branch facts are a snapshot; fetch `origin` before acting._
 
 ## Start here on any computer
 
@@ -72,6 +71,10 @@ sign-in boundary.
   `eede8565d703a466bd788962d494e8b385b53409` / pipeline 105.
 - Self-managed delivery lanes and Claude Voice correction allocation: PR 76 at
   `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf` / pipeline 107.
+- Protected Voice visual parity: accepted Claude tip
+  `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`, Azure PR 80, merge
+  `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`, pipeline 113
+  (`20260719.21`) Build and Deploy passed.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.
@@ -81,31 +84,30 @@ Settings, private text Capture lifecycle, canonical Moment confirmation,
 private exact-version Placement reference foundation, refined public résumé,
 public browser-local Interview Studio, and Deep Navy Gold foundations.
 
-## Active lane 1 - PS-VOICE-001
+## Completed lane - PS-VOICE-001
 
 ### Honest current state
 
-Voice is implemented and deployed. Production private Blob/RBAC, managed-
-identity Speech, SQL migration/verification, Azure PR 75, pipeline 105, and the
-protected functional path passed. Pete completed the signed-in workflow and
-confirmed that it works.
+Voice is implemented, deployed, visually accepted, and closed. Production
+private Blob/RBAC, managed-identity Speech, SQL migration/verification, Azure
+PR 75, pipeline 105, and Pete's signed-in functional validation remain the
+backend evidence. Claude Code completed the protected visual correction,
+self-certified `Pass`, and relinquished exact tip
+`e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`. Pete and ChatGPT Work accepted the
+real responsive implementation at V3. Azure PR 80 released it at
+`864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 passed Build and
+Deploy.
 
-Pete then withdrew visual acceptance because the protected desktop and mobile
-experience is clunky and does not match the approved homepage/feed walkthrough.
-Voice is therefore technically deployed but product/visual status remains In
-Progress.
+Live verification returned 200 for `/` and the Voice walkthrough, the expected
+signed-out 302 from `/app/capture` to sign-in, and the accepted Voice CSS/JS
+signatures from production. The available verification browser had no signed-in
+member session, so no new post-deploy authenticated screenshot or repeated real
+Speech transaction is claimed. The accepted implementation evidence remains the
+visual proof; pipeline and live asset/auth checks are the V4 release proof.
 
-Preserve `C:\Users\peter\Documents\portfolio-voice-001`; do not switch, clean,
-edit, stash, or reuse it. Claude Code now owns a fresh self-managed visual-
-parity branch from current `origin/main` under
-`docs/initiatives/PS-VOICE-001/06_VISUAL_PARITY_CORRECTION.md`.
-
-The active Claude branch is `work/2026-07-19-voice-visual-parity-001` in
-`C:\Users\peter\Documents\portfolio-voice-visual-parity`. Its observed pushed
-checkpoint `0158daf22d26e7c38be494e2b32e6b51fdaca0fb` contains design
-instructions only. The manager answers are recorded in the correction addendum;
-Claude may implement after synchronizing current `origin/main` without another
-pre-build manager pause.
+Preserve `C:\Users\peter\Documents\portfolio-voice-001` and
+`C:\Users\peter\Documents\portfolio-voice-visual-parity`; do not switch, clean,
+edit, stash, or reuse them. They are historical references, not active lanes.
 
 ### Required product outcome
 
@@ -116,10 +118,9 @@ Capture** into the existing lifecycle. Text remains available. No Moment,
 Placement, Journal, résumé, Studio, share, audience, or publication is created
 automatically.
 
-### Owner visual correction and final acceptance
+### Closed visual contract
 
-Claude self-reviews and corrects the returned UI against
-`OWNER_VISUAL_INTEGRITY_STANDARD.md`:
+The released UI satisfies `OWNER_VISUAL_INTEGRITY_STANDARD.md`:
 
 - the homepage Voice walkthrough is the minimum visual/interaction authority;
 - the real protected UI must be recognizably the same or better;
@@ -130,13 +131,12 @@ Claude self-reviews and corrects the returned UI against
   owner/manager visual acceptance are mandatory.
 
 The approved future Community, Connections, selected-audience, My Story, Slate
-Board, résumé, attachment, AI-draft, and publication affordances may appear as
+Board, résumé, attachment, AI-draft, and publication affordances appear only as
 polished, disabled `Coming later` scaffolding. **Save private Capture** remains
-the only live completion action. Claude returns exact evidence and a
-`Pass`/`Conditional`/`Fail` report. Pete and the designated session manager perform a focused
-real-product acceptance review rather than a second complete technical audit.
+the only live completion action. Later activation requires separate backend,
+authorization, product, visual, and release packages.
 
-## Active lane 2 - PS-INTERVIEW-PUBLIC-GATE-001
+## Active lane 1 - PS-INTERVIEW-PUBLIC-GATE-001
 
 ### Product decision already approved
 
@@ -186,7 +186,7 @@ Then:
 Do not authorize Claude implementation from the three-direction art package
 alone.
 
-## Active lane 3 - PS-CAPTURE-MEDIA-001
+## Active lane 2 - PS-CAPTURE-MEDIA-001
 
 Claude Co-Work is the designated manager for Capture Media planning. No remote
 Capture Media implementation branch was visible when this package was
@@ -228,21 +228,19 @@ does not interrupt Voice or Interview.
 
 Near-term sequencing is:
 
-1. finish and release the PS-VOICE-001 visual correction after Claude's
-   self-certified evidence and focused Pete/designated-manager acceptance;
-2. finish Interview Gate 2.4, feasibility review, owner approval, and then the
+1. finish Interview Gate 2.4, feasibility review, owner approval, and then the
    bounded public Studio implementation;
-3. define the separate homepage Interview walkthrough package after its design
+2. define the separate homepage Interview walkthrough package after its design
    freezes;
-4. choose the next backend consumer or owner-shell slice without automatically
+3. choose the next backend consumer or owner-shell slice without automatically
    starting Journal;
-5. build the real owner Home/viewer modes and authenticated Studio only through
+4. build the real owner Home/viewer modes and authenticated Studio only through
    separately approved identity, persistence, authorization, and lifecycle
    packages;
-6. conduct the broader public/homepage visual convergence after its entry gate;
-7. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
+5. conduct the broader public/homepage visual convergence after its entry gate;
+6. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
    layout persistence, accessible interaction, and publication design gate;
-8. run a two-member founding alpha with Pete and Danielle, then structured
+7. run a two-member founding alpha with Pete and Danielle, then structured
    feedback, fixes, a small invited cohort, and measured rollout.
 
 Journal UI remains on hold. Do not duplicate Capture or Moment text, create a
@@ -256,19 +254,15 @@ backend reference as a visible member feature.
 2. Confirm the self-managed delivery workflow is merged and green.
 3. Inspect all worktrees without changing them; confirm each active branch has
    one writer and non-overlapping files.
-4. Let Claude Code finish the current-main Voice visual-correction package and
-   self-manage implementation, self-review, tests, evidence, and PR readiness.
-5. The designated manager reviews Claude's real Voice result and report with
-   Pete; do not recreate the entire technical audit by default.
-6. After acceptance, let Claude complete its Azure PR, pipeline, production
-   verification, and package closeout.
-7. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
+4. Treat Voice as released and closed; preserve its worktrees and require a new
+   package for any future refinement.
+5. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
    Co-Work, confirm it, then send the accepted package to Claude Code/Fable for
    feasibility review.
-8. Obtain Pete/designated-manager visual approval before Interview code.
-9. Claude Co-Work completes Capture Media manager planning before assigning an
+6. Obtain Pete/designated-manager visual approval before Interview code.
+7. Claude Co-Work completes Capture Media manager planning before assigning an
    implementation writer.
-10. Keep Voice, Interview, and Capture Media status and next gates current in
+8. Keep Interview and Capture Media status and next gates current in
    the repository after each material handoff or release.
 
 ## Paste-ready kickoff for a designated manager session
@@ -281,10 +275,9 @@ backend reference as a visible member feature.
 > reviews its complete diff, corrects issues, runs tests/evidence, prepares the
 > PR, and returns `Pass`, `Conditional`, or `Fail`; after focused Pete/manager
 > acceptance the same writer completes Azure release/closeout. Preserve the
-> original PS-VOICE-001 worktree and assign Claude the fresh protected Voice
-> visual correction under `06_VISUAL_PARITY_CORRECTION.md`. The real UI must
-> match or exceed the homepage/feed walkthrough on desktop and mobile, with
-> Speak and Type first class and future controls truth-labeled as disabled.
+> completed PS-VOICE-001 worktrees; Voice is released and any later change
+> requires a new package. Preserve its accepted Speak/Type, privacy, lifecycle,
+> accessibility, and walkthrough-parity contracts.
 > Continue Interview only at Gate 2.4 design review until its complete package
 > and approvals pass. Maintain honest implementation, demonstration, deployment,
 > and live-production boundaries.

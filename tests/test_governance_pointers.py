@@ -156,8 +156,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 105", self.baseline)
-        self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
+        self.assertIn("application_behavior_pipeline: 113", self.baseline)
+        self.assertIn("864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82", self.baseline)
         self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", self.baseline)
         self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", self.baseline)
         self.assertIn("MANAGER_SESSION_HANDOFF.md", self.baseline)
@@ -167,6 +167,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("voice_release_pipeline: 105", self.baseline)
         self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
+        self.assertIn("voice_visual_release_pipeline: 113", self.baseline)
+        self.assertIn("voice_visual_release_pr: 80", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -176,7 +178,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001", "PS-CAPTURE-MEDIA-001"],
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-CAPTURE-MEDIA-001"],
             active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
@@ -328,7 +330,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("Self-certification: Pass / Conditional / Fail", report)
         self.assertIn("Complete-diff review", report)
 
-    def test_voice_visual_correction_is_truthful_and_assigned_to_claude(self):
+    def test_voice_visual_correction_is_truthful_and_closed(self):
         correction = _read(
             "docs", "initiatives", "PS-VOICE-001", "06_VISUAL_PARITY_CORRECTION.md"
         )
@@ -341,9 +343,12 @@ class BaselineCoherenceTests(unittest.TestCase):
             "Pass`, `Conditional`, or `Fail",
         ):
             self.assertIn(expected, correction)
-        self.assertIn("Claude Code self-managed visual correction", self.baseline)
+        self.assertIn("PS-VOICE-VISUAL-PARITY-001", self.baseline)
+        self.assertIn("PS-VOICE-001 is released and closed", self.baseline)
         self.assertIn("pipeline 105", self.state)
         self.assertIn("withdrew Voice visual acceptance", self.state)
+        self.assertIn("pipeline 113", self.state)
+        self.assertIn("functionally deployed, visually accepted, and closed", self.state)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,10 @@
 ## Assignment
 
 - Original backend writer: ChatGPT Codex; released through Azure PR 75 / pipeline 105
-- Current corrective frontend writer: Claude Code, self-managed
-- Task manager / visual authority / final acceptance: Pete and the package-designated session manager (ChatGPT Work/Codex or Claude Co-Work)
-- Corrective branch: `work/2026-07-19-voice-visual-parity-001`
+- Corrective frontend writer: Claude Code, completed and relinquished
+- Task manager / visual authority / final acceptance: Pete and ChatGPT Work; accepted 2026-07-19
+- Accepted corrective tip: `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`
+- Released through Azure PR 80 at `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 passed Build and Deploy
 - Entry gate: PS-VOICE-CAPTURE-MANAGER-001 is squash-merged, its Azure pipeline is green, and the branch starts from the resulting current `origin/main`.
 - Depends on: PS-AUTH-001, PS-CAPTURE-001/002, PS-MOMENT-001, and the existing App Service managed identity.
 
@@ -20,18 +21,21 @@ Voice and text converge at the existing private Capture boundary. The original a
 ## Current release and corrective status - 2026-07-19
 
 The backend, production infrastructure, SQL migration, Azure merge/deploy, and
-signed-in functional workflow are real. Pete confirmed that Voice works, then
-withdrew visual acceptance because the protected desktop/mobile UI does not
-match the approved homepage/feed walkthrough. Read and follow
-[06_VISUAL_PARITY_CORRECTION.md](06_VISUAL_PARITY_CORRECTION.md) for the current
-Claude assignment. The earlier implementation documents remain authoritative
-for backend behavior and must not be reopened by the visual correction.
+signed-in functional workflow are real. Pete confirmed the workflow works,
+withdrew the first visual execution, then approved Claude's corrected protected
+desktop/mobile result after ChatGPT Work's focused review. The implementation
+matches or exceeds the homepage/feed walkthrough, keeps Speak and Type first
+class, and preserves truthful disabled future scaffolding.
 
-The corrective branch exists at planning checkpoint
-`0158daf22d26e7c38be494e2b32e6b51fdaca0fb`. That checkpoint adds design
-instructions only; it is not implementation, review, acceptance, deployment,
-or closeout evidence. Claude must synchronize the branch with current
-`origin/main` after this governance package lands.
+The correction is released through Azure PR 80 at exact merge
+`864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 (`20260719.21`)
+passed Build and Deploy. Production served the accepted Voice CSS/JavaScript
+signatures and the expected protected-route sign-in boundary. The available
+post-deploy verification browser was not signed in, so the release evidence
+does not claim a new authenticated production screenshot or repeat the already
+completed real Speech validation. Read
+[06_VISUAL_PARITY_CORRECTION.md](06_VISUAL_PARITY_CORRECTION.md) as the closed
+correction contract; future Voice changes require a new package.
 
 ## Owner-visible first slice
 

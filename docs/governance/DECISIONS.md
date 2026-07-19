@@ -163,3 +163,24 @@ This is an append-only operational decision record. The current Bible and Roadma
   activates requirements, architecture, decomposition, and writer allocation;
   it does not claim that photo, video, or document Capture is implemented,
   deployed, or live.
+
+## 2026-07-19 - Accept and release Voice visual parity
+
+- Pete and ChatGPT Work accepted PS-VOICE-VISUAL-PARITY-001 as **Pass** at the
+  relinquished Claude Code tip
+  `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b` after the manager correction pass.
+- Azure PR 80 squash-merged the accepted manager closeout as
+  `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113
+  (`20260719.21`) passed Build and Deploy for that exact merge.
+- Live verification proved the public routes, deployed Voice CSS/JavaScript
+  signatures, and the protected `/app/capture` sign-in boundary. The available
+  production browser was signed out, so this closeout does not claim a new
+  authenticated production screenshot or repeat the already completed real
+  Azure Speech transaction.
+- PS-VOICE-001 and its visual-parity correction are complete, accepted,
+  deployed, live, and closed. The released privacy, lifecycle, Speak/Type,
+  accessibility, and visual contracts remain binding.
+- Disabled future-destination scaffolding remains non-functional. Activating
+  Community, Connections, Story, Slate Board, resume, media attachment, AI-post,
+  sharing, or publication behavior requires a separately authorized package,
+  branch, evidence set, visual acceptance, and Azure closeout.
