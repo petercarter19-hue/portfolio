@@ -60,6 +60,15 @@ class DatabaseServiceTests(unittest.TestCase):
 
         self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
 
+    def test_placement_procedures_are_explicitly_allowlisted(self):
+        expected = {
+            "usp_CreateOrReactivateMomentPlacement",
+            "usp_ListMomentPlacementsForOwner",
+            "usp_RemoveMomentPlacement",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+
 
 if __name__ == "__main__":
     unittest.main()
