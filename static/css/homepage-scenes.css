@@ -1578,7 +1578,11 @@ body[data-theme="dark"] .home-v3 button:focus-visible {
    composition keeps them as the light stages between dark hero and dark
    footer, so their internals stay legible and the page alternates. */
 body[data-theme="dark"] .home-v3 .hv-resume,
-body[data-theme="dark"] .home-v3 .hv-story {
+body[data-theme="dark"] .home-v3 .hv-story,
+body[data-theme="dark"] .home-v3 .hv-interview {
+    /* PS-HOME-INTERVIEW-DEMO-001: the walkthrough scene sits between the
+       two existing paper bands, so it joins the same light/cream override
+       to keep the dark-theme light/dark alternation intact. */
     --hv-indigo: #8a6500;
     --hv-indigo-strong: #6f5100;
     --hv-indigo-soft: rgb(216 169 40 / 16%);
@@ -1601,23 +1605,27 @@ body[data-theme="dark"] .home-v3 .hv-story {
 
 /* Paper-band buttons flip back to gold-on-light rules. */
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--primary,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary {
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--primary {
     background: #d8a928;
     color: #0a1730;
     box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost {
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--ghost {
     color: #0a1730;
     border-color: #cfc9bd;
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost:hover,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost:hover { background: #f1efea; }
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost:hover,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--ghost:hover { background: #f1efea; }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-eyebrow,
-body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow {
+body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-eyebrow {
     background: rgb(216 169 40 / 15%);
     color: #6f5100;
 }
@@ -1645,15 +1653,21 @@ body[data-theme="dark"] .home-v3 .hv-week__summary {
 /* Chips inside the paper bands go back to warm light pills (the graphite
    chip style above is for the dark hero only). */
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip,
-body[data-theme="dark"] .home-v3 .hv-story .hv-chip {
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-chip {
     background: #f1efea;
     color: #55534e;
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--amber,
 body[data-theme="dark"] .home-v3 .hv-story .hv-chip--amber,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--amber,
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--cyan,
-body[data-theme="dark"] .home-v3 .hv-story .hv-chip--cyan {
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip--cyan,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--cyan,
+body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--green,
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip--green,
+body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--green {
     background: rgb(216 169 40 / 16%);
     color: #6f5100;
 }
@@ -1673,3 +1687,632 @@ body[data-theme="dark"] .home-v3 .hv-invite {
 body[data-theme="dark"] .home-v3 .hv-invite__line { color: #f7f9fc; }
 
 body[data-theme="dark"] .home-v3 .hv-future__phd-mark { color: #e3b83a; }
+
+/* New chip variant used only by the Interview walkthrough's "Retry
+   strengthened" chip; paired with the existing amber/cyan modifiers above
+   so it themes the same way in the dark-hero and paper-band contexts. */
+.home-v3 .hv-chip--green { background: #E4F5EC; color: #1F7A52; }
+body[data-theme="dark"] .home-v3 .hv-chip--green { background: rgb(105 174 146 / 16%); color: #69ae92; }
+
+/* =====================================================================
+   PS-HOME-INTERVIEW-DEMO-001 — Interview Studio illustrative walkthrough
+   Scene 3 of 4 (between Living R&eacute;sum&eacute; and My Story/Future).
+   Interaction revised 2026-07-19 (owner direction): an on-page POSTER whose
+   "Walk me through it" button pops out a MODAL that steps through the four
+   fixed states — the same guided pattern as the Voice hero's capture
+   overlay, for continuity. Scoped under .home-v3 .hv-interview; class prefix
+   hv-int- for pieces internal to this scene. Fixed fictional content only;
+   the four steps are server-rendered inside the modal and JS toggles which
+   one shows. Controls are hidden entirely without JS via the .hv-int--js
+   gate, so the poster (question + truth bar) plus a normal Studio link are
+   the only surface in that scenario. No fixed viewport-height squeeze on the
+   scene; the modal alone caps its height to the viewport and scrolls
+   internally (standard dialog behavior).
+   ===================================================================== */
+
+.home-v3 .hv-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.home-v3 .hv-interview { padding: clamp(3rem, 6vw, 5.5rem) 0; }
+
+.home-v3 .hv-interview__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
+    gap: clamp(1.8rem, 3.4vw, 3.4rem);
+    align-items: center;
+}
+
+.home-v3 .hv-interview__copy { padding-top: 0.4rem; }
+
+.home-v3 .hv-int-badge { display: inline-flex; margin-bottom: 1.2rem; }
+
+.home-v3 .hv-int-truthlist {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0 0 1.3rem;
+    padding: 0;
+    list-style: none;
+}
+
+.home-v3 .hv-int-truthlist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--hv-text);
+}
+
+.home-v3 .hv-int-truthlist svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex: 0 0 auto;
+    margin-top: 0.15rem;
+    fill: none;
+    stroke: var(--hv-green);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.home-v3 .hv-int-sequence-note {
+    margin: 0;
+    padding: 0.2rem 0 0.2rem 1rem;
+    border-left: 3px solid var(--hv-amber);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--hv-muted);
+}
+
+.home-v3 .hv-int-sequence-note strong { color: var(--hv-ink); }
+
+/* ---- shared bits used by both the poster and the modal steps ---- */
+
+.home-v3 .hv-int-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--hv-indigo-strong);
+}
+
+.home-v3 .hv-int-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.home-v3 .hv-int-meta { font-size: 0.82rem; color: var(--hv-muted); white-space: nowrap; }
+
+.home-v3 .hv-int-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+}
+
+.home-v3 .hv-int-listen {
+    margin: 0;
+    padding: 0.15rem 0 0.15rem 0.9rem;
+    border-left: 3px solid var(--hv-amber);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--hv-text);
+}
+
+.home-v3 .hv-int-listen strong { color: var(--hv-ink); }
+
+/* ---- poster (on-page card that invites the walkthrough) ---- */
+
+.home-v3 .hv-int-poster {
+    background: var(--hv-surface);
+    border: 1px solid rgb(221 228 240 / 90%);
+    border-radius: var(--hv-radius-lg);
+    box-shadow: var(--hv-shadow-lift);
+    padding: clamp(1.4rem, 2.6vw, 2.2rem);
+}
+
+.home-v3 .hv-int-poster__head { margin-bottom: 1.2rem; }
+
+.home-v3 .hv-int-poster__title {
+    margin: 0;
+    font-family: var(--hv-serif);
+    font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+    line-height: 1.15;
+    color: var(--hv-ink);
+}
+
+.home-v3 .hv-int-poster__question {
+    padding: 1.2rem 1.3rem;
+    border-radius: var(--hv-radius-md);
+    background: #F7F9FD;
+    border: 1px solid #E8EDF5;
+}
+
+.home-v3 .hv-int-poster__q {
+    margin: 0.8rem 0 1rem;
+    font-family: var(--hv-serif);
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    line-height: 1.3;
+    color: var(--hv-ink);
+}
+
+.home-v3 .hv-int-poster__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    margin: 1.3rem 0;
+}
+
+.home-v3 .hv-int-poster__actions .hv-btn svg { width: 1.05rem; height: 1.05rem; }
+.home-v3 .hv-int-poster__actions .hv-btn--primary svg { fill: currentColor; stroke: none; }
+
+/* ---- truth bar (persistent on the poster and echoed in the modal foot) ---- */
+
+.home-v3 .hv-int-truthbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.4rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--hv-radius-md);
+    background: var(--hv-ink);
+}
+
+.home-v3 .hv-int-truthbar span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.home-v3 .hv-int-truthbar svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    fill: none;
+    stroke: #d8a928;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---- JS gate ----
+   Without JS: hide the "Walk me through it" button (it can't open a modal),
+   keep the poster's Studio link. With JS: show the button, hide the link
+   (the modal's last step carries the Studio link). */
+.home-v3 .hv-interview:not(.hv-int--js) .hv-int-controls { display: none; }
+.home-v3 .hv-interview.hv-int--js .hv-int-nojs { display: none; }
+
+/* =====================================================================
+   Pop-out modal — matches the Voice hero overlay's visual language
+   (dimmed, blurred backdrop; centered white card; sits above the sticky
+   global header at z-index 1200).
+   ===================================================================== */
+
+.home-v3 .hv-int-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgb(8 18 37 / 42%);
+    backdrop-filter: blur(8px);
+}
+
+/* The display:grid above is more specific than the UA [hidden] rule, so it
+   must be restated or the modal would show through its hidden attribute. */
+.home-v3 .hv-int-overlay[hidden] { display: none; }
+
+.home-v3 .hv-int-modal {
+    width: min(760px, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: var(--hv-surface);
+    border-radius: 28px;
+    box-shadow: var(--hv-shadow-lift);
+    color: var(--hv-text);
+}
+
+.home-v3 .hv-int-modal__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.4rem 1.6rem 1.1rem;
+    border-bottom: 1px solid #EEF2F8;
+}
+
+.home-v3 .hv-int-modal__head > div { flex: 1 1 auto; min-width: 0; }
+
+.home-v3 .hv-int-modal__title {
+    margin: 0;
+    font-family: var(--hv-serif);
+    font-weight: 600;
+    font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+    line-height: 1.2;
+    color: var(--hv-ink);
+}
+
+.home-v3 .hv-int-count {
+    align-self: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--hv-muted);
+    white-space: nowrap;
+}
+
+.home-v3 .hv-int-close {
+    flex: 0 0 auto;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.8rem;
+    border: 1px solid var(--hv-line);
+    background: var(--hv-surface);
+    color: #75839A;
+    cursor: pointer;
+}
+
+.home-v3 .hv-int-close svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.home-v3 .hv-int-close:hover { background: #F5F7FC; color: var(--hv-ink); }
+
+/* step rail inside the modal */
+
+.home-v3 .hv-int-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 1rem 1.6rem;
+    border-bottom: 1px solid #EEF2F8;
+    list-style: none;
+}
+
+.home-v3 .hv-int-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+    border-radius: 999px;
+    border: 1px solid var(--hv-line);
+    background: var(--hv-surface);
+    color: var(--hv-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.home-v3 .hv-int-step__num {
+    display: grid;
+    place-items: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    background: var(--hv-cloud);
+    color: var(--hv-muted);
+    font-size: 0.78rem;
+    font-weight: 750;
+    flex: 0 0 auto;
+}
+
+.home-v3 .hv-int-step[aria-current="step"] { border-color: var(--hv-indigo-strong); color: var(--hv-ink); }
+.home-v3 .hv-int-step[aria-current="step"] .hv-int-step__num { background: var(--hv-indigo); color: #fff; }
+.home-v3 .hv-int-step[data-done="true"]:not([aria-current="step"]) { color: var(--hv-text); }
+.home-v3 .hv-int-step[data-done="true"] .hv-int-step__num { background: var(--hv-green); color: #fff; }
+
+/* modal body + step content */
+
+.home-v3 .hv-int-modal__body { padding: 1.5rem 1.6rem; }
+
+.home-v3 .hv-int-state__title {
+    margin: 0 0 0.9rem;
+    font-family: var(--hv-serif);
+    font-size: clamp(1.3rem, 2vw, 1.7rem);
+    line-height: 1.25;
+    color: var(--hv-ink);
+}
+
+.home-v3 .hv-int-state__title:focus-visible {
+    outline: 2px solid var(--hv-indigo);
+    outline-offset: 4px;
+    border-radius: 0.3rem;
+}
+
+.home-v3 .hv-int-listen + .hv-int-method { margin-top: 1.1rem; }
+
+.home-v3 .hv-int-method {
+    display: inline-flex;
+    padding: 0.3rem;
+    margin-bottom: 1rem;
+    border-radius: 0.9rem;
+    background: var(--hv-cloud);
+    border: 1px solid var(--hv-line);
+}
+
+.home-v3 .hv-int-method__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.1rem;
+    border-radius: 0.7rem;
+    background: transparent;
+    color: var(--hv-muted);
+    font-size: 0.92rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.home-v3 .hv-int-method__btn svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.home-v3 .hv-int-method__btn[aria-pressed="true"] { background: var(--hv-indigo); color: #fff; box-shadow: 0 8px 18px rgb(32 55 103 / 22%); }
+
+.home-v3 .hv-int-method__default {
+    margin-left: 0.15rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.4rem;
+    background: rgb(255 255 255 / 24%);
+    font-size: 0.66rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.home-v3 .hv-int-method__btn[aria-pressed="false"] .hv-int-method__default { display: none; }
+
+.home-v3 .hv-int-explain {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--hv-radius-md);
+    background: #F7F9FD;
+    border: 1px solid #E8EDF5;
+}
+
+/* display:flex above outranks UA [hidden]; restate so the inactive panel hides. */
+.home-v3 .hv-int-explain[hidden] { display: none; }
+
+.home-v3 .hv-int-explain__icon {
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--hv-indigo);
+    color: #fff;
+}
+
+.home-v3 .hv-int-explain__icon svg { width: 1.4rem; height: 1.4rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.home-v3 .hv-int-explain strong { display: block; margin-bottom: 0.25rem; font-size: 0.95rem; color: var(--hv-ink); }
+.home-v3 .hv-int-explain p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--hv-muted); }
+
+.home-v3 .hv-int-inline-note { margin: 1rem 0 0; font-size: 0.82rem; line-height: 1.5; color: var(--hv-muted); }
+.home-v3 .hv-int-inline-note strong { color: var(--hv-indigo-strong); }
+
+/* step 2 — transcript card */
+
+.home-v3 .hv-int-transcript-card {
+    display: flex;
+    gap: 1.1rem;
+    padding: 1.1rem;
+    border-radius: var(--hv-radius-md);
+    background: #F7F9FD;
+    border: 1px solid #E8EDF5;
+}
+
+.home-v3 .hv-int-transcript-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 6.5rem;
+    flex: 0 0 auto;
+    padding: 0.9rem 0.5rem;
+    border-radius: var(--hv-radius-md);
+    background: var(--hv-indigo);
+    color: #fff;
+}
+
+.home-v3 .hv-int-transcript-badge svg { width: 1.3rem; height: 1.3rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.home-v3 .hv-int-wave { display: flex; align-items: flex-end; gap: 0.15rem; height: 1.8rem; }
+.home-v3 .hv-int-wave i { display: block; width: 0.2rem; border-radius: 0.15rem; background: rgb(255 255 255 / 75%); }
+
+.home-v3 .hv-int-transcript-label {
+    margin: 0 0 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hv-indigo-strong);
+}
+
+.home-v3 .hv-int-transcript-text { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--hv-text); overflow-wrap: anywhere; }
+
+/* step 3 — bottom line + review + STAR */
+
+.home-v3 .hv-int-bottomline { padding: 0.2rem 0 0.2rem 1.1rem; margin-bottom: 1.2rem; border-left: 4px solid var(--hv-indigo); }
+
+.home-v3 .hv-int-bottomline-label {
+    margin: 0 0 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--hv-indigo-strong);
+}
+
+.home-v3 .hv-int-bottomline p { margin: 0.6rem 0 0; font-size: 0.9rem; line-height: 1.55; color: var(--hv-muted); }
+
+.home-v3 .hv-int-review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem; }
+
+.home-v3 .hv-int-review-col { padding: 0.9rem 1rem; border-radius: var(--hv-radius-md); border: 1px solid #E8EDF5; background: #FBFCFF; }
+.home-v3 .hv-int-review-col h4 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--hv-ink); }
+.home-v3 .hv-int-review-col ul { margin: 0; padding: 0 0 0 1.1rem; font-size: 0.85rem; line-height: 1.6; color: var(--hv-text); }
+
+.home-v3 .hv-int-star { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+
+.home-v3 .hv-int-star__tile { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.8rem 0.5rem; border-radius: var(--hv-radius-md); text-align: center; }
+.home-v3 .hv-int-star__tile strong { font-family: var(--hv-serif); font-size: 1.3rem; }
+.home-v3 .hv-int-star__tile span { font-size: 0.72rem; line-height: 1.3; color: var(--hv-muted); }
+.home-v3 .hv-int-star__tile--complete { background: #E4F5EC; }
+.home-v3 .hv-int-star__tile--complete strong { color: #1F7A52; }
+.home-v3 .hv-int-star__tile--target { background: #FBF3E1; }
+.home-v3 .hv-int-star__tile--target strong { color: #8A6A1E; }
+
+/* step 4 — retry comparison */
+
+.home-v3 .hv-int-retry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem; }
+
+.home-v3 .hv-int-retry-panel { padding: 1rem 1.1rem; border-radius: var(--hv-radius-md); border: 1px solid #E8EDF5; background: #FBFCFF; }
+.home-v3 .hv-int-retry-panel h4 { margin: 0 0 0.6rem; font-size: 0.78rem; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; color: var(--hv-muted); }
+.home-v3 .hv-int-retry-panel p { margin: 0; font-size: 0.88rem; line-height: 1.6; color: var(--hv-text); overflow-wrap: anywhere; }
+.home-v3 .hv-int-retry-panel--improved { background: #fff; border-color: rgb(31 122 82 / 25%); }
+.home-v3 .hv-int-retry-panel--improved h4 { color: #1F7A52; }
+.home-v3 .hv-int-retry-panel mark { background: var(--hv-indigo-soft); color: var(--hv-ink); padding: 0.05rem 0.15rem; border-radius: 0.2rem; }
+
+.home-v3 .hv-int-changes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+.home-v3 .hv-int-changes li { padding: 0.75rem 0.85rem; border-radius: var(--hv-radius-md); background: #F7F9FD; border: 1px solid #E8EDF5; }
+.home-v3 .hv-int-changes strong { display: block; font-size: 0.85rem; color: var(--hv-ink); }
+.home-v3 .hv-int-changes span { display: block; margin-top: 0.15rem; font-size: 0.78rem; line-height: 1.4; color: var(--hv-muted); }
+
+/* modal footer — persistent truth strip + Back / Next / Finish */
+
+.home-v3 .hv-int-modal__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.1rem 1.6rem 1.3rem;
+    border-top: 1px solid #EEF2F8;
+    position: sticky;
+    bottom: 0;
+    background: var(--hv-surface);
+}
+
+.home-v3 .hv-int-modal__truth { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+.home-v3 .hv-int-modal__truth span { font-size: 0.72rem; font-weight: 650; color: var(--hv-muted); }
+.home-v3 .hv-int-modal__truth span::before { content: "\25C6"; margin-right: 0.35rem; color: var(--hv-amber); }
+
+.home-v3 .hv-int-modal__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.home-v3 .hv-int-modal__actions .hv-btn svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The Back/Next/Finish controls carry the shared .hv-btn class (display:
+   inline-flex, 0-2-0), which outranks the UA [hidden] rule (0-1-0) — so the
+   `hidden` attribute JS toggles on them would be ignored without this guard.
+   (Same specificity trap as .hv-int-explain / .hv-int-overlay above.) */
+.home-v3 .hv-int-back[hidden],
+.home-v3 .hv-int-next[hidden],
+.home-v3 .hv-int-finish[hidden] { display: none; }
+
+/* ---- motion: fade the backdrop and rise the card, only when motion is OK.
+   The sitewide prefers-reduced-motion:reduce block (earlier in this file)
+   already zeroes these; gating on no-preference is belt-and-braces. ---- */
+@media (prefers-reduced-motion: no-preference) {
+    .home-v3 .hv-int-overlay { animation: hv-int-overlay-in 0.22s ease; }
+    .home-v3 .hv-int-overlay.is-open .hv-int-modal { animation: hv-int-modal-in 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+}
+
+@keyframes hv-int-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hv-int-modal-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ---- responsive ---- */
+
+@media (max-width: 1180px) {
+    .home-v3 .hv-interview__inner { grid-template-columns: 1fr; align-items: start; }
+    .home-v3 .hv-interview__copy { padding-top: 0; }
+}
+
+@media (max-width: 860px) {
+    .home-v3 .hv-int-review-grid,
+    .home-v3 .hv-int-retry-grid { grid-template-columns: 1fr; }
+    .home-v3 .hv-int-star { grid-template-columns: 1fr 1fr; }
+    .home-v3 .hv-int-changes { grid-template-columns: 1fr; }
+    .home-v3 .hv-int-transcript-card { flex-direction: column; }
+    .home-v3 .hv-int-transcript-badge { flex-direction: row; width: auto; }
+}
+
+@media (max-width: 560px) {
+    /* Modal docks to the bottom as a sheet, like the Voice overlay. */
+    .home-v3 .hv-int-overlay { padding: 0; place-items: end stretch; }
+    .home-v3 .hv-int-modal { width: 100%; max-width: none; max-height: 92vh; border-radius: 25px 25px 0 0; }
+    .home-v3 .hv-int-modal__head,
+    .home-v3 .hv-int-steps,
+    .home-v3 .hv-int-modal__body,
+    .home-v3 .hv-int-modal__foot { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .home-v3 .hv-int-method { width: 100%; }
+    .home-v3 .hv-int-method__btn { flex: 1 1 0; justify-content: center; }
+    .home-v3 .hv-int-modal__foot { flex-direction: column-reverse; align-items: stretch; }
+    .home-v3 .hv-int-modal__actions .hv-btn { width: 100%; justify-content: center; }
+    .home-v3 .hv-int-poster__actions .hv-btn { width: 100%; justify-content: center; }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .home-v3 .hv-int-overlay.is-open .hv-int-modal { animation-name: hv-int-sheet-in; }
+    }
+}
+
+@keyframes hv-int-sheet-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: none; } }
+
+/* =====================================================================
+   PS-HOME-INTERVIEW-DEMO-001 — portaled-modal theming
+   The walkthrough modal is portaled to <body> (inside a `home-v3` wrapper)
+   so it escapes main.main-content's isolation and covers the full viewport
+   like the Voice hero overlay. Because the wrapper is a `.home-v3`, it would
+   otherwise inherit the dark-theme gold variable overrides — but the modal
+   must always read as the same paper-light card as the poster, so pin its
+   palette here for both themes and restate the two components that use
+   hard-coded theme colors (chips + ghost button) rather than --hv-* tokens.
+   ===================================================================== */
+.hv-int-portal,
+body[data-theme="dark"] .hv-int-portal {
+    --hv-indigo: #203767;
+    --hv-indigo-strong: #132447;
+    --hv-indigo-soft: #E7ECF4;
+    --hv-amber: #B87900;
+    --hv-ink: #0A1B36;
+    --hv-text: #22334E;
+    --hv-muted: #66778F;
+    --hv-line: #DDE2EB;
+    --hv-surface: #FFFFFF;
+    --hv-cloud: #F6F7FA;
+    --hv-green: #2B9B6D;
+    --hv-shadow-lift: 0 24px 60px rgb(17 31 68 / 12%);
+    --hv-radius-lg: 1.5rem;
+    --hv-radius-md: 1rem;
+    --hv-serif: "Newsreader", Georgia, serif;
+}
+
+.hv-int-portal { background: none; }
+
+body[data-theme="dark"] .hv-int-portal .hv-chip { background: #EEF1F8; color: #5B6B82; }
+body[data-theme="dark"] .hv-int-portal .hv-chip--amber { background: #FBF3E1; color: #8A6A1E; }
+body[data-theme="dark"] .hv-int-portal .hv-chip--green { background: #E4F5EC; color: #1F7A52; }
+body[data-theme="dark"] .hv-int-portal .hv-btn--ghost { color: #45566F; border-color: var(--hv-line); }
+body[data-theme="dark"] .hv-int-portal .hv-btn--ghost:hover { background: #F5F7FC; }

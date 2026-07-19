@@ -1,17 +1,23 @@
 {% extends "base.html" %}
 
-{#  HOMEPAGE — three-scene overhaul (PS-HOME-STORY-001, 2026-07-16)
+{#  HOMEPAGE — three-scene overhaul (PS-HOME-STORY-001, 2026-07-16),
+    plus the Interview Studio illustrative walkthrough
+    (PS-HOME-INTERVIEW-DEMO-001, 2026-07-19)
     ============================================================
-    Voice-first hero → Living Résumé scene → My Story + Future scene →
-    final invitation band. Approved by Pete from three mockups; the
-    detailed My Story + Future brief lives in
-    docs/initiatives/PS-HOME-STORY-001/.
+    Voice-first hero → Living Résumé scene → Interview Studio walkthrough →
+    My Story + Future scene → final invitation band. Approved by Pete from
+    three mockups; the detailed My Story + Future brief lives in
+    docs/initiatives/PS-HOME-STORY-001/. The Interview walkthrough brief
+    lives in docs/initiatives/PS-HOME-INTERVIEW-DEMO-001/.
 
     Rules kept: the shared global header/footer from base.html are reused
     untouched; every CTA resolves through existing endpoints; all content
     comes from the same server-side sources as the live My Story page and
     résumé (see _build_home_context in app.py — no second copy of Pete's
-    content); no new JavaScript, fonts, or frameworks.
+    content); the Interview walkthrough is fixed fictional content with no
+    input, storage, or AI request — see the scene partial's own comment.
+    This is the homepage's first JavaScript, added only for that scene's
+    deterministic state toggling (see static/js/homepage-interview-demo.js).
 
     The previous cinematic homepage remains at /experience for comparison
     and rollback.
@@ -26,7 +32,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/homepage-scenes.css') }}?v=three-scenes-1"
+    href="{{ url_for('static', filename='css/homepage-scenes.css') }}?v=interview-demo-1"
 >
 {% endblock %}
 
@@ -34,7 +40,12 @@
 <div class="home-v3">
     {% include "partials/homepage/_voice_hero.html" %}
     {% include "partials/homepage/_living_resume_scene.html" %}
+    {% include "partials/homepage/_interview_demo_scene.html" %}
     {% include "partials/homepage/_story_future_scene.html" %}
     {% include "partials/homepage/_invite_band.html" %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/homepage-interview-demo.js') }}?v=int-demo-1" defer></script>
 {% endblock %}
