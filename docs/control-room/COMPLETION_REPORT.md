@@ -1,19 +1,18 @@
 # PeerSlate Completion & Handoff Report — Owner Control Room
 
 ## A. Status
-- Package: Owner Control Room, **v1 + v2 (live repository sync)** (owner-override build; **not** a manager-assigned initiative yet — proposed id `PS-CONTROL-ROOM-001`)
-- Status: Technical/security/integration review passed; release readiness **Conditional**; not deployed
-- Branch and commit: `work/2026-07-19-control-room`; current `origin/main @ 296711d001c7dd0d0bc66001a29c42595a938bdb` merged and review corrections committed at `b0db7708964d867922603b76f20df9ae1f3ac4d2`. The final documentation commit and pushed branch tip are reported in the handoff response.
-- PR / pipeline / environment: none opened yet — awaiting owner/manager decision (section I)
-- Production state: not deployed; verified locally on `http://localhost:5000`
+- Package: Owner Control Room, **v1 + v2 (live repository sync)** (owner-override build; **not** a manager-assigned initiative — proposed id `PS-CONTROL-ROOM-001`; owner deployed directly, see below)
+- Status: **Deployed to production and verified.**
+- Branch and commit: source branch `work/2026-07-19-control-room` (deleted by Azure after merge). Merged current `origin/main` at each step: `296711d` (Codex's review), then `a98cced` (PR 85/86) immediately before opening the PR. Squash-merged into `main` via **Azure PR #87** at merge commit `6cb49f135cc3a2749dd4539f8261d176b43dad9a`.
+- PR / pipeline / environment: **Azure DevOps PR #87**, completed (squash merge, source branch auto-deleted). Azure Pipeline runs **#123** (CI-triggered) and **#124** (manually triggered) both built commit `6cb49f1` and both **succeeded**.
+- Production state: **Deployed and live** at `https://peerslate.com`. See section F for the full verification sweep.
 - Visual authority and status: Not Applicable (internal owner tool; no approved visual authority exists for it). Deep Navy Gold palette reused.
-- Pete / designated session manager visual acceptance: Not started
-- Designated session manager: package-designated portable session manager; not yet assigned for this unregistered package
-- Manager handoff status and next receiver: pending governance-path and merge-readiness decision
-- Lane owner and self-managed authority: Claude Code relinquished at `904f5697e90468fb1f221364bdc7d4fc4762b458`; Codex completed the requested review
-- Self-certification: **Conditional** — technical/security/integration pass; production, owner functional acceptance, visual acceptance, and governance registration remain open
-- Complete-diff review: **Issues corrected** — manager-schema compatibility, mobile overflow, unsafe external-link schemes, and sequential cold Azure reads
-- Acceptance requested: owner functional acceptance, designated-manager governance/merge readiness, then release verification
+- Pete / designated session manager visual acceptance: Not separately recorded — see the owner-deployment note below.
+- Designated session manager: not assigned for this unregistered package; the owner exercised direct deployment authority instead (see below).
+- Lane owner and self-managed authority: Claude Code relinquished for review at `904f5697e90468fb1f221364bdc7d4fc4762b458`; Codex completed technical + security review (Pass/Pass, see `SECURITY_REVIEW.md`); Claude Code then executed the deployment on Pete's direct instruction.
+- **Owner deployment authorization:** Pete instructed direct deployment ("Deploy it," 2026-07-19) after reviewing the functionality and Codex's sign-off, exercising owner authority over the recommended pre-PR governance-registration step. This is recorded here as the functional-acceptance and governance-path decision for this package.
+- Complete-diff review: **Issues corrected** by Codex before merge — manager-schema compatibility, mobile overflow, unsafe external-link schemes, and sequential cold Azure reads.
+- **Remaining owner action:** the dashboard is live but returns 404 for everyone, including Pete, until he sets `PEERSLATE_OWNER_EMAILS` (or `PEERSLATE_OWNER_USER_KEYS`) himself in Azure Web App → Configuration. No AI has set or seen this value.
 
 ## B. What changed technically
 - **New site-owner authorization** (`owner_authorization.py`): fail-closed check that resolves identity only via `identity.get_optional_identity()` (trusted Easy Auth boundary) and compares it to operator-configured allowlists `PEERSLATE_OWNER_EMAILS` / `PEERSLATE_OWNER_USER_KEYS`. `owner_required` decorator returns a bare `404` to any non-owner (unauthenticated, authenticated non-owner, or identity-storage failure). No prior site-owner concept existed; the existing `/app/*` routes are per-member self-ownership.
@@ -164,13 +163,30 @@ Gold design foundation.
 - **Visual evidence:** desktop-light, mobile-light, and desktop-dark full-page
   screenshots re-captured after v2 (status band, Repository activity section,
   freshness chips all visible; Deep Navy Gold preserved; no console errors).
-- **Honest limits:** No production deployment or production-URL verification has
-  been done. "Recent changes" prefers local `git`, falls back to the v2 build
-  snapshot; the snapshot itself has only been generated and inspected manually
-  (with fabricated `BUILD_*` env values), not yet produced by a real Azure
-  Pipelines run. No real Azure DevOps PAT was available in this environment, so
-  Tier 1's live-fetch paths are verified by mocked tests, not a real API call.
-  No real-member validation (owner-only internal tool).
+- **Production deployment and verification (2026-07-19, post-merge):** PR #87
+  squash-merged to `main` at `6cb49f1`; Azure Pipeline runs #123 and #124 both
+  built and deployed that commit and both **succeeded**. Live route sweep
+  against `https://peerslate.com` immediately after:
+  - `/` and every pre-existing public route (`/petec/resume`, `/petec/my-story`,
+    `/petec/skills`, `/petec/slate-board`, `/interview-studio`, `/petec/about`,
+    `/petec/contact`, `/the-slate`) returned **200** — no regression from this
+    merge or the two others (PR 85/86) that landed alongside it.
+    (A handful of these briefly returned 404 in the ~30–60s immediately after
+    deploy — two back-to-back deploys of the same commit were settling. All
+    recovered to 200 on their own with no intervention; re-swept clean.)
+  - `/owner/control-room`, `/owner/control-room/data.json`, and
+    `/control_room_snapshot.json` all returned **404** — the correct fail-closed
+    state, since no owner allowlist is configured yet.
+  - `/robots.txt` and `/sitemap.xml` do not reference the Control Room route.
+  - This is the first time the Azure Pipeline actually ran
+    `scripts/generate_control_room_snapshot.py` in CI and the first time this
+    code has run under the real production WSGI process — both proved out
+    clean.
+- **Still unverified:** Tier 1 (live Azure DevOps sync) has not been turned on
+  in production — no PAT has been created or set. First real use will be the
+  first true end-to-end proof of that adapter against a live API. No real
+  owner sign-in / allowlisted-access walkthrough has occurred yet (see the
+  remaining owner action in section A).
 
 ## G. Known gaps, risks, and exclusions
 - **Governance authority not modified.** The dashboard is not registered in
@@ -187,38 +203,46 @@ Gold design foundation.
   The adapter's request/response handling, caching, and failure paths are
   proven with mocked HTTP responses (11 tests), not a live call. First real use
   will be the first genuine end-to-end proof of the Tier 1 wiring.
-- **The build-time snapshot has not been produced by a real pipeline run.**
-  The generator was exercised locally (real git history parses correctly) and
-  with fabricated `BUILD_BUILDID`/`BUILD_SOURCEVERSION`/`BUILD_SOURCEBRANCH`
-  values; the actual Azure Pipelines step (`azure-pipelines.yml`) has not yet
-  executed in CI.
-- **Recent Changes** unavailable in production until the first deploy produces
-  a real snapshot (or, from then on, uses it automatically).
+- **The build-time snapshot has now run for real** in Azure Pipelines (runs
+  #123/#124) and did not fail the build. Its actual content in the live
+  artifact has not yet been separately inspected via `data.json` (that
+  requires an allowlisted owner session — see the remaining owner action).
 - **Drift detection is bounded by the fetched commit window** (30 most-recent
   `main` commits). A deployed build older than that window correctly reports
   `unknown` rather than guessing — this is intentional, not a bug, but means
   very stale deployments won't get a "behind by N" count, only "unknown."
 - Do not infer production status from this page; it reflects recorded and
   polled facts, not a guarantee.
-- Pete owner functional acceptance and designated-manager visual/product
-  acceptance have not occurred. The internal-tool visual authority remains N/A,
-  but the repository visual-integrity gate still requires those explicit
-  acceptance records before merge.
+- **Governance registration remains open.** This package deployed under direct
+  owner authorization rather than through a designated-manager governance
+  review. `PS-CONTROL-ROOM-001` is still not registered in
+  `CURRENT_BASELINE.yaml`/`ACTIVE_INITIATIVES.md` — a future manager session
+  should reconcile this (register it, or record the owner-override exception
+  formally) so the authority records match what is actually live.
+- **Owner functional acceptance** (actually signing in and using the deployed
+  dashboard) has not yet happened — Pete has not yet set his owner allowlist
+  value, so no one has viewed the live page.
 
 ## H. Clear next step
-Have the designated session manager register `PS-CONTROL-ROOM-001` (or record an
-explicit governance exception), then collect Pete's functional acceptance and
-the required manager visual/product acceptance before opening the Azure PR.
-That establishes the missing authority and acceptance evidence without changing
-the technically reviewed implementation. Turning on Tier 1 (the four
+The dashboard is deployed. The only remaining step is Pete's: set
+`PEERSLATE_OWNER_EMAILS` (or `PEERSLATE_OWNER_USER_KEYS`) in the Azure Web App's
+Configuration → Application settings, then sign in and open
+`https://peerslate.com/owner/control-room`. Separately, a manager session should
+reconcile the governance record (register `PS-CONTROL-ROOM-001` or log the
+owner-override exception) so `CURRENT_BASELINE.yaml`/`ACTIVE_INITIATIVES.md`
+match what is now live. Turning on Tier 1 (the four
 `PEERSLATE_ADO_*` settings) is a separate, optional follow-up Pete can do at
 any point after deploy — nothing about deployment depends on it.
 
 ## I. What Pete needs to do or decide
-1. Decide governance path (H): the recommended path is to register
-   `PS-CONTROL-ROOM-001`; otherwise record an explicit exception before PR.
-2. To use it after deploy, set `PEERSLATE_OWNER_EMAILS` (your sign-in email) in
-   the Azure Web App application settings. I never see or handle that value.
+1. **To actually see and use it:** set `PEERSLATE_OWNER_EMAILS` (your PeerSlate
+   sign-in email) in the Azure Web App application settings, then sign in and
+   open `https://peerslate.com/owner/control-room`. I never see or handle that
+   value. This is the only step left between now and you actually using it.
+2. Decide, whenever convenient, whether to have a manager session formally
+   register `PS-CONTROL-ROOM-001` in the governance records or log this
+   deployment as an explicit owner-override exception — purely a
+   record-keeping reconciliation at this point, since the code is already live.
 3. **Optional (v2):** to turn on live Repository Activity/Drift, create a PAT
    in Azure DevOps scoped to **Code (Read)** and **Build (Read)** only, with an
    expiry, and set `PEERSLATE_ADO_ORG_URL`, `PEERSLATE_ADO_PROJECT`,
