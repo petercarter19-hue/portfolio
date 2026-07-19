@@ -246,17 +246,26 @@ class VoiceCaptureService:
             )
             raise VoiceCaptureError("upload-failed", source_key) from error
 
-        queued = self._outcome(
-            self.database.first_row(
-                "usp_QueueVoiceTranscription",
-                [
-                    ("@UserKey", user_key),
-                    ("@SourceKey", source_key),
-                    ("@ExpectedRowVersion", _row_version(created["row_version"])),
-                ],
-            ),
-            {"queued"},
-        )
+        try:
+            queued = self._outcome(
+                self.database.first_row(
+                    "usp_QueueVoiceTranscription",
+                    [
+                        ("@UserKey", user_key),
+                        ("@SourceKey", source_key),
+                        (
+                            "@ExpectedRowVersion",
+                            _row_version(created["row_version"]),
+                        ),
+                    ],
+                ),
+                {"queued"},
+            )
+        except (DatabaseServiceError, VoiceCaptureError) as error:
+            # The Blob upload succeeded, so preserve the opaque source key. Once
+            # the database is available the owner can retry or explicitly delete
+            # this still-private, uploading draft from its stable review URL.
+            raise VoiceCaptureError("queue-failed", source_key) from error
         queued.setdefault("source_key", source_key)
         self._transcribe_attempt(
             user_key, queued, audio.data, audio.content_type

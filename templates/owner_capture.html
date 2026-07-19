@@ -125,6 +125,7 @@
             <p class="owner-app__eyebrow">Private voice draft</p>
             <h2 id="voice-review-title">
                 {% if voice_draft.state == 'needs_review' %}Review the transcript
+                {% elif voice_draft.state == 'uploading' %}Transcription has not started
                 {% elif voice_draft.state == 'failed' %}Transcription needs attention
                 {% elif voice_draft.state == 'deletion_pending' %}Deletion needs another try
                 {% elif voice_draft.state == 'confirmed' %}Saved private Capture
@@ -165,19 +166,17 @@
                 </label>
                 <button class="owner-app__primary" type="submit">Save private Capture</button>
             </form>
+            {% elif voice_draft.state == 'uploading' %}
+            <p role="alert">
+                The private audio is stored, but transcription has not started.
+                No Capture or downstream item was created. Retry when the service is available,
+                delete this draft, or use text instead.
+            </p>
             {% elif voice_draft.state == 'failed' %}
             <p role="alert">
                 The private draft was preserved, but transcription did not finish.
                 No Capture or downstream item was created.
             </p>
-            {% if voice_draft.attempt_number %}
-            <form method="post" action="{{ url_for('owner.retry_voice_capture', source_key=voice_draft.source_key) }}">
-                <input type="hidden" name="expected_row_version" value="{{ voice_draft.row_version_token }}">
-                <button class="owner-app__primary" type="submit">Retry transcription</button>
-            </form>
-            {% else %}
-            <p>The upload did not complete. Delete this draft and record again, or use text instead.</p>
-            {% endif %}
             {% elif voice_draft.state == 'deletion_pending' %}
             <p role="alert">
                 PeerSlate has not reported this draft as deleted because private audio removal
@@ -187,6 +186,13 @@
             <p>The reviewed text is saved privately. The original audio remains private source evidence.</p>
             {% else %}
             <p role="status">Current state: {{ voice_draft.state|replace('_', ' ') }}.</p>
+            {% endif %}
+
+            {% if voice_draft.state in ['uploading', 'failed'] %}
+            <form method="post" action="{{ url_for('owner.retry_voice_capture', source_key=voice_draft.source_key) }}">
+                <input type="hidden" name="expected_row_version" value="{{ voice_draft.row_version_token }}">
+                <button class="owner-app__primary" type="submit">Retry transcription</button>
+            </form>
             {% endif %}
 
             {% if voice_draft.state not in ['confirmed', 'deleted'] %}

@@ -46,6 +46,11 @@ class OwnerVoiceUiContractTests(unittest.TestCase):
         ):
             self.assertIn(contract, TEMPLATE)
 
+    def test_uploaded_but_unqueued_source_can_be_retried_or_deleted(self):
+        self.assertIn("The private audio is stored, but transcription has not started", TEMPLATE)
+        self.assertIn("voice_draft.state in ['uploading', 'failed']", TEMPLATE)
+        self.assertIn("Retry transcription", TEMPLATE)
+
     def test_mobile_focus_reduced_motion_and_document_flow_are_scoped(self):
         self.assertIn("@media (max-width: 540px)", STYLES)
         self.assertIn("@media (prefers-reduced-motion: reduce)", STYLES)

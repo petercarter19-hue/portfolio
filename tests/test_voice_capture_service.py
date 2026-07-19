@@ -2,6 +2,8 @@ import io
 import unittest
 from unittest.mock import Mock
 
+from services.database_service import DatabaseServiceError
+from services.media_storage_service import MediaStorageError
 from services.voice_capture_service import (
     MAX_VOICE_BYTES,
     MAX_VOICE_DURATION_SECONDS,
@@ -9,7 +11,6 @@ from services.voice_capture_service import (
     VoiceCaptureService,
     validate_audio,
 )
-from services.media_storage_service import MediaStorageError
 
 
 WEBM_HEADER = b"\x1aE\xdf\xa3" + (b"\x00" * 32)
@@ -115,6 +116,43 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
         self.assertEqual(raised.exception.source_key, self.source_key)
         failure_params = self.db.first_row.call_args_list[-1].args[1]
         self.assertIn(("@SafeErrorCode", "storage_unavailable"), failure_params)
+
+    def test_database_failure_after_blob_upload_returns_recoverable_source(self):
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            DatabaseServiceError("PRIVATE DATABASE DETAIL"),
+        ]
+
+        with self.assertRaisesRegex(VoiceCaptureError, "queue-failed") as raised:
+            self.service.create_and_transcribe(self.user_key, FakeUpload(), "1")
+
+        self.assertEqual(raised.exception.source_key, self.source_key)
+        self.assertNotIn("PRIVATE", str(raised.exception))
+        self.storage.upload.assert_called_once()
+        self.speech.transcribe.assert_not_called()
+
+    def test_changed_queue_outcome_after_blob_upload_returns_recoverable_source(self):
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "not_found_or_changed"},
+        ]
+
+        with self.assertRaisesRegex(VoiceCaptureError, "queue-failed") as raised:
+            self.service.create_and_transcribe(self.user_key, FakeUpload(), "1")
+
+        self.assertEqual(raised.exception.source_key, self.source_key)
+        self.storage.upload.assert_called_once()
+        self.speech.transcribe.assert_not_called()
 
     def test_retry_creates_new_attempt_and_never_overwrites_old_result(self):
         self.db.first_row.side_effect = [

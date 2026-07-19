@@ -358,10 +358,17 @@ def upload_voice_capture():
     except AuthenticationRequired:
         return redirect(url_for("auth.sign_in", return_to="/app/capture"))
     except VoiceCaptureError as error:
-        status = 503 if error.code in {"upload-failed", "transcription-failed"} else 400
+        status = (
+            503
+            if error.code
+            in {"upload-failed", "queue-failed", "transcription-failed"}
+            else 400
+        )
         payload = {"error": error.code}
         if error.source_key:
-            payload["state"] = "failed"
+            payload["state"] = (
+                "uploading" if error.code == "queue-failed" else "failed"
+            )
             payload["review_url"] = url_for(
                 "owner.capture", voice=error.source_key
             )

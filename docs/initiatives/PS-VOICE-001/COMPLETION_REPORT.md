@@ -5,7 +5,7 @@
 - Package: PS-VOICE-001 - Private Voice Capture
 - Status: Complete for technical handoff; user-facing visual status is In Review
 - Branch and commit: `work/2026-07-18-voice-001`; this report is part of the final branch commit, whose exact full SHA is supplied in the handoff
-- Authoritative base: `origin/main` at `80cff8b5dc06db5a8df74b66ae166be5ccb8793c`; Voice activation `5488819ad13d3f411319d7e184fde3779d62b8d2` is an ancestor
+- Authoritative base: `origin/main` at `fd27b2147b6a34019353d038331f4bde4f97d3b5`; Voice activation `5488819ad13d3f411319d7e184fde3779d62b8d2` is an ancestor
 - PR / pipeline / environment: no PR opened and no pipeline requested; real-resource proof used a disposable isolated Azure resource group, now deleted
 - Production state: not deployed; no production Azure resource or production SQL change was made; the production Capture experience remains the released text-only slice
 - Visual authority and status: homepage Voice walkthrough in `templates/partials/homepage/_voice_hero.html`; implementation comparison is complete and awaits ChatGPT Work/Pete review
@@ -23,6 +23,7 @@
 ### Service and privacy architecture
 
 - Added `VoiceCaptureService` orchestration with explicit upload, transcription, review, confirmation, playback, export, and retryable distributed-deletion transitions.
+- Made a successful private Blob upload recoverable when the following database queue call fails or reports a changed outcome. The response exposes only the opaque source key, an owner review URL, and the safe `uploading` state; that page offers retry and explicit deletion without returning provider/database detail.
 - Added a private Blob adapter that accepts only opaque server-generated names, emits no Blob metadata or URLs, disallows overwrite, and uses `DefaultAzureCredential` only.
 - Added an Azure Speech fast-transcription adapter for `en-US`, using the Microsoft Entra token scope and normalized safe error codes. It never logs or returns provider response bodies.
 - Enforced accepted MIME/container signatures, finite positive duration, a maximum of 180 seconds, a maximum of 20 MiB, and an 8,000 UTF-16-code-unit transcript boundary on the server independently of browser checks.
@@ -40,6 +41,7 @@
 
 - Added an idempotent PowerShell `plan` / `apply` / `verify` script for one private GPv2 Storage account/container, the existing App Service managed identity, `Storage Blob Data Contributor` at container scope, and `Cognitive Services Speech User` at the existing AI Services account scope.
 - The script disables public Blob access and shared-key access, writes only nonsecret endpoint/name/limit/locale settings, and stops if the selected AI Services account cannot prove Speech support with managed identity.
+- Credential-safe `verify` never lists or retrieves App Service settings or their values. It verifies only resource/RBAC/Speech endpoint controls; the known Voice settings are proved later by the signed-in functional lifecycle without exposing the unrelated secret-bearing setting collection.
 - No production mode was run. No queue, worker, VNet, private endpoint, Key Vault secret, second AI account, transcoder, or native media dependency was introduced.
 
 ## C. What this means in plain English
@@ -63,7 +65,7 @@ Production members cannot use Voice yet because this branch has not been reviewe
 
 ## E. How this connects to PeerSlate
 
-This implements the Bible v2.4 private Capture entry point without creating a parallel content model. Voice and Type converge on the same canonical private Capture record, and later corrections use the existing PS-CAPTURE-002 revision history. A later, separately approved action may propose or confirm a Moment from an exact Capture version; this package does not do so automatically.
+This implements the Bible v2.5 private Capture entry point without creating a parallel content model. Voice and Type converge on the same canonical private Capture record, and later corrections use the existing PS-CAPTURE-002 revision history. A later, separately approved action may propose or confirm a Moment from an exact Capture version; this package does not do so automatically.
 
 The protected interface uses the approved Deep Navy Gold foundation and treats the homepage Voice walkthrough as the binding production-intent visual minimum. Privacy and member agency remain visible in both the interaction and the enforced backend behavior: AI transcription proposes text, the member reviews it, explicit save creates the private Capture, and publishing remains a separate future action.
 
@@ -71,9 +73,9 @@ The protected interface uses the approved Deep Navy Gold foundation and treats t
 
 ### Automated tests and static checks
 
-- Final Voice/Capture/database/migration focused run: 93 tests passed.
-- Governance and Site Rules run: 18 tests passed.
-- Complete configured suite: 372 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
+- Final Voice/Capture/database/migration focused run: 137 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
+- Governance and Site Rules run: 19 tests passed.
+- Complete configured suite: 379 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
 - Python compilation, JavaScript syntax, PowerShell parsing, migration plan selection, `git diff --check`, and static secret/private-content scans passed.
 - Focused tests cover owner routing, cross-site rejection, neutral cross-owner outcomes, format/size/duration validation, immutable attempts, retry failures, idempotent confirmation, no-cache media, export shape, deletion retry, state/concurrency contracts, Blob metadata/path constraints, managed-identity configuration, permission timing, unsupported/denied/offline states, screen-reader announcements, mobile layout, focus, and reduced motion.
 
@@ -91,10 +93,13 @@ The protected interface uses the approved Deep Navy Gold foundation and treats t
 - Desktop opening: `evidence/voice-capture-desktop.png`.
 - Mobile/touch review and long-form document flow: `evidence/voice-review-mobile.png`.
 - Desktop review: `evidence/voice-review-desktop.png`.
-- Viewport-equivalent 200% reflow proxy: `evidence/voice-capture-200-percent-reflow.png` (720 CSS-pixel viewport representing half of a 1440-pixel desktop); no horizontal document overflow was observed.
+- Exact native Chrome 200% control proof: `evidence/voice-capture-native-200-percent.png`; Chrome's own menu visibly reports `200%` over the local Capture route.
+- Exact native Chrome 200% reflow: `evidence/voice-capture-native-200-percent-reflow.png`; no horizontal document scrollbar or overflow was observed, while the page retained readable document flow and both capture choices.
+- Named Type-path desktop proof: `evidence/voice-capture-type-desktop.png`; Type is selected, the textarea has visible focus, text Capture availability is explicit, and `Save privately` is visible.
+- Supplemental viewport-equivalent regression artifact: `evidence/voice-capture-200-percent-reflow.png`; it is no longer used as the native-zoom gate.
 - Transcription failure/recovery: `evidence/voice-review-failure.png` plus focused retry/deletion tests.
-- Real-browser checks observed no horizontal overflow at 1425, 705, and 375 CSS pixels; touch targets were at least 44 pixels; keyboard focus was visible; status/error regions exposed `role=status` or `role=alert`; microphone permission was requested only after Start. A Chromium permission override then denied the microphone, and the real UI moved to `error`, announced the safe denied/unavailable message, left Type enabled, and moved focus to Switch to Type.
-- Reduced motion, unsupported browser, microphone-denied, offline/upload failure, transcription failure, 8,000-character content, and text fallback are covered by focused UI/state tests. Chromium permission denial also passed against the real UI. The harness could not set the browser's zoom control directly, so the 200% result is explicitly a viewport-equivalent reflow proof rather than a manual browser-zoom acceptance pass.
+- Real-browser checks observed no horizontal overflow at native Chrome 200% and at 1425, 705, and 375 CSS pixels; touch targets were at least 44 pixels; keyboard focus was visible; status/error regions exposed `role=status` or `role=alert`; microphone permission was requested only after Start. A Chromium permission override then denied the microphone, and the real UI moved to `error`, announced the safe denied/unavailable message, left Type enabled, and moved focus to Switch to Type.
+- Reduced motion, unsupported browser, microphone-denied, offline/upload failure, transcription failure, post-upload queue/database failure, 8,000-character content, and text fallback are covered by focused UI/state tests. Chromium permission denial also passed against the real UI. Native Chrome zoom was reset to 100% and the temporary evidence tab was closed after capture.
 
 ### Visual parity and intentional deviations
 
@@ -112,7 +117,7 @@ Automated, isolated-resource, and visual-comparison evidence is complete for han
 ## G. Known gaps, risks, and exclusions
 
 - ChatGPT Work must independently review the exact branch SHA, SQL/infrastructure plan, security boundary, and visual parity before any PR or production work.
-- Pete and ChatGPT Work visual acceptance is still required before merge. Exact manual 200% browser zoom should be included in that acceptance pass because the available browser harness provided a viewport-equivalent reflow proof rather than changing the browser's zoom control directly.
+- Pete and ChatGPT Work visual acceptance is still required before merge. Exact native Chrome 200% evidence is now included, but evidence passing does not substitute for owner acceptance.
 - Production Storage, RBAC, app settings, SQL migration, PR, pipeline, signed-in smoke test, and live deletion proof are intentionally not done.
 - The synchronous three-minute Speech request fits the approved first slice, but App Service/provider timeouts remain an operational risk to observe during manager validation. No queue/worker was introduced because that would require a stop and a new package decision.
 - Locale expansion, photo/video/document Capture, background processing, downstream Moments/placements, Journal, public projection, sharing/audience controls, résumé, Interview Studio, and publication remain excluded.
@@ -120,7 +125,7 @@ Automated, isolated-resource, and visual-comparison evidence is complete for han
 
 ## H. Clear next step
 
-ChatGPT Work should fetch the exact pushed branch/SHA, rerun the focused/governance/full suites and non-mutating infrastructure `plan`, inspect the completion evidence, and obtain Pete/manager visual acceptance. That review determines merge readiness and unlocks the separately controlled production provision, SQL apply, Azure PR, deployment, and signed-in smoke-test sequence. Interview Studio design work may proceed independently in its assigned lane.
+ChatGPT Work should fetch the exact pushed branch/SHA, rerun the focused/governance/full suites and non-mutating infrastructure `plan`, inspect the completion evidence, and obtain Pete/manager visual acceptance. That review determines merge readiness and unlocks the separately controlled production provision, SQL apply, Azure PR, deployment, and signed-in smoke-test sequence.
 
 ## I. What Pete needs to do or decide
 

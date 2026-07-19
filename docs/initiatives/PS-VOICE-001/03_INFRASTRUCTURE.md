@@ -21,6 +21,22 @@ The idempotent provisioning script must support `plan`, `apply`, and `verify` be
 4. Verify whether `peerslate-foundry` supports the selected Speech-to-text endpoint in its deployed region/account kind. If it does, assign the App Service identity `Cognitive Services Speech User` at that account scope. If it does not, stop and return a manager decision packet before creating a second AI account.
 5. Add only nonsecret App Service settings for account URL, container, Speech endpoint/API version, locale, and limits.
 
+## Credential-safe verification boundary
+
+`verify` checks only resource posture, container privacy, managed-identity RBAC,
+and the existing AI Services account's Speech-capable Entra endpoint. It must
+never call `az webapp config appsettings list`, retrieve the App Service setting
+collection, or inspect any setting value. A client-side query is not an
+acceptable safeguard because Azure CLI receives the complete secret-bearing
+response before filtering it.
+
+`apply` writes the reviewed nonsecret Voice settings with output suppressed.
+After apply, the known settings are proved through a signed-in functional Voice
+lifecycle: private upload, Azure transcription, owner playback/export,
+explicit deletion with final media absence, and continued text Capture
+availability. This proves the configured behavior without reading unrelated App
+Service settings or credentials.
+
 ## Approved integration direction
 
 - Blob access: Azure SDK for Python using `DefaultAzureCredential` and the App Service managed identity.

@@ -82,6 +82,43 @@ class OwnerVoiceCaptureRouteTests(unittest.TestCase):
         self.assertIn(f"voice={SOURCE_KEY}", response.get_json()["review_url"])
 
     @patch("owner_routes.voice_capture_service.create_and_transcribe")
+    def test_queue_failure_after_upload_returns_recoverable_review_location(self, create):
+        create.side_effect = VoiceCaptureError("queue-failed", SOURCE_KEY)
+
+        response = self.client.post(
+            "/app/capture/voice",
+            data={
+                "audio": (io.BytesIO(b"\x1aE\xdf\xa3data"), "ignored.webm"),
+                "duration_seconds": "1.2",
+            },
+            headers=self.same_origin_headers(),
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.get_json()["error"], "queue-failed")
+        self.assertEqual(response.get_json()["state"], "uploading")
+        self.assertIn(f"voice={SOURCE_KEY}", response.get_json()["review_url"])
+
+    @patch("owner_routes.voice_capture_service.get_draft")
+    def test_uploaded_but_unqueued_review_page_offers_retry_and_delete(self, get_draft):
+        get_draft.return_value = {
+            "source_key": SOURCE_KEY,
+            "state": "uploading",
+            "row_version_token": "0000000000000001",
+        }
+
+        with patch("owner_routes.database_service.first_result", return_value=[]):
+            response = self.client.get(f"/app/capture?voice={SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("transcription has not started", page)
+        self.assertIn("Retry transcription", page)
+        self.assertIn("Delete private voice draft", page)
+        self.assertNotIn("PRIVATE DATABASE DETAIL", page)
+
+    @patch("owner_routes.voice_capture_service.create_and_transcribe")
     def test_voice_route_can_receive_more_than_global_two_megabyte_limit(self, create):
         create.return_value = {"source_key": SOURCE_KEY, "state": "needs_review"}
 

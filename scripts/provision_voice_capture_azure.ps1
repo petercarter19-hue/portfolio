@@ -265,21 +265,6 @@ if ($AiDetails.kind -notin @("AIServices", "CognitiveServices", "SpeechServices"
 }
 Write-Output "PASS: existing AI Services Speech endpoint"
 
-$Settings = Invoke-AzureCli @(
-    "webapp", "config", "appsettings", "list", "--resource-group", $ResourceGroupName,
-    "--name", $WebAppName, "--query", "[].{name:name,value:value}", "-o", "json"
-) | ConvertFrom-Json
-$ExpectedSettings = @{
-    VOICE_BLOB_ACCOUNT_URL = $BlobAccountUrl
-    VOICE_BLOB_CONTAINER = $ContainerName
-    VOICE_SPEECH_ENDPOINT = [string]$AiDetails.endpoint
-    VOICE_SPEECH_API_VERSION = $SpeechApiVersion
-    VOICE_LOCALE = $VoiceLocale
-    VOICE_MAX_BYTES = $VoiceMaxBytes
-    VOICE_MAX_DURATION_SECONDS = $VoiceMaxDurationSeconds
-}
-foreach ($Expected in $ExpectedSettings.GetEnumerator()) {
-    $Actual = ($Settings | Where-Object { $_.name -eq $Expected.Key }).value
-    Assert-Equal $Actual $Expected.Value "app setting $($Expected.Key)"
-}
-Write-Output "PS-VOICE-001 Azure verification passed."
+Write-Output "PASS: verify does not read App Service setting values or credentials"
+Write-Output "Known Voice settings require a signed-in Voice lifecycle check after apply: private upload, Azure transcription, owner playback/export, explicit deletion, and text Capture availability."
+Write-Output "PS-VOICE-001 Azure control-plane verification passed; live functional verification remains required."

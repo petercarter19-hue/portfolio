@@ -53,6 +53,18 @@ class VoiceInfrastructureContractTests(unittest.TestCase):
         for forbidden in ("listkeys", "account key", "speech_key", "sas_token"):
             self.assertNotIn(forbidden, lowered)
 
+    def test_verify_never_reads_app_setting_values_or_credentials(self):
+        self.assertNotIn(
+            '"webapp", "config", "appsettings", "list"',
+            self.script,
+        )
+        self.assertNotIn("$Settings =", self.script)
+        self.assertIn(
+            "does not read App Service setting values",
+            self.script,
+        )
+        self.assertIn("signed-in Voice lifecycle", self.script)
+
 
 if __name__ == "__main__":
     unittest.main()
