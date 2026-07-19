@@ -40,19 +40,62 @@ feasibility only; it does not authorize implementation.
 
 The real-Studio-first implementation and homepage-walkthrough sequence is in
 [10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md](10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md).
-The real Studio is upstream visual/product authority. The current homepage demo
-branch is a parked interaction prototype and must not merge or deploy until the
-real Studio design is accepted, implemented, released through Azure, and
-verified live. The demo then converges on that exact released product in a
-separate closeout.
+The real Studio is upstream visual/product authority. Status update
+2026-07-19: Pete accepted the fixed illustrative homepage walkthrough for an
+interim live release; source tip `90d035a25344c850e6ed732c1efb6e4d0a240787`
+squash-merged through Azure PR 86 at
+`a98cced519a1f853ad9f4462fd438efa67d6f260`, and automatic pipeline 122 passed
+Build and Deploy. That release is an honest pre-convergence demonstration
+only — it is not final 5A/5C homepage parity, and its Voice-default framing
+and paper-light dark modal remain known downstream convergence work. After
+the real Studio passes doc-10 Gates 1–3 (accepted, implemented, released,
+verified live), a fresh downstream branch converges the walkthrough on the
+exact released product in a separate closeout (Gate 4).
 
-Pete may now open a new Codex session and upload the complete Gate 2.4 package.
-That session follows [07_GATE_24_SESSION_REVIEW.md](07_GATE_24_SESSION_REVIEW.md),
-reviews only, commits a durable `Pass`/`Conditional`/`Fail` result, and gives
-Claude Co-Work the exact review branch/SHA. Claude Co-Work confirms the package
-as designated manager, then sends it to Claude Code for feasibility. Product
-implementation remains blocked until feasibility and Pete/designated-manager
-visual approval pass.
+The Gate 2.4 review sequence has occurred. A bounded Codex manager-review
+session followed [07_GATE_24_SESSION_REVIEW.md](07_GATE_24_SESSION_REVIEW.md)
+and returned a durable `Conditional` on this branch; the Claude/Fable
+feasibility response and round-2 evidence follow below. Product
+implementation remains blocked until the remaining approvals in
+`12_…ADDENDUM.md` §E pass.
+
+The 2026-07-19 final-image submission review is recorded in
+[08_GATE_24_FINAL_VISUAL_REVIEW.md](08_GATE_24_FINAL_VISUAL_REVIEW.md). Pete's
+approval of the supplied visual direction is recorded, and the seven
+PUBLIC-03-through-PUBLIC-V02 states are accepted as the target. The formal Gate
+2.4 result is `Conditional` because the package still needs a bounded
+PUBLIC-01/02 authority/source correction, complete responsive/accessibility
+evidence, shared shell/component/token mapping, and Claude/Fable feasibility.
+No product implementation is authorized by that review.
+
+The 2026-07-19 Claude/Fable correction-and-feasibility response is recorded in
+[11_REAL_STUDIO_IMPLEMENTATION_ARCHITECTURE.md](11_REAL_STUDIO_IMPLEMENTATION_ARCHITECTURE.md)
+(the Gate 2 architecture record: shell resolution, semantic tokens with
+measured contrast, component/state contract, screen-by-screen mapping, theme
+no-state-loss proof plan, file mapping, risks, deviations D1–D21) and
+[12_GATE_24_CORRECTION_AND_FEASIBILITY_ADDENDUM.md](12_GATE_24_CORRECTION_AND_FEASIBILITY_ADDENDUM.md)
+(closure of all eleven Codex corrections; implementation feasibility **Pass**).
+After a second Codex review returned `Conditional`, the round-2 closure
+(addendum §H) added the separate PUBLIC-01/02 exports, the editable evidence
+source, and the pre-implementation responsive/accessibility state evidence
+under `artifacts/ps-interview-public-gate-001/gate-24-fable-evidence/`
+(hash-pinned in its `EVIDENCE_INDEX.md`), and reconciled this README and the
+completion report with the live homepage-demo status and Bible v2.5 /
+Roadmap v2.4.
+
+**Gate 1 closed 2026-07-19** (addendum §I): Pete reviewed the round-2
+package directly and gave explicit approval, ratifying board 1 and
+recording an owner-authorized exception to the parallel designated-manager
+sign-off for this package's design gate only. Product implementation is
+authorized. The separate real-implementation visual acceptance required by
+`OWNER_VISUAL_INTEGRITY_STANDARD.md` V3 still applies before the built
+product may merge or deploy.
+The next-phase instructions are packaged in
+[13_SONNET_IMPLEMENTATION_BRIEF.md](13_SONNET_IMPLEMENTATION_BRIEF.md)
+(self-managed implementation writer) and
+[14_OPUS_REVIEW_CHARTER.md](14_OPUS_REVIEW_CHARTER.md) (independent
+reviewer). Product implementation stays blocked until the addendum §E
+blockers are recorded as resolved.
 
 ## Route and identity decision
 
