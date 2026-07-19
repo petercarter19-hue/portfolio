@@ -52,9 +52,9 @@ items, still pending Pete + manager real-visual acceptance before merge.
   correction pass. **Not merged, not deployed** — awaiting Pete and ChatGPT Work
   real-visual acceptance per role boundaries and the manager's CONDITIONAL hold.
 - **Branch:** `work/2026-07-19-voice-visual-parity-001`, pushed to `origin`.
-- **Implementation commit (final full SHA):** `__FINAL_SHA__`
+- **Implementation commit (final full SHA):** `1701ffdc5fff403080bf0ca3c59e1d04c486604e`
   (design checkpoint `0158daf22d26e7c38be494e2b32e6b51fdaca0fb`; first-pass
-  `177d7a6` / `122470a`; correction pass `__FINAL_SHA__`).
+  `177d7a6` / `122470a`; correction pass `1701ffdc5fff403080bf0ca3c59e1d04c486604e`).
 - **Base:** synchronized `origin/main` at
   `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f` — merged in (no rebase/force-push),
   verified via `git merge-base --is-ancestor`.
