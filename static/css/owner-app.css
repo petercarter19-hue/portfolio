@@ -188,62 +188,200 @@
     box-shadow: 0 5px 16px rgba(19, 36, 71, 0.18);
 }
 
-.owner-app__voice,
+/* ============================================================
+   PS-VOICE-VISUAL-PARITY-001 (2026-07-19) — visual authority: the
+   approved homepage Voice walkthrough (/feed-living-stream?state=voice
+   and ?state=review). Colors reconciled to the current Deep Navy Gold
+   system per owner direction ("merge with current color schemes",
+   2026-07-19): Primary Navy for primary actions/active/selected
+   (confirmed by the four committed production mobile screenshots at
+   docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/, which
+   already render navy, not gold); Marigold reserved for "Coming later"
+   capability-preview tags and evidence/provenance accents, matching
+   AGENTS.md's semantic assignment. All selectors below are Voice-scoped.
+   ============================================================ */
+
+.owner-app__capture-methods,
+.owner-app__voice-modal,
 .owner-app__voice-review {
-    margin-top: 2rem;
-    padding: clamp(1.25rem, 4vw, 2rem);
-    border: 1px solid rgba(32, 55, 103, 0.18);
-    border-radius: 22px;
-    background:
-        radial-gradient(circle at 92% 8%, rgba(184, 121, 0, 0.13), transparent 15rem),
-        #fff;
+    --pv-navy: #203767;
+    --pv-navy-strong: #132447;
+    --pv-navy-soft: #EDEFFF;
+    --pv-ink: #101b30;
+    --pv-text: #1B2C47;
+    --pv-muted: #6F7F99;
+    --pv-line: #DDE4F0;
+    --pv-line-soft: #E8EDF5;
+    --pv-cloud: #F6F8FC;
+    --pv-marigold: #B87900;
+    --pv-marigold-text: #8A5A00;
+    --pv-marigold-soft: #F4E4B4;
+    --pv-shadow-2: 0 24px 70px rgba(17, 31, 68, 0.16);
+    --pv-serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --pv-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.owner-app__voice-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: 0 0 auto;
+    display: inline-block;
+    vertical-align: -0.2em;
+    margin-right: 0.4rem;
+}
+
+.owner-app__voice-icon--lg {
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0;
+}
+
+.owner-app__voice-icon--sm {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.owner-app__voice-lede {
+    margin: 1.5rem 0 0;
+    color: var(--pv-ink, #101b30);
+    font: 600 1.3rem/1.35 "Newsreader", Georgia, serif;
+}
+
+/* ---- Capture method chooser: bigger, equal-weight Speak/Type CTAs ---- */
+
+.owner-app__capture-methods {
+    display: inline-flex;
+    gap: 0.6rem;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+.owner-app__method {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3.25rem;
+    padding: 0.85rem 1.35rem;
+    border: 1px solid var(--pv-line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--pv-navy);
+    font: 800 0.95rem/1 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__method .owner-app__voice-icon {
+    color: var(--pv-navy);
+}
+
+.owner-app__method[aria-pressed="true"] {
+    background: var(--pv-navy);
+    border-color: var(--pv-navy);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(32, 55, 103, 0.22);
+}
+
+.owner-app__method[aria-pressed="true"] .owner-app__voice-icon {
+    color: #fff;
+}
+
+/* ============================================================
+   Recording modal (parity target: ?state=voice)
+   ============================================================ */
+
+.owner-app__voice-modal {
+    width: min(100%, 46rem);
+    margin: 0 auto;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: var(--pv-shadow-2);
+    overflow: hidden;
     font-family: Inter, sans-serif;
 }
 
-.owner-app__voice h2,
-.owner-app__voice-review h2 {
+.owner-app__voice-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.35rem 1.55rem 1.05rem;
+    border-bottom: 1px solid var(--pv-line-soft);
+}
+
+.owner-app__voice-modal-head h2 {
     margin: 0;
-    color: #132447;
-    font: 650 clamp(1.55rem, 4vw, 2.25rem)/1.1 Newsreader, serif;
+    color: var(--pv-ink);
+    font: 650 1.6rem/1.15 var(--pv-serif);
 }
 
-.owner-app__voice > p,
-.owner-app__voice-review > p,
-.owner-app__voice-provider p {
-    max-width: 64ch;
-    margin: 0.8rem 0 0;
-    color: #526078;
-    font: 400 0.96rem/1.65 Inter, sans-serif;
+.owner-app__voice-modal-close {
+    flex: 0 0 auto;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 1px solid var(--pv-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--pv-muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
 }
 
-.owner-app__voice-limits {
-    padding-left: 0.85rem;
-    border-left: 3px solid #b87900;
+.owner-app__voice-modal-close .owner-app__voice-icon {
+    margin: 0;
+}
+
+.owner-app__voice-modal-close:hover {
+    background: var(--pv-cloud);
 }
 
 .owner-app__voice-stage {
     display: grid;
     place-items: center;
-    gap: 0.8rem;
-    min-height: 11rem;
-    margin-top: 1.25rem;
-    padding: 1.5rem;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 20px;
-    background:
-        radial-gradient(circle at 50% 0%, rgba(184, 121, 0, 0.28), transparent 58%),
-        #132447;
-    color: #fff;
+    gap: 0.55rem;
+    padding: 2.2rem 2.4rem 1.9rem;
     text-align: center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.owner-app__voice-stage > p {
-    max-width: 34ch;
-    margin: 0;
+.owner-app__voice-ring {
+    width: 8rem;
+    height: 8rem;
+    margin-bottom: 0.6rem;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
     color: #fff;
-    font: 600 1.12rem/1.4 Newsreader, serif;
+    cursor: pointer;
+    background: radial-gradient(circle, var(--pv-navy) 0 38%, #3a5aa0 39% 50%, var(--pv-navy-soft) 51% 62%, var(--pv-cloud) 63%);
+    box-shadow: 0 20px 55px rgba(32, 55, 103, 0.25);
+}
+
+.owner-app__voice-ring .owner-app__voice-icon {
+    color: #fff;
+}
+
+.owner-app__voice-state-title {
+    font: 800 1.32rem/1.3 Inter, sans-serif;
+    color: var(--pv-ink);
+    margin: 0;
+}
+
+.owner-app__voice-state-help {
+    max-width: 34ch;
+    margin: 0 0 0.4rem;
+    color: var(--pv-muted);
+    font: 400 0.85rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__voice-prompt {
+    font: 400 1.6rem/1.45 var(--pv-serif);
+    color: #273852;
+    max-width: 38ch;
+    margin: 0 0 0.3rem;
+    min-height: 2.9rem;
 }
 
 .owner-app__voice-wave {
@@ -251,8 +389,9 @@
     align-items: center;
     justify-content: center;
     gap: clamp(0.16rem, 0.6vw, 0.35rem);
-    width: min(100%, 31rem);
-    height: 4.5rem;
+    width: min(100%, 26rem);
+    height: 2.9rem;
+    margin: 0 0 0.2rem;
 }
 
 .owner-app__voice-wave span {
@@ -260,33 +399,51 @@
     height: var(--voice-bar-height);
     min-height: 0.35rem;
     border-radius: 999px;
-    background: linear-gradient(180deg, #f4e4b4, #d29a25);
+    background: linear-gradient(180deg, #3a5aa0, var(--pv-navy));
     opacity: 0.72;
     transform-origin: center;
 }
 
-.owner-app__voice[data-voice-state="requesting"] .owner-app__voice-wave span,
-.owner-app__voice[data-voice-state="processing"] .owner-app__voice-wave span {
-    animation: owner-voice-breathe 1.3s ease-in-out infinite alternate;
-    animation-delay: -0.35s;
+.owner-app__voice-timer {
+    color: var(--pv-navy-strong) !important;
+    font: 800 0.85rem/1 Inter, sans-serif !important;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
 }
 
-.owner-app__voice[data-voice-state="recording"] .owner-app__voice-wave span {
+/* Sub-state visibility, driven by data-voice-state (owner-capture-voice.js) */
+
+.owner-app__voice-modal[data-voice-state="ready"] .owner-app__voice-wave,
+.owner-app__voice-modal[data-voice-state="ready"] .owner-app__voice-timer,
+.owner-app__voice-modal[data-voice-state="requesting"] .owner-app__voice-wave,
+.owner-app__voice-modal[data-voice-state="requesting"] .owner-app__voice-timer,
+.owner-app__voice-modal[data-voice-state="error"] .owner-app__voice-wave,
+.owner-app__voice-modal[data-voice-state="error"] .owner-app__voice-timer {
+    visibility: hidden;
+}
+
+.owner-app__voice-modal[data-voice-state="recording"] .owner-app__voice-ring,
+.owner-app__voice-modal[data-voice-state="processing"] .owner-app__voice-ring,
+.owner-app__voice-modal[data-voice-state="requesting"] .owner-app__voice-ring {
+    cursor: default;
+}
+
+.owner-app__voice-modal[data-voice-state="requesting"] .owner-app__voice-ring,
+.owner-app__voice-modal[data-voice-state="processing"] .owner-app__voice-ring {
+    animation: owner-voice-breathe 1.3s ease-in-out infinite alternate;
+}
+
+.owner-app__voice-modal[data-voice-state="recording"] .owner-app__voice-wave span {
     opacity: 1;
     animation: owner-voice-listening 0.72s ease-in-out infinite alternate;
     animation-delay: -0.22s;
 }
 
-.owner-app__voice-wave span:nth-child(2n) {
-    animation-delay: -0.48s !important;
-}
-
-.owner-app__voice-wave span:nth-child(3n) {
-    animation-delay: -0.1s !important;
-}
+.owner-app__voice-wave span:nth-child(2n) { animation-delay: -0.48s !important; }
+.owner-app__voice-wave span:nth-child(3n) { animation-delay: -0.1s !important; }
 
 @keyframes owner-voice-breathe {
-    to { opacity: 1; }
+    to { opacity: 0.72; transform: scale(0.97); }
 }
 
 @keyframes owner-voice-listening {
@@ -295,35 +452,33 @@
 
 .owner-app__voice-controls {
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 0.65rem;
-    margin-top: 1.25rem;
+    padding: 0 2.4rem 1.5rem;
 }
 
-.owner-app__voice-controls button:disabled,
-.owner-app__voice-review button:disabled {
+.owner-app__voice-controls button:disabled {
     cursor: not-allowed;
-    opacity: 0.52;
+    opacity: 0.45;
 }
 
-.owner-app__voice-timer {
-    color: #132447 !important;
-    font-weight: 800 !important;
-    font-variant-numeric: tabular-nums;
-}
-
-.owner-app__voice-stage .owner-app__voice-timer {
-    color: #f4e4b4 !important;
-    font: 800 0.9rem/1 Inter, sans-serif;
+.owner-app__voice-controls .owner-app__primary,
+.owner-app__voice-controls .owner-app__secondary {
+    min-height: 2.85rem;
+    padding: 0 1.35rem;
 }
 
 .owner-app__voice-status {
-    min-height: 2.75rem;
+    margin: 0 2.4rem;
     padding: 0.75rem 0.9rem;
     border-radius: 12px;
     background: rgba(32, 55, 103, 0.07);
-    color: #132447 !important;
+    color: var(--pv-navy-strong) !important;
     font-weight: 700 !important;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .owner-app__voice-status--error {
@@ -332,83 +487,412 @@
     color: #842d2d !important;
 }
 
-.owner-app__voice-review audio {
-    width: 100%;
-    margin-top: 1.25rem;
+.owner-app__voice-limits {
+    margin: 1rem 2.4rem 1.6rem;
+    padding-left: 0.85rem;
+    border-left: 3px solid var(--pv-marigold);
+    color: #7d8ba3;
+    font-size: 0.78rem;
+    line-height: 1.5;
 }
 
-.owner-app__voice-review form {
-    display: grid;
-    gap: 0.8rem;
-    margin-top: 1.25rem;
-}
+/* ============================================================
+   Review stage (parity target: ?state=review)
+   ============================================================ */
 
-.owner-app__voice-review form > label,
-.owner-app__voice-confirm {
-    color: #132447;
-    font: 800 0.9rem/1.5 Inter, sans-serif;
-}
-
-.owner-app__voice-review textarea {
-    width: 100%;
-    min-height: 15rem;
-    padding: 1rem;
-    resize: vertical;
-    border: 1px solid rgba(10, 27, 54, 0.28);
-    border-radius: 14px;
+.owner-app__voice-review {
+    width: min(100%, 63rem);
+    margin: 2rem auto 0;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 28px;
     background: #fff;
-    color: #141a28;
-    font: 400 1rem/1.65 Inter, sans-serif;
+    box-shadow: var(--pv-shadow-2);
+    overflow: hidden;
+    font-family: Inter, sans-serif;
 }
 
-.owner-app__voice-review textarea:focus-visible,
-.owner-app__voice-confirm input:focus-visible {
-    outline: 3px solid #2f5296;
-    outline-offset: 3px;
+.owner-app__voice-review .owner-app__voice-modal-head h2 {
+    font-size: 1.5rem;
 }
 
-.owner-app__voice-confirm {
+.owner-app__voice-private-status {
     display: flex;
-    align-items: flex-start;
-    gap: 0.65rem;
+    align-items: center;
+    margin: 0;
+    padding: 0.85rem 1.55rem;
+    background: var(--pv-marigold-soft);
+    color: var(--pv-marigold-text);
+    font: 700 0.85rem/1.4 Inter, sans-serif;
+    border-bottom: 1px solid rgba(184, 121, 0, 0.16);
 }
 
-.owner-app__voice-confirm input {
-    flex: 0 0 auto;
-    width: 1.15rem;
-    height: 1.15rem;
-    margin-top: 0.18rem;
-    accent-color: #203767;
+.owner-app__voice-private-status .owner-app__voice-icon {
+    color: var(--pv-marigold-text);
 }
 
-.owner-app__voice-review form .owner-app__primary {
-    justify-self: start;
+.owner-app__voice-review-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    margin: 0;
+}
+
+.owner-app__voice-review-main {
+    padding: 1.5rem 1.6rem 1.7rem;
+}
+
+.owner-app__voice-review-side {
+    padding: 1.5rem 1.35rem;
+    background: var(--pv-cloud);
+    border-left: 1px solid var(--pv-line);
+}
+
+.owner-app__field-label {
+    display: block;
+    margin: 0 0 0.5rem;
+    color: #8A99AE;
+    font: 800 0.68rem/1 Inter, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.owner-app__voice-help {
+    max-width: 60ch;
+    margin: 0 0 0.9rem;
+    color: var(--pv-muted);
+    font: 400 0.85rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__voice-player {
+    margin: 0 0 0.6rem;
+}
+
+.owner-app__voice-player audio {
+    width: 100%;
+}
+
+.owner-app__voice-download {
+    margin: 0 0 1.1rem;
+}
+
+.owner-app__voice-download a {
+    color: var(--pv-navy);
+    font: 700 0.82rem/1.4 Inter, sans-serif;
+}
+
+.owner-app__voice-transcript-box {
+    width: 100%;
+    min-height: 7rem;
+    padding: 0.9rem 1rem;
+    resize: vertical;
+    border: 1px solid var(--pv-line);
+    border-radius: 15px;
+    background: #fff;
+    color: #35465F;
+    font: 400 0.9rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__voice-transcript-box:focus-visible {
+    outline: none;
+    border-color: #B9C2F5;
+    box-shadow: 0 0 0 3px rgba(79, 91, 213, 0.14);
 }
 
 .owner-app__voice-provider {
-    margin-top: 1.25rem;
-    padding: 0.9rem 1rem;
+    margin-top: 0.9rem;
+    padding: 0.75rem 0.9rem;
     border: 1px solid rgba(184, 121, 0, 0.3);
     border-radius: 14px;
     background: #fffaf0;
 }
 
 .owner-app__voice-provider summary {
-    min-height: 44px;
-    color: #8a5a00;
-    font: 800 0.9rem/1.4 Inter, sans-serif;
+    min-height: 2.75rem;
+    color: var(--pv-marigold-text);
+    font: 800 0.85rem/1.4 Inter, sans-serif;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.owner-app__voice-provider p {
+    margin: 0.7rem 0 0;
+    color: #7d6a3f;
+    font-size: 0.8rem;
+    line-height: 1.5;
 }
 
 .owner-app__voice-provider blockquote {
-    margin: 0.8rem 0 0;
-    padding: 0.9rem 1rem;
-    border-left: 3px solid #b87900;
+    margin: 0.7rem 0 0;
+    padding: 0.8rem 0.9rem;
+    border-left: 3px solid var(--pv-marigold);
     background: #fff;
     color: #141a28;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    font: 400 1rem/1.65 Inter, sans-serif;
+    font: 400 0.9rem/1.6 Inter, sans-serif;
+}
+
+.owner-app__voice-ai-card {
+    margin-top: 1rem;
+    padding: 0.95rem 1.1rem;
+    border: 1px solid #DDE2F7;
+    border-radius: 16px;
+    background: #FBFCFF;
+}
+
+.owner-app__voice-ai-kicker {
+    display: flex;
+    align-items: center;
+    margin: 0 0 0.35rem;
+    color: #4A56D4;
+    font: 800 0.72rem/1.3 Inter, sans-serif;
+}
+
+.owner-app__voice-ai-kicker .owner-app__voice-icon {
+    color: #4A56D4;
+}
+
+.owner-app__voice-ai-card p {
+    margin: 0;
+    color: #56667D;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.owner-app__voice-ai-card p + p {
+    margin-top: 0.4rem;
+}
+
+.owner-app__voice-attach {
+    margin-top: 1.1rem;
+}
+
+.owner-app__voice-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.owner-app__voice-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.1rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--pv-line);
+    border-radius: 11px;
+    background: #fff;
+    color: #64738A;
+    font: 650 0.78rem/1 Inter, sans-serif;
+}
+
+.owner-app__voice-chip:disabled {
+    cursor: not-allowed;
+    color: #9AA6B8;
+    background: #F7F9FC;
+}
+
+.owner-app__voice-chip--active {
+    color: #3D4E6B;
+    background: #F2F5FB;
+    font-weight: 700;
+}
+
+.owner-app__voice-soon {
+    margin-left: 0.45rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: var(--pv-marigold-soft);
+    color: var(--pv-marigold-text);
+    font: 800 0.62rem/1.4 Inter, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.owner-app__voice-audience {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.owner-app__voice-audience-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.65rem 0.6rem;
+    border-radius: 12px;
+}
+
+.owner-app__voice-audience-option--selected {
+    background: var(--pv-navy-soft);
+}
+
+.owner-app__voice-audience-option--disabled {
+    opacity: 0.62;
+}
+
+.owner-app__voice-audience-option input {
+    margin-top: 0.15rem;
+    accent-color: var(--pv-navy);
+}
+
+.owner-app__voice-audience-copy strong {
+    display: block;
+    color: var(--pv-ink);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.owner-app__voice-audience-copy span {
+    display: block;
+    margin-top: 0.15rem;
+    color: #7A899F;
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+.owner-app__voice-connect-label {
+    margin-top: 1.1rem;
+}
+
+.owner-app__voice-side-footnote {
+    margin: 0.9rem 0 0;
+    color: #7A899F;
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+/* ---- "More ways to use this": a native <details> disclosure around the
+   audience + destination capability previews. Mobile-first: collapsed by
+   default (real progressive disclosure, no JS). The min-width override
+   below forces it permanently expanded with the toggle hidden on desktop,
+   where the walkthrough shows this content unconditionally. ---- */
+
+.owner-app__voice-more summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+    color: var(--pv-navy);
+    font: 800 0.8rem/1.4 Inter, sans-serif;
+    cursor: pointer;
+    list-style: none;
+}
+
+.owner-app__voice-more summary::-webkit-details-marker {
+    display: none;
+}
+
+.owner-app__voice-more summary::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.55rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.15s var(--pv-ease);
+}
+
+.owner-app__voice-more[open] summary::after {
+    transform: rotate(-135deg);
+}
+
+.owner-app__voice-more-body {
+    padding-top: 0.7rem;
+}
+
+@media (min-width: 541px) {
+    /* Desktop shows this content unconditionally, matching the walkthrough;
+       owner-capture-voice.js leaves the [open] attribute from the server
+       untouched at this width, so no forced-visible override is needed
+       here (Chromium's native <details> disclosure-content sizing can't be
+       reliably overridden by author CSS once collapsed). */
+    .owner-app__voice-more summary {
+        display: none;
+    }
+
+    .owner-app__voice-more-body {
+        padding-top: 0;
+    }
+}
+
+.owner-app__voice-review-footer {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.6rem;
+    border-top: 1px solid var(--pv-line);
+    background: #fff;
+}
+
+.owner-app__voice-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    flex: 1 1 20rem;
+    color: var(--pv-ink);
+    font: 700 0.78rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__voice-confirm input {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-top: 0.15rem;
+    accent-color: var(--pv-navy);
+}
+
+.owner-app__voice-review-footer .owner-app__primary {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.owner-app__voice-review-simple {
+    padding: 1.5rem 1.6rem;
+}
+
+.owner-app__voice-review-simple p {
+    max-width: 64ch;
+    margin: 0;
+    color: #526078;
+    font: 400 0.92rem/1.6 Inter, sans-serif;
+}
+
+.owner-app__voice-review-simple form {
+    margin-top: 1rem;
+}
+
+.owner-app__voice-delete {
+    margin: 0 1.6rem 1.5rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+}
+
+/* ---- Body-level portal + backdrop (owner-capture-voice.js) ---- */
+
+#voice-overlay-root {
+    position: relative;
+    z-index: 1400;
+}
+
+.owner-app__voice-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: rgba(8, 18, 37, 0.42);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.owner-app__voice-backdrop .owner-app__voice-modal,
+.owner-app__voice-backdrop .owner-app__voice-review {
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    margin: 0;
 }
 
 .owner-app__captures {
@@ -938,11 +1422,115 @@
     }
 
     .owner-app__capture-methods,
-    .owner-app__method,
-    .owner-app__voice-controls,
-    .owner-app__voice-controls button,
-    .owner-app__voice-review form .owner-app__primary {
+    .owner-app__method {
         width: 100%;
+    }
+
+    .owner-app__capture-methods {
+        flex-direction: column;
+    }
+
+    /* ---- Voice recording modal + review stage: purpose-designed mobile
+       bottom sheets, not a compressed desktop column. ---- */
+
+    .owner-app__voice-backdrop {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .owner-app__voice-modal,
+    .owner-app__voice-review {
+        width: 100%;
+        max-width: none;
+        border-radius: 22px 22px 0 0;
+        max-height: 92vh;
+    }
+
+    .owner-app__voice-modal-head {
+        padding: 1rem 1.1rem 0.85rem;
+    }
+
+    .owner-app__voice-modal-head h2 {
+        font-size: 1.3rem;
+    }
+
+    .owner-app__voice-stage {
+        padding: 1.5rem 1.25rem 1.4rem;
+    }
+
+    .owner-app__voice-ring {
+        width: 6rem;
+        height: 6rem;
+    }
+
+    .owner-app__voice-prompt {
+        font-size: 1.2rem;
+        min-height: 0;
+    }
+
+    .owner-app__voice-controls {
+        flex-direction: column;
+        padding: 0 1.25rem 1.25rem;
+    }
+
+    .owner-app__voice-controls .owner-app__primary,
+    .owner-app__voice-controls .owner-app__secondary {
+        width: 100%;
+    }
+
+    .owner-app__voice-status,
+    .owner-app__voice-limits {
+        margin-left: 1.25rem;
+        margin-right: 1.25rem;
+    }
+
+    .owner-app__voice-review-body {
+        display: block;
+    }
+
+    .owner-app__voice-review-main {
+        padding: 1.1rem 1.1rem 0.5rem;
+    }
+
+    .owner-app__voice-review-side {
+        border-left: 0;
+        border-top: 1px solid var(--pv-line);
+        padding: 1.1rem;
+    }
+
+    /* Sticky primary action: Save private Capture stays reachable while
+       the rest of the review sheet (transcript, provider disclosure, More
+       ways to use this) scrolls underneath it. */
+    .owner-app__voice-review-footer {
+        position: sticky;
+        bottom: 0;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.9rem 1.1rem;
+    }
+
+    /* .owner-app__voice-confirm's flex-basis (20rem) sizes its WIDTH in the
+       desktop row-direction footer; in this column-direction footer that
+       same basis would size its HEIGHT instead, so it must be reset here. */
+    .owner-app__voice-confirm {
+        flex: 0 0 auto;
+    }
+
+    .owner-app__voice-review-footer .owner-app__primary {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .owner-app__voice-review-simple {
+        padding: 0.9rem 1.1rem;
+    }
+
+    .owner-app__voice-review-simple form .owner-app__primary {
+        width: 100%;
+    }
+
+    .owner-app__voice-delete {
+        margin: 0 1.1rem 1.1rem;
     }
 
     .owner-app__capture-moment .owner-app__secondary {
@@ -974,9 +1562,52 @@
     .owner-app *::before,
     .owner-app *::after {
         scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 
-    .owner-app__voice-wave span {
+    .owner-app__voice-wave span,
+    .owner-app__voice-ring,
+    .owner-app__voice-more summary::after {
         animation: none !important;
     }
 }
+
+/* ============================================================
+   Dark theme — ring/wave shift to the gold ramp, matching the walkthrough's
+   own dark-theme treatment (feed-living-stream.css); everything else keeps
+   the same light "paper" modal surface the approved screenshots show.
+   ============================================================ */
+
+body[data-theme="dark"] .owner-app__voice-ring {
+    background: radial-gradient(circle, #d8a928 0 38%, #e3b83a 39% 50%, #f5e7b6 51% 62%, #fbf6e4 63%);
+    box-shadow: 0 20px 55px rgba(216, 169, 40, 0.3);
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .owner-app__voice-ring .owner-app__voice-icon {
+    color: #0b0c0e;
+}
+
+body[data-theme="dark"] .owner-app__voice-wave span {
+    background: linear-gradient(#e3b83a, #8a6500);
+}
+
+body[data-theme="dark"] .owner-app__voice-transcript-box:focus-visible {
+    border-color: #d8a928;
+    box-shadow: 0 0 0 3px rgba(216, 169, 40, 0.18);
+}
+
+body[data-theme="dark"] .owner-app__voice-audience-option--selected {
+    background: rgb(216 169 40 / 13%);
+}
+
+body[data-theme="dark"] .owner-app__voice-audience-option--selected .owner-app__voice-audience-copy strong {
+    color: #6d4700;
+}
+
+/* The walkthrough's own dark-theme rules (feed-living-stream.css) keep
+   every primary action navy — only the ring, wave, focus rings, and the
+   audience "selected" tint shift to gold. .owner-app__method mirrors that:
+   no override here, it stays navy in both themes like .owner-app__primary. */

@@ -21,12 +21,20 @@ this document or amend it._
      (`reviewOverlayHTML()` in `static/js/feed-living-stream.js:609`)
    - Styles: `static/css/feed-living-stream.css:280–344` (overlay, modal,
      listening stage, review grid) and `:433–446` (mobile bottom sheet).
-2. The approved Voice screenshots referenced in the owner instruction.
-   **Open item:** those screenshots were not delivered into this session or the
-   repository. They must be committed under
-   `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/` (or a path
-   the manager names) before V2 comparison evidence can cite them. Until then,
-   the live walkthrough code above is the binding, inspectable authority.
+2. The approved Voice screenshots. **Resolved 2026-07-19:** four production
+   mobile screenshots (Safari, `peerslate.com`, live `/feed-living-stream`) are
+   committed at
+   `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/approved-mobile-0{1..4}-*.png`.
+   They show the recording/listening modal, the review stage's audience rail,
+   the review stage's attach/connect row, and the Feed entry point — all in
+   **navy** primary/selected treatment, matching the current
+   `feed-living-stream.css` exactly. Two desktop screenshots were also shown
+   in chat (recording + review, in a **marigold-toned** treatment that does not
+   match current code) but arrived as inline chat content with no underlying
+   file path, so they could not be copied into the repository as binary
+   evidence; only the committed mobile set and the inspectable walkthrough
+   source are durable V0 authority. See §8.2 for how the color discrepancy
+   between the two desktop images and the four mobile images is resolved.
 
 ### 1.2 Truth boundary (what is live vs. presentation)
 
@@ -298,19 +306,41 @@ same single column.
 7. **Assets:** Newsreader/Inter already load via the base page; no new
    external dependencies.
 
-## 8. Open questions for Pete / ChatGPT Work (answers before build)
+## 8. Owner decisions
 
-1. **Approved screenshots.** Please commit the approved Voice screenshots to
-   `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/` (or name
-   their durable location). The walkthrough code is authoritative meanwhile.
-2. **Primary button color.** The light-theme walkthrough primary is Primary
-   Navy `#203767` (gold appears only in dark theme), but the manager note says
-   "the gold primary button must remain Save private Capture." Confirm: navy
-   primary in light / gold in dark (my recommendation, matching the
-   walkthrough and AGENTS.md color semantics), or marigold primary in both.
-3. **Test-contract revision** in §7.5 (scoped `position: fixed`) — approve.
-4. **Review dismissal copy** — "Close keeps your private draft; resume any
-   time from this page." Confirm wording is acceptable.
+**2026-07-19 — Pete approved this document as written** ("we approve -
+implement this. merge with current color schemes. I signoff") and provided
+the four production mobile screenshots now committed under
+`visual-authority/`. Resolutions below.
+
+1. ~~Approved screenshots~~ — **Resolved.** Four real mobile screenshots
+   committed (§1.1). Desktop authority remains the inspectable walkthrough
+   source (§2–3), since the two desktop images shown in chat had no file path
+   to commit.
+2. ~~Primary button color~~ — **Resolved: navy primary in every theme**, per
+   "merge with current color schemes." The four committed mobile screenshots
+   settle this directly: every primary button ("Stop and review," "Publish
+   update") and every selected state ("Community" radio) renders in Primary
+   Navy on the real production site today, exactly matching
+   `feed-living-stream.css` and the AGENTS.md semantic assignment (navy =
+   primary actions/active/selected; marigold = evidence chips/progress/
+   highlights). Checking `feed-living-stream.css`'s own dark-theme block
+   confirms primary actions stay navy there too — only decorative accents
+   (the listening ring, waveform, textarea focus ring, and the audience
+   "selected" background tint) shift to the gold ramp in dark theme. The
+   implementation mirrors that exactly: `.owner-app__primary` (Save private
+   Capture) and the Speak/Type toggle stay navy in both themes; only the
+   mic ring, waveform, and selected-audience tint go gold under
+   `body[data-theme="dark"]`. The two marigold-toned desktop images shown in
+   chat are treated as a superseded/alternate mockup pass that predates or
+   diverges from the shipped Deep Navy Gold reconciliation — they are not
+   used as color authority. Recorded as an owner-directed deviation in the
+   §9 parity matrix, not an unauthorized downgrade.
+3. **Test-contract revision** in §7.5 (scoped `position: fixed`) — approved by
+   implication of "implement this."
+4. **Review dismissal copy** — proceeding with "Close keeps your private
+   draft; resume any time from this page." as drafted; will flag in the
+   completion report for a final wording pass if Pete wants a change.
 
 ## 9. Evidence plan (V2)
 

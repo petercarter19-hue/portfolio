@@ -1,4 +1,5 @@
 import pathlib
+import re
 import unittest
 
 
@@ -62,7 +63,26 @@ class OwnerVoiceUiContractTests(unittest.TestCase):
         self.assertIn("@media (prefers-reduced-motion: reduce)", STYLES)
         self.assertIn(":focus-visible", STYLES)
         self.assertIn("resize: vertical", STYLES)
-        self.assertNotIn("position: fixed", STYLES)
+        # PS-VOICE-VISUAL-PARITY-001 (2026-07-19, owner-approved revision):
+        # the Voice recording/review overlay portals to <body> and uses
+        # position: fixed for its full-viewport backdrop only, because
+        # main.main-content's isolation:isolate establishes a stacking
+        # context that otherwise traps a nested fixed overlay below the
+        # sticky global header (verified against templates/base.html and
+        # static/css/style.css, not merely asserted). Every other Voice/
+        # Capture rule must stay in normal, non-fixed document flow.
+        fixed_rule_selectors = re.findall(r"([^{}]+)\{[^{}]*position:\s*fixed[^{}]*\}", STYLES)
+        self.assertTrue(
+            fixed_rule_selectors,
+            "expected the Voice overlay backdrop rule to use position: fixed",
+        )
+        for selector in fixed_rule_selectors:
+            self.assertIn(
+                "voice-backdrop",
+                selector,
+                "position: fixed must stay scoped to the Voice overlay backdrop, "
+                f"found on: {selector.strip()}",
+            )
 
     def test_homepage_voice_authority_is_reflected_without_faking_behavior(self):
         for contract in (
@@ -78,6 +98,44 @@ class OwnerVoiceUiContractTests(unittest.TestCase):
         self.assertIn('"recording"', CLIENT)
         self.assertIn('switchMode("voice", false)', CLIENT)
         self.assertIn("animation: none !important", STYLES)
+
+    def test_capability_previews_are_genuinely_disabled_and_labeled(self):
+        # PS-VOICE-VISUAL-PARITY-001: future affordances (Community,
+        # Connections, Selected people, My Story, Slate Board, Resume,
+        # Photo/Video/Document, AI wording) are visible per the approved
+        # walkthrough composition, but must be real, non-operable HTML
+        # controls carrying a truthful "Coming later" label, not disguised
+        # working buttons.
+        for label in ("Connections", "Community", "Selected people", "My Story", "Slate Board"):
+            self.assertIn(label, TEMPLATE)
+        self.assertIn("R&eacute;sum&eacute;", TEMPLATE)
+        self.assertGreaterEqual(TEMPLATE.count("Coming later"), 8)
+        self.assertGreaterEqual(TEMPLATE.count('disabled aria-disabled="true"'), 6)
+        self.assertIn('<input type="radio" name="audience_preview" checked disabled', TEMPLATE)
+        self.assertIn("AI-assisted wording", TEMPLATE)
+        self.assertIn("coming later", TEMPLATE)
+        self.assertIn(
+            "Your original transcript will always remain unchanged",
+            TEMPLATE,
+        )
+        self.assertIn("Publishing and audience choices are coming later.", TEMPLATE)
+
+    def test_review_states_explicit_private_status(self):
+        self.assertIn("This Capture is private and visible only to you.", TEMPLATE)
+
+    def test_voice_overlay_has_dialog_semantics_and_portals_to_body(self):
+        self.assertIn('role="dialog"', TEMPLATE)
+        self.assertIn('aria-modal="true"', TEMPLATE)
+        self.assertIn("voice-overlay-root", CLIENT)
+        self.assertIn("document.body.appendChild(overlayRoot)", CLIENT)
+        self.assertIn('event.key === "Escape"', CLIENT)
+        self.assertIn("trapFocus", CLIENT)
+
+    def test_mobile_sticky_save_action_and_progressive_disclosure(self):
+        self.assertIn('<details class="owner-app__voice-more" open>', TEMPLATE)
+        self.assertIn("More ways to use this", TEMPLATE)
+        self.assertIn(".owner-app__voice-review-footer {", STYLES)
+        self.assertIn("position: sticky", STYLES)
 
 
 if __name__ == "__main__":
