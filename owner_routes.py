@@ -9,9 +9,11 @@ from flask import (
     Blueprint,
     Response,
     current_app,
+    jsonify,
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 
@@ -24,6 +26,12 @@ from services.moment_service import (
     MOMENT_KINDS,
     OCCURRED_PRECISIONS,
     validate_moment_proposal,
+)
+from services.voice_capture_service import (
+    MAX_VOICE_BYTES,
+    MAX_VOICE_DURATION_SECONDS,
+    VoiceCaptureError,
+    voice_capture_service,
 )
 
 
@@ -39,6 +47,11 @@ CAPTURE_VALIDATION_MESSAGES = {
     ),
     "changed": "That capture changed or is no longer available. Refresh and try again.",
     "confirm-delete": "Confirm permanent deletion before deleting this capture.",
+    "voice-changed": "That private voice draft changed or is no longer available. Refresh and try again.",
+    "voice-required": "Review the transcript and add meaningful text before saving.",
+    "voice-too-long": f"Keep the reviewed transcript to {MAX_CAPTURE_BODY_LENGTH:,} characters or fewer.",
+    "voice-delete-retry": "The private audio could not be deleted yet. Nothing was reported as deleted; try again.",
+    "voice-transcription": "The private recording was preserved, but transcription did not finish. Retry or delete the draft.",
 }
 CAPTURE_SUCCESS_MESSAGES = {
     "corrected": "Correction saved as a new version. The original is unchanged.",
@@ -46,6 +59,7 @@ CAPTURE_SUCCESS_MESSAGES = {
     "restored": "Capture restored to your active captures.",
     "deleted": "Capture and its correction history were permanently deleted.",
     "moment-discarded": "Private Moment proposal discarded.",
+    "voice-deleted": "Private voice draft and original audio were deleted.",
 }
 MOMENT_VALIDATION_MESSAGES = {
     "required": "Choose a type and add both a title and member-approved narrative.",
@@ -81,6 +95,14 @@ def _is_same_origin_write():
         (origin and origin.rstrip("/") != expected_origin)
         or (fetch_site and fetch_site not in {"same-origin", "none"})
     )
+
+
+@owner.before_request
+def _allow_bounded_voice_upload():
+    """Override the smaller global form limit only for the Voice upload route."""
+    if request.endpoint == "owner.upload_voice_capture":
+        # Multipart framing adds a small amount beyond the enforced 20 MB file cap.
+        request.max_content_length = MAX_VOICE_BYTES + (64 * 1024)
 
 
 def _capture_body_length(body):
@@ -288,6 +310,17 @@ def capture():
                 ("@Archived", archived),
             ],
         )
+        voice_draft = None
+        voice_key = request.args.get("voice")
+        if voice_key:
+            normalized_voice_key = _normalize_capture_key(voice_key)
+            if not normalized_voice_key:
+                return "Voice draft not found.", 404
+            voice_draft = voice_capture_service.get_draft(
+                identity.user_key, normalized_voice_key
+            )
+            if not voice_draft:
+                return "Voice draft not found.", 404
     except AuthenticationRequired:
         return redirect(url_for("auth.sign_in", return_to="/app/capture"))
     except DatabaseServiceError:
@@ -302,9 +335,178 @@ def capture():
         success_message=CAPTURE_SUCCESS_MESSAGES.get(request.args.get("changed")),
         saved=request.args.get("saved") == "1",
         archived=archived,
+        voice_draft=voice_draft,
         max_body_length=MAX_CAPTURE_BODY_LENGTH,
         max_correction_note_length=MAX_CORRECTION_NOTE_LENGTH,
+        max_voice_bytes=MAX_VOICE_BYTES,
+        max_voice_duration_seconds=MAX_VOICE_DURATION_SECONDS,
     )
+
+
+@owner.post("/app/capture/voice")
+def upload_voice_capture():
+    """Upload and transcribe one owner-scoped private Voice draft."""
+    if not _is_same_origin_write():
+        return "Cross-site capture requests are not allowed.", 403
+    try:
+        identity = get_current_identity()
+        draft = voice_capture_service.create_and_transcribe(
+            identity.user_key,
+            request.files.get("audio"),
+            request.form.get("duration_seconds"),
+        )
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/capture"))
+    except VoiceCaptureError as error:
+        status = (
+            503
+            if error.code
+            in {
+                "upload-failed",
+                "queue-failed",
+                "transcription-failed",
+                "transcription-recovery",
+            }
+            else 400
+        )
+        payload = {"error": error.code}
+        if error.source_key:
+            payload["source_key"] = error.source_key
+            payload["review_url"] = url_for(
+                "owner.capture", voice=error.source_key
+            )
+        return jsonify(payload), status
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Voice Capture is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    source_key = str(draft["source_key"])
+    return (
+        jsonify(
+            {
+                "state": draft["state"],
+                "review_url": url_for("owner.capture", voice=source_key),
+            }
+        ),
+        201,
+    )
+
+
+def _voice_action_identity(source_key):
+    if not _is_same_origin_write():
+        return None, None, ("Cross-site capture requests are not allowed.", 403)
+    normalized = _normalize_capture_key(source_key)
+    if not normalized:
+        return None, None, ("Voice draft not found.", 404)
+    try:
+        return get_current_identity(), normalized, None
+    except AuthenticationRequired:
+        return None, None, redirect(url_for("auth.sign_in", return_to="/app/capture"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Voice Capture identity is unavailable.")
+        return None, None, _render_owner_unavailable()
+
+
+@owner.post("/app/capture/voice/<source_key>/retry")
+def retry_voice_capture(source_key):
+    """Create a new immutable transcription attempt for a failed draft."""
+    identity, normalized, response = _voice_action_identity(source_key)
+    if response is not None:
+        return response
+    try:
+        voice_capture_service.retry_transcription(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+        )
+    except VoiceCaptureError as error:
+        error_key = (
+            "voice-transcription"
+            if error.code == "transcription-failed"
+            else "voice-changed"
+        )
+        return redirect(url_for("owner.capture", voice=normalized, error=error_key))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Voice retry is unavailable.")
+        return _render_owner_unavailable()
+    return redirect(url_for("owner.capture", voice=normalized))
+
+
+@owner.post("/app/capture/voice/<source_key>/confirm")
+def confirm_voice_capture(source_key):
+    """Explicitly create one private Capture from member-approved transcript text."""
+    identity, normalized, response = _voice_action_identity(source_key)
+    if response is not None:
+        return response
+    body = request.form.get("approved_body", "").strip()
+    if request.form.get("confirm_voice") != "save-private-capture" or not body:
+        return redirect(url_for("owner.capture", voice=normalized, error="required"))
+    if _capture_body_length(body) > MAX_CAPTURE_BODY_LENGTH:
+        return redirect(url_for("owner.capture", voice=normalized, error="too-long"))
+    try:
+        voice_capture_service.confirm_capture(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+            body,
+        )
+    except VoiceCaptureError as error:
+        error_key = error.code if error.code in {"required", "too-long"} else "voice-changed"
+        return redirect(url_for("owner.capture", voice=normalized, error=error_key))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Voice confirmation is unavailable.")
+        return _render_owner_unavailable()
+    return redirect(url_for("owner.capture", saved="1"))
+
+
+@owner.post("/app/capture/voice/<source_key>/delete")
+def delete_voice_draft(source_key):
+    """Explicitly delete an unconfirmed draft through a retryable workflow."""
+    identity, normalized, response = _voice_action_identity(source_key)
+    if response is not None:
+        return response
+    if request.form.get("confirm_delete") != "delete":
+        return redirect(url_for("owner.capture", voice=normalized, error="confirm-delete"))
+    try:
+        voice_capture_service.delete_draft(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+        )
+    except VoiceCaptureError as error:
+        error_key = "voice-delete-retry" if error.code == "delete-retry" else "voice-changed"
+        return redirect(url_for("owner.capture", voice=normalized, error=error_key))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Voice deletion is unavailable.")
+        return _render_owner_unavailable()
+    return redirect(url_for("owner.capture", changed="voice-deleted"))
+
+
+@owner.get("/app/capture/voice/<source_key>/audio")
+def voice_capture_audio(source_key):
+    """Proxy private audio only after owner resolution; never issue a Blob URL."""
+    normalized = _normalize_capture_key(source_key)
+    if not normalized:
+        return "Voice audio not found.", 404
+    try:
+        identity = get_current_identity()
+        media = voice_capture_service.open_audio(identity.user_key, normalized)
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/capture"))
+    except (DatabaseServiceError, VoiceCaptureError):
+        current_app.logger.error("PeerSlate private Voice playback is unavailable.")
+        return "Voice audio is temporarily unavailable.", 503
+    if not media:
+        return "Voice audio not found.", 404
+    response = send_file(
+        media["stream"],
+        mimetype=media["content_type"],
+        as_attachment=request.args.get("download") == "1",
+        download_name="peerslate-private-voice-source",
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @owner.post("/app/capture/<capture_key>/moment-proposal")
@@ -637,17 +839,14 @@ def delete_capture(capture_key):
         return redirect(url_for("owner.capture", error="confirm-delete"))
 
     try:
-        result = database_service.first_row(
-            "usp_DeleteCapture",
-            [
-                ("@UserKey", identity.user_key),
-                ("@CaptureKey", normalized_capture_key),
-                ("@ExpectedRowVersion", expected_row_version),
-            ],
+        result = voice_capture_service.delete_capture(
+            identity.user_key,
+            normalized_capture_key,
+            expected_row_version,
         )
-    except DatabaseServiceError:
+    except (DatabaseServiceError, VoiceCaptureError):
         current_app.logger.error("PeerSlate private capture deletion is unavailable.")
-        return _render_owner_unavailable()
+        return redirect(url_for("owner.capture", error="voice-delete-retry"))
 
     if not result or result.get("outcome") != "success":
         return redirect(url_for("owner.capture", error="changed"))
@@ -675,14 +874,19 @@ def export_capture(capture_key):
         current_app.logger.error("PeerSlate private capture export is unavailable.")
         return _render_owner_unavailable()
 
-    named = database_service.name_result_sets(result_sets, ("capture", "revisions"))
-    if not named["capture"]:
+    capture_rows = result_sets[0] if result_sets else []
+    auxiliary_rows = result_sets[1] if len(result_sets) > 1 else []
+    if not capture_rows:
         return "Capture not found.", 404
 
-    capture = dict(named["capture"][0])
+    capture = dict(capture_rows[0])
     revision_number = int(capture.get("revision_number") or 0)
-    revisions = named["revisions"]
-    if not revisions and capture.get("revisions_json"):
+    revisions = (
+        auxiliary_rows
+        if auxiliary_rows and "revision_number" in auxiliary_rows[0]
+        else []
+    )
+    if capture.get("revisions_json"):
         try:
             revisions = json.loads(capture["revisions_json"])
         except (TypeError, ValueError):
@@ -690,9 +894,15 @@ def export_capture(capture_key):
                 "PeerSlate private capture export returned invalid revision data."
             )
             return _render_owner_unavailable()
+    voice_source = (
+        dict(auxiliary_rows[0])
+        if auxiliary_rows and "source_key" in auxiliary_rows[0]
+        else None
+    )
+    schema_version = 2 if capture.get("capture_type") == "voice" else 1
     payload = {
         "schema": "peerslate.capture.export",
-        "schema_version": 1,
+        "schema_version": schema_version,
         "capture": {
             "key": str(capture["capture_key"]),
             "type": capture["capture_type"],
@@ -717,6 +927,25 @@ def export_capture(capture_key):
             ],
         },
     }
+    if voice_source:
+        source_key = str(voice_source["source_key"])
+        payload["capture"]["voice_source"] = {
+            "source_key": source_key,
+            "content_type": voice_source["content_type"],
+            "byte_length": int(voice_source["byte_length"]),
+            "duration_milliseconds": voice_source.get(
+                "verified_duration_milliseconds"
+            )
+            or voice_source.get("client_duration_milliseconds"),
+            "locale": voice_source["locale"],
+            "provider": "Azure Speech",
+            "provider_transcript": voice_source["provider_transcript"],
+            "audio_export_path": url_for(
+                "owner.voice_capture_audio",
+                source_key=source_key,
+                download="1",
+            ),
+        }
     response = Response(
         json.dumps(
             payload,
@@ -728,7 +957,7 @@ def export_capture(capture_key):
         mimetype="application/json",
     )
     response.headers["Content-Disposition"] = (
-        f'attachment; filename="peerslate-capture-{normalized_capture_key}-v1.json"'
+        f'attachment; filename="peerslate-capture-{normalized_capture_key}-v{schema_version}.json"'
     )
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"

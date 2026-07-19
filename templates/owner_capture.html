@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-moment-001-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-voice-001-1">
 {% endblock %}
 
 {% block content %}
@@ -12,8 +12,8 @@
         <p class="owner-app__eyebrow">Private owner workspace</p>
         <h1 id="owner-capture-title">Capture</h1>
         <p>
-            Write down something real while it is fresh. New captures stay
-            private until you deliberately review and place them later.
+            Speak or type something real while it is fresh. New captures stay
+            private. Voice transcripts are drafts until you review and explicitly save them.
         </p>
 
         {% if validation_message %}
@@ -30,7 +30,29 @@
         </p>
         {% endif %}
 
-        <form class="owner-app__capture-form" method="post" action="{{ url_for('owner.capture') }}">
+        <div class="owner-app__capture-methods" role="group" aria-label="Capture method">
+            <button
+                class="owner-app__method"
+                type="button"
+                data-capture-mode="text"
+                aria-pressed="true"
+                aria-controls="capture-text-panel"
+            >Type</button>
+            <button
+                class="owner-app__method"
+                type="button"
+                data-capture-mode="voice"
+                aria-pressed="false"
+                aria-controls="capture-voice-panel"
+            >Speak</button>
+        </div>
+
+        <form class="owner-app__capture-form"
+            id="capture-text-panel"
+            data-capture-panel="text"
+            method="post"
+            action="{{ url_for('owner.capture') }}"
+        >
             <label for="capture-body">What do you want to remember?</label>
             <textarea
                 id="capture-body"
@@ -41,10 +63,177 @@
                 required
             ></textarea>
             <p id="capture-help">
-                Text only for this first slice, up to {{ '{:,}'.format(max_body_length) }} characters.
+                Up to {{ '{:,}'.format(max_body_length) }} characters. Text Capture is always available.
             </p>
             <button class="owner-app__primary" type="submit">Save privately</button>
         </form>
+
+        <section
+            id="capture-voice-panel"
+            class="owner-app__voice"
+            data-capture-panel="voice"
+            data-upload-url="{{ url_for('owner.upload_voice_capture') }}"
+            data-max-bytes="{{ max_voice_bytes }}"
+            data-max-seconds="{{ max_voice_duration_seconds }}"
+            data-voice-state="idle"
+            aria-labelledby="capture-voice-title"
+            hidden
+        >
+            <h2 id="capture-voice-title">Say what happened.</h2>
+            <p>
+                Your browser asks for microphone permission only after you select
+                <strong>Start recording</strong>. The original recording is kept privately
+                with your Capture until you explicitly delete it.
+            </p>
+            <p class="owner-app__voice-limits" id="capture-voice-limits">
+                English (United States) only. Maximum 3 minutes and 20 MB.
+                Nothing is shared, published, or sent to another PeerSlate room.
+            </p>
+            <div class="owner-app__voice-stage" data-voice-stage aria-hidden="true">
+                <div class="owner-app__voice-wave" data-voice-wave>
+                    {% for height in [18, 34, 50, 28, 62, 42, 76, 36, 58, 86, 46, 70, 38, 82, 52, 66, 30, 60, 40, 72, 32, 54, 26, 44] %}
+                    <span style="--voice-bar-height: {{ height }}%"></span>
+                    {% endfor %}
+                </div>
+                <p>What happened today that you may want to remember?</p>
+                <p class="owner-app__voice-timer" data-voice-timer>0:00 / 3:00</p>
+            </div>
+            <div class="owner-app__voice-controls" aria-describedby="capture-voice-limits">
+                <button class="owner-app__primary" type="button" data-voice-action="start">
+                    Start recording
+                </button>
+                <button class="owner-app__secondary" type="button" data-voice-action="stop" disabled>
+                    Stop
+                </button>
+                <button class="owner-app__secondary" type="button" data-voice-action="cancel" disabled>
+                    Cancel
+                </button>
+                <button class="owner-app__secondary" type="button" data-voice-action="text">
+                    Switch to Type
+                </button>
+            </div>
+            <p class="owner-app__voice-status" data-voice-status role="status" aria-live="polite">
+                Ready. Microphone access has not been requested.
+            </p>
+            <noscript>
+                <p>Voice recording needs JavaScript. The text Capture form remains available above.</p>
+            </noscript>
+        </section>
+
+        {% if voice_draft %}
+        <section class="owner-app__voice-review" aria-labelledby="voice-review-title">
+            <p class="owner-app__eyebrow">Private voice draft</p>
+            <h2 id="voice-review-title">
+                {% if voice_draft.state == 'needs_review' %}Review the transcript
+                {% elif voice_draft.state == 'uploading' %}Transcription has not started
+                {% elif voice_draft.state == 'queued' %}Transcription is queued
+                {% elif voice_draft.state == 'processing' %}Transcription needs recovery
+                {% elif voice_draft.state == 'failed' %}Transcription needs attention
+                {% elif voice_draft.state == 'deletion_pending' %}Deletion needs another try
+                {% elif voice_draft.state == 'confirmed' %}Saved private Capture
+                {% else %}Voice draft status{% endif %}
+            </h2>
+
+            {% if voice_draft.state == 'needs_review' %}
+            <p>
+                Azure Speech produced a draft. Compare it with the private recording,
+                correct the text, then explicitly save it as a private Capture.
+            </p>
+            <audio controls preload="none" src="{{ url_for('owner.voice_capture_audio', source_key=voice_draft.source_key) }}">
+                Your browser cannot play this recording. You can download it below.
+            </audio>
+            <p>
+                <a class="owner-app__secondary" href="{{ url_for('owner.voice_capture_audio', source_key=voice_draft.source_key, download='1') }}">
+                    Download original audio
+                </a>
+            </p>
+            <details class="owner-app__voice-provider">
+                <summary>View original provider transcript</summary>
+                <p>This provenance record is immutable and is not changed by your edits.</p>
+                <blockquote>{{ voice_draft.provider_transcript }}</blockquote>
+            </details>
+            <form method="post" action="{{ url_for('owner.confirm_voice_capture', source_key=voice_draft.source_key) }}">
+                <input type="hidden" name="expected_row_version" value="{{ voice_draft.row_version_token }}">
+                <label for="voice-approved-body">Reviewed Capture text</label>
+                <textarea
+                    id="voice-approved-body"
+                    name="approved_body"
+                    rows="10"
+                    maxlength="{{ max_body_length }}"
+                    required
+                >{{ voice_draft.provider_transcript }}</textarea>
+                <label class="owner-app__voice-confirm">
+                    <input name="confirm_voice" type="checkbox" value="save-private-capture" required>
+                    Save this reviewed text as one private Capture. Do not share or publish it.
+                </label>
+                <button class="owner-app__primary" type="submit">Save private Capture</button>
+            </form>
+            {% elif voice_draft.state == 'uploading' %}
+            <p role="alert">
+                The private audio is stored, but transcription has not started.
+                No Capture or downstream item was created. Retry when the service is available,
+                delete this draft, or use text instead.
+            </p>
+            {% elif voice_draft.state == 'queued' %}
+            <p role="alert">
+                The private audio is stored, but the queued transcription did not reach review.
+                No Capture or downstream item was created. Retry to abandon this unfinished
+                attempt and start a new one, or delete the draft.
+            </p>
+            {% elif voice_draft.state == 'processing' %}
+            <p role="alert">
+                The private audio is stored, but transcription did not reach a completed review
+                state. No Capture or downstream item was created. Retry to abandon this unfinished
+                attempt and start a new one, or delete the draft.
+            </p>
+            {% elif voice_draft.state == 'failed' %}
+            {% if voice_draft.attempt_number %}
+            <p role="alert">
+                The private draft was preserved, but transcription did not finish.
+                No Capture or downstream item was created.
+            </p>
+            {% else %}
+            <p role="alert">
+                The private audio upload could not be verified. This upload cannot be retried.
+                No Capture or downstream item was created. Record again, choose Switch to Type,
+                or delete this draft below.
+            </p>
+            {% endif %}
+            {% elif voice_draft.state == 'deletion_pending' %}
+            <p role="alert">
+                PeerSlate has not reported this draft as deleted because private audio removal
+                was not yet proved. Retry the deletion below.
+            </p>
+            {% elif voice_draft.state == 'confirmed' %}
+            <p>The reviewed text is saved privately. The original audio remains private source evidence.</p>
+            {% else %}
+            <p role="status">Current state: {{ voice_draft.state|replace('_', ' ') }}.</p>
+            {% endif %}
+
+            {% if voice_draft.state in ['uploading', 'queued', 'processing']
+                  or (voice_draft.state == 'failed' and voice_draft.attempt_number) %}
+            <form method="post" action="{{ url_for('owner.retry_voice_capture', source_key=voice_draft.source_key) }}">
+                <input type="hidden" name="expected_row_version" value="{{ voice_draft.row_version_token }}">
+                <button class="owner-app__primary" type="submit">Retry transcription</button>
+            </form>
+            {% endif %}
+
+            {% if voice_draft.state not in ['confirmed', 'deleted'] %}
+            <details class="owner-app__capture-delete">
+                <summary>Delete private voice draft</summary>
+                <p>This removes the original audio and transcript content. It cannot be undone.</p>
+                <form method="post" action="{{ url_for('owner.delete_voice_draft', source_key=voice_draft.source_key) }}">
+                    <input type="hidden" name="expected_row_version" value="{{ voice_draft.row_version_token }}">
+                    <label>
+                        <input name="confirm_delete" type="checkbox" value="delete" required>
+                        I understand this permanently deletes the private voice draft.
+                    </label>
+                    <button type="submit">Delete private draft</button>
+                </form>
+            </details>
+            {% endif %}
+        </section>
+        {% endif %}
 
         <section class="owner-app__captures" aria-labelledby="recent-captures-title">
             <div class="owner-app__capture-heading">
@@ -69,6 +258,7 @@
                         <span>Version {{ capture.revision_number }}</span>
                         {% endif %}
                         {% if archived %}<span>Archived</span>{% endif %}
+                        {% if capture.capture_type == 'voice' %}<span>Voice source retained privately</span>{% endif %}
                     </div>
 
                     {% if capture.revision_count %}
@@ -174,6 +364,7 @@
                         <summary>Delete permanently</summary>
                         <p>
                             This removes the original capture and every correction.
+                            {% if capture.capture_type == 'voice' %}The private original audio and provider transcript are also removed before deletion is reported complete.{% endif %}
                             It cannot be undone.
                         </p>
                         <form
@@ -211,4 +402,8 @@
         </div>
     </section>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-001-1" defer></script>
 {% endblock %}

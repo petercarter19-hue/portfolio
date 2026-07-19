@@ -27,3 +27,6 @@ gunicorn==23.0.0       # The production web server Azure runs the app under.
                        # pinning it here makes the dependency explicit and the
                        # app portable to any other host.
 mssql-python==1.11.0  # Microsoft-supported Azure SQL connector used by PeerSlate APIs
+azure-identity==1.25.3  # Passwordless DefaultAzureCredential for private Blob and Speech
+azure-storage-blob==12.30.0  # Private Voice source storage; no key or SAS authentication
+requests==2.34.2       # Bounded Azure Speech fast-transcription HTTP client

@@ -27,11 +27,11 @@ No test evidence may print audio, transcript content, credentials, access tokens
 1. Review the exact Codex branch SHA and completion report.
 2. Rerun focused tests, governance/Site Rules, complete suite, compile/diff checks, migration plan, and static secret/content scans.
 3. Run infrastructure `plan`; inspect exact resources, roles, settings, and cost boundary.
-4. Provision/verify production Storage and managed-identity roles without keys.
+4. Provision/verify production Storage and managed-identity roles without keys. Verification must not list or retrieve App Service setting values.
 5. Apply/verify the production SQL migration through the configured secure path.
 6. Open Azure PR, squash-merge, and wait for matching Build and Deploy success.
 7. Verify public routes are unchanged and protected voice routes fail closed when logged out.
-8. Perform a real signed-in owner smoke test: record a harmless phrase, review/edit, save, play/export, archive/restore, delete, and verify audio is gone.
+8. Perform a real signed-in owner smoke test: record a harmless phrase, review/edit, save, play/export, archive/restore, delete, verify audio is gone, and verify text Capture remains available. This functional path is the proof for the known nonsecret Voice settings; do not read the App Service setting collection.
 9. Record exact PR, merge SHA, pipeline, resource, migration, and live evidence in the manager closeout.
 
 ## Rollback

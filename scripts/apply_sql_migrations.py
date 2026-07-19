@@ -38,6 +38,12 @@ PLACEMENT_VERIFY_PATH = (
     / "Verification"
     / "PS-PLACEMENT-001_owner_isolation_verify.sql"
 )
+VOICE_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-VOICE-001_owner_isolation_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -62,6 +68,9 @@ APPROVED_OPTIONAL_MIGRATIONS = {
     ),
     "PS-PLACEMENT-001": (
         MIGRATION_DIR / "proposed" / "PS-PLACEMENT-001_moment_placements.sql"
+    ),
+    "PS-VOICE-001": (
+        MIGRATION_DIR / "proposed" / "PS-VOICE-001_voice_capture.sql"
     ),
 }
 EXPECTED_TABLES = {
@@ -315,6 +324,22 @@ def verify_placement(env_path: Path | None = None) -> None:
     )
 
 
+def verify_voice(env_path: Path | None = None) -> None:
+    if not VOICE_VERIFY_PATH.exists():
+        raise RuntimeError(f"Verification script is missing: {VOICE_VERIFY_PATH}")
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(VOICE_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-VOICE-001 owner-isolation verification failed.")
+    print(
+        "Verified PS-VOICE-001 owner isolation, immutable transcript provenance, "
+        "explicit private confirmation, retry, deletion, and zero downstream writes."
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -374,6 +399,8 @@ def main() -> None:
             verify_moment(args.env_file)
         if "PS-PLACEMENT-001" in args.migration:
             verify_placement(args.env_file)
+        if "PS-VOICE-001" in args.migration:
+            verify_voice(args.env_file)
 
 
 if __name__ == "__main__":
