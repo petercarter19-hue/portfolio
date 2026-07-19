@@ -1,6 +1,6 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-19 for portable package management, Interview Gate 2.4 review, and Capture Media planning._
+_Updated 2026-07-19 after the accepted and released Voice visual correction._
 
 ## Operating model
 
@@ -18,42 +18,19 @@ Claude Code implementation.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Voice, Interview, and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
+| Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Interview and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
 | Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 planning | requirements, architecture, slice decomposition, writer allocation, evidence gates | implementation claims, Voice rebuild, Journal, publication, shared runtime files before reservation |
-| Protected front end | Claude Code | PS-VOICE-001 visual-parity correction | protected Voice Capture template/scoped CSS/client/tests/evidence | Voice backend, auth, SQL, infrastructure, public Studio/resume, global theme/nav |
 | Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Direction A design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
 ## Current active gate
 
-PS-VOICE-001 is deployed through PR 75 / pipeline 105 and Pete verified that the
-signed-in workflow works. Pete then rejected the visual execution as materially
-below the approved walkthrough. Claude Code is assigned the corrective
-self-managed frontend lane on a new branch from current `origin/main`. Preserve
-the original `C:\Users\peter\Documents\portfolio-voice-001` worktree.
-The reserved branch is `work/2026-07-19-voice-visual-parity-001`; its observed
-checkpoint `0158daf22d26e7c38be494e2b32e6b51fdaca0fb` contains design
-instructions only and must synchronize with current `origin/main` before build.
-
-### PS-VOICE-001 - Claude Code protected visual-correction lane
-
-- Source package: `docs/initiatives/PS-VOICE-001/README.md` and its architecture/security/infrastructure/test/implementation contracts.
-- Current real outcome: short authenticated recording -> private original audio -> server-side transcription -> member review/correction -> explicit private voice Capture.
-- Text Capture remains the fallback. No Moment, Placement, Journal, resume, Interview Studio, share, or publication is created automatically.
-- Claude changes only the protected frontend allocation described in
-  `06_VISUAL_PARITY_CORRECTION.md`; backend routes, SQL, Blob, Speech, identity,
-  and lifecycle behavior remain fixed.
-- The design-instructions checkpoint is manager-approved with the binding
-  answers in the correction addendum. Claude may implement without another
-  pre-build manager audit; final real-product acceptance remains required.
-- Claude self-reviews the complete branch, corrects its own issues, runs all
-  required evidence, and returns `Pass`, `Conditional`, or `Fail`. Pete and
-  the designated session manager then perform a focused real-product acceptance review. After
-  acceptance Claude may complete its Azure PR, pipeline, production checks, and
-  package closeout.
-- The protected UI must match or exceed the homepage/feed Voice walkthrough,
-  keep Speak and Type first class, and prove desktop/mobile/accessibility/failure
-  parity. Approved future actions remain clearly disabled `Coming later`
-  scaffolding; **Save private Capture** is the only live completion action.
+PS-VOICE-001 is no longer an active gate. Pete and ChatGPT Work accepted the
+corrected implementation after Claude Code relinquished exact tip
+`e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`. Azure PR 80 squash-merged the
+package at `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 passed Build
+and Deploy. Preserve the original and visual-correction worktrees as historical
+references; do not reuse them for later work. A future Voice change requires a
+new package and branch.
 
 ### PS-INTERVIEW-PUBLIC-GATE-001 - Codex Gate 2.4 review / Claude Co-Work manager lane
 
@@ -82,7 +59,8 @@ instructions only and must synchronize with current `origin/main` before build.
 - No authoritative remote Capture Media implementation branch was observed at
   activation. Planning may proceed, but implementation, deployment, and live
   status remain false until exact branch/PR/pipeline/production evidence exists.
-- PS-VOICE-001 remains separate and must not be reimplemented by Capture Media.
+- The released PS-VOICE-001 foundation remains separate and must not be
+  reimplemented by Capture Media.
 
 ## Later backend decisions
 

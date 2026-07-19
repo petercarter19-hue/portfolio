@@ -49,9 +49,7 @@ visual gate is closed as **PASS**.
 ## A. Status
 
 - **Package:** PS-VOICE-VISUAL-PARITY-001 — Voice visual-parity correction
-- **Status:** Complete and visually accepted after the manager correction pass.
-  **Not yet merged or deployed** at the time of this acceptance record; Azure
-  release evidence is recorded separately after the release completes.
+- **Status:** Complete, visually accepted, merged, deployed, live, and closed.
 - **Branch:** `work/2026-07-19-voice-visual-parity-001`, pushed to `origin`.
 - **Relinquished handoff tip (exact full SHA):**
   `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`.
@@ -64,8 +62,12 @@ visual gate is closed as **PASS**.
 - **Writer relinquishment:** Claude Code explicitly relinquished the branch at
   the exact handoff tip above. ChatGPT Work accepted responsibility for Azure
   PR, pipeline, deployment, and live closeout.
-- **Production state:** Not deployed. Nothing in this package has touched
-  production.
+- **Azure release:** manager closeout source
+  `fe2cb3b33215256f7e61c9303c01837142765dd3`; Azure PR 80 completed by squash
+  at `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113
+  (`20260719.21`) passed Build and Deploy for that exact merge.
+- **Production state:** Live. Production served the accepted Voice-scoped CSS
+  and JavaScript signatures and preserved the protected-route sign-in boundary.
 - **Visual authority and status:** Accepted (V3 PASS, 2026-07-19). Authority:
   the approved
   homepage Voice walkthrough (`/feed-living-stream?state=voice` /
@@ -118,7 +120,7 @@ visual gate is closed as **PASS**.
   mobile sticky-save/progressive-disclosure pattern.
 - New, non-code: `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/PARITY_MATRIX.md`,
   `DESIGN_INSTRUCTIONS.md` (already committed as the pre-implementation
-  checkpoint, now updated with owner resolutions), `evidence/*.png` (19
+  checkpoint, now updated with owner resolutions), `evidence/*.png` (23
   screenshots), `visual-authority/*.png` (4 committed real screenshots).
 
 **Test-contract revision (owner-approved in advance, design doc §7.5/§8.3):**
@@ -190,7 +192,7 @@ current evidence, both covered by re-run screenshots):**
    committed code so the evidence and code agree.
 7. **Asset cache-bust bumped.** The `owner-app.css`/`owner-capture-voice.js`
    query string moved from `?v=ps-voice-001-1` to
-   `?v=ps-voice-visual-parity-001` so returning users' browsers fetch the
+   `?v=ps-voice-visual-parity-002` so returning users' browsers fetch the
    rewritten assets rather than a cached prior version on deploy.
 
 ## C. What this means in plain English
@@ -285,7 +287,7 @@ three call sites `tests/test_owner_voice_capture.py` already mocks
 (`owner_routes.get_current_identity`, `owner_routes.database_service.first_result`,
 `owner_routes.voice_capture_service.get_draft`) patched to fixture data —
 the template, CSS, and JS rendering path is exactly what production serves.
-19 named screenshots plus a full parity/deviation matrix are in
+23 named screenshots plus a full parity/deviation matrix are in
 `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/` (see §A and `PARITY_MATRIX.md`).
 Real device/UI states verified: desktop recording (ready + listening),
 desktop review, Type/opening, long transcript, upload/failure/retry states,
@@ -313,11 +315,28 @@ light and dark themes under the binding manager correction while other primary
 actions remain navy, and the capability-preview treatment for every
 not-yet-backed feature.
 
+**Azure and production release evidence:** Azure PR 80 recorded source commit
+`fe2cb3b33215256f7e61c9303c01837142765dd3`, prior target
+`31864e43287d7cefb5a0d1c0441e94bec0bd6b1f`, and squash merge
+`864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`. Pipeline 113 passed Build and
+Deploy for that exact merge. Live checks returned 200 for `/` and
+`/feed-living-stream?state=voice`, the expected signed-out 302 from
+`/app/capture` to `/auth/sign-in?return_to=/app/capture`, and 200 for the
+deployed Voice CSS/JavaScript assets. The live assets contained the accepted
+light/dark gold Save rules, `.owner-app__voice-save`, JavaScript-managed
+`aria-modal`, and background `inert` handling.
+
+The available production-verification browser had no signed-in member session,
+so the V4 evidence does not claim a new authenticated screenshot or repeat the
+already completed real Azure Speech transaction. V3 visual acceptance rests on
+the committed 23-state implementation evidence; V4 release integrity rests on
+the exact Azure merge/pipeline plus live asset and auth-boundary checks.
+
 ## G. Known gaps, risks, and exclusions
 
-- **Visual acceptance closed.** Pete and ChatGPT Work reviewed the actual
-  implementation and evidence and accepted it on 2026-07-19. Merge, pipeline,
-  deployment, and live verification remain separate release states.
+- **Visual and release gates closed.** Pete and ChatGPT Work accepted the actual
+  implementation on 2026-07-19; Azure PR 80, pipeline 113, and the live checks
+  above separately closed merge, deployment, and production verification.
 - **Opening behavior — RESOLVED by the manager.** The first pass auto-opened
   the recording modal on load; the manager directed landing on the Speak/Type
   chooser with Speak opening the modal (no auto-open). That is now implemented
@@ -342,10 +361,10 @@ not-yet-backed feature.
 
 ## H. Clear next step
 
-ChatGPT Work owns the standard Azure release sequence: open and complete the
-Azure DevOps PR, verify the Build and Deploy stages, verify the protected route
-and deployed corrected assets, and then record exact PR, merge SHA, pipeline,
-visual acceptance, and live evidence in the governance closeout.
+PS-VOICE-001 is closed. Preserve the released privacy, lifecycle, Speak/Type,
+accessibility, and visual-parity contracts. Any later Voice refinement or
+activation of a disabled future capability requires its own authorized package,
+branch, evidence, visual acceptance, and Azure closeout.
 
 ## I. What Pete needs to do or decide
 
