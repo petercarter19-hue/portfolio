@@ -93,8 +93,8 @@ The protected interface uses the approved Deep Navy Gold foundation and treats t
 - Desktop review: `evidence/voice-review-desktop.png`.
 - Viewport-equivalent 200% reflow proxy: `evidence/voice-capture-200-percent-reflow.png` (720 CSS-pixel viewport representing half of a 1440-pixel desktop); no horizontal document overflow was observed.
 - Transcription failure/recovery: `evidence/voice-review-failure.png` plus focused retry/deletion tests.
-- Real-browser checks observed no horizontal overflow at 1425, 705, and 375 CSS pixels; touch targets were at least 44 pixels; keyboard focus was visible; status/error regions exposed `role=status` or `role=alert`; microphone permission was requested only after Start.
-- Reduced motion, unsupported browser, microphone-denied, offline/upload failure, transcription failure, 8,000-character content, and text fallback are covered by focused UI/state tests. The in-app browser could not complete an actual permission-denial prompt or set browser zoom directly, so those two items are not claimed as a real-device/manual acceptance pass.
+- Real-browser checks observed no horizontal overflow at 1425, 705, and 375 CSS pixels; touch targets were at least 44 pixels; keyboard focus was visible; status/error regions exposed `role=status` or `role=alert`; microphone permission was requested only after Start. A Chromium permission override then denied the microphone, and the real UI moved to `error`, announced the safe denied/unavailable message, left Type enabled, and moved focus to Switch to Type.
+- Reduced motion, unsupported browser, microphone-denied, offline/upload failure, transcription failure, 8,000-character content, and text fallback are covered by focused UI/state tests. Chromium permission denial also passed against the real UI. The harness could not set the browser's zoom control directly, so the 200% result is explicitly a viewport-equivalent reflow proof rather than a manual browser-zoom acceptance pass.
 
 ### Visual parity and intentional deviations
 
@@ -112,7 +112,7 @@ Automated, isolated-resource, and visual-comparison evidence is complete for han
 ## G. Known gaps, risks, and exclusions
 
 - ChatGPT Work must independently review the exact branch SHA, SQL/infrastructure plan, security boundary, and visual parity before any PR or production work.
-- Pete and ChatGPT Work visual acceptance is still required before merge. Exact manual 200% browser zoom and an actual microphone-denied prompt should be included in that acceptance pass because the available browser harness could only provide reflow/test evidence for them.
+- Pete and ChatGPT Work visual acceptance is still required before merge. Exact manual 200% browser zoom should be included in that acceptance pass because the available browser harness provided a viewport-equivalent reflow proof rather than changing the browser's zoom control directly.
 - Production Storage, RBAC, app settings, SQL migration, PR, pipeline, signed-in smoke test, and live deletion proof are intentionally not done.
 - The synchronous three-minute Speech request fits the approved first slice, but App Service/provider timeouts remain an operational risk to observe during manager validation. No queue/worker was introduced because that would require a stop and a new package decision.
 - Locale expansion, photo/video/document Capture, background processing, downstream Moments/placements, Journal, public projection, sharing/audience controls, résumé, Interview Studio, and publication remain excluded.
