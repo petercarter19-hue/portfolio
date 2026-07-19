@@ -165,7 +165,11 @@ These rules govern product copy, information architecture, data behavior, AI beh
 81. Before editing, inspect repository instructions, branch, status, remotes, worktrees, stashes, routes, templates, data access, migrations, tests, environment configuration, and current behavior.
 82. Do not hardcode Pete or Danielle into reusable product logic.
 83. Do not present mock data, a disabled control, or an unimplemented path as working.
-84. Every work package requires user stories, scope, acceptance criteria, privacy behavior, failure states, accessibility, tests, observability, rollout, rollback, verification evidence, and a handoff.
+84. Every work package requires user stories, scope, acceptance criteria,
+    privacy behavior, failure states, accessibility, tests, observability,
+    rollout, rollback, verification evidence, and writer self-certification. A
+    branch/SHA handoff is additionally required when a different writer
+    continues the branch.
 85. Stop and report when the repository or Azure state conflicts with the approved plan. Do not silently invent a new architecture.
 
 ## 13. Visual integrity and demonstration parity
@@ -189,19 +193,24 @@ These rules govern product copy, information architecture, data behavior, AI beh
 91. If Speak and Type or another set of input alternatives is approved for a
     flow, preserve each as a first-class path unless the approved authority says
     otherwise.
+92. An assigned self-managed writer shall review the complete diff, correct its
+    own issues, run the required evidence, and return `Pass`, `Conditional`, or
+    `Fail`. Pete and ChatGPT Work retain final product/visual acceptance but may
+    rely on a coherent self-certified report instead of repeating the full
+    technical audit.
 
 ## 14. Member-directed Story composition
 
-92. Follow `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` for every
+93. Follow `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` for every
     Story design, schema, editor, projection, and rendering package.
-93. The future authenticated Story Composer shall let the member move and
+94. The future authenticated Story Composer shall let the member move and
     resize supported Story objects and control their emphasis and layering. AI
     may suggest an arrangement but shall not silently apply, save, or publish it.
-94. Dragging shall have keyboard and structured-editor equivalents. Spatial
+95. Dragging shall have keyboard and structured-editor equivalents. Spatial
     presentation shall preserve stable semantic reading order, mobile reflow,
     200% zoom, touch access, reduced motion, and understandable recovery.
-95. Store owner-scoped, versioned layout metadata separately from canonical
+96. Store owner-scoped, versioned layout metadata separately from canonical
     content. Layout records reference governed projection items and shall not
     duplicate authoritative Story text or media.
-96. Saving a private layout draft and publishing an audience-visible Story are
+97. Saving a private layout draft and publishing an audience-visible Story are
     separate explicit actions with exact responsive and audience preview.

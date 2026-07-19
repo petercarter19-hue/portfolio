@@ -45,6 +45,11 @@ owner, entry gate, current production baseline, named visual authority and
 acceptance status when user-facing work is involved, and next required evidence.
 Create a work branch from current `origin/main`.
 
+Also confirm whether the package uses the self-managed delivery model, who owns
+post-acceptance PR/deploy/closeout, whether shared governance files are reserved,
+and which `Pass`, `Conditional`, or `Fail` evidence is required before final
+acceptance.
+
 Stop and report when authority, ownership, identity boundary, migration ownership, or current document version is unclear. Never guess.
 
 ## 4. Mandatory closeout

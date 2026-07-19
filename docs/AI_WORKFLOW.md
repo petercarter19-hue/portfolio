@@ -30,13 +30,15 @@ github  https://github.com/petercarter19-hue/portfolio.git
 3. Only one person or AI may actively write to a branch at a time.
 4. Start new work from the latest `origin/main`.
 5. Commit and push all intended work before handing a task to another computer or AI.
-6. Every handoff must provide the branch name and exact full commit SHA.
+6. Every transfer to a different writer must provide the branch name and exact full commit SHA. A self-managed writer may retain ownership through implementation, self-review, approval, release, and closeout.
 7. Merge through an Azure DevOps pull request using squash merge, then delete the task branch.
 8. Run relevant tests and checks before requesting or completing the pull request.
 9. Preserve unrelated and unfinished work. Never discard it to make a checkout look clean.
 10. Never expose, read, copy, commit, or transmit credentials or secrets.
 11. Do not rewrite shared history, force-push, prune objects, or perform destructive Git cleanup without a verified recovery reference and explicit justification.
 12. Keep GitHub a one-way mirror of Azure. GitHub must never become an alternate production path.
+13. Assigned writers self-manage their own delivery lane: implementation, complete-diff review, correction, testing, evidence, PR readiness, approved release, production verification, and closeout.
+14. ChatGPT Work manages package sequencing, cross-lane file ownership, shared authority, and final acceptance. It does not routinely repeat a writer's complete technical review when the self-certification evidence is coherent.
 
 ## Beginning every session
 
@@ -112,6 +114,56 @@ git status --short
 git push -u origin HEAD
 ```
 
+## Self-managed delivery lanes
+
+Owner decision, 2026-07-19: Codex and Claude may self-manage an assigned branch
+from implementation through self-review and release closeout. The assigned
+writer performs the work that previously required a separate manager technical
+pass.
+
+The writer must:
+
+1. confirm the package, visual authority, release boundary, writable files, and
+   shared integration zones before editing;
+2. implement the bounded package and inspect the complete diff against its
+   exact `origin/main` base;
+3. find and correct its own regressions, missing requirements, accessibility
+   failures, visual deviations, unsafe assumptions, and unrelated changes;
+4. run every required focused, guardrail, full-suite, migration, infrastructure,
+   responsive, accessibility, and production-intent check that applies;
+5. synchronize with current `origin/main`, resolve only in-scope conflicts, and
+   rerun affected evidence before requesting acceptance;
+6. write the standard completion report with exact commands/results, branch,
+   full SHA, screenshots, parity/deviation evidence, limitations, conflicts,
+   and a self-certification result of `Pass`, `Conditional`, or `Fail`;
+7. stop and report `Conditional` or `Fail` rather than hide a failed check,
+   unresolved security/privacy issue, destructive migration uncertainty,
+   unsupported production claim, or material design deviation; and
+8. after Pete/ChatGPT Work acceptance, complete its own Azure PR, pipeline,
+   production verification, package-local architecture/evidence update, and
+   release closeout unless the package assigns those actions elsewhere.
+
+Self-certification is acceptable completion evidence. ChatGPT Work may rely on
+the report and a short product/visual acceptance review instead of rerunning the
+entire implementation audit. It may request an independent or deeper review
+when evidence conflicts, a high-risk exception is disclosed, shared-file scope
+drifts, or the real product does not match the report.
+
+This delegation does not permit a writer to approve its own owner acceptance.
+For material user-facing work, the writer performs and reports the visual
+comparison; Pete and ChatGPT Work still accept or reject the real result. The
+acceptance may be concise and report-based. A writer also may not use a UI
+capability flag as authorization: backend access, audience, publication, and
+data-lifecycle controls remain server-enforced.
+
+Package-local requirements, architecture, decisions, evidence, and completion
+reports belong on the task branch. Shared records such as `CURRENT_BASELINE.yaml`,
+`CURRENT_STATE.md`, `ACTIVE_INITIATIVES.md`, the Bible, and the Roadmap may be
+edited only when the package explicitly reserves them. The Bible is not a changelog:
+update it only for a constitutional product decision. Use the
+Roadmap for sequencing/architecture changes and the current-state records for
+verified implementation and release status.
+
 ## Visual integrity for user-facing work
 
 Before any user-facing design or implementation, read
@@ -123,11 +175,14 @@ composition, clarity, and finish.
 
 The writer must return named desktop/mobile and applicable focus, 200% zoom,
 reduced-motion, long-content, processing, failure, and recovery evidence plus a
-parity/deviation summary. ChatGPT Work and Pete must accept material user-facing
-work visually before merge unless Pete explicitly delegates that gate. Passing
-tests, a clean branch, or a working happy path does not by itself satisfy visual
-completion. Demonstrations must still state honestly which behavior is live,
-illustrative, stored, transmitted, local-only, private, public, or future.
+parity/deviation summary and self-certification. ChatGPT Work and Pete must
+accept material user-facing work visually before merge unless Pete explicitly
+delegates that gate. The manager may rely on the returned evidence and a focused
+review of the real product rather than recreating the writer's entire visual
+audit. Passing tests, a clean branch, or a working happy path does not by itself
+satisfy visual completion. Demonstrations must still state honestly which
+behavior is live, illustrative, stored, transmitted, local-only, private,
+public, or future.
 
 For any My Story design, schema, editor, projection, or rendering work, also
 read `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. The member owns the
@@ -143,6 +198,7 @@ applied, saved, overwritten, or published.
 - Two computers may not edit the same branch simultaneously.
 - Reading or reviewing another branch is allowed; modifying it requires an explicit handoff.
 - The current writer must commit, push, provide the exact SHA, and state that ownership is relinquished before another writer continues.
+- A self-managed writer does not relinquish its branch merely because it reached self-review or PR readiness. It may retain ownership through post-acceptance release and closeout.
 - The receiving agent must fetch and verify that exact SHA before editing.
 - Never infer a handoff from phrases such as "latest code" or "everything is pushed." Require the branch and SHA.
 
@@ -179,6 +235,9 @@ Production status: not deployed | Azure run and verification details
 Known issues or deferred work: <summary>
 Next action: <single clear next step>
 Active writer relinquished: yes | no
+Self-certification: Pass | Conditional | Fail
+Self-review evidence: <complete diff, tests, screenshots, parity, security/privacy, conflicts>
+Acceptance requested: technical report | visual/product | release
 ```
 
 Never claim that work is deployed merely because it is committed or pushed.
@@ -187,10 +246,12 @@ Never claim that work is deployed merely because it is committed or pushed.
 
 1. Push the task branch to `origin`.
 2. Open an Azure DevOps pull request from the task branch into `main`.
-3. Review the complete diff and confirm the branch contains no unrelated work.
+3. The self-managed writer reviews the complete diff and confirms the branch contains no unrelated work.
 4. Run the relevant tests, syntax checks, and smoke checks.
-5. For material user-facing work, confirm the named visual authority, comparison
-   evidence, documented deviations, and Pete/ChatGPT Work visual acceptance.
+5. For material user-facing work, the writer self-certifies the named visual
+   authority comparison and documented deviations, then obtains Pete/ChatGPT
+   Work visual acceptance. Acceptance may rely on the report and a focused
+   product review; a second line-by-line implementation audit is not required.
 6. Resolve review feedback on the same task branch.
 7. Squash-merge the pull request.
 8. Delete the source branch after the merge.
@@ -347,6 +408,8 @@ Every completed task must report:
 - Azure pipeline result
 - production verification result
 - GitHub mirror result
+- self-certification result and complete-diff review status
+- disclosed failures, conflicts, escalations, and evidence limitations
 - remaining risks, assumptions, or follow-up work
 
 The words "done," "deployed," "current," or "clean" must be backed by the corresponding Git, test, pipeline, and production evidence.

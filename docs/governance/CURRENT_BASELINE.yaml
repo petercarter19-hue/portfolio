@@ -1,8 +1,8 @@
 # PeerSlate current authority record
-# Updated by PS-STORY-COMPOSER-DIRECTION-001 on 2026-07-18.
+# Updated for the owner-approved self-managed delivery model on 2026-07-19.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
-updated_at: "2026-07-18"
+updated_at: "2026-07-19"
 
 authority:
   remote: origin
@@ -16,10 +16,13 @@ authority:
   visual_integrity_pipeline: 99
   story_composition_merge_commit: "aaee6e563a94e19d1786ded3f636d8376e20d500"
   story_composition_pipeline: 102
+  voice_release_merge_commit: "eede8565d703a466bd788962d494e8b385b53409"
+  voice_release_pr: 75
+  voice_release_pipeline: 105
   production_url: "https://peerslate.com"
-  application_behavior_commit: "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5"
-  application_behavior_pipeline: 93
-  note: "PR 73/pipeline 102 released Bible v2.5, Roadmap v2.4, and member-directed Story composition governance without changing website behavior. PR 71/pipeline 99 released visual-integrity enforcement and the durable manager handoff. PR 70/pipeline 97 activated PS-VOICE-001. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No Story Composer, placement UI, or downstream consumer exists yet. Fetch origin for the exact current tip."
+  application_behavior_commit: "eede8565d703a466bd788962d494e8b385b53409"
+  application_behavior_pipeline: 105
+  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PS-VOICE-001 remains active for Claude's visual-parity correction. The current owner decision also delegates complete-diff review, tests, evidence, PR readiness, and post-acceptance release/closeout to each assigned self-managed writer. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -29,8 +32,9 @@ mirror:
 
 manager:
   tool: "ChatGPT Work"
-  owner_decision_date: "2026-07-18"
-  responsibilities: "governance, sequencing, handoff review, visual acceptance, merge readiness, and release verification"
+  owner_decision_date: "2026-07-19"
+  delivery_model: "self_managed_lanes"
+  responsibilities: "task sequencing, governance truth, shared-file reservations, visual authority, final product acceptance, and exception escalation; assigned writers self-review and self-certify their branches"
 
 governing_documents:
   bible:
@@ -54,6 +58,8 @@ governing_documents:
     path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
+  delivery_workflow:
+    path: "docs/AI_WORKFLOW.md"
 
 theme: deep_navy_gold
 
@@ -75,6 +81,7 @@ completed_packages:
   - PS-VOICE-CAPTURE-MANAGER-001
   - PS-VISUAL-INTEGRITY-GOV-001
   - PS-STORY-COMPOSER-DIRECTION-001
+  - PS-SELF-MANAGED-LANES-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -86,14 +93,14 @@ holds:
 
 active_packages:
   - id: PS-INTERVIEW-PUBLIC-GATE-001
-    owner: "ChatGPT Pro visual direction; Claude Code feasibility"
+    owner: "ChatGPT Work visual authority; Claude Code feasibility"
     lane: public_experience
     package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
   - id: PS-VOICE-001
-    owner: "ChatGPT Codex"
-    lane: backend_convergence
+    owner: "Claude Code self-managed visual correction; Codex backend released"
+    lane: protected_frontend_visual_parity
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation. PS-STORY-COMPOSER-001 is preserved as planned future work and is not active."
+next_gate: "Claude self-manages the PS-VOICE-001 visual-parity correction from current origin/main under 06_VISUAL_PARITY_CORRECTION.md, then returns a Pass/Conditional/Fail report for Pete/ChatGPT Work product acceptance before merge. Interview Studio independently awaits the complete Direction A Gate 2.4 design review and approval before implementation. PS-STORY-COMPOSER-001 remains planned future work."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

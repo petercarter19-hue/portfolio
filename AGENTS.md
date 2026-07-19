@@ -16,6 +16,8 @@ Non-negotiable summary:
 - Never commit or push directly to `main`.
 - Create one short-lived `work/YYYY-MM-DD-task-name` branch per task.
 - Only one person or AI may actively write to a branch at a time.
+- The assigned writer self-manages implementation, complete-diff review,
+  correction, tests, evidence, PR readiness, and post-acceptance release/closeout.
 - Commit and push before handoff; handoffs require the branch and exact full SHA.
 - Merge through an Azure pull request using squash merge, then delete the task branch.
 - Never discard unrelated work or perform destructive Git cleanup without a verified recovery reference.
@@ -37,11 +39,15 @@ as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported
 rather than implemented.
 
-**Manager assignment (owner decision, 2026-07-18):** ChatGPT Work is the
-PeerSlate coordination manager. It owns package sequencing, governance truth,
-handoff review, merge readiness, and release verification. ChatGPT Codex owns
-the backend convergence lane; Claude Code owns the public résumé and Interview
-Studio front-end lane. Each writer uses a separate task branch.
+**Manager assignment (owner decisions, 2026-07-18 and 2026-07-19):** ChatGPT
+Work is the PeerSlate task manager and final owner-acceptance room. It owns
+package sequencing, governance truth, shared-file reservations, visual
+authority, and final acceptance. ChatGPT Codex owns assigned backend packages;
+Claude Code owns assigned front-end packages, including protected owner
+surfaces when expressly assigned. Each writer uses a separate task branch and
+self-manages implementation, self-review, evidence, PR readiness, and approved
+release/closeout under `docs/AI_WORKFLOW.md`. ChatGPT Work does not routinely
+repeat a coherent self-certified technical audit.
 
 Before changing résumé or Slate Board code, read these repository documents in this order:
 
@@ -173,6 +179,11 @@ Do not add another permanent navigation layer inside Slate Board. Global site na
 - The user grants standing authorization for normal project work: creating task branches, committing, pushing task branches to Azure, creating and completing Azure pull requests, configuring Azure DevOps, deploying through Azure Pipelines, and verifying production behavior. This is not authorization to push directly to `main`, rewrite shared history, or bypass `docs/AI_WORKFLOW.md`.
 - Azure DevOps is the source of truth. The remote is named `origin`. GitHub is the `github` mirror and must not deploy the application.
 - Preserve current pages and behavior where practical, but make the requested changes and resolve implementation blockers autonomously.
+- For an assigned self-managed package, perform a distinct complete-diff review,
+  fix discovered issues, run all required evidence, and return a `Pass`,
+  `Conditional`, or `Fail` self-certification. Do not label unresolved failures
+  as passed. After Pete/ChatGPT Work acceptance, the same writer may complete
+  the Azure PR, pipeline, production verification, and package closeout.
 - Prefer reviewable commits and report material changes, but do not treat a dirty worktree or an ambiguous base as an automatic stop condition; inspect it, protect unrelated work, and proceed with the safest reasonable path.
 - Do not perform database migrations or add production dependencies without explaining the reason and impact first.
 - **Credentials are off-limits:** never request, read, expose, copy, store, commit, rotate, or transmit the user's API keys, passwords, tokens, publish profiles, certificates, or other secrets. Use already-configured secure Azure/Azure DevOps service connections when available; otherwise ask the user to complete the credential-only step themselves.

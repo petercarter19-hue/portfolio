@@ -82,7 +82,10 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-VOICE-001", "03_INFRASTRUCTURE.md"),
         ("docs", "initiatives", "PS-VOICE-001", "04_TEST_RELEASE_PLAN.md"),
         ("docs", "initiatives", "PS-VOICE-001", "05_IMPLEMENTATION_PLAN.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "06_VISUAL_PARITY_CORRECTION.md"),
         ("docs", "initiatives", "PS-VOICE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "README.md"),
+        ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
@@ -130,6 +133,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
+        self.assertIn("PS-SELF-MANAGED-LANES-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
         self.assertIn(
             'voice_activation_merge_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"',
@@ -142,11 +146,14 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 93", self.baseline)
-        self.assertIn("e0462a2e4683c91ebe518b6d984a2a8b973ba3d5", self.baseline)
+        self.assertIn("application_behavior_pipeline: 105", self.baseline)
+        self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
         self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", self.baseline)
         self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", self.baseline)
         self.assertIn("MANAGER_SESSION_HANDOFF.md", self.baseline)
+        self.assertIn('delivery_model: "self_managed_lanes"', self.baseline)
+        self.assertIn("voice_release_pipeline: 105", self.baseline)
+        self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -177,7 +184,8 @@ class BaselineCoherenceTests(unittest.TestCase):
             "pipeline 93",
             "ChatGPT Work",
             "GitHub mirror is not current",
-            "Capture remains text-only",
+            "Voice is functionally deployed",
+            "self-certification",
             "Placement reference model is live",
             "no website control creates or displays placements yet",
             "pipeline 97",
@@ -231,6 +239,52 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
         self.assertIn("PS-STORY-COMPOSER-001", self.state)
         self.assertIn("not active", self.initiatives)
+
+    def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        for expected in (
+            "Self-managed delivery lanes",
+            "complete diff",
+            "Pass`, `Conditional`, or `Fail",
+            "post-acceptance release and closeout",
+            "The Bible is not a changelog",
+        ):
+            self.assertIn(expected, workflow)
+
+        for relative_path in (
+            "START_HERE.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/governance/CURRENT_BASELINE.yaml",
+            "docs/governance/CURRENT_STATE.md",
+            "docs/governance/ACTIVE_INITIATIVES.md",
+            "docs/governance/MANAGER_SESSION_HANDOFF.md",
+            "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                self.assertRegex(body, r"(?i)self-manag")
+
+        report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
+        self.assertIn("Self-certification: Pass / Conditional / Fail", report)
+        self.assertIn("Complete-diff review", report)
+
+    def test_voice_visual_correction_is_truthful_and_assigned_to_claude(self):
+        correction = _read(
+            "docs", "initiatives", "PS-VOICE-001", "06_VISUAL_PARITY_CORRECTION.md"
+        )
+        for expected in (
+            "Claude Code",
+            "Save private Capture",
+            "Coming later",
+            "Frontend flags",
+            "portfolio-voice-001",
+            "Pass`, `Conditional`, or `Fail",
+        ):
+            self.assertIn(expected, correction)
+        self.assertIn("Claude Code self-managed visual correction", self.baseline)
+        self.assertIn("pipeline 105", self.state)
+        self.assertIn("withdrew Voice visual acceptance", self.state)
 
 
 if __name__ == "__main__":

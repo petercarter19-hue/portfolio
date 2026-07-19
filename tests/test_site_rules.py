@@ -102,6 +102,8 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn('CURRENT_BASELINE.yaml', content)
         self.assertIn('DOCUMENT_CONTROL.md', content)
         self.assertIn('Bible v2.5 / Roadmap v2.4', content)
+        self.assertIn('self-manages its assigned branch', content)
+        self.assertIn('Pass` self-certification', content)
 
 
 class NavigationLanguageTests(unittest.TestCase):

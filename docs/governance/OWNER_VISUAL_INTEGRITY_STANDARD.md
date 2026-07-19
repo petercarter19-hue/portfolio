@@ -89,12 +89,22 @@ user-facing work does not pass this gate until both accept it or Pete explicitly
 delegates final visual acceptance in writing. A technical handoff marked ready
 does not itself authorize merge.
 
+Under the owner-approved self-managed delivery model, the assigned writer first
+performs and documents the complete visual comparison, corrects its own issues,
+and returns a `Pass`, `Conditional`, or `Fail` self-certification. ChatGPT Work
+may rely on coherent comparison evidence and a focused review of the real
+product instead of repeating the writer's complete implementation audit. Pete
+and ChatGPT Work still own final product/visual acceptance; self-certification
+does not let a writer approve its own visual gate.
+
 ### V4 - Release integrity
 
-The Azure PR, pipeline, and live verification still apply. After deployment,
-the manager verifies the canonical production route at representative desktop
-and mobile widths and confirms that deployed assets match the accepted build.
-The completion report records functional status and visual status separately.
+The Azure PR, pipeline, and live verification still apply. After acceptance and
+deployment, the assigned self-managed writer verifies the canonical production
+route at representative desktop and mobile widths and confirms that deployed
+assets match the accepted build. ChatGPT Work records or accepts that evidence
+at closeout and may escalate contradictions. The completion report records
+functional status and visual status separately.
 
 ## Current owner bindings
 

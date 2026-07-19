@@ -1,6 +1,7 @@
 # PeerSlate Manager Session Handoff
 
-_Prepared 2026-07-18 for the next ChatGPT Work manager session. Repository and
+_Prepared 2026-07-18 and updated 2026-07-19 for self-managed delivery lanes,
+the released Voice implementation, and its reopened visual gate. Repository and
 branch facts are a snapshot; fetch `origin` before acting._
 
 ## Start here on any computer
@@ -16,17 +17,18 @@ branch facts are a snapshot; fetch `origin` before acting._
 
 ## Manager role and lane model
 
-- **ChatGPT Work:** PeerSlate manager. Owns authority records, package
-  sequencing, design and handoff review, merge readiness, Azure PRs, production
-  migrations/infrastructure gates, deployment, and release verification.
-- **ChatGPT Codex:** backend convergence writer. Owns only its assigned private
-  Capture/Moment/Placement/service/migration package and returns a pushed branch
-  plus exact full SHA without merging or changing production.
-- **Claude Code / Fable:** public-experience design feasibility and approved
-  front-end implementation. It does not change auth, private data, migrations,
-  or backend contracts.
-- One writer per branch. Voice and Interview may proceed in parallel because
-  their writable files do not overlap.
+- **ChatGPT Work:** task manager, shared-authority/file-boundary coordinator,
+  visual authority, exception escalation point, and final product-acceptance
+  room. It does not routinely repeat a coherent writer self-audit.
+- **ChatGPT Codex:** self-managed writer for assigned backend packages.
+- **Claude Code / Fable:** self-managed writer for assigned front-end packages,
+  including a protected owner surface when the package explicitly assigns it.
+- Each writer owns implementation, complete-diff review, correction, tests,
+  evidence, PR readiness, and, after Pete/ChatGPT Work acceptance, Azure
+  release/closeout. Every report states `Pass`, `Conditional`, or `Fail`.
+- One writer per branch remains mandatory. A branch/SHA handoff is required when
+  a different writer continues; it is not required merely because the same
+  self-managed writer reached self-review or PR readiness.
 
 ## Verified released foundation
 
@@ -57,6 +59,8 @@ sign-in boundary.
 - Voice activation package: PR 70 / pipeline 97.
 - Visual-integrity governance and manager handoff: PR 71 / pipeline 99.
 - Member-directed Story composition authority: PR 73 / pipeline 102.
+- Private Voice Capture implementation: PR 75 at
+  `eede8565d703a466bd788962d494e8b385b53409` / pipeline 105.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.
@@ -70,22 +74,27 @@ public browser-local Interview Studio, and Deep Navy Gold foundations.
 
 ### Honest current state
 
-Voice is authorized and actively being implemented, but it is not live. The
-production Capture experience remains text-only until the full manager release
-gate passes.
+Voice is implemented and deployed. Production private Blob/RBAC, managed-
+identity Speech, SQL migration/verification, Azure PR 75, pipeline 105, and the
+protected functional path passed. Pete completed the signed-in workflow and
+confirmed that it works.
 
-At the manager snapshot:
+Pete then withdrew visual acceptance because the protected desktop and mobile
+experience is clunky and does not match the approved homepage/feed walkthrough.
+Voice is therefore technically deployed but product/visual status remains In
+Progress.
 
-- local worktree: `C:\Users\peter\Documents\portfolio-voice-001`
-- branch: `work/2026-07-18-voice-001`
-- base/HEAD: `5488819ad13d3f411319d7e184fde3779d62b8d2`
-- state: active dirty worktree with Voice routes, services, SQL, infrastructure,
-  UI, and tests in progress
-- pushed remote branch: none yet
+Preserve `C:\Users\peter\Documents\portfolio-voice-001`; do not switch, clean,
+edit, stash, or reuse it. Claude Code now owns a fresh self-managed visual-
+parity branch from current `origin/main` under
+`docs/initiatives/PS-VOICE-001/06_VISUAL_PARITY_CORRECTION.md`.
 
-Do not switch, clean, edit, stash, or reuse that worktree. ChatGPT Codex owns it
-until it supplies a clean pushed branch, exact full SHA, test evidence, SQL and
-Azure proof, screenshots, completion report, and explicit relinquishment.
+The active Claude branch is `work/2026-07-19-voice-visual-parity-001` in
+`C:\Users\peter\Documents\portfolio-voice-visual-parity`. Its observed pushed
+checkpoint `0158daf22d26e7c38be494e2b32e6b51fdaca0fb` contains design
+instructions only. The manager answers are recorded in the correction addendum;
+Claude may implement after synchronizing current `origin/main` without another
+pre-build manager pause.
 
 ### Required product outcome
 
@@ -96,10 +105,10 @@ Capture** into the existing lifecycle. Text remains available. No Moment,
 Placement, Journal, résumé, Studio, share, audience, or publication is created
 automatically.
 
-### Owner visual addendum that the manager must enforce at review
+### Owner visual correction and final acceptance
 
-Codex started before the new visual-integrity authority was merged. The manager
-must therefore review the returned UI against `OWNER_VISUAL_INTEGRITY_STANDARD.md`:
+Claude self-reviews and corrects the returned UI against
+`OWNER_VISUAL_INTEGRITY_STANDARD.md`:
 
 - the homepage Voice walkthrough is the minimum visual/interaction authority;
 - the real protected UI must be recognizably the same or better;
@@ -109,8 +118,12 @@ must therefore review the returned UI against `OWNER_VISUAL_INTEGRITY_STANDARD.m
   privacy, explicit save, failures, desktop/mobile/keyboard/zoom evidence, and
   owner/manager visual acceptance are mandatory.
 
-If that evidence or parity is missing, return the branch for rework rather than
-merging a merely functional UI.
+The approved future Community, Connections, selected-audience, My Story, Slate
+Board, résumé, attachment, AI-draft, and publication affordances may appear as
+polished, disabled `Coming later` scaffolding. **Save private Capture** remains
+the only live completion action. Claude returns exact evidence and a
+`Pass`/`Conditional`/`Fail` report. Pete and ChatGPT Work perform a focused
+real-product acceptance review rather than a second complete technical audit.
 
 ## Active lane 2 - PS-INTERVIEW-PUBLIC-GATE-001
 
@@ -137,7 +150,8 @@ not yet implementation authority. Known corrections remain:
 
 ### Required next design gate
 
-ChatGPT Pro must return Gate 2.4: the complete nine current-public screens,
+The assigned ChatGPT visual-authority session must return Gate 2.4: the complete
+nine current-public screens,
 editable responsive source, mobile portrait/landscape, 200% reflow, keyboard
 focus, reduced motion, long content, failure and media-denied states, component
 inventory, truth/accessibility review, and implementation mapping. It should
@@ -157,7 +171,7 @@ alone.
 
 ## Owner-wide visual decision
 
-The current Bible is updated to v2.4 and the new
+The current Bible is v2.5 and the
 `OWNER_VISUAL_INTEGRITY_STANDARD.md` is part of mandatory startup. Selected
 demonstrations are visual promises: the real experience must match or exceed
 them. Visual polish is a release gate across all user-facing PeerSlate work,
@@ -183,7 +197,8 @@ does not interrupt Voice or Interview.
 
 Near-term sequencing is:
 
-1. finish and release PS-VOICE-001 after manager technical and visual review;
+1. finish and release the PS-VOICE-001 visual correction after Claude's
+   self-certified evidence and focused Pete/ChatGPT Work acceptance;
 2. finish Interview Gate 2.4, feasibility review, owner approval, and then the
    bounded public Studio implementation;
 3. define the separate homepage Interview walkthrough package after its design
@@ -207,29 +222,34 @@ backend reference as a visible member feature.
 
 1. Fetch `origin` and verify the exact current `main`, current Bible pointer,
    pipeline, and production routes.
-2. Confirm this visual-integrity governance package is merged and green.
-3. Inspect all worktrees without changing them; identify the active Voice writer.
-4. Wait for or obtain the exact Codex Voice handoff branch/SHA.
-5. Review Voice scope, SQL, infrastructure, privacy, tests, and rollback.
-6. Review Voice UI against the homepage demonstration and Speak/Type decision.
-7. Return Voice for rework if visual or technical gates are incomplete; otherwise
-   run production infrastructure/migration, Azure PR, pipeline, and live checks.
-8. Obtain and review the complete Interview Gate 2.4 package.
-9. Send it to Claude/Fable for feasibility review, then obtain Pete's final
+2. Confirm the self-managed delivery workflow is merged and green.
+3. Inspect all worktrees without changing them; confirm each active branch has
+   one writer and non-overlapping files.
+4. Give Claude the current-main Voice visual-correction package and let Claude
+   self-manage implementation, self-review, tests, evidence, and PR readiness.
+5. Review Claude's real Voice result and `Pass`/`Conditional`/`Fail` report with
+   Pete; do not recreate the entire technical audit by default.
+6. After acceptance, let Claude complete its Azure PR, pipeline, production
+   verification, and package closeout.
+7. Obtain and review the complete Interview Gate 2.4 package.
+8. Send it to Claude/Fable for feasibility review, then obtain Pete's final
    visual approval before code.
-10. Keep Voice and Interview status, holds, decisions, and next gates current in
-    the repository after each material handoff or release.
+9. Keep Voice and Interview status, holds, decisions, and next gates current in
+   the repository after each material handoff or release.
 
 ## Paste-ready kickoff for a new ChatGPT Work session
 
 > You are the PeerSlate manager. Open and follow `START_HERE.md`, then read
 > `docs/governance/MANAGER_SESSION_HANDOFF.md` and every authority file it names.
 > Fetch authoritative Azure `origin/main` and inspect all worktrees before any
-> write. Preserve the active PS-VOICE-001 worktree and require Codex's exact
-> pushed branch/SHA handoff before review. Enforce the Voice visual addendum:
-> the real protected UI must match or exceed the homepage Voice walkthrough and
-> keep Speak and Type first class. Continue PS-INTERVIEW-PUBLIC-GATE-001 only at
-> Gate 2.4 design review; do not authorize Claude implementation until the full
-> nine-screen Direction A package, feasibility review, and Pete/manager visual
-> approval are complete. Maintain honest implemented-versus-demonstration-versus-live
-> boundaries and close every material package through Azure with full evidence.
+> write. Apply the self-managed lane model: each assigned writer implements,
+> reviews its complete diff, corrects issues, runs tests/evidence, prepares the
+> PR, and returns `Pass`, `Conditional`, or `Fail`; after focused Pete/ChatGPT
+> Work acceptance the same writer completes Azure release/closeout. Preserve the
+> original PS-VOICE-001 worktree and assign Claude the fresh protected Voice
+> visual correction under `06_VISUAL_PARITY_CORRECTION.md`. The real UI must
+> match or exceed the homepage/feed walkthrough on desktop and mobile, with
+> Speak and Type first class and future controls truth-labeled as disabled.
+> Continue Interview only at Gate 2.4 design review until its complete package
+> and approvals pass. Maintain honest implementation, demonstration, deployment,
+> and live-production boundaries.

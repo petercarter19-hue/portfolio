@@ -8,6 +8,10 @@
 - Production state:
 - Visual authority and status: Not Applicable / Not Started / In Design / In Review / Accepted / Blocked
 - Pete / ChatGPT Work visual acceptance:
+- Lane owner and self-managed authority:
+- Self-certification: Pass / Conditional / Fail
+- Complete-diff review: Passed / Issues corrected / Issues remaining
+- Acceptance requested: technical report / visual-product / release
 
 ## B. What changed technically
 Include code, architecture, routes, data, migrations, identity/authorization, infrastructure, tests, deployment, rollback, and evidence. Do not omit technical detail.
@@ -24,6 +28,13 @@ Connect the work to the Bible, current Roadmap position, canonical Capture-to-Mo
 ## F. Verification and validation
 Separate automated tests, production verification, and real-member validation. State evidence limits honestly.
 
+The assigned writer must list the exact complete-diff review, focused and full
+tests, migration/infrastructure checks, responsive/accessibility evidence,
+security/privacy checks, conflicts, and corrections it performed. Self-review
+is a distinct delivery step, not a synonym for implementation. A package with
+an unresolved required check, material deviation, or conflicting evidence must
+report `Conditional` or `Fail`.
+
 For user-facing work, follow
 `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`, separately name the approved visual authority, list the
 desktop/mobile/zoom/focus/reduced-motion/long-content/failure screenshots or
@@ -38,7 +49,9 @@ responsive layout revisions, undo/restore, concurrency, draft-versus-published
 state, exact audience preview, and proof that AI did not auto-apply or publish.
 
 ## G. Known gaps, risks, and exclusions
-List deferred behavior, temporary state, risks, stop conditions, and anything the owner must not infer.
+List deferred behavior, temporary state, risks, stop conditions, conflicts,
+escalations, and anything the owner must not infer. State whether any issue
+requires an independent or deeper review.
 
 ## H. Clear next step
 Give one recommended next action, why it is next, what it unlocks, and what may safely proceed in parallel.

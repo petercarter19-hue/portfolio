@@ -13,6 +13,8 @@
 - [ ] Read `DOCUMENT_CONTROL.md` and the current manager/lane assignment
 - [ ] Read assigned initiative package and evidence requirements
 - [ ] Confirmed branch, package ID, file ownership, migration ownership, and shared integration zones
+- [ ] Confirmed whether the lane is self-managed, who grants final acceptance, and who owns post-acceptance PR/deploy/closeout
+- [ ] Confirmed whether shared governance files are reserved or package-local records only may change
 - [ ] Named the visual authority and current owner/manager acceptance state for user-facing work
 - [ ] Identified current roadmap position, entry gate, exit gate, and next required evidence
 - [ ] Created a new work branch from current `origin/main`

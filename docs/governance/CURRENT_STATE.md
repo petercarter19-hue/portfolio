@@ -1,6 +1,6 @@
 # PeerSlate - Current State
 
-_Verified 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
+_Updated 2026-07-19 for the released Voice implementation, owner functional validation, reopened Voice visual gate, and self-managed delivery decision. Every writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -27,6 +27,15 @@ _Verified 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001. Repository facts are a 
   no website behavior. Production `/`, `/petec/resume`, `/interview-studio`,
   and `/petec/my-story` returned 200; `/my-story` kept its canonical redirect;
   and `/app/capture` kept its signed-out redirect to sign-in.
+- PS-VOICE-001 squash-merged through Azure PR 75 at
+  `eede8565d703a466bd788962d494e8b385b53409`; pipeline 105 passed Build and
+  Deploy for that exact commit. Production Storage/RBAC and SQL migration
+  verification passed, and Pete completed the signed-in Voice workflow and
+  confirmed that it functions.
+- Pete then withdrew Voice visual acceptance: the protected desktop and mobile
+  interface is materially flatter and clunkier than the approved homepage/feed
+  walkthrough. The release remains technically deployed but product/visual
+  status is In Progress until Claude's corrective visual-parity package passes.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -43,12 +52,29 @@ _Verified 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001. Repository facts are a 
 
 ## Manager and delivery lanes
 
-ChatGPT Work is the owner-designated manager. It maintains repository truth, sequences packages, reviews handoffs, and verifies merges and releases. ChatGPT Codex owns backend convergence. Claude Code owns assigned public front-end work. Each package has one writer, one short-lived branch, and a separate file reservation.
+ChatGPT Work is the owner-designated task manager and final acceptance room. It
+maintains repository truth, sequences packages, reserves shared files, defines
+visual authority, and records final product acceptance. Codex and Claude
+self-manage their assigned branches: implementation, complete-diff review,
+correction, tests, evidence, PR readiness, and post-acceptance Azure
+release/closeout. ChatGPT Work may rely on a coherent `Pass` self-certification
+instead of repeating the complete technical audit. Each package still has one
+writer, one short-lived branch, and explicit file ownership.
 
-The public design lane and Voice Capture backend lane are active independently:
+The Interview Studio design lane and protected Voice visual-correction lane are active independently:
 
 1. **PS-INTERVIEW-PUBLIC-GATE-001 - public design:** continue the owner-approved Approach A visual-design lane for the public Studio. Implementation remains gated on manager and owner approval of the returned visual package.
-2. **PS-VOICE-001 - backend convergence:** Pete selected private Voice Capture. ChatGPT Codex is actively implementing it in its separate worktree from the PR 70 baseline and has not yet returned a clean pushed branch/SHA.
+2. **PS-VOICE-001 - protected visual correction:** the backend, infrastructure,
+   SQL, merge, deploy, and signed-in functional path are real. Claude Code now
+   owns the self-managed desktop/mobile visual-parity correction on a fresh
+   branch from current `origin/main`; the original Codex worktree remains
+   preserved and must not be reused.
+
+The Claude branch `work/2026-07-19-voice-visual-parity-001` was observed at
+`0158daf22d26e7c38be494e2b32e6b51fdaca0fb` with design instructions only. The
+manager-approved implementation answers now live in the PS-VOICE-001 visual
+correction addendum. Claude must synchronize with current `origin/main`; no
+implementation or acceptance is inferred from that planning checkpoint.
 
 The completed Placement foundation does not depend on Interview Studio. Voice Capture also does not authorize a placement UI or downstream Story/Work/Project/resume/Studio/Journal/Feed consumer.
 
@@ -56,10 +82,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Voice activation released; Bible v2.5, Roadmap v2.4, visual-integrity enforcement, and the member-directed Story composition contract are current | Review the active Voice handoff and Interview Gate 2.4 under the visual acceptance gate; keep Story Composer planned until its entry gate is approved |
+| Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, and self-managed lanes are current | Use self-certified lane reports plus focused Pete/ChatGPT Work acceptance; keep Story Composer planned |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Direction A art direction selected | Complete the nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
-| Capture | Text lifecycle live through PR 63 / pipeline 85; PS-VOICE-001 approved and specified | Add short private voice recording, transcription review, explicit save, source retention, export, and deletion without bypassing Capture |
+| Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in Voice workflow works | Rebuild protected Voice desktop/mobile visuals to match the approved walkthrough, then obtain final product acceptance |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
@@ -68,8 +94,11 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 ## Honest boundaries
 
 - The Placement reference model is live, but no website control creates or displays placements yet. Existing Moments and destinations remain unchanged until a future authorized consumer explicitly invokes the stored-procedure boundary.
-- Capture remains text-only in production today. PS-VOICE-001 is the active build package; approval and documentation do not make voice live.
-- The verified Azure starting point has an App Service managed identity and AI Services account, but no Blob Storage account and no app-identity resource role assignments. PS-VOICE-001 must add and verify those through a manager-reviewed passwordless infrastructure gate.
+- Voice is functionally deployed, but it is not visually accepted or closed.
+  Working behavior and successful deployment do not override the reopened visual
+  gate.
+- Production has the required private Blob Storage and managed-identity Blob and
+  Speech roles. The active correction must not change those backend contracts.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
@@ -87,6 +116,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   visual comparison evidence and Pete plus ChatGPT Work visual acceptance.
 - The homepage Voice walkthrough is the minimum for the real protected Voice
   Capture UI, with Speak and Type as first-class choices.
+- The approved future Community, Connections, selected-audience, Story, Slate
+  Board, résumé, attachment, AI-draft, and publication affordances may appear as
+  polished, explicitly disabled `Coming later` scaffolding. Only private Capture
+  save is live; frontend capability state is never authorization.
 - Direction A is selected for Interview Studio, but implementation remains
   blocked until the complete Gate 2.4 design set and visual reviews pass.
 - The current homepage overall is not an approved final visual baseline; its

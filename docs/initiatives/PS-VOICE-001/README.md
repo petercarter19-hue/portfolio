@@ -2,9 +2,10 @@
 
 ## Assignment
 
-- Writer: ChatGPT Codex
-- Manager/reviewer: ChatGPT Work
-- Branch when accepted: `work/YYYY-MM-DD-voice-001`
+- Original backend writer: ChatGPT Codex; released through Azure PR 75 / pipeline 105
+- Current corrective frontend writer: Claude Code, self-managed
+- Task manager / visual authority / final acceptance: ChatGPT Work and Pete
+- Corrective branch: `work/2026-07-19-voice-visual-parity-001`
 - Entry gate: PS-VOICE-CAPTURE-MANAGER-001 is squash-merged, its Azure pipeline is green, and the branch starts from the resulting current `origin/main`.
 - Depends on: PS-AUTH-001, PS-CAPTURE-001/002, PS-MOMENT-001, and the existing App Service managed identity.
 
@@ -15,6 +16,22 @@ Implement the first complete owner-scoped Voice Capture path:
 **record short audio -> store original privately -> transcribe -> member reviews or corrects -> explicit Save private Capture -> existing Capture lifecycle**
 
 Voice and text converge at the existing private Capture boundary. The original audio is preserved as private source evidence until the member explicitly deletes the Capture. The transcript is a proposal until the member approves it. No later product object is created automatically.
+
+## Current release and corrective status - 2026-07-19
+
+The backend, production infrastructure, SQL migration, Azure merge/deploy, and
+signed-in functional workflow are real. Pete confirmed that Voice works, then
+withdrew visual acceptance because the protected desktop/mobile UI does not
+match the approved homepage/feed walkthrough. Read and follow
+[06_VISUAL_PARITY_CORRECTION.md](06_VISUAL_PARITY_CORRECTION.md) for the current
+Claude assignment. The earlier implementation documents remain authoritative
+for backend behavior and must not be reopened by the visual correction.
+
+The corrective branch exists at planning checkpoint
+`0158daf22d26e7c38be494e2b32e6b51fdaca0fb`. That checkpoint adds design
+instructions only; it is not implementation, review, acceptance, deployment,
+or closeout evidence. Claude must synchronize the branch with current
+`origin/main` after this governance package lands.
 
 ## Owner-visible first slice
 
@@ -84,4 +101,8 @@ If implementation requires another shared file, stop and ask ChatGPT Work to res
 
 Follow `START_HERE.md`, then read the current baseline/state/initiatives, Document Control, Bible/Roadmap/Sync Standard, PS-CAPTURE-001/002, PS-MOMENT-001, this README, [architecture](01_ARCHITECTURE.md), [security/privacy](02_SECURITY_PRIVACY.md), [infrastructure](03_INFRASTRUCTURE.md), [test/release plan](04_TEST_RELEASE_PLAN.md), and [implementation sequence](05_IMPLEMENTATION_PLAN.md).
 
-Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` and the exact branch plus full commit SHA.
+For the current correction, also read `06_VISUAL_PARITY_CORRECTION.md`. Close
+with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`, a `Pass`,
+`Conditional`, or `Fail` self-certification, and the exact branch plus full
+commit SHA. After Pete/ChatGPT Work acceptance, the same writer may complete
+the Azure PR, pipeline, production verification, and package closeout.

@@ -108,3 +108,39 @@ This is an append-only operational decision record. The current Bible and Roadma
   The example is validation evidence, not Pete-specific reusable logic.
 - Reserve `PS-STORY-COMPOSER-001` as planned future work. This decision does not
   change the current public Story or interrupt active Voice and Interview work.
+
+## 2026-07-19 - Adopt self-managed delivery lanes
+
+- Owner decision: Codex and Claude self-manage their assigned branches through
+  implementation, complete-diff review, correction, tests, evidence, PR
+  readiness, and post-acceptance Azure release/closeout.
+- ChatGPT Work remains the task manager, shared-authority and file-boundary
+  coordinator, visual authority, exception escalation point, and final
+  product-acceptance room. It does not routinely repeat a coherent writer
+  self-audit.
+- Every writer returns a `Pass`, `Conditional`, or `Fail` self-certification
+  with exact branch/SHA, tests, screenshots, parity/deviation evidence,
+  conflicts, limitations, pipeline, and production proof as applicable.
+- Pete and ChatGPT Work still accept material user-facing work. That focused
+  acceptance may rely on the self-certified report and real-product review.
+- A branch still has one writer; Azure PR/squash/pipeline rules, server-enforced
+  trust boundaries, credential restrictions, and honest implementation versus
+  deployment versus live status remain unchanged.
+- Package-local architecture and completion records travel with the branch.
+  Shared current-state records change only under explicit reservation. The
+  Bible changes only for constitutional product direction, not routine release
+  tracking.
+
+## 2026-07-19 - Reopen Voice visual acceptance and preserve future scaffolding
+
+- Pete verified that the deployed signed-in Voice workflow functions, then
+  withdrew visual acceptance because the protected desktop and mobile
+  experience does not match the approved homepage/feed walkthrough.
+- Claude Code owns the self-managed frontend correction on a fresh branch from
+  current `origin/main`; the original Codex Voice worktree remains preserved.
+- Community, Connections, selected audiences, My Story, Slate Board, résumé,
+  photo/video/document, AI-assisted draft, and publication may be represented
+  now as polished, clearly disabled `Coming later` scaffolding.
+- The scaffolding is not authorization or simulated completion. **Save private
+  Capture** remains the only live completion action until separately approved
+  backend and destination packages activate later capabilities.
