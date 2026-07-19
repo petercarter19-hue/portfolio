@@ -3,7 +3,7 @@
 ## Decision status
 
 - Owner: Pete Carter
-- Decision date: 2026-07-18
+- Decision date: 2026-07-18; dual-theme visual authority updated 2026-07-19
 - Designated session manager: Claude Co-Work
 - Gate 2.4 review session: Codex manager-review session
 - Disposition: Gate A approved for the current public package
@@ -25,11 +25,22 @@ The design shall simplify the opening, progressively disclose secondary depth, a
 ## Approved owner decisions
 
 1. **Current approach:** preserve interactive public practice with explicit truth and privacy labels.
-2. **Theme boundary:** the current public route stays light-first Deep Navy Gold. Dark-first applies to the future authenticated owner Studio, not this public refinement.
+2. **Theme boundary:** the current public route stays light-first Deep Navy Gold.
+   Image 5 Concept A controls default/light and Image 5 Concept C controls an
+   optional dark expression of the same public Studio. Both themes share one
+   semantic DOM, state machine, functionality, truth, and accessibility model.
 3. **Demo identity:** retain Pete Carter because the page uses his approved public profile and résumé data. Label it as a public demo profile, never as signed-in identity.
 4. **Vocabulary:** use **Interview Me** for member-entered answers, **Interview AI** for model responses, and **Video Practice** for local camera rehearsal.
 5. **Worked-example tour:** exclude it from the current implementation. Preserve the concept for the future public demonstration.
 6. **Future direction:** after an authenticated private Studio exists, passes privacy/identity verification, and is live, PeerSlate may reconsider converting the public route to the scripted guided-demonstration model. This is approved direction in principle, not automatic implementation authorization.
+
+The exact source path, composition rules, shared component/theme architecture,
+nine-screen dual-theme requirement, theme persistence/no-state-loss contract,
+and definitive Claude handoff are controlled by
+`09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md`. That newer owner decision
+supersedes any statement in this file or file `06` that reserves dark styling
+exclusively for a future authenticated Studio. It does not authorize product
+implementation.
 
 ## Verified current facts Fable may rely on
 

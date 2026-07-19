@@ -1,6 +1,8 @@
 # PeerSlate - Current State
 
-_Updated 2026-07-19 for the completed Voice visual-parity release, Interview Gate 2.4 review, and Capture Media manager planning. Every manager and writer must still fetch `origin` before starting._
+_Updated 2026-07-19 for the completed Voice release, Interview Studio Image 5
+5A-light/5C-dark authority, and Capture Media manager planning. Every manager
+and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -60,6 +62,11 @@ _Updated 2026-07-19 for the completed Voice visual-parity release, Interview Gat
   verification browser had no signed-in member session, so this closeout does
   not claim a new post-deploy authenticated screenshot or repeat the already
   completed real Speech workflow.
+- Voice governance closeout PR 81 squash-merged at
+  `5cc5b69346ee354bcc36248f7ee5724ce13c9d08`; pipeline 115
+  (`20260719.23`) passed Build and Deploy for that exact commit. Production
+  `/`, `/interview-studio`, and `/feed-living-stream?state=voice` returned 200,
+  and `/app/capture` kept the expected signed-out redirect to sign-in.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -99,10 +106,13 @@ reservations must be serialized.
 The Interview Studio review lane and Capture Media manager-planning lane are
 active independently. The Voice correction lane is closed:
 
-1. **PS-INTERVIEW-PUBLIC-GATE-001 - Gate 2.4 review:** a new Codex manager
-   session may receive the complete Direction A design package, review it on a
-   clean design-review branch, and return a `Pass`, `Conditional`, or `Fail`
-   report to Claude Co-Work. It does not implement the Studio.
+1. **PS-INTERVIEW-PUBLIC-GATE-001 - Gate 2.4 review:** the exact Image 5
+   authority is recorded: Concept A Editorial Studio Ledger controls
+   default/light and Concept C Cinematic Studio controls optional dark. A new
+   Codex manager session may receive the complete dual-theme nine-screen design
+   package, review it on a clean design-review branch, and return a `Pass`,
+   `Conditional`, or `Fail` report to Claude Co-Work. It does not implement the
+   Studio.
 2. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
    session manager for requirements, architecture, decomposition, and writer
    allocation. No authoritative Azure implementation branch was observed at
@@ -120,7 +130,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Public browser-local slice shipped; Approach A approved; Direction A art direction selected | Complete the nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
+| Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio | Complete the dual-theme nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
@@ -161,8 +171,12 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Board, résumé, attachment, AI-draft, and publication affordances may appear as
   polished, explicitly disabled `Coming later` scaffolding. Only private Capture
   save is live; frontend capability state is never authorization.
-- Direction A is selected for Interview Studio, but implementation remains
-  blocked until the complete Gate 2.4 design set and visual reviews pass.
+- Interview Studio Image 5 Concept A controls default/light and Concept C
+  controls optional dark. They are two themes of the same public Studio, not
+  separate products. Theme switching may not reset Studio state. Implementation
+  remains blocked until the complete dual-theme Gate 2.4 design set,
+  truth/accessibility review, Claude/Fable feasibility, and Pete/manager visual
+  approval pass.
 - The current homepage overall is not an approved final visual baseline; its
   broader redesign remains a separate later initiative.
 

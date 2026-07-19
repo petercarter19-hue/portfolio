@@ -10,15 +10,20 @@ Use, in order:
 
 1. the repository startup and current pointer chain;
 2. the current Bible/Roadmap and Site Rules;
-3. this initiative README and files `01` through `05`;
+3. this initiative README and files `01` through `05`, plus controlling file
+   `09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md`;
 4. the existing public Interview Studio implementation as behavioral truth;
 5. the useful visual and interaction ideas from `PS_INTERVIEW_PUBLIC_GATE_001_DESIGN_AUTHORITY_v2.zip`, only where they conform to the owner-approved scope.
 
-When the ZIP conflicts with `05_OWNER_APPROVED_DESIGN_SCOPE.md`, file `05` controls for this current package.
+When an older ZIP or brief conflicts with file `09`, file `09` controls the
+current light/dark visual authority. Files `01`, `02`, and `05` continue to
+control product truth and behavior.
 
 ## Required screen set
 
-Return nine separate full-screen production-intent states:
+Return nine separate full-screen production-intent states in both controlling
+themes: Image 5 Concept A for default/light and Image 5 Concept C for optional
+dark. This requires 18 primary exports:
 
 1. `PUBLIC-01_ORIENTATION_AND_DEMO_PROFILE`
 2. `PUBLIC-02_ACTIVE_WRITTEN_PRACTICE`
@@ -30,7 +35,9 @@ Return nine separate full-screen production-intent states:
 8. `PUBLIC-V01_PROCESSING_FAILURE`
 9. `PUBLIC-V02_CAMERA_MIC_DENIED`
 
-Each export must show one complete state at legible production scale. Do not use a multi-screen collage as the primary evidence.
+Each export must show one complete state at legible production scale. Do not use
+a multi-screen collage as the primary evidence and do not treat dark as a
+palette-only alternate.
 
 ## Responsive and interaction source
 
@@ -59,6 +66,13 @@ The editable source must include mobile portrait and mobile landscape variants f
 ## Visual rules
 
 - Use light-first Deep Navy Gold and the semantic allocation in file `05`.
+  Image 5 Concept A controls the recognizable default/light composition; Image
+  5 Concept C controls the recognizable optional dark composition.
+- Both themes use the same information architecture, semantic DOM, component
+  placement, actions, functionality, state machine, and accessibility behavior.
+- Reuse the existing global `body[data-theme]` / `ps-theme` mechanism in the
+  feasibility plan. Theme switching may not reset any Studio state, focus, or
+  scroll position.
 - Do not use teal as the current step or room-wide active accent.
 - Do not import the protected owner navigation rail.
 - Preserve the public shell and avoid a broad public-site redesign.

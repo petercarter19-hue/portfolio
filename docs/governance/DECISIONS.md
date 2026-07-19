@@ -184,3 +184,26 @@ This is an append-only operational decision record. The current Bible and Roadma
   Community, Connections, Story, Slate Board, resume, media attachment, AI-post,
   sharing, or publication behavior requires a separately authorized package,
   branch, evidence set, visual acceptance, and Azure closeout.
+
+## 2026-07-19 - Select 5A light and 5C dark for the current public Interview Studio
+
+- Owner decision: the exact source image
+  `C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`
+  controls the current public Studio visual system. Concept A, Editorial Studio
+  Ledger, controls default/light; Concept C, Cinematic Studio, controls optional
+  dark. Image 1A and Image 2A are not co-authorities.
+- Light and dark are themes of the same `/interview-studio`, with one semantic
+  DOM, information architecture, action set, state machine, truth boundary,
+  responsive behavior, and accessibility model. Dark is not a second product,
+  authenticated route, private workspace, or expanded feature set.
+- The current written-practice flow remains primary. Changing theme must not
+  reset drafts, goals, answers, selected modes, browser-local history, media
+  state, focus, dialogs, or scroll position.
+- The full nine-screen current-public package must cover both themes and all
+  responsive, focus, reflow, reduced-motion, long-content, unavailable, error,
+  retry, and recovery states. Mobile reflows and scrolls; it does not shrink the
+  desktop composition or hide essential truth.
+- This decision supersedes the earlier assumption that Concept C could only be
+  banked for a future authenticated Studio. It does not authorize product code.
+  Claude/Fable feasibility plus Pete and designated-manager visual approval
+  must pass before a fresh implementation branch may start.

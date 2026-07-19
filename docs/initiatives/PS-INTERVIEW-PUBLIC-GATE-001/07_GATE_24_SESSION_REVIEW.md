@@ -5,10 +5,10 @@ is the receiving designated session manager._
 
 ## Purpose and boundary
 
-Pete may open a new Codex session and attach the complete Direction A,
-Editorial Studio Ledger Gate 2.4 design package. The session reviews and makes
-the design evidence durable. It does not edit Interview Studio product code and
-does not authorize implementation by itself.
+Pete may open a new Codex session and attach the complete dual-theme Direction
+A Gate 2.4 design package: Image 5 Concept A Editorial Studio Ledger controls
+default/light and Image 5 Concept C Cinematic Studio controls optional dark.
+The session reviews and makes the design evidence durable. It does not edit Interview Studio product code and does not authorize implementation by itself.
 
 - Review branch: `work/YYYY-MM-DD-interview-gate-24-review`
 - Base: freshly fetched current `origin/main`
@@ -21,7 +21,8 @@ does not authorize implementation by itself.
 
 The attached package must contain or identify:
 
-1. the nine separate full-screen current-public states from file `06`;
+1. the nine separate full-screen current-public states from file `06` in both
+   controlling themes - 18 primary exports total;
 2. editable responsive source;
 3. mobile portrait and landscape for written, review, video, history, and
    failure journeys;
@@ -33,7 +34,10 @@ The attached package must contain or identify:
    files;
 7. a truth/accessibility self-review and implementation concerns; and
 8. the separate illustrative homepage Interview walkthrough, clearly separated
-   from the real current-public Studio.
+   from the real current-public Studio; and
+9. the shared component/token architecture, existing-theme-mechanism mapping,
+   theme persistence/no-state-loss plan, and 5A/5C parity matrix required by
+   file `09`.
 
 If any item is absent, review what was supplied and return `Conditional` or
 `Fail`; do not invent the missing screen or quietly reduce the gate.
@@ -44,6 +48,8 @@ For every required screen and variant, record:
 
 - present and legible at production scale;
 - aligned to Direction A and Deep Navy Gold semantics;
+- recognizable as 5A in light and 5C in dark, with the same structure and real
+  behavior rather than duplicated products or palette-only treatment;
 - one dominant practice object/action;
 - truthful public-profile, browser-local, coaching-transmission, and local-media
   language;
@@ -51,7 +57,9 @@ For every required screen and variant, record:
 - keyboard, screen-reader, focus, zoom/reflow, motion, responsive, long-content,
   and failure evidence;
 - implementation mapping within the reserved template/CSS/JavaScript/test
-  files; and
+  files;
+- theme-switch preservation of drafts, goals, answers, modes, local history,
+  media state, focus, dialogs, and scroll position; and
 - deviations, conflicts, feasibility risks, or missing evidence.
 
 ## Writable review scope
@@ -79,9 +87,10 @@ approval may a fresh implementation branch start.
 
 > Follow `START_HERE.md`, fetch authoritative Azure `origin/main`, and read the
 > complete `PS-INTERVIEW-PUBLIC-GATE-001` package through
-> `07_GATE_24_SESSION_REVIEW.md`. You are the Gate 2.4 manager-review session,
+> `09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md`. You are the Gate 2.4 manager-review session,
 > not the implementation writer. Create a clean review branch, inspect the
-> attached Direction A package against every nine-screen, responsive,
+> attached 5A-light / 5C-dark Direction A package against every nine-screen,
+> shared-component, theme-persistence/no-state-loss, responsive,
 > truth/accessibility, failure, and implementation-mapping requirement, and
 > return `Pass`, `Conditional`, or `Fail`. Do not edit Interview product code.
 > Commit/push the review and give Claude Co-Work the exact branch/full SHA and

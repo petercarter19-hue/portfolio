@@ -125,21 +125,30 @@ functional status and visual status separately.
 
 ### Interview Studio
 
-- Direction A, **Editorial Studio Ledger**, is the selected visual direction for
-  the current public Interview Studio design work.
-- The current `/interview-studio` remains the real interactive, light-first
-  Approach A public experience. It must keep honest public-profile grounding,
-  browser-local history, real coaching requests, and local camera behavior.
+- The exact source image
+  `C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`
+  is the current public Studio visual authority. Image 5 Concept A,
+  **Editorial Studio Ledger**, controls default/light; Image 5 Concept C,
+  **Cinematic Studio**, controls optional dark. Image 1A and Image 2A are not
+  co-authorities.
+- The current `/interview-studio` remains one real interactive, light-first
+  Approach A public experience. Dark is an optional theme of that same public Studio and route,
+  semantic DOM, information architecture, state machine, behavior, and truth
+  boundary; it is not an authenticated product or separate feature set.
+- Both themes must keep honest public-profile grounding, browser-local history,
+  real coaching requests, local camera behavior, and the current primary
+  written-practice flow. Changing theme must not reset or alter product state.
 - Implementation is not authorized until the complete nine-screen current-public
-  design set, responsive and accessibility states, editable source, component
-  inventory, truth review, Claude/Fable feasibility review, manager review, and
-  Pete's visual approval are complete.
+  design set in both themes, responsive and accessibility states, editable
+  source, component inventory, truth review, Claude/Fable feasibility review,
+  manager review, and Pete's visual approval are complete.
 - Pete later authorized a separately scoped homepage Interview Studio
   walkthrough. That decision supersedes the earlier worked-example exclusion
   only for a future homepage demonstration package; it does not replace the
   interactive public Studio or authorize a homepage edit in the current package.
-- The future authenticated owner Studio remains a separate, dark-first package
-  after authenticated routes, identity, persistence, and authorization exist.
+- The future authenticated owner Studio remains a separate package after
+  authenticated routes, identity, persistence, and authorization exist. The
+  current public dark theme does not simulate or pre-authorize it.
 
 ### Homepage boundary
 

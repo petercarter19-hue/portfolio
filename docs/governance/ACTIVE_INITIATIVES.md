@@ -1,6 +1,7 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-19 after the accepted and released Voice visual correction._
+_Updated 2026-07-19 after the accepted Voice release and the Interview Studio
+Image 5 5A-light/5C-dark owner decision._
 
 ## Operating model
 
@@ -20,7 +21,7 @@ Claude Code implementation.
 |---|---|---|---|---|
 | Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Interview and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
 | Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 planning | requirements, architecture, slice decomposition, writer allocation, evidence gates | implementation claims, Voice rebuild, Journal, publication, shared runtime files before reservation |
-| Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Direction A design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
+| Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Image 5 Concept A light / Concept C dark design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
 ## Current active gate
 
@@ -36,12 +37,17 @@ new package and branch.
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
-- Current action: Direction A, Editorial Studio Ledger, is selected. Pete may
-  start a new Codex manager session, upload the complete Gate 2.4 package, and
+- Owner visual authority updated 2026-07-19: exact Image 5 Concept A Editorial
+  Studio Ledger controls default/light and Concept C Cinematic Studio controls
+  optional dark. Both themes share one public route, DOM, state machine,
+  functionality, truth, responsive behavior, and accessibility model.
+- Current action: Pete may start a new Codex manager session, upload the
+  complete dual-theme Gate 2.4 package, and
   let that session create a clean review branch from current `origin/main`.
-  The session reviews all nine responsive/accessibility states, the separately
-  scoped homepage walkthrough, truth/accessibility, and implementation mapping;
-  it does not write product code. It returns its exact branch/SHA and
+  The session reviews all nine states in both themes, responsive/accessibility
+  evidence, theme persistence/no-state-loss, the separately scoped homepage
+  walkthrough, truth/accessibility, and implementation mapping; it does not
+  write product code. It returns its exact branch/SHA and
   `Pass`/`Conditional`/`Fail` report to Claude Co-Work.
 - Claude Co-Work receives the durable review as designated manager and sends
   the accepted package to Claude Code for feasibility. No implementation branch

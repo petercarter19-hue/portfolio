@@ -75,6 +75,10 @@ sign-in boundary.
   `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`, Azure PR 80, merge
   `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`, pipeline 113
   (`20260719.21`) Build and Deploy passed.
+- Voice governance closeout: Azure PR 81, merge
+  `5cc5b69346ee354bcc36248f7ee5724ce13c9d08`, pipeline 115
+  (`20260719.23`) Build and Deploy passed; public, Interview, Voice walkthrough,
+  and protected Capture auth-boundary checks passed.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.
@@ -145,12 +149,20 @@ A. Preserve written answers, real coaching requests, Interview AI, comparison,
 browser-local history, and local camera rehearsal. Keep the route light-first
 Deep Navy Gold. Pete is a clearly labeled public demo profile, not signed-in
 identity. Current mode names are Interview Me, Interview AI, and Video Practice.
+The current written-practice flow remains primary.
 
 ### Design state and selected direction
 
-The Gate 2.2/2.3 visual-art-direction package proposed three directions. Direction
-A, **Editorial Studio Ledger**, is selected. It is a strong art direction but
-not yet implementation authority. Known corrections remain:
+The exact owner authority is
+`C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`.
+Image 5 Concept A, **Editorial Studio Ledger**, controls default/light. Image 5
+Concept C, **Cinematic Studio**, controls optional dark. Image 1A and Image 2A
+are not co-authorities. Light and dark are two themes of the same public route,
+semantic DOM, functionality, state machine, truth, and accessibility behavior;
+dark is not a separate or authenticated product. File
+`09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md` is the definitive Claude
+design/feasibility package. It is not yet implementation authority. Known
+corrections remain:
 
 - use one dominant opening CTA;
 - keep **Interview Me** as the mode name; "written practice" may describe it;
@@ -162,10 +174,12 @@ not yet implementation authority. Known corrections remain:
 ### Required next design gate
 
 The assigned Codex manager-review session must receive and evaluate Gate 2.4:
-the complete nine current-public screens,
+the complete nine current-public screens in both controlling themes (18 primary
+exports),
 editable responsive source, mobile portrait/landscape, 200% reflow, keyboard
 focus, reduced motion, long content, failure and media-denied states, component
-inventory, truth/accessibility review, and implementation mapping. It should
+inventory, theme persistence/no-state-loss, truth/accessibility review, and
+implementation mapping. It should
 also design a separate homepage Interview Studio walkthrough using Direction A.
 That homepage walkthrough is illustrative only and belongs to a later separate
 package/branch; it must not replace the real public Studio.
@@ -278,9 +292,11 @@ backend reference as a visible member feature.
 > completed PS-VOICE-001 worktrees; Voice is released and any later change
 > requires a new package. Preserve its accepted Speak/Type, privacy, lifecycle,
 > accessibility, and walkthrough-parity contracts.
-> Continue Interview only at Gate 2.4 design review until its complete package
-> and approvals pass. Maintain honest implementation, demonstration, deployment,
-> and live-production boundaries.
+> Continue Interview only at Gate 2.4 design review. Image 5 Concept A controls
+> default/light and Concept C controls optional dark for the same public Studio.
+> Require file `09`'s complete dual-theme package, feasibility, and approvals.
+> Maintain honest implementation, demonstration, deployment, and
+> live-production boundaries.
 
 ## Paste-ready kickoff for the new Codex Interview Gate 2.4 session
 
@@ -288,10 +304,12 @@ backend reference as a visible member feature.
 > bounded manager-review session for `PS-INTERVIEW-PUBLIC-GATE-001` Gate 2.4,
 > not the implementation writer. Create a clean
 > `work/YYYY-MM-DD-interview-gate-24-review` branch. Review the attached complete
-> Direction A Editorial Studio Ledger package against files `01` through `06`
-> and `07_GATE_24_SESSION_REVIEW.md`: nine full-screen states, responsive source,
+> Image 5 Concept A light / Concept C dark package against files `01` through
+> `07` and `09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md`: nine
+> full-screen states in both themes (18 primary exports), responsive source,
 > mobile portrait/landscape, focus, 200% reflow, reduced motion, long content,
-> failure/media-denied states, truth/accessibility, component inventory,
+> failure/media-denied states, truth/accessibility, component inventory, shared
+> DOM/state architecture, theme persistence/no-state-loss,
 > homepage walkthrough separation, and implementation mapping. Do not edit
 > Interview product code. Return `Pass`, `Conditional`, or `Fail`, commit/push
 > the durable review, and give Claude Co-Work the exact branch/full SHA and

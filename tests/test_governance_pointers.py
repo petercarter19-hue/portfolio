@@ -169,6 +169,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
         self.assertIn("voice_visual_release_pipeline: 113", self.baseline)
         self.assertIn("voice_visual_release_pr: 80", self.baseline)
+        self.assertIn("voice_governance_closeout_pipeline: 115", self.baseline)
+        self.assertIn("5cc5b69346ee354bcc36248f7ee5724ce13c9d08", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -231,6 +233,45 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
         self.assertIn("Pete / designated session manager visual acceptance", report)
+
+    def test_interview_dual_theme_authority_is_explicit_and_still_design_only(self):
+        brief = _read(
+            "docs",
+            "initiatives",
+            "PS-INTERVIEW-PUBLIC-GATE-001",
+            "09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md",
+        )
+        standard = _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md")
+        review = _read(
+            "docs",
+            "initiatives",
+            "PS-INTERVIEW-PUBLIC-GATE-001",
+            "07_GATE_24_SESSION_REVIEW.md",
+        )
+        for expected in (
+            "ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png",
+            "7A03EE1F4569478F067EE2996C575B130077633CB6C2AAA36A058EFE772467DD",
+            "Concept A",
+            "Concept C",
+            "Image 1A and Image 2A",
+            "one DOM, one state machine",
+            "18 primary exports",
+            "ps-theme",
+            "no-state-loss",
+            "Product implementation: **Not authorized**",
+            "Design and feasibility only; product implementation has not started",
+        ):
+            self.assertIn(expected, brief)
+        for expected in (
+            "Editorial Studio Ledger",
+            "Cinematic Studio",
+            "same public Studio",
+            "Changing theme must not reset",
+        ):
+            self.assertIn(expected, standard)
+        self.assertIn("18 primary exports", review)
+        self.assertIn("Concept A Editorial Studio Ledger controls", self.state)
+        self.assertIn("Concept C", self.baseline)
 
     def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
         workflow = _read("docs", "AI_WORKFLOW.md")
