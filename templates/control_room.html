@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Defense in depth only. The server-side owner check is the access control. #}
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>Control Room · PeerSlate</title>
+
+    <link rel="icon" type="image/png"
+          href="{{ url_for('static', filename='images/peerslate-favicon.png') }}">
+    <meta name="theme-color" content="#203767">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/control-room.css') }}?v=cr-1">
+</head>
+
+{#- ---- reusable macros ------------------------------------------------- -#}
+{% macro pill(status, label=None) -%}
+    {%- set map = {
+        'ok': ('cr-pill--ok', 'OK', '●'),
+        'active': ('cr-pill--ok', 'Active', '●'),
+        'unknown': ('cr-pill--unknown', 'Unknown', '○'),
+        'unavailable': ('cr-pill--unavailable', 'Unavailable', '—'),
+        'partial': ('cr-pill--partial', 'Partial', '◐'),
+        'stale': ('cr-pill--stale', 'Stale', '◑'),
+        'failed': ('cr-pill--failed', 'Failed', '✕')
+    } -%}
+    {%- set cls, text, glyph = map.get(status|lower, ('cr-pill--unknown', status, '○')) -%}
+    <span class="cr-pill {{ cls }}"><span class="cr-pill__glyph" aria-hidden="true">{{ glyph }}</span>{{ label or text }}</span>
+{%- endmacro %}
+
+{% macro lifecycle(state) -%}
+    {%- set map = {
+        'Completed': 'cr-pill--ok',
+        'Active': 'cr-pill--active',
+        'On hold': 'cr-pill--stale',
+        'Public-safe slice': 'cr-pill--partial',
+        'Recorded': 'cr-pill--unknown'
+    } -%}
+    <span class="cr-pill {{ map.get(state, 'cr-pill--unknown') }}">{{ state }}</span>
+{%- endmacro %}
+
+{% macro source_ref(source) -%}
+    {%- if source and source.path -%}
+        <span class="cr-source">
+            {%- if source.link -%}
+                <a href="{{ source.link }}" target="_blank" rel="noopener noreferrer">{{ source.path }}</a>
+            {%- else -%}
+                <span>{{ source.path }}</span>
+            {%- endif -%}
+            {%- if source.updated %} · <time>{{ source.updated }}</time>{% endif -%}
+        </span>
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro value_or_unknown(value) -%}
+    {%- if value not in (none, '', []) -%}{{ value }}{%- else -%}<span class="cr-muted">Not recorded</span>{%- endif -%}
+{%- endmacro %}
+
+{# Render parsed README blocks (paragraphs + lists) as escaped, structured
+   HTML. All text comes from repository files and passes through Jinja
+   autoescaping — no raw markup is ever injected. #}
+{% macro render_blocks(blocks) -%}
+    {%- for b in blocks -%}
+        {%- if b.type == 'list' -%}
+            {%- if b.ordered -%}<ol class="cr-detail-list">{%- else -%}<ul class="cr-detail-list">{%- endif -%}
+                {%- for item in b['items'] -%}<li>{{ item }}</li>{%- endfor -%}
+            {%- if b.ordered -%}</ol>{%- else -%}</ul>{%- endif -%}
+        {%- else -%}
+            <p>{{ b.text }}</p>
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro %}
+
+{# Freshness chip for the repo-file-backed sections (Overview, Initiatives,
+   Documents, Decisions, Traceability): those read whatever files this running
+   process has, so their true cadence is "whenever this build was deployed". #}
+{% macro freshness_deploy(build) -%}
+    {%- if build and build.environment == 'production_build' -%}
+        <span class="cr-freshness" title="Refreshes automatically on the next deploy">
+            <span class="cr-freshness__dot" aria-hidden="true"></span>As of deploy{% if build.build_id %} · build {{ build.build_id }}{% endif %}
+        </span>
+    {%- elif build and build.environment == 'local_development' -%}
+        <span class="cr-freshness cr-freshness--dev" title="Local development — reflects files on disk right now, not a packaged build">
+            <span class="cr-freshness__dot" aria-hidden="true"></span>Local development
+        </span>
+    {%- else -%}
+        <span class="cr-freshness cr-freshness--unknown"><span class="cr-freshness__dot" aria-hidden="true"></span>Unknown</span>
+    {%- endif -%}
+{%- endmacro %}
+
+{# Freshness chip for a live-polled tier (Tier 1 repository activity). #}
+{% macro freshness_tier(status, fetched_at, live_label='Live', stale_label='Stale', off_label='Not configured') -%}
+    {%- if status == 'ok' -%}
+        <span class="cr-freshness"><span class="cr-freshness__dot" aria-hidden="true"></span>{{ live_label }}{% if fetched_at %} · fetched {{ fetched_at }}{% endif %}</span>
+    {%- elif status == 'stale' -%}
+        <span class="cr-freshness cr-freshness--stale"><span class="cr-freshness__dot" aria-hidden="true"></span>{{ stale_label }}{% if fetched_at %} · last success {{ fetched_at }}{% endif %}</span>
+    {%- elif status == 'not_configured' -%}
+        <span class="cr-freshness cr-freshness--unknown"><span class="cr-freshness__dot" aria-hidden="true"></span>{{ off_label }}</span>
+    {%- else -%}
+        <span class="cr-freshness cr-freshness--unknown"><span class="cr-freshness__dot" aria-hidden="true"></span>Unavailable</span>
+    {%- endif -%}
+{%- endmacro %}
+
+<body>
+<a class="cr-skip" href="#cr-main">Skip to Control Room content</a>
+
+<header class="cr-topbar">
+    <div class="cr-topbar__inner cr-container">
+        <div class="cr-brand">
+            <span class="cr-brand__mark" aria-hidden="true">PS</span>
+            <span class="cr-brand__text">
+                <span class="cr-brand__name">PeerSlate</span>
+                <span class="cr-brand__sub">Control Room</span>
+            </span>
+        </div>
+        <div class="cr-topbar__meta">
+            <span class="cr-readonly" title="This dashboard cannot change any project state.">
+                <span class="cr-readonly__dot" aria-hidden="true"></span>Read-only
+            </span>
+            {% if owner_label %}<span class="cr-owner">Owner · {{ owner_label }}</span>{% endif %}
+            <span class="cr-refreshed" aria-live="polite">Refreshed <time id="cr-generated">{{ projection.generated_at }}</time></span>
+            <button type="button" class="cr-btn" id="cr-refresh" data-endpoint="{{ url_for('control_room.control_room_data') }}">
+                <span aria-hidden="true">↻</span> Refresh
+            </button>
+        </div>
+    </div>
+</header>
+
+<nav class="cr-sectionnav cr-container" aria-label="Control Room sections">
+    <a href="#cr-overview">Overview</a>
+    <a href="#cr-initiatives">Initiatives</a>
+    <a href="#cr-documents">Documents</a>
+    <a href="#cr-decisions">Decisions</a>
+    <a href="#cr-traceability">Traceability</a>
+    <a href="#cr-delivery">Delivery</a>
+    <a href="#cr-repo-activity">Repository activity</a>
+    <a href="#cr-changes">Recent changes</a>
+</nav>
+
+<main id="cr-main" class="cr-container">
+    <h1 class="cr-h1">Project state at a glance</h1>
+    <p class="cr-lede">
+        A calm, source-backed view of PeerSlate's documented and delivered state.
+        Every figure below is derived from authoritative repository files. This
+        surface is observational only — viewing it cannot approve, edit, deploy,
+        or change anything.
+    </p>
+
+    {# ---- OVERVIEW ---- #}
+    <section id="cr-overview" aria-labelledby="cr-overview-h" class="cr-section">
+        <h2 id="cr-overview-h" class="cr-h2">Overview</h2>
+        {% set ov = projection.overview %}
+        {% set gov = projection.governance %}
+        {% set build = projection.build_identity %}
+        {% set ra = projection.repository_activity %}
+        {% set drift = ra.drift %}
+
+        {# "Am I current?" at a glance: what's deployed, what's in the repo
+           right now, and whether those two agree. #}
+        <p class="cr-h3" style="margin:0 0 10px;">Is this current?</p>
+        <div class="cr-statusband" id="cr-statusband">
+            <div class="cr-statuscard">
+                <span class="cr-statuscard__label">Production</span>
+                <div class="cr-statuscard__body" id="cr-status-production">
+                    {% if build.status == 'ok' %}
+                        <span class="cr-mono cr-statuscard__commit">{{ build.commit }}</span>
+                        {% if build.environment == 'local_development' %}<span class="cr-tag">Local dev</span>{% endif %}
+                        <p class="cr-statuscard__detail">{{ build.subject or 'No commit subject recorded.' }}</p>
+                        {% if build.build_id %}<p class="cr-muted">Build {{ build.build_id }}</p>{% endif %}
+                    {% else %}
+                        <p class="cr-muted">Unknown — no deployment snapshot or local git found.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="cr-statuscard">
+                <span class="cr-statuscard__label">Repository <span id="cr-status-repository-freshness">{{ freshness_tier(ra.status, ra.fetched_at) }}</span></span>
+                <div class="cr-statuscard__body" id="cr-status-repository">
+                    {% if ra.status in ('ok', 'stale') %}
+                        {% set main_branch = ra.branches.items|selectattr('name', 'equalto', 'main')|first %}
+                        {% if main_branch %}<span class="cr-mono cr-statuscard__commit">{{ main_branch.commit }}</span>{% endif %}
+                        <p class="cr-statuscard__detail">{{ ra.prs_active.items|length }} active PR{{ 's' if ra.prs_active.items|length != 1 else '' }}</p>
+                        {% if ra.commits_main.items %}<p class="cr-muted">Latest commit {{ ra.commits_main.items[0].date }}</p>{% endif %}
+                    {% elif ra.status == 'not_configured' %}
+                        <p class="cr-muted">Not configured. <a href="https://dev.azure.com/peerslate19/portfolio-site/_git/portfolio-site?path=/docs/control-room/V2_LIVE_SYNC_SPEC.md" target="_blank" rel="noopener noreferrer" class="cr-source">Setup guide</a></p>
+                    {% else %}
+                        <p class="cr-muted">{{ ra.note or 'Unavailable.' }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="cr-statuscard" id="cr-status-drift-card">
+                <span class="cr-statuscard__label">Drift</span>
+                <div class="cr-statuscard__body" id="cr-status-drift">
+                    {% if drift.state == 'up_to_date' %}
+                        {{ pill('ok', 'Up to date') }}
+                    {% elif drift.state == 'behind' %}
+                        {{ pill('partial', 'Behind') }}
+                        <p class="cr-statuscard__detail">{{ drift.detail }}</p>
+                        {% if drift.pending_commits %}
+                        <ul class="cr-bullets cr-muted" style="margin-top:6px;">
+                            {% for c in drift.pending_commits[:3] %}<li>{{ c.subject or c.commit }}</li>{% endfor %}
+                        </ul>
+                        {% endif %}
+                    {% else %}
+                        {{ pill('unknown', 'Unknown') }}
+                        <p class="cr-muted">Needs both a deployment snapshot and live repository data.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if gov.status == 'unavailable' %}
+            <div class="cr-banner cr-banner--warn">
+                {{ pill('unavailable') }} The authority baseline could not be read
+                ({{ gov.source.path if gov.source }}). Overview figures are unavailable.
+            </div>
+        {% else %}
+        <div class="cr-stats">
+            <div class="cr-stat">
+                <span class="cr-stat__num">{{ value_or_unknown(ov.active_count) }}</span>
+                <span class="cr-stat__label">Active packages</span>
+            </div>
+            <div class="cr-stat">
+                <span class="cr-stat__num">{{ value_or_unknown(ov.completed_count) }}</span>
+                <span class="cr-stat__label">Completed packages</span>
+            </div>
+            <div class="cr-stat">
+                <span class="cr-stat__num">{{ value_or_unknown(ov.initiative_count) }}</span>
+                <span class="cr-stat__label">Initiative packages</span>
+            </div>
+            <div class="cr-stat">
+                <span class="cr-stat__num">{{ ov.holds|length }}</span>
+                <span class="cr-stat__label">On hold</span>
+            </div>
+        </div>
+
+        <div class="cr-grid cr-grid--2">
+            <div class="cr-card">
+                <h3 class="cr-h3">Authority</h3>
+                <dl class="cr-dl">
+                    <dt>Manager</dt><dd>{{ value_or_unknown(ov.manager) }}</dd>
+                    <dt>Bible</dt><dd>{% if ov.bible %}v{{ ov.bible.version }}{% else %}{{ value_or_unknown(none) }}{% endif %}</dd>
+                    <dt>Roadmap</dt><dd>{% if ov.roadmap %}v{{ ov.roadmap.version }}{% else %}{{ value_or_unknown(none) }}{% endif %}</dd>
+                    <dt>Production</dt><dd>{% if ov.production_url %}<a href="{{ ov.production_url }}" target="_blank" rel="noopener noreferrer">{{ ov.production_url }}</a>{% else %}{{ value_or_unknown(none) }}{% endif %}</dd>
+                </dl>
+                {{ source_ref(gov.source) }}
+            </div>
+            <div class="cr-card">
+                <h3 class="cr-h3">Attention <span class="cr-count">{{ ov.warnings|length }}</span></h3>
+                {% if ov.warnings %}
+                <ul class="cr-attention">
+                    {% for w in ov.warnings %}
+                    <li>{{ pill(w.status) }} <strong>{{ w.subject }}</strong> — {{ w.kind }}{% if w.detail %}<span class="cr-attention__detail">{{ w.detail }}</span>{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="cr-muted">No open blockers, gaps, or unavailable sources detected in the current records.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if ov.next_gate %}
+        <div class="cr-card cr-card--quiet">
+            <h3 class="cr-h3">Next gate</h3>
+            <p>{{ ov.next_gate }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+    </section>
+
+    {# ---- INITIATIVES ---- #}
+    <section id="cr-initiatives" aria-labelledby="cr-initiatives-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-initiatives-h" class="cr-h2">Initiatives</h2>
+            {{ freshness_deploy(build) }}
+            {{ source_ref(projection.initiatives.source) }}
+        </div>
+        <p class="cr-note">Select any initiative <strong>ID</strong> to read a plain-language description of what it is — its intended outcome, what "done" means, and what it deliberately excludes — drawn from that initiative's own record.</p>
+        {% if projection.initiatives.records %}
+        <div class="cr-filter">
+            <label for="cr-init-filter" class="cr-filter__label">Filter initiatives</label>
+            <input type="search" id="cr-init-filter" class="cr-filter__input"
+                   placeholder="Type an id, title, owner…" data-filter-target="cr-init-table"
+                   autocomplete="off">
+            <span class="cr-filter__count" data-filter-count="cr-init-table" aria-live="polite"></span>
+        </div>
+        <div class="cr-tablewrap">
+            <table class="cr-table" id="cr-init-table">
+                <caption class="cr-visually-hidden">Initiative packages with lifecycle state, owner, and source.</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">State</th>
+                        <th scope="col">Owner / lane</th>
+                        <th scope="col">Closeout</th>
+                        <th scope="col">Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for it in projection.initiatives.records %}
+                    <tr data-ts="{{ it.updated or '' }}">
+                        <th scope="row" class="cr-mono">
+                            <button type="button" class="cr-rowbtn" data-detail="cr-detail-{{ it.id }}" aria-haspopup="dialog">{{ it.id }}</button>
+                        </th>
+                        <td>{{ it.title }}<span class="cr-new-pill" hidden>New</span></td>
+                        <td>{{ lifecycle(it.status) }}</td>
+                        <td>
+                            {% if it.owner %}{{ it.owner }}{% if it.lane %} · {{ it.lane }}{% endif %}
+                            {% else %}<span class="cr-muted">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if it.has_completion_report %}{{ pill('ok', 'Report') }}
+                            {% else %}{{ pill('unknown', 'None') }}{% endif %}
+                        </td>
+                        <td>{{ source_ref(it.source) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="cr-banner">{{ pill(projection.initiatives.status) }} No initiative packages were found.</div>
+        {% endif %}
+    </section>
+
+    {# ---- DOCUMENTS ---- #}
+    <section id="cr-documents" aria-labelledby="cr-documents-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-documents-h" class="cr-h2">Documentation register</h2>
+            {{ freshness_deploy(build) }}
+            {{ source_ref(projection.documents.source) }}
+        </div>
+        {% if projection.documents.records %}
+        <div class="cr-filter">
+            <label for="cr-doc-filter" class="cr-filter__label">Filter documents</label>
+            <input type="search" id="cr-doc-filter" class="cr-filter__input"
+                   placeholder="Type a title or path…" data-filter-target="cr-doc-table"
+                   autocomplete="off">
+            <span class="cr-filter__count" data-filter-count="cr-doc-table" aria-live="polite"></span>
+        </div>
+        <div class="cr-tablewrap">
+            <table class="cr-table" id="cr-doc-table">
+                <caption class="cr-visually-hidden">Authoritative and supporting documents with type, authority, and last update.</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Document</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Authority</th>
+                        <th scope="col">Version</th>
+                        <th scope="col">Updated</th>
+                        <th scope="col">Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in projection.documents.records %}
+                    <tr>
+                        <th scope="row">{{ doc.title }}</th>
+                        <td>{{ doc.type }}</td>
+                        <td>
+                            {% if doc.authority == 'Superseded' %}{{ pill('stale', 'Superseded') }}
+                            {% elif doc.authority == 'Canonical' %}{{ pill('ok', 'Canonical') }}
+                            {% else %}<span class="cr-tag">{{ doc.authority }}</span>{% endif %}
+                        </td>
+                        <td>{% if doc.version %}v{{ doc.version }}{% else %}<span class="cr-muted">—</span>{% endif %}</td>
+                        <td>{% if doc.updated %}<time>{{ doc.updated }}</time>{% else %}<span class="cr-muted">Unknown</span>{% endif %}</td>
+                        <td>
+                            {% if doc.status == 'unavailable' %}{{ pill('unavailable', 'Missing') }}
+                            {% elif doc.link %}<a href="{{ doc.link }}" target="_blank" rel="noopener noreferrer" class="cr-source">{{ doc.path }}</a>
+                            {% elif doc.path %}<span class="cr-source">{{ doc.path }}</span>
+                            {% else %}<span class="cr-muted">—</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="cr-banner">{{ pill(projection.documents.status) }} No documents catalogued.</div>
+        {% endif %}
+    </section>
+
+    {# ---- DECISIONS ---- #}
+    <section id="cr-decisions" aria-labelledby="cr-decisions-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-decisions-h" class="cr-h2">Decisions</h2>
+            {{ freshness_deploy(build) }}
+            {{ source_ref(projection.decisions.source) }}
+        </div>
+        {% if projection.decisions.records %}
+        <ol class="cr-timeline">
+            {% for d in projection.decisions.records %}
+            <li class="cr-timeline__item" data-ts="{{ d.date or '' }}">
+                <div class="cr-timeline__meta">
+                    <time class="cr-timeline__date">{{ d.date or 'Undated' }}</time>
+                </div>
+                <div class="cr-timeline__body">
+                    <h3 class="cr-h3">{{ d.title }}<span class="cr-new-pill" hidden>New</span></h3>
+                    {% if d.points %}
+                    <ul class="cr-bullets">
+                        {% for p in d.points %}<li>{{ p }}</li>{% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <div class="cr-banner">{{ pill(projection.decisions.status) }} No decision records found.</div>
+        {% endif %}
+    </section>
+
+    {# ---- TRACEABILITY ---- #}
+    <section id="cr-traceability" aria-labelledby="cr-traceability-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-traceability-h" class="cr-h2">Traceability
+                {% if projection.traceability.partial %}<span class="cr-tag cr-tag--partial">Partial</span>{% endif %}
+            </h2>
+            {{ freshness_deploy(build) }}
+        </div>
+        {% if projection.traceability.note %}<p class="cr-note">{{ projection.traceability.note }}</p>{% endif %}
+        {% if projection.traceability.records %}
+        <ul class="cr-trace">
+            {% for t in projection.traceability.records %}
+            <li class="cr-trace__item">
+                {{ pill(t.status) }}
+                <div>
+                    <strong>{{ t.kind }}</strong>
+                    <span class="cr-mono">{{ t.subject }}</span>
+                    {% if t.detail %}<span class="cr-trace__detail">{{ t.detail }}</span>{% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="cr-muted">No traceability signals to report from the current records.</p>
+        {% endif %}
+    </section>
+
+    {# ---- DELIVERY HEALTH ---- #}
+    <section id="cr-delivery" aria-labelledby="cr-delivery-h" class="cr-section">
+        <h2 id="cr-delivery-h" class="cr-h2">Delivery health</h2>
+        <div class="cr-banner cr-banner--info">
+            {{ pill('unavailable', 'Live integration off') }}
+            {{ projection.delivery.live_integration_note }}
+        </div>
+        {% if projection.delivery.records %}
+        <div class="cr-grid cr-grid--2">
+            {% for r in projection.delivery.records %}
+            <div class="cr-card">
+                <h3 class="cr-h3">{{ r.label }}</h3>
+                <p class="cr-mono cr-break">{{ value_or_unknown(r.value) }}</p>
+                {% if r.detail %}<p class="cr-muted">{{ r.detail }}</p>{% endif %}
+                <div>{{ pill(r.status) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+
+    {# ---- REPOSITORY ACTIVITY (Tier 1: live Azure DevOps) ---- #}
+    <section id="cr-repo-activity" aria-labelledby="cr-repo-activity-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-repo-activity-h" class="cr-h2">Repository activity</h2>
+            <span id="cr-repo-activity-chip">{{ freshness_tier(ra.status, ra.fetched_at) }}</span>
+        </div>
+        <p class="cr-note">Live pushes, pull requests, and pipeline runs from Azure DevOps — separate from and ahead of whatever is currently deployed.</p>
+
+        <div id="cr-repo-activity-body">
+        {% if ra.status == 'not_configured' %}
+            <div class="cr-banner cr-banner--info">
+                {{ pill('unavailable', 'Not configured') }} {{ ra.note }}
+            </div>
+        {% elif ra.status == 'unavailable' %}
+            <div class="cr-banner cr-banner--warn">
+                {{ pill('unavailable') }} {{ ra.note }}
+            </div>
+        {% else %}
+            {% if ra.status == 'stale' %}
+            <div class="cr-banner cr-banner--warn">{{ pill('stale') }} {{ ra.note }}</div>
+            {% endif %}
+            <div class="cr-grid cr-grid--2">
+                <div class="cr-card">
+                    <h3 class="cr-h3">Active pull requests <span class="cr-count">{{ ra.prs_active.items|length }}</span></h3>
+                    {% if ra.prs_active.items %}
+                    <ul class="cr-activity-list">
+                        {% for pr in ra.prs_active.items %}
+                        <li data-ts="{{ pr.created or '' }}">
+                            <a href="{{ pr.link }}" target="_blank" rel="noopener noreferrer">#{{ pr.id }} {{ pr.title }}</a>
+                            <span class="cr-new-pill" hidden>New</span>
+                            <span class="cr-muted">{{ pr.source_branch }} → {{ pr.target_branch }} · {{ pr.author }} · {{ pr.created }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="cr-muted">No active pull requests.</p>
+                    {% endif %}
+                </div>
+                <div class="cr-card">
+                    <h3 class="cr-h3">Recently completed</h3>
+                    {% if ra.prs_completed.items %}
+                    <ul class="cr-activity-list">
+                        {% for pr in ra.prs_completed.items %}
+                        <li data-ts="{{ pr.closed or pr.created or '' }}">
+                            <a href="{{ pr.link }}" target="_blank" rel="noopener noreferrer">#{{ pr.id }} {{ pr.title }}</a>
+                            <span class="cr-new-pill" hidden>New</span>
+                            <span class="cr-muted">{{ pr.status }} · {{ pr.closed or pr.created }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="cr-muted">No recently completed pull requests.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="cr-grid cr-grid--2" style="margin-top:14px;">
+                <div class="cr-card">
+                    <h3 class="cr-h3">Branches</h3>
+                    {% if ra.branches.items %}
+                    <ul class="cr-activity-list">
+                        {% for b in ra.branches.items %}
+                        <li><span class="cr-tag">{{ b.name }}</span> <span class="cr-mono">{{ b.commit }}</span></li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="cr-muted">No branch data.</p>
+                    {% endif %}
+                </div>
+                <div class="cr-card">
+                    <h3 class="cr-h3">Recent pipeline runs</h3>
+                    {% if ra.pipeline_runs.items %}
+                    <ul class="cr-activity-list">
+                        {% for run in ra.pipeline_runs.items %}
+                        <li>
+                            {% if run.link %}<a href="{{ run.link }}" target="_blank" rel="noopener noreferrer">Build {{ run.build_number or run.id }}</a>{% else %}Build {{ run.build_number or run.id }}{% endif %}
+                            {{ pill('ok' if run.result == 'succeeded' else ('failed' if run.result == 'failed' else 'unknown'), run.result or run.status) }}
+                            <span class="cr-muted cr-mono">{{ run.commit }}</span>
+                            <span class="cr-muted">{{ run.finished }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="cr-muted">No pipeline run data.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    </section>
+
+    {# ---- RECENT CHANGES ---- #}
+    <section id="cr-changes" aria-labelledby="cr-changes-h" class="cr-section">
+        <div class="cr-section__head">
+            <h2 id="cr-changes-h" class="cr-h2">Recent changes</h2>
+            {% if projection.recent_changes.tier == 'live_git' %}
+                <span class="cr-freshness"><span class="cr-freshness__dot" aria-hidden="true"></span>Live git</span>
+            {% elif projection.recent_changes.tier == 'build_snapshot' %}
+                {{ freshness_deploy(build) }}
+            {% endif %}
+        </div>
+        {% if projection.recent_changes.status == 'ok' %}
+        <div class="cr-tablewrap">
+            <table class="cr-table">
+                <caption class="cr-visually-hidden">Recent version-control changes.</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Commit</th>
+                        <th scope="col">Author</th>
+                        <th scope="col">Subject</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in projection.recent_changes.records %}
+                    <tr>
+                        <td><time>{{ c.date }}</time></td>
+                        <td class="cr-mono">{{ c.commit }}</td>
+                        <td>{{ c.author }}</td>
+                        <td>{{ c.subject }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="cr-banner cr-banner--info">
+            {{ pill('unavailable') }} {{ projection.recent_changes.note }}
+        </div>
+        {% endif %}
+    </section>
+
+    <footer class="cr-footer">
+        <p>
+            PeerSlate Control Room · owner-only · read-only projection of repository truth.
+            Generated <time>{{ projection.generated_at }}</time>. It does not modify project state.
+        </p>
+    </footer>
+</main>
+
+{# Hidden detail store: each initiative's plain-language detail, rendered
+   server-side (autoescaped) once. The modal reads from here on demand, so no
+   detail endpoint exists and no request input ever becomes a file path. #}
+<div id="cr-detail-store" hidden aria-hidden="true">
+    {% for id, d in initiative_details.items() %}
+    <div id="cr-detail-{{ id }}" data-title="{{ id }} · {{ d.title }}">
+        <div class="cr-detail-meta">
+            {{ lifecycle(d.status) }}
+            {% if d.owner %}<span class="cr-tag">{{ d.owner }}{% if d.lane %} · {{ d.lane }}{% endif %}</span>{% endif %}
+            {% if d.has_completion_report %}{{ pill('ok', 'Closeout report on file') }}{% else %}{{ pill('unknown', 'No closeout report') }}{% endif %}
+        </div>
+        {% if not d.has_readme %}
+        <p class="cr-muted">This initiative folder exists but has no <code>README.md</code> yet, so there is no recorded description to show. When its README lands, the full detail will appear here automatically.</p>
+        {% else %}
+            {% if d.summary_blocks %}
+            <div class="cr-detail-summary">{{ render_blocks(d.summary_blocks) }}</div>
+            {% endif %}
+            {% for sec in d.sections %}
+            <section class="cr-detail-section">
+                <h3>{{ sec.heading }}</h3>
+                {{ render_blocks(sec.blocks) }}
+            </section>
+            {% endfor %}
+        {% endif %}
+        <p class="cr-detail-source">
+            Read the complete source:
+            {% if d.source.link %}<a href="{{ d.source.link }}" target="_blank" rel="noopener noreferrer">{{ d.source.path }}</a>{% else %}<span class="cr-mono">{{ d.source.path }}</span>{% endif %}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+
+{# Detail pop-out. A body-level dialog so it layers above the sticky topbar
+   regardless of any ancestor stacking context. #}
+<div id="cr-modal" class="cr-modal" role="dialog" aria-modal="true" aria-labelledby="cr-modal-title" hidden>
+    <div class="cr-modal__backdrop" data-modal-close></div>
+    <div class="cr-modal__dialog" role="document">
+        <div class="cr-modal__head">
+            <h2 class="cr-modal__title" id="cr-modal-title">Initiative detail</h2>
+            <button type="button" class="cr-modal__close" data-modal-close aria-label="Close detail">×</button>
+        </div>
+        <div class="cr-modal__body" id="cr-modal-body" tabindex="-1"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/control-room.js') }}?v=cr-2" defer></script>
+</body>
+</html>

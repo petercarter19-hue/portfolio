@@ -36,6 +36,13 @@ stages:
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
 
+          - script: python scripts/generate_control_room_snapshot.py
+            displayName: Generate Control Room snapshot
+            env:
+              BUILD_BUILDID: $(Build.BuildId)
+              BUILD_SOURCEVERSION: $(Build.SourceVersion)
+              BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(System.DefaultWorkingDirectory)'

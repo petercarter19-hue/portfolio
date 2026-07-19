@@ -47,3 +47,8 @@ tmp/
 
 # Stray sandbox test artifact (safe to delete)
 .__cptest
+
+# Control Room build-time snapshot: generated fresh by the Azure pipeline
+# (scripts/generate_control_room_snapshot.py) before packaging. Never commit
+# the generated file itself; only the generator script is tracked.
+control_room_snapshot.json

@@ -20,6 +20,7 @@ from db import get_connection, fetch_all_result_sets
 from identity import AuthenticationRequired, get_current_identity
 from auth_routes import auth
 from owner_routes import owner
+from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from services.people_interests_feed import (
@@ -103,6 +104,22 @@ app.config.update(
         'PEERSLATE_AUTH_PROVIDER_NAME', 'aad'
     ),
     PEERSLATE_AUTH_HEADER_MAX_LENGTH=65536,
+    # Site-owner allowlist for the owner-only Control Room (owner_authorization
+    # .py). Comma/space separated. Values are configured per environment and are
+    # never hardcoded here. Empty => the Control Room is inaccessible to everyone
+    # (fail-closed). Emails match the server-resolved identity email
+    # case-insensitively; user keys match the opaque identity.user_key exactly.
+    PEERSLATE_OWNER_EMAILS=os.environ.get('PEERSLATE_OWNER_EMAILS', ''),
+    PEERSLATE_OWNER_USER_KEYS=os.environ.get('PEERSLATE_OWNER_USER_KEYS', ''),
+    # Control Room Tier 1 (services/azure_devops_read.py): optional, read-only
+    # live Azure DevOps sync. All four must be set to activate it; any one
+    # missing => the dashboard truthfully reports "not configured". The PAT
+    # needs only Code (Read) + Build (Read) scopes and is set by Pete directly
+    # in the environment — never requested, read, or handled by an agent.
+    PEERSLATE_ADO_ORG_URL=os.environ.get('PEERSLATE_ADO_ORG_URL', ''),
+    PEERSLATE_ADO_PROJECT=os.environ.get('PEERSLATE_ADO_PROJECT', ''),
+    PEERSLATE_ADO_REPO=os.environ.get('PEERSLATE_ADO_REPO', ''),
+    PEERSLATE_ADO_READ_PAT=os.environ.get('PEERSLATE_ADO_READ_PAT', ''),
 )
 
 # MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
@@ -118,6 +135,7 @@ limiter = Limiter(
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app.register_blueprint(auth)
 app.register_blueprint(owner)
+app.register_blueprint(control_room)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
 
