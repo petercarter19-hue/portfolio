@@ -156,6 +156,261 @@
     justify-self: start;
 }
 
+.owner-app [hidden] {
+    display: none !important;
+}
+
+.owner-app__capture-methods {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 2rem;
+    padding: 0.35rem;
+    border: 1px solid rgba(32, 55, 103, 0.2);
+    border-radius: 999px;
+    background: rgba(32, 55, 103, 0.05);
+}
+
+.owner-app__method {
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #203767;
+    font: 800 0.9rem/1 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__method[aria-pressed="true"] {
+    background: #203767;
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(19, 36, 71, 0.18);
+}
+
+.owner-app__voice,
+.owner-app__voice-review {
+    margin-top: 2rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border: 1px solid rgba(32, 55, 103, 0.18);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 92% 8%, rgba(184, 121, 0, 0.13), transparent 15rem),
+        #fff;
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__voice h2,
+.owner-app__voice-review h2 {
+    margin: 0;
+    color: #132447;
+    font: 650 clamp(1.55rem, 4vw, 2.25rem)/1.1 Newsreader, serif;
+}
+
+.owner-app__voice > p,
+.owner-app__voice-review > p,
+.owner-app__voice-provider p {
+    max-width: 64ch;
+    margin: 0.8rem 0 0;
+    color: #526078;
+    font: 400 0.96rem/1.65 Inter, sans-serif;
+}
+
+.owner-app__voice-limits {
+    padding-left: 0.85rem;
+    border-left: 3px solid #b87900;
+}
+
+.owner-app__voice-stage {
+    display: grid;
+    place-items: center;
+    gap: 0.8rem;
+    min-height: 11rem;
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(184, 121, 0, 0.28), transparent 58%),
+        #132447;
+    color: #fff;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.owner-app__voice-stage > p {
+    max-width: 34ch;
+    margin: 0;
+    color: #fff;
+    font: 600 1.12rem/1.4 Newsreader, serif;
+}
+
+.owner-app__voice-wave {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.16rem, 0.6vw, 0.35rem);
+    width: min(100%, 31rem);
+    height: 4.5rem;
+}
+
+.owner-app__voice-wave span {
+    width: clamp(2px, 0.45vw, 4px);
+    height: var(--voice-bar-height);
+    min-height: 0.35rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #f4e4b4, #d29a25);
+    opacity: 0.72;
+    transform-origin: center;
+}
+
+.owner-app__voice[data-voice-state="requesting"] .owner-app__voice-wave span,
+.owner-app__voice[data-voice-state="processing"] .owner-app__voice-wave span {
+    animation: owner-voice-breathe 1.3s ease-in-out infinite alternate;
+    animation-delay: -0.35s;
+}
+
+.owner-app__voice[data-voice-state="recording"] .owner-app__voice-wave span {
+    opacity: 1;
+    animation: owner-voice-listening 0.72s ease-in-out infinite alternate;
+    animation-delay: -0.22s;
+}
+
+.owner-app__voice-wave span:nth-child(2n) {
+    animation-delay: -0.48s !important;
+}
+
+.owner-app__voice-wave span:nth-child(3n) {
+    animation-delay: -0.1s !important;
+}
+
+@keyframes owner-voice-breathe {
+    to { opacity: 1; }
+}
+
+@keyframes owner-voice-listening {
+    to { transform: scaleY(0.42); }
+}
+
+.owner-app__voice-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+}
+
+.owner-app__voice-controls button:disabled,
+.owner-app__voice-review button:disabled {
+    cursor: not-allowed;
+    opacity: 0.52;
+}
+
+.owner-app__voice-timer {
+    color: #132447 !important;
+    font-weight: 800 !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.owner-app__voice-stage .owner-app__voice-timer {
+    color: #f4e4b4 !important;
+    font: 800 0.9rem/1 Inter, sans-serif;
+}
+
+.owner-app__voice-status {
+    min-height: 2.75rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    background: rgba(32, 55, 103, 0.07);
+    color: #132447 !important;
+    font-weight: 700 !important;
+}
+
+.owner-app__voice-status--error {
+    border: 1px solid rgba(132, 45, 45, 0.28);
+    background: rgba(132, 45, 45, 0.07);
+    color: #842d2d !important;
+}
+
+.owner-app__voice-review audio {
+    width: 100%;
+    margin-top: 1.25rem;
+}
+
+.owner-app__voice-review form {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 1.25rem;
+}
+
+.owner-app__voice-review form > label,
+.owner-app__voice-confirm {
+    color: #132447;
+    font: 800 0.9rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__voice-review textarea {
+    width: 100%;
+    min-height: 15rem;
+    padding: 1rem;
+    resize: vertical;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 14px;
+    background: #fff;
+    color: #141a28;
+    font: 400 1rem/1.65 Inter, sans-serif;
+}
+
+.owner-app__voice-review textarea:focus-visible,
+.owner-app__voice-confirm input:focus-visible {
+    outline: 3px solid #2f5296;
+    outline-offset: 3px;
+}
+
+.owner-app__voice-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.owner-app__voice-confirm input {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.18rem;
+    accent-color: #203767;
+}
+
+.owner-app__voice-review form .owner-app__primary {
+    justify-self: start;
+}
+
+.owner-app__voice-provider {
+    margin-top: 1.25rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(184, 121, 0, 0.3);
+    border-radius: 14px;
+    background: #fffaf0;
+}
+
+.owner-app__voice-provider summary {
+    min-height: 44px;
+    color: #8a5a00;
+    font: 800 0.9rem/1.4 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__voice-provider blockquote {
+    margin: 0.8rem 0 0;
+    padding: 0.9rem 1rem;
+    border-left: 3px solid #b87900;
+    background: #fff;
+    color: #141a28;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: 400 1rem/1.65 Inter, sans-serif;
+}
+
 .owner-app__captures {
     margin-top: 3rem;
     padding-top: 2rem;
@@ -682,6 +937,14 @@
         width: 100%;
     }
 
+    .owner-app__capture-methods,
+    .owner-app__method,
+    .owner-app__voice-controls,
+    .owner-app__voice-controls button,
+    .owner-app__voice-review form .owner-app__primary {
+        width: 100%;
+    }
+
     .owner-app__capture-moment .owner-app__secondary {
         width: 100%;
     }
@@ -711,5 +974,9 @@
     .owner-app *::before,
     .owner-app *::after {
         scroll-behavior: auto !important;
+    }
+
+    .owner-app__voice-wave span {
+        animation: none !important;
     }
 }

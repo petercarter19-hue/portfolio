@@ -69,6 +69,24 @@ class DatabaseServiceTests(unittest.TestCase):
 
         self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
 
+    def test_voice_procedures_are_explicitly_allowlisted(self):
+        expected = {
+            "usp_CreateVoiceDraft",
+            "usp_FailVoiceUpload",
+            "usp_QueueVoiceTranscription",
+            "usp_MarkVoiceTranscriptionProcessing",
+            "usp_CompleteVoiceTranscription",
+            "usp_FailVoiceTranscription",
+            "usp_GetVoiceDraftForOwner",
+            "usp_GetVoiceMediaForOwner",
+            "usp_ConfirmVoiceCapture",
+            "usp_BeginVoiceDraftDeletion",
+            "usp_FinalizeVoiceDraftDeletion",
+            "usp_FinalizeVoiceCaptureDeletion",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+
 
 if __name__ == "__main__":
     unittest.main()
