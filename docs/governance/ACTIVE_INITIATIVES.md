@@ -52,6 +52,17 @@ new package and branch.
 - Claude Co-Work receives the durable review as designated manager and sends
   the accepted package to Claude Code for feasibility. No implementation branch
   until feasibility and Pete/designated-manager visual approval pass.
+- The real Studio is upstream of the homepage walkthrough. After design
+  approval, Claude Code records the real Studio implementation architecture,
+  implements/self-reviews it on a fresh branch, and returns focused visual and
+  technical evidence for acceptance. Azure release and live verification of the
+  real Studio must pass before the demo branch resumes.
+- Homepage demo checkpoint `work/2026-07-19-home-interview-demo-001` at observed
+  clean pushed SHA `358e7eea304a2b4d4008031ea8f51c523380ee4f` is a parked
+  interaction prototype. It is not accepted, merged, deployed, or live. Preserve
+  its modal/accessibility/static-demo shell, then converge it on the exact
+  released 5A/5C Studio in a separate branch closeout. Do not release its stale
+  paper-light dark treatment or Voice-first framing.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
 ### PS-CAPTURE-MEDIA-001 - Claude Co-Work manager-planning lane

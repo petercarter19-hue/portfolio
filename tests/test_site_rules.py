@@ -107,6 +107,40 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn('Claude Co-Work', content)
         self.assertIn('designated session manager', content)
 
+    def test_interview_demo_is_downstream_of_released_studio(self):
+        package = os.path.join(
+            ROOT,
+            'docs',
+            'initiatives',
+            'PS-INTERVIEW-PUBLIC-GATE-001')
+        convergence_path = os.path.join(
+            package,
+            '10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md')
+        self.assertTrue(os.path.isfile(convergence_path), convergence_path)
+
+        convergence = _read(convergence_path)
+        normalized_convergence = ' '.join(convergence.split())
+        readme = _read(os.path.join(package, 'README.md'))
+        visual_standard = _read(os.path.join(
+            ROOT, 'docs', 'governance',
+            'OWNER_VISUAL_INTEGRITY_STANDARD.md'))
+
+        self.assertIn(
+            'The walkthrough is not a second visual authority',
+            normalized_convergence)
+        self.assertIn(
+            'verified live before demo convergence begins',
+            normalized_convergence)
+        self.assertIn(
+            'Written practice is primary in both real product and demo',
+            normalized_convergence)
+        self.assertIn(
+            'no network, API, input, storage', normalized_convergence)
+        self.assertIn(
+            '10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md', readme)
+        self.assertIn(
+            'upstream authority for that walkthrough', visual_standard)
+
 
 class NavigationLanguageTests(unittest.TestCase):
     """PS-BRAND-NAV-001: Evidence and About stay out of the navigation."""

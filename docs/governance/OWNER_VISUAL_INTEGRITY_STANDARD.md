@@ -146,6 +146,16 @@ functional status and visual status separately.
   walkthrough. That decision supersedes the earlier worked-example exclusion
   only for a future homepage demonstration package; it does not replace the
   interactive public Studio or authorize a homepage edit in the current package.
+- The real public Studio is the upstream authority for that walkthrough. The
+  walkthrough is a later static, no-side-effect projection of the accepted and
+  live Studio, not a parallel design authority. It must use the real Studio's
+  5A-light/5C-dark composition, written-practice-first hierarchy, product names,
+  and truth labels. A pre-existing walkthrough prototype must be held and
+  converged after the real Studio release rather than merged with stale visuals
+  or Voice-first framing.
+- Real Studio implementation and homepage-demo implementation require separate
+  visual acceptance, Azure release, and live verification evidence. A demo may
+  never be used to claim that the real Studio is implemented or deployed.
 - The future authenticated owner Studio remains a separate package after
   authenticated routes, identity, persistence, and authorization exist. The
   current public dark theme does not simulate or pre-authorize it.
@@ -153,10 +163,11 @@ functional status and visual status separately.
 ### Homepage boundary
 
 The current homepage as a whole is not an approved quality baseline. The
-specifically accepted Voice walkthrough is a binding minimum for Voice Capture,
-and the future Interview walkthrough will receive its own authority. A broader
-homepage redesign remains a separate later initiative and must meet this same
-standard across the entire page.
+specifically accepted Voice walkthrough is a binding minimum for Voice Capture.
+The future Interview walkthrough is governed by the accepted real Studio and
+receives its own focused acceptance only after that Studio is released. A
+broader homepage redesign remains a separate later initiative and must meet this
+same standard across the entire page.
 
 ### Member-directed My Story composition
 

@@ -1,6 +1,6 @@
 # PeerSlate current authority record
-# Updated for the completed Voice release and Interview Studio Image 5
-# 5A-light/5C-dark owner authority on 2026-07-19.
+# Updated for the completed Voice release, Interview Studio Image 5
+# 5A-light/5C-dark owner authority, and real-Studio-first demo convergence.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-19"
@@ -118,7 +118,7 @@ active_packages:
     owner: "Claude Co-Work designated session manager; implementation writer unassigned"
     lane: capture_media_manager_planning
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
-next_gate: "The Codex Interview session records and reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. Claude Code implementation remains blocked until Claude/Fable feasibility and Pete/designated-manager approval. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
+next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before the parked homepage demo branch may resume and converge on that exact released 5A/5C product in a separate closeout. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

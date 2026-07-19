@@ -113,7 +113,15 @@ active independently. The Voice correction lane is closed:
    package, review it on a clean design-review branch, and return a `Pass`,
    `Conditional`, or `Fail` report to Claude Co-Work. It does not implement the
    Studio.
-2. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
+2. **Interview homepage demo - parked dependent prototype:** Claude's clean
+   pushed `work/2026-07-19-home-interview-demo-001` checkpoint was observed at
+   `358e7eea304a2b4d4008031ea8f51c523380ee4f`. Its modal, static-state,
+   accessibility, responsive, and no-JavaScript work is reusable, but its
+   paper-light dark treatment and Voice-first framing predate the controlling
+   5A/5C and written-practice decisions. It is not accepted, merged, deployed,
+   or live. Hold it until the real Studio is accepted, implemented, released,
+   and verified live; then converge it in a separate demo closeout.
+3. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
    session manager for requirements, architecture, decomposition, and writer
    allocation. No authoritative Azure implementation branch was observed at
    activation, so Capture Media is not implemented, deployed, or live.
@@ -130,7 +138,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio | Complete the dual-theme nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
+| Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; homepage demo is a parked prototype only | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the homepage demo |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
@@ -177,6 +185,11 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   remains blocked until the complete dual-theme Gate 2.4 design set,
   truth/accessibility review, Claude/Fable feasibility, and Pete/manager visual
   approval pass.
+- The homepage Interview walkthrough is downstream of the real Studio. Its
+  current branch is a prototype, not a release. It must remain static and
+  no-side-effect, but its light/dark composition, written-practice hierarchy,
+  product labels, truth, and mapped states must converge on the exact accepted
+  and live Studio before it can receive separate visual acceptance and release.
 - The current homepage overall is not an approved final visual baseline; its
   broader redesign remains a separate later initiative.
 

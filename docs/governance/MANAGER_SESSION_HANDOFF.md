@@ -180,9 +180,10 @@ editable responsive source, mobile portrait/landscape, 200% reflow, keyboard
 focus, reduced motion, long content, failure and media-denied states, component
 inventory, theme persistence/no-state-loss, truth/accessibility review, and
 implementation mapping. It should
-also design a separate homepage Interview Studio walkthrough using Direction A.
-That homepage walkthrough is illustrative only and belongs to a later separate
-package/branch; it must not replace the real public Studio.
+also review the relationship to the separate homepage Interview Studio
+walkthrough. That homepage walkthrough is illustrative only, belongs to a later
+separate closeout, and must not replace or visually diverge from the real public
+Studio.
 
 The Codex session creates a clean review branch, records the package matrix,
 truth/accessibility review, implementation mapping, and `Pass`, `Conditional`,
@@ -195,7 +196,24 @@ Then:
    package manager.
 2. Claude Code/Fable performs feasibility review only.
 3. Pete and the designated manager approve the final visual baseline.
-4. Only then may Claude receive implementation authorization on a fresh branch.
+4. Only then may Claude receive real Studio implementation authorization on a
+   fresh branch. Claude records the implementation architecture first, then
+   self-manages implementation, tests, evidence, and `Pass` review.
+5. Pete and the manager accept the real implementation and visuals; Azure PR,
+   pipeline, and live verification close the real Studio release.
+6. Only after that live verification may Claude resume and converge the parked
+   homepage walkthrough on the exact released 5A/5C Studio. The demo receives
+   separate acceptance, Azure release, and live homepage verification.
+
+The currently observed clean pushed homepage prototype is
+`work/2026-07-19-home-interview-demo-001` at
+`358e7eea304a2b4d4008031ea8f51c523380ee4f`. It preserves useful modal,
+responsive, accessibility, no-JavaScript, and static-state work, but its
+paper-light dark modal and Voice-first copy are stale. It is not accepted,
+merged, deployed, or live. Claude should push any newer in-scope checkpoint,
+report its exact SHA, and pause the branch. File
+`10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` contains the definitive
+real-Studio and demo instructions.
 
 Do not authorize Claude implementation from the three-direction art package
 alone.

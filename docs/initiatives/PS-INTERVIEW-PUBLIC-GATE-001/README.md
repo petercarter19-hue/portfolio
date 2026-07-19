@@ -38,6 +38,14 @@ dark. It supersedes the earlier assumption that the dark expression must wait
 for an authenticated Studio. Fable/Claude's next task remains design and
 feasibility only; it does not authorize implementation.
 
+The real-Studio-first implementation and homepage-walkthrough sequence is in
+[10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md](10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md).
+The real Studio is upstream visual/product authority. The current homepage demo
+branch is a parked interaction prototype and must not merge or deploy until the
+real Studio design is accepted, implemented, released through Azure, and
+verified live. The demo then converges on that exact released product in a
+separate closeout.
+
 Pete may now open a new Codex session and upload the complete Gate 2.4 package.
 That session follows [07_GATE_24_SESSION_REVIEW.md](07_GATE_24_SESSION_REVIEW.md),
 reviews only, commits a durable `Pass`/`Conditional`/`Fail` result, and gives
@@ -87,6 +95,9 @@ If implementation requires another file, stop and ask the manager to reserve it 
 
 ## Required reading
 
-Follow `START_HERE.md`, then read the current governance records, Document Control, Bible/Roadmap/Sync Standard, `docs/PEERSLATE_SITE_RULES.md`, PS-INTERVIEW-002, [route and truth boundary](01_BOUNDARY_CONTRACT.md), [experience/accessibility contract](02_EXPERIENCE_ACCESSIBILITY.md), [validation plan](03_VALIDATION_PLAN.md), [implementation sequence](04_IMPLEMENTATION_PLAN.md), [owner-approved design scope](05_OWNER_APPROVED_DESIGN_SCOPE.md), [Fable design brief](06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md), [Gate 2.4 review contract](07_GATE_24_SESSION_REVIEW.md), and [dual-theme visual authority and Claude brief](09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md).
+Follow `START_HERE.md`, then read the current governance records, Document Control, Bible/Roadmap/Sync Standard, `docs/PEERSLATE_SITE_RULES.md`, PS-INTERVIEW-002, [route and truth boundary](01_BOUNDARY_CONTRACT.md), [experience/accessibility contract](02_EXPERIENCE_ACCESSIBILITY.md), [validation plan](03_VALIDATION_PLAN.md), [implementation sequence](04_IMPLEMENTATION_PLAN.md), [owner-approved design scope](05_OWNER_APPROVED_DESIGN_SCOPE.md), [Fable design brief](06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md), [Gate 2.4 review contract](07_GATE_24_SESSION_REVIEW.md), [dual-theme visual authority and Claude brief](09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md), and [real Studio/demo convergence sequence](10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md).
 
 Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` and the exact branch plus full commit SHA.
+
+The manager record for the real-Studio/demo sequencing update is
+[10_CONVERGENCE_MANAGER_COMPLETION_REPORT.md](10_CONVERGENCE_MANAGER_COMPLETION_REPORT.md).

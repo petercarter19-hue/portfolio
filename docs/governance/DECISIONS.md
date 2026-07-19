@@ -207,3 +207,26 @@ This is an append-only operational decision record. The current Bible and Roadma
   banked for a future authenticated Studio. It does not authorize product code.
   Claude/Fable feasibility plus Pete and designated-manager visual approval
   must pass before a fresh implementation branch may start.
+
+## 2026-07-19 - Make the homepage Interview walkthrough a downstream projection
+
+- Owner decision: finish and approve the real 5A-light/5C-dark Studio first;
+  then architecture, implement, accept, release, and verify that real Studio;
+  only then converge the separate homepage walkthrough on the exact released
+  product.
+- The real `/interview-studio` is the upstream visual and product authority.
+  The homepage walkthrough is a short static projection, not a co-authority or
+  substitute for the product.
+- The observed clean pushed demo branch
+  `work/2026-07-19-home-interview-demo-001` at
+  `358e7eea304a2b4d4008031ea8f51c523380ee4f` is a parked interaction
+  prototype. Preserve its modal, responsive/accessibility, no-JavaScript, and
+  no-side-effect shell. Do not merge or deploy its stale paper-light dark
+  treatment or Voice-first product framing.
+- The converged demo must map each fixed step to an exact released real-Studio
+  state, express 5A in light and 5C in dark, keep written Interview Me primary,
+  and remain static with no network, storage, microphone, camera, or real
+  coaching behavior.
+- Real Studio implementation and demo implementation require separate exact
+  branch/SHA, Pete/manager visual acceptance, Azure PR, squash-merge SHA,
+  pipeline, and live verification evidence.
