@@ -43,7 +43,7 @@ The file lists below are **potential reservations**, not permission to edit now.
 
 **Must not reserve/edit:** Voice, Capture Media, Interview, Story, Feed, Community, global navigation/theme, public fixture templates, or `identity.py` absent a separately approved identity defect.
 
-**Acceptance:** `owner-home.v1`; 3-review/9-object/64-KiB limits; owner-before-query; two-owner canaries; no N+1; SQL apply/verify/rollback/reapply; partial failure; default-off flag; full regression.
+**Acceptance:** `owner-home.v1`; 3-review/9-object/64-KiB limits; owner-before-query; two-owner canaries; no N+1; SQL apply/verify/rollback/reapply; partial failure; server-owned `coming_later` availability with no data query; default-off flag; full regression.
 
 ## Package 2 - `PS-HOME-FRONTEND-001`: finite Owner Home experience
 
@@ -65,7 +65,7 @@ The file lists below are **potential reservations**, not permission to edit now.
 
 **Intersections requiring coordination:** `owner_routes.py` and `tests/test_owner_home.py` overlap Package 1; therefore no concurrent branches. Avoid `base.html`, `style.css`, `owner-app.css`, `mobile-nav.js`, and global theme/navigation unless the approved design cannot be delivered without them and ChatGPT Work explicitly expands reservations.
 
-**Acceptance:** Recognizable match/exceed approved boards, one dominant Capture action, all finite/empty/loading/failure/stale states, 320-pixel reflow, 200% zoom, keyboard/NVDA/forced colors/reduced motion, Pete and Danielle founding-alpha, screenshots, no fixture/simulated capability.
+**Acceptance:** Recognizable match/exceed approved boards, one dominant Capture action, all finite/empty/loading/failure/stale states, and approved future insight/connection/viewer silhouettes shown now as polished, disabled, visibly labeled **Coming later** capability previews following the Voice pattern. At 320-pixel reflow, 200% zoom, keyboard/NVDA/forced colors/reduced motion, the previews remain understandable and issue no request. Pete and Danielle founding-alpha, screenshots, and no fixture/simulated data are required.
 
 **First vertical slice release gate:** Packages 1 and 2 merged, default-off deployment verified, Pete/ChatGPT Work visual acceptance recorded, then alpha flag enabled. Insight and connection may remain truthfully absent.
 
@@ -154,7 +154,7 @@ The file lists below are **potential reservations**, not permission to edit now.
 
 **Avoid by default:** `base.html`, `style.css`, `mobile-nav.js`, `theme-toggle.js`, existing Story/resume/Slate Board templates/scripts/styles. If a shared primitive truly needs change, ChatGPT Work assigns a separate shared-shell package rather than silently widening this branch.
 
-**Acceptance:** no owner controls/private fields in viewer DOM; exact context labels; restricted/revoked content clearing; complete desktop/mobile/keyboard/NVDA/zoom/forced-color/reduced-motion states; preview/live equivalence; Pete and Danielle acceptance per mode.
+**Acceptance:** no owner controls/private fields in viewer DOM; exact context labels; not-yet-active viewer modes remain visible as disabled **Coming later** previews without sample content or routes; restricted/revoked content clearing; complete desktop/mobile/keyboard/NVDA/zoom/forced-color/reduced-motion states; preview/live equivalence for activated modes; Pete and Danielle acceptance per mode.
 
 ## Merge and release order
 

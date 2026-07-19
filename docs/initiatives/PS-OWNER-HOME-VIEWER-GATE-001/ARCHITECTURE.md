@@ -21,6 +21,7 @@ Both reuse the current identity boundary and canonical Capture/Moment/Placement 
 - Finite by contract. Counts and response sizes are enforced server-side.
 - Failure closes access. No fixture, stale payload, broader audience, or last-known private response is a fallback.
 - Owner settings change defaults prospectively unless an explicit impact review says otherwise; they never silently republish existing content.
+- Approved future capabilities remain visible through the Voice-style capability-preview pattern: production-quality silhouette, genuinely disabled control, visible **Coming later** label, no fabricated payload, and no client-side activation.
 
 ## Route boundary
 
@@ -94,11 +95,19 @@ It proves the requester owns the subject, then calls `ViewerContextResolver` wit
 
 Separate explicit serializers produce `owner-home.v1` and `slate-projection.v1`. They use allowlisted fields and fail closed on an unexpected field/category. Templates receive view models, not database rows. Capability flags are computed server-side from context and purpose.
 
+### Capability-preview registry
+
+Future Home/viewer features selected for the approved composition are rendered before activation from a small versioned registry owned by the release package. Each entry contains only an allowlisted capability key, approved display label, `state = coming_later`, concise future-purpose copy, and optional documentation destination. It contains no actor/subject selector, member content, record count, result, grant, or authorization claim.
+
+The registry follows the accepted Voice pattern. Its frontend map is presentational only. Native disabled/`aria-disabled` controls remain outside forms and make no API request. A browser flag, DOM edit, or query parameter cannot turn the capability on. Moving from `coming_later` to `available` requires the real route/service, server feature flag, authorization/lifecycle tests, deployment proof, and owner/manager acceptance.
+
 ## View models
 
 ### `OwnerHomeViewModel`
 
 Required top-level fields and maxima are defined in FINITE_HOME_CONTRACT.md. Every object uses opaque external keys and a bounded summary. `state_version` changes when any selected owner-state input changes. The endpoint rejects a serialized body larger than 64 KiB and records a safe contract-violation metric without logging content.
+
+The `availability` map may identify an approved category as `coming_later`. That value causes the frontend to render the category's disabled capability preview in the same one-slot budget. It never causes a category data query and never carries sample content.
 
 ### `SlateProjectionViewModel`
 

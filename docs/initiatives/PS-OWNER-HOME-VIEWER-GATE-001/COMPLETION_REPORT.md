@@ -5,8 +5,8 @@
 - Package: PS-OWNER-HOME-VIEWER-GATE-001
 - Status: Complete (planning deliverables); implementation gate Conditional
 - Branch and commit: `work/2026-07-19-owner-home-viewer-architecture`; exact commit is the commit containing this report and is recorded in the external handoff because a commit cannot contain its own SHA
-- Origin/main base: `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f`
-- PR / pipeline / environment: No PR or deployment requested for this planning branch. Existing Azure pipeline 112 / build `20260719.20` succeeded for the exact base SHA.
+- Origin/main base: original package base `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f`; owner-instruction update synchronized through current `origin/main` at `5cc5b69346ee354bcc36248f7ee5724ce13c9d08`
+- PR / pipeline / environment: No PR or deployment requested for this planning branch. Azure pipeline 112 / `20260719.20` succeeded for the original base. Voice application commit `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82` passed Build and Deploy in pipeline 113 / `20260719.21`; current `origin/main` `5cc5b69346ee354bcc36248f7ee5724ce13c9d08` is the later governance closeout and records that released behavior.
 - Production state: No change. This branch changes documentation only and does not deploy.
 - Visual authority and status: Current Bible v2.5/Roadmap v2.4 and the owner-approved July 18 Owner Home plus Journal/My Slate boards were audited as truth inputs; future production-intent Home/viewer implementation design is Not Started by this package.
 - Pete / designated session manager visual acceptance: Not requested for an implementation because no UI was created. Future Home/viewer implementation still requires Pete and ChatGPT Work acceptance.
@@ -25,6 +25,7 @@ This branch adds one planning package with:
 - an early visual-truth handoff that limits future Home/viewer claims without choosing a final composition;
 - a five-mode authorization/projection matrix covering identity, records, server filters, responses, caching, revocation, and negative tests;
 - a finite Home contract with one Capture action, at most three review items, and a hard nine-object maximum;
+- the owner's 2026-07-19 direction that approved future Home/viewer capabilities remain visibly present now using the accepted Voice pattern: production-quality silhouette, genuinely disabled control, visible **Coming later**, accessible equivalent, and no fabricated content or backend request;
 - a service/route/view-model architecture with authorization before retrieval, reference-only projection manifests, exact version binding, concurrency, cache, telemetry, security, and recovery rules;
 - desktop/mobile/accessibility behavior requirements;
 - a two-owner, payload-privacy, migration, performance, accessibility, rollout, rollback, Azure, and founding-alpha test/release plan;
@@ -79,7 +80,7 @@ The finite Home follows the current Bible's bounded orientation instead of the l
 ### Automated tests and document checks
 
 - `python -m unittest tests.test_governance_pointers tests.test_site_rules -v`: 22 passed.
-- Full `python -m unittest discover -s tests`: 396 passed, 1 skipped because the isolated PS-PLACEMENT-001 SQL gate database was not configured. The borrowed virtual environment initially lacked the already-declared `azure-storage-blob==12.30.0`; the dependency was loaded into a disposable temp target, its focused adapter test passed, the full suite passed, and the temp target was removed. No workspace/venv/dependency file changed.
+- Full `python -m unittest discover -s tests` after synchronizing Voice visual parity and applying the owner instruction update: 404 passed, 1 skipped because the isolated PS-PLACEMENT-001 SQL gate database was not configured. The borrowed virtual environment lacked the already-declared `azure-storage-blob==12.30.0`; the dependency was loaded into a disposable temp target, the full suite passed, and the temp target was removed. No workspace/venv/dependency file changed.
 - `git diff --check`: passed after staging the package for review.
 - Required-file/heading/term checks and non-ASCII scan: passed; no mojibake or missing required deliverable.
 - Complete staged diff and status review: only this package's ten files; no secret, credential, product-code, shared-governance, deployment, or unrelated worktree change.
@@ -99,21 +100,21 @@ The plan requires trusted identity reuse, authorization before retrieval, SQL-sc
 - `entity_publication_versions.snapshot_json` permits arbitrary JSON and is not yet an approved reference-only manifest.
 - Access grants, connection tables, and fixture pages are foundations/evidence only; they do not prove a released retrieval, publication, revocation, or preview lifecycle.
 - Public/profile route mapping and navigation remain unresolved.
-- Governed insight and connection items are intentionally absent from the first Home release until their own evidence/privacy/release gates pass.
+- Governed insight and connection **data/results** remain absent until their evidence/privacy/release gates pass. Their selected visual silhouettes remain present as disabled, content-free **Coming later** capability previews per the owner's direction.
 - This package performed no isolated SQL apply/rollback/reapply because it contains no SQL and the dedicated Placement gate database was not configured for the repository suite.
 - No signed-in production session or Pete/Danielle real-member validation was performed for this planning-only branch.
-- Existing Voice visual acceptance remains outside this package and was not modified.
+- Voice visual parity is now merged on current main and provides the accepted capability-preview precedent. This package does not modify Voice files or claim its signed-in visuals were revalidated here.
 
 The viewer/release gaps require independent implementation, migration, security/privacy, visual, and real-member reviews. They are conditions, not minor follow-ups.
 
 ## H. Clear next step
 
-ChatGPT Work should review and accept this architecture/truth package, then commission the owner-approved production-intent Owner Home desktop/mobile/state design and assign `PS-HOME-BACKEND-001` from current `origin/main` with the exact reservations in IMPLEMENTATION_DECOMPOSITION.md rechecked.
+ChatGPT Work should redo the production-intent Owner Home desktop/mobile/state design using the paste-ready instruction in VISUAL_TRUTH_HANDOFF.md, keeping approved future capabilities visible as Voice-style **Coming later** previews. After Pete accepts that pass, ChatGPT Work should assign `PS-HOME-BACKEND-001` from current `origin/main` with the exact reservations in IMPLEMENTATION_DECOMPOSITION.md rechecked.
 
 This unlocks the first finite owner-only Home vertical slice without pretending broader viewer capability. Audience vocabulary, route-map, and publication/grant lifecycle decisions may proceed in parallel as manager-controlled planning, but no viewer implementation should start until those gates close.
 
 ## I. What Pete needs to do or decide
 
-- Accept or revise the nine-object finite Home budget and owner-only first vertical slice.
-- Approve the future production-intent Home design before frontend implementation/release.
+- Review the next ChatGPT Work appearance pass; confirm the nine-object finite Home budget and owner-only first vertical slice in the context of the new **Coming later** treatment.
+- Approve the production-intent Home design before frontend implementation/release.
 - Before viewer work, decide with ChatGPT Work the canonical public/member route map, audience vocabulary (including legacy `shared`/`recruiter` handling), and publication/grant lifecycle direction.

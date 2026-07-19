@@ -19,6 +19,8 @@ Owner preview requires a persistent, non-color-only banner naming the preview mo
 
 Public and permissioned viewers must not see owner controls. Hiding those controls with CSS is insufficient; they must be absent from the server payload/DOM.
 
+Approved future capabilities selected for the experience remain visibly present now. They must say **Coming later** beside the feature name and must not be described as available, live, enabled, connected, personalized, or waiting for the member's action.
+
 ## Semantic structure
 
 - One descriptive `h1` per page. Sections use a logical heading hierarchy with no skipped levels caused by styling.
@@ -27,6 +29,7 @@ Public and permissioned viewers must not see owner controls. Hiding those contro
 - Review items and projected sections use lists when order/grouping matters. Visual placement does not replace semantic reading order.
 - Dates/times use semantic markup and include understandable absolute text; relative text such as "2 days ago" has an accessible absolute equivalent.
 - Statuses such as Private, Draft, Published, Restricted, Revoked, Deleted, and Stale use text plus any visual treatment. Color or icon alone is prohibited.
+- **Coming later** appears as visible text in the capability itself, not only a tooltip, lock/clock icon, reduced opacity, hover message, or section footnote.
 - Icons are decorative when adjacent text already names the action; otherwise they have an accessible name. No file-name or emoji-only labels.
 - Member-authored headings and summaries preserve meaning but cannot inject heading levels, landmarks, scripts, or unsafe markup.
 
@@ -39,6 +42,7 @@ Public and permissioned viewers must not see owner controls. Hiding those contro
 - When a mode selector is eventually designed, it must use a native control or a complete accessible pattern. Changing a selection must not navigate or fetch without clear activation unless that behavior is announced in advance.
 - Retry, Refresh, sign-in, return-to-Home, and safe-exit actions are keyboard reachable in every failure/revoked state.
 - No pointer-only hover controls. Any contextual actions have keyboard and touch equivalents and remain discoverable on focus.
+- A capability preview uses a native disabled control plus `aria-disabled="true"` where applicable, is excluded from form submission, and performs no pointer or keyboard action. Because native disabled controls are outside the tab order, the visible label and nearby description must remain in semantic reading order. A separately labeled **Learn what is coming** link/disclosure may be focusable if it only explains the future capability.
 
 ## Focus management and visible focus
 
@@ -58,6 +62,7 @@ Public and permissioned viewers must not see owner controls. Hiding those contro
 - Repeated retries do not produce duplicate announcement storms.
 - Category counts reflect the bounded objects actually returned. Do not announce hidden or unauthorized totals.
 - Preview mode and viewer context occur in the title/heading/context description, not only in a badge.
+- Capability-preview text follows the understandable pattern **"[Feature] - coming later. Not yet available."** It is read once in normal document order and is not announced repeatedly as an alert.
 - Empty sections use concise real text. They do not expose internal error codes or imply that private content exists for another viewer.
 
 ## Desktop behavior
@@ -66,6 +71,7 @@ Public and permissioned viewers must not see owner controls. Hiding those contro
 - Supporting categories may continue vertically. They are not compressed into a dashboard grid merely to fit above the fold.
 - At common desktop widths, text lines remain readable and long summaries do not push controls off-screen.
 - If a multi-column presentation is later approved, DOM/reading order remains meaningful when columns collapse, and zoom does not cause cross-column focus jumps.
+- Future capability previews retain the intended visual hierarchy and production finish; disabled does not mean an illegible, tiny, or visually discarded placeholder.
 - The page remains usable with browser sidebars, increased default fonts, and content at least 200% zoom.
 
 ## Mobile and reflow behavior
@@ -102,6 +108,7 @@ Public and permissioned viewers must not see owner controls. Hiding those contro
 | Loading | Stable page heading and section labels; one status announcement; inert/hidden skeletons; no fake records or counts |
 | Empty Home | Explain what is empty and the real next available action; Capture remains obvious when available |
 | Empty published projection | Identify the subject/context and say there is no published content in this view; do not imply private content exists |
+| Coming later capability | Keep the intended silhouette; show feature name plus visible **Coming later**; disable the feature; include no sample person, result, count, notification, generated output, active route, or success state |
 | Private/unpublished owner item | Text label communicates status and that preview/management did not publish |
 | Restricted/not found | Neutral unavailable heading and safe navigation; do not reveal whether the subject or private record exists |
 | Revoked/access changed | Sensitive DOM and client state cleared, explicit access-changed message, focus moves to heading, no stale fallback, safe exit/retry |
@@ -146,6 +153,7 @@ Every implementing frontend package must test at minimum:
 - touch/mobile viewport and orientation change;
 - long names/titles/summaries, missing optional data, deleted reference, and translated/bidirectional sample content;
 - each viewer mode's context wording and absence of owner controls;
+- each approved future capability's visible **Coming later** text, disabled/no-request behavior, semantic description, form exclusion, and absence of fabricated content;
 - loading, empty, partial failure, total failure, stale, restricted, revoked, and successful retry;
 - screenshot comparison at named desktop and mobile sizes against the owner-approved visual authority.
 

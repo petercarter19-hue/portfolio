@@ -61,12 +61,14 @@ Snapshot tests are allowed only as readable supporting evidence. Explicit field 
 - Anonymous JSON -> `401 authentication_required`; anonymous HTML `/app` -> validated local sign-in redirect.
 - Signed-in owner -> `owner-home.v1`, at most 64 KiB, at most 3 review and 9 total objects.
 - Missing categories -> `null`/empty and honest availability, not fixtures.
+- Approved future categories -> item remains `null`, `availability.state` is `coming_later`, and the rendered capability preview contains only approved feature/purpose/status copy.
 - Duplicate eligible record -> appears in only the highest-priority category.
 - Stable ties -> deterministic order across repeated requests.
 - Foreign/deleted/inactive inputs -> absent or approved tombstone only.
 - Core/optional dependency failures -> defined partial/complete failure behavior.
 - Headers -> `private, no-store`; content type and security headers correct.
 - Legacy `/api/dashboard` response changes do not alter Home contract and Home never calls it.
+- Capability previews are genuinely disabled, excluded from forms, issue no route/API request, cannot be activated by DOM/query/client flag changes, and retain the nine-object budget.
 
 ### Viewer modes
 
@@ -143,6 +145,7 @@ For every user-facing state, perform:
 - desktop and mobile screenshots at the design package's named sizes;
 - touch target, orientation, long/missing/translated/bidirectional content tests;
 - loading, empty, partial/complete failure, retry, private/unpublished, restricted/not-found, stale, deleted, revoked/access-changed tests;
+- visible **Coming later** preview labels, native disabled/`aria-disabled` semantics, form exclusion, no-request behavior, readable contrast, and no fabricated people/results/counts/content;
 - owner/viewer/preview context comprehension and absence of hidden owner controls from viewer DOM.
 
 Named screenshots must be compared against the owner-approved production-intent visual authority. Deviations are recorded and require ChatGPT Work plus Pete approval unless Pete delegates that gate in writing.
@@ -174,7 +177,7 @@ No future package may "fix" a failing unrelated lane by editing its reserved fil
 4. Complete Pete and Danielle validation and visual acceptance.
 5. Expand only after privacy, reliability, performance, and support observations pass.
 
-The first enabled Home may omit insight and connection categories truthfully. It cannot use filler.
+The first enabled Home should preserve the approved insight and connection silhouettes as disabled **Coming later** capability previews, following the accepted Voice pattern. Their real item fields remain `null`; they contain no filler, people, counts, observations, or working controls.
 
 ### Release 2: projection service, viewer modes, and preview
 
@@ -219,7 +222,7 @@ Both founders validate with distinct real accounts and account-owned records. Ne
 
 - Confirm each sees only their own finite Home and recognizes Capture as the obvious action.
 - Complete/visit a real review item, recent/resurfaced Moment, and next step where eligible.
-- Confirm empty/unavailable insight and connection states do not pretend capability.
+- Confirm future insight, connection, and viewer features remain visibly present as polished **Coming later** capability previews, while no control works and no fabricated data appears.
 - Exercise mobile, keyboard, zoom, loading/failure/retry, stale, and sign-out/back behavior.
 
 ### Viewer/preview tasks when released

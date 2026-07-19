@@ -6,6 +6,8 @@ Authorization is a server decision made before content retrieval. A profile slug
 
 Current code and schema do not provide this complete service. The matrix below is the required future contract, not a claim that the viewer modes are live.
 
+Per the owner's 2026-07-19 direction, the five mode choices remain visibly present in the next appearance pass as polished, genuinely disabled capability previews with a visible **Coming later** label. Those controls retrieve nothing, contain no sample projection, and grant no access. This matrix governs each mode only when its backend is later activated.
+
 ## Shared response envelope
 
 Successful JSON projections use one versioned, audience-safe envelope:
@@ -60,7 +62,7 @@ Before any viewer implementation, a migration and decision record must:
 
 ## Preview rule
 
-Owner preview is not an owner-shaped payload with elements hidden in JavaScript. The owner selects a mode, and the server executes the same authorization rules, stored projection query, view model, and serializer used by that live mode. The only preview-specific fields are an outer owner-only banner and non-content metadata such as `is_preview: true`. The owner cannot select another member as a selected-person or connection viewer until a real current grant/relationship exists; an explicitly labeled eligibility explanation may be shown instead.
+Before preview exists, its mode choices may be shown only as disabled **Coming later** capability previews. Once a mode is activated, owner preview is not an owner-shaped payload with elements hidden in JavaScript: the owner selects an eligible mode, and the server executes the same authorization rules, stored projection query, view model, and serializer used by that live mode. The only preview-specific fields are an outer owner-only banner and non-content metadata such as `is_preview: true`. The owner cannot select another member as a selected-person or connection viewer until a real current grant/relationship exists; an explicitly labeled eligibility explanation may be shown instead.
 
 ## Error contract
 
