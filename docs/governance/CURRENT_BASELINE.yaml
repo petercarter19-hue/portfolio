@@ -32,10 +32,13 @@ authority:
   portable_session_manager_merge_commit: "c4e5145026cc9a67a68c6c147cc5daa8db386f7a"
   portable_session_manager_pr: 78
   portable_session_manager_pipeline: 110
+  interview_demo_convergence_merge_commit: "cee015f6291fe5460a6a5d5795c445bb6b25c6f9"
+  interview_demo_convergence_pr: 83
+  interview_demo_convergence_pipeline: 117
   production_url: "https://peerslate.com"
   application_behavior_commit: "864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82"
   application_behavior_pipeline: 113
-  note: "PR 75/pipeline 105 released private Voice Capture. After Pete withdrew visual acceptance, Claude completed the protected desktop/mobile correction and relinquished exact tip e32b31d7c351ac2f8601a4467bcd1c9450f52c3b. Pete and ChatGPT Work accepted the corrected visuals, PR 80/pipeline 113 released them at 864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82, and PR 81/pipeline 115 closed governance at 5cc5b69346ee354bcc36248f7ee5724ce13c9d08. Interview Gate 2.4 now uses exact Image 5 Concept A for default/light and Concept C for optional dark; Capture Media manager planning remains active and separate. Fetch origin for the exact current tip."
+  note: "PR 75/pipeline 105 released private Voice Capture. After Pete withdrew visual acceptance, Claude completed the protected desktop/mobile correction and relinquished exact tip e32b31d7c351ac2f8601a4467bcd1c9450f52c3b. Pete and ChatGPT Work accepted the corrected visuals, PR 80/pipeline 113 released them at 864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82, and PR 81/pipeline 115 closed governance at 5cc5b69346ee354bcc36248f7ee5724ce13c9d08. Interview Gate 2.4 now uses exact Image 5 Concept A for default/light and Concept C for optional dark. PR 83/pipeline 117 made the real Studio upstream of the parked homepage-demo prototype and required separate post-release demo convergence. Capture Media manager planning remains active and separate. Fetch origin for the exact current tip."
 
 mirror:
   remote: github

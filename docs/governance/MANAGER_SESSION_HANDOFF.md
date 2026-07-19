@@ -215,6 +215,14 @@ report its exact SHA, and pause the branch. File
 `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` contains the definitive
 real-Studio and demo instructions.
 
+That sequencing record is authoritative on `origin/main`: implementation tip
+`9ea02196f6410fbbe40aa60355f6013815a7e625`, Azure PR 83, squash merge
+`cee015f6291fe5460a6a5d5795c445bb6b25c6f9`, and pipeline 117
+(`20260719.25`) with Build and Deploy passed. Live `/`,
+`/interview-studio`, and `/interview-studio/history` returned 200; protected
+`/app/capture` kept its signed-out redirect. This was a governance-only release
+and is not evidence that the new Studio or converged demo is implemented.
+
 Do not authorize Claude implementation from the three-direction art package
 alone.
 

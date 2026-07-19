@@ -67,6 +67,16 @@ and writer must still fetch `origin` before starting._
   (`20260719.23`) passed Build and Deploy for that exact commit. Production
   `/`, `/interview-studio`, and `/feed-living-stream?state=voice` returned 200,
   and `/app/capture` kept the expected signed-out redirect to sign-in.
+- The real-Studio-first homepage-demo convergence package squash-merged through
+  Azure PR 83 at `cee015f6291fe5460a6a5d5795c445bb6b25c6f9` after the
+  clean implementation tip
+  `9ea02196f6410fbbe40aa60355f6013815a7e625`. Pipeline 117
+  (`20260719.25`) passed Build and Deploy for that exact merge. A redundant
+  manual run 118 for the same SHA was canceled after the automatic run was
+  identified; it is not a failed release. Live `/`, `/interview-studio`, and
+  `/interview-studio/history` returned 200, and `/app/capture` kept the expected
+  signed-out redirect. This governance-only release changed no Studio or demo
+  website behavior.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

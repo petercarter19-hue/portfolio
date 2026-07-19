@@ -4,13 +4,13 @@
 
 - Package: PS-INTERVIEW-PUBLIC-GATE-001 real Studio/homepage demo convergence sequencing
 - Status: Complete for governance and instruction package; real Studio design, implementation, demo convergence, deployment, and live verification remain separate later gates
-- Branch and commit: `work/2026-07-19-interview-demo-convergence-plan`, based on `origin/main` `b0e093eb3928a7aca7094dfaaba13f0785dd272d`; the exact clean pushed report SHA is supplied in the final handoff because a commit cannot record its own SHA
-- PR / pipeline / environment: not yet opened or run for this governance branch
-- Production state: unchanged
+- Branch and commit: `work/2026-07-19-interview-demo-convergence-plan`, based on `origin/main` `b0e093eb3928a7aca7094dfaaba13f0785dd272d`, clean pushed tip `9ea02196f6410fbbe40aa60355f6013815a7e625`; Azure squash merge `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`
+- PR / pipeline / environment: Azure PR 83; pipeline 117 (`20260719.25`) passed Build and Deploy for the exact squash-merge SHA. Redundant manual run 118 was canceled after the automatic run was found.
+- Production state: governance closeout deployed; live `/`, `/interview-studio`, and `/interview-studio/history` returned 200 and `/app/capture` kept its expected signed-out redirect. Website behavior is unchanged.
 - Visual authority and status: Image 5 Concept A light / Concept C dark authority is recorded; complete dual-theme design remains In Design / In Review and is not yet accepted
 - Pete / designated session manager visual acceptance: not claimed; Pete approved the real-Studio-first sequence, not the unfinished 18-screen design or an implementation
 - Designated session manager: this bounded Codex manager session for the sequencing record; Claude Co-Work remains the package-designated receiving manager
-- Manager handoff status and next receiver: ready for Claude Co-Work and Claude Code after Azure governance closeout; the active demo writer receives the immediate checkpoint-and-pause instruction
+- Manager handoff status and next receiver: authoritative on `origin/main` and ready for Claude Co-Work/Claude Code; the active demo writer receives the immediate checkpoint-and-pause instruction
 - Lane owner and self-managed authority: Claude Code remains the later self-managed public-front-end writer; this branch changes governance/instructions only
 - Self-certification: Pass
 - Complete-diff review: Passed after correcting a whitespace-sensitive documentation guardrail
@@ -70,6 +70,9 @@ publication, or any owner data flow.
   `358e7eea304a2b4d4008031ea8f51c523380ee4f` before recording the checkpoint.
 - Preserved the active demo and other worktrees; no switch, clean, stash, edit,
   merge, or rebase was performed in them.
+- Pushed the sequencing branch at exact tip
+  `9ea02196f6410fbbe40aa60355f6013815a7e625`; Azure PR 83 squash-merged it
+  to `origin/main` at `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`.
 
 ### Complete-diff review
 
@@ -98,8 +101,16 @@ publication, or any owner data flow.
   changed on this branch.
 - The existing demo screenshots were inspected only to classify the checkpoint
   and identify the paper-light dark treatment and Voice-first mismatch.
-- No deployment or production verification was performed because this branch
-  has not entered an Azure PR and changes no website behavior.
+- Azure pipeline 117 (`20260719.25`) passed both Build and Deploy for exact
+  merge SHA `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`.
+- The automatic pipeline was briefly absent from the list view. Manual run 118
+  was queued against the same SHA, then canceled as redundant after automatic
+  run 117 was identified. The cancellation is not a failed release.
+- Post-deploy live checks returned 200 for `/`, `/interview-studio`, and
+  `/interview-studio/history`. `/app/capture` returned the expected 302 to
+  `/auth/sign-in?return_to=/app/capture`.
+- These checks prove the governance release and unchanged route/auth boundary;
+  they do not prove new Studio or demo visuals.
 - No real-member validation was required or performed.
 
 ## G. Known gaps, risks, and exclusions
@@ -116,8 +127,7 @@ publication, or any owner data flow.
 
 ## H. Clear next step
 
-Close this governance branch through Azure, then give Claude the immediate
-checkpoint-and-pause instruction in
+Give Claude the immediate checkpoint-and-pause instruction in
 `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md`. Continue Gate 2.4 design
 review and approval for the real Studio. That unlocks the real implementation
 branch without losing the demo work.

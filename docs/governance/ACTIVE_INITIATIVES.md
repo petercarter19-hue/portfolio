@@ -63,6 +63,10 @@ new package and branch.
   its modal/accessibility/static-demo shell, then converge it on the exact
   released 5A/5C Studio in a separate branch closeout. Do not release its stale
   paper-light dark treatment or Voice-first framing.
+- The convergence governance is authoritative on `origin/main`: Azure PR 83
+  squash-merged at `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`, and
+  pipeline 117 passed Build and Deploy. This release records sequencing only;
+  it does not make the new Studio design or homepage demo implemented or live.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
 ### PS-CAPTURE-MEDIA-001 - Claude Co-Work manager-planning lane

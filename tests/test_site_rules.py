@@ -141,6 +141,11 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn(
             'upstream authority for that walkthrough', visual_standard)
 
+        baseline = _read(os.path.join(
+            ROOT, 'docs', 'governance', 'CURRENT_BASELINE.yaml'))
+        self.assertIn('interview_demo_convergence_pr: 83', baseline)
+        self.assertIn('interview_demo_convergence_pipeline: 117', baseline)
+
 
 class NavigationLanguageTests(unittest.TestCase):
     """PS-BRAND-NAV-001: Evidence and About stay out of the navigation."""
