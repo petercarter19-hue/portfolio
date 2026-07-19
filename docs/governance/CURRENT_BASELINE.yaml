@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated by PS-PLACEMENT-RELEASE-MANAGER-001 on 2026-07-18.
+# Updated by PS-VOICE-CAPTURE-MANAGER-001 on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 2
 updated_at: "2026-07-18"
@@ -74,7 +74,11 @@ active_packages:
     owner: "ChatGPT Pro visual direction; Claude Code feasibility"
     lane: public_experience
     package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
-next_gate: "Owner decision required before the next backend package: choose voice/non-text Capture (PS-CAPTURE-MEDIA-001/PS-VOICE-001) or owner Home/viewer-mode work. ChatGPT Codex waits; the separately approved Interview Studio design lane may continue."
+  - id: PS-VOICE-001
+    owner: "ChatGPT Codex"
+    lane: backend_convergence
+    package_path: "docs/initiatives/PS-VOICE-001/README.md"
+next_gate: "After PS-VOICE-CAPTURE-MANAGER-001 squash-merges with a green Azure pipeline, ChatGPT Codex starts PS-VOICE-001 from the resulting current origin/main. The Interview Studio design lane continues independently."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

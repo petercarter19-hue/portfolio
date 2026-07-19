@@ -69,6 +69,15 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-BACKEND-NEXT-GATE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-PLACEMENT-RELEASE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-PLACEMENT-RELEASE-MANAGER-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-VOICE-CAPTURE-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-VOICE-CAPTURE-MANAGER-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "README.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "01_ARCHITECTURE.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "02_SECURITY_PRIVACY.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "03_INFRASTRUCTURE.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "04_TEST_RELEASE_PLAN.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "05_IMPLEMENTATION_PLAN.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
     )
@@ -124,7 +133,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIsNotNone(active_block)
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
-        self.assertEqual(["PS-INTERVIEW-PUBLIC-GATE-001"], active_ids)
+        self.assertEqual(
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001"], active_ids
+        )
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
             with self.subTest(package=package_id):

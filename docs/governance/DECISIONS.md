@@ -50,3 +50,13 @@ This is an append-only operational decision record. The current Bible and Roadma
 - The placement record stores keys, ownership, lifecycle, actor, and timestamps only. It must not copy Capture text, Moment narrative, destination content, or a purpose-specific presentation snapshot.
 - Creating or removing a placement must not create or edit the destination, change visibility/audience/publication, create an access grant, or update Story, Work, Project, résumé, Studio, Journal, Feed, or public pages.
 - Downstream consumption and purpose-specific wording remain separate later packages. Journal remains on hold.
+
+## 2026-07-18 - Select private Voice Capture as the next backend package
+
+- Owner decision: start Voice Capture before owner Home/viewer-mode work.
+- PS-VOICE-001 is one complete private path: short recording, private original audio, server-side transcription, member correction/review, and explicit save into the existing Capture lifecycle.
+- The original audio is retained privately with the Capture as source evidence and removed through an explicit, retryable deletion workflow. The first slice is `en-US`, 3 minutes, and 20 MB.
+- App Service uses managed identity for private Blob Storage and Azure Speech. No storage/Speech key, public container, public Blob URL, reusable SAS URL, or private payload in logs/audit metadata is allowed.
+- Voice confirmation creates one private `capture_type = voice` record only. It never automatically creates or changes a Moment, Placement, Journal entry, resume, Interview Studio record, audience, share, or publication.
+- Text Capture remains available whenever microphone access, browser support, upload, storage, or transcription fails.
+- ChatGPT Codex implements and proves PS-VOICE-001 without touching production. ChatGPT Work retains production infrastructure, migration, PR, deployment, and live-verification authority.
