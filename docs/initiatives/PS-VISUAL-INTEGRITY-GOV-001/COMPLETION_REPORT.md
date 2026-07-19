@@ -3,11 +3,14 @@
 ## A. Status
 
 - Package: PS-VISUAL-INTEGRITY-GOV-001
-- Status: Complete and ready for Azure PR
-- Branch and commit: `work/2026-07-18-visual-integrity-governance-001`; exact
-  pushed commit is supplied in the manager handoff
-- PR / pipeline / environment: pending manager release gate
-- Production state: governance-only; no product behavior changes
+- Status: Complete and released
+- Branch and commit: `work/2026-07-18-visual-integrity-governance-001` at
+  `317498b0e096d529aba36a311551618a340f1afb`
+- PR / pipeline / environment: Azure PR 71 squash-merged at
+  `28ec01097677219bbe466ff2c731707d0e4a2b89`; pipeline 99
+  (`20260719.7`) passed Build and Deploy
+- Production state: governance-only; no product behavior changes. Canonical
+  route smoke passed after App Service restart/warm-up.
 - Visual authority and status: Not Applicable - governance package establishing
   the future user-facing acceptance standard
 - Pete / ChatGPT Work visual acceptance: Pete approved the governing direction;
@@ -55,8 +58,11 @@ and Interview design decisions without crossing either writer's branch.
 - Complete configured suite: 324 passed, one skipped, 146 subtests passed, one
   existing Flask-Limiter development-storage warning.
 - `git diff --check`: passed.
-- Azure PR, matching Build/Deploy, and production smoke are the remaining
-  release evidence and are owned by ChatGPT Work after the exact branch push.
+- Azure PR 71 merge succeeded; pipeline 99 passed Build and Deploy for exact
+  merge SHA `28ec01097677219bbe466ff2c731707d0e4a2b89`.
+- Production smoke after the App Service restart/warm-up: `/`,
+  `/petec/resume`, and `/interview-studio` returned 200; `/app/capture` returned
+  the expected signed-out 302 redirect to `/auth/sign-in?return_to=/app/capture`.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -69,9 +75,8 @@ and Interview design decisions without crossing either writer's branch.
 
 ## H. Clear next step
 
-Release this governance package through Azure, then the next ChatGPT Work
-session uses the durable handoff to review Voice and continue the Interview
-design gate independently.
+The next ChatGPT Work session uses the durable handoff to review Voice and
+continue the Interview design gate independently.
 
 ## I. What Pete needs to do or decide
 

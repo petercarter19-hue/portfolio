@@ -34,12 +34,18 @@ Before this visual-integrity governance package, Azure `main` was
 `5488819ad13d3f411319d7e184fde3779d62b8d2` after PR 70 and pipeline 97.
 Always fetch for the actual current tip.
 
+The visual-integrity governance package then squash-merged through Azure PR 71
+at `28ec01097677219bbe466ff2c731707d0e4a2b89`; pipeline 99
+(`20260719.7`) passed Build and Deploy. This released Bible v2.4, the Owner
+Visual Integrity Standard, and this handoff without changing website behavior.
+
 - Public résumé refinement: PR 62 / pipeline 83.
 - Capture lifecycle: PR 63 / pipeline 85.
 - Canonical Moment: PR 66 / pipeline 91.
 - Private placement reference foundation: PR 68 / pipeline 93.
 - Placement governance closeout: PR 69 / pipeline 95.
 - Voice activation package: PR 70 / pipeline 97.
+- Visual-integrity governance and manager handoff: PR 71 / pipeline 99.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.

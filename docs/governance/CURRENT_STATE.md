@@ -1,6 +1,6 @@
 # PeerSlate - Current State
 
-_Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
+_Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001 closeout. Repository facts are a snapshot; every writer must fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -14,6 +14,12 @@ _Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001. Repository facts are a snap
 - Production `/`, `/petec/resume`, and `/interview-studio` returned 200. `/app/capture` and a protected Moment review route redirected logged-out requests to sign-in. No unauthenticated private content or mutation was exposed.
 - The governance closeout for Placement squash-merged through Azure PR 69 at `d11163cd1753e47aa12f139166b6af71069f2d81`; pipeline 95 (`20260719.3`) passed Build and Deploy.
 - The Voice activation package squash-merged through Azure PR 70 at `5488819ad13d3f411319d7e184fde3779d62b8d2`; manually queued pipeline 97 passed Build and Deploy. It authorized and specified PS-VOICE-001 without changing website behavior.
+- Bible v2.4, the Owner Visual Integrity Standard, and the durable manager
+  handoff squash-merged through Azure PR 71 at
+  `28ec01097677219bbe466ff2c731707d0e4a2b89`; pipeline 99
+  (`20260719.7`) passed Build and Deploy. The governance-only release changed no
+  website behavior. After an App Service restart/warm-up, `/`, `/petec/resume`,
+  and `/interview-studio` returned 200 and `/app/capture` redirected to sign-in.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

@@ -128,10 +128,15 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
         self.assertIn(
-            'repository_baseline_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"',
+            'voice_activation_merge_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"',
             self.baseline,
         )
-        self.assertIn("repository_baseline_pipeline: 97", self.baseline)
+        self.assertIn("voice_activation_pipeline: 97", self.baseline)
+        self.assertIn(
+            'visual_integrity_merge_commit: "28ec01097677219bbe466ff2c731707d0e4a2b89"',
+            self.baseline,
+        )
+        self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
         self.assertIn("application_behavior_pipeline: 93", self.baseline)
         self.assertIn("e0462a2e4683c91ebe518b6d984a2a8b973ba3d5", self.baseline)
@@ -171,6 +176,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             "Placement reference model is live",
             "no website control creates or displays placements yet",
             "pipeline 97",
+            "pipeline 99",
             "binding visual minimums",
         ):
             self.assertIn(expected, self.state)

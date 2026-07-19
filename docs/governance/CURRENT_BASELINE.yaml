@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated by PS-VISUAL-INTEGRITY-GOV-001 on 2026-07-18.
+# Updated by PS-VISUAL-INTEGRITY-GOV-001 closeout on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-18"
@@ -10,12 +10,14 @@ authority:
   branch: main
   manager_setup_merge_commit: "89c8797b498a411f426e5e0efd042d0816996adf"
   manager_setup_pipeline: 80
-  repository_baseline_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"
-  repository_baseline_pipeline: 97
+  voice_activation_merge_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"
+  voice_activation_pipeline: 97
+  visual_integrity_merge_commit: "28ec01097677219bbe466ff2c731707d0e4a2b89"
+  visual_integrity_pipeline: 99
   production_url: "https://peerslate.com"
   application_behavior_commit: "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5"
   application_behavior_pipeline: 93
-  note: "PR 70/pipeline 97 is the repository baseline and activated PS-VOICE-001 without changing website behavior. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No placement UI or downstream consumer exists yet. Fetch origin for the exact current tip."
+  note: "PR 71/pipeline 99 released Bible v2.4, visual-integrity enforcement, and the durable manager handoff without changing website behavior. PR 70/pipeline 97 activated PS-VOICE-001. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No placement UI or downstream consumer exists yet. Fetch origin for the exact current tip."
 
 mirror:
   remote: github

@@ -1,6 +1,6 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001._
+_Updated 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001 closeout._
 
 ## Operating model
 
@@ -8,7 +8,7 @@ _Updated 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001._
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work | PS-VISUAL-INTEGRITY-GOV-001 | Bible/current governance, startup/workflow/reporting, manager handoff, governance guardrail tests | product routes, migrations, active Voice/Interview implementation files |
+| Governance and orchestration | ChatGPT Work | Visual-integrity governance released; monitoring Voice and Interview gates | Current authority/state, lane sequencing, handoff review, release verification | product routes, migrations, active Voice/Interview implementation files |
 | Backend convergence | ChatGPT Codex | PS-VOICE-001 active | protected Capture voice routes/UI, voice services, media/transcription schema, infrastructure automation, focused tests | public resume/Studio, downstream Moment/Placement consumers, Journal, global theme/nav, auth rewrite |
 | Public experience | ChatGPT Pro visual direction, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | Direction A Gate 2.4 design package; implementation only after complete visual gate and approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
