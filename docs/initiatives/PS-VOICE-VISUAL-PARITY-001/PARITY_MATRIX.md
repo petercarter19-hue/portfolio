@@ -4,7 +4,20 @@ Visual authority: the approved homepage Voice walkthrough
 (`/feed-living-stream?state=voice` and `?state=review`, source inspected at
 `static/js/feed-living-stream.js` / `static/css/feed-living-stream.css`) plus
 four production mobile screenshots committed at
-`docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/`.
+`docs/initiatives/PS-VOICE-VISUAL-PARITY-001/visual-authority/`, and the binding
+`docs/initiatives/PS-VOICE-001/06_VISUAL_PARITY_CORRECTION.md`.
+
+## Manager correction pass (2026-07-19) — what changed from the first pass
+
+| Item | First pass | Corrected |
+|---|---|---|
+| Opening | Recording modal auto-opened on load | Lands on the Speak/Type chooser; Speak opens the modal; no auto-open (`desktop-00-opening-chooser`, `mobile-00-opening-chooser`) |
+| Save button color | Navy (read as "merge with current schemes") | **Gold** — binding decision 2: strong gold `#8A5A00` light / bright marigold `#d8a928` dark, the one gold exception; other primaries stay navy (`desktop-04-review`, `desktop-09b-review-dark-theme`) |
+| Desktop Save visibility | Below the modal fold (had to scroll) | Pinned flex-footer, visible without scrolling (`desktop-04-review`) |
+| Close reassurance | Not shown | Visible copy: "Close keeps your private draft; resume any time from this page." |
+| Dialog semantics | Hardcoded in base markup | JS-managed: added on portal, removed when inline (no-JS / post-Close) |
+| Background while modal | scroll-locked only | `inert` + `aria-hidden` on all non-overlay content; focus restored to the Speak invoker on close |
+| Landscape mobile | not captured | captured (`mobile-06-landscape-recording`, `mobile-07-landscape-review`) |
 
 All screenshots referenced below are in
 `docs/initiatives/PS-VOICE-VISUAL-PARITY-001/evidence/`, captured headless
@@ -47,7 +60,7 @@ standing in for the database — the render path (Jinja, `owner-app.css`,
 
 | Deviation | Reason | Evidence |
 |---|---|---|
-| Primary button and every "selected" state are **navy**, not the marigold shown in two desktop images pasted into chat | Owner instruction: "merge with current color schemes." The four **committed, real production** mobile screenshots (`visual-authority/approved-mobile-0{1,2,3}-*.png`) show navy in this exact composition today; `feed-living-stream.css`'s own dark-theme rules keep primary actions navy as well. The marigold-toned chat images are treated as a superseded/alternate pass, not color authority | `desktop-04-review.png` vs. `visual-authority/approved-mobile-02-review-audience.png` |
+| **Save private Capture uses the approved gold/marigold treatment** (the one gold exception); all other primaries and the "selected" audience state stay navy | Binding `06_VISUAL_PARITY_CORRECTION.md` decision 2: the walkthrough's dominant completion action gets gold emphasis, using text-safe strong gold `#8A5A00` for WCAG 2.2 AA in light and the bright marigold ramp with near-black text in dark. First pass used navy for Save; the manager corrected this to gold | `desktop-04-review.png` (light), `desktop-09b-review-dark-theme.png` (dark) |
 | Private-status banner ("This Capture is private and visible only to you.") | Additive truth element; the walkthrough has no equivalent because its "Community" default audience is a demo default, not a truth boundary | `desktop-04-review.png` |
 | Native `<audio controls>` element, not a custom round play-button + fabricated waveform | The custom player would need real waveform peak data extracted from the audio, which isn't available; the native control is the honest, fully-functional choice and is still wrapped in the walkthrough's pill styling | `desktop-04-review.png` |
 | Every future capability (Connections, Community, Selected people, My Story, Slate Board, Résumé, Photo, Video, Document, AI wording) renders as a real, native-`disabled` control with a visible "Coming later" tag | Per owner's 2026-07-19 guidance: build the full approved composition now as capability previews, not working controls, so later packages activate them without a redesign | `desktop-04-review.png` |

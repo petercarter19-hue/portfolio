@@ -85,6 +85,39 @@
         if (scrollLockCount === 0) document.body.style.overflow = "";
     };
 
+    // While a modal is open, make everything except the overlay inert and
+    // aria-hidden so keyboard and assistive-tech users cannot reach the page
+    // behind it. Uses the `inert` attribute (removes the subtree from tab
+    // order + AT) plus aria-hidden for older AT, and restores prior values.
+    let backgroundInertEls = [];
+    const setBackgroundInert = (on) => {
+        if (on) {
+            if (backgroundInertEls.length) return;
+            backgroundInertEls = Array.prototype.filter.call(
+                document.body.children,
+                (el) => el !== overlayRoot && el.tagName !== "SCRIPT" && el.tagName !== "TEMPLATE"
+            );
+            backgroundInertEls.forEach((el) => {
+                el.__hadInert = el.hasAttribute("inert");
+                el.__hadAriaHidden = el.getAttribute("aria-hidden");
+                el.setAttribute("inert", "");
+                el.setAttribute("aria-hidden", "true");
+            });
+        } else {
+            backgroundInertEls.forEach((el) => {
+                if (!el.__hadInert) el.removeAttribute("inert");
+                if (el.__hadAriaHidden === null) el.removeAttribute("aria-hidden");
+                else el.setAttribute("aria-hidden", el.__hadAriaHidden);
+                delete el.__hadInert;
+                delete el.__hadAriaHidden;
+            });
+            backgroundInertEls = [];
+        }
+    };
+
+    const anyModalOpen = () =>
+        overlayRoot.querySelector(".owner-app__voice-backdrop") !== null;
+
     // <summary> is keyboard-focusable but matches none of the usual control
     // selectors, and a closed <details> hides its content via
     // content-visibility (which offsetParent does NOT reflect) rather than
@@ -119,16 +152,31 @@
         }
     };
 
-    const portalIn = (el, onEscape) => {
+    // opts.restoreFocus: element or () => element to focus after close (falls
+    // back to the invoker that was focused when the modal opened).
+    const portalIn = (el, onEscape, opts = {}) => {
         if (!el || portalPositions.has(el)) return;
-        portalPositions.set(el, { parent: el.parentNode, next: el.nextSibling });
+        const invoker = document.activeElement;
+        portalPositions.set(el, {
+            parent: el.parentNode,
+            next: el.nextSibling,
+            invoker,
+            restoreFocus: opts.restoreFocus,
+        });
         const backdrop = document.createElement("div");
         backdrop.className = "owner-app__voice-backdrop";
         backdrop.appendChild(el);
         overlayRoot.appendChild(backdrop);
         portalBackdrops.set(el, backdrop);
         el.hidden = false;
+        // Dialog semantics belong to the modal presentation only. They are
+        // added here (and removed in portalOut) so the same section rendered
+        // inline — without JavaScript, or after Close — is not falsely
+        // announced as a modal dialog.
+        el.setAttribute("role", "dialog");
+        el.setAttribute("aria-modal", "true");
         lockScroll();
+        setBackgroundInert(true);
 
         const keydownHandler = (event) => {
             if (event.key === "Escape") {
@@ -152,6 +200,8 @@
             el.removeEventListener("keydown", el.__voiceKeydownHandler);
             delete el.__voiceKeydownHandler;
         }
+        el.removeAttribute("role");
+        el.removeAttribute("aria-modal");
         const backdrop = portalBackdrops.get(el);
         if (pos.next && pos.next.parentNode === pos.parent) {
             pos.parent.insertBefore(el, pos.next);
@@ -162,6 +212,17 @@
         portalPositions.delete(el);
         portalBackdrops.delete(el);
         unlockScroll();
+        if (!anyModalOpen()) setBackgroundInert(false);
+
+        // Restore focus to the invoker (e.g. the Speak button) or an explicit
+        // target, so keyboard/screen-reader users are not dropped at the top
+        // of the document.
+        let target = pos.restoreFocus;
+        if (typeof target === "function") target = target();
+        if (!target || !document.contains(target)) {
+            target = pos.invoker && document.contains(pos.invoker) ? pos.invoker : null;
+        }
+        if (target && typeof target.focus === "function") target.focus();
     };
 
     /* ---------- voice recording lifecycle ---------- */
@@ -216,33 +277,39 @@
         return supportedTypes.find((type) => window.MediaRecorder.isTypeSupported(type)) || "";
     };
 
-    const closeVoiceModal = () => {
+    const voiceModeButton = modeButtons.find((button) => button.dataset.captureMode === "voice");
+
+    // Stop and clean up any in-progress recording without touching the portal.
+    const teardownRecording = () => {
         if (recorder?.state === "recording") {
             cancelled = true;
             recorder.stop();
         }
         resetControls();
-        portalOut(voicePanel);
     };
 
     const switchMode = (mode, focus = true) => {
+        // Leaving Voice closes the modal first; portalOut restores focus to
+        // the Speak button. Done before re-entering switchMode so there is no
+        // recursion between switchMode and the modal-close path.
+        if (mode !== "voice" && portalPositions.has(voicePanel)) {
+            teardownRecording();
+            portalOut(voicePanel);
+        }
         modeButtons.forEach((button) => {
-            const selected = button.dataset.captureMode === mode;
-            button.setAttribute("aria-pressed", String(selected));
+            button.setAttribute("aria-pressed", String(button.dataset.captureMode === mode));
         });
         panels.forEach((panel) => {
             panel.hidden = panel.dataset.capturePanel !== mode;
         });
         if (mode === "voice") {
-            portalIn(voicePanel, () => {
-                closeVoiceModal();
-                switchMode("text");
-            });
-        } else if (portalPositions.has(voicePanel)) {
-            closeVoiceModal();
-        }
-        if (focus) {
-            if (mode === "text") document.querySelector("#capture-body")?.focus();
+            portalIn(
+                voicePanel,
+                () => switchMode("text", false),
+                { restoreFocus: () => voiceModeButton }
+            );
+        } else if (focus && mode === "text") {
+            document.querySelector("#capture-body")?.focus();
         }
     };
 
@@ -349,16 +416,6 @@
         }
     };
 
-    const cancelRecording = () => {
-        if (recorder?.state === "recording") {
-            cancelled = true;
-            recorder.stop();
-        } else {
-            resetControls();
-        }
-        announce("Recording cancelled. No audio was uploaded.", false, "ready");
-    };
-
     modeButtons.forEach((button) => {
         button.addEventListener("click", () => switchMode(button.dataset.captureMode));
     });
@@ -369,25 +426,24 @@
             recorder.stop();
         }
     });
-    cancelButton.addEventListener("click", cancelRecording);
-    textButton.addEventListener("click", () => {
-        if (recorder?.state === "recording") cancelRecording();
-        switchMode("text");
+    // Cancel abandons an in-progress recording and closes the modal.
+    cancelButton.addEventListener("click", () => {
+        announce("Recording cancelled. No audio was uploaded.", false, "ready");
+        switchMode("text", false);
     });
+    // Switch to Type closes the modal and moves to the text form.
+    textButton.addEventListener("click", () => switchMode("text"));
+    // Close (X) and Escape keep nothing recorded and return to the Type surface.
     if (dismissButton) {
-        dismissButton.addEventListener("click", () => {
-            closeVoiceModal();
-            switchMode("text");
-        });
+        dismissButton.addEventListener("click", () => switchMode("text", false));
     }
 
-    // Voice is the production-intent opening path when JavaScript is available.
-    // The server-rendered Type form remains the no-script fallback and its choice stays visible.
-    // Skipped when a review draft is already pending: the review stage is
-    // the dialog that should auto-open in that case, not a fresh recording
-    // modal stacked on top of it.
-    if (!reviewStage) switchMode("voice", false);
-
+    // Opening choice: Speak and Type are both first-class. The page lands on
+    // the Type surface (server-rendered, works without JavaScript). Choosing
+    // Speak opens the focused Voice modal; the Voice modal is NEVER auto-opened
+    // on ordinary page load (manager decision 2026-07-19,
+    // docs/initiatives/PS-VOICE-001/06_VISUAL_PARITY_CORRECTION.md). When a
+    // voice draft is pending, the review stage below is what opens instead.
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder || !chooseMimeType()) {
         startButton.disabled = true;
         announce("Voice recording is not supported in this browser. Text Capture remains available.", true, "error");
@@ -401,7 +457,13 @@
         const closeReview = () => portalOut(reviewStage);
         const reviewDismiss = reviewStage.querySelector("[data-voice-action='dismiss']");
         if (reviewDismiss) reviewDismiss.addEventListener("click", closeReview);
-        portalIn(reviewStage, closeReview);
+        // Auto-opens as a modal (the page was loaded specifically to review a
+        // pending draft). On Close it de-portals to an inline, non-dialog view
+        // — the draft is server-persisted and stays on the page — and focus
+        // lands on the now-inline review heading so it can be resumed.
+        portalIn(reviewStage, closeReview, {
+            restoreFocus: () => reviewStage.querySelector("#voice-review-title"),
+        });
 
         // "More ways to use this" ships open (server-rendered, so it works
         // with or without JS). On mobile only, collapse it by default for

@@ -815,8 +815,17 @@
     }
 }
 
+/* Reassurance that Close is non-destructive (manager point 4). Sits between
+   the header and the scrolling body, so it stays visible in the modal. */
+.owner-app__voice-reassurance {
+    margin: 0;
+    padding: 0.7rem 1.55rem;
+    color: var(--pv-muted);
+    font: 600 0.8rem/1.4 Inter, sans-serif;
+    border-bottom: 1px solid var(--pv-line-soft);
+}
+
 .owner-app__voice-review-footer {
-    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -846,6 +855,28 @@
 .owner-app__voice-review-footer .owner-app__primary {
     flex: 0 0 auto;
     margin-left: auto;
+}
+
+/* ---- Save private Capture: the one approved gold/marigold completion action
+   (manager decision 2, 06_VISUAL_PARITY_CORRECTION.md). Every other primary
+   keeps the shared navy semantics. Light mode uses the text-safe strong gold
+   #8A5A00 so white label text stays WCAG 2.2 AA (~5.9:1); dark mode uses the
+   bright marigold ramp with near-black text (~8:1). ---- */
+.owner-app__voice-save {
+    background: linear-gradient(180deg, #9a6400 0%, #8a5a00 100%);
+    border-color: #7a5000;
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(184, 121, 0, 0.32);
+}
+
+.owner-app__voice-save:hover {
+    background: linear-gradient(180deg, #8a5a00 0%, #744c00 100%);
+    border-color: #6a4600;
+}
+
+.owner-app__voice-save:focus-visible {
+    outline: 3px solid #8a5a00;
+    outline-offset: 3px;
 }
 
 .owner-app__voice-review-simple {
@@ -888,11 +919,33 @@
     -webkit-backdrop-filter: blur(8px);
 }
 
-.owner-app__voice-backdrop .owner-app__voice-modal,
-.owner-app__voice-backdrop .owner-app__voice-review {
+.owner-app__voice-backdrop .owner-app__voice-modal {
     max-height: calc(100vh - 3rem);
     overflow-y: auto;
     margin: 0;
+}
+
+/* In the modal, the review becomes a flex column: header + reassurance +
+   private-status pinned at the top, a single scrolling region in the middle,
+   and the Save footer pinned at the bottom — so Save is always visible without
+   scrolling (manager point 6). Inline (no-JS or after Close) it stays normal
+   document flow. */
+.owner-app__voice-backdrop .owner-app__voice-review {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 3rem);
+    overflow: hidden;
+    margin: 0;
+}
+
+.owner-app__voice-backdrop .owner-app__voice-review-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.owner-app__voice-backdrop .owner-app__voice-review-footer {
+    flex: 0 0 auto;
 }
 
 .owner-app__captures {
@@ -1498,12 +1551,11 @@
         padding: 1.1rem;
     }
 
-    /* Sticky primary action: Save private Capture stays reachable while
-       the rest of the review sheet (transcript, provider disclosure, More
-       ways to use this) scrolls underneath it. */
+    /* The footer is pinned by the flex-column layout of the review modal (see
+       the .owner-app__voice-backdrop rules), so Save stays visible while the
+       body scrolls. On mobile it also stacks the confirm line above a
+       full-width Save. */
     .owner-app__voice-review-footer {
-        position: sticky;
-        bottom: 0;
         flex-direction: column;
         align-items: stretch;
         padding: 0.9rem 1.1rem;
@@ -1611,3 +1663,22 @@ body[data-theme="dark"] .owner-app__voice-audience-option--selected .owner-app__
    every primary action navy — only the ring, wave, focus rings, and the
    audience "selected" tint shift to gold. .owner-app__method mirrors that:
    no override here, it stays navy in both themes like .owner-app__primary. */
+
+/* Save private Capture is the one approved gold exception in BOTH themes. In
+   dark mode it uses the bright marigold ramp with near-black text (~8:1 AA). */
+body[data-theme="dark"] .owner-app__voice-save {
+    background: linear-gradient(180deg, #e3b83a 0%, #d8a928 100%);
+    border-color: #b8901f;
+    color: #241a00;
+    box-shadow: 0 12px 28px rgba(216, 169, 40, 0.3);
+}
+
+body[data-theme="dark"] .owner-app__voice-save:hover {
+    background: linear-gradient(180deg, #d8a928 0%, #c39d1f 100%);
+    border-color: #a17d1a;
+}
+
+body[data-theme="dark"] .owner-app__voice-save:focus-visible {
+    outline: 3px solid #f5e7b6;
+    outline-offset: 3px;
+}

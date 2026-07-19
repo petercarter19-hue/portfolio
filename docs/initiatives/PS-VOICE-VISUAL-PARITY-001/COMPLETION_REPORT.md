@@ -1,16 +1,63 @@
 # PeerSlate Completion & Handoff Report — PS-VOICE-VISUAL-PARITY-001
 
+## 0. Manager conditional-correction pass (2026-07-19)
+
+The manager returned **CONDITIONAL** on the first submission and required a
+correction pass. All ten required items are complete:
+
+1. **Synchronized with `origin/main`** — merged (no rebase, no force-push).
+   New base is `origin/main` @ `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f`
+   (PRs 76–79: self-managed-lanes + portable-session-manager). Merge was
+   conflict-free; it touched only governance docs and the two guardrail test
+   files, none of the Voice UI files.
+2. **First-class opening restored** — the page lands on the Speak/Type chooser;
+   Speak opens the Voice modal; the Voice modal is **no longer auto-opened** on
+   ordinary page load. (Verified live: `modalOpenOnLoad: false`, both choices
+   visible, Type inline.)
+3. **Gold Save treatment applied** (light + dark) per the binding
+   `06_VISUAL_PARITY_CORRECTION.md` decision 2. Light: strong-gold gradient
+   `#9a6400→#8a5a00` with white label (~5.9:1 AA). Dark: bright marigold ramp
+   `#e3b83a→#d8a928` with near-black `#241a00` label (~8:1 AA). It is the only
+   action with the gold modifier; every other primary stays navy. (Verified
+   via computed style in both themes.)
+4. **Visible reassurance copy rendered:** "Close keeps your private draft;
+   resume any time from this page." (pinned under the review header, all draft
+   states).
+5. **Accessibility contract completed** — background `inert` + `aria-hidden`
+   while modal (verified: `main-content` inert on open, cleared on close);
+   focus contained in the modal (trap wraps at both boundaries); focus restored
+   to the Speak invoker on close (verified live); dialog/`aria-modal` semantics
+   are added by JS only when presented as a modal and removed when inline
+   (base markup carries neither); keyboard-only, visible focus, reduced motion
+   (`animationDuration: 0s`), and 200% zoom all verified.
+6. **Persistent desktop Save footer** — the review modal is a flex column with a
+   pinned footer, so Save is visible without scrolling (verified: footer bottom
+   843 ≤ viewport 844) while the body scrolls internally.
+7. **Fresh evidence** captured for every affected state (23 shots; inventory in
+   §F and `PARITY_MATRIX.md`), including the new opening chooser and mobile
+   landscape.
+8. **Self-reviewed the complete diff; reran focused + full tests** after sync:
+   focused Voice UI 16/16, full suite **404 pass (skipped=1)**.
+9. **Reports updated** (this file + `PARITY_MATRIX.md`) with the final SHA,
+   test totals, synchronized base, limitations, and exact screenshot inventory.
+10. **Committed, pushed, and relinquished** — see §A and the handoff at the end.
+
+**Self-certification: CONDITIONAL → resubmitted as PASS** for the corrected
+items, still pending Pete + manager real-visual acceptance before merge.
+
 ## A. Status
 
 - **Package:** PS-VOICE-VISUAL-PARITY-001 — Voice visual-parity correction
-- **Status:** Complete (implementation, tests, and evidence). **Not merged** —
-  awaiting Pete and ChatGPT Work real-visual acceptance per role boundaries.
-- **Branch and commit:** `work/2026-07-19-voice-visual-parity-001`, pushed to
-  `origin`. Design-instructions checkpoint at `0158daf22d26e7c38be494e2b32e6b51fdaca0fb`;
-  implementation commit follows this report (exact SHA in the next message).
-- **Base:** `origin/main` at `eede8565d703a466bd788962d494e8b385b53409`
-  ("PS-VOICE-001 private Voice Capture") — verified via `git merge-base
-  --is-ancestor`, not assumed.
+- **Status:** Complete (implementation, tests, and evidence) after the manager
+  correction pass. **Not merged, not deployed** — awaiting Pete and ChatGPT Work
+  real-visual acceptance per role boundaries and the manager's CONDITIONAL hold.
+- **Branch:** `work/2026-07-19-voice-visual-parity-001`, pushed to `origin`.
+- **Implementation commit (final full SHA):** `__FINAL_SHA__`
+  (design checkpoint `0158daf22d26e7c38be494e2b32e6b51fdaca0fb`; first-pass
+  `177d7a6` / `122470a`; correction pass `__FINAL_SHA__`).
+- **Base:** synchronized `origin/main` at
+  `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f` — merged in (no rebase/force-push),
+  verified via `git merge-base --is-ancestor`.
 - **PR / pipeline / environment:** No PR opened. Claude does not merge,
   deploy, or provision infrastructure per role boundaries.
 - **Production state:** Not deployed. Nothing in this package has touched
@@ -197,14 +244,30 @@ authorization now.
 
 ## F. Verification and validation
 
-**Automated tests:** `tests/test_owner_voice_ui.py` (13/13 pass, focused
-Voice contract); full repository suite `python -m unittest discover -s tests`
-— 397 tests, `OK (skipped=1)`, run from a local venv with the repo's own
-declared `requirements.txt` installed (this machine had neither
-`flask_limiter` nor `azure-storage-blob` installed globally; both are already
-in `requirements.txt`, so this is environment setup, not a new dependency).
+**Automated tests (after the correction pass and the origin/main sync):**
+`tests/test_owner_voice_ui.py` (16/16 pass, focused Voice contract — the three
+new correction-pass tests cover the no-auto-modal opening, JS-managed dialog
+semantics + background inert + focus restore, and the gold Save / reassurance /
+pinned footer); full repository suite `python -m unittest discover -s tests` —
+**404 tests, `OK (skipped=1)`**, run from a local venv with the repo's own
+declared `requirements.txt` installed (this machine had neither `flask_limiter`
+nor `azure-storage-blob` installed globally; both are already in
+`requirements.txt`, so this is environment setup, not a new dependency).
 Guardrail suites `tests/test_site_rules.py` and
-`tests/test_governance_pointers.py` are included in that run and pass.
+`tests/test_governance_pointers.py` (updated on the synced `origin/main`) are
+included in that run and pass.
+
+**Screenshot inventory (23, all re-captured against the final committed code):**
+desktop-00-opening-chooser, desktop-01-recording-ready, desktop-02-recording-listening,
+desktop-03-opening-type, desktop-04-review, desktop-05-review-keyboard-focus,
+desktop-06-review-long-transcript, desktop-07-review-failure-retry,
+desktop-08-review-uploading, desktop-09-recording-dark-theme,
+desktop-09b-review-dark-theme, desktop-10-reduced-motion-recording,
+desktop-11-review-200pct-zoom-reflow, desktop-12-microphone-denied,
+desktop-13-unsupported-browser, mobile-00-opening-chooser, mobile-01-recording-ready,
+mobile-02-recording-listening, mobile-03-review-collapsed,
+mobile-04-review-more-expanded, mobile-05-review-long-transcript,
+mobile-06-landscape-recording, mobile-07-landscape-review.
 
 **Visual verification:** the in-app Browser pane's screenshot capture timed
 out consistently (a known, previously-documented pattern in this project when
@@ -245,20 +308,11 @@ and the capability-preview treatment for every not-yet-backed feature.
 - **Not merged.** This branch must not be merged until Pete and ChatGPT Work
   review the actual implementation (not just this report) and accept it
   visually, per role boundaries in the task instructions.
-- **Opening behavior — one judgment call for ChatGPT to confirm.** On a plain
-  `/app/capture` load with JavaScript, the recording modal auto-opens over the
-  page (faithful to the accepted "voice is the production-intent opening path"
-  from PS-VOICE-001, and it gives immediate visual parity with the
-  walkthrough). Type stays first-class as the "Switch to Type" action inside
-  the modal and via dismissing. The trade-off: on that cold load — and again
-  after a save redirects back — the recent-captures list and any "Saved
-  privately" confirmation sit behind the modal until it is dismissed. This was
-  deliberately **not** changed here, because altering the accepted opening
-  default is outside a visual-parity correction and would invalidate the
-  evidence set; it is surfaced for ChatGPT (the visual authority) to confirm
-  or redirect. An alternative — landing on the Speak/Type chooser and opening
-  the modal on the Speak click (closer to the homepage hero's click-to-enter
-  pattern) — is a small change if preferred.
+- **Opening behavior — RESOLVED by the manager.** The first pass auto-opened
+  the recording modal on load; the manager directed landing on the Speak/Type
+  chooser with Speak opening the modal (no auto-open). That is now implemented
+  and verified. The recent-captures list and any "Saved privately" confirmation
+  are no longer hidden behind an auto-modal on load.
 - The two desktop screenshots shown earlier in chat (marigold-toned) could
   not be committed as durable evidence — they arrived as inline chat content
   with no underlying file path. If exact-pixel desktop authority images are

@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-voice-visual-parity-001">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-voice-visual-parity-002">
 {% endblock %}
 
 {% block content %}
@@ -93,8 +93,6 @@
             data-max-bytes="{{ max_voice_bytes }}"
             data-max-seconds="{{ max_voice_duration_seconds }}"
             data-voice-state="ready"
-            role="dialog"
-            aria-modal="true"
             aria-labelledby="capture-voice-title"
             hidden
         >
@@ -164,16 +162,19 @@
            overlay on load and de-portals it on dismiss (draft is kept
            either way — nothing here is discarded by closing).
            ============================================================ #}
+        {# The review section is a plain <section> in the base HTML so it works
+           inline without JavaScript. owner-capture-voice.js portals it into a
+           body-level modal and adds the dialog role and modal flag there,
+           removing them again on Close — so the inline presentation is never
+           falsely announced as a modal (manager point 5). #}
         <section
             id="voice-review-stage"
             class="owner-app__voice-review"
             data-voice-review-state="{{ voice_draft.state }}"
-            role="dialog"
-            aria-modal="true"
             aria-labelledby="voice-review-title"
         >
             <header class="owner-app__voice-modal-head">
-                <h2 id="voice-review-title">
+                <h2 id="voice-review-title" tabindex="-1">
                     {% if voice_draft.state == 'needs_review' %}Review before saving
                     {% elif voice_draft.state == 'uploading' %}Transcription has not started
                     {% elif voice_draft.state == 'queued' %}Transcription is queued
@@ -188,12 +189,20 @@
                 </button>
             </header>
 
+            {% if voice_draft.state not in ['confirmed', 'deleted'] %}
+            <p class="owner-app__voice-reassurance">Close keeps your private draft; resume any time from this page.</p>
+            {% endif %}
+
             {% if voice_draft.state == 'needs_review' %}
             <p class="owner-app__voice-private-status">
                 {{ icon_lock() }} This Capture is private and visible only to you.
             </p>
+            {% endif %}
 
+            <div class="owner-app__voice-review-scroll">
+            {% if voice_draft.state == 'needs_review' %}
             <form
+                id="voice-confirm-form"
                 class="owner-app__voice-review-body"
                 method="post"
                 action="{{ url_for('owner.confirm_voice_capture', source_key=voice_draft.source_key) }}"
@@ -307,14 +316,6 @@
                         </div>
                     </details>
                 </aside>
-
-                <footer class="owner-app__voice-review-footer">
-                    <label class="owner-app__voice-confirm">
-                        <input name="confirm_voice" type="checkbox" value="save-private-capture" required>
-                        Save this reviewed text as one private Capture. Do not share or publish it.
-                    </label>
-                    <button class="owner-app__primary" type="submit">Save private Capture</button>
-                </footer>
             </form>
             {% else %}
             <div class="owner-app__voice-review-simple">
@@ -383,6 +384,21 @@
                     <button type="submit">Delete private draft</button>
                 </form>
             </details>
+            {% endif %}
+            </div>{# /.owner-app__voice-review-scroll #}
+
+            {# Persistent footer: the confirm checkbox and the gold Save action
+               live outside the scrolling region and stay visible on desktop and
+               mobile. They are associated with the review form by id, so the
+               separate delete form is never nested inside it. #}
+            {% if voice_draft.state == 'needs_review' %}
+            <footer class="owner-app__voice-review-footer">
+                <label class="owner-app__voice-confirm">
+                    <input form="voice-confirm-form" name="confirm_voice" type="checkbox" value="save-private-capture" required>
+                    Save this reviewed text as one private Capture. Do not share or publish it.
+                </label>
+                <button form="voice-confirm-form" class="owner-app__primary owner-app__voice-save" type="submit">Save private Capture</button>
+            </footer>
             {% endif %}
         </section>
         {% endif %}
@@ -557,5 +573,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-visual-parity-001" defer></script>
+<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-visual-parity-002" defer></script>
 {% endblock %}
