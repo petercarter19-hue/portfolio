@@ -1,6 +1,7 @@
 # PeerSlate current authority record
 # Updated for the completed Voice release, Interview Studio Image 5
-# 5A-light/5C-dark owner authority, and real-Studio-first demo convergence.
+# 5A-light/5C-dark owner authority, real-Studio-first demo convergence,
+# planned Ask Pete AI discovery, and cross-product homepage parity.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-19"
@@ -81,6 +82,11 @@ governing_documents:
 
 theme: deep_navy_gold
 
+homepage_product_projection:
+  standard: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
+  rule: "When the logged-out homepage presents or links a product, every material product or visual change requires a same-wave homepage parity update or an exact downstream parity package; the real product remains upstream authority."
+  current_examples: "Private Voice Capture and public Interview Studio; applies to every present and future homepage product section"
+
 completed_packages:
   - PS-AUTH-001
   - PS-OWNER-001-slice-1
@@ -121,7 +127,16 @@ active_packages:
     owner: "Claude Co-Work designated session manager; implementation writer unassigned"
     lane: capture_media_manager_planning
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
-next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before the parked homepage demo branch may resume and converge on that exact released 5A/5C product in a separate closeout. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
+
+planned_packages:
+  - id: PS-ASK-PETE-AI-001
+    owner: "Pete product direction; future designated discovery manager and implementation writer unassigned"
+    lane: future_ask_pete_ai_discovery
+    roadmap_phase: "Phase 11 - Next Chapter and Qualification Alignment"
+    package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
+    status: "planned_not_active"
+
+next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before the parked homepage demo branch may resume and converge on that exact released 5A/5C product in a separate closeout. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-ASK-PETE-AI-001 is planned under Phase 11 and begins with owner discovery, not implementation. Every user-facing package must perform the homepage-product parity check. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

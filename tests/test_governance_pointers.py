@@ -98,6 +98,9 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "README.md"),
         ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"),
+        ("docs", "initiatives", "PS-ASK-PETE-AI-001", "01_DISCOVERY_AGENDA.md"),
+        ("docs", "initiatives", "PS-ASK-PETE-AI-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -341,6 +344,67 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
         self.assertIn("PS-STORY-COMPOSER-001", self.state)
         self.assertIn("not active", self.initiatives)
+
+    def test_ask_pete_ai_is_planned_and_homepage_parity_is_governed(self):
+        package = _read(
+            "docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"
+        )
+        agenda = _read(
+            "docs", "initiatives", "PS-ASK-PETE-AI-001",
+            "01_DISCOVERY_AGENDA.md",
+        )
+        visual_standard = _read(
+            "docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"
+        )
+
+        for expected in (
+            "PS-ASK-PETE-AI-001",
+            'status: "planned_not_active"',
+            "homepage_product_projection",
+        ):
+            self.assertIn(expected, self.baseline)
+
+        for expected in (
+            "Ask Pete AI",
+            'does not use or define\n"PAI."',
+            "Type, Speak, and Attach",
+            "PDF, DOCX, or TXT",
+            "PNG/JPEG screenshots",
+            "Roadmap placement: Phase 11",
+            "No product route",
+        ):
+            self.assertIn(expected, package)
+
+        for expected in (
+            "job posting",
+            "OCR",
+            "public/private mode",
+            "no implementation yet",
+        ):
+            self.assertIn(expected, agenda)
+
+        for expected in (
+            "Cross-product homepage projection parity",
+            "real product is upstream authority",
+            "same release wave",
+            "showcase-quality",
+            "Voice Capture",
+            "Interview Studio",
+        ):
+            self.assertIn(expected, visual_standard)
+
+        self.assertIn("PS-ASK-PETE-AI-001", self.state)
+        self.assertIn("PS-ASK-PETE-AI-001", self.initiatives)
+
+        for relative_path in (
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/AI_WORKFLOW.md",
+            "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                self.assertRegex(body, r"(?i)homepage.*parity")
 
     def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
         workflow = _read("docs", "AI_WORKFLOW.md")

@@ -1,8 +1,9 @@
 # PeerSlate - Current State
 
 _Updated 2026-07-19 for the completed Voice release, Interview Studio Image 5
-5A-light/5C-dark authority, and Capture Media manager planning. Every manager
-and writer must still fetch `origin` before starting._
+5A-light/5C-dark authority, Capture Media manager planning, planned Ask Pete AI
+discovery, and cross-product homepage parity. Every manager and writer must
+still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -93,6 +94,10 @@ and writer must still fetch `origin` before starting._
 - **Canonical Moment (PS-MOMENT-001):** protected owner review of one pinned Capture source version, editable private proposal versions, explicit confirmation into one source-linked canonical Moment, and deterministic deleted-source tombstones. Confirmation does not publish or place content.
 - **Private Placement reference (PS-PLACEMENT-001):** an explicit, owner-scoped, lifecycle-aware pointer from one exact confirmed Moment version to one existing eligible private/unpublished Slate destination. The reference copies no authoritative text and changes no audience, access grant, publication record, destination content, or downstream room.
 - **Public resume:** canonical `/petec/resume`, existing redirects, download path, Ask Pete AI hooks, shared resume dataset, and the refined progressive default scan.
+- **Public Ask Pete AI:** a real typed visitor assistant at `POST /api/chat`
+  grounded in approved public Markdown knowledge. It currently has a
+  1,000-character text boundary and no voice, attachment, OCR, private
+  owner-history retrieval, or saved job-analysis workspace.
 - **Interview Studio public slice:** a public browser-local practice experience. It is not an authenticated private history system.
 - **Deep Navy Gold (PS-THEME-001):** shared owner visual foundation and approved mockups under `docs/governance/approved_owner_visual_baseline/`.
 
@@ -136,6 +141,12 @@ active independently. The Voice correction lane is closed:
    allocation. No authoritative Azure implementation branch was observed at
    activation, so Capture Media is not implemented, deployed, or live.
 
+`PS-ASK-PETE-AI-001` is separately planned under Roadmap Phase 11. Its first
+gate is an owner product discussion, not implementation. The future concept
+must explore Type, Speak, documents, and screenshot/OCR input while preserving
+an explicit public Ask Pete AI versus private owner-analysis boundary. It has no
+manager, writer, implementation branch, start date, deployment, or live claim.
+
 The completed Voice lane preserves its original worktrees as historical
 references. They are not active writing lanes and must not be reused for later
 Voice changes. The released code and evidence on `origin/main` are authority.
@@ -153,6 +164,8 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
+| Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |
+| Homepage product projections | Cross-product parity governance is active; Voice and Interview Studio are the current named examples | Every material user-facing package assesses `/`; update affected sections in the same wave or activate an exact downstream parity package and keep parity open until accepted and live |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
 | Journal UI | On hold | Owner must explicitly restart it |
 
@@ -167,6 +180,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Speech roles. The active correction must not change those backend contracts.
 - PS-CAPTURE-MEDIA-001 planning does not make photo, video, or document Capture
   available. Voice is not to be rebuilt inside the broader media package.
+- PS-ASK-PETE-AI-001 is a planned discovery package only. A document or job-
+  posting screenshot cannot currently be uploaded to Ask Pete AI; voice and
+  private Slate grounding are not live there. Uploaded targets must never be
+  inferred to be public, indexed, recommended, or part of a job marketplace.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
@@ -200,6 +217,12 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   no-side-effect, but its light/dark composition, written-practice hierarchy,
   product labels, truth, and mapped states must converge on the exact accepted
   and live Studio before it can receive separate visual acceptance and release.
+- Every current and future homepage product section now follows the same
+  cross-product projection contract. A material real-product change triggers a
+  homepage-impact assessment and either a same-wave accepted update or an exact
+  downstream parity package. The real product is upstream authority; homepage
+  parity remains open while the public section is stale. Voice and Interview
+  Studio are current examples, not exceptions limited to those two products.
 - The current homepage overall is not an approved final visual baseline; its
   broader redesign remains a separate later initiative.
 

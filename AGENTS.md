@@ -99,6 +99,15 @@ If any source document is missing, stop and report the missing path. Do not reco
   approval and must remain In Progress.
 - When a package approves multiple input paths, such as Speak and Type, keep
   them first-class unless the approved authority expressly says otherwise.
+- Every user-facing package must record whether the logged-out homepage has a
+  section, walkthrough, or product card for that experience. When the real
+  product changes materially in function, hierarchy, theme, or visual quality,
+  the linked homepage projection must receive a formal parity review and an
+  update in the same release wave or an explicitly sequenced downstream package.
+- The real product is upstream authority. Homepage sections must be truthful,
+  current, product-specific, and independently showcase-quality; they may
+  distill the experience for visitors, but may not remain a stale or generic
+  version of the product they link to.
 
 ## Multi-user and trust rules
 

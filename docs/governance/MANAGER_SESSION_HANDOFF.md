@@ -240,6 +240,21 @@ failure, infrastructure, test, rollout, and rollback contracts. It then selects
 one first vertical slice and assigns one implementation writer/branch. Planning
 does not mean implemented, deployed, or live.
 
+## Planned package - PS-ASK-PETE-AI-001
+
+Ask Pete AI is planned under Roadmap Phase 11 and is not an active writer lane.
+The current production assistant remains public, typed, and grounded only in
+approved public profile knowledge. The future product discussion must explore
+Type, Speak, PDF/DOCX/TXT, and screenshot/OCR inputs while defining an explicit
+public Ask Pete AI versus private owner-analysis boundary.
+
+The first gate is the owner discussion in
+`docs/initiatives/PS-ASK-PETE-AI-001/01_DISCOVERY_AGENDA.md`. Do not assign an
+implementation writer until the role, primary scenario, inputs/outputs,
+complete visual authority, privacy/lifecycle, architecture, AI-safety,
+evaluation, homepage impact, and release gates are approved. This package must
+not interrupt the active Interview or Capture Media lanes.
+
 ## Owner-wide visual decision
 
 The current Bible is v2.5 and the
@@ -249,6 +264,16 @@ them. Visual polish is a release gate across all user-facing PeerSlate work,
 alongside function, privacy, security, accessibility, tests, and deployment.
 The current homepage overall is not the target; a broader homepage redesign is
 still future work.
+
+Every logged-out homepage section is also a governed product projection. When
+the real product changes materially in function, hierarchy, theme, truth, or
+visual finish, the affected homepage section must be updated in the same wave
+or through an exact downstream parity package. The real product is upstream
+authority. The manager may let it release first when sequencing requires that,
+but must keep homepage parity open until the visitor-facing section is current,
+showcase-quality, separately accepted, released, and verified. Voice and
+Interview Studio are current examples; the rule applies to every homepage
+product section.
 
 ## Owner Story composition decision
 
@@ -278,9 +303,12 @@ Near-term sequencing is:
    separately approved identity, persistence, authorization, and lifecycle
    packages;
 5. conduct the broader public/homepage visual convergence after its entry gate;
-6. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
+6. hold PS-ASK-PETE-AI-001 Phase A discovery when Pete is ready; do not start
+   implementation before the multimodal, public/private, visual, architecture,
+   safety, and homepage-parity gates pass;
+7. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
    layout persistence, accessible interaction, and publication design gate;
-7. run a two-member founding alpha with Pete and Danielle, then structured
+8. run a two-member founding alpha with Pete and Danielle, then structured
    feedback, fixes, a small invited cohort, and measured rollout.
 
 Journal UI remains on hold. Do not duplicate Capture or Moment text, create a
@@ -302,7 +330,11 @@ backend reference as a visible member feature.
 6. Obtain Pete/designated-manager visual approval before Interview code.
 7. Claude Co-Work completes Capture Media manager planning before assigning an
    implementation writer.
-8. Keep Interview and Capture Media status and next gates current in
+8. Apply the homepage-impact and parity check to every user-facing package;
+   keep exact downstream parity packages visible until their homepage sections
+   are accepted and live.
+9. Keep Interview, Capture Media, planned Ask Pete AI, and homepage parity
+   status and next gates current in
    the repository after each material handoff or release.
 
 ## Paste-ready kickoff for a designated manager session
@@ -322,7 +354,11 @@ backend reference as a visible member feature.
 > default/light and Concept C controls optional dark for the same public Studio.
 > Require file `09`'s complete dual-theme package, feasibility, and approvals.
 > Maintain honest implementation, demonstration, deployment, and
-> live-production boundaries.
+> live-production boundaries. For every user-facing package, identify any
+> homepage product projection and require the same-wave update or exact
+> downstream parity package defined by the Owner Visual Integrity Standard.
+> Keep `PS-ASK-PETE-AI-001` planned until Pete completes the product discussion;
+> Ask Pete AI is the correct name, not PAI.
 
 ## Paste-ready kickoff for the new Codex Interview Gate 2.4 session
 

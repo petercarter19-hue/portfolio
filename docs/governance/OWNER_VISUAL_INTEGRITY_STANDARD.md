@@ -49,6 +49,9 @@ Truth and beauty are simultaneous requirements:
   only documented improvements.
 - **Visual completion:** manager and owner acceptance of the implemented result
   against the named authority across required states and form factors.
+- **Homepage product projection:** a logged-out homepage section, product card,
+  or walkthrough that presents or links a real PeerSlate experience. It is a
+  distilled public expression of the real product, not a parallel authority.
 
 ## Required gates for user-facing work
 
@@ -61,7 +64,9 @@ Before design or implementation, the initiative records:
    sent to a service, stored, or not stored;
 3. the dominant object and dominant action for every primary state;
 4. all approved first-class input alternatives, such as Speak and Type; and
-5. the files, routes, data, and capabilities the package may not change.
+5. the files, routes, data, and capabilities the package may not change; and
+6. whether the logged-out homepage presents or links this experience, which
+   section is affected, and whether parity work is required.
 
 ### V1 - Design readiness
 
@@ -80,6 +85,12 @@ must cover silhouette and composition, hierarchy, dominant action, typography,
 spacing, color semantics, content density, interaction states, mobile behavior,
 focus, zoom, reduced motion, long content, and failure/recovery. Any intentional
 deviation requires a written reason and manager approval.
+
+When a homepage product projection exists, the comparison also pairs the
+accepted real-product screens with that homepage section at desktop and mobile.
+It records whether product purpose, dominant action, terminology, truth labels,
+theme, hierarchy, recognizable visual language, canonical link, and finish are
+current. A polished but stale projection fails this gate.
 
 ### V3 - Owner and manager acceptance
 
@@ -106,6 +117,52 @@ assets match the accepted build. The designated session manager records or accep
 at closeout and may escalate contradictions. The completion report records
 functional status and visual status separately.
 
+When a product release materially changes an experience represented on the
+homepage, V4 also records one of two valid outcomes: the homepage projection was
+accepted and released in the same wave, or an exact downstream parity package
+was activated and sequenced immediately after the real product. The real
+product may release first when that dependency is necessary, but the package
+must report homepage parity as open until the public projection is current.
+
+## Cross-product homepage projection parity
+
+The logged-out homepage is a sequence of product promises. Each section must be
+individually exceptional and showcase-quality, unmistakably about its product,
+and as professionally finished as the real experience it introduces. It may
+simplify a workflow for a visitor, but it may not collapse into generic cards,
+a stale screenshot, a less beautiful imitation, or a claim that no longer
+matches production.
+
+The following contract applies to every current and future homepage product
+section, including Voice Capture, Interview Studio, Ask Pete AI, Living Resume,
+My Story, Slate Board, and any later experience added to `/`:
+
+1. The accepted and live real product is upstream authority for function,
+   terminology, truth status, theme, hierarchy, and recognizable interaction.
+2. Every material product change triggers a homepage-impact assessment. A
+   change is material when it alters behavior, capability status, dominant
+   action, information architecture, product name, theme, visual authority,
+   responsive model, or professional finish.
+3. When impact exists, the homepage section is updated in the same release wave
+   when file ownership and sequencing are safe. Otherwise the real product
+   releases first and an exact downstream homepage-parity package follows; the
+   stale projection is tracked honestly until that package is live.
+4. A homepage projection has its own production-intent composition and owner/
+   manager acceptance. "Parity" does not require copying an application screen;
+   it requires a beautiful visitor-facing distillation that is recognizably the
+   same product and links to the canonical current route.
+5. Homepage work may never add, imply, or demonstrate capability that the real
+   product does not provide unless it is explicitly labeled as a future,
+   illustrative walkthrough. Once the real capability changes, those labels
+   and states must be reviewed too.
+6. Product implementation and homepage projection use separate evidence even
+   when shipped together: named desktop/mobile comparisons, truth review,
+   responsive/accessibility checks, canonical-link verification, and explicit
+   Pete/designated-manager acceptance.
+7. A homepage redesign may improve the presentation beyond the application
+   screen, but it may not become a competing product direction or silently
+   redefine the real experience.
+
 ## Current owner bindings
 
 ### Private Voice Capture
@@ -122,6 +179,9 @@ functional status and visual status separately.
   waveform/timer, stop, upload/transcription, editable transcript, playback,
   retry, private status, explicit save, text path, failures, desktop, mobile,
   keyboard, and 200% zoom.
+- Any later material Voice function or visual change triggers review of the
+  homepage Voice section under the cross-product parity contract. The released
+  protected product becomes the upstream reference for that public story.
 
 ### Interview Studio
 
@@ -162,12 +222,15 @@ functional status and visual status separately.
 
 ### Homepage boundary
 
-The current homepage as a whole is not an approved quality baseline. The
-specifically accepted Voice walkthrough is a binding minimum for Voice Capture.
-The future Interview walkthrough is governed by the accepted real Studio and
-receives its own focused acceptance only after that Studio is released. A
-broader homepage redesign remains a separate later initiative and must meet this
-same standard across the entire page.
+The current homepage as a whole is not an approved quality baseline. Every
+section must ultimately reach the owner's showcase-quality bar; improving one
+section does not certify the rest of the page. The specifically accepted Voice
+walkthrough remains the original minimum for Voice Capture, but later accepted
+product improvements flow back to the homepage under the cross-product parity
+contract. The future Interview walkthrough is governed by the accepted real
+Studio and receives its own focused acceptance only after that Studio is
+released. A broader homepage redesign remains a separate later initiative and
+must preserve these product-specific authority links across the entire page.
 
 ### Member-directed My Story composition
 
@@ -199,6 +262,8 @@ Every material user-facing completion report must state:
   Blocked;
 - the screenshot and responsive/accessibility evidence reviewed;
 - every approved deviation and why it improves the product;
+- the homepage-impact assessment, affected section and canonical link, parity
+  status, comparison evidence, and exact downstream package when still open;
 - Pete's and the designated session manager's acceptance status; and
 - the honest distinction between demonstration, implementation, deployment,
   and live production behavior.

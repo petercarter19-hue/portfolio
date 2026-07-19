@@ -7,6 +7,7 @@
 - PR / pipeline / environment:
 - Production state:
 - Visual authority and status: Not Applicable / Not Started / In Design / In Review / Accepted / Blocked
+- Homepage product projection: Not Applicable / Current / Update Included / Downstream Package Required / Blocked
 - Pete / designated session manager visual acceptance:
 - Designated session manager:
 - Manager handoff status and next receiver:
@@ -44,6 +45,13 @@ evidence reviewed, compare the implementation with that authority, record every
 intentional deviation and its reason, and state Pete's and the designated
 session manager's visual
 acceptance. A functional pass is not visual acceptance.
+
+For every user-facing package, name any logged-out homepage section that
+presents, demonstrates, or links the product. State whether it remains current
+with the accepted product across function, truth labels, hierarchy, theme,
+responsive behavior, and professional finish. If the product changed
+materially, include the homepage comparison evidence and same-wave update, or
+name the exact downstream parity package and keep homepage parity open.
 
 For Story composition work, also follow
 `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` and separately report

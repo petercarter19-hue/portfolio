@@ -213,6 +213,17 @@ satisfy visual completion. Demonstrations must still state honestly which
 behavior is live, illustrative, stored, transmitted, local-only, private,
 public, or future.
 
+Every user-facing package must also perform the homepage-product parity check
+defined in the same standard. If the logged-out homepage presents, demonstrates,
+or links the product, the package must identify the affected homepage section
+and compare it with the accepted real product. A material change to product
+function, hierarchy, theme, truth status, or visual finish requires either a
+same-wave homepage update or an explicitly linked downstream parity package.
+The real product releases first when sequencing is necessary, but the package
+does not claim homepage parity is closed while the public projection remains
+stale. Voice and Interview Studio are current examples; the rule applies to
+every present and future homepage product section.
+
 For any My Story design, schema, editor, projection, or rendering work, also
 read `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. The member owns the
 composition. Direct manipulation requires keyboard and structured equivalents;

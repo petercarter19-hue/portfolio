@@ -44,6 +44,12 @@ binding minimum: the real experience must match or exceed it, and material work
 requires comparison screenshots plus Pete and the designated session manager's
 visual acceptance.
 Do not treat functional completion as permission to ship a visual downgrade.
+For every such package, complete the homepage-impact check required by the
+standard. If `/` presents or links that product, a material product or visual
+change requires a truthful, showcase-quality homepage parity update in the
+same release wave or an explicitly sequenced downstream package. The real
+product remains upstream authority; a stale homepage walkthrough may not ship
+as the current product story.
 
 Before Story design or implementation, also read
 `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. The future authenticated

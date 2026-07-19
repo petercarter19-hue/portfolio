@@ -1,7 +1,8 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-19 after the accepted Voice release and the Interview Studio
-Image 5 5A-light/5C-dark owner decision._
+_Updated 2026-07-19 after the accepted Voice release, the Interview Studio
+Image 5 5A-light/5C-dark owner decision, planned Ask Pete AI discovery, and the
+cross-product homepage parity decision._
 
 ## Operating model
 
@@ -93,6 +94,29 @@ and explicit Story publication under
 `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. It is not active, has no
 writer or implementation branch, and must not interrupt Voice or Interview.
 
+### PS-ASK-PETE-AI-001 - planned Phase 11 discovery
+
+- Source package: `docs/initiatives/PS-ASK-PETE-AI-001/README.md`.
+- Working product name: **Ask Pete AI**. This is not "PAI." The naming and
+  permission relationship to reusable Ask [Name] AI and private Owner AI is a
+  future discovery decision; no current live label changes.
+- Current production remains the public, typed, approved-source Ask Pete AI
+  assistant. Voice, private owner-history retrieval, document upload,
+  screenshot/OCR processing, saved targets, and Qualification Alignment are not
+  implemented, deployed, or live.
+- Planned inputs to explore include Type, Speak, PDF/DOCX/TXT, and one or more
+  PNG/JPEG screenshots such as job postings. The member must review extracted
+  text and source spans before consequential analysis.
+- Roadmap placement is Phase 11, Next Chapter and Qualification Alignment. The
+  first action is the owner discovery agenda, followed by complete experience,
+  visual-authority, architecture, privacy, AI-safety, and traceability gates.
+- No designated discovery manager, implementation writer, product branch, or
+  start date is assigned. This package must not interrupt the active Interview
+  Studio or Capture Media gates.
+- Any homepage section that presents or links Ask Pete AI is subject to the
+  cross-product homepage projection parity contract before future product
+  implementation can close.
+
 ## Held
 
 - **PS-JOURNAL-001:** Journal UI remains on hold by explicit owner decision.
@@ -112,6 +136,11 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 - Follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; material
   user-facing work requires a named visual authority, parity evidence, and Pete
   plus designated-session-manager visual acceptance.
+- Every user-facing package records a homepage-impact assessment. If `/`
+  presents, demonstrates, or links that product, material function or visual
+  changes require a same-wave homepage update or an exact downstream parity
+  package; the real product remains upstream authority and parity stays open
+  until the public projection is current and accepted.
 - Manager-to-manager transfer requires a durable package report naming the
   current gate, exact branch/SHA, evidence, shared-file reservation, unresolved
   issues, and single next action. Chat history alone is not a handoff.

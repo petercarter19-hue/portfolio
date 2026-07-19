@@ -230,3 +230,47 @@ This is an append-only operational decision record. The current Bible and Roadma
 - Real Studio implementation and demo implementation require separate exact
   branch/SHA, Pete/manager visual acceptance, Azure PR, squash-merge SHA,
   pipeline, and live verification evidence.
+
+## 2026-07-19 - Register Ask Pete AI for multimodal product discovery
+
+- Owner clarification: the product name is **Ask Pete AI**, not "PAI."
+- The current public typed Ask Pete AI remains real and unchanged. It is not
+  evidence that private owner retrieval, voice, attachments, OCR, or job-
+  posting analysis already exists.
+- Reserve `PS-ASK-PETE-AI-001` as planned Roadmap Phase 11 work. The package
+  begins with an owner discussion to define the role, public/private modes,
+  first scenario, inputs, outputs, exclusions, success measures, and product
+  name relationships before design or implementation.
+- The discovery must explore Type, Speak, PDF/DOCX/TXT documents, and one or
+  more PNG/JPEG screenshots such as job postings. Extracted/OCR text and source
+  spans require member review before consequential analysis.
+- The future product stays private-first, source-grounded, correctable, and
+  deletable. It is not a job board, job feed, fit oracle, automatic application
+  tool, public index, or unreviewed editor of canonical Slate records.
+- No discovery manager, implementation writer, product branch, migration,
+  dependency, design authority, start date, or implementation authorization is
+  assigned by this docket decision.
+
+## 2026-07-19 - Require cross-product homepage projection parity
+
+- Owner decision: every logged-out homepage section that presents or links a
+  PeerSlate product must be individually showcase-quality - in Pete's words,
+  "staggeringly beautiful" - and must remain truthful and current with the real
+  product.
+- The accepted and live real product is upstream authority. A homepage section
+  is a distilled public projection, not a parallel design or product authority.
+- Every material product or visual change requires a homepage-impact
+  assessment. When a related homepage section exists, update it in the same
+  release wave when safe or activate an exact downstream parity package after
+  the real product releases. Do not report homepage parity closed while the
+  public projection remains stale.
+- Parity covers function, capability truth, product names, hierarchy, dominant
+  action, themes, recognizable visual language, responsive/accessibility
+  behavior, canonical links, and professional finish. It does not require a
+  literal copy of the application screen.
+- Voice Capture and Interview Studio are the current named examples. The rule
+  applies equally to Ask Pete AI, Living Resume, My Story, Slate Board, and
+  every other present or future product section on `/`.
+- Each affected real-product package and homepage package requires its own
+  desktop/mobile comparison, truth review, Pete/designated-manager acceptance,
+  Azure release, and live verification evidence.
