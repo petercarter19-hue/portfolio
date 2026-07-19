@@ -19,10 +19,13 @@ authority:
   voice_release_merge_commit: "eede8565d703a466bd788962d494e8b385b53409"
   voice_release_pr: 75
   voice_release_pipeline: 105
+  self_managed_lanes_merge_commit: "fe03d49ca57bde2c4d0bfc4c66726c132da81ebf"
+  self_managed_lanes_pr: 76
+  self_managed_lanes_pipeline: 107
   production_url: "https://peerslate.com"
   application_behavior_commit: "eede8565d703a466bd788962d494e8b385b53409"
   application_behavior_pipeline: 105
-  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PS-VOICE-001 remains active for Claude's visual-parity correction. The current owner decision also delegates complete-diff review, tests, evidence, PR readiness, and post-acceptance release/closeout to each assigned self-managed writer. Fetch origin for the exact current tip."
+  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released the self-managed delivery model and Claude visual-parity allocation without changing application behavior. PS-VOICE-001 remains active for Claude's correction. Fetch origin for the exact current tip."
 
 mirror:
   remote: github

@@ -12,7 +12,7 @@ readiness, and post-acceptance release/closeout.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work | Self-managed lane activation; Voice and Interview gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
+| Governance and orchestration | ChatGPT Work | Self-managed lanes released; Voice and Interview gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
 | Backend convergence | ChatGPT Codex | Next backend package preparation | assigned backend architecture/services/schema/tests only | Voice visual files, public Studio, Journal, global theme/nav unless assigned |
 | Protected front end | Claude Code | PS-VOICE-001 visual-parity correction | protected Voice Capture template/scoped CSS/client/tests/evidence | Voice backend, auth, SQL, infrastructure, public Studio/resume, global theme/nav |
 | Public experience | ChatGPT visual-authority session, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | Direction A Gate 2.4 design package; implementation only after complete visual gate and approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |

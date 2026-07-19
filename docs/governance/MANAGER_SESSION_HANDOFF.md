@@ -61,6 +61,8 @@ sign-in boundary.
 - Member-directed Story composition authority: PR 73 / pipeline 102.
 - Private Voice Capture implementation: PR 75 at
   `eede8565d703a466bd788962d494e8b385b53409` / pipeline 105.
+- Self-managed delivery lanes and Claude Voice correction allocation: PR 76 at
+  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf` / pipeline 107.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.

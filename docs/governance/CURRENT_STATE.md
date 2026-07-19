@@ -36,6 +36,10 @@ _Updated 2026-07-19 for the released Voice implementation, owner functional vali
   interface is materially flatter and clunkier than the approved homepage/feed
   walkthrough. The release remains technically deployed but product/visual
   status is In Progress until Claude's corrective visual-parity package passes.
+- The self-managed delivery model and Claude Voice correction allocation
+  squash-merged through Azure PR 76 at
+  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf`; pipeline 107 passed Build and
+  Deploy for that exact commit. Public route behavior remained unchanged.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

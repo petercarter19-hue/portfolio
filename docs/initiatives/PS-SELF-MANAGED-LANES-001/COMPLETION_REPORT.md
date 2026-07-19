@@ -3,18 +3,19 @@
 ## A. Status
 
 - Package: PS-SELF-MANAGED-LANES-001
-- Status: Complete for branch self-certification; Azure release pending
-- Branch and commit: `work/2026-07-19-self-managed-lanes`; exact pushed tip is
-  supplied in the Azure PR and final manager handoff because a commit cannot
-  contain its own SHA
-- PR / pipeline / environment: pending branch push and Azure PR
-- Production state: governance-only; no product behavior change
+- Status: Released and live
+- Branch and commit: `work/2026-07-19-self-managed-lanes` at
+  `a909e6bf50c20f54b7ab0c22c28f573e94076c7b`
+- PR / pipeline / environment: Azure PR 76 squash-merged at
+  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf`; pipeline 107 passed Build and
+  Deploy
+- Production state: governance deployed; verified public behavior unchanged
 - Visual authority and status: Not Applicable
 - Pete / ChatGPT Work visual acceptance: Not Applicable
 - Lane owner and self-managed authority: ChatGPT Work governance lane
-- Self-certification: Pass for repository scope; release evidence pending
+- Self-certification: Pass
 - Complete-diff review: Passed; environment gaps isolated and required tests rerun
-- Acceptance requested: release
+- Acceptance requested: none; release closeout complete
 
 ## B. What changed technically
 
@@ -75,11 +76,21 @@ the reopened visual gate, and the active Claude planning checkpoint.
 - Complete-diff review confirmed every changed path is governance,
   agent/workflow instruction, initiative documentation, completion-template,
   or guardrail-test scope. No runtime product file changed.
+- Azure PR 76 completed with merge status `succeeded`; its exact source SHA was
+  `a909e6bf50c20f54b7ab0c22c28f573e94076c7b` and squash merge SHA was
+  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf`. Azure deleted the remote source
+  branch.
+- Azure pipeline 107 passed both Build and Deploy for exact merge SHA
+  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf`. A manual fallback queued while
+  Azure's automatic run was briefly absent from the default list; duplicate run
+  108 was canceled before its pending Deploy job started.
+- Live checks after pipeline 107: `/`, `/petec/resume`, `/interview-studio`, and
+  `/petec/my-story` returned 200; `/my-story` returned the canonical 302 to
+  `/petec/my-story`; signed-out `/app/capture` returned the expected 302 to
+  `/auth/sign-in?return_to=/app/capture`.
 
 ## G. Known gaps, risks, and exclusions
 
-- Azure PR, pipeline, production-route checks, and GitHub-mirror status remain
-  pending until this branch is pushed and merged.
 - The Voice visual correction is allocated and its design checkpoint is
   manager-approved, but implementation, screenshots, product acceptance,
   deployment, and live verification are separate future evidence.
@@ -88,12 +99,14 @@ the reopened visual gate, and the active Claude planning checkpoint.
 - No Bible or Roadmap version change was needed: the owner decision changes
   delivery operations, while current-state and package records carry release
   status.
+- The GitHub mirror was not updated because the authoritative baseline keeps
+  `push_on_hold: true`; Azure `origin/main` remains the only release source.
 
 ## H. Clear next step
 
-Push this exact branch, release it through Azure PR/squash/pipeline, verify the
-unchanged production routes, then give Claude the resulting current
-`origin/main` SHA to synchronize before implementation.
+Claude should fetch and synchronize the exact current `origin/main` after this
+release-evidence closeout merges, then self-manage the protected Voice visual
+correction through real-product acceptance and Azure release.
 
 ## I. What Pete needs to do or decide
 
