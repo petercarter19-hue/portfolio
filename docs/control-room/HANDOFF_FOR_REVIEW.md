@@ -26,24 +26,33 @@ Feature commits:  09d3c19  v1: owner-only read-only dashboard
                   60ac065  v2: live repository sync (Tier 0/1/2)
                   3c34e0f  v2.1: plain-language initiative detail pop-out
 Original base:    origin/main @ fd27b2147b6a34019353d038331f4bde4f97d3b5
-Merged main:      origin/main @ 296711d001c7dd0d0bc66001a29c42595a938bdb
+Merged main (2nd pass): origin/main @ a98cced519a1f853ad9f4462fd438efa67d6f260
+Merge commit:     6cb49f135cc3a2749dd4539f8261d176b43dad9a (squash, PR #87)
 Working tree:     unrelated untracked files remain preserved and are not part
                   of this package: SETUP_PS_GOV_001.sh and
                   docs/initiatives/PS-CAPTURE-MEDIA-001/CLAUDE_CODE_HANDOFF_INSTRUCTIONS.md.
 Pushed to Azure:  yes
-Tests/checks:     full suite 468 pass (1 pre-existing skip); focused
-                  test_control_room (49) + test_azure_devops_read (13) green;
-                  guardrails test_site_rules + test_governance_pointers (24) green.
-Production status: NOT deployed. Verified locally in a real browser only.
-Active writer:    RELINQUISHED by Claude Code at the review tip. Codex may review
-                  (read-only) freely; to *edit* the branch, treat this as the
-                  handoff. To hand back to Claude Code, return the branch + exact
-                  full SHA.
+Tests/checks:     full suite 494 pass (1 pre-existing skip) on the final merged
+                  tree; focused test_control_room (49) + test_azure_devops_read
+                  (13) green; guardrails green.
+Azure PR:         #87, source work/2026-07-19-control-room -> main, squash
+                  merge, source branch auto-deleted. Completed 2026-07-19.
+Pipeline:         runs #123 (CI-triggered) and #124 (manual), both built commit
+                  6cb49f1, both SUCCEEDED.
+Production status: DEPLOYED and verified live at https://peerslate.com. Full
+                  route sweep (existing public routes 200, Control Room routes
+                  404 fail-closed, snapshot file not publicly reachable) — see
+                  COMPLETION_REPORT.md section F for the complete evidence.
+Active writer:    Claude Code executed the merge/deploy on Pete's direct
+                  instruction ("Deploy it") and then relinquished again. Branch
+                  no longer exists (deleted post-merge).
 ```
 
-> **Integration review complete:** current `origin/main` at `296711d` was merged
-> in commit `b0db770`; the full suite and governance guardrails were rerun on
-> that integrated tree. No PR has been opened and nothing has been deployed.
+> **Deployed 2026-07-19.** PR #87 squash-merged current `origin/main` (through
+> PR 86) with this branch's reviewed, corrected implementation. Both triggered
+> pipeline runs succeeded. Production was verified live immediately after — see
+> the completion report for the full sweep. The dashboard itself is inert until
+> Pete sets his owner allowlist (Part B.4 below).
 
 ---
 
@@ -61,8 +70,8 @@ you can see it.
 
 ### B.2 Where it lives
 
-- **Production (after it is deployed):** `https://peerslate.com/owner/control-room`
-- **Local (for trying it before deploy):** `http://localhost:5000/owner/control-room`
+- **Production (live now):** `https://peerslate.com/owner/control-room`
+- **Local (for local development/testing):** `http://localhost:5000/owner/control-room`
 
 There is intentionally **no menu link** to it anywhere — that's part of keeping
 it private. Bookmark the URL.
@@ -77,20 +86,20 @@ signed-in identity, so it can't be faked from the browser.
 
 ### B.4 Signing in (production)
 
-1. **Deploy it first** (merge the branch → Azure pipeline deploys — see the
-   pending decision in Part C.4).
-2. **Add one setting** in the Azure Web App → Configuration → Application
+**It's already deployed and live** — this is the only step left:
+
+1. **Add one setting** in the Azure Web App → Configuration → Application
    settings:
    `PEERSLATE_OWNER_EMAILS` = the email address you sign in to PeerSlate with
    (your Microsoft / Entra account email). You set this yourself; no one else,
    including any AI, needs the value.
-3. **Sign in to PeerSlate normally** — the site's existing "Sign In" (Microsoft
+2. **Sign in to PeerSlate normally** — the site's existing "Sign In" (Microsoft
    Entra). This is the same login the app already uses; the Control Room adds no
    new login of its own.
-4. **Go to** `https://peerslate.com/owner/control-room`. Because your signed-in
+3. **Go to** `https://peerslate.com/owner/control-room`. Because your signed-in
    email matches the allowlist, you'll see the dashboard. Anyone else visiting
    that URL gets a 404.
-5. **To revoke access later**, clear that app setting — the page instantly
+4. **To revoke access later**, clear that app setting — the page instantly
    becomes 404 for everyone again.
 
 (If you'd rather key access to the opaque account id than the email, there's a
@@ -227,24 +236,24 @@ Please confirm each — the deeper rationale is in
 - [x] **No runtime AI:** the initiative detail is parsed source prose, not a
   model-generated summary.
 
-### C.4 Governance context & the pending decision (please weigh in)
+### C.4 Governance context & how it was actually released
 
 - This was built under an **explicit one-session owner override** of the Claude
   Code "public-experience / no-auth" lane, because a genuine owner-only surface
   requires a site-owner auth check that lane normally excludes.
 - The **governance authority files were intentionally NOT modified**
-  (`CURRENT_BASELINE.yaml` `active_packages`, `ACTIVE_INITIATIVES.md`). Registering
-  this as an initiative (proposed id `PS-CONTROL-ROOM-001`) is the designated
-  session manager's call. Guardrail suites are green precisely because nothing
-  in the authority chain was touched.
-- **Pending owner/manager decision:** (a) merge as-is under the owner override via
-  an Azure PR, or (b) have the designated session manager register
-  `PS-CONTROL-ROOM-001` (lane, file reservation) first. Codex recommends (b), or
-  an explicit recorded exception. Current `origin/main @ 296711d` is already
-  merged in review commit `b0db770`.
-- **Manager remains the formal merge-readiness/release authority.** This Codex
-  review is the technical sign-off the owner asked for; it complements, not
-  replaces, the manager's step.
+  (`CURRENT_BASELINE.yaml` `active_packages`, `ACTIVE_INITIATIVES.md`).
+  Registering this as an initiative (proposed id `PS-CONTROL-ROOM-001`) was
+  Codex's recommendation before merge. **Pete instead instructed direct
+  deployment** ("Deploy it") after reviewing Codex's Pass/Pass sign-off,
+  exercising owner authority over that recommendation. PR #87 was opened,
+  merged (squash), and deployed on that instruction — see
+  `COMPLETION_REPORT.md` section A/H for the record.
+- **Still open:** a manager session should reconcile the governance record
+  after the fact (register `PS-CONTROL-ROOM-001`, or log the owner-override as
+  a formal exception) so `CURRENT_BASELINE.yaml`/`ACTIVE_INITIATIVES.md`
+  reflect what is now actually live. This is a paperwork reconciliation, not a
+  blocker — the code is already deployed and verified.
 
 ### C.5 Questions I'd like aligned (please answer in your sign-off)
 
@@ -279,21 +288,25 @@ Codex review answers:
 |---|---|---|---|
 | ChatGPT Codex — technical & integration review | **Pass** | Integrated with `origin/main @ 296711d`; two defects corrected; 468-test full suite, focused tests, guardrails, route smoke checks, and responsive browser checks pass. This is not merge-readiness or visual acceptance. | 2026-07-19 |
 | ChatGPT Codex — security (auth, read-only, secrets) | **Pass** | No open high/medium findings. Keep owner allowlists server-configured; prefer opaque user key; PAT remains optional, server-side, read-only, expiring, and never committed. Live production auth/PAT remains unproved until release. See `SECURITY_REVIEW.md`. | 2026-07-19 |
-| Pete — owner functional acceptance (I can access & use it) |  |  |  |
-| Designated session manager — merge-readiness (governance path chosen) |  |  |  |
+| Pete — release decision | **Deploy authorized** | Instructed direct deployment ("Deploy it") after reviewing functionality and Codex's Pass/Pass sign-off — exercising owner authority over the recommended pre-merge governance-registration step. Recorded here as the release decision; owner *functional* acceptance (actually using the live page) is still open below. | 2026-07-19 |
+| Pete — owner functional acceptance (I can access & use it) | _open_ | Not yet recorded — requires Pete to set his owner allowlist value and open the live page. | |
+| Designated session manager — governance reconciliation | _open_ | Deployment did not wait for this. A future manager session should register `PS-CONTROL-ROOM-001` or log the owner-override as a formal exception so the governance record matches what is live. | |
 
 ---
 
 ## Part D — Known limitations (don't infer past these)
 
-- **Not deployed.** No production or production-URL verification yet.
+- **Deployed and verified 2026-07-19** — PR #87, merge commit `6cb49f1`,
+  pipeline runs #123/#124 succeeded, live route sweep clean (see
+  `COMPLETION_REPORT.md` section F). The dashboard itself has not yet been
+  viewed by anyone, since no owner allowlist is set — Pete has not yet
+  performed the functional-acceptance walkthrough of the live page itself.
 - **Tier 1 live sync not exercised against real Azure DevOps** — its request /
-  cache / failure / credential paths are proven with mocked HTTP (11 tests), not
+  cache / failure / credential paths are proven with mocked HTTP (13 tests), not
   a live call. First real use is the first true end-to-end proof.
-- **The build-time snapshot** has been generated locally with fabricated
-  `BUILD_*` values, not yet produced by a real Azure Pipelines run; so
-  production "Recent changes" and the deployed-commit card are unproven until the
-  first deploy.
+- **The build-time snapshot has now run for real** in Azure Pipelines (part of
+  runs #123/#124) and did not fail the build. Its actual content has not yet
+  been inspected (that requires an allowlisted owner session).
 - **Drift** compares against the 30 most-recent `main` commits; a deployment
   older than that window reports `unknown` (by design, never a guess).
 - Everything else (auth boundary, read-only boundary, truthfulness states,
