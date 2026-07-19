@@ -1,6 +1,6 @@
 # PeerSlate Document Control
 
-_Adopted 2026-07-18. Maintained by the ChatGPT Work manager lane._
+_Adopted 2026-07-18. Maintained by the currently designated governance manager lane._
 
 ## Authority order
 
@@ -25,6 +25,7 @@ No agent may silently choose an older instruction because it is more detailed. S
 | Company and Product Bible | v2.5 | Product language, boundaries, principles, visual integrity, Story composition authority, and intended model |
 | Product Strategy and Architecture Roadmap | v2.4 | Evidence state, package order, gates, architecture direction, and Story Composer allocation |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
+| Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
 | Deep Navy Gold visual baseline | Approved | Shared owner visual foundation |
 | Owner Visual Integrity Standard | Approved | Demonstration parity, visual evidence, and owner/manager acceptance gates |
@@ -42,4 +43,13 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 ## Change rule
 
-Update `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and `ACTIVE_INITIATIVES.md` together when a package, owner, hold, authority version, or verified production boundary changes. Product packages may update only their own initiative records unless the manager reserves a governance-file edit in writing.
+Update `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and `ACTIVE_INITIATIVES.md`
+together when a package, owner, hold, authority version, or verified production
+boundary changes. Product packages may update only their own initiative records
+unless the manager reserves a governance-file edit in writing. Under the
+self-managed delivery model, the assigned writer owns complete-diff review,
+evidence, PR readiness, and post-acceptance release/closeout, but this does not
+silently grant shared-governance-file ownership. The Bible changes only for
+constitutional product direction; routine implementation/release status belongs
+in initiative architecture, completion, Roadmap, and current-state records as
+applicable.

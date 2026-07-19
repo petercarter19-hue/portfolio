@@ -32,6 +32,7 @@ class StartHereEntryPointTests(unittest.TestCase):
                 self.assertIn("CURRENT_BASELINE.yaml", body)
                 self.assertIn("DOCUMENT_CONTROL.md", body)
                 self.assertIn("ChatGPT Work", body)
+                self.assertIn("Claude Co-Work", body)
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
                 self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
                 self.assertNotIn("## v1.3 governance", body)
@@ -65,6 +66,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "README.md"),
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "README.md"),
+        ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "07_GATE_24_SESSION_REVIEW.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
@@ -82,7 +84,14 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-VOICE-001", "03_INFRASTRUCTURE.md"),
         ("docs", "initiatives", "PS-VOICE-001", "04_TEST_RELEASE_PLAN.md"),
         ("docs", "initiatives", "PS-VOICE-001", "05_IMPLEMENTATION_PLAN.md"),
+        ("docs", "initiatives", "PS-VOICE-001", "06_VISUAL_PARITY_CORRECTION.md"),
         ("docs", "initiatives", "PS-VOICE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "README.md"),
+        ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"),
+        ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
@@ -126,10 +135,15 @@ class BaselineCoherenceTests(unittest.TestCase):
     def test_baseline_names_current_authority_and_manager(self):
         self.assertIn("Bible_v2.5", self.baseline)
         self.assertIn("Roadmap_v2.4", self.baseline)
-        self.assertIn('tool: "ChatGPT Work"', self.baseline)
+        self.assertIn('role: "package_designated_session_manager"', self.baseline)
+        self.assertIn(
+            'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
+            self.baseline,
+        )
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
+        self.assertIn("PS-SELF-MANAGED-LANES-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
         self.assertIn(
             'voice_activation_merge_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"',
@@ -142,11 +156,17 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 93", self.baseline)
-        self.assertIn("e0462a2e4683c91ebe518b6d984a2a8b973ba3d5", self.baseline)
+        self.assertIn("application_behavior_pipeline: 105", self.baseline)
+        self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
         self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", self.baseline)
         self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", self.baseline)
         self.assertIn("MANAGER_SESSION_HANDOFF.md", self.baseline)
+        self.assertIn(
+            'delivery_model: "portable_session_manager_with_self_managed_writers"',
+            self.baseline,
+        )
+        self.assertIn("voice_release_pipeline: 105", self.baseline)
+        self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -156,7 +176,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001"], active_ids
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001", "PS-CAPTURE-MEDIA-001"],
+            active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
@@ -176,8 +197,11 @@ class BaselineCoherenceTests(unittest.TestCase):
             "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5",
             "pipeline 93",
             "ChatGPT Work",
+            "Claude Co-Work",
+            "Capture Media manager planning",
             "GitHub mirror is not current",
-            "Capture remains text-only",
+            "Voice is functionally deployed",
+            "self-certification",
             "Placement reference model is live",
             "no website control creates or displays placements yet",
             "pipeline 97",
@@ -204,7 +228,50 @@ class BaselineCoherenceTests(unittest.TestCase):
                 body = _read(*relative_path.split("/"))
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
-        self.assertIn("Pete / ChatGPT Work visual acceptance", report)
+        self.assertIn("Pete / designated session manager visual acceptance", report)
+
+    def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        handoff = _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md")
+        interview_review = _read(
+            "docs",
+            "initiatives",
+            "PS-INTERVIEW-PUBLIC-GATE-001",
+            "07_GATE_24_SESSION_REVIEW.md",
+        )
+        capture = _read(
+            "docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"
+        )
+
+        for expected in (
+            "Portable session management",
+            "exactly one designated session manager",
+            "Claude Co-Work management is",
+            "distinct from Claude Code implementation ownership",
+        ):
+            self.assertIn(expected, workflow)
+        for expected in (
+            "Codex Interview Gate 2.4 session",
+            "Claude Co-Work",
+            "PS-CAPTURE-MEDIA-001",
+            "implementation, demonstration, deployment",
+        ):
+            self.assertIn(expected, handoff)
+        for expected in (
+            "Review-only",
+            "nine",
+            "truth/accessibility",
+            "Claude Co-Work",
+            "does not edit Interview Studio product code",
+        ):
+            self.assertIn(expected, interview_review)
+        for expected in (
+            "Manager/planning active",
+            "Implementation writer: Unassigned",
+            "No photo, video, or document Capture is implemented, deployed, or live",
+            "Voice",
+        ):
+            self.assertIn(expected, capture)
 
     def test_story_composition_is_member_directed_and_not_claimed_live(self):
         standard = _read(
@@ -231,6 +298,52 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
         self.assertIn("PS-STORY-COMPOSER-001", self.state)
         self.assertIn("not active", self.initiatives)
+
+    def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        for expected in (
+            "Self-managed delivery lanes",
+            "complete diff",
+            "Pass`, `Conditional`, or `Fail",
+            "post-acceptance release and closeout",
+            "The Bible is not a changelog",
+        ):
+            self.assertIn(expected, workflow)
+
+        for relative_path in (
+            "START_HERE.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/governance/CURRENT_BASELINE.yaml",
+            "docs/governance/CURRENT_STATE.md",
+            "docs/governance/ACTIVE_INITIATIVES.md",
+            "docs/governance/MANAGER_SESSION_HANDOFF.md",
+            "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                self.assertRegex(body, r"(?i)self-manag")
+
+        report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
+        self.assertIn("Self-certification: Pass / Conditional / Fail", report)
+        self.assertIn("Complete-diff review", report)
+
+    def test_voice_visual_correction_is_truthful_and_assigned_to_claude(self):
+        correction = _read(
+            "docs", "initiatives", "PS-VOICE-001", "06_VISUAL_PARITY_CORRECTION.md"
+        )
+        for expected in (
+            "Claude Code",
+            "Save private Capture",
+            "Coming later",
+            "Frontend flags",
+            "portfolio-voice-001",
+            "Pass`, `Conditional`, or `Fail",
+        ):
+            self.assertIn(expected, correction)
+        self.assertIn("Claude Code self-managed visual correction", self.baseline)
+        self.assertIn("pipeline 105", self.state)
+        self.assertIn("withdrew Voice visual acceptance", self.state)
 
 
 if __name__ == "__main__":

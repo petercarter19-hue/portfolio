@@ -1,6 +1,6 @@
 # PeerSlate Owner Visual Integrity Standard
 
-_Owner decision: 2026-07-18. Maintained by the ChatGPT Work manager lane._
+_Owner decision: 2026-07-18. Maintained by the currently designated session manager lane._
 
 ## Purpose and authority
 
@@ -83,18 +83,28 @@ deviation requires a written reason and manager approval.
 
 ### V3 - Owner and manager acceptance
 
-ChatGPT Work reviews functional truth, accessibility, and visual parity. Pete
-reviews the real implemented result for professional finish. Material
+The designated session manager reviews functional truth, accessibility, and
+visual parity. Pete reviews the real implemented result for professional finish. Material
 user-facing work does not pass this gate until both accept it or Pete explicitly
 delegates final visual acceptance in writing. A technical handoff marked ready
 does not itself authorize merge.
 
+Under the owner-approved self-managed delivery model, the assigned writer first
+performs and documents the complete visual comparison, corrects its own issues,
+and returns a `Pass`, `Conditional`, or `Fail` self-certification. The designated session manager
+may rely on coherent comparison evidence and a focused review of the real
+product instead of repeating the writer's complete implementation audit. Pete
+and the designated session manager still own final product/visual acceptance;
+self-certification does not let a writer approve its own visual gate.
+
 ### V4 - Release integrity
 
-The Azure PR, pipeline, and live verification still apply. After deployment,
-the manager verifies the canonical production route at representative desktop
-and mobile widths and confirms that deployed assets match the accepted build.
-The completion report records functional status and visual status separately.
+The Azure PR, pipeline, and live verification still apply. After acceptance and
+deployment, the assigned self-managed writer verifies the canonical production
+route at representative desktop and mobile widths and confirms that deployed
+assets match the accepted build. The designated session manager records or accepts that evidence
+at closeout and may escalate contradictions. The completion report records
+functional status and visual status separately.
 
 ## Current owner bindings
 
@@ -169,6 +179,6 @@ Every material user-facing completion report must state:
   Blocked;
 - the screenshot and responsive/accessibility evidence reviewed;
 - every approved deviation and why it improves the product;
-- Pete's and ChatGPT Work's acceptance status; and
+- Pete's and the designated session manager's acceptance status; and
 - the honest distinction between demonstration, implementation, deployment,
   and live production behavior.

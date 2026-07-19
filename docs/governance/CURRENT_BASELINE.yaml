@@ -1,8 +1,8 @@
 # PeerSlate current authority record
-# Updated by PS-STORY-COMPOSER-DIRECTION-001 on 2026-07-18.
+# Updated for portable package management and Capture Media planning on 2026-07-19.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
-updated_at: "2026-07-18"
+updated_at: "2026-07-19"
 
 authority:
   remote: origin
@@ -16,10 +16,19 @@ authority:
   visual_integrity_pipeline: 99
   story_composition_merge_commit: "aaee6e563a94e19d1786ded3f636d8376e20d500"
   story_composition_pipeline: 102
+  voice_release_merge_commit: "eede8565d703a466bd788962d494e8b385b53409"
+  voice_release_pr: 75
+  voice_release_pipeline: 105
+  self_managed_lanes_merge_commit: "fe03d49ca57bde2c4d0bfc4c66726c132da81ebf"
+  self_managed_lanes_pr: 76
+  self_managed_lanes_pipeline: 107
+  portable_session_manager_merge_commit: "c4e5145026cc9a67a68c6c147cc5daa8db386f7a"
+  portable_session_manager_pr: 78
+  portable_session_manager_pipeline: 110
   production_url: "https://peerslate.com"
-  application_behavior_commit: "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5"
-  application_behavior_pipeline: 93
-  note: "PR 73/pipeline 102 released Bible v2.5, Roadmap v2.4, and member-directed Story composition governance without changing website behavior. PR 71/pipeline 99 released visual-integrity enforcement and the durable manager handoff. PR 70/pipeline 97 activated PS-VOICE-001. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No Story Composer, placement UI, or downstream consumer exists yet. Fetch origin for the exact current tip."
+  application_behavior_commit: "eede8565d703a466bd788962d494e8b385b53409"
+  application_behavior_pipeline: 105
+  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released self-managed delivery. PR 78/pipeline 110 released portable session management between a ChatGPT Work/Codex manager session and Claude Co-Work. Interview Gate 2.4 review, Voice visual correction, and Capture Media manager planning are active but remain separate. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -28,9 +37,12 @@ mirror:
   status: push_on_hold_and_behind_origin
 
 manager:
-  tool: "ChatGPT Work"
-  owner_decision_date: "2026-07-18"
-  responsibilities: "governance, sequencing, handoff review, visual acceptance, merge readiness, and release verification"
+  role: "package_designated_session_manager"
+  eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
+  owner_decision_date: "2026-07-19"
+  delivery_model: "portable_session_manager_with_self_managed_writers"
+  responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
+  current_assignments: "Codex manager session reviews Interview Gate 2.4; Claude Co-Work receives that review and manages PS-CAPTURE-MEDIA-001 planning; Claude Code remains the separate implementation writer when assigned"
 
 governing_documents:
   bible:
@@ -54,6 +66,8 @@ governing_documents:
     path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
+  delivery_workflow:
+    path: "docs/AI_WORKFLOW.md"
 
 theme: deep_navy_gold
 
@@ -75,6 +89,8 @@ completed_packages:
   - PS-VOICE-CAPTURE-MANAGER-001
   - PS-VISUAL-INTEGRITY-GOV-001
   - PS-STORY-COMPOSER-DIRECTION-001
+  - PS-SELF-MANAGED-LANES-001
+  - PS-PORTABLE-SESSION-MANAGER-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -86,14 +102,18 @@ holds:
 
 active_packages:
   - id: PS-INTERVIEW-PUBLIC-GATE-001
-    owner: "ChatGPT Pro visual direction; Claude Code feasibility"
+    owner: "Codex Gate 2.4 review session; Claude Co-Work designated manager; Claude Code feasibility/implementation only after approval"
     lane: public_experience
     package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
   - id: PS-VOICE-001
-    owner: "ChatGPT Codex"
-    lane: backend_convergence
+    owner: "Claude Code self-managed visual correction; Pete and designated session manager accept"
+    lane: protected_frontend_visual_parity
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation. PS-STORY-COMPOSER-001 is preserved as planned future work and is not active."
+  - id: PS-CAPTURE-MEDIA-001
+    owner: "Claude Co-Work designated session manager; implementation writer unassigned"
+    lane: capture_media_manager_planning
+    package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
+next_gate: "Claude Code completes PS-VOICE-001 visual parity and returns self-certified evidence. The Codex Interview session reviews the uploaded complete Direction A Gate 2.4 package and hands its exact branch/SHA/report to Claude Co-Work; Claude Code implementation remains blocked until feasibility and Pete/designated-manager approval. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

@@ -91,8 +91,13 @@ Return:
 6. any implementation concern that would require a file outside the current Claude writable list;
 7. a plain-English owner walkthrough describing what changes from today's public page.
 
+The new Codex Gate 2.4 session reviews this handoff under
+`07_GATE_24_SESSION_REVIEW.md` and commits its review only. Claude Co-Work then
+receives that exact review branch/SHA as designated manager. Claude Code
+feasibility and implementation remain separate later steps.
+
 End the handoff with: **Design only; implementation has not started.**
 
 ## Copy/paste kickoff
 
-> Review and follow `START_HERE.md`, the current repository pointer chain, the active `PS-INTERVIEW-PUBLIC-GATE-001` package, and especially `05_OWNER_APPROVED_DESIGN_SCOPE.md` plus `06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md`. Pete approved Approach A on 2026-07-18: preserve the real interactive public Interview Studio and simplify/truth-label it. Produce the nine separate current-public production-intent screens and editable responsive/accessibility states required by file `06`. Use light-first Deep Navy Gold, navy for primary/active states, marigold for highlights/grounding, and teal for success only. Keep Pete as a clearly labeled public demo profile. Preserve Interview Me, Interview AI, Video Practice, real coaching, browser-local history, and local camera rehearsal. Do not design working private Studio, sign-in gating, member history, Interview Story save, job-description analysis, server persistence, paid entitlements, or video analytics into the current screens. This is design only: do not change repository files or begin implementation. Return the complete design handoff to ChatGPT Work for sign-off.
+> Review and follow `START_HERE.md`, the current repository pointer chain, the active `PS-INTERVIEW-PUBLIC-GATE-001` package, and especially `05_OWNER_APPROVED_DESIGN_SCOPE.md` plus `06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md`. Pete approved Approach A on 2026-07-18: preserve the real interactive public Interview Studio and simplify/truth-label it. Produce the nine separate current-public production-intent screens and editable responsive/accessibility states required by file `06`. Use light-first Deep Navy Gold, navy for primary/active states, marigold for highlights/grounding, and teal for success only. Keep Pete as a clearly labeled public demo profile. Preserve Interview Me, Interview AI, Video Practice, real coaching, browser-local history, and local camera rehearsal. Do not design working private Studio, sign-in gating, member history, Interview Story save, job-description analysis, server persistence, paid entitlements, or video analytics into the current screens. This is design only: do not change repository files or begin implementation. Return the complete design handoff to the designated session manager for sign-off.
