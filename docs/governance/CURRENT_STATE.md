@@ -20,6 +20,13 @@ _Verified 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001. Repository facts are a 
   (`20260719.7`) passed Build and Deploy. The governance-only release changed no
   website behavior. After an App Service restart/warm-up, `/`, `/petec/resume`,
   and `/interview-studio` returned 200 and `/app/capture` redirected to sign-in.
+- Bible v2.5, Roadmap v2.4, and the member-directed Story composition contract
+  squash-merged through Azure PR 73 at
+  `aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
+  (`20260719.10`) passed Build and Deploy. The governance-only release changed
+  no website behavior. Production `/`, `/petec/resume`, `/interview-studio`,
+  and `/petec/my-story` returned 200; `/my-story` kept its canonical redirect;
+  and `/app/capture` kept its signed-out redirect to sign-in.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

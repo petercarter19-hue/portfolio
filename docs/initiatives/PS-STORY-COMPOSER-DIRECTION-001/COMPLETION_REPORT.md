@@ -3,9 +3,12 @@
 ## A. Status
 
 - Package: PS-STORY-COMPOSER-DIRECTION-001
-- Status: Complete and ready for Azure PR
-- Branch and commit: `work/2026-07-18-story-composer-direction-001`; pending
-- PR / pipeline / environment: pending
+- Status: Released
+- Branch and commit: `work/2026-07-18-story-composer-direction-001`;
+  `18bae1dad6fbe32723a520f5747538561b967ea5`
+- PR / pipeline / environment: Azure PR 73 squash-merged at
+  `aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
+  (`20260719.10`) passed Build and Deploy
 - Production state: governance-only; no product behavior changes
 - Visual authority and status: Not Started for future implementation; this
   package defines the design and architecture entry gate
@@ -51,7 +54,9 @@ or allowing AI to control presentation or publication.
 - Complete configured suite: 325 passed, 1 skipped, 152 subtests passed, with
   the existing Flask-Limiter development-storage warning.
 - `git diff --check`: passed.
-- Azure PR, pipeline, and production smoke remain the manager release step.
+- Production smoke: `/`, `/petec/resume`, `/interview-studio`, and
+  `/petec/my-story` returned 200; `/my-story` redirected to the canonical Story;
+  `/app/capture` redirected a signed-out request to sign-in.
 
 ## G. Known gaps, risks, and exclusions
 

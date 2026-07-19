@@ -43,6 +43,12 @@ The later Story-composition direction adopts Bible v2.5 and Roadmap v2.4. The
 next manager must treat the current baseline pointers as controlling and fetch
 `origin` for the exact release evidence.
 
+That direction squash-merged through Azure PR 73 at
+`aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
+(`20260719.10`) passed Build and Deploy. Production behavior remained
+unchanged, including the canonical My Story redirect and the protected Capture
+sign-in boundary.
+
 - Public résumé refinement: PR 62 / pipeline 83.
 - Capture lifecycle: PR 63 / pipeline 85.
 - Canonical Moment: PR 66 / pipeline 91.
@@ -50,6 +56,7 @@ next manager must treat the current baseline pointers as controlling and fetch
 - Placement governance closeout: PR 69 / pipeline 95.
 - Voice activation package: PR 70 / pipeline 97.
 - Visual-integrity governance and manager handoff: PR 71 / pipeline 99.
+- Member-directed Story composition authority: PR 73 / pipeline 102.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.
