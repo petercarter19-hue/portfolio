@@ -29,10 +29,11 @@ not copy a repository folder between computers as a synchronization method.
 4. `docs/governance/ACTIVE_INITIATIVES.md`
 5. The current Bible and Roadmap paths listed in `CURRENT_BASELINE.yaml`
 6. `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`
-7. For ChatGPT Work manager or cross-lane sessions,
+7. `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`
+8. For ChatGPT Work manager or cross-lane sessions,
    `docs/governance/MANAGER_SESSION_HANDOFF.md`
-8. The assigned initiative `README.md`
-9. Relevant architecture decisions and evidence linked by that initiative
+9. The assigned initiative `README.md`
+10. Relevant architecture decisions and evidence linked by that initiative
 
 `docs/governance/DOCUMENT_CONTROL.md` records the authority order when an older
 repository document conflicts with the current Bible or Roadmap.

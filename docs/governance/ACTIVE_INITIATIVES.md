@@ -1,6 +1,6 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001 closeout._
+_Updated 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001._
 
 ## Operating model
 
@@ -43,6 +43,12 @@ completion report, and explicit writer relinquishment before review.
 ## Later backend decisions
 
 Owner Home/viewer mode, photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/Feed/sharing/public-projection consumer remain separate later packages. PS-VOICE-001 does not authorize them.
+
+`PS-STORY-COMPOSER-001` is now reserved as a planned future cross-lane package.
+It will add member-controlled move, resize, layering, responsive layout drafts,
+and explicit Story publication under
+`docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. It is not active, has no
+writer or implementation branch, and must not interrupt Voice or Interview.
 
 ## Held
 

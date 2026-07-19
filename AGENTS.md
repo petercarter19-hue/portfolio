@@ -3,7 +3,7 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.4 + Roadmap v2.3).
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.5 + Roadmap v2.4).
 
 ## Mandatory shared AI and Git workflow
 
@@ -30,7 +30,7 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 ## Source of truth
 
 The current authority is the Bible, Roadmap, Sync Standard, and design baseline
-named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.4 + Roadmap v2.3 as of
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.5 + Roadmap v2.4 as of
 2026-07-18). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
 Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
 as decision history or supporting detail only. Where they conflict with the
@@ -145,6 +145,24 @@ If any source document is missing, stop and report the missing path. Do not reco
 - AI may propose milestones, questions, reminders, websites, and videos, but does not save automatically.
 - Supporting experiences continue vertically below the opening board. Do not pack everything into one screen.
 - PS-EXP-002 Focus Stage remains separate, optional, feature-flagged, and off by default. It must never replace the Board.
+
+## My Story composition direction
+
+- Read `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` before any Story
+  design, schema, editor, projection, or public-rendering work.
+- Story is a member-curated projection from canonical records. Layout metadata
+  must remain separate from authoritative Story content and must never create a
+  second copy of the facts.
+- The future authenticated Story Composer must let members move and resize
+  supported notes, text, images, and media; control overlap/layering; undo,
+  preview, save a private draft, and publish separately.
+- Dragging is not the only interaction. Provide keyboard and structured-editor
+  equivalents, stable semantic reading order, mobile reflow, 200% zoom, touch,
+  reduced-motion, long-content, missing-media, and failure states.
+- AI may propose a layout but may not silently apply, save, overwrite, or
+  publish it. The member remains the authority over composition and audience.
+- `PS-STORY-COMPOSER-001` is reserved future work, not an active package. Do not
+  modify the current public My Story fixture under this direction-only package.
 
 ## Navigation
 

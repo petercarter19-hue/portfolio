@@ -129,6 +129,13 @@ tests, a clean branch, or a working happy path does not by itself satisfy visual
 completion. Demonstrations must still state honestly which behavior is live,
 illustrative, stored, transmitted, local-only, private, public, or future.
 
+For any My Story design, schema, editor, projection, or rendering work, also
+read `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. The member owns the
+composition. Direct manipulation requires keyboard and structured equivalents;
+layout metadata remains separate from canonical content; layout save and Story
+publication remain separate; and an AI layout proposal is never silently
+applied, saved, overwritten, or published.
+
 ## Branch ownership and AI coordination
 
 - A branch has exactly one active writer.

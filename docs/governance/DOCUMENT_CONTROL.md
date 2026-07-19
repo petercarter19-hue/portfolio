@@ -22,17 +22,19 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 | Record | Current version/status | Purpose |
 |---|---|---|
-| Company and Product Bible | v2.4 | Product language, boundaries, principles, visual integrity, and intended model |
-| Product Strategy and Architecture Roadmap | v2.3 | Evidence state, package order, gates, and architecture direction |
+| Company and Product Bible | v2.5 | Product language, boundaries, principles, visual integrity, Story composition authority, and intended model |
+| Product Strategy and Architecture Roadmap | v2.4 | Evidence state, package order, gates, architecture direction, and Story Composer allocation |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
 | Deep Navy Gold visual baseline | Approved | Shared owner visual foundation |
 | Owner Visual Integrity Standard | Approved | Demonstration parity, visual evidence, and owner/manager acceptance gates |
+| Owner Story Composition Standard | Approved | Member-controlled Story layout, accessible manipulation, responsive projection, persistence, and publication gates |
 | Manager Session Handoff | Current snapshot | Active-lane state, stop conditions, and next-manager kickoff |
 
 ## Known supersessions
 
-- Bible v2.4 supersedes v2.3 and v1.1 through v1.4 for current product decisions.
+- Bible v2.5 supersedes v2.4, v2.3, and v1.1 through v1.4 for current product decisions.
+- Roadmap v2.4 supersedes Roadmap v2.3 for current sequencing and architecture decisions.
 - Deep Navy Gold supersedes Iris/Direction C as the approved shared theme.
 - The controlled data sequence is private Capture source → reviewed canonical Moment → governed placement by reference. Journal is not the current canonical source model.
 - Journal UI remains on hold even when older backlogs describe it as active.

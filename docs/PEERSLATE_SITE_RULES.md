@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Approved:** July 16, 2026  
-**Status:** Subordinate implementation rules; current Bible v2.4 / Roadmap v2.3 control conflicts
+**Status:** Subordinate implementation rules; current Bible v2.5 / Roadmap v2.4 control conflicts
 
 > **Authority correction — 2026-07-18:** This file was written during the
 > v1.3/Iris program state. The Bible and Roadmap named in
@@ -189,3 +189,19 @@ These rules govern product copy, information architecture, data behavior, AI beh
 91. If Speak and Type or another set of input alternatives is approved for a
     flow, preserve each as a first-class path unless the approved authority says
     otherwise.
+
+## 14. Member-directed Story composition
+
+92. Follow `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` for every
+    Story design, schema, editor, projection, and rendering package.
+93. The future authenticated Story Composer shall let the member move and
+    resize supported Story objects and control their emphasis and layering. AI
+    may suggest an arrangement but shall not silently apply, save, or publish it.
+94. Dragging shall have keyboard and structured-editor equivalents. Spatial
+    presentation shall preserve stable semantic reading order, mobile reflow,
+    200% zoom, touch access, reduced motion, and understandable recovery.
+95. Store owner-scoped, versioned layout metadata separately from canonical
+    content. Layout records reference governed projection items and shall not
+    duplicate authoritative Story text or media.
+96. Saving a private layout draft and publishing an audience-visible Story are
+    separate explicit actions with exact responsive and audience preview.

@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated by PS-VISUAL-INTEGRITY-GOV-001 closeout on 2026-07-18.
+# Updated by PS-STORY-COMPOSER-DIRECTION-001 on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-18"
@@ -32,11 +32,11 @@ manager:
 
 governing_documents:
   bible:
-    version: "2.4"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
+    version: "2.5"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
   roadmap:
-    version: "2.3"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
+    version: "2.4"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -48,6 +48,8 @@ governing_documents:
     path: "docs/governance/approved_owner_visual_baseline/"
   visual_integrity:
     path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
+  story_composition:
+    path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
 
@@ -70,6 +72,7 @@ completed_packages:
   - PS-PLACEMENT-001
   - PS-VOICE-CAPTURE-MANAGER-001
   - PS-VISUAL-INTEGRITY-GOV-001
+  - PS-STORY-COMPOSER-DIRECTION-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -88,7 +91,7 @@ active_packages:
     owner: "ChatGPT Codex"
     lane: backend_convergence
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation."
+next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation. PS-STORY-COMPOSER-001 is preserved as planned future work and is not active."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -96,3 +99,5 @@ superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.3.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"

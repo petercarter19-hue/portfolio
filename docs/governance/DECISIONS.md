@@ -89,3 +89,22 @@ This is an append-only operational decision record. The current Bible and Roadma
   package/branch after the design is frozen.
 - The current homepage overall is not the approved final quality baseline. A
   broader homepage/public convergence remains a later gated initiative.
+
+## 2026-07-18 - Make My Story composition member-directed
+
+- Adopt Bible v2.5 and Roadmap v2.4, superseding Bible v2.4 and Roadmap v2.3.
+- The future authenticated Story Composer shall let members move and resize
+  supported notes, text, pictures, and media and control overlap/layering.
+- Dragging shall have keyboard and structured-editor equivalents. Spatial
+  presentation shall preserve semantic reading order, responsive flow, touch,
+  200-percent zoom, reduced motion, and failure recovery.
+- Layout metadata is owner-scoped, versioned projection data stored separately
+  from canonical Story content. Saving a layout draft and publishing a Story are
+  separate explicit actions with exact audience preview.
+- AI may propose a layout but may not silently apply, overwrite, save, or publish
+  it. The member remains the authority over composition and audience.
+- Pete's first acceptance example is the **I went back at 36** card on the Maui
+  image: he must be able to shrink or move it so the sailboat remains visible.
+  The example is validation evidence, not Pete-specific reusable logic.
+- Reserve `PS-STORY-COMPOSER-001` as planned future work. This decision does not
+  change the current public Story or interrupt active Voice and Interview work.

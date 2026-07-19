@@ -31,6 +31,12 @@ evidence reviewed, compare the implementation with that authority, record every
 intentional deviation and its reason, and state Pete's and ChatGPT Work's visual
 acceptance. A functional pass is not visual acceptance.
 
+For Story composition work, also follow
+`docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md` and separately report
+direct manipulation, keyboard/structured equivalence, semantic reading order,
+responsive layout revisions, undo/restore, concurrency, draft-versus-published
+state, exact audience preview, and proof that AI did not auto-apply or publish.
+
 ## G. Known gaps, risks, and exclusions
 List deferred behavior, temporary state, risks, stop conditions, and anything the owner must not infer.
 
