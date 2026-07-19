@@ -388,12 +388,13 @@ BEGIN TRY
                 BEGIN TRANSACTION;
                 DECLARE @ProfileId bigint;
                 DECLARE @SourceId bigint;
+                DECLARE @SourceState nvarchar(30);
                 DECLARE @AttemptNumber int;
                 SELECT @ProfileId = profile.profile_id
                 FROM dbo.member_profiles AS profile
                 JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
                 WHERE app_user.user_key = @UserKey AND app_user.active = 1 AND profile.active = 1;
-                SELECT @SourceId = source.source_id
+                SELECT @SourceId = source.source_id, @SourceState = source.state
                 FROM dbo.voice_media_sources AS source WITH (UPDLOCK, HOLDLOCK)
                 WHERE source.owner_profile_id = @ProfileId
                   AND source.source_key = @SourceKey
@@ -401,6 +402,7 @@ BEGIN TRY
                   AND
                   (
                       source.state = N''uploading''
+                      OR source.state IN (N''queued'', N''processing'')
                       OR
                       (
                           source.state = N''failed''
@@ -416,6 +418,15 @@ BEGIN TRY
                     COMMIT TRANSACTION;
                     SELECT N''not_found_or_changed'' AS outcome;
                     RETURN;
+                END;
+                IF @SourceState IN (N''queued'', N''processing'')
+                BEGIN
+                    UPDATE dbo.voice_transcription_attempts
+                    SET state = N''failed'', safe_error_code = N''recovery_retry'',
+                        started_at_utc = COALESCE(started_at_utc, SYSUTCDATETIME()),
+                        completed_at_utc = SYSUTCDATETIME()
+                    WHERE source_id = @SourceId AND owner_profile_id = @ProfileId
+                      AND state IN (N''queued'', N''processing'');
                 END;
                 SELECT @AttemptNumber = ISNULL(MAX(attempt_number), 0) + 1
                 FROM dbo.voice_transcription_attempts WITH (UPDLOCK, HOLDLOCK)
@@ -445,11 +456,16 @@ BEGIN TRY
         CREATE OR ALTER PROCEDURE dbo.usp_MarkVoiceTranscriptionProcessing
             @UserKey nvarchar(300),
             @SourceKey uniqueidentifier,
-            @AttemptNumber int
+            @AttemptNumber int,
+            @ExpectedRowVersion binary(8)
         AS
         BEGIN
             SET NOCOUNT ON;
             SET XACT_ABORT ON;
+            IF NULLIF(LTRIM(RTRIM(@UserKey)), N'''') IS NULL
+               OR @SourceKey IS NULL OR @AttemptNumber IS NULL
+               OR @ExpectedRowVersion IS NULL
+                THROW 52417, ''Owner, source, attempt, and expected version are required.'', 1;
             BEGIN TRY
                 BEGIN TRANSACTION;
                 DECLARE @ProfileId bigint;
@@ -462,7 +478,8 @@ BEGIN TRY
                 SELECT @SourceId = source.source_id
                 FROM dbo.voice_media_sources AS source WITH (UPDLOCK, HOLDLOCK)
                 WHERE source.owner_profile_id = @ProfileId AND source.source_key = @SourceKey
-                  AND source.state = N''queued'';
+                  AND source.state = N''queued''
+                  AND source.row_version = @ExpectedRowVersion;
                 UPDATE dbo.voice_transcription_attempts
                 SET state = N''processing'', started_at_utc = SYSUTCDATETIME()
                 WHERE source_id = @SourceId AND owner_profile_id = @ProfileId
@@ -477,7 +494,9 @@ BEGIN TRY
                 SET state = N''processing'', updated_at_utc = SYSUTCDATETIME()
                 WHERE source_id = @SourceId AND owner_profile_id = @ProfileId;
                 COMMIT TRANSACTION;
-                SELECT N''processing'' AS outcome;
+                SELECT N''processing'' AS outcome, row_version
+                FROM dbo.voice_media_sources
+                WHERE source_id = @SourceId AND owner_profile_id = @ProfileId;
             END TRY
             BEGIN CATCH
                 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
@@ -491,6 +510,7 @@ BEGIN TRY
             @UserKey nvarchar(300),
             @SourceKey uniqueidentifier,
             @AttemptNumber int,
+            @ExpectedRowVersion binary(8),
             @ProviderTranscript nvarchar(max),
             @ProviderRequestId nvarchar(100) = NULL,
             @VerifiedDurationMilliseconds int = NULL
@@ -507,6 +527,10 @@ BEGIN TRY
             IF @VerifiedDurationMilliseconds IS NULL
                OR @VerifiedDurationMilliseconds NOT BETWEEN 1 AND 180000
                 THROW 52413, ''Verified duration exceeds the Voice limit.'', 1;
+            IF NULLIF(LTRIM(RTRIM(@UserKey)), N'''') IS NULL
+               OR @SourceKey IS NULL OR @AttemptNumber IS NULL
+               OR @ExpectedRowVersion IS NULL
+                THROW 52418, ''Owner, source, attempt, and expected version are required.'', 1;
             BEGIN TRY
                 BEGIN TRANSACTION;
                 DECLARE @ProfileId bigint;
@@ -519,7 +543,8 @@ BEGIN TRY
                 SELECT @SourceId = source.source_id
                 FROM dbo.voice_media_sources AS source WITH (UPDLOCK, HOLDLOCK)
                 WHERE source.owner_profile_id = @ProfileId AND source.source_key = @SourceKey
-                  AND source.state = N''processing'';
+                  AND source.state = N''processing''
+                  AND source.row_version = @ExpectedRowVersion;
                 UPDATE dbo.voice_transcription_attempts
                 SET state = N''succeeded'', provider_request_id = @ProviderRequestId,
                     provider_transcript = @ProviderTranscript,

@@ -159,17 +159,30 @@ class VoiceCaptureService:
     def _transcribe_attempt(self, user_key, queued, audio_bytes, content_type):
         source_key = _source_key(queued["source_key"])
         attempt_number = int(queued["attempt_number"])
-        processing = self._outcome(
-            self.database.first_row(
-                "usp_MarkVoiceTranscriptionProcessing",
-                [
-                    ("@UserKey", user_key),
-                    ("@SourceKey", source_key),
-                    ("@AttemptNumber", attempt_number),
-                ],
-            ),
-            {"processing"},
-        )
+        try:
+            processing = self._outcome(
+                self.database.first_row(
+                    "usp_MarkVoiceTranscriptionProcessing",
+                    [
+                        ("@UserKey", user_key),
+                        ("@SourceKey", source_key),
+                        ("@AttemptNumber", attempt_number),
+                        (
+                            "@ExpectedRowVersion",
+                            _row_version(queued["row_version"]),
+                        ),
+                    ],
+                ),
+                {"processing"},
+            )
+            completed_row_version = processing["row_version"]
+        except (DatabaseServiceError, VoiceCaptureError) as error:
+            # The source and private Blob already exist. Preserve their opaque
+            # key even when the database outcome is uncertain so the owner can
+            # return to the stable review URL and retry or delete explicitly.
+            raise VoiceCaptureError(
+                "transcription-recovery", source_key
+            ) from error
         try:
             result = self.speech.transcribe(audio_bytes, content_type, VOICE_LOCALE)
             transcript = str(result.get("provider_transcript") or "").strip()
@@ -182,21 +195,6 @@ class VoiceCaptureService:
                 raise SpeechTranscriptionError("speech_malformed")
             if float(provider_duration) > MAX_VOICE_DURATION_SECONDS:
                 raise SpeechTranscriptionError("speech_duration_exceeded")
-            completed = self.database.first_row(
-                "usp_CompleteVoiceTranscription",
-                [
-                    ("@UserKey", user_key),
-                    ("@SourceKey", source_key),
-                    ("@AttemptNumber", attempt_number),
-                    ("@ProviderTranscript", transcript),
-                    ("@ProviderRequestId", result.get("provider_request_id")),
-                    (
-                        "@VerifiedDurationMilliseconds",
-                        int(round(float(provider_duration) * 1000)),
-                    ),
-                ],
-            )
-            self._outcome(completed, {"needs_review"})
         except SpeechTranscriptionError as error:
             self._record_failure(
                 "usp_FailVoiceTranscription",
@@ -208,7 +206,32 @@ class VoiceCaptureService:
                 ],
             )
             raise VoiceCaptureError("transcription-failed", source_key) from error
-        return processing
+
+        try:
+            completed = self.database.first_row(
+                "usp_CompleteVoiceTranscription",
+                [
+                    ("@UserKey", user_key),
+                    ("@SourceKey", source_key),
+                    ("@AttemptNumber", attempt_number),
+                    (
+                        "@ExpectedRowVersion",
+                        _row_version(completed_row_version),
+                    ),
+                    ("@ProviderTranscript", transcript),
+                    ("@ProviderRequestId", result.get("provider_request_id")),
+                    (
+                        "@VerifiedDurationMilliseconds",
+                        int(round(float(provider_duration) * 1000)),
+                    ),
+                ],
+            )
+            self._outcome(completed, {"needs_review"})
+        except (DatabaseServiceError, VoiceCaptureError) as error:
+            raise VoiceCaptureError(
+                "transcription-recovery", source_key
+            ) from error
+        return completed
 
     def create_and_transcribe(self, user_key, upload, duration_seconds):
         audio = validate_audio(upload, duration_seconds)
@@ -267,12 +290,23 @@ class VoiceCaptureService:
             # this still-private, uploading draft from its stable review URL.
             raise VoiceCaptureError("queue-failed", source_key) from error
         queued.setdefault("source_key", source_key)
-        self._transcribe_attempt(
-            user_key, queued, audio.data, audio.content_type
-        )
-        draft = self.get_draft(user_key, source_key)
+        try:
+            self._transcribe_attempt(
+                user_key, queued, audio.data, audio.content_type
+            )
+            draft = self.get_draft(user_key, source_key)
+        except VoiceCaptureError as error:
+            if error.source_key:
+                raise
+            raise VoiceCaptureError(
+                "transcription-recovery", source_key
+            ) from error
+        except DatabaseServiceError as error:
+            raise VoiceCaptureError(
+                "transcription-recovery", source_key
+            ) from error
         if not draft:
-            raise VoiceCaptureError("changed")
+            raise VoiceCaptureError("transcription-recovery", source_key)
         return draft
 
     def get_draft(self, user_key, source_key):
@@ -316,7 +350,15 @@ class VoiceCaptureService:
         self._transcribe_attempt(
             user_key, queued, audio_bytes, queued["content_type"]
         )
-        return self.get_draft(user_key, source_key)
+        try:
+            draft = self.get_draft(user_key, source_key)
+        except (DatabaseServiceError, VoiceCaptureError) as error:
+            raise VoiceCaptureError(
+                "transcription-recovery", source_key
+            ) from error
+        if not draft:
+            raise VoiceCaptureError("transcription-recovery", source_key)
+        return draft
 
     def confirm_capture(
         self, user_key, source_key, expected_row_version, approved_body

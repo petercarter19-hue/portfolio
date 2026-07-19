@@ -97,8 +97,32 @@ class OwnerVoiceCaptureRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.get_json()["error"], "queue-failed")
-        self.assertEqual(response.get_json()["state"], "uploading")
+        self.assertEqual(response.get_json()["source_key"], SOURCE_KEY)
+        self.assertNotIn("state", response.get_json())
         self.assertIn(f"voice={SOURCE_KEY}", response.get_json()["review_url"])
+
+    @patch("owner_routes.voice_capture_service.create_and_transcribe")
+    def test_post_upload_database_uncertainty_returns_stable_recovery_location(self, create):
+        create.side_effect = VoiceCaptureError("transcription-recovery", SOURCE_KEY)
+
+        response = self.client.post(
+            "/app/capture/voice",
+            data={
+                "audio": (io.BytesIO(b"\x1aE\xdf\xa3data"), "ignored.webm"),
+                "duration_seconds": "1.2",
+            },
+            headers=self.same_origin_headers(),
+            content_type="multipart/form-data",
+        )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(payload["error"], "transcription-recovery")
+        self.assertEqual(payload["source_key"], SOURCE_KEY)
+        self.assertIn(f"voice={SOURCE_KEY}", payload["review_url"])
+        self.assertNotIn("state", payload)
+        self.assertNotIn("provider", str(payload).lower())
+        self.assertNotIn("database", str(payload).lower())
 
     @patch("owner_routes.voice_capture_service.get_draft")
     def test_uploaded_but_unqueued_review_page_offers_retry_and_delete(self, get_draft):
@@ -117,6 +141,50 @@ class OwnerVoiceCaptureRouteTests(unittest.TestCase):
         self.assertIn("Retry transcription", page)
         self.assertIn("Delete private voice draft", page)
         self.assertNotIn("PRIVATE DATABASE DETAIL", page)
+
+    def _render_voice_draft(self, state, attempt_number=None):
+        draft = {
+            "source_key": SOURCE_KEY,
+            "state": state,
+            "attempt_number": attempt_number,
+            "row_version_token": "0000000000000001",
+        }
+        with patch(
+            "owner_routes.voice_capture_service.get_draft",
+            return_value=draft,
+        ), patch("owner_routes.database_service.first_result", return_value=[]):
+            return self.client.get(f"/app/capture?voice={SOURCE_KEY}")
+
+    def test_failed_draft_with_attempt_offers_retry_and_delete(self):
+        response = self._render_voice_draft("failed", attempt_number=2)
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertIn("Retry transcription", page)
+        self.assertIn("Delete private voice draft", page)
+        self.assertNotIn("cannot be retried", page)
+
+    def test_failed_upload_without_attempt_offers_rerecord_type_and_delete_only(self):
+        response = self._render_voice_draft("failed", attempt_number=None)
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_data(as_text=True)
+        self.assertNotIn("Retry transcription", page)
+        self.assertIn("cannot be retried", page)
+        self.assertIn("Record again", page)
+        self.assertIn("Switch to Type", page)
+        self.assertIn("Delete private voice draft", page)
+
+    def test_stranded_queued_and_processing_drafts_offer_retry_and_delete(self):
+        for state in ("queued", "processing"):
+            with self.subTest(state=state):
+                response = self._render_voice_draft(state, attempt_number=1)
+                self.assertEqual(response.status_code, 200)
+                page = response.get_data(as_text=True)
+                self.assertIn("Retry transcription", page)
+                self.assertIn("Delete private voice draft", page)
+                self.assertIn("No Capture or downstream item was created", page)
+                self.assertNotIn("Saved private Capture", page)
 
     @patch("owner_routes.voice_capture_service.create_and_transcribe")
     def test_voice_route_can_receive_more_than_global_two_megabyte_limit(self, create):

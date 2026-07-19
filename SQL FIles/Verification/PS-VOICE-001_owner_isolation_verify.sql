@@ -99,10 +99,13 @@ BEGIN TRY
         @ExpectedRowVersion = @SourceVersionA;
     IF NOT EXISTS (SELECT 1 FROM @Queue WHERE outcome = N'queued' AND attempt_number = 1)
         THROW 52475, 'Owner A transcription was not queued.', 1;
+    SELECT @SourceVersionA = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @SourceKeyA;
 
     /* Cross-owner processing denial. */
     EXEC dbo.usp_MarkVoiceTranscriptionProcessing
-        @UserKey = @UserKeyB, @SourceKey = @SourceKeyA, @AttemptNumber = 1;
+        @UserKey = @UserKeyB, @SourceKey = @SourceKeyA, @AttemptNumber = 1,
+        @ExpectedRowVersion = @SourceVersionA;
     IF NOT EXISTS
        (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
         (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @SourceKeyA)
@@ -110,11 +113,15 @@ BEGIN TRY
         THROW 52476, 'Cross-owner processing changed a foreign attempt.', 1;
 
     EXEC dbo.usp_MarkVoiceTranscriptionProcessing
-        @UserKey = @UserKeyA, @SourceKey = @SourceKeyA, @AttemptNumber = 1;
+        @UserKey = @UserKeyA, @SourceKey = @SourceKeyA, @AttemptNumber = 1,
+        @ExpectedRowVersion = @SourceVersionA;
+    SELECT @SourceVersionA = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @SourceKeyA;
 
     /* Cross-owner completion denial. */
     EXEC dbo.usp_CompleteVoiceTranscription
         @UserKey = @UserKeyB, @SourceKey = @SourceKeyA, @AttemptNumber = 1,
+        @ExpectedRowVersion = @SourceVersionA,
         @ProviderTranscript = N'cross-owner provider transcript',
         @ProviderRequestId = N'cross-owner-request',
         @VerifiedDurationMilliseconds = 2400;
@@ -136,6 +143,7 @@ BEGIN TRY
 
     EXEC dbo.usp_CompleteVoiceTranscription
         @UserKey = @UserKeyA, @SourceKey = @SourceKeyA, @AttemptNumber = 1,
+        @ExpectedRowVersion = @SourceVersionA,
         @ProviderTranscript = @PrivateSentinel,
         @ProviderRequestId = N'provider-request-a',
         @VerifiedDurationMilliseconds = 2400;
@@ -252,7 +260,8 @@ BEGIN TRY
         @ExpectedRowVersion = @CaptureVersion;
     SELECT @CaptureVersion = row_version FROM dbo.captures WHERE capture_id = @CaptureIdA;
 
-    /* Retry creates attempt two and leaves attempt one immutable. */
+    /* Explicit retry recovers uploading, queued, processing, and failed states
+       while preserving every abandoned or failed attempt immutably. */
     EXEC dbo.usp_CreateVoiceDraft
         @UserKey = @UserKeyA, @BlobName = @BlobNameRetry,
         @ContentType = N'audio/webm', @ByteLength = 2048,
@@ -266,31 +275,90 @@ BEGIN TRY
     DELETE @Queue;
     INSERT @Queue EXEC dbo.usp_QueueVoiceTranscription
         @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @ExpectedRowVersion = @RetryVersion;
+
+    /* Recover a stranded queued attempt. */
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
+    DELETE @Queue;
+    INSERT @Queue EXEC dbo.usp_QueueVoiceTranscription
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @ExpectedRowVersion = @RetryVersion;
+    IF NOT EXISTS (SELECT 1 FROM @Queue WHERE outcome = N'queued' AND attempt_number = 2)
+       OR NOT EXISTS
+          (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
+           (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)
+           AND attempt_number = 1 AND state = N'failed'
+           AND safe_error_code = N'recovery_retry')
+        THROW 52490, 'Queued retry did not safely abandon the unfinished attempt.', 1;
+
+    /* A stale mark for the abandoned attempt must not change the new attempt. */
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
     EXEC dbo.usp_MarkVoiceTranscriptionProcessing
-        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 1;
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 1,
+        @ExpectedRowVersion = @RetryVersion;
+    EXEC dbo.usp_MarkVoiceTranscriptionProcessing
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 2,
+        @ExpectedRowVersion = @RetryVersion;
+
+    /* Recover a stranded processing attempt, then prove a stale completion
+       cannot write provider content or move the replacement attempt. */
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
+    DELETE @Queue;
+    INSERT @Queue EXEC dbo.usp_QueueVoiceTranscription
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @ExpectedRowVersion = @RetryVersion;
+    IF NOT EXISTS (SELECT 1 FROM @Queue WHERE outcome = N'queued' AND attempt_number = 3)
+       OR NOT EXISTS
+          (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
+           (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)
+           AND attempt_number = 2 AND state = N'failed'
+           AND safe_error_code = N'recovery_retry')
+        THROW 52500, 'Processing retry did not safely abandon the unfinished attempt.', 1;
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
+    EXEC dbo.usp_CompleteVoiceTranscription
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 2,
+        @ExpectedRowVersion = @RetryVersion,
+        @ProviderTranscript = N'stale completion must not persist',
+        @ProviderRequestId = N'stale-request', @VerifiedDurationMilliseconds = 1000;
+    IF EXISTS
+       (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
+        (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)
+        AND attempt_number = 2 AND provider_transcript IS NOT NULL)
+        THROW 52501, 'A stale completion changed an abandoned attempt.', 1;
+
+    EXEC dbo.usp_MarkVoiceTranscriptionProcessing
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 3,
+        @ExpectedRowVersion = @RetryVersion;
     EXEC dbo.usp_FailVoiceTranscription
         @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey,
-        @AttemptNumber = 1, @SafeErrorCode = N'speech_timeout';
+        @AttemptNumber = 3, @SafeErrorCode = N'speech_timeout';
     SELECT @RetryVersion = row_version FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
     DELETE @Queue;
     INSERT @Queue EXEC dbo.usp_QueueVoiceTranscription
         @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @ExpectedRowVersion = @RetryVersion;
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
     EXEC dbo.usp_MarkVoiceTranscriptionProcessing
-        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 2;
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 4,
+        @ExpectedRowVersion = @RetryVersion;
+    SELECT @RetryVersion = row_version
+    FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;
     EXEC dbo.usp_CompleteVoiceTranscription
-        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 2,
+        @UserKey = @UserKeyA, @SourceKey = @RetrySourceKey, @AttemptNumber = 4,
+        @ExpectedRowVersion = @RetryVersion,
         @ProviderTranscript = N'synthetic retry transcript',
         @ProviderRequestId = N'provider-request-retry', @VerifiedDurationMilliseconds = 1000;
     IF (SELECT COUNT(*) FROM dbo.voice_transcription_attempts WHERE source_id =
-        (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)) <> 2
+        (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)) <> 4
        OR NOT EXISTS
           (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
            (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)
-           AND attempt_number = 1 AND state = N'failed')
+           AND attempt_number = 3 AND state = N'failed' AND safe_error_code = N'speech_timeout')
        OR NOT EXISTS
           (SELECT 1 FROM dbo.voice_transcription_attempts WHERE source_id =
            (SELECT source_id FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey)
-           AND attempt_number = 2 AND state = N'succeeded')
+           AND attempt_number = 4 AND state = N'succeeded')
         THROW 52490, 'Retry did not preserve separate immutable attempts.', 1;
 
     SELECT @RetryVersion = row_version FROM dbo.voice_media_sources WHERE source_key = @RetrySourceKey;

@@ -72,8 +72,8 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
                 "blob_name": "voice/v1/ab/opaque.webm",
                 "row_version": b"\x00" * 7 + b"\x01",
             },
-            {"outcome": "queued", "attempt_number": 1},
-            {"outcome": "processing"},
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
             {"outcome": "needs_review", "source_key": self.source_key},
             {
                 "source_key": self.source_key,
@@ -94,7 +94,10 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
         self.storage.upload.assert_called_once()
         self.speech.transcribe.assert_called_once()
         self.assertEqual(result["state"], "needs_review")
+        processing = self.db.first_row.call_args_list[2]
+        self.assertIn(("@ExpectedRowVersion", b"\x01" * 8), processing.args[1])
         completion = self.db.first_row.call_args_list[3]
+        self.assertIn(("@ExpectedRowVersion", b"\x02" * 8), completion.args[1])
         self.assertIn(("@ProviderTranscript", "Synthetic provider draft."), completion.args[1])
 
     def test_storage_failure_records_safe_code_without_payload(self):
@@ -154,6 +157,121 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
         self.storage.upload.assert_called_once()
         self.speech.transcribe.assert_not_called()
 
+    def _set_successful_speech_result(self):
+        self.speech.transcribe.return_value = {
+            "provider_transcript": "Synthetic provider draft.",
+            "provider_request_id": "request-opaque",
+            "duration_seconds": 1.0,
+        }
+
+    def _assert_recoverable_post_upload_failure(self):
+        with self.assertRaises(VoiceCaptureError) as raised:
+            self.service.create_and_transcribe(
+                self.user_key, FakeUpload(), "1"
+            )
+
+        self.assertEqual(raised.exception.code, "transcription-recovery")
+        self.assertEqual(raised.exception.source_key, self.source_key)
+        self.assertNotIn("PRIVATE", str(raised.exception))
+        self.storage.upload.assert_called_once()
+
+    def test_processing_mark_database_failure_preserves_recovery_location(self):
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            DatabaseServiceError("PRIVATE DATABASE DETAIL"),
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+        self.speech.transcribe.assert_not_called()
+
+    def test_processing_mark_changed_outcome_preserves_recovery_location(self):
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "not_found_or_changed"},
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+        self.speech.transcribe.assert_not_called()
+
+    def test_completion_database_failure_preserves_recovery_location(self):
+        self._set_successful_speech_result()
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
+            DatabaseServiceError("PRIVATE DATABASE DETAIL"),
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+        self.speech.transcribe.assert_called_once()
+
+    def test_completion_changed_outcome_preserves_recovery_location(self):
+        self._set_successful_speech_result()
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
+            {"outcome": "not_found_or_changed"},
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+
+    def test_final_draft_read_database_failure_preserves_recovery_location(self):
+        self._set_successful_speech_result()
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
+            {"outcome": "needs_review"},
+            DatabaseServiceError("PRIVATE DATABASE DETAIL"),
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+
+    def test_final_draft_read_changed_outcome_preserves_recovery_location(self):
+        self._set_successful_speech_result()
+        self.db.first_row.side_effect = [
+            {
+                "outcome": "created",
+                "source_key": self.source_key,
+                "blob_name": "voice/v1/ab/opaque.webm",
+                "row_version": b"\x00" * 7 + b"\x01",
+            },
+            {"outcome": "queued", "attempt_number": 1, "row_version": b"\x01" * 8},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
+            {"outcome": "needs_review"},
+            None,
+        ]
+
+        self._assert_recoverable_post_upload_failure()
+
     def test_retry_creates_new_attempt_and_never_overwrites_old_result(self):
         self.db.first_row.side_effect = [
             {
@@ -162,8 +280,9 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
                 "blob_name": "voice/v1/ab/opaque.webm",
                 "content_type": "audio/webm",
                 "attempt_number": 2,
+                "row_version": b"\x01" * 8,
             },
-            {"outcome": "processing"},
+            {"outcome": "processing", "row_version": b"\x02" * 8},
             {"outcome": "needs_review"},
             {"source_key": self.source_key, "state": "needs_review"},
         ]
@@ -191,6 +310,7 @@ class VoiceCaptureOrchestrationTests(unittest.TestCase):
                 "blob_name": "voice/v1/ab/opaque.webm",
                 "content_type": "audio/webm",
                 "attempt_number": 2,
+                "row_version": b"\x01" * 8,
             },
             {"outcome": "failed"},
         ]

@@ -69,6 +69,20 @@ class VoiceMigrationContractTests(unittest.TestCase):
         self.assertIn("capture_type", self.forward)
         self.assertIn("'voice'", self.forward)
 
+    def test_retry_atomically_recovers_stranded_queued_and_processing_attempts(self):
+        self.assertIn(
+            "source.state IN (N''queued'', N''processing'')",
+            self.forward,
+        )
+        self.assertIn("safe_error_code = N''recovery_retry''", self.forward)
+        self.assertIn("state IN (N''queued'', N''processing'')", self.forward)
+        self.assertIn("@ExpectedRowVersion", self.forward)
+        self.assertIn(
+            "AND source.row_version = @ExpectedRowVersion",
+            self.forward,
+        )
+        self.assertIn("recovery_retry", self.verify)
+
     def test_delete_is_pending_then_final_and_preserves_moment_tombstone(self):
         self.assertIn("usp_DeleteCapture", self.forward)
         self.assertIn("deletion_pending", self.forward)

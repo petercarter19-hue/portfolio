@@ -8,7 +8,7 @@
 - Authoritative base: `origin/main` at `fd27b2147b6a34019353d038331f4bde4f97d3b5`; Voice activation `5488819ad13d3f411319d7e184fde3779d62b8d2` is an ancestor
 - PR / pipeline / environment: no PR opened and no pipeline requested; real-resource proof used a disposable isolated Azure resource group, now deleted
 - Production state: not deployed; no production Azure resource or production SQL change was made; the production Capture experience remains the released text-only slice
-- Visual authority and status: homepage Voice walkthrough in `templates/partials/homepage/_voice_hero.html`; implementation comparison is complete and awaits ChatGPT Work/Pete review
+- Visual authority and status: homepage Voice walkthrough in `templates/partials/homepage/_voice_hero.html`; refreshed implementation evidence is ready and awaits ChatGPT Work/Pete visual acceptance
 - Pete / ChatGPT Work visual acceptance: pending; this report does not claim acceptance
 
 ## B. What changed technically
@@ -23,7 +23,7 @@
 ### Service and privacy architecture
 
 - Added `VoiceCaptureService` orchestration with explicit upload, transcription, review, confirmation, playback, export, and retryable distributed-deletion transitions.
-- Made a successful private Blob upload recoverable when the following database queue call fails or reports a changed outcome. The response exposes only the opaque source key, an owner review URL, and the safe `uploading` state; that page offers retry and explicit deletion without returning provider/database detail.
+- Made every failure after a successful private Blob upload owner-recoverable. Queue, mark-processing, complete-transcription, and final-draft lookup failures or changed outcomes return only the opaque source key and stable owner review URL, never provider/database detail or a guessed state.
 - Added a private Blob adapter that accepts only opaque server-generated names, emits no Blob metadata or URLs, disallows overwrite, and uses `DefaultAzureCredential` only.
 - Added an Azure Speech fast-transcription adapter for `en-US`, using the Microsoft Entra token scope and normalized safe error codes. It never logs or returns provider response bodies.
 - Enforced accepted MIME/container signatures, finite positive duration, a maximum of 180 seconds, a maximum of 20 MiB, and an 8,000 UTF-16-code-unit transcript boundary on the server independently of browser checks.
@@ -34,6 +34,7 @@
 
 - Added `dbo.voice_media_sources`, `dbo.voice_transcription_attempts`, and `dbo.voice_capture_links` with tenant ownership, explicit states, row-version concurrency, filtered uniqueness, immutable successful provider results, and body-free deletion tombstones.
 - Added owner-resolving procedures for every source, attempt, media, confirmation, and deletion operation. Confirmation is idempotent and creates at most one private `capture_type = voice` Capture per source.
+- Made explicit retry recover stranded `queued` and `processing` sources atomically and under source row-version control. The unfinished attempt is preserved as failed with the safe code `recovery_retry`, a new immutable queued attempt is created, and stale mark/completion calls cannot write provider content or move the replacement attempt.
 - Extended the protected Capture list/get/delete/export contracts without changing the canonical Capture-to-Moment boundary or creating downstream records.
 - Added guarded forward, verify, rollback, and reapply support. Rollback refuses when Voice data, later migrations, dependent objects, or protected-procedure drift would make it unsafe.
 
@@ -59,7 +60,9 @@ On this branch in a configured isolated or later production environment, an auth
 - review the private original audio and immutable Azure provider transcript;
 - correct the proposed text and explicitly save one private Voice Capture;
 - correct, archive, restore, export, play/download, and explicitly delete that Capture through the existing lifecycle; and
-- safely retry a failed transcription or deletion.
+- safely retry upload-complete, queued, processing, or previously attempted failed transcription states, and retry deletion.
+
+If storage/upload failed before a transcription attempt existed, the page does not offer a retry that SQL cannot honor. It instead gives truthful Record again, Switch to Type, and delete guidance.
 
 Production members cannot use Voice yet because this branch has not been reviewed, merged, provisioned, migrated, or deployed. Text Capture remains available and unchanged. No Voice action creates a Moment, Placement, Journal entry, résumé/Interview Studio update, share, audience change, or publication.
 
@@ -73,32 +76,33 @@ The protected interface uses the approved Deep Navy Gold foundation and treats t
 
 ### Automated tests and static checks
 
-- Final Voice/Capture/database/migration focused run: 137 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
+- Final Voice/Capture/database/migration focused run: 133 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
 - Governance and Site Rules run: 19 tests passed.
-- Complete configured suite: 379 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
+- Complete configured suite: 391 tests passed, 1 skipped. The skip is the existing opt-in real SQL concurrency test, not a Voice failure.
 - Python compilation, JavaScript syntax, PowerShell parsing, migration plan selection, `git diff --check`, and static secret/private-content scans passed.
-- Focused tests cover owner routing, cross-site rejection, neutral cross-owner outcomes, format/size/duration validation, immutable attempts, retry failures, idempotent confirmation, no-cache media, export shape, deletion retry, state/concurrency contracts, Blob metadata/path constraints, managed-identity configuration, permission timing, unsupported/denied/offline states, screen-reader announcements, mobile layout, focus, and reduced motion.
+- Focused tests cover owner routing, cross-site rejection, neutral cross-owner outcomes, format/size/duration validation, immutable attempts, truthful retry rendering for uploading/failed-with-attempt/failed-without-attempt, all post-upload database failure points, idempotent confirmation, no-cache media, export shape, deletion retry, state/concurrency contracts, Blob metadata/path constraints, managed-identity configuration, permission timing, unsupported/denied/offline states, screen-reader announcements, mobile layout, focus, and reduced motion.
 
 ### Isolated real-resource proof
 
-- SQL: applied the Capture foundation plus PS-CAPTURE-002, PS-MOMENT-001, PS-PLACEMENT-001, and PS-VOICE-001 to disposable Azure SQL; the PS-VOICE-001 verifier passed two-owner denials, stale tokens, immutable provider transcript enforcement, confirmation, lifecycle/export, and outer rollback. Data, definition-drift, and later-migration rollback guards refused as designed. Clean rollback, reapply, and re-verification then passed.
+- SQL: applied the Capture foundation plus PS-CAPTURE-002, PS-MOMENT-001, PS-PLACEMENT-001, and PS-VOICE-001 to disposable Azure SQL. The PS-VOICE-001 verifier passed two-owner denials, row-version-protected mark/completion, queued and processing recovery, stale completion denial, immutable provider transcript enforcement, confirmation, lifecycle/export, and outer rollback. Clean guarded Voice rollback, reapply, and re-verification then passed.
 - Blob: with `DefaultAzureCredential`, uploaded, read, and deleted a synthetic file in a disposable private container; Blob metadata was empty, shared-key access and anonymous public access were disabled, and final absence was verified.
 - Speech: the existing `peerslate-foundry` AI Services account proved Speech support under Microsoft Entra authentication. One Windows-generated synthetic, non-member audio sample produced a nonempty transcript, provider request ID, and bounded duration without printing the audio or transcript.
 - End-to-end isolated application path: exercised review, required confirmation, explicit save, archive, restore, playback/download, versioned export, deletion, and final Blob absence with synthetic data only.
-- The disposable resource group `ps-voice-proof-482984` was deleted and `az group exists` returned `false`.
+- The disposable proof resource group was deleted, and a final Azure existence check returned `false`.
 
 ### Visual and accessibility evidence
 
 - Visual authority: homepage Voice walkthrough, specifically its Speak/Type choice, navy listening stage, waveform, prompt, timer, and concise recording controls.
-- Desktop opening: `evidence/voice-capture-desktop.png`.
+- Desktop opening: `evidence/voice-capture-desktop.png`; the clean isolated browser shows a coherent signed-in `My Slate` owner header.
 - Mobile/touch review and long-form document flow: `evidence/voice-review-mobile.png`.
 - Desktop review: `evidence/voice-review-desktop.png`.
-- Exact native Chrome 200% control proof: `evidence/voice-capture-native-200-percent.png`; Chrome's own menu visibly reports `200%` over the local Capture route.
+- Exact native Chrome 200% control proof: `evidence/voice-capture-native-200-percent.png`; Chrome's own native zoom indicator visibly reports `200%` over the local signed-in Capture route.
 - Exact native Chrome 200% reflow: `evidence/voice-capture-native-200-percent-reflow.png`; no horizontal document scrollbar or overflow was observed, while the page retained readable document flow and both capture choices.
-- Named Type-path desktop proof: `evidence/voice-capture-type-desktop.png`; Type is selected, the textarea has visible focus, text Capture availability is explicit, and `Save privately` is visible.
+- Named Type-path desktop proof: `evidence/voice-capture-type-desktop.png`; the same signed-in owner header is present, Type is selected, the textarea has visible focus, text Capture availability is explicit, and `Save privately` is visible.
 - Supplemental viewport-equivalent regression artifact: `evidence/voice-capture-200-percent-reflow.png`; it is no longer used as the native-zoom gate.
 - Transcription failure/recovery: `evidence/voice-review-failure.png` plus focused retry/deletion tests.
 - Real-browser checks observed no horizontal overflow at native Chrome 200% and at 1425, 705, and 375 CSS pixels; touch targets were at least 44 pixels; keyboard focus was visible; status/error regions exposed `role=status` or `role=alert`; microphone permission was requested only after Start. A Chromium permission override then denied the microphone, and the real UI moved to `error`, announced the safe denied/unavailable message, left Type enabled, and moved focus to Switch to Type.
+- Refreshed desktop, Type, and native-zoom evidence came from one clean isolated single-tab Chrome window. It contains no unrelated tabs, bookmarks, profile details, or signed-out/protected-page contradiction. Chrome zoom was reset, prior browser-bar state restored, the isolated window closed, and the temporary local evidence harness was stopped and removed before handoff.
 - Reduced motion, unsupported browser, microphone-denied, offline/upload failure, transcription failure, post-upload queue/database failure, 8,000-character content, and text fallback are covered by focused UI/state tests. Chromium permission denial also passed against the real UI. Native Chrome zoom was reset to 100% and the temporary evidence tab was closed after capture.
 
 ### Visual parity and intentional deviations
@@ -112,7 +116,7 @@ The protected interface uses the approved Deep Navy Gold foundation and treats t
 | Review/correction before persistence | Added as a protected production requirement; the provider transcript is immutable and Save private Capture is explicit. |
 | Public marketing composition | Adapted to the existing owner workspace shell rather than copying a public hero into the private application. |
 
-Automated, isolated-resource, and visual-comparison evidence is complete for handoff. Production verification and real-member validation are not complete because production changes were explicitly prohibited. Passing this evidence does not constitute Pete or ChatGPT Work visual acceptance.
+Automated, isolated-resource, and visual evidence is complete for technical handoff. Production verification and real-member validation are not complete because production changes were explicitly prohibited. Passing this evidence does not constitute Pete or ChatGPT Work visual acceptance.
 
 ## G. Known gaps, risks, and exclusions
 

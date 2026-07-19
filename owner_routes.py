@@ -361,14 +361,17 @@ def upload_voice_capture():
         status = (
             503
             if error.code
-            in {"upload-failed", "queue-failed", "transcription-failed"}
+            in {
+                "upload-failed",
+                "queue-failed",
+                "transcription-failed",
+                "transcription-recovery",
+            }
             else 400
         )
         payload = {"error": error.code}
         if error.source_key:
-            payload["state"] = (
-                "uploading" if error.code == "queue-failed" else "failed"
-            )
+            payload["source_key"] = error.source_key
             payload["review_url"] = url_for(
                 "owner.capture", voice=error.source_key
             )
