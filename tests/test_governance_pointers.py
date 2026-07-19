@@ -32,6 +32,7 @@ class StartHereEntryPointTests(unittest.TestCase):
                 self.assertIn("CURRENT_BASELINE.yaml", body)
                 self.assertIn("DOCUMENT_CONTROL.md", body)
                 self.assertIn("ChatGPT Work", body)
+                self.assertIn("Claude Co-Work", body)
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
                 self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
                 self.assertNotIn("## v1.3 governance", body)
@@ -65,6 +66,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "README.md"),
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "README.md"),
+        ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "07_GATE_24_SESSION_REVIEW.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
@@ -86,6 +88,10 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-VOICE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "README.md"),
         ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"),
+        ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
@@ -129,7 +135,11 @@ class BaselineCoherenceTests(unittest.TestCase):
     def test_baseline_names_current_authority_and_manager(self):
         self.assertIn("Bible_v2.5", self.baseline)
         self.assertIn("Roadmap_v2.4", self.baseline)
-        self.assertIn('tool: "ChatGPT Work"', self.baseline)
+        self.assertIn('role: "package_designated_session_manager"', self.baseline)
+        self.assertIn(
+            'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
+            self.baseline,
+        )
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
@@ -151,7 +161,10 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", self.baseline)
         self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", self.baseline)
         self.assertIn("MANAGER_SESSION_HANDOFF.md", self.baseline)
-        self.assertIn('delivery_model: "self_managed_lanes"', self.baseline)
+        self.assertIn(
+            'delivery_model: "portable_session_manager_with_self_managed_writers"',
+            self.baseline,
+        )
         self.assertIn("voice_release_pipeline: 105", self.baseline)
         self.assertIn("eede8565d703a466bd788962d494e8b385b53409", self.baseline)
 
@@ -163,7 +176,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001"], active_ids
+            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-VOICE-001", "PS-CAPTURE-MEDIA-001"],
+            active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
@@ -183,6 +197,8 @@ class BaselineCoherenceTests(unittest.TestCase):
             "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5",
             "pipeline 93",
             "ChatGPT Work",
+            "Claude Co-Work",
+            "Capture Media manager planning",
             "GitHub mirror is not current",
             "Voice is functionally deployed",
             "self-certification",
@@ -212,7 +228,50 @@ class BaselineCoherenceTests(unittest.TestCase):
                 body = _read(*relative_path.split("/"))
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
-        self.assertIn("Pete / ChatGPT Work visual acceptance", report)
+        self.assertIn("Pete / designated session manager visual acceptance", report)
+
+    def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        handoff = _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md")
+        interview_review = _read(
+            "docs",
+            "initiatives",
+            "PS-INTERVIEW-PUBLIC-GATE-001",
+            "07_GATE_24_SESSION_REVIEW.md",
+        )
+        capture = _read(
+            "docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"
+        )
+
+        for expected in (
+            "Portable session management",
+            "exactly one designated session manager",
+            "Claude Co-Work management is",
+            "distinct from Claude Code implementation ownership",
+        ):
+            self.assertIn(expected, workflow)
+        for expected in (
+            "Codex Interview Gate 2.4 session",
+            "Claude Co-Work",
+            "PS-CAPTURE-MEDIA-001",
+            "implementation, demonstration, deployment",
+        ):
+            self.assertIn(expected, handoff)
+        for expected in (
+            "Review-only",
+            "nine",
+            "truth/accessibility",
+            "Claude Co-Work",
+            "does not edit Interview Studio product code",
+        ):
+            self.assertIn(expected, interview_review)
+        for expected in (
+            "Manager/planning active",
+            "Implementation writer: Unassigned",
+            "No photo, video, or document Capture is implemented, deployed, or live",
+            "Voice",
+        ):
+            self.assertIn(expected, capture)
 
     def test_story_composition_is_member_directed_and_not_claimed_live(self):
         standard = _read(

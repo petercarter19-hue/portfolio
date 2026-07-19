@@ -13,21 +13,24 @@ Bible v2.5 / Roadmap v2.4 documents. Consult `docs/governance/DOCUMENT_CONTROL.m
 an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
 language as current merely because it remains in repository history.
 
-ChatGPT Work is the owner-designated PeerSlate task manager and final
-owner-acceptance room. Claude Code owns any front-end package explicitly
-assigned in `docs/governance/ACTIVE_INITIATIVES.md`, including a protected owner
-surface when the package says so. Before editing, read that initiative's README,
-confirm its reserved branch and files, and verify the exact `origin/main` base.
-Do not begin another lane unless it has a separate writer, branch, worktree, and
-non-overlapping files.
+PeerSlate uses a package-designated session manager. ChatGPT Work/Codex manager
+sessions and Claude Co-Work have the same manager authority when the active
+initiative assigns them. Claude Co-Work management is not Claude Code writing:
+the manager reviews and coordinates branches but does not silently take over a
+Claude Code implementation branch. Claude Code owns any implementation package
+explicitly assigned in `docs/governance/ACTIVE_INITIATIVES.md`, including a
+protected owner surface when the package says so. Before editing, read that
+initiative's README, confirm its designated manager, reserved branch and files,
+and exact `origin/main` base. Do not begin another lane unless it has a separate
+writer, branch, worktree, and non-overlapping files.
 
 Owner decision, 2026-07-19: Claude self-manages its assigned branch. That means
 implementing, reviewing the complete diff, finding and fixing its own issues,
 running focused/full/responsive/accessibility/visual checks, producing the
 completion report and exact evidence, synchronizing with `origin/main`, and
-preparing the Azure PR. After Pete/ChatGPT Work product and visual acceptance,
+preparing the Azure PR. After Pete/designated-session-manager product and visual acceptance,
 Claude may complete the PR, pipeline, production verification, and closeout.
-ChatGPT Work may rely on Claude's coherent `Pass` self-certification rather than
+The designated manager may rely on Claude's coherent `Pass` self-certification rather than
 repeat the full technical audit. Report `Conditional` or `Fail` whenever an
 issue, conflict, or evidence gap remains.
 
@@ -38,7 +41,8 @@ For every user-facing task, read
 `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`. Name the exact approved
 visual authority before implementation. A selected mockup or demonstration is a
 binding minimum: the real experience must match or exceed it, and material work
-requires comparison screenshots plus Pete and ChatGPT Work visual acceptance.
+requires comparison screenshots plus Pete and the designated session manager's
+visual acceptance.
 Do not treat functional completion as permission to ship a visual downgrade.
 
 Before Story design or implementation, also read

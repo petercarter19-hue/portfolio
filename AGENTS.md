@@ -39,15 +39,17 @@ as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported
 rather than implemented.
 
-**Manager assignment (owner decisions, 2026-07-18 and 2026-07-19):** ChatGPT
-Work is the PeerSlate task manager and final owner-acceptance room. It owns
-package sequencing, governance truth, shared-file reservations, visual
-authority, and final acceptance. ChatGPT Codex owns assigned backend packages;
-Claude Code owns assigned front-end packages, including protected owner
-surfaces when expressly assigned. Each writer uses a separate task branch and
-self-manages implementation, self-review, evidence, PR readiness, and approved
-release/closeout under `docs/AI_WORKFLOW.md`. ChatGPT Work does not routinely
-repeat a coherent self-certified technical audit.
+**Portable manager assignment (owner decisions through 2026-07-19):** the
+manager is a package-designated role, not a single tool. A ChatGPT Work/Codex
+manager session or Claude Co-Work may own package sequencing, governance truth,
+shared-file reservations, visual authority, exception escalation, and final
+manager acceptance. Each package names exactly one current manager. ChatGPT
+Codex and Claude Code remain implementation writers only when assigned that
+role; Claude Co-Work management is distinct from Claude Code branch ownership.
+Writers use separate task branches and self-manage implementation, self-review,
+evidence, PR readiness, and approved release/closeout under
+`docs/AI_WORKFLOW.md`. The designated manager does not routinely repeat a
+coherent self-certified technical audit.
 
 Before changing résumé or Slate Board code, read these repository documents in this order:
 
@@ -89,8 +91,9 @@ If any source document is missing, stop and report the missing path. Do not reco
   stored, transmitted, local-only, private, public, or future. Truthful labels
   do not make the visual promise optional.
 - A technical or functional pass is not visual completion. Material user-facing
-  work requires named comparison screenshots and explicit ChatGPT Work plus
-  Pete visual acceptance before merge unless Pete delegates that gate in writing.
+  work requires named comparison screenshots and explicit designated session
+  manager plus Pete visual acceptance before merge unless Pete delegates that
+  gate in writing.
 - Do not release a visibly downgraded "function now, polish later" public or
   member experience. A clearly labeled internal preview requires Pete's explicit
   approval and must remain In Progress.
@@ -182,7 +185,7 @@ Do not add another permanent navigation layer inside Slate Board. Global site na
 - For an assigned self-managed package, perform a distinct complete-diff review,
   fix discovered issues, run all required evidence, and return a `Pass`,
   `Conditional`, or `Fail` self-certification. Do not label unresolved failures
-  as passed. After Pete/ChatGPT Work acceptance, the same writer may complete
+  as passed. After Pete/designated-session-manager acceptance, the same writer may complete
   the Azure PR, pipeline, production verification, and package closeout.
 - Prefer reviewable commits and report material changes, but do not treat a dirty worktree or an ambiguous base as an automatic stop condition; inspect it, protect unrelated work, and proceed with the safest reasonable path.
 - Do not perform database migrations or add production dependencies without explaining the reason and impact first.

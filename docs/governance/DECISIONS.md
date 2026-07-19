@@ -144,3 +144,22 @@ This is an append-only operational decision record. The current Bible and Roadma
 - The scaffolding is not authorization or simulated completion. **Save private
   Capture** remains the only live completion action until separately approved
   backend and destination packages activate later capabilities.
+
+## 2026-07-19 - Make the session-manager role portable and activate Capture Media planning
+
+- Owner decision: a ChatGPT Work/Codex manager session or Claude Co-Work may
+  perform the same package-management role when named by the active initiative.
+- Each package has exactly one designated session manager at a time. Different
+  managers may coordinate non-overlapping packages, but shared-governance-file
+  reservations and writer branches may not overlap.
+- Claude Co-Work management is distinct from Claude Code implementation. A
+  manager reviews a writer branch read-only unless exact branch/SHA ownership is
+  explicitly transferred.
+- A Codex manager session may review the complete Interview Studio Gate 2.4
+  design package and return its branch/SHA/report to Claude Co-Work. Claude Code
+  implementation remains blocked until feasibility and Pete/designated-manager
+  visual approval pass.
+- Claude Co-Work is designated manager for PS-CAPTURE-MEDIA-001 planning. This
+  activates requirements, architecture, decomposition, and writer allocation;
+  it does not claim that photo, video, or document Capture is implemented,
+  deployed, or live.

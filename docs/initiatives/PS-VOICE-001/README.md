@@ -4,7 +4,7 @@
 
 - Original backend writer: ChatGPT Codex; released through Azure PR 75 / pipeline 105
 - Current corrective frontend writer: Claude Code, self-managed
-- Task manager / visual authority / final acceptance: ChatGPT Work and Pete
+- Task manager / visual authority / final acceptance: Pete and the package-designated session manager (ChatGPT Work/Codex or Claude Co-Work)
 - Corrective branch: `work/2026-07-19-voice-visual-parity-001`
 - Entry gate: PS-VOICE-CAPTURE-MANAGER-001 is squash-merged, its Azure pipeline is green, and the branch starts from the resulting current `origin/main`.
 - Depends on: PS-AUTH-001, PS-CAPTURE-001/002, PS-MOMENT-001, and the existing App Service managed identity.
@@ -86,7 +86,7 @@ or closeout evidence. Claude must synchronize the branch with current
 - `scripts/provision_voice_capture_azure.ps1` - new idempotent plan/apply/verify infrastructure script; never prints credentials
 - focused Voice/Capture/database/migration tests and this initiative directory
 
-If implementation requires another shared file, stop and ask ChatGPT Work to reserve it before editing.
+If implementation requires another shared file, stop and ask the designated session manager to reserve it before editing.
 
 ## Read-only and forbidden domains
 
@@ -95,7 +95,7 @@ If implementation requires another shared file, stop and ask ChatGPT Work to res
 - Do not add Moment, Placement, Journal, Story, Work, Project, resume, Feed, sharing, audience, or publication behavior.
 - Do not feed transcript text to a generative model, polish it automatically, or claim speaker analytics, sentiment, confidence, emotion, or accuracy that the provider does not enforce.
 - Do not place private payloads in application logs, audit metadata, exception messages, analytics, blob metadata, request IDs, file names, or infrastructure outputs.
-- Do not provision production Azure resources, apply production SQL, open a PR, merge, deploy, or start the next package. Return the tested branch to ChatGPT Work.
+- Do not provision production Azure resources, apply production SQL, open a PR, merge, deploy, or start the next package. Return the tested branch to the designated session manager.
 
 ## Required reading
 
@@ -104,5 +104,5 @@ Follow `START_HERE.md`, then read the current baseline/state/initiatives, Docume
 For the current correction, also read `06_VISUAL_PARITY_CORRECTION.md`. Close
 with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`, a `Pass`,
 `Conditional`, or `Fail` self-certification, and the exact branch plus full
-commit SHA. After Pete/ChatGPT Work acceptance, the same writer may complete
+commit SHA. After Pete/designated-session-manager acceptance, the same writer may complete
 the Azure PR, pipeline, production verification, and package closeout.

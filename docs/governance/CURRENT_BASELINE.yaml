@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated for the owner-approved self-managed delivery model on 2026-07-19.
+# Updated for portable package management and Capture Media planning on 2026-07-19.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-19"
@@ -25,7 +25,7 @@ authority:
   production_url: "https://peerslate.com"
   application_behavior_commit: "eede8565d703a466bd788962d494e8b385b53409"
   application_behavior_pipeline: 105
-  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released the self-managed delivery model and Claude visual-parity allocation without changing application behavior. PS-VOICE-001 remains active for Claude's correction. Fetch origin for the exact current tip."
+  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released self-managed delivery. Package management is now portable between a ChatGPT Work/Codex manager session and Claude Co-Work. Interview Gate 2.4 review, Voice visual correction, and Capture Media manager planning are active but remain separate. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -34,10 +34,12 @@ mirror:
   status: push_on_hold_and_behind_origin
 
 manager:
-  tool: "ChatGPT Work"
+  role: "package_designated_session_manager"
+  eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
   owner_decision_date: "2026-07-19"
-  delivery_model: "self_managed_lanes"
-  responsibilities: "task sequencing, governance truth, shared-file reservations, visual authority, final product acceptance, and exception escalation; assigned writers self-review and self-certify their branches"
+  delivery_model: "portable_session_manager_with_self_managed_writers"
+  responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
+  current_assignments: "Codex manager session reviews Interview Gate 2.4; Claude Co-Work receives that review and manages PS-CAPTURE-MEDIA-001 planning; Claude Code remains the separate implementation writer when assigned"
 
 governing_documents:
   bible:
@@ -85,6 +87,7 @@ completed_packages:
   - PS-VISUAL-INTEGRITY-GOV-001
   - PS-STORY-COMPOSER-DIRECTION-001
   - PS-SELF-MANAGED-LANES-001
+  - PS-PORTABLE-SESSION-MANAGER-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -96,14 +99,18 @@ holds:
 
 active_packages:
   - id: PS-INTERVIEW-PUBLIC-GATE-001
-    owner: "ChatGPT Work visual authority; Claude Code feasibility"
+    owner: "Codex Gate 2.4 review session; Claude Co-Work designated manager; Claude Code feasibility/implementation only after approval"
     lane: public_experience
     package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
   - id: PS-VOICE-001
-    owner: "Claude Code self-managed visual correction; Codex backend released"
+    owner: "Claude Code self-managed visual correction; Pete and designated session manager accept"
     lane: protected_frontend_visual_parity
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "Claude self-manages the PS-VOICE-001 visual-parity correction from current origin/main under 06_VISUAL_PARITY_CORRECTION.md, then returns a Pass/Conditional/Fail report for Pete/ChatGPT Work product acceptance before merge. Interview Studio independently awaits the complete Direction A Gate 2.4 design review and approval before implementation. PS-STORY-COMPOSER-001 remains planned future work."
+  - id: PS-CAPTURE-MEDIA-001
+    owner: "Claude Co-Work designated session manager; implementation writer unassigned"
+    lane: capture_media_manager_planning
+    package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
+next_gate: "Claude Code completes PS-VOICE-001 visual parity and returns self-certified evidence. The Codex Interview session reviews the uploaded complete Direction A Gate 2.4 package and hands its exact branch/SHA/report to Claude Co-Work; Claude Code implementation remains blocked until feasibility and Pete/designated-manager approval. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

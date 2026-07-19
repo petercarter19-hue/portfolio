@@ -30,7 +30,8 @@ not copy a repository folder between computers as a synchronization method.
 5. The current Bible and Roadmap paths listed in `CURRENT_BASELINE.yaml`
 6. `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`
 7. `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`
-8. For ChatGPT Work manager or cross-lane sessions,
+8. For any designated session manager (ChatGPT Work/Codex or Claude Co-Work)
+   or cross-lane session,
    `docs/governance/MANAGER_SESSION_HANDOFF.md`
 9. The assigned initiative `README.md`
 10. Relevant architecture decisions and evidence linked by that initiative
@@ -49,6 +50,12 @@ Also confirm whether the package uses the self-managed delivery model, who owns
 post-acceptance PR/deploy/closeout, whether shared governance files are reserved,
 and which `Pass`, `Conditional`, or `Fail` evidence is required before final
 acceptance.
+
+Every package must name exactly one designated session manager. ChatGPT
+Work/Codex and Claude Co-Work have the same manager authority when assigned;
+Claude Code remains a separate implementation writer. Parallel managers may
+coordinate different packages, but only one manager branch may reserve shared
+governance files at a time.
 
 Stop and report when authority, ownership, identity boundary, migration ownership, or current document version is unclear. Never guess.
 

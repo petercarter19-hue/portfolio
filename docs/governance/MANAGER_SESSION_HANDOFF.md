@@ -1,8 +1,9 @@
 # PeerSlate Manager Session Handoff
 
-_Prepared 2026-07-18 and updated 2026-07-19 for self-managed delivery lanes,
-the released Voice implementation, and its reopened visual gate. Repository and
-branch facts are a snapshot; fetch `origin` before acting._
+_Prepared 2026-07-18 and updated 2026-07-19 for portable package management,
+self-managed delivery lanes, the reopened Voice visual gate, Interview Gate 2.4
+review, and Capture Media planning. Repository and branch facts are a snapshot;
+fetch `origin` before acting._
 
 ## Start here on any computer
 
@@ -17,16 +18,24 @@ branch facts are a snapshot; fetch `origin` before acting._
 
 ## Manager role and lane model
 
-- **ChatGPT Work:** task manager, shared-authority/file-boundary coordinator,
-  visual authority, exception escalation point, and final product-acceptance
-  room. It does not routinely repeat a coherent writer self-audit.
-- **ChatGPT Codex:** self-managed writer for assigned backend packages.
-- **Claude Code / Fable:** self-managed writer for assigned front-end packages,
-  including a protected owner surface when the package explicitly assigns it.
+- **Designated session manager:** a package-specific role that may be held by a
+  ChatGPT Work/Codex manager session or Claude Co-Work. Both have the same
+  sequencing, governance, file-boundary, visual-authority, exception,
+  acceptance, and Azure-closeout authority when assigned.
+- **ChatGPT Codex:** may be a bounded manager/reviewer session or a self-managed
+  implementation writer; the assigned initiative must say which role applies.
+- **Claude Co-Work:** currently receives the Interview Gate 2.4 review and
+  manages PS-CAPTURE-MEDIA-001 planning.
+- **Claude Code / Fable:** self-managed implementation writer for assigned
+  front-end packages, including a protected owner surface when explicitly
+  assigned. Claude Co-Work management does not grant Claude Code ownership of a
+  manager or writer branch.
 - Each writer owns implementation, complete-diff review, correction, tests,
-  evidence, PR readiness, and, after Pete/ChatGPT Work acceptance, Azure
+  evidence, PR readiness, and, after Pete/designated-manager acceptance, Azure
   release/closeout. Every report states `Pass`, `Conditional`, or `Fail`.
-- One writer per branch remains mandatory. A branch/SHA handoff is required when
+- One manager per package and one writer per branch remain mandatory. Parallel
+  managers may coordinate separate packages but may not overlap shared-file
+  reservations. A branch/SHA handoff is required when
   a different writer continues; it is not required merely because the same
   self-managed writer reached self-review or PR readiness.
 
@@ -124,7 +133,7 @@ The approved future Community, Connections, selected-audience, My Story, Slate
 Board, résumé, attachment, AI-draft, and publication affordances may appear as
 polished, disabled `Coming later` scaffolding. **Save private Capture** remains
 the only live completion action. Claude returns exact evidence and a
-`Pass`/`Conditional`/`Fail` report. Pete and ChatGPT Work perform a focused
+`Pass`/`Conditional`/`Fail` report. Pete and the designated session manager perform a focused
 real-product acceptance review rather than a second complete technical audit.
 
 ## Active lane 2 - PS-INTERVIEW-PUBLIC-GATE-001
@@ -152,8 +161,8 @@ not yet implementation authority. Known corrections remain:
 
 ### Required next design gate
 
-The assigned ChatGPT visual-authority session must return Gate 2.4: the complete
-nine current-public screens,
+The assigned Codex manager-review session must receive and evaluate Gate 2.4:
+the complete nine current-public screens,
 editable responsive source, mobile portrait/landscape, 200% reflow, keyboard
 focus, reduced motion, long content, failure and media-denied states, component
 inventory, truth/accessibility review, and implementation mapping. It should
@@ -161,15 +170,35 @@ also design a separate homepage Interview Studio walkthrough using Direction A.
 That homepage walkthrough is illustrative only and belongs to a later separate
 package/branch; it must not replace the real public Studio.
 
+The Codex session creates a clean review branch, records the package matrix,
+truth/accessibility review, implementation mapping, and `Pass`, `Conditional`,
+or `Fail` result, then pushes and gives Claude Co-Work the exact branch/SHA.
+It does not edit product implementation files.
+
 Then:
 
-1. ChatGPT Work reviews the complete package.
-2. Claude/Fable performs feasibility review only.
-3. Pete and ChatGPT Work approve the final visual baseline.
+1. Claude Co-Work receives and confirms the durable Codex review as designated
+   package manager.
+2. Claude Code/Fable performs feasibility review only.
+3. Pete and the designated manager approve the final visual baseline.
 4. Only then may Claude receive implementation authorization on a fresh branch.
 
 Do not authorize Claude implementation from the three-direction art package
 alone.
+
+## Active lane 3 - PS-CAPTURE-MEDIA-001
+
+Claude Co-Work is the designated manager for Capture Media planning. No remote
+Capture Media implementation branch was visible when this package was
+activated. Treat any unpushed session work as non-authoritative until it is on a
+clean Azure task branch with an exact full SHA.
+
+The manager must inventory the released private Voice/Blob/Speech foundation,
+keep Voice separate, and define photo, video, and document source slices through
+the shared owner, provenance, review, lifecycle, export/delete, accessibility,
+failure, infrastructure, test, rollout, and rollback contracts. It then selects
+one first vertical slice and assigns one implementation writer/branch. Planning
+does not mean implemented, deployed, or live.
 
 ## Owner-wide visual decision
 
@@ -200,7 +229,7 @@ does not interrupt Voice or Interview.
 Near-term sequencing is:
 
 1. finish and release the PS-VOICE-001 visual correction after Claude's
-   self-certified evidence and focused Pete/ChatGPT Work acceptance;
+   self-certified evidence and focused Pete/designated-manager acceptance;
 2. finish Interview Gate 2.4, feasibility review, owner approval, and then the
    bounded public Studio implementation;
 3. define the separate homepage Interview walkthrough package after its design
@@ -227,27 +256,31 @@ backend reference as a visible member feature.
 2. Confirm the self-managed delivery workflow is merged and green.
 3. Inspect all worktrees without changing them; confirm each active branch has
    one writer and non-overlapping files.
-4. Give Claude the current-main Voice visual-correction package and let Claude
+4. Let Claude Code finish the current-main Voice visual-correction package and
    self-manage implementation, self-review, tests, evidence, and PR readiness.
-5. Review Claude's real Voice result and `Pass`/`Conditional`/`Fail` report with
+5. The designated manager reviews Claude's real Voice result and report with
    Pete; do not recreate the entire technical audit by default.
 6. After acceptance, let Claude complete its Azure PR, pipeline, production
    verification, and package closeout.
-7. Obtain and review the complete Interview Gate 2.4 package.
-8. Send it to Claude/Fable for feasibility review, then obtain Pete's final
-   visual approval before code.
-9. Keep Voice and Interview status, holds, decisions, and next gates current in
+7. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
+   Co-Work, confirm it, then send the accepted package to Claude Code/Fable for
+   feasibility review.
+8. Obtain Pete/designated-manager visual approval before Interview code.
+9. Claude Co-Work completes Capture Media manager planning before assigning an
+   implementation writer.
+10. Keep Voice, Interview, and Capture Media status and next gates current in
    the repository after each material handoff or release.
 
-## Paste-ready kickoff for a new ChatGPT Work session
+## Paste-ready kickoff for a designated manager session
 
-> You are the PeerSlate manager. Open and follow `START_HERE.md`, then read
+> You are the designated PeerSlate package manager. Open and follow
+> `START_HERE.md`, then read
 > `docs/governance/MANAGER_SESSION_HANDOFF.md` and every authority file it names.
 > Fetch authoritative Azure `origin/main` and inspect all worktrees before any
 > write. Apply the self-managed lane model: each assigned writer implements,
 > reviews its complete diff, corrects issues, runs tests/evidence, prepares the
-> PR, and returns `Pass`, `Conditional`, or `Fail`; after focused Pete/ChatGPT
-> Work acceptance the same writer completes Azure release/closeout. Preserve the
+> PR, and returns `Pass`, `Conditional`, or `Fail`; after focused Pete/manager
+> acceptance the same writer completes Azure release/closeout. Preserve the
 > original PS-VOICE-001 worktree and assign Claude the fresh protected Voice
 > visual correction under `06_VISUAL_PARITY_CORRECTION.md`. The real UI must
 > match or exceed the homepage/feed walkthrough on desktop and mobile, with
@@ -255,3 +288,33 @@ backend reference as a visible member feature.
 > Continue Interview only at Gate 2.4 design review until its complete package
 > and approvals pass. Maintain honest implementation, demonstration, deployment,
 > and live-production boundaries.
+
+## Paste-ready kickoff for the new Codex Interview Gate 2.4 session
+
+> Open authoritative Azure `origin/main` and follow `START_HERE.md`. You are the
+> bounded manager-review session for `PS-INTERVIEW-PUBLIC-GATE-001` Gate 2.4,
+> not the implementation writer. Create a clean
+> `work/YYYY-MM-DD-interview-gate-24-review` branch. Review the attached complete
+> Direction A Editorial Studio Ledger package against files `01` through `06`
+> and `07_GATE_24_SESSION_REVIEW.md`: nine full-screen states, responsive source,
+> mobile portrait/landscape, focus, 200% reflow, reduced motion, long content,
+> failure/media-denied states, truth/accessibility, component inventory,
+> homepage walkthrough separation, and implementation mapping. Do not edit
+> Interview product code. Return `Pass`, `Conditional`, or `Fail`, commit/push
+> the durable review, and give Claude Co-Work the exact branch/full SHA and
+> report for manager confirmation and Claude Code feasibility review.
+
+## Paste-ready kickoff for Claude Co-Work
+
+> Open the authoritative Azure repository and follow `START_HERE.md`. You are a
+> package-designated PeerSlate session manager with the same governed manager
+> authority as ChatGPT Work/Codex. Read `MANAGER_SESSION_HANDOFF.md`, current
+> authority/state/initiatives, and every assigned package. Receive writer or
+> manager-review branches read-only by exact full SHA; rely on coherent
+> self-certification while escalating conflicts; keep implementation,
+> demonstration, deployment, and live status separate; and close accepted work
+> through Azure evidence. You currently receive the Codex Interview Gate 2.4
+> review and manage `PS-CAPTURE-MEDIA-001` planning. Do not take over Claude Code
+> implementation branches without explicit writer relinquishment. Capture Media
+> planning must define bounded photo/video/document slices and assign a separate
+> writer before any implementation claim.

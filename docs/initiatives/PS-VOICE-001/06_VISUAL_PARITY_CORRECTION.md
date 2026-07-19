@@ -19,8 +19,9 @@ does not reopen the working backend.
 
 - Writer: Claude Code
 - Delivery model: self-managed under `docs/AI_WORKFLOW.md`
-- Task manager and visual authority: ChatGPT Work
-- Final product acceptance: Pete and ChatGPT Work
+- Task manager and visual authority: the package-designated session manager
+  (ChatGPT Work/Codex or Claude Co-Work)
+- Final product acceptance: Pete and the designated session manager
 - Branch: `work/2026-07-19-voice-visual-parity-001`
 - Base: current fetched `origin/main`
 - Preserve completely: `C:\Users\peter\Documents\portfolio-voice-001`
@@ -115,7 +116,7 @@ Slate Board, or publication behavior without a new explicit reservation.
 
 ## Self-managed acceptance evidence
 
-Before requesting Pete/ChatGPT Work acceptance, Claude must:
+Before requesting Pete/designated-session-manager acceptance, Claude must:
 
 1. inspect the complete diff against the exact base and remove unrelated work;
 2. run focused Voice UI tests, governance guardrails, and the complete configured
@@ -131,7 +132,7 @@ Before requesting Pete/ChatGPT Work acceptance, Claude must:
 7. commit, push, and return the exact branch/full SHA and standard completion
    report with `Pass`, `Conditional`, or `Fail` self-certification.
 
-Pete and ChatGPT Work then perform a focused review of the real product and the
+Pete and the designated session manager then perform a focused review of the real product and the
 self-certified report. After acceptance, Claude may complete its own Azure PR,
 pipeline, production checks, and closeout.
 
@@ -157,5 +158,5 @@ binding answers; no separate pre-build manager pause remains:
    from this page.` Closing never deletes or confirms the draft.
 5. Pete's request to have Claude correct the real desktop and mobile experience,
    together with this manager decision, authorizes implementation on the
-   assigned branch. Pete/ChatGPT Work acceptance still occurs against the real
+   assigned branch. Pete/designated-session-manager acceptance still occurs against the real
    completed product before merge.

@@ -34,7 +34,8 @@ Keep `/app/interview-studio`, private persistence, Capture/Moment writes, and br
 
 ## H. Clear next step
 
-ChatGPT Work reviews the branch, exact SHA, diff boundary, evidence, and report before any Azure merge.
+The designated session manager reviews the branch, exact SHA, diff boundary,
+evidence, and report before any Azure merge.
 
 ## I. What Pete needs to do or decide
 

@@ -185,7 +185,7 @@ These rules govern product copy, information architecture, data behavior, AI beh
     truthfully preview approved future behavior without claiming it already
     works.
 89. Material user-facing work requires named visual-authority comparison
-    evidence and Pete plus ChatGPT Work visual acceptance before merge unless
+    evidence and Pete plus the designated session manager's visual acceptance before merge unless
     Pete explicitly delegates the gate.
 90. Functional, security, accessibility, and test evidence remain mandatory and
     do not substitute for visual acceptance; visual acceptance does not
@@ -195,7 +195,7 @@ These rules govern product copy, information architecture, data behavior, AI beh
     otherwise.
 92. An assigned self-managed writer shall review the complete diff, correct its
     own issues, run the required evidence, and return `Pass`, `Conditional`, or
-    `Fail`. Pete and ChatGPT Work retain final product/visual acceptance but may
+    `Fail`. Pete and the designated session manager retain final product/visual acceptance but may
     rely on a coherent self-certified report instead of repeating the full
     technical audit.
 

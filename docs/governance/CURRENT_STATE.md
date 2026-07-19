@@ -1,6 +1,6 @@
 # PeerSlate - Current State
 
-_Updated 2026-07-19 for the released Voice implementation, owner functional validation, reopened Voice visual gate, and self-managed delivery decision. Every writer must still fetch `origin` before starting._
+_Updated 2026-07-19 for portable session management, Interview Gate 2.4 review, and Capture Media manager planning. Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -56,23 +56,37 @@ _Updated 2026-07-19 for the released Voice implementation, owner functional vali
 
 ## Manager and delivery lanes
 
-ChatGPT Work is the owner-designated task manager and final acceptance room. It
-maintains repository truth, sequences packages, reserves shared files, defines
-visual authority, and records final product acceptance. Codex and Claude
-self-manage their assigned branches: implementation, complete-diff review,
-correction, tests, evidence, PR readiness, and post-acceptance Azure
-release/closeout. ChatGPT Work may rely on a coherent `Pass` self-certification
-instead of repeating the complete technical audit. Each package still has one
-writer, one short-lived branch, and explicit file ownership.
+The task manager is a package-designated role. ChatGPT Work/Codex manager
+sessions and Claude Co-Work have the same governed manager authority when an
+active initiative names them. A manager maintains repository truth, sequences
+the assigned package, reserves shared files, defines visual authority, records
+manager acceptance, and coordinates Azure closeout. Codex and Claude writers
+self-manage their assigned branches through implementation, complete-diff
+review, correction, tests, evidence, PR readiness, and post-acceptance release.
+The designated manager may rely on a coherent `Pass` self-certification instead
+of repeating the complete technical audit.
 
-The Interview Studio design lane and protected Voice visual-correction lane are active independently:
+Each package has one designated manager and one active writer per branch.
+Claude Co-Work management is distinct from Claude Code implementation. Parallel
+manager sessions may coordinate separate packages, but shared-governance-file
+reservations must be serialized.
 
-1. **PS-INTERVIEW-PUBLIC-GATE-001 - public design:** continue the owner-approved Approach A visual-design lane for the public Studio. Implementation remains gated on manager and owner approval of the returned visual package.
+The Interview Studio review lane, protected Voice visual-correction lane, and
+Capture Media manager-planning lane are active independently:
+
+1. **PS-INTERVIEW-PUBLIC-GATE-001 - Gate 2.4 review:** a new Codex manager
+   session may receive the complete Direction A design package, review it on a
+   clean design-review branch, and return a `Pass`, `Conditional`, or `Fail`
+   report to Claude Co-Work. It does not implement the Studio.
 2. **PS-VOICE-001 - protected visual correction:** the backend, infrastructure,
    SQL, merge, deploy, and signed-in functional path are real. Claude Code now
    owns the self-managed desktop/mobile visual-parity correction on a fresh
    branch from current `origin/main`; the original Codex worktree remains
    preserved and must not be reused.
+3. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
+   session manager for requirements, architecture, decomposition, and writer
+   allocation. No authoritative Azure implementation branch was observed at
+   activation, so Capture Media is not implemented, deployed, or live.
 
 The Claude branch `work/2026-07-19-voice-visual-parity-001` was observed at
 `0158daf22d26e7c38be494e2b32e6b51fdaca0fb` with design instructions only. The
@@ -86,10 +100,11 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, and self-managed lanes are current | Use self-certified lane reports plus focused Pete/ChatGPT Work acceptance; keep Story Composer planned |
+| Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Direction A art direction selected | Complete the nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in Voice workflow works | Rebuild protected Voice desktop/mobile visuals to match the approved walkthrough, then obtain final product acceptance |
+| Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
@@ -103,6 +118,8 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   gate.
 - Production has the required private Blob Storage and managed-identity Blob and
   Speech roles. The active correction must not change those backend contracts.
+- PS-CAPTURE-MEDIA-001 planning does not make photo, video, or document Capture
+  available. Voice is not to be rebuilt inside the broader media package.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
@@ -117,7 +134,8 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production
   evidence remain required. Material user-facing work also requires named
-  visual comparison evidence and Pete plus ChatGPT Work visual acceptance.
+  visual comparison evidence and Pete plus designated-session-manager visual
+  acceptance.
 - The homepage Voice walkthrough is the minimum for the real protected Voice
   Capture UI, with Speak and Type as first-class choices.
 - The approved future Community, Connections, selected-audience, Story, Slate
@@ -150,5 +168,5 @@ Both guardrail suites, package-focused tests, and the Azure pipeline must pass f
 
 For material user-facing packages, the release evidence must also include the
 named visual authority, desktop/mobile and applicable focus/zoom/reduced-motion/
-failure comparisons, recorded deviations, and explicit Pete/ChatGPT Work visual
-acceptance.
+failure comparisons, recorded deviations, and explicit Pete/designated-manager
+visual acceptance.

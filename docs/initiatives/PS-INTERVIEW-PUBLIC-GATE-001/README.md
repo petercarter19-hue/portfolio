@@ -2,9 +2,11 @@
 
 ## Assignment
 
-- Writer: Claude Code
-- Manager/reviewer: ChatGPT Work
-- Branch when accepted: `work/YYYY-MM-DD-interview-public-gate-001`
+- Current Gate 2.4 reviewer: bounded Codex manager-review session
+- Designated session manager: Claude Co-Work
+- Later feasibility/implementation writer: Claude Code, only after all design gates
+- Review branch: `work/YYYY-MM-DD-interview-gate-24-review`
+- Later implementation branch: `work/YYYY-MM-DD-interview-public-gate-001`
 - Entry gate: PS-NEXT-WAVE-MANAGER-001 is squash-merged, its Azure pipeline is green, and the branch starts from the resulting current `origin/main`.
 - Depends on: PS-INTERVIEW-002, PS-RESUME-PUBLIC-REFINE-001, and the verified public/auth route audit.
 
@@ -26,6 +28,14 @@ Pete approved the manager recommendation to preserve the current interactive pub
 - bank the scripted public demonstration and authenticated dark Studio as future design authority only, to be reconsidered after the private Studio exists and is verified.
 
 The controlling decision and design allocation are recorded in [05_OWNER_APPROVED_DESIGN_SCOPE.md](05_OWNER_APPROVED_DESIGN_SCOPE.md). Fable's next task is design only under [06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md](06_FABLE_CURRENT_PUBLIC_DESIGN_BRIEF.md); it does not authorize implementation.
+
+Pete may now open a new Codex session and upload the complete Gate 2.4 package.
+That session follows [07_GATE_24_SESSION_REVIEW.md](07_GATE_24_SESSION_REVIEW.md),
+reviews only, commits a durable `Pass`/`Conditional`/`Fail` result, and gives
+Claude Co-Work the exact review branch/SHA. Claude Co-Work confirms the package
+as designated manager, then sends it to Claude Code for feasibility. Product
+implementation remains blocked until feasibility and Pete/designated-manager
+visual approval pass.
 
 ## Route and identity decision
 

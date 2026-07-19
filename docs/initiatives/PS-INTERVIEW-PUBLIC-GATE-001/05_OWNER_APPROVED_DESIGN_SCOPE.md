@@ -4,7 +4,8 @@
 
 - Owner: Pete Carter
 - Decision date: 2026-07-18
-- Manager: ChatGPT Work
+- Designated session manager: Claude Co-Work
+- Gate 2.4 review session: Codex manager-review session
 - Disposition: Gate A approved for the current public package
 - Approved approach: Approach A — preserve interactive public practice and make its boundaries unmistakable
 - Implementation authorization: none; this decision authorizes the next design-only step
@@ -97,4 +98,4 @@ These concepts require a separately authorized authenticated-Studio initiative w
 
 ## Design exit gate
 
-Fable returns separate full-screen production-intent designs for the current-public allocation, editable responsive source, a component/state inventory, and a short self-review against this file. ChatGPT Work must issue a clean design sign-off before any implementation begins.
+Fable returns separate full-screen production-intent designs for the current-public allocation, editable responsive source, a component/state inventory, and a short self-review against this file. The Codex Gate 2.4 session records a durable complete-package review, Claude Co-Work confirms it as designated manager, and Pete plus that manager must issue a clean visual sign-off before implementation begins.

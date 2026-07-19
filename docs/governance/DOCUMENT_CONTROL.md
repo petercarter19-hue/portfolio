@@ -1,6 +1,6 @@
 # PeerSlate Document Control
 
-_Adopted 2026-07-18. Maintained by the ChatGPT Work manager lane._
+_Adopted 2026-07-18. Maintained by the currently designated governance manager lane._
 
 ## Authority order
 

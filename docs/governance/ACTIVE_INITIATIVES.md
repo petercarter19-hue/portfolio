@@ -1,21 +1,27 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-19 for self-managed delivery lanes and the reopened Voice visual gate._
+_Updated 2026-07-19 for portable package management, Interview Gate 2.4 review, and Capture Media planning._
 
 ## Operating model
 
-**ChatGPT Work is the PeerSlate task manager and final acceptance room.** It
-owns package sequencing, governance truth, shared-file boundaries, visual
-authority, and final product acceptance. Each assigned writer self-manages its
+The manager is a package-designated role. A ChatGPT Work/Codex manager session
+or Claude Co-Work has the same authority when named: package sequencing,
+governance truth, shared-file boundaries, visual authority, exception
+escalation, and final manager acceptance. Each assigned writer self-manages its
 own branch through implementation, complete-diff review, tests, evidence, PR
 readiness, and post-acceptance release/closeout.
 
+Each package has one designated session manager. Parallel managers may
+coordinate different packages, but they may not edit the same branch or reserve
+the same shared governance files. Claude Co-Work management is distinct from
+Claude Code implementation.
+
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work | Self-managed lanes released; Voice and Interview gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
-| Backend convergence | ChatGPT Codex | Next backend package preparation | assigned backend architecture/services/schema/tests only | Voice visual files, public Studio, Journal, global theme/nav unless assigned |
+| Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Voice, Interview, and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
+| Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 planning | requirements, architecture, slice decomposition, writer allocation, evidence gates | implementation claims, Voice rebuild, Journal, publication, shared runtime files before reservation |
 | Protected front end | Claude Code | PS-VOICE-001 visual-parity correction | protected Voice Capture template/scoped CSS/client/tests/evidence | Voice backend, auth, SQL, infrastructure, public Studio/resume, global theme/nav |
-| Public experience | ChatGPT visual-authority session, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | Direction A Gate 2.4 design package; implementation only after complete visual gate and approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
+| Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Direction A design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
 ## Current active gate
 
@@ -41,7 +47,7 @@ instructions only and must synchronize with current `origin/main` before build.
   pre-build manager audit; final real-product acceptance remains required.
 - Claude self-reviews the complete branch, corrects its own issues, runs all
   required evidence, and returns `Pass`, `Conditional`, or `Fail`. Pete and
-  ChatGPT Work then perform a focused real-product acceptance review. After
+  the designated session manager then perform a focused real-product acceptance review. After
   acceptance Claude may complete its Azure PR, pipeline, production checks, and
   package closeout.
 - The protected UI must match or exceed the homepage/feed Voice walkthrough,
@@ -49,17 +55,34 @@ instructions only and must synchronize with current `origin/main` before build.
   parity. Approved future actions remain clearly disabled `Coming later`
   scaffolding; **Save private Capture** is the only live completion action.
 
-### PS-INTERVIEW-PUBLIC-GATE-001 - ChatGPT visual-authority / Claude feasibility lane
+### PS-INTERVIEW-PUBLIC-GATE-001 - Codex Gate 2.4 review / Claude Co-Work manager lane
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
-- Current action: Direction A, Editorial Studio Ledger, is selected. The
-  assigned ChatGPT visual-authority session must complete the nine-screen Gate
-  2.4 responsive/accessibility design set and
-  a separately scoped homepage walkthrough design. Claude Code then performs
-  feasibility review. No code until Pete and ChatGPT Work approve the final
-  design baseline and expressly authorize implementation.
+- Current action: Direction A, Editorial Studio Ledger, is selected. Pete may
+  start a new Codex manager session, upload the complete Gate 2.4 package, and
+  let that session create a clean review branch from current `origin/main`.
+  The session reviews all nine responsive/accessibility states, the separately
+  scoped homepage walkthrough, truth/accessibility, and implementation mapping;
+  it does not write product code. It returns its exact branch/SHA and
+  `Pass`/`Conditional`/`Fail` report to Claude Co-Work.
+- Claude Co-Work receives the durable review as designated manager and sends
+  the accepted package to Claude Code for feasibility. No implementation branch
+  until feasibility and Pete/designated-manager visual approval pass.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
+
+### PS-CAPTURE-MEDIA-001 - Claude Co-Work manager-planning lane
+
+- Source package: `docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`.
+- Current action: inventory the released Voice/private-media foundation; define
+  separate photo, video, and document vertical slices; select the first slice;
+  allocate one implementation writer/branch; and return requirements,
+  architecture, privacy/lifecycle, accessibility, infrastructure, test,
+  rollout, and rollback gates.
+- No authoritative remote Capture Media implementation branch was observed at
+  activation. Planning may proceed, but implementation, deployment, and live
+  status remain false until exact branch/PR/pipeline/production evidence exists.
+- PS-VOICE-001 remains separate and must not be reimplemented by Capture Media.
 
 ## Later backend decisions
 
@@ -89,5 +112,8 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 - Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`.
 - Follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; material
   user-facing work requires a named visual authority, parity evidence, and Pete
-  plus ChatGPT Work visual acceptance.
+  plus designated-session-manager visual acceptance.
+- Manager-to-manager transfer requires a durable package report naming the
+  current gate, exact branch/SHA, evidence, shared-file reservation, unresolved
+  issues, and single next action. Chat history alone is not a handoff.
 - Do not duplicate Capture or Moment text into destinations, introduce a second resume dataset, rewrite authentication, start Journal UI, or claim private/public behavior the backend does not enforce.

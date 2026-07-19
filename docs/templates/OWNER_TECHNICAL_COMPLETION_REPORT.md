@@ -7,7 +7,9 @@
 - PR / pipeline / environment:
 - Production state:
 - Visual authority and status: Not Applicable / Not Started / In Design / In Review / Accepted / Blocked
-- Pete / ChatGPT Work visual acceptance:
+- Pete / designated session manager visual acceptance:
+- Designated session manager:
+- Manager handoff status and next receiver:
 - Lane owner and self-managed authority:
 - Self-certification: Pass / Conditional / Fail
 - Complete-diff review: Passed / Issues corrected / Issues remaining
@@ -39,7 +41,8 @@ For user-facing work, follow
 `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`, separately name the approved visual authority, list the
 desktop/mobile/zoom/focus/reduced-motion/long-content/failure screenshots or
 evidence reviewed, compare the implementation with that authority, record every
-intentional deviation and its reason, and state Pete's and ChatGPT Work's visual
+intentional deviation and its reason, and state Pete's and the designated
+session manager's visual
 acceptance. A functional pass is not visual acceptance.
 
 For Story composition work, also follow

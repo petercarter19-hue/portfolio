@@ -38,7 +38,7 @@ github  https://github.com/petercarter19-hue/portfolio.git
 11. Do not rewrite shared history, force-push, prune objects, or perform destructive Git cleanup without a verified recovery reference and explicit justification.
 12. Keep GitHub a one-way mirror of Azure. GitHub must never become an alternate production path.
 13. Assigned writers self-manage their own delivery lane: implementation, complete-diff review, correction, testing, evidence, PR readiness, approved release, production verification, and closeout.
-14. ChatGPT Work manages package sequencing, cross-lane file ownership, shared authority, and final acceptance. It does not routinely repeat a writer's complete technical review when the self-certification evidence is coherent.
+14. The package-designated session manager manages sequencing, cross-lane file ownership, shared authority, and final manager acceptance. ChatGPT Work/Codex and Claude Co-Work have equal manager authority when assigned. The manager does not routinely repeat a writer's complete technical review when the self-certification evidence is coherent.
 
 ## Beginning every session
 
@@ -139,11 +139,11 @@ The writer must:
 7. stop and report `Conditional` or `Fail` rather than hide a failed check,
    unresolved security/privacy issue, destructive migration uncertainty,
    unsupported production claim, or material design deviation; and
-8. after Pete/ChatGPT Work acceptance, complete its own Azure PR, pipeline,
+8. after Pete/designated-session-manager acceptance, complete its own Azure PR, pipeline,
    production verification, package-local architecture/evidence update, and
    release closeout unless the package assigns those actions elsewhere.
 
-Self-certification is acceptable completion evidence. ChatGPT Work may rely on
+Self-certification is acceptable completion evidence. The designated session manager may rely on
 the report and a short product/visual acceptance review instead of rerunning the
 entire implementation audit. It may request an independent or deeper review
 when evidence conflicts, a high-risk exception is disclosed, shared-file scope
@@ -151,7 +151,7 @@ drifts, or the real product does not match the report.
 
 This delegation does not permit a writer to approve its own owner acceptance.
 For material user-facing work, the writer performs and reports the visual
-comparison; Pete and ChatGPT Work still accept or reject the real result. The
+comparison; Pete and the designated session manager still accept or reject the real result. The
 acceptance may be concise and report-based. A writer also may not use a UI
 capability flag as authorization: backend access, audience, publication, and
 data-lifecycle controls remain server-enforced.
@@ -164,6 +164,35 @@ update it only for a constitutional product decision. Use the
 Roadmap for sequencing/architecture changes and the current-state records for
 verified implementation and release status.
 
+## Portable session management
+
+Owner decision, 2026-07-19: package management is a portable role. A ChatGPT
+Work/Codex manager session or Claude Co-Work may perform the same governed
+manager functions when the active initiative names it:
+
+- establish the package, gate, visual authority, branch owner, writable files,
+  shared integration zones, and release boundary;
+- receive and evaluate self-certified writer evidence without automatically
+  repeating the full technical audit;
+- coordinate truth, accessibility, feasibility, visual/product acceptance,
+  Azure PR/pipeline/live verification, and package closeout;
+- keep implementation, demonstration, deployment, and live-production status
+  distinct; and
+- escalate conflicts, evidence gaps, unsafe migrations, or owner decisions.
+
+Each package has exactly one designated session manager at a time. Different
+managers may coordinate separate packages in parallel, but they may not both
+write the same branch or reserve the same shared governance files. A manager
+reviewing a writer branch remains read-only unless the writer explicitly
+relinquishes it with the exact branch and full SHA. Claude Co-Work management is
+therefore distinct from Claude Code implementation ownership.
+
+When management moves between sessions or tools, the outgoing manager returns
+the package ID, current gate, writer branch and exact SHA, evidence status,
+visual/owner decision, shared-file reservation, unresolved conflicts, and the
+single next action. Chat memory is never the handoff authority; the repository
+package and Azure branch are.
+
 ## Visual integrity for user-facing work
 
 Before any user-facing design or implementation, read
@@ -175,7 +204,7 @@ composition, clarity, and finish.
 
 The writer must return named desktop/mobile and applicable focus, 200% zoom,
 reduced-motion, long-content, processing, failure, and recovery evidence plus a
-parity/deviation summary and self-certification. ChatGPT Work and Pete must
+parity/deviation summary and self-certification. The designated session manager and Pete must
 accept material user-facing work visually before merge unless Pete explicitly
 delegates that gate. The manager may rely on the returned evidence and a focused
 review of the real product rather than recreating the writer's entire visual
@@ -249,8 +278,8 @@ Never claim that work is deployed merely because it is committed or pushed.
 3. The self-managed writer reviews the complete diff and confirms the branch contains no unrelated work.
 4. Run the relevant tests, syntax checks, and smoke checks.
 5. For material user-facing work, the writer self-certifies the named visual
-   authority comparison and documented deviations, then obtains Pete/ChatGPT
-   Work visual acceptance. Acceptance may rely on the report and a focused
+   authority comparison and documented deviations, then obtains Pete and
+   designated-session-manager visual acceptance. Acceptance may rely on the report and a focused
    product review; a second line-by-line implementation audit is not required.
 6. Resolve review feedback on the same task branch.
 7. Squash-merge the pull request.
@@ -409,6 +438,7 @@ Every completed task must report:
 - production verification result
 - GitHub mirror result
 - self-certification result and complete-diff review status
+- designated session manager and manager-handoff status
 - disclosed failures, conflicts, escalations, and evidence limitations
 - remaining risks, assumptions, or follow-up work
 
