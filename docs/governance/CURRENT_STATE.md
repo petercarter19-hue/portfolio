@@ -40,6 +40,14 @@ _Updated 2026-07-19 for portable session management, Interview Gate 2.4 review, 
   squash-merged through Azure PR 76 at
   `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf`; pipeline 107 passed Build and
   Deploy for that exact commit. Public route behavior remained unchanged.
+- Portable session management, the Codex Interview Gate 2.4 review contract,
+  and Claude Co-Work Capture Media manager planning squash-merged through Azure
+  PR 78 at `c4e5145026cc9a67a68c6c147cc5daa8db386f7a`; pipeline 110 passed Build
+  and Deploy for that exact commit. A redundant manual pipeline 111 for the
+  same commit was canceled after pipeline 110 succeeded; it was not a failed
+  release. Production `/`, `/petec/resume`, `/interview-studio`, and
+  `/petec/my-story` returned 200; `/my-story` kept its canonical redirect; and
+  `/app/capture` kept its signed-out redirect to sign-in.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

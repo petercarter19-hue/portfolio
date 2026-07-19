@@ -3,18 +3,18 @@
 ## A. Status
 
 - Package: PS-PORTABLE-SESSION-MANAGER-001
-- Status: Ready for Azure PR
-- Branch and commit: `work/2026-07-19-portable-session-manager`; exact pushed SHA supplied with handoff
-- PR / pipeline / environment: pending
-- Production state: governance only; no product behavior change
+- Status: Complete
+- Branch and commit: `work/2026-07-19-portable-session-manager` at `eb6b51b45fc6438f75763364212a3cf0f1d013de`; squash `c4e5145026cc9a67a68c6c147cc5daa8db386f7a`
+- PR / pipeline / environment: Azure PR 78; pipeline 110 passed Build and Deploy; production
+- Production state: governance released; no product behavior change
 - Visual authority and status: Not Applicable
 - Pete / designated session manager visual acceptance: Not Applicable
 - Designated session manager: Codex governance lane for this package
-- Manager handoff status and next receiver: Claude Co-Work after release
+- Manager handoff status and next receiver: available on current `origin/main`; Codex Interview reviewer and Claude Co-Work
 - Lane owner and self-managed authority: Codex governance lane
 - Self-certification: Pass
 - Complete-diff review: Pass
-- Acceptance requested: release
+- Acceptance requested: Complete
 
 ## B. What changed technically
 
@@ -54,6 +54,14 @@ architecture or live functionality.
 - Full `python -m unittest discover -s tests`: 396 tests passed, 1 expected
   skip. Test-only placeholders and an isolated dependency path were used; no
   credentials or production data were read.
+- Azure PR 78 squash-merged the package as
+  `c4e5145026cc9a67a68c6c147cc5daa8db386f7a`.
+- Azure pipeline 110 passed Build and Deploy for that exact commit. Redundant
+  manual pipeline 111 for the same commit was canceled after 110 succeeded.
+- Production checks: `/`, `/petec/resume`, `/interview-studio`, and
+  `/petec/my-story` returned 200; `/my-story` redirected to
+  `/petec/my-story`; `/app/capture` redirected signed-out access to
+  `/auth/sign-in?return_to=/app/capture`.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -62,9 +70,9 @@ package. Existing Voice worktrees remain protected.
 
 ## H. Clear next step
 
-Release through Azure, record the exact PR/pipeline/live route evidence, then
-start the Codex Interview review session or Claude Co-Work manager session from
-the resulting current `origin/main`.
+Start the Codex Interview Gate 2.4 review session with the complete design
+package, or let Claude Co-Work continue PS-CAPTURE-MEDIA-001 manager planning,
+from freshly fetched current `origin/main`.
 
 ## I. What Pete needs to do or decide
 

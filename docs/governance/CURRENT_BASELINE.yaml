@@ -22,10 +22,13 @@ authority:
   self_managed_lanes_merge_commit: "fe03d49ca57bde2c4d0bfc4c66726c132da81ebf"
   self_managed_lanes_pr: 76
   self_managed_lanes_pipeline: 107
+  portable_session_manager_merge_commit: "c4e5145026cc9a67a68c6c147cc5daa8db386f7a"
+  portable_session_manager_pr: 78
+  portable_session_manager_pipeline: 110
   production_url: "https://peerslate.com"
   application_behavior_commit: "eede8565d703a466bd788962d494e8b385b53409"
   application_behavior_pipeline: 105
-  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released self-managed delivery. Package management is now portable between a ChatGPT Work/Codex manager session and Claude Co-Work. Interview Gate 2.4 review, Voice visual correction, and Capture Media manager planning are active but remain separate. Fetch origin for the exact current tip."
+  note: "PR 75/pipeline 105 released private Voice Capture. Pete verified the signed-in workflow works, then withdrew visual acceptance because the protected desktop/mobile UI does not match the approved walkthrough. PR 76/pipeline 107 released self-managed delivery. PR 78/pipeline 110 released portable session management between a ChatGPT Work/Codex manager session and Claude Co-Work. Interview Gate 2.4 review, Voice visual correction, and Capture Media manager planning are active but remain separate. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
