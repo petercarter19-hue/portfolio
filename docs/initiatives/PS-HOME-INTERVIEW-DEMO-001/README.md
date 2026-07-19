@@ -9,6 +9,13 @@
 - **Worktree:** `C:\Users\peter\Documents\portfolio-home-interview-demo`
 - **Base:** `origin/main` at `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f` (verified current tip at architecture time; re-fetch at execution time)
 - **Owner authorization:** Pete, 2026-07-19 (recorded below)
+- **Final source tip:** `90d035a25344c850e6ed732c1efb6e4d0a240787`
+- **Release:** Azure PR 86; squash merge
+  `a98cced519a1f853ad9f4462fd438efa67d6f260`; automatic pipeline 122
+  (`20260719.30`) passed Build and Deploy.
+- **Current status:** accepted, deployed, and verified live as a fixed
+  pre-convergence illustrative walkthrough. Final 5A/5C homepage projection
+  parity remains open under the real-Studio convergence gate.
 
 ## Owner authorization — 2026-07-19
 
@@ -114,6 +121,13 @@ serializes shared-governance activation and closeout separately.
 ## Delivery gates
 
 Architecture (this package's records) → implementation on this branch →
-self-review with Pass/Conditional/Fail → commit/push to Azure → **no merge or
-deploy** until Pete and the designated session manager inspect the real
-implementation and grant visual/product acceptance.
+self-review with Pass/Conditional/Fail → commit/push to Azure → Pete and
+designated-manager visual/product acceptance → Azure PR/pipeline → live
+verification.
+
+That sequence passed for the package's fixed illustrative purpose. The
+walkthrough remains static, fictional, and no-side-effect. Its current
+Voice-default framing and paper-light modal in dark theme are accepted
+pre-convergence limitations, not the controlling real-Studio design. After the
+real 5A/5C Studio is accepted, released, and verified live, a fresh downstream
+branch must converge and separately release the homepage projection.

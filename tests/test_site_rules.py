@@ -145,6 +145,16 @@ class GovernanceDocsTests(unittest.TestCase):
             ROOT, 'docs', 'governance', 'CURRENT_BASELINE.yaml'))
         self.assertIn('interview_demo_convergence_pr: 83', baseline)
         self.assertIn('interview_demo_convergence_pipeline: 117', baseline)
+        self.assertIn('homepage_interview_demo_pr: 86', baseline)
+        self.assertIn('homepage_interview_demo_pipeline: 122', baseline)
+        self.assertIn(
+            'homepage_interview_demo_merge_commit: '
+            '"a98cced519a1f853ad9f4462fd438efa67d6f260"',
+            baseline)
+        self.assertIn(
+            'Current illustration live and verified; real 5A/5C Studio and '
+            'converged projection not live',
+            normalized_convergence)
 
 
 class NavigationLanguageTests(unittest.TestCase):

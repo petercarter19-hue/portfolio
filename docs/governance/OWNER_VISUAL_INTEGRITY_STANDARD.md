@@ -210,9 +210,14 @@ My Story, Slate Board, and any later experience added to `/`:
   walkthrough is a later static, no-side-effect projection of the accepted and
   live Studio, not a parallel design authority. It must use the real Studio's
   5A-light/5C-dark composition, written-practice-first hierarchy, product names,
-  and truth labels. A pre-existing walkthrough prototype must be held and
-  converged after the real Studio release rather than merged with stale visuals
-  or Voice-first framing.
+  and truth labels when final projection parity closes.
+- Pete explicitly accepted the completed fixed pre-convergence walkthrough for
+  an interim live illustrative release on 2026-07-19. That narrow exception
+  allows the truthful, fictional, no-side-effect walkthrough to remain live
+  while the real Studio gate proceeds. It does not make the walkthrough a
+  co-authority or close homepage parity. Its Voice-default framing and
+  paper-light dark modal remain required downstream convergence work after the
+  exact 5A/5C real Studio is accepted and live.
 - Real Studio implementation and homepage-demo implementation require separate
   visual acceptance, Azure release, and live verification evidence. A demo may
   never be used to claim that the real Studio is implemented or deployed.

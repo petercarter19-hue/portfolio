@@ -10,7 +10,7 @@
 - Visual authority and status: Image 5 Concept A light / Concept C dark authority is recorded; complete dual-theme design remains In Design / In Review and is not yet accepted
 - Pete / designated session manager visual acceptance: not claimed; Pete approved the real-Studio-first sequence, not the unfinished 18-screen design or an implementation
 - Designated session manager: this bounded Codex manager session for the sequencing record; Claude Co-Work remains the package-designated receiving manager
-- Manager handoff status and next receiver: authoritative on `origin/main` and ready for Claude Co-Work/Claude Code; the active demo writer receives the immediate checkpoint-and-pause instruction
+- Manager handoff status and next receiver: authoritative on `origin/main` and ready for Claude Co-Work/Claude Code; the historical demo branch is closed after the later owner-accepted interim release recorded in §J
 - Lane owner and self-managed authority: Claude Code remains the later self-managed public-front-end writer; this branch changes governance/instructions only
 - Self-certification: Pass
 - Complete-diff review: Passed after correcting a whitespace-sensitive documentation guardrail
@@ -22,7 +22,9 @@
 - Recorded the observed clean pushed demo checkpoint:
   `work/2026-07-19-home-interview-demo-001` at
   `358e7eea304a2b4d4008031ea8f51c523380ee4f`.
-- Classified that demo as a reusable interaction prototype that is not accepted, merged, deployed, or live.
+- Classified that demo as a reusable interaction prototype that was not
+  accepted, merged, deployed, or live **at the time of this sequencing
+  closeout**. See §J for the subsequent owner-accepted interim release.
 - Required real Studio design acceptance, implementation architecture, implementation acceptance, Azure release, and live verification before demo convergence begins.
 - Required the later demo to map fixed steps to exact released Studio states, render 5A light and 5C dark, keep written practice primary, and remain static with no side effects.
 - Updated the Interview package README, current baseline/state, active initiatives, decisions, manager handoff, and Owner Visual Integrity Standard.
@@ -118,26 +120,44 @@ publication, or any owner data flow.
 - The complete 18-export dual-theme Studio design is not yet accepted.
 - Claude/Fable feasibility, real Studio implementation, visual acceptance,
   Azure release, and live verification remain pending.
-- The demo checkpoint must remain parked. Continuing it before the real Studio
-  is live risks another visual and product-truth divergence.
+- The current fixed illustration may remain live under the later explicit owner
+  acceptance in §J. Its downstream 5A/5C parity work remains blocked until the
+  real Studio is live; starting that work early risks another visual and
+  product-truth divergence.
 - A later demo convergence must use the exact released Studio manifest, not the
   current design package alone.
-- This report does not approve the demo visuals, real Studio visuals, product
-  implementation, deployment, or live status.
+- This original sequencing report did not approve demo or real-Studio visuals,
+  product implementation, deployment, or live status. Section J records the
+  later acceptance and release of the fixed illustration only.
 
 ## H. Clear next step
 
-Give Claude the immediate checkpoint-and-pause instruction in
-`10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md`. Continue Gate 2.4 design
-review and approval for the real Studio. That unlocks the real implementation
-branch without losing the demo work.
+Continue Gate 2.4 design review and approval for the real Studio. That unlocks
+the real implementation branch. After the real Studio is accepted and live,
+assign a fresh downstream branch for homepage convergence; do not reuse the
+deleted historical demo branch.
 
 Capture Media planning may continue independently under Claude Co-Work because
 it does not share the Interview product files.
 
 ## I. What Pete needs to do or decide
 
-- Give the active demo writer the checkpoint-and-pause instruction after this
-  governance package is available on authoritative `origin/main`.
 - Review the complete 18-screen Studio design when it is returned. No additional
   architecture or demo-design decision is required now.
+
+## J. Subsequent accepted interim demo release
+
+Pete later accepted the completed fixed homepage walkthrough for its current
+illustrative purpose. Claude's exact source tip
+`90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
+at `a98cced519a1f853ad9f4462fd438efa67d6f260`; automatic pipeline 122
+(`20260719.30`) passed Build and Deploy. Automatic pipeline 123 then passed for
+descendant main `6cb49f135cc3a2749dd4539f8261d176b43dad9a` with the demo-owned
+paths unchanged. Manual pipeline 124 was additional successful evidence, not a
+CI-trigger failure. Live homepage and asset checks plus desktop/390px manager
+review passed the fixed four-state, truthful flow.
+
+This later event closes the current demonstration, not the real Studio design,
+real Studio implementation, or final homepage parity. The live Voice-default
+framing and paper-light dark modal remain downstream convergence work after the
+exact accepted 5A/5C Studio is live.

@@ -231,6 +231,27 @@ This is an append-only operational decision record. The current Bible and Roadma
   branch/SHA, Pete/manager visual acceptance, Azure PR, squash-merge SHA,
   pipeline, and live verification evidence.
 
+## 2026-07-19 - Accept the current homepage Interview walkthrough as a live pre-convergence illustration
+
+- Pete accepted the fixed four-state homepage Interview walkthrough for its
+  current illustrative purpose. Claude's exact source tip
+  `90d035a25344c850e6ed732c1efb6e4d0a240787` released through Azure PR 86,
+  squash merge `a98cced519a1f853ad9f4462fd438efa67d6f260`, and automatic pipeline
+  122 (`20260719.30`). Live desktop and 390px manager review passed the poster,
+  modal, four deterministic states, explicit truth labels, and final real-Studio
+  link.
+- This is an explicit owner-approved interim release of the demonstration. It
+  does not reverse the real-Studio-first authority decision, make the current
+  walkthrough a co-authority, approve the real 5A/5C Studio implementation, or
+  close homepage projection parity.
+- The current Voice-default framing and paper-light dark modal are accepted only
+  as known pre-convergence limitations. After the exact 5A-light/5C-dark real
+  Studio is accepted, released, and verified live, a fresh downstream branch
+  must map and release the updated homepage projection.
+- Automatic pipelines 122 and 123 both fired successfully. Manual pipeline 124
+  was an additional successful deployment of descendant main and is not
+  evidence that the Azure CI trigger is disabled.
+
 ## 2026-07-19 - Register Ask Pete AI for multimodal product discovery
 
 - Owner clarification: the product name is **Ask Pete AI**, not "PAI."

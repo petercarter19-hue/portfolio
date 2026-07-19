@@ -1,9 +1,10 @@
 # PeerSlate - Current State
 
 _Updated 2026-07-19 for the completed Voice release, Interview Studio Image 5
-5A-light/5C-dark authority, Capture Media manager planning, planned Ask Pete AI
-discovery, and cross-product homepage parity. Every manager and writer must
-still fetch `origin` before starting._
+5A-light/5C-dark authority, the accepted live pre-convergence homepage
+walkthrough, Capture Media manager planning, planned Ask Pete AI discovery, and
+cross-product homepage parity. Every manager and writer must still fetch
+`origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -78,6 +79,23 @@ still fetch `origin` before starting._
   `/interview-studio/history` returned 200, and `/app/capture` kept the expected
   signed-out redirect. This governance-only release changed no Studio or demo
   website behavior.
+- Pete accepted the current fixed homepage Interview walkthrough for its
+  illustrative purpose. Claude's clean pushed source tip
+  `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
+  at `a98cced519a1f853ad9f4462fd438efa67d6f260`. Automatic pipeline 122
+  (`20260719.30`) passed Build and Deploy for that exact merge. Automatic
+  pipeline 123 (`20260719.31`) then passed for descendant main
+  `6cb49f135cc3a2749dd4539f8261d176b43dad9a`, whose demo-owned paths are
+  byte-for-byte unchanged from the PR 86 merge. Manual pipeline 124
+  (`20260719.32`) also passed for that same descendant SHA; it was redundant
+  successful evidence, not proof of a CI-trigger failure.
+- Live `https://peerslate.com/`,
+  `/static/css/homepage-scenes.css?v=interview-demo-1`, and
+  `/static/js/homepage-interview-demo.js?v=int-demo-1` returned 200. The live
+  DOM contains the poster, modal dialog, four fixed states, truth markers, and
+  final `/interview-studio` link. Manager browser review passed the desktop
+  flow and 390px reflow without page-level horizontal overflow. This is a
+  released demonstration, not final 5A/5C homepage parity.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -128,14 +146,16 @@ active independently. The Voice correction lane is closed:
    package, review it on a clean design-review branch, and return a `Pass`,
    `Conditional`, or `Fail` report to Claude Co-Work. It does not implement the
    Studio.
-2. **Interview homepage demo - parked dependent prototype:** Claude's clean
-   pushed `work/2026-07-19-home-interview-demo-001` checkpoint was observed at
-   `358e7eea304a2b4d4008031ea8f51c523380ee4f`. Its modal, static-state,
-   accessibility, responsive, and no-JavaScript work is reusable, but its
-   paper-light dark treatment and Voice-first framing predate the controlling
-   5A/5C and written-practice decisions. It is not accepted, merged, deployed,
-   or live. Hold it until the real Studio is accepted, implemented, released,
-   and verified live; then converge it in a separate demo closeout.
+2. **Interview homepage demo - accepted live pre-convergence walkthrough:**
+   `PS-HOME-INTERVIEW-DEMO-001` is implemented, accepted for its fixed
+   illustrative purpose, deployed, and live through source
+   `90d035a25344c850e6ed732c1efb6e4d0a240787`, Azure PR 86, merge
+   `a98cced519a1f853ad9f4462fd438efa67d6f260`, and automatic pipeline 122.
+   Its modal, static-state, accessibility, responsive, and no-JavaScript work
+   is real. Its paper-light dark treatment and Voice-default framing still
+   predate the controlling 5A/5C and written-practice decisions. After the real
+   Studio is accepted, implemented, released, and verified live, use a fresh
+   downstream branch to converge the homepage projection and close parity.
 3. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
    session manager for requirements, architecture, decomposition, and writer
    allocation. No authoritative Azure implementation branch was observed at
@@ -159,7 +179,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; homepage demo is a parked prototype only | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the homepage demo |
+| Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; the fixed illustrative homepage walkthrough is accepted and live through PR 86/pipeline 122, while final 5A/5C projection parity remains open | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the updated homepage projection |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
@@ -213,10 +233,13 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   truth/accessibility review, Claude/Fable feasibility, and Pete/manager visual
   approval pass.
 - The homepage Interview walkthrough is downstream of the real Studio. Its
-  current branch is a prototype, not a release. It must remain static and
-  no-side-effect, but its light/dark composition, written-practice hierarchy,
-  product labels, truth, and mapped states must converge on the exact accepted
-  and live Studio before it can receive separate visual acceptance and release.
+  current fixed, fictional, no-side-effect version is accepted and live as a
+  pre-convergence demonstration, but it is not final visual parity. Its
+  light/dark composition, written-practice hierarchy, product labels, truth,
+  and mapped states must converge on the exact accepted and live Studio in a
+  fresh later package before homepage parity can close. The live Voice-default
+  copy and paper-light dark modal are known downstream work, not the real
+  Studio's controlling visual or product authority.
 - Every current and future homepage product section now follows the same
   cross-product projection contract. A material real-product change triggers a
   homepage-impact assessment and either a same-wave accepted update or an exact

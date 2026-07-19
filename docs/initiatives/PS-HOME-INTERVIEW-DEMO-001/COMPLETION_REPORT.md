@@ -3,14 +3,18 @@
 ## 1. Status and identifiers
 
 - Package: PS-HOME-INTERVIEW-DEMO-001
-- Status: **Implementation complete (pop-out modal revision). Self-review: Pass.**
-  Not merged, not deployed — awaiting Pete + the designated session manager's
-  visual/product acceptance per the package's delivery gate.
+- Status: **Accepted, deployed, and verified live for the fixed illustrative
+  walkthrough. Writer self-review: Pass. Manager result: Pass for the current
+  demonstration; Downstream Package Required for final 5A/5C homepage parity.**
 - Branch: `work/2026-07-19-home-interview-demo-001`
 - Worktree: `C:\Users\peter\Documents\portfolio-home-interview-demo`
 - Base: `origin/main` @ `31864e43287d7cefb5a0d1c0441e94bec0bd6b1f`
 - Architecture commit: `9c4b1e4`; first implementation (inline): `db01e2a`;
-  this modal revision: recorded after this report is committed.
+  final clean pushed source tip:
+  `90d035a25344c850e6ed732c1efb6e4d0a240787`.
+- Release: Azure PR 86; squash merge
+  `a98cced519a1f853ad9f4462fd438efa67d6f260`; automatic pipeline 122
+  (`20260719.30`) passed Build and Deploy for that exact merge.
 - Design authority: `PS-HOME-INTERVIEW-DEMO-001_Design_Authority_Package.zip`,
   SHA-256 `968BFD9723A216939AB078C77D9725102A47746DB10D35D5DE07AEF6EEC082E3`;
   Direction A — Editorial Studio Ledger. Interaction pattern set by owner
@@ -191,9 +195,45 @@ Remove the one `{% include %}` line and the `<script>` tag from
 inert. Standard path: `git revert` the squash-merge commit. No data, route, or
 backend state exists to clean up.
 
-## 10. Single next action
+## 10. Manager acceptance and release closeout
 
-Pete + the designated session manager inspect the pop-out walkthrough (live on
-the branch, or via `artifacts/ps-home-interview-demo-001/`) and grant
-visual/product acceptance. **No merge or deploy has occurred or is requested by
-this report.**
+- **Owner acceptance:** Pete stated that he likes the demo and that it does what
+  it is supposed to do. This acceptance applies to the current fixed,
+  illustrative walkthrough.
+- **Manager live visual acceptance:** Pass at desktop and 390px mobile. The
+  poster opens the labelled modal; Question, Sample answer, Coaching review,
+  and Improved retry all advance correctly; truth remains visible; the final
+  action links to `/interview-studio`; and the 390px page has no document-level
+  horizontal overflow.
+- **Implementation:** exact source tip
+  `90d035a25344c850e6ed732c1efb6e4d0a240787`.
+- **Deployment:** Azure PR 86 completed with squash merge
+  `a98cced519a1f853ad9f4462fd438efa67d6f260`. Automatic pipeline 122
+  (`20260719.30`) passed for that exact merge. Automatic pipeline 123
+  (`20260719.31`) also passed for descendant main
+  `6cb49f135cc3a2749dd4539f8261d176b43dad9a`; the demo-owned paths are
+  unchanged between those commits. Manual pipeline 124 (`20260719.32`) passed
+  for the same descendant SHA and was redundant successful evidence, not a
+  CI-trigger failure.
+- **Live production:** `https://peerslate.com/` returned 200 and contained the
+  walkthrough poster, modal marker, final Studio link, and versioned assets.
+  `homepage-scenes.css?v=interview-demo-1` and
+  `homepage-interview-demo.js?v=int-demo-1` each returned 200. The four-state
+  flow was exercised against live production.
+- **Infrastructure:** no schema, storage, identity, secret, or service change.
+  This package is static frontend demonstration code only.
+- **Historical worktree:** preserved at
+  `C:\Users\peter\Documents\portfolio-home-interview-demo`; no cleanup,
+  switching, stashing, or deletion was performed.
+
+## 11. Required downstream action
+
+This package is closed as the current illustrative demonstration. It does not
+close the cross-product homepage projection contract. After the real public
+Studio passes the complete 5A-light/5C-dark design, implementation, acceptance,
+Azure release, and live-verification gates, create a fresh downstream branch
+that maps the homepage walkthrough to that exact release. Replace the current
+Voice-default emphasis and paper-light dark modal with the accepted product
+hierarchy and theme treatments while preserving the fixed, fictional,
+no-side-effect truth boundary. That later convergence requires its own exact
+branch/SHA, visual acceptance, PR, pipeline, and live evidence.

@@ -1,8 +1,9 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
 _Updated 2026-07-19 after the accepted Voice release, the Interview Studio
-Image 5 5A-light/5C-dark owner decision, planned Ask Pete AI discovery, and the
-cross-product homepage parity decision._
+Image 5 5A-light/5C-dark owner decision, the accepted live pre-convergence
+homepage walkthrough, planned Ask Pete AI discovery, and the cross-product
+homepage parity decision._
 
 ## Operating model
 
@@ -53,17 +54,25 @@ new package and branch.
 - Claude Co-Work receives the durable review as designated manager and sends
   the accepted package to Claude Code for feasibility. No implementation branch
   until feasibility and Pete/designated-manager visual approval pass.
-- The real Studio is upstream of the homepage walkthrough. After design
+- The real Studio remains upstream of the homepage walkthrough. After design
   approval, Claude Code records the real Studio implementation architecture,
   implements/self-reviews it on a fresh branch, and returns focused visual and
   technical evidence for acceptance. Azure release and live verification of the
-  real Studio must pass before the demo branch resumes.
-- Homepage demo checkpoint `work/2026-07-19-home-interview-demo-001` at observed
-  clean pushed SHA `358e7eea304a2b4d4008031ea8f51c523380ee4f` is a parked
-  interaction prototype. It is not accepted, merged, deployed, or live. Preserve
-  its modal/accessibility/static-demo shell, then converge it on the exact
-  released 5A/5C Studio in a separate branch closeout. Do not release its stale
-  paper-light dark treatment or Voice-first framing.
+  real Studio must pass before the separate homepage-parity convergence starts.
+- Pete accepted the current fixed illustrative walkthrough for its present
+  purpose. Claude's exact source tip
+  `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
+  at `a98cced519a1f853ad9f4462fd438efa67d6f260`; automatic pipeline 122
+  (`20260719.30`) passed Build and Deploy. Automatic pipeline 123 then released
+  descendant main `6cb49f135cc3a2749dd4539f8261d176b43dad9a` with the demo-owned
+  paths unchanged. Manual pipeline 124 was an additional successful run, not
+  evidence of a disabled CI trigger. Live `/` and both demo assets return 200,
+  and manager review passed the four-state desktop/390px illustrative flow.
+- This release closes `PS-HOME-INTERVIEW-DEMO-001` as an honest demonstration,
+  not as final homepage parity. A fresh downstream branch must later replace
+  the Voice-default emphasis and paper-light dark modal with a mapped projection
+  of the exact accepted and live 5A/5C Studio. Preserve the historical demo
+  worktree; do not reuse or delete it during the active Studio gate.
 - The convergence governance is authoritative on `origin/main`: Azure PR 83
   squash-merged at `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`, and
   pipeline 117 passed Build and Deploy. This release records sequencing only;

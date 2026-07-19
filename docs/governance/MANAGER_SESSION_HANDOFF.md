@@ -181,9 +181,10 @@ focus, reduced motion, long content, failure and media-denied states, component
 inventory, theme persistence/no-state-loss, truth/accessibility review, and
 implementation mapping. It should
 also review the relationship to the separate homepage Interview Studio
-walkthrough. That homepage walkthrough is illustrative only, belongs to a later
-separate closeout, and must not replace or visually diverge from the real public
-Studio.
+walkthrough. The current walkthrough is an accepted, live, illustrative
+pre-convergence release. It must not replace or visually control the real
+public Studio, and final 5A/5C homepage parity remains a later separate
+closeout.
 
 The Codex session creates a clean review branch, records the package matrix,
 truth/accessibility review, implementation mapping, and `Pass`, `Conditional`,
@@ -201,17 +202,29 @@ Then:
    self-manages implementation, tests, evidence, and `Pass` review.
 5. Pete and the manager accept the real implementation and visuals; Azure PR,
    pipeline, and live verification close the real Studio release.
-6. Only after that live verification may Claude resume and converge the parked
-   homepage walkthrough on the exact released 5A/5C Studio. The demo receives
-   separate acceptance, Azure release, and live homepage verification.
+6. Only after that live verification may Claude start a fresh downstream branch
+   and converge the already-live illustrative walkthrough on the exact released
+   5A/5C Studio. The updated projection receives separate acceptance, Azure
+   release, and live homepage verification.
 
-The currently observed clean pushed homepage prototype is
-`work/2026-07-19-home-interview-demo-001` at
-`358e7eea304a2b4d4008031ea8f51c523380ee4f`. It preserves useful modal,
-responsive, accessibility, no-JavaScript, and static-state work, but its
-paper-light dark modal and Voice-first copy are stale. It is not accepted,
-merged, deployed, or live. Claude should push any newer in-scope checkpoint,
-report its exact SHA, and pause the branch. File
+Pete accepted the fixed illustrative homepage walkthrough for its current
+purpose. Claude's exact source tip
+`90d035a25344c850e6ed732c1efb6e4d0a240787` on
+`work/2026-07-19-home-interview-demo-001` squash-merged through Azure PR 86 at
+`a98cced519a1f853ad9f4462fd438efa67d6f260`. Automatic pipeline 122
+(`20260719.30`) passed Build and Deploy for that exact merge. Automatic
+pipeline 123 (`20260719.31`) then passed for descendant main
+`6cb49f135cc3a2749dd4539f8261d176b43dad9a`, with no changes in demo-owned
+paths. Manual pipeline 124 (`20260719.32`) also passed for that same SHA and
+was redundant evidence, not a CI-trigger failure.
+
+The live homepage, versioned demo CSS, and versioned demo JavaScript return 200.
+The four fixed stages, explicit fictional/no-input/no-AI/no-storage truth, final
+real-Studio link, desktop modal, and 390px reflow passed manager review. This
+closes the current demonstration only. Its paper-light dark modal and
+Voice-default copy remain known downstream 5A/5C convergence work. Preserve the
+historical worktree; do not delete or reuse it during the active Studio gate.
+File
 `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` contains the definitive
 real-Studio and demo instructions.
 
@@ -221,7 +234,9 @@ That sequencing record is authoritative on `origin/main`: implementation tip
 (`20260719.25`) with Build and Deploy passed. Live `/`,
 `/interview-studio`, and `/interview-studio/history` returned 200; protected
 `/app/capture` kept its signed-out redirect. This was a governance-only release
-and is not evidence that the new Studio or converged demo is implemented.
+and is not evidence that the new Studio or the later 5A/5C-converged homepage
+projection is implemented. The separate PR 86 release is evidence only for the
+current pre-convergence illustration.
 
 Do not authorize Claude implementation from the three-direction art package
 alone.
@@ -295,8 +310,9 @@ Near-term sequencing is:
 
 1. finish Interview Gate 2.4, feasibility review, owner approval, and then the
    bounded public Studio implementation;
-2. define the separate homepage Interview walkthrough package after its design
-   freezes;
+2. after the real Studio is accepted and live, open the separate downstream
+   branch that converges the existing live homepage walkthrough on that exact
+   release;
 3. choose the next backend consumer or owner-shell slice without automatically
    starting Journal;
 4. build the real owner Home/viewer modes and authenticated Studio only through

@@ -48,11 +48,27 @@ At the time this decision was recorded:
 - its light paper treatment in dark mode and Voice-first copy predated the
   final 5A/5C decision and the controlling written-practice-first product truth.
 
-The homepage checkpoint is therefore a **prototype/interaction shell**. It is
-not accepted, merged, deployed, or live. It must not be released unchanged.
-If Claude has produced a newer clean pushed checkpoint before receiving this
-instruction, Claude must return that newer full SHA and use it as the parked
-checkpoint instead; the status remains the same.
+That checkpoint was therefore classified as a **prototype/interaction shell**
+when this sequencing decision was recorded.
+
+### Subsequent owner-accepted interim release
+
+Pete later accepted the completed fixed walkthrough for its current
+illustrative purpose. Claude's exact clean pushed source tip
+`90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
+at `a98cced519a1f853ad9f4462fd438efa67d6f260`. Automatic pipeline 122
+(`20260719.30`) passed Build and Deploy for that exact merge. Automatic
+pipeline 123 (`20260719.31`) subsequently passed for descendant main
+`6cb49f135cc3a2749dd4539f8261d176b43dad9a`, whose demo-owned paths are
+unchanged. Manual pipeline 124 (`20260719.32`) was an additional successful
+run for the same descendant SHA, not evidence of a disabled CI trigger.
+
+The live homepage, versioned CSS, and versioned JavaScript return 200. Manager
+review passed the four deterministic stages on desktop and at 390px, including
+truth labels and the final Studio link. This is an explicit interim release of
+the demonstration; it does not supersede the real-Studio-first authority or
+close final 5A/5C homepage parity. The current Voice-default framing and
+paper-light dark modal remain known downstream convergence work.
 
 ## Statuses that must remain separate
 
@@ -60,9 +76,9 @@ checkpoint instead; the status remains the same.
 |---|---|---|
 | Visual design | complete editable source, 18 primary exports, responsive/accessibility/truth review, feasibility, Pete and manager approval | In progress |
 | Real Studio implementation | exact implementation branch/SHA, complete diff, tests, 18-state implementation evidence, writer `Pass` | Not authorized |
-| Homepage demonstration | exact demo branch/SHA, fixed-state parity map, responsive/theme evidence, writer `Pass` | Prototype checkpoint only |
-| Deployment | Azure PR, squash-merge SHA, Build and Deploy pipeline for that SHA | Not started for either change |
-| Live production | route and asset verification against the deployed SHA, plus accepted visual evidence at production URLs | Unchanged |
+| Homepage demonstration | exact demo branch/SHA, fixed-state parity map, responsive/theme evidence, writer `Pass` | Current fixed illustration accepted and implemented at source `90d035a25344c850e6ed732c1efb6e4d0a240787`; final 5A/5C parity remains open |
+| Deployment | Azure PR, squash-merge SHA, Build and Deploy pipeline for that SHA | Current illustration released through PR 86 / `a98cced519a1f853ad9f4462fd438efa67d6f260` / automatic pipeline 122; real Studio and later convergence not started |
+| Live production | route and asset verification against the deployed SHA, plus accepted visual evidence at production URLs | Current illustration live and verified; real 5A/5C Studio and converged projection not live |
 
 Neither a design export nor a local screenshot proves implementation. A clean
 implementation branch does not prove deployment. A green pipeline does not by
@@ -102,16 +118,16 @@ Deploy pipeline, and live `/interview-studio` and
 `/interview-studio/history` verification. Verify both themes and representative
 desktop/mobile states against the accepted implementation.
 
-The demo remains parked until this gate passes.
+The already-live illustration may remain in production, but the downstream
+5A/5C parity update remains blocked until this gate passes.
 
 ### Gate 4 - converge the homepage walkthrough
 
-After the real Studio is verified live, resume the existing homepage demo branch
-with the same writer. Fetch `origin`, merge then-current `origin/main` into the
-published demo branch without rebasing or force-pushing, and update only the
-owned demo package and reserved homepage files. If branch ownership changes,
-the prior writer must first return the clean pushed full SHA and explicitly
-relinquish; the manager then assigns a fresh successor branch.
+After the real Studio is verified live, create a fresh downstream homepage
+convergence branch from then-current `origin/main` and update only the owned
+demo package and reserved homepage files. Treat the historical demo worktree
+and exact source tip as evidence, not as an active branch to reuse. The manager
+must record the new writer, branch, base SHA, and reserved files before work.
 
 The updated walkthrough must be based on the exact released Studio evidence,
 not on memory, an earlier mockup, or the pre-convergence demo checkpoint.
@@ -136,7 +152,8 @@ manager visual approval are explicitly recorded as passed.
 >
 > Create a fresh `work/YYYY-MM-DD-interview-public-gate-001` branch from the
 > exact current `origin/main`. You are the sole writer. Do not use or edit the
-> parked homepage demo worktree or branch during this phase.
+> preserved historical homepage demo worktree during this phase, and do not
+> attempt to recreate or reuse its deleted source branch.
 >
 > Before product edits, record
 > `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/11_REAL_STUDIO_IMPLEMENTATION_ARCHITECTURE.md`
@@ -199,13 +216,14 @@ available.
 > Deploy pipeline, live verification timestamp, and accepted production
 > screenshots for 5A light and 5C dark. Record that manifest in the demo package.
 >
-> Resume `work/2026-07-19-home-interview-demo-001` only if you remain its sole
-> writer. The observed parked checkpoint was
-> `358e7eea304a2b4d4008031ea8f51c523380ee4f`; if you pushed a later clean
-> checkpoint before the pause, report and use that exact SHA. Merge the current
-> `origin/main` into the published demo branch. Do not rebase, force-push, or
-> disturb another worktree. If ownership has changed, stop and return the exact
-> checkpoint so the manager can assign a successor branch.
+> Create a fresh downstream convergence branch from then-current `origin/main`.
+> Do not reuse the deleted historical source branch. The accepted live
+> illustration came from exact source tip
+> `90d035a25344c850e6ed732c1efb6e4d0a240787`, Azure PR 86, and squash merge
+> `a98cced519a1f853ad9f4462fd438efa67d6f260`; use those as evidence only. Do
+> not rebase, force-push, delete, switch, clean, or otherwise disturb the
+> preserved historical worktree. The manager must name the new writer, branch,
+> base SHA, and reserved files before implementation begins.
 >
 > Preserve the good interaction shell: a bounded homepage modal, clear trigger,
 > focus trap and restoration, inert/hidden background behavior, Escape/close,
@@ -278,9 +296,11 @@ The combined sequence passes only when all of the following are true:
 10. The final governance closeout names what is designed, implemented,
     demonstrated, deployed, and verified live without collapsing those states.
 
-## Immediate instruction for the active demo writer
+## Current instruction for the homepage projection
 
-Commit and push any current in-scope demo progress, return the exact full SHA
-and a short checkpoint report, and pause the branch. Do not merge, deploy, or
-continue visual convergence until the real Studio has passed Gates 1 through 3.
-Preserve the worktree and all evidence so the shell can be resumed at Gate 4.
+The fixed pre-convergence demonstration is accepted and live through PR 86 and
+pipeline 122. Preserve its historical worktree and evidence. Do not continue
+visual convergence on that deleted source branch, and do not represent the
+current Voice-default/paper-light treatment as final parity. After the real
+Studio has passed Gates 1 through 3, assign a fresh downstream branch for Gate
+4 using the exact accepted and live Studio evidence.
