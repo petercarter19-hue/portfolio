@@ -67,6 +67,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-PLACEMENT-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-BACKEND-NEXT-GATE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-BACKEND-NEXT-GATE-MANAGER-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-PLACEMENT-RELEASE-MANAGER-001", "README.md"),
+        ("docs", "initiatives", "PS-PLACEMENT-RELEASE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
     )
@@ -95,7 +97,7 @@ class BaselineCoherenceTests(unittest.TestCase):
 
     def test_every_baseline_path_resolves(self):
         paths = re.findall(r'path:\s*"([^"]+)"', self.baseline)
-        self.assertGreaterEqual(len(paths), 8)
+        self.assertGreaterEqual(len(paths), 7)
         stale = []
         for relative_path in paths:
             parts = relative_path.rstrip("/").split("/")
@@ -111,7 +113,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-BASELINE-001", self.baseline)
         self.assertIn("PS-NEXT-WAVE-MANAGER-001", self.baseline)
         self.assertIn("manager_setup_pipeline: 80", self.baseline)
-        self.assertIn("application_behavior_pipeline: 91", self.baseline)
+        self.assertIn("PS-PLACEMENT-001", self.baseline)
+        self.assertIn("application_behavior_pipeline: 93", self.baseline)
+        self.assertIn("e0462a2e4683c91ebe518b6d984a2a8b973ba3d5", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -120,9 +124,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIsNotNone(active_block)
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
-        self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-PLACEMENT-001"], active_ids
-        )
+        self.assertEqual(["PS-INTERVIEW-PUBLIC-GATE-001"], active_ids)
         self.assertEqual(len(active_ids), len(package_paths))
         for package_id, relative_path in zip(active_ids, package_paths):
             with self.subTest(package=package_id):
@@ -138,10 +140,13 @@ class BaselineCoherenceTests(unittest.TestCase):
             "pipeline 85",
             "43afd9353af1a0693aafab0c918f3dff92802376",
             "pipeline 91",
+            "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5",
+            "pipeline 93",
             "ChatGPT Work",
             "GitHub mirror is not current",
             "Capture remains text-only",
-            "No placement-reference model is implemented yet",
+            "Placement reference model is live",
+            "no website control creates or displays placements yet",
         ):
             self.assertIn(expected, self.state)
 

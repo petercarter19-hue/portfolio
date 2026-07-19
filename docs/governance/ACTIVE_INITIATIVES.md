@@ -1,6 +1,6 @@
 # PeerSlate — Active Initiatives and Lane Assignments
 
-_Updated 2026-07-18 by PS-BACKEND-NEXT-GATE-MANAGER-001._
+_Updated 2026-07-18 by PS-PLACEMENT-RELEASE-MANAGER-001._
 
 ## Operating model
 
@@ -8,32 +8,26 @@ _Updated 2026-07-18 by PS-BACKEND-NEXT-GATE-MANAGER-001._
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work | PS-BACKEND-NEXT-GATE-MANAGER-001 | `docs/governance/*`, initiative controls, governance guardrail tests | product routes, migrations, public theme |
-| Backend convergence | ChatGPT Codex | PS-PLACEMENT-001 | private confirmed-Moment placement references, migration, services, backend tests | public résumé/Studio templates, downstream surface integration, theme, global nav, auth rewrite |
-| Public experience | Claude Code | PS-INTERVIEW-PUBLIC-GATE-001 | public Interview Studio design package; implementation only after manager approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
+| Governance and orchestration | ChatGPT Work | PS-PLACEMENT-RELEASE-MANAGER-001 | `docs/governance/*`, initiative controls, governance guardrail tests | product routes, migrations, public theme |
+| Backend convergence | ChatGPT Codex | None; waiting for owner decision | no writable reservation | public résumé/Studio templates, downstream surface integration, theme, global nav, auth rewrite |
+| Public experience | ChatGPT Pro visual direction, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | current-public Interview Studio design package; implementation only after manager and owner approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
 ## Current start gate
 
-PS-PLACEMENT-001 may start only after PS-BACKEND-NEXT-GATE-MANAGER-001 is squash-merged and its Azure pipeline is green. Codex must fetch, branch from that exact current `origin/main`, and record the full base SHA. The separate Interview Studio design lane may continue in parallel because it shares no writable files.
-
-### PS-PLACEMENT-001 — prepared for ChatGPT Codex
-
-- Branch when accepted: `work/2026-07-18-placement-001` (or the actual start date).
-- Source package: `docs/initiatives/PS-PLACEMENT-001/README.md`.
-- Outcome: explicit owner action creates a private, lifecycle-aware reference from one exact confirmed Moment version to one existing owner-owned private/unpublished Slate destination.
-- Exit gate: migration up/down evidence, two-owner negative authorization, exact confirmed-version and destination pinning, concurrent duplicate/idempotency proof, no authoritative-text copy, no access/publication/audience mutation, focused and regression tests green, completion report reviewed.
+PS-PLACEMENT-001 is complete and released. ChatGPT Codex must not infer the next backend package. Pete must choose between voice/non-text Capture and owner Home/viewer-mode work; ChatGPT Work will then prepare the controlled package and fresh branch from current `origin/main`.
 
 ### PS-INTERVIEW-PUBLIC-GATE-001 — Claude Code design lane
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
-- Current action: Fable design only under the package's files `05` and `06`; no code until ChatGPT Work reviews the returned design package and expressly authorizes implementation.
+- Current action: ChatGPT Pro supplies the visual-art-direction revision while preserving Claude/Fable's functional blueprint. Claude Code then performs feasibility review. No code until Pete and ChatGPT Work approve the final design baseline and expressly authorize implementation.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
-## Sequenced after Placement
+## Next backend decision
 
-1. **Next owner decision:** choose PS-CAPTURE-MEDIA-001/PS-VOICE-001 or owner Home/viewer-mode work after Placement is verified. Do not infer authorization before manager review.
-2. **Downstream consumers:** Story, Work, Project, résumé, Studio, Journal, Feed, sharing, and public projection integrations each require their own later package. PS-PLACEMENT-001 creates the safe reference contract only.
+1. **Recommended:** PS-CAPTURE-MEDIA-001/PS-VOICE-001, beginning with voice capture into the existing private Capture lifecycle. This directly addresses the owner's requested voice path while preserving transcript → proposal → source/visibility review → explicit approval.
+2. **Alternative:** owner Home/viewer-mode work, making the authenticated workspace and private/public viewing boundary more visible before expanding Capture inputs.
+3. **Later consumers:** Story, Work, Project, résumé, Studio, Journal, Feed, sharing, and public projection integrations each require their own later package. PS-PLACEMENT-001 created the safe reference contract only.
 
 ## Held
 
