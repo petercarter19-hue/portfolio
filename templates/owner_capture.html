@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-voice-001-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-voice-visual-parity-001">
 {% endblock %}
 
 {% block content %}
@@ -110,6 +110,7 @@
                     class="owner-app__voice-ring"
                     type="button"
                     data-voice-action="start"
+                    data-autofocus
                     aria-label="Start recording"
                 >{{ icon_mic('lg') }}</button>
                 <p class="owner-app__voice-state-title" data-voice-state-title>Ready when you are</p>
@@ -223,6 +224,7 @@
                         rows="8"
                         maxlength="{{ max_body_length }}"
                         class="owner-app__voice-transcript-box"
+                        data-autofocus
                         required
                     >{{ voice_draft.provider_transcript }}</textarea>
 
@@ -555,5 +557,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-001-1" defer></script>
+<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-visual-parity-001" defer></script>
 {% endblock %}

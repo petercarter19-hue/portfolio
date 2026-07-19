@@ -116,6 +116,29 @@ current evidence, both covered by re-run screenshots):**
    whenever a `voice_draft` was present, stacking two backdrops. Fixed by
    skipping the recording modal's auto-open when a review stage exists.
 
+**Final pre-handoff review pass (2026-07-19), additional fixes:**
+4. **Modal focus-trap leak (accessibility).** The focus trap counted content
+   inside a closed `<details>` as focusable (`content-visibility:hidden` is
+   invisible to `offsetParent`) and ignored keyboard-focusable `<summary>`
+   elements, so it miscomputed its first/last boundaries and could let focus
+   escape the modal. Fixed by using `HTMLElement.checkVisibility({
+   contentVisibilityAuto: true })` and adding `summary`/`audio[controls]` to
+   the focusable set; re-verified live that Tab/Shift+Tab wrap correctly and
+   the disabled capability previews stay out of the tab order. New test
+   `test_focus_trap_accounts_for_summary_and_content_visibility`.
+5. **Purposeful initial focus.** `data-autofocus` now lands focus on the mic
+   ring (recording) and the transcript textarea (review) instead of the Close
+   button.
+6. **Stale error-state evidence corrected.** The committed CSS already hid the
+   waveform/timer in the recording modal's error state, but the first-pass
+   `desktop-12`/`desktop-13` screenshots were captured before that rule landed
+   and showed the wave. All 19 screenshots were re-captured against the final
+   committed code so the evidence and code agree.
+7. **Asset cache-bust bumped.** The `owner-app.css`/`owner-capture-voice.js`
+   query string moved from `?v=ps-voice-001-1` to
+   `?v=ps-voice-visual-parity-001` so returning users' browsers fetch the
+   rewritten assets rather than a cached prior version on deploy.
+
 ## C. What this means in plain English
 
 The private Voice Capture screen a member actually sees when they record or
@@ -174,7 +197,7 @@ authorization now.
 
 ## F. Verification and validation
 
-**Automated tests:** `tests/test_owner_voice_ui.py` (12/12 pass, focused
+**Automated tests:** `tests/test_owner_voice_ui.py` (13/13 pass, focused
 Voice contract); full repository suite `python -m unittest discover -s tests`
 — 397 tests, `OK (skipped=1)`, run from a local venv with the repo's own
 declared `requirements.txt` installed (this machine had neither
@@ -222,6 +245,20 @@ and the capability-preview treatment for every not-yet-backed feature.
 - **Not merged.** This branch must not be merged until Pete and ChatGPT Work
   review the actual implementation (not just this report) and accept it
   visually, per role boundaries in the task instructions.
+- **Opening behavior — one judgment call for ChatGPT to confirm.** On a plain
+  `/app/capture` load with JavaScript, the recording modal auto-opens over the
+  page (faithful to the accepted "voice is the production-intent opening path"
+  from PS-VOICE-001, and it gives immediate visual parity with the
+  walkthrough). Type stays first-class as the "Switch to Type" action inside
+  the modal and via dismissing. The trade-off: on that cold load — and again
+  after a save redirects back — the recent-captures list and any "Saved
+  privately" confirmation sit behind the modal until it is dismissed. This was
+  deliberately **not** changed here, because altering the accepted opening
+  default is outside a visual-parity correction and would invalidate the
+  evidence set; it is surfaced for ChatGPT (the visual authority) to confirm
+  or redirect. An alternative — landing on the Speak/Type chooser and opening
+  the modal on the Speak click (closer to the homepage hero's click-to-enter
+  pattern) — is a small change if preferred.
 - The two desktop screenshots shown earlier in chat (marigold-toned) could
   not be committed as durable evidence — they arrived as inline chat content
   with no underlying file path. If exact-pixel desktop authority images are

@@ -73,10 +73,33 @@ Two bugs were found and fixed during this verification pass (not present in the 
 
 | State | Evidence | Notes |
 |---|---|---|
-| Keyboard focus visible | `desktop-05-review-keyboard-focus.png` | Visible focus ring on the confirm checkbox after Tab navigation from the transcript |
+| Initial focus | `desktop-01-recording-ready.png`, `desktop-04-review.png` | On open, focus lands on the primary task: the mic-ring Start button (recording) and the transcript textarea (review), via `data-autofocus` |
+| Keyboard focus visible | `desktop-05-review-keyboard-focus.png` | Visible focus ring after Tab navigation from the transcript |
+| Modal focus trap | verified live (DOM), not separately screenshotted | Tab on the last focusable wraps to the first and vice-versa; `Tab`/`Shift+Tab` `defaultPrevented` at the boundaries. See the focus-trap fix note below. |
 | Reduced motion | `desktop-10-reduced-motion-recording.png` | `animation-duration` computed as `0s` (verified via `getComputedStyle`, not just visual inspection) |
 | 200% zoom / reflow | `desktop-11-review-200pct-zoom-reflow.png` | Halved logical viewport (720×450), standard technique for zoom-reflow testing without native browser zoom; content stays legible, no overlap |
 | Dark theme | `desktop-09-recording-dark-theme.png`, `desktop-09b-review-dark-theme.png` | Ring/wave/focus/selected-tint shift to gold, matching `feed-living-stream.css`'s own dark-theme rules exactly; primary actions stay navy in both themes |
+
+### Focus-trap fix (final review pass, 2026-07-19)
+
+A pre-handoff review pass found the modal focus trap could leak focus out of
+the dialog. Two causes, both verified live and then fixed:
+1. A closed `<details>` (the provider-transcript and delete-draft
+   disclosures) hides its content via `content-visibility`, which
+   `offsetParent` does **not** reflect — so the trap's `offsetParent`-based
+   filter wrongly counted the hidden delete-draft button as the last
+   focusable element, and `Shift+Tab` from the top tried to focus an
+   unreachable control.
+2. `<summary>` elements are keyboard-focusable but were matched by none of
+   the trap's control selectors, so the real last tab stop (the "Delete
+   private voice draft" summary) was not recognized and forward-`Tab` escaped
+   the dialog.
+Fixed by switching the trap's visibility test to `HTMLElement.checkVisibility({
+contentVisibilityAuto: true })` and adding `summary` (and `audio[controls]`)
+to the focusable selector. Re-verified live: the computed first/last stops are
+now Close ↔ the delete-draft summary, and Tab/Shift+Tab wrap correctly at both
+boundaries. Also confirmed the disabled capability-preview controls (audience
+radios, destination/attachment chips) remain excluded from the tab order.
 
 ## Failure and recovery states
 

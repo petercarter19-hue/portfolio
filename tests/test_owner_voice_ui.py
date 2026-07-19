@@ -131,6 +131,17 @@ class OwnerVoiceUiContractTests(unittest.TestCase):
         self.assertIn('event.key === "Escape"', CLIENT)
         self.assertIn("trapFocus", CLIENT)
 
+    def test_focus_trap_accounts_for_summary_and_content_visibility(self):
+        # The focus trap must count <summary> elements (keyboard-focusable but
+        # matched by no ordinary control selector) and must NOT count content
+        # inside a closed <details> (hidden via content-visibility, which
+        # offsetParent does not reflect). Otherwise the modal leaks focus.
+        self.assertIn("summary", CLIENT)
+        self.assertIn("checkVisibility", CLIENT)
+        self.assertIn("contentVisibilityAuto", CLIENT)
+        # A purposeful initial focus target is declared on both dialogs.
+        self.assertEqual(TEMPLATE.count("data-autofocus"), 2)
+
     def test_mobile_sticky_save_action_and_progressive_disclosure(self):
         self.assertIn('<details class="owner-app__voice-more" open>', TEMPLATE)
         self.assertIn("More ways to use this", TEMPLATE)

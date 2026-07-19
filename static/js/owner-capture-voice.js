@@ -85,12 +85,28 @@
         if (scrollLockCount === 0) document.body.style.overflow = "";
     };
 
+    // <summary> is keyboard-focusable but matches none of the usual control
+    // selectors, and a closed <details> hides its content via
+    // content-visibility (which offsetParent does NOT reflect) rather than
+    // display:none — so both the provider-transcript and delete-draft
+    // disclosures would otherwise be mis-counted as trap boundaries. Include
+    // summary, and prefer checkVisibility() (accounts for content-visibility)
+    // over offsetParent, so the focus trap's first/last are the real ones.
+    const FOCUSABLE_SELECTOR =
+        "button, [href], input, textarea, select, summary, audio[controls], [tabindex]:not([tabindex='-1'])";
+    const isReallyVisible = (el) =>
+        typeof el.checkVisibility === "function"
+            ? el.checkVisibility({ checkVisibilityCSS: true, contentVisibilityAuto: true })
+            : el.offsetParent !== null;
+    const focusableItems = (container) =>
+        Array.prototype.filter.call(
+            container.querySelectorAll(FOCUSABLE_SELECTOR),
+            (el) => !el.disabled && el.tabIndex !== -1 && isReallyVisible(el)
+        );
+
     const trapFocus = (event, container) => {
         if (event.key !== "Tab") return;
-        const items = Array.prototype.filter.call(
-            container.querySelectorAll("button, [href], input, textarea, select, [tabindex]:not([tabindex='-1'])"),
-            (el) => !el.disabled && el.offsetParent !== null
-        );
+        const items = focusableItems(container);
         if (!items.length) return;
         const first = items[0];
         const last = items[items.length - 1];
@@ -125,7 +141,7 @@
         el.addEventListener("keydown", keydownHandler);
         el.__voiceKeydownHandler = keydownHandler;
 
-        const preferred = el.querySelector("[data-autofocus]") || el.querySelector("button:not(:disabled), [href], input, textarea");
+        const preferred = el.querySelector("[data-autofocus]") || focusableItems(el)[0];
         if (preferred) preferred.focus();
     };
 
