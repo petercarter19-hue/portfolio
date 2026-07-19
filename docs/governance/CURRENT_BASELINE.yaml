@@ -1,5 +1,5 @@
 # PeerSlate current authority record
-# Updated by PS-VISUAL-INTEGRITY-GOV-001 closeout on 2026-07-18.
+# Updated by PS-STORY-COMPOSER-DIRECTION-001 on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-18"
@@ -14,10 +14,12 @@ authority:
   voice_activation_pipeline: 97
   visual_integrity_merge_commit: "28ec01097677219bbe466ff2c731707d0e4a2b89"
   visual_integrity_pipeline: 99
+  story_composition_merge_commit: "aaee6e563a94e19d1786ded3f636d8376e20d500"
+  story_composition_pipeline: 102
   production_url: "https://peerslate.com"
   application_behavior_commit: "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5"
   application_behavior_pipeline: 93
-  note: "PR 71/pipeline 99 released Bible v2.4, visual-integrity enforcement, and the durable manager handoff without changing website behavior. PR 70/pipeline 97 activated PS-VOICE-001. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No placement UI or downstream consumer exists yet. Fetch origin for the exact current tip."
+  note: "PR 73/pipeline 102 released Bible v2.5, Roadmap v2.4, and member-directed Story composition governance without changing website behavior. PR 71/pipeline 99 released visual-integrity enforcement and the durable manager handoff. PR 70/pipeline 97 activated PS-VOICE-001. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No Story Composer, placement UI, or downstream consumer exists yet. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -32,11 +34,11 @@ manager:
 
 governing_documents:
   bible:
-    version: "2.4"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
+    version: "2.5"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
   roadmap:
-    version: "2.3"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
+    version: "2.4"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -48,6 +50,8 @@ governing_documents:
     path: "docs/governance/approved_owner_visual_baseline/"
   visual_integrity:
     path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
+  story_composition:
+    path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
 
@@ -70,6 +74,7 @@ completed_packages:
   - PS-PLACEMENT-001
   - PS-VOICE-CAPTURE-MANAGER-001
   - PS-VISUAL-INTEGRITY-GOV-001
+  - PS-STORY-COMPOSER-DIRECTION-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -88,7 +93,7 @@ active_packages:
     owner: "ChatGPT Codex"
     lane: backend_convergence
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation."
+next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation. PS-STORY-COMPOSER-001 is preserved as planned future work and is not active."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -96,3 +101,5 @@ superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.3.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"

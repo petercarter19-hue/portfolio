@@ -39,6 +39,16 @@ at `28ec01097677219bbe466ff2c731707d0e4a2b89`; pipeline 99
 (`20260719.7`) passed Build and Deploy. This released Bible v2.4, the Owner
 Visual Integrity Standard, and this handoff without changing website behavior.
 
+The later Story-composition direction adopts Bible v2.5 and Roadmap v2.4. The
+next manager must treat the current baseline pointers as controlling and fetch
+`origin` for the exact release evidence.
+
+That direction squash-merged through Azure PR 73 at
+`aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
+(`20260719.10`) passed Build and Deploy. Production behavior remained
+unchanged, including the canonical My Story redirect and the protected Capture
+sign-in boundary.
+
 - Public résumé refinement: PR 62 / pipeline 83.
 - Capture lifecycle: PR 63 / pipeline 85.
 - Canonical Moment: PR 66 / pipeline 91.
@@ -46,6 +56,7 @@ Visual Integrity Standard, and this handoff without changing website behavior.
 - Placement governance closeout: PR 69 / pipeline 95.
 - Voice activation package: PR 70 / pipeline 97.
 - Visual-integrity governance and manager handoff: PR 71 / pipeline 99.
+- Member-directed Story composition authority: PR 73 / pipeline 102.
 - Production checks after PR 70: `/`, `/petec/resume`, and
   `/interview-studio` returned 200; `/app/capture` redirected a signed-out
   visitor to sign-in.
@@ -154,6 +165,20 @@ alongside function, privacy, security, accessibility, tests, and deployment.
 The current homepage overall is not the target; a broader homepage redesign is
 still future work.
 
+## Owner Story composition decision
+
+The future authenticated My Story editor is member-directed. Members shall be
+able to move and resize supported notes, text, pictures, and media; control
+overlap/layering; undo and restore; preview desktop/tablet/mobile and exact
+audiences; save a private layout draft; and publish separately. Dragging requires
+keyboard and structured-editor equivalents. AI may propose a layout but may not
+silently apply, save, overwrite, or publish it.
+
+Pete's concrete acceptance case is the current **I went back at 36** card: he
+must be able to make it smaller or move it so the sailboat in the Maui image
+remains visible. `PS-STORY-COMPOSER-001` is planned future work, not active, and
+does not interrupt Voice or Interview.
+
 ## Roadmap looking forward
 
 Near-term sequencing is:
@@ -169,7 +194,9 @@ Near-term sequencing is:
    separately approved identity, persistence, authorization, and lifecycle
    packages;
 6. conduct the broader public/homepage visual convergence after its entry gate;
-7. run a two-member founding alpha with Pete and Danielle, then structured
+7. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
+   layout persistence, accessible interaction, and publication design gate;
+8. run a two-member founding alpha with Pete and Danielle, then structured
    feedback, fixes, a small invited cohort, and measured rollout.
 
 Journal UI remains on hold. Do not duplicate Capture or Moment text, create a

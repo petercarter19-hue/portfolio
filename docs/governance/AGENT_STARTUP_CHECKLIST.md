@@ -8,6 +8,7 @@
 - [ ] Read `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and `ACTIVE_INITIATIVES.md`
 - [ ] Opened current Bible and Roadmap through repository pointers
 - [ ] Read `OWNER_VISUAL_INTEGRITY_STANDARD.md`
+- [ ] Read `OWNER_STORY_COMPOSITION_STANDARD.md`
 - [ ] Read `MANAGER_SESSION_HANDOFF.md` when managing or coordinating active lanes
 - [ ] Read `DOCUMENT_CONTROL.md` and the current manager/lane assignment
 - [ ] Read assigned initiative package and evidence requirements

@@ -1,6 +1,6 @@
 # PeerSlate - Current State
 
-_Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001 closeout. Repository facts are a snapshot; every writer must fetch `origin` before starting._
+_Verified 2026-07-18 by PS-STORY-COMPOSER-DIRECTION-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -20,6 +20,13 @@ _Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001 closeout. Repository facts a
   (`20260719.7`) passed Build and Deploy. The governance-only release changed no
   website behavior. After an App Service restart/warm-up, `/`, `/petec/resume`,
   and `/interview-studio` returned 200 and `/app/capture` redirected to sign-in.
+- Bible v2.5, Roadmap v2.4, and the member-directed Story composition contract
+  squash-merged through Azure PR 73 at
+  `aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
+  (`20260719.10`) passed Build and Deploy. The governance-only release changed
+  no website behavior. Production `/`, `/petec/resume`, `/interview-studio`,
+  and `/petec/my-story` returned 200; `/my-story` kept its canonical redirect;
+  and `/app/capture` kept its signed-out redirect to sign-in.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -49,12 +56,13 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Voice activation released; Bible v2.4 and visual-integrity enforcement are current | Review the active Voice handoff and Interview Gate 2.4 under the new visual acceptance gate |
+| Governance and baseline | Voice activation released; Bible v2.5, Roadmap v2.4, visual-integrity enforcement, and the member-directed Story composition contract are current | Review the active Voice handoff and Interview Gate 2.4 under the visual acceptance gate; keep Story Composer planned until its entry gate is approved |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Direction A art direction selected | Complete the nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
 | Capture | Text lifecycle live through PR 63 / pipeline 85; PS-VOICE-001 approved and specified | Add short private voice recording, transcription review, explicit save, source retention, export, and deletion without bypassing Capture |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
+| My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
 | Journal UI | On hold | Owner must explicitly restart it |
 
 ## Honest boundaries
@@ -65,10 +73,13 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
+- The current public My Story separates fixture content from repository-authored
+  layout metadata, but a signed-in member cannot yet move, resize, save, or
+  publish a personal composition. `PS-STORY-COMPOSER-001` is planned, not live.
 
 ## Owner visual-integrity decision
 
-- Bible v2.4 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+- Bible v2.5 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
   production-intent demonstrations binding visual minimums. The real experience
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production
@@ -80,6 +91,21 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   blocked until the complete Gate 2.4 design set and visual reviews pass.
 - The current homepage overall is not an approved final visual baseline; its
   broader redesign remains a separate later initiative.
+
+## Owner Story composition decision
+
+- Bible v2.5, Roadmap v2.4, and
+  `OWNER_STORY_COMPOSITION_STANDARD.md` make Story composition member-directed.
+- The future authenticated editor must let a member move and resize supported
+  notes, text, images, and media; control overlap/layering; use keyboard and
+  structured alternatives; preview responsive/audience states; save a private
+  layout draft; and publish separately.
+- AI may propose an arrangement but may not silently apply, overwrite, save, or
+  publish it. Layout metadata remains separate from canonical Story content.
+- Pete's first acceptance case is the **I went back at 36** card: he must be able
+  to shrink or move it so it no longer obscures the sailboat in the Maui image.
+- This decision does not modify the current public Story or start the future
+  implementation package.
 
 ## Required release evidence
 

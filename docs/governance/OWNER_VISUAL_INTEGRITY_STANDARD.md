@@ -139,6 +139,20 @@ and the future Interview walkthrough will receive its own authority. A broader
 homepage redesign remains a separate later initiative and must meet this same
 standard across the entire page.
 
+### Member-directed My Story composition
+
+- Story polish does not authorize AI or a fixed template to control the
+  member's final arrangement. Follow
+  `OWNER_STORY_COMPOSITION_STANDARD.md` for the full interaction, accessibility,
+  responsive, data, draft, and publication contract.
+- The member shall be able to move and resize supported Story items and control
+  overlap/layering while preserving accessible semantic order and mobile flow.
+- Any AI arrangement is a reviewable proposal. Member-controlled composition,
+  exact responsive/audience preview, and explicit publication are part of
+  visual acceptance for the future Story Composer.
+- The current public Pete Story is fixed fixture evidence, not proof that the
+  authenticated multi-user composer is live.
+
 ## Backend-only and infrastructure packages
 
 A backend, schema, or infrastructure foundation may merge without a visible UI

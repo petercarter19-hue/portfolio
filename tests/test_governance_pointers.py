@@ -33,6 +33,7 @@ class StartHereEntryPointTests(unittest.TestCase):
                 self.assertIn("DOCUMENT_CONTROL.md", body)
                 self.assertIn("ChatGPT Work", body)
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
+                self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
                 self.assertNotIn("## v1.3 governance", body)
 
     def test_startup_inspects_before_switching(self):
@@ -52,6 +53,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "governance", "DOCUMENT_CONTROL.md"),
         ("docs", "governance", "DECISIONS.md"),
         ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
+        ("docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"),
         ("docs", "governance", "MANAGER_SESSION_HANDOFF.md"),
         ("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-GOV-001", "README.md"),
@@ -85,6 +87,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "README.md"),
+        ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -111,7 +115,7 @@ class BaselineCoherenceTests(unittest.TestCase):
 
     def test_every_baseline_path_resolves(self):
         paths = re.findall(r'path:\s*"([^"]+)"', self.baseline)
-        self.assertGreaterEqual(len(paths), 9)
+        self.assertGreaterEqual(len(paths), 10)
         stale = []
         for relative_path in paths:
             parts = relative_path.rstrip("/").split("/")
@@ -120,8 +124,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.4", self.baseline)
-        self.assertIn("Roadmap_v2.3", self.baseline)
+        self.assertIn("Bible_v2.5", self.baseline)
+        self.assertIn("Roadmap_v2.4", self.baseline)
         self.assertIn('tool: "ChatGPT Work"', self.baseline)
         self.assertIn("PS-GOV-001", self.baseline)
         self.assertIn("PS-BASELINE-001", self.baseline)
@@ -141,6 +145,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("application_behavior_pipeline: 93", self.baseline)
         self.assertIn("e0462a2e4683c91ebe518b6d984a2a8b973ba3d5", self.baseline)
         self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", self.baseline)
+        self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", self.baseline)
         self.assertIn("MANAGER_SESSION_HANDOFF.md", self.baseline)
 
     def test_active_package_paths_and_coordination_agree(self):
@@ -178,6 +183,8 @@ class BaselineCoherenceTests(unittest.TestCase):
             "pipeline 97",
             "pipeline 99",
             "binding visual minimums",
+            "I went back at 36",
+            "PS-STORY-COMPOSER-001",
         ):
             self.assertIn(expected, self.state)
 
@@ -198,6 +205,32 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
         self.assertIn("Pete / ChatGPT Work visual acceptance", report)
+
+    def test_story_composition_is_member_directed_and_not_claimed_live(self):
+        standard = _read(
+            "docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"
+        )
+        for expected in (
+            "move and resize",
+            "Dragging is never the only path",
+            "Layout metadata is stored separately",
+            "never silently apply, save, overwrite, or publish",
+            "I went back at 36",
+            "planned, not active",
+        ):
+            self.assertIn(expected, standard)
+        for relative_path in (
+            "START_HERE.md",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/AI_WORKFLOW.md",
+            "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                self.assertIn("OWNER_STORY_COMPOSITION_STANDARD.md", body)
+        self.assertIn("PS-STORY-COMPOSER-001", self.state)
+        self.assertIn("not active", self.initiatives)
 
 
 if __name__ == "__main__":
