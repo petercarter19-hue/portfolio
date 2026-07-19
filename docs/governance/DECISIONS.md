@@ -60,3 +60,32 @@ This is an append-only operational decision record. The current Bible and Roadma
 - Voice confirmation creates one private `capture_type = voice` record only. It never automatically creates or changes a Moment, Placement, Journal entry, resume, Interview Studio record, audience, share, or publication.
 - Text Capture remains available whenever microphone access, browser support, upload, storage, or transcription fails.
 - ChatGPT Codex implements and proves PS-VOICE-001 without touching production. ChatGPT Work retains production infrastructure, migration, PR, deployment, and live-verification authority.
+
+## 2026-07-18 - Make visual integrity and demonstration parity constitutional
+
+- Adopt Bible v2.4 as the current Bible, superseding v2.3 while retaining
+  Roadmap v2.3 and Sync Standard v1.1.
+- Owner decision: PeerSlate must be gorgeous, professional, and polished across
+  every user-facing experience. Functional correctness alone is not completion.
+- An owner-approved production-intent demonstration, walkthrough, mockup, or
+  storyboard is a binding visual minimum. The real product must be recognizably
+  the same interaction model and match or exceed its composition, hierarchy,
+  clarity, and finish.
+- Demonstrations must honestly label illustrative versus live behavior, storage,
+  transmission, identity, privacy, and future capability. That honesty does not
+  permit a later visual downgrade.
+- Material user-facing work requires named comparison evidence and Pete plus
+  ChatGPT Work visual acceptance before merge unless Pete explicitly delegates
+  the gate.
+- The homepage Voice walkthrough is the minimum visual authority for the real
+  protected Voice Capture experience. Speak and Type are first-class opening
+  paths. The real flow still ends at review and explicit private Capture save.
+- Direction A, Editorial Studio Ledger, is selected for the current public
+  Interview Studio design lane. It is not implementation-ready until Gate 2.4's
+  complete nine-screen responsive source, truth/accessibility review, Claude/
+  Fable feasibility review, and owner/manager acceptance pass.
+- Pete authorized a separate future homepage Interview Studio walkthrough. It
+  does not replace the real interactive public Studio and requires its own
+  package/branch after the design is frozen.
+- The current homepage overall is not the approved final quality baseline. A
+  broader homepage/public convergence remains a later gated initiative.

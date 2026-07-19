@@ -3,7 +3,7 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible + Roadmap v2.3).
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.4 + Roadmap v2.3).
 
 ## Mandatory shared AI and Git workflow
 
@@ -30,11 +30,12 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 ## Source of truth
 
 The current authority is the Bible, Roadmap, Sync Standard, and design baseline
-named in `docs/governance/CURRENT_BASELINE.yaml` (Bible + Roadmap v2.3 as of
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.4 + Roadmap v2.3 as of
 2026-07-18). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
 Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
-as decision history or supporting detail only. Where they conflict with v2.3,
-v2.3 wins and the conflict must be reported rather than implemented.
+as decision history or supporting detail only. Where they conflict with the
+current baseline, the current baseline wins and the conflict must be reported
+rather than implemented.
 
 **Manager assignment (owner decision, 2026-07-18):** ChatGPT Work is the
 PeerSlate coordination manager. It owns package sequencing, governance truth,
@@ -69,6 +70,26 @@ If any source document is missing, stop and report the missing path. Do not reco
 - Use generous vertical spacing and progressive disclosure. Do not force the experience above the fold.
 - One dominant product object per opening viewport.
 - Never use the retired résumé example. Never use the MICAP example in redesigned résumé fixtures or visible copy.
+
+## Visual integrity and owner acceptance
+
+- Read and follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md` for every
+  user-facing design or implementation package.
+- An owner-approved production-intent mockup, storyboard, walkthrough, or
+  demonstration is a binding visual promise. The real product must be
+  recognizably the same interaction model and match or exceed its hierarchy,
+  composition, clarity, finish, and professional polish.
+- Clearly label what a demonstration simulates and what behavior is live,
+  stored, transmitted, local-only, private, public, or future. Truthful labels
+  do not make the visual promise optional.
+- A technical or functional pass is not visual completion. Material user-facing
+  work requires named comparison screenshots and explicit ChatGPT Work plus
+  Pete visual acceptance before merge unless Pete delegates that gate in writing.
+- Do not release a visibly downgraded "function now, polish later" public or
+  member experience. A clearly labeled internal preview requires Pete's explicit
+  approval and must remain In Progress.
+- When a package approves multiple input paths, such as Speak and Type, keep
+  them first-class unless the approved authority expressly says otherwise.
 
 ## Multi-user and trust rules
 
@@ -148,6 +169,8 @@ Do not add another permanent navigation layer inside Slate Board. Global site na
 - Run the existing test/lint/format commands discovered in the repository.
 - Add focused tests for new routes, rendering states, and interactions.
 - Capture desktop and mobile screenshots for review.
+- Compare user-facing implementation screenshots against the package's named
+  visual authority and record every approved deviation.
 - Report changed files, commits, commands run, failures, assumptions, and remaining work.
 
 ## Communication

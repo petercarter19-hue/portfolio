@@ -4,12 +4,12 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible + Roadmap v2.3).** This supersedes any version-specific note below.
+> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.4 + Roadmap v2.3).** This supersedes any version-specific note below.
 
 # Claude / Claude Code instructions
 
 The live authority is `docs/governance/CURRENT_BASELINE.yaml` and its referenced
-Bible/Roadmap v2.3 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
+Bible v2.4 / Roadmap v2.3 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
 an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
 language as current merely because it remains in repository history.
 
@@ -22,6 +22,13 @@ unless the manager assigns a separate writer, branch, and non-overlapping files.
 
 The guardrail suites `tests/test_site_rules.py` and
 `tests/test_governance_pointers.py` must stay green.
+
+For every user-facing task, read
+`docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`. Name the exact approved
+visual authority before implementation. A selected mockup or demonstration is a
+binding minimum: the real experience must match or exceed it, and material work
+requires comparison screenshots plus Pete and ChatGPT Work visual acceptance.
+Do not treat functional completion as permission to ship a visual downgrade.
 
 - Treat `AGENTS.md` as the shared PeerSlate product and quality rules.
 - Treat `docs/PEERSLATE_SITE_RULES.md` as binding where it does not conflict

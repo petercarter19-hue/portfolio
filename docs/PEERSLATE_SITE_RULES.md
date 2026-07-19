@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Approved:** July 16, 2026  
-**Status:** Subordinate implementation rules; current Bible/Roadmap v2.3 control conflicts
+**Status:** Subordinate implementation rules; current Bible v2.4 / Roadmap v2.3 control conflicts
 
 > **Authority correction — 2026-07-18:** This file was written during the
 > v1.3/Iris program state. The Bible and Roadmap named in
@@ -167,3 +167,25 @@ These rules govern product copy, information architecture, data behavior, AI beh
 83. Do not present mock data, a disabled control, or an unimplemented path as working.
 84. Every work package requires user stories, scope, acceptance criteria, privacy behavior, failure states, accessibility, tests, observability, rollout, rollback, verification evidence, and a handoff.
 85. Stop and report when the repository or Azure state conflicts with the approved plan. Do not silently invent a new architecture.
+
+## 13. Visual integrity and demonstration parity
+
+86. Follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md` for every
+    user-facing design and implementation package.
+87. An owner-approved production-intent demonstration, mockup, storyboard, or
+    walkthrough is a binding visual minimum. The real product must be
+    recognizably the same interaction model and match or exceed its professional
+    polish; it may not silently ship as a generic downgrade.
+88. Demonstrations must identify what is illustrative, live, stored,
+    transmitted, local-only, private, public, or future. A demonstration may
+    truthfully preview approved future behavior without claiming it already
+    works.
+89. Material user-facing work requires named visual-authority comparison
+    evidence and Pete plus ChatGPT Work visual acceptance before merge unless
+    Pete explicitly delegates the gate.
+90. Functional, security, accessibility, and test evidence remain mandatory and
+    do not substitute for visual acceptance; visual acceptance does not
+    substitute for those controls.
+91. If Speak and Type or another set of input alternatives is approved for a
+    flow, preserve each as a first-class path unless the approved authority says
+    otherwise.

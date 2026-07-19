@@ -1,7 +1,7 @@
 # PeerSlate current authority record
-# Updated by PS-VOICE-CAPTURE-MANAGER-001 on 2026-07-18.
+# Updated by PS-VISUAL-INTEGRITY-GOV-001 on 2026-07-18.
 # This is a verified snapshot, not a substitute for fetching origin before work.
-schema_version: 2
+schema_version: 3
 updated_at: "2026-07-18"
 
 authority:
@@ -10,10 +10,12 @@ authority:
   branch: main
   manager_setup_merge_commit: "89c8797b498a411f426e5e0efd042d0816996adf"
   manager_setup_pipeline: 80
+  repository_baseline_commit: "5488819ad13d3f411319d7e184fde3779d62b8d2"
+  repository_baseline_pipeline: 97
   production_url: "https://peerslate.com"
   application_behavior_commit: "e0462a2e4683c91ebe518b6d984a2a8b973ba3d5"
   application_behavior_pipeline: 93
-  note: "PR 68/pipeline 93 delivered the private exact-version Moment placement-reference foundation after the production migration and verifier passed. No placement UI or downstream consumer exists yet. Fetch origin for the exact current tip."
+  note: "PR 70/pipeline 97 is the repository baseline and activated PS-VOICE-001 without changing website behavior. PR 68/pipeline 93 remains the latest application-behavior release: the private exact-version Moment placement-reference foundation. No placement UI or downstream consumer exists yet. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -24,12 +26,12 @@ mirror:
 manager:
   tool: "ChatGPT Work"
   owner_decision_date: "2026-07-18"
-  responsibilities: "governance, sequencing, handoff review, merge readiness, and release verification"
+  responsibilities: "governance, sequencing, handoff review, visual acceptance, merge readiness, and release verification"
 
 governing_documents:
   bible:
-    version: "2.3"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
+    version: "2.4"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
   roadmap:
     version: "2.3"
     path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
@@ -42,6 +44,10 @@ governing_documents:
     path: "docs/governance/DECISIONS.md"
   design_baseline:
     path: "docs/governance/approved_owner_visual_baseline/"
+  visual_integrity:
+    path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
+  manager_handoff:
+    path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
 
 theme: deep_navy_gold
 
@@ -60,6 +66,8 @@ completed_packages:
   - PS-NEXT-WAVE-MANAGER-001
   - PS-BACKEND-NEXT-GATE-MANAGER-001
   - PS-PLACEMENT-001
+  - PS-VOICE-CAPTURE-MANAGER-001
+  - PS-VISUAL-INTEGRITY-GOV-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -78,10 +86,11 @@ active_packages:
     owner: "ChatGPT Codex"
     lane: backend_convergence
     package_path: "docs/initiatives/PS-VOICE-001/README.md"
-next_gate: "After PS-VOICE-CAPTURE-MANAGER-001 squash-merges with a green Azure pipeline, ChatGPT Codex starts PS-VOICE-001 from the resulting current origin/main. The Interview Studio design lane continues independently."
+next_gate: "PS-VOICE-001 is active in the Codex worktree and awaits a clean pushed branch/SHA for manager technical and visual review. Interview Studio independently awaits the complete Direction A Gate 2.4 design set, Claude/Fable feasibility review, and Pete/manager visual approval before implementation."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.2.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.3.docx"
   - "PeerSlate_Company_and_Product_Bible_v1.4.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"

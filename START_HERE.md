@@ -28,8 +28,11 @@ not copy a repository folder between computers as a synchronization method.
 3. `docs/governance/CURRENT_STATE.md`
 4. `docs/governance/ACTIVE_INITIATIVES.md`
 5. The current Bible and Roadmap paths listed in `CURRENT_BASELINE.yaml`
-6. The assigned initiative `README.md`
-7. Relevant architecture decisions and evidence linked by that initiative
+6. `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`
+7. For ChatGPT Work manager or cross-lane sessions,
+   `docs/governance/MANAGER_SESSION_HANDOFF.md`
+8. The assigned initiative `README.md`
+9. Relevant architecture decisions and evidence linked by that initiative
 
 `docs/governance/DOCUMENT_CONTROL.md` records the authority order when an older
 repository document conflicts with the current Bible or Roadmap.
@@ -37,7 +40,8 @@ repository document conflicts with the current Bible or Roadmap.
 ## 3. Confirm before writing
 
 Confirm the package ID, manager, branch owner, files/domains reserved, migration
-owner, entry gate, current production baseline, and next required evidence.
+owner, entry gate, current production baseline, named visual authority and
+acceptance status when user-facing work is involved, and next required evidence.
 Create a work branch from current `origin/main`.
 
 Stop and report when authority, ownership, identity boundary, migration ownership, or current document version is unclear. Never guess.

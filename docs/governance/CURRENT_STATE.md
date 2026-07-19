@@ -1,6 +1,6 @@
 # PeerSlate - Current State
 
-_Verified 2026-07-18 by PS-VOICE-CAPTURE-MANAGER-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
+_Verified 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001. Repository facts are a snapshot; every writer must fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -13,6 +13,7 @@ _Verified 2026-07-18 by PS-VOICE-CAPTURE-MANAGER-001. Repository facts are a sna
 - The PS-PLACEMENT-001 production migration and verifier passed through the configured secure connection path. They proved exact confirmed-version pinning, two-owner isolation, destination eligibility, explicit remove/reactivate lifecycle, zero content copy, no access/publication/downstream writes, and full synthetic rollback without reading or printing member content.
 - Production `/`, `/petec/resume`, and `/interview-studio` returned 200. `/app/capture` and a protected Moment review route redirected logged-out requests to sign-in. No unauthenticated private content or mutation was exposed.
 - The governance closeout for Placement squash-merged through Azure PR 69 at `d11163cd1753e47aa12f139166b6af71069f2d81`; pipeline 95 (`20260719.3`) passed Build and Deploy.
+- The Voice activation package squash-merged through Azure PR 70 at `5488819ad13d3f411319d7e184fde3779d62b8d2`; manually queued pipeline 97 passed Build and Deploy. It authorized and specified PS-VOICE-001 without changing website behavior.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -31,10 +32,10 @@ _Verified 2026-07-18 by PS-VOICE-CAPTURE-MANAGER-001. Repository facts are a sna
 
 ChatGPT Work is the owner-designated manager. It maintains repository truth, sequences packages, reviews handoffs, and verifies merges and releases. ChatGPT Codex owns backend convergence. Claude Code owns assigned public front-end work. Each package has one writer, one short-lived branch, and a separate file reservation.
 
-The public design lane and Voice Capture backend lane may continue independently:
+The public design lane and Voice Capture backend lane are active independently:
 
 1. **PS-INTERVIEW-PUBLIC-GATE-001 - public design:** continue the owner-approved Approach A visual-design lane for the public Studio. Implementation remains gated on manager and owner approval of the returned visual package.
-2. **PS-VOICE-001 - backend convergence:** Pete selected private Voice Capture. ChatGPT Codex may start only after the manager activation package is on current `origin/main` with a green pipeline.
+2. **PS-VOICE-001 - backend convergence:** Pete selected private Voice Capture. ChatGPT Codex is actively implementing it in its separate worktree from the PR 70 baseline and has not yet returned a clean pushed branch/SHA.
 
 The completed Placement foundation does not depend on Interview Studio. Voice Capture also does not authorize a placement UI or downstream Story/Work/Project/resume/Studio/Journal/Feed consumer.
 
@@ -42,9 +43,9 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Placement release closed; Voice package approved and specified | Merge PS-VOICE-CAPTURE-MANAGER-001 and start Codex from its resulting current main |
+| Governance and baseline | Voice activation released; Bible v2.4 and visual-integrity enforcement are current | Review the active Voice handoff and Interview Gate 2.4 under the new visual acceptance gate |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Public browser-local slice shipped; Approach A and functional design blueprint approved | ChatGPT Pro visual directions, Claude feasibility review, then manager/owner implementation approval |
+| Interview Studio | Public browser-local slice shipped; Approach A approved; Direction A art direction selected | Complete the nine-screen Gate 2.4 package, Claude/Fable feasibility review, then Pete/manager visual approval before implementation |
 | Capture | Text lifecycle live through PR 63 / pipeline 85; PS-VOICE-001 approved and specified | Add short private voice recording, transcription review, explicit save, source retention, export, and deletion without bypassing Capture |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
@@ -59,6 +60,26 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
 
+## Owner visual-integrity decision
+
+- Bible v2.4 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+  production-intent demonstrations binding visual minimums. The real experience
+  must be recognizable as the approved demonstration and match or exceed it.
+- Functional, privacy, security, accessibility, test, pipeline, and production
+  evidence remain required. Material user-facing work also requires named
+  visual comparison evidence and Pete plus ChatGPT Work visual acceptance.
+- The homepage Voice walkthrough is the minimum for the real protected Voice
+  Capture UI, with Speak and Type as first-class choices.
+- Direction A is selected for Interview Studio, but implementation remains
+  blocked until the complete Gate 2.4 design set and visual reviews pass.
+- The current homepage overall is not an approved final visual baseline; its
+  broader redesign remains a separate later initiative.
+
 ## Required release evidence
 
 Both guardrail suites, package-focused tests, and the Azure pipeline must pass for every later package. PS-VOICE-001 must additionally prove owner-isolated private Blob authorization, managed-identity Speech access, transcription review before save, full source deletion/export behavior, and text fallback before Voice Capture may be called live.
+
+For material user-facing packages, the release evidence must also include the
+named visual authority, desktop/mobile and applicable focus/zoom/reduced-motion/
+failure comparisons, recorded deviations, and explicit Pete/ChatGPT Work visual
+acceptance.

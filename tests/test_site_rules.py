@@ -91,7 +91,7 @@ class GovernanceDocsTests(unittest.TestCase):
         for rel in (
                 'docs/governance/CURRENT_BASELINE.yaml',
                 'docs/governance/DOCUMENT_CONTROL.md',
-                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx',
+                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx',
                 'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx',
                 'docs/PEERSLATE_SITE_RULES.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
@@ -101,7 +101,7 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn('PEERSLATE_SITE_RULES.md', content)
         self.assertIn('CURRENT_BASELINE.yaml', content)
         self.assertIn('DOCUMENT_CONTROL.md', content)
-        self.assertIn('Bible/Roadmap v2.3', content)
+        self.assertIn('Bible v2.4 / Roadmap v2.3', content)
 
 
 class NavigationLanguageTests(unittest.TestCase):

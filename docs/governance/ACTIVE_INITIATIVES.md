@@ -1,6 +1,6 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-18 by PS-VOICE-CAPTURE-MANAGER-001._
+_Updated 2026-07-18 by PS-VISUAL-INTEGRITY-GOV-001._
 
 ## Operating model
 
@@ -8,13 +8,16 @@ _Updated 2026-07-18 by PS-VOICE-CAPTURE-MANAGER-001._
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work | PS-VOICE-CAPTURE-MANAGER-001 | `docs/governance/*`, initiative controls, governance guardrail tests | product routes, migrations, public theme |
-| Backend convergence | ChatGPT Codex | PS-VOICE-001 after manager merge/pipeline | protected Capture voice routes/UI, voice services, media/transcription schema, infrastructure automation, focused tests | public resume/Studio, downstream Moment/Placement consumers, Journal, global theme/nav, auth rewrite |
-| Public experience | ChatGPT Pro visual direction, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | current-public Interview Studio design package; implementation only after manager and owner approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
+| Governance and orchestration | ChatGPT Work | PS-VISUAL-INTEGRITY-GOV-001 | Bible/current governance, startup/workflow/reporting, manager handoff, governance guardrail tests | product routes, migrations, active Voice/Interview implementation files |
+| Backend convergence | ChatGPT Codex | PS-VOICE-001 active | protected Capture voice routes/UI, voice services, media/transcription schema, infrastructure automation, focused tests | public resume/Studio, downstream Moment/Placement consumers, Journal, global theme/nav, auth rewrite |
+| Public experience | ChatGPT Pro visual direction, then Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | Direction A Gate 2.4 design package; implementation only after complete visual gate and approval | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
 
-## Current start gate
+## Current active gate
 
-Pete approved private Voice Capture as the next backend package. ChatGPT Codex starts `PS-VOICE-001` only after PS-VOICE-CAPTURE-MANAGER-001 is squash-merged and the matching Azure pipeline is green, using a fresh branch from that current `origin/main`.
+PS-VOICE-CAPTURE-MANAGER-001 is released through PR 70 / pipeline 97. ChatGPT
+Codex is actively implementing `PS-VOICE-001` in its own worktree. The manager
+must not touch that branch and waits for a clean pushed branch, exact full SHA,
+completion report, and explicit writer relinquishment before review.
 
 ### PS-VOICE-001 - ChatGPT Codex backend lane
 
@@ -22,12 +25,19 @@ Pete approved private Voice Capture as the next backend package. ChatGPT Codex s
 - Outcome: short authenticated recording -> private original audio -> server-side transcription -> member review/correction -> explicit private voice Capture.
 - Text Capture remains the fallback. No Moment, Placement, Journal, resume, Interview Studio, share, or publication is created automatically.
 - Codex writes and proves code, SQL, and idempotent infrastructure automation in isolation, then returns the exact branch/SHA. ChatGPT Work owns production resources, migration, PR, deploy, and live validation.
+- At manager review, the protected UI must also pass the owner visual addendum:
+  match or exceed the homepage Voice walkthrough, keep Speak and Type first
+  class, and provide full desktop/mobile/accessibility/failure comparison evidence.
 
 ### PS-INTERVIEW-PUBLIC-GATE-001 - Claude Code design lane
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
-- Current action: ChatGPT Pro supplies the visual-art-direction revision while preserving Claude/Fable's functional blueprint. Claude Code then performs feasibility review. No code until Pete and ChatGPT Work approve the final design baseline and expressly authorize implementation.
+- Current action: Direction A, Editorial Studio Ledger, is selected. ChatGPT Pro
+  must complete the nine-screen Gate 2.4 responsive/accessibility design set and
+  a separately scoped homepage walkthrough design. Claude Code then performs
+  feasibility review. No code until Pete and ChatGPT Work approve the final
+  design baseline and expressly authorize implementation.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
 ## Later backend decisions
@@ -45,4 +55,7 @@ Owner Home/viewer mode, photo/video/document Capture, and each Story/Work/Projec
 - Handoff requires the branch name and exact full commit SHA.
 - Merge through an Azure pull request with squash; delete the task branch afterward.
 - Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`.
+- Follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; material
+  user-facing work requires a named visual authority, parity evidence, and Pete
+  plus ChatGPT Work visual acceptance.
 - Do not duplicate Capture or Moment text into destinations, introduce a second resume dataset, rewrite authentication, start Journal UI, or claim private/public behavior the backend does not enforce.

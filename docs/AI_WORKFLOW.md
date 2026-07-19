@@ -112,6 +112,23 @@ git status --short
 git push -u origin HEAD
 ```
 
+## Visual integrity for user-facing work
+
+Before any user-facing design or implementation, read
+`docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md` and record the exact visual
+authority in the initiative. An owner-approved production-intent demonstration,
+mockup, storyboard, or walkthrough is a binding minimum: implementation must be
+recognizably the same interaction model and match or exceed its hierarchy,
+composition, clarity, and finish.
+
+The writer must return named desktop/mobile and applicable focus, 200% zoom,
+reduced-motion, long-content, processing, failure, and recovery evidence plus a
+parity/deviation summary. ChatGPT Work and Pete must accept material user-facing
+work visually before merge unless Pete explicitly delegates that gate. Passing
+tests, a clean branch, or a working happy path does not by itself satisfy visual
+completion. Demonstrations must still state honestly which behavior is live,
+illustrative, stored, transmitted, local-only, private, public, or future.
+
 ## Branch ownership and AI coordination
 
 - A branch has exactly one active writer.
@@ -150,6 +167,7 @@ Pushed to Azure: yes | no
 Commits included: <short list>
 Tests/checks: <commands and results>
 Files/areas changed: <summary>
+Visual authority/status: <named authority; parity evidence; Pete/manager acceptance>
 Production status: not deployed | Azure run and verification details
 Known issues or deferred work: <summary>
 Next action: <single clear next step>
@@ -164,11 +182,13 @@ Never claim that work is deployed merely because it is committed or pushed.
 2. Open an Azure DevOps pull request from the task branch into `main`.
 3. Review the complete diff and confirm the branch contains no unrelated work.
 4. Run the relevant tests, syntax checks, and smoke checks.
-5. Resolve review feedback on the same task branch.
-6. Squash-merge the pull request.
-7. Delete the source branch after the merge.
-8. Confirm the Azure pipeline associated with the merged `main` commit succeeds.
-9. Verify the public production behavior and, when applicable, verify that production assets or a version marker correspond to the merged SHA.
+5. For material user-facing work, confirm the named visual authority, comparison
+   evidence, documented deviations, and Pete/ChatGPT Work visual acceptance.
+6. Resolve review feedback on the same task branch.
+7. Squash-merge the pull request.
+8. Delete the source branch after the merge.
+9. Confirm the Azure pipeline associated with the merged `main` commit succeeds.
+10. Verify the public production behavior and, when applicable, verify that production assets or a version marker correspond to the merged SHA.
 
 Do not describe a deployment as successful until both the Azure pipeline and the public site have been verified.
 
@@ -314,6 +334,8 @@ Every completed task must report:
 - Azure pull request and merge status
 - changed files or areas
 - tests and checks run with results
+- named visual authority, parity/deviation evidence, and owner/manager visual
+  acceptance status for user-facing work
 - working-tree status
 - Azure pipeline result
 - production verification result
