@@ -680,7 +680,79 @@ body[data-theme="dark"] .is__mic { color: var(--is-gold-bright); background: rgb
 .is__composer-controls { display: flex; align-items: center; gap: 0.55rem; padding: 0.7rem 0.75rem 0.7rem 0; }
 .is__composer-submit { white-space: nowrap; }
 .is__mic svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.is__mic.is-listening { color: #fff; background: var(--is-error); animation: is-pulse 1.4s ease-in-out infinite; }
+/* Dictation control.
+   Listening is a current-state cue, so it uses the gold treatment the 5A/5C
+   authority reserves for progress and current state. Red stays reserved for
+   true errors; the video recording badge keeps its own recording red. */
+.is__mic--inline { width: 1.9rem; height: 1.9rem; }
+.is__mic-labeled { display: inline-flex; align-items: center; gap: 0.55rem; }
+.is__mic-labeled .is__mic { pointer-events: none; }
+
+.is__mic.is-listening,
+.is__mic-labeled.is-listening .is__mic {
+    color: var(--is-action-primary-text);
+    background: var(--is-gold);
+    animation: is-pulse 1.4s ease-in-out infinite;
+}
+
+.is__mic-labeled.is-listening {
+    color: var(--is-gold-text);
+    background: var(--is-gold-soft);
+    border-color: var(--is-line-strong);
+}
+
+.is__mic.is-unavailable,
+.is__mic-labeled.is-unavailable { opacity: 0.55; cursor: not-allowed; }
+
+.is__dictation-note {
+    margin-top: 0.6rem;
+    color: var(--is-text-muted);
+    font-size: 0.72rem;
+    line-height: 1.55;
+}
+
+.is__dictation-live {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+    color: var(--is-gold-text);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.is__dictation-live::before {
+    content: "";
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--is-gold);
+    border-radius: 50%;
+    animation: is-pulse 1.2s ease-in-out infinite;
+}
+
+.is__dictation-interim {
+    margin-top: 0.45rem;
+    padding: 0.55rem 0.7rem;
+    color: var(--is-text-muted);
+    background: var(--is-surface-2);
+    border: 1px dashed var(--is-line);
+    border-radius: var(--is-control-radius);
+    font-size: 0.8rem;
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.is__dictation-interim-label {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--is-text-muted);
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
 
 .is__composer-meta {
     display: flex;
