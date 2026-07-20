@@ -279,7 +279,7 @@ class OwnerVoiceCaptureRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("error=voice-changed", response.location)
 
-    @patch("owner_routes.voice_capture_service.delete_capture")
+    @patch("owner_routes.capture_lifecycle_service.delete_capture")
     def test_voice_capture_delete_uses_distributed_service(self, delete):
         delete.return_value = {"outcome": "success", "kind": "voice"}
 

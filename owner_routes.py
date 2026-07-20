@@ -1,6 +1,7 @@
 """Protected owner-only routes for the PeerSlate application."""
 
 import json
+import os
 import re
 from datetime import date, datetime
 from uuid import UUID
@@ -19,6 +20,10 @@ from flask import (
 
 from identity import AuthenticationRequired, get_current_identity
 from services.database_service import DatabaseServiceError, database_service
+from services.capture_lifecycle_service import (
+    CaptureLifecycleError,
+    capture_lifecycle_service,
+)
 from services.moment_service import (
     MAX_MOMENT_NARRATIVE_LENGTH,
     MAX_MOMENT_TITLE_LENGTH,
@@ -32,6 +37,11 @@ from services.voice_capture_service import (
     MAX_VOICE_DURATION_SECONDS,
     VoiceCaptureError,
     voice_capture_service,
+)
+from services.photo_capture_service import (
+    MAX_PHOTO_BYTES,
+    PhotoCaptureError,
+    photo_capture_service,
 )
 
 
@@ -99,10 +109,25 @@ def _is_same_origin_write():
 
 @owner.before_request
 def _allow_bounded_voice_upload():
-    """Override the smaller global form limit only for the Voice upload route."""
+    """Override the smaller global form limit for bounded media upload routes."""
     if request.endpoint == "owner.upload_voice_capture":
         # Multipart framing adds a small amount beyond the enforced 20 MB file cap.
         request.max_content_length = MAX_VOICE_BYTES + (64 * 1024)
+    elif request.endpoint == "owner.upload_photo_capture":
+        request.max_content_length = MAX_PHOTO_BYTES + (64 * 1024)
+
+
+def _photo_capture_enabled():
+    value = current_app.config.get("CAPTURE_PHOTO_ENABLED")
+    if value is None:
+        value = os.getenv("CAPTURE_PHOTO_ENABLED", "false")
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _photo_unavailable():
+    return "Photo Capture is unavailable.", 404
 
 
 def _capture_body_length(body):
@@ -509,6 +534,206 @@ def voice_capture_audio(source_key):
     return response
 
 
+def _photo_action_identity(source_key=None, require_write=True):
+    if not _photo_capture_enabled():
+        return None, None, _photo_unavailable()
+    if require_write and not _is_same_origin_write():
+        return None, None, ("Cross-site capture requests are not allowed.", 403)
+    normalized = _normalize_capture_key(source_key) if source_key else None
+    if source_key and not normalized:
+        return None, None, ("Photo source not found.", 404)
+    try:
+        return get_current_identity(), normalized, None
+    except AuthenticationRequired:
+        return None, None, redirect(url_for("auth.sign_in", return_to="/app/capture"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Photo Capture identity is unavailable.")
+        return None, None, _render_owner_unavailable()
+
+
+def _photo_source_payload(source):
+    source_key = str(source["source_key"])
+    payload = {
+        "source_key": source_key,
+        "state": source["state"],
+        "scan_result": source.get("scan_result"),
+        "safe_error_code": source.get("safe_error_code"),
+        "content_type": source.get("original_content_type"),
+        "byte_length": int(source.get("original_byte_length") or 0),
+        "width": source.get("pixel_width"),
+        "height": source.get("pixel_height"),
+        "row_version": source.get("row_version_token", ""),
+        "status_url": url_for("owner.photo_capture_status", source_key=source_key),
+    }
+    if source["state"] in {"needs_review", "confirmed"}:
+        payload["preview_url"] = url_for(
+            "owner.photo_capture_preview", source_key=source_key
+        )
+        payload["original_download_url"] = url_for(
+            "owner.photo_capture_original", source_key=source_key, download="1"
+        )
+    return payload
+
+
+@owner.post("/app/capture/photo")
+def upload_photo_capture():
+    """Accept one owner-scoped private Photo source while the feature is enabled."""
+    identity, _, response = _photo_action_identity()
+    if response is not None:
+        return response
+    try:
+        source = photo_capture_service.create_source(
+            identity.user_key, request.files.get("photo")
+        )
+    except PhotoCaptureError as error:
+        status = 503 if error.code in {"upload-failed", "upload-recovery"} else 400
+        if error.code == "draft-limit":
+            status = 409
+        payload = {"error": error.code}
+        if error.source_key:
+            payload["source_key"] = error.source_key
+            payload["status_url"] = url_for(
+                "owner.photo_capture_status", source_key=error.source_key
+            )
+        return jsonify(payload), status
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Photo Capture is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    return jsonify(_photo_source_payload(source)), 201
+
+
+@owner.get("/app/capture/photo/<source_key>")
+def photo_capture_status(source_key):
+    """Return one owner-safe Photo source state without storage locators."""
+    identity, normalized, response = _photo_action_identity(
+        source_key, require_write=False
+    )
+    if response is not None:
+        return response
+    try:
+        source = photo_capture_service.get_source(identity.user_key, normalized)
+    except (DatabaseServiceError, PhotoCaptureError):
+        current_app.logger.error("PeerSlate private Photo status is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    if not source:
+        return "Photo source not found.", 404
+    response = jsonify(_photo_source_payload(source))
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@owner.post("/app/capture/photo/<source_key>/reconcile")
+def reconcile_photo_capture(source_key):
+    """Reconcile Defender state and create a safe derivative only after clean."""
+    identity, normalized, response = _photo_action_identity(source_key)
+    if response is not None:
+        return response
+    try:
+        source = photo_capture_service.reconcile_and_process(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+        )
+    except PhotoCaptureError as error:
+        status = 409 if error.code == "changed" else 503
+        if error.code in {"unsupported", "dimensions", "invalid-image", "integrity-failed"}:
+            status = 422
+        return jsonify({"error": error.code}), status
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Photo reconciliation is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    return jsonify(_photo_source_payload(source))
+
+
+@owner.post("/app/capture/photo/<source_key>/confirm")
+def confirm_photo_capture(source_key):
+    """Explicitly create one private Capture from a clean Photo source."""
+    identity, normalized, response = _photo_action_identity(source_key)
+    if response is not None:
+        return response
+    body = request.form.get("approved_body", "").strip()
+    if request.form.get("confirm_photo") != "save-private-capture" or not body:
+        return jsonify({"error": "required"}), 400
+    if _capture_body_length(body) > MAX_CAPTURE_BODY_LENGTH:
+        return jsonify({"error": "too-long"}), 400
+    try:
+        result = photo_capture_service.confirm_capture(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+            body,
+        )
+    except PhotoCaptureError as error:
+        status = 400 if error.code in {"required", "too-long"} else 409
+        return jsonify({"error": error.code}), status
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Photo confirmation is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    return jsonify({"outcome": result["outcome"], "capture_key": str(result["capture_key"])})
+
+
+@owner.post("/app/capture/photo/<source_key>/delete")
+def delete_photo_draft(source_key):
+    """Delete an unconfirmed Photo source and both possible private blobs."""
+    identity, normalized, response = _photo_action_identity(source_key)
+    if response is not None:
+        return response
+    if request.form.get("confirm_delete") != "delete":
+        return jsonify({"error": "confirm-delete"}), 400
+    try:
+        photo_capture_service.delete_draft(
+            identity.user_key,
+            normalized,
+            request.form.get("expected_row_version", ""),
+        )
+    except PhotoCaptureError as error:
+        status = 503 if error.code == "delete-retry" else 409
+        return jsonify({"error": error.code}), status
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate private Photo deletion is unavailable.")
+        return jsonify({"error": "unavailable"}), 503
+    return jsonify({"outcome": "success"})
+
+
+def _photo_media_response(source_key, media_kind):
+    identity, normalized, response = _photo_action_identity(
+        source_key, require_write=False
+    )
+    if response is not None:
+        return response
+    try:
+        media = photo_capture_service.open_media(
+            identity.user_key, normalized, media_kind
+        )
+    except (DatabaseServiceError, PhotoCaptureError):
+        current_app.logger.error("PeerSlate private Photo media is unavailable.")
+        return "Photo media is temporarily unavailable.", 503
+    if not media:
+        return "Photo media not found.", 404
+    extension = "jpg" if media["content_type"] == "image/jpeg" else "png"
+    response = send_file(
+        media["stream"],
+        mimetype=media["content_type"],
+        as_attachment=media_kind == "original",
+        download_name=f"peerslate-private-photo-{media_kind}.{extension}",
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@owner.get("/app/capture/photo/<source_key>/preview")
+def photo_capture_preview(source_key):
+    return _photo_media_response(source_key, "preview")
+
+
+@owner.get("/app/capture/photo/<source_key>/original")
+def photo_capture_original(source_key):
+    return _photo_media_response(source_key, "original")
+
+
 @owner.post("/app/capture/<capture_key>/moment-proposal")
 def create_moment_proposal(capture_key):
     """Create or reopen one private proposal pinned to an exact source version."""
@@ -839,12 +1064,12 @@ def delete_capture(capture_key):
         return redirect(url_for("owner.capture", error="confirm-delete"))
 
     try:
-        result = voice_capture_service.delete_capture(
+        result = capture_lifecycle_service.delete_capture(
             identity.user_key,
             normalized_capture_key,
             expected_row_version,
         )
-    except (DatabaseServiceError, VoiceCaptureError):
+    except (DatabaseServiceError, CaptureLifecycleError):
         current_app.logger.error("PeerSlate private capture deletion is unavailable.")
         return redirect(url_for("owner.capture", error="voice-delete-retry"))
 
@@ -894,12 +1119,17 @@ def export_capture(capture_key):
                 "PeerSlate private capture export returned invalid revision data."
             )
             return _render_owner_unavailable()
-    voice_source = (
+    source_row = (
         dict(auxiliary_rows[0])
         if auxiliary_rows and "source_key" in auxiliary_rows[0]
         else None
     )
-    schema_version = 2 if capture.get("capture_type") == "voice" else 1
+    source_type = (source_row or {}).get("source_type")
+    if not source_type and source_row:
+        source_type = "voice" if "provider_transcript" in source_row else "photo"
+    voice_source = source_row if source_type == "voice" else None
+    photo_source = source_row if source_type == "photo" else None
+    schema_version = {"voice": 2, "photo": 3}.get(capture.get("capture_type"), 1)
     payload = {
         "schema": "peerslate.capture.export",
         "schema_version": schema_version,
@@ -945,6 +1175,32 @@ def export_capture(capture_key):
                 source_key=source_key,
                 download="1",
             ),
+        }
+    if photo_source:
+        source_key = str(photo_source["source_key"])
+        payload["capture"]["photo_source"] = {
+            "source_key": source_key,
+            "original": {
+                "content_type": photo_source["original_content_type"],
+                "byte_length": int(photo_source["original_byte_length"]),
+                "download_path": url_for(
+                    "owner.photo_capture_original",
+                    source_key=source_key,
+                    download="1",
+                ),
+            },
+            "safe_preview": {
+                "content_type": photo_source["derivative_content_type"],
+                "byte_length": int(photo_source["derivative_byte_length"]),
+                "width": int(photo_source["pixel_width"]),
+                "height": int(photo_source["pixel_height"]),
+                "preview_path": url_for(
+                    "owner.photo_capture_preview", source_key=source_key
+                ),
+            },
+            "scan_result": photo_source["scan_result"],
+            "scan_completed_at_utc": photo_source.get("scan_completed_at_utc"),
+            "embedded_metadata_removed_from_preview": True,
         }
     response = Response(
         json.dumps(

@@ -30,3 +30,4 @@ mssql-python==1.11.0  # Microsoft-supported Azure SQL connector used by PeerSlat
 azure-identity==1.25.3  # Passwordless DefaultAzureCredential for private Blob and Speech
 azure-storage-blob==12.30.0  # Private Voice source storage; no key or SAS authentication
 requests==2.34.2       # Bounded Azure Speech fast-transcription HTTP client
+Pillow==12.3.0         # Strict JPEG/PNG decode and metadata-free Photo derivatives

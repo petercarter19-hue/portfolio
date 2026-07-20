@@ -44,6 +44,12 @@ VOICE_VERIFY_PATH = (
     / "Verification"
     / "PS-VOICE-001_owner_isolation_verify.sql"
 )
+PHOTO_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-CAPTURE-MEDIA-001_owner_isolation_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -71,6 +77,11 @@ APPROVED_OPTIONAL_MIGRATIONS = {
     ),
     "PS-VOICE-001": (
         MIGRATION_DIR / "proposed" / "PS-VOICE-001_voice_capture.sql"
+    ),
+    "PS-CAPTURE-MEDIA-001": (
+        MIGRATION_DIR
+        / "proposed"
+        / "PS-CAPTURE-MEDIA-001_photo_sources.sql"
     ),
 }
 EXPECTED_TABLES = {
@@ -340,6 +351,23 @@ def verify_voice(env_path: Path | None = None) -> None:
     )
 
 
+def verify_photo(env_path: Path | None = None) -> None:
+    if not PHOTO_VERIFY_PATH.exists():
+        raise RuntimeError(f"Verification script is missing: {PHOTO_VERIFY_PATH}")
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(PHOTO_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-CAPTURE-MEDIA-001 owner-isolation verification failed.")
+    print(
+        "Verified PS-CAPTURE-MEDIA-001 owner isolation, fail-closed scan and "
+        "derivative gates, explicit private confirmation, deletion, and zero "
+        "downstream writes."
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -401,6 +429,8 @@ def main() -> None:
             verify_placement(args.env_file)
         if "PS-VOICE-001" in args.migration:
             verify_voice(args.env_file)
+        if "PS-CAPTURE-MEDIA-001" in args.migration:
+            verify_photo(args.env_file)
 
 
 if __name__ == "__main__":

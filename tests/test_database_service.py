@@ -87,6 +87,24 @@ class DatabaseServiceTests(unittest.TestCase):
 
         self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
 
+    def test_photo_procedures_are_explicitly_allowlisted(self):
+        expected = {
+            "usp_CreatePhotoSource",
+            "usp_MarkPhotoUploaded",
+            "usp_FailPhotoSource",
+            "usp_GetPhotoSourceForOwner",
+            "usp_GetPhotoProcessingSourceForOwner",
+            "usp_RecordPhotoScanResult",
+            "usp_CompletePhotoProcessing",
+            "usp_ConfirmPhotoCapture",
+            "usp_GetPhotoMediaForOwner",
+            "usp_BeginPhotoDraftDeletion",
+            "usp_FinalizePhotoDraftDeletion",
+            "usp_FinalizePhotoCaptureDeletion",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+
 
 if __name__ == "__main__":
     unittest.main()
