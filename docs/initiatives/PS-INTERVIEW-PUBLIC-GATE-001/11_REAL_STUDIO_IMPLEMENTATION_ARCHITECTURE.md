@@ -1,15 +1,49 @@
 # PS-INTERVIEW-PUBLIC-GATE-001 — Real Studio Implementation Architecture (5A light / 5C dark)
 
 _Recorded 2026-07-19 by the Claude/Fable architecture-and-feasibility session on
-`work/2026-07-19-interview-gate-24-final-review`. Design and feasibility only;
-product implementation has not started. This file is the architecture record
-required by `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` Gate 2. The
-implementation writer must re-validate it against then-current `origin/main`
-on the fresh implementation branch before editing product code._
+`work/2026-07-19-interview-gate-24-final-review`. This file is the architecture
+record required by `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` Gate 2.
+Status update: implementation of this architecture **has started and is in
+review** on `work/2026-07-19-interview-public-gate-001` (see §0 and
+`15_REAL_STUDIO_IMPLEMENTATION_COMPLETION_REPORT.md`); the original
+"design and feasibility only" boundary applied to the design-gate phase and
+is historical, not current._
 
 Reading order: this file (architecture) → `12_GATE_24_CORRECTION_AND_FEASIBILITY_ADDENDUM.md`
 (gate closure + readiness result) → `13_SONNET_IMPLEMENTATION_BRIEF.md` →
 `14_OPUS_REVIEW_CHARTER.md`.
+
+## 0. Re-validation (implementation branch)
+
+_Recorded 2026-07-19 by the Claude Sonnet 5 implementation-writer session._
+
+- Gate 1 owner acceptance: recorded (`12_…ADDENDUM.md` §I) — Pete approved
+  the round-2 package directly, ratifying board 1 and recording an
+  owner-authorized exception to the parallel manager sign-off. Product
+  implementation is authorized.
+- Design-gate merge: Azure PR 90 squash-merged
+  `81a48c0df180e3dc27b4635e17bb16f25273f6fd` into `main` at merge commit
+  `6d5ef46ce05bd7c3a3f6e4b4c356bdf9c9bc6fcd`; governance/docs only, no
+  product file changed.
+- Implementation branch: `work/2026-07-19-interview-public-gate-001`,
+  created from that exact merge commit as base SHA.
+- Reserved-file drift check: `git log 229bfba4…3fabb396..HEAD -- templates/interview_studio.html static/css/interview-studio.css static/js/interview-studio.js tests/test_interview_studio.py app.py`
+  returns no commits — none of the four reserved files or `app.py` changed
+  since this architecture was written. No re-plan required; proceeding per
+  §1–§13 as written.
+
+_Correction-round re-validation (2026-07-19, after the Codex Conditional
+implementation review):_ `origin/main` advanced to
+`8da639fd47df5af7c1a146fb8ccb8992805bd7a5` (Capture Media planning, Projects
+direction, Bible v2.6 / Roadmap v2.5 authority documents, updated guardrail
+suites) and was merged into the implementation branch; no overlap with this
+package's reserved files. Bible v2.6 and Roadmap v2.5 were re-checked for
+Interview Studio language: the public gate remains an authorized focused
+public-surface refinement with no new constraints affecting this
+architecture. The Codex review's three functional corrections (STAR renderer
+classes, `aria-current="step"` stage semantics, truthful Interview AI
+answer-basis label) are implementation-level fixes within §5.4, §2.3, and
+§5.5 as specified — no architecture change was required to close them.
 
 ## 1. Authority manifest
 
@@ -484,10 +518,14 @@ disclosure.
 
 ## 6. Theme mechanism and no-state-loss proof
 
-Mechanism: the existing global toggle only — `#theme-toggle` flips
-`body[data-theme]` between `modern-blue` and `dark` and persists `ps-theme`;
-the base anti-flash script applies the stored preference before paint; no-JS
-loads light. The Studio adds **zero** theme code.
+Mechanism: the existing global theme controller only —
+`static/js/theme-toggle.js` flips `body[data-theme]` between `modern-blue`
+and `dark` and persists `ps-theme`; the base anti-flash script applies the
+stored preference before paint; no-JS loads light. The header exposes the
+primary switch. Each native modal dialog also exposes a synchronized switch
+proxy inside the modal because `showModal()` correctly makes the header
+inert. Those proxies invoke the same global controller and add no theme
+logic to the Studio script (D22).
 
 Architecture invariants (each is reviewable in the diff and guarded by tests):
 
@@ -524,7 +562,7 @@ directions, desktop + 390px):
 | 6 | AI result + typed follow-up | result, follow-up input value |
 | 7 | Recording in progress | stream, timer, recording continues |
 | 8 | Playback ready | blob URL playback still plays, elapsed position |
-| 9 | History with filters + open detail dialog | filter values, dialog open, focused control |
+| 9 | History with filters + open detail dialog | filter values, dialog open, focused modal theme control |
 | 10 | V01 error / V02 denied | error band, preserved answer, focus position |
 
 ## 7. Accessibility architecture
@@ -580,9 +618,12 @@ directions, desktop + 390px):
 
 ## 9. File-by-file implementation mapping
 
-Reserved files only; `app.py`, routes, APIs, base templates, global theme
-files, and deployment are untouched. If any need appears outside these four
-files, the writer stops for manager reservation.
+The original implementation reservation covered the four product files.
+The acceptance correction adds two narrowly bounded shared-file edits under
+Pete's explicit 2026-07-20 owner authorization: the existing global theme
+controller binds synchronized modal proxies, and `templates/base.html`
+bumps that script's cache key. `app.py`, routes, APIs, global theme tokens,
+and deployment configuration remain untouched.
 
 ### 9.1 `templates/interview_studio.html`
 
@@ -735,6 +776,7 @@ built product.
 | D19 | Orientation Interview AI card copy names the three labeled views instead of the board's "3 trusted sources" (no such external sources exist) | truth |
 | D20 | Orientation support line "Your practice stays in this browser until you submit an answer for coaching." replaces "Everything you do stays in this browser." (false at submit time) | truth |
 | D21 | Video view keeps a compact question block + "Question N of M · Local rehearsal" though PUBLIC-06 exports omit question context (recording is bound to a question; history records and flows depend on it) | functionality preservation |
+| D22 | Each native modal includes a synchronized theme-switch proxy owned by the existing global theme controller; the header switch is inert while `showModal()` is open, so an in-modal proxy is required to satisfy the open-dialog no-state-loss contract | accessibility and functionality preservation |
 
 ## 12. Implementation evidence matrix (what the writer must return)
 
@@ -764,4 +806,9 @@ tour; authenticated `/app/interview-studio`; homepage walkthrough convergence
 (Gate 4 of doc 10, only after the real Studio is released and verified live);
 any Voice/Capture/Moment/Placement/Story/resume surface.
 
-**Design and feasibility only; product implementation has not started.**
+**Status (2026-07-19): implementation of this architecture is complete on
+`work/2026-07-19-interview-public-gate-001` and awaiting Pete +
+designated-manager (Claude Co-Work) acceptance. Not merged, not deployed,
+not live. The original "design only" closing line applied to the design-gate
+phase and was superseded by the Gate 1 approval recorded in
+`12_…ADDENDUM.md` §I.**

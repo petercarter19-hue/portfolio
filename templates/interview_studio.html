@@ -8,10 +8,11 @@
 
 {% block extra_head %}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=light-orbit-2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=studio-5a5c-2">
 {% endblock %}
 
 {% block content %}
+{% set is_orientation = interview_initial_view != 'history' and not request.args.get('mode') %}
 <div
     class="is"
     data-interview-studio
@@ -28,131 +29,199 @@
     <div class="is__backdrop" aria-hidden="true"></div>
 
     <div class="site-container is__shell">
-        <header class="is__hero">
-            <div class="is__hero-copy">
-                <p class="is__eyebrow">PeerSlate Studio</p>
+        <noscript>
+            <div class="is__band is__noscript-band">
+                <strong>Interactive practice needs JavaScript.</strong>
+                Everything shown on this page stays truthful: nothing is stored in this browser or sent to PeerSlate until you submit an answer for coaching. Every mode below is a real link you can open now.
+            </div>
+        </noscript>
+
+        <header class="is__bar">
+            <div class="is__brand">
                 <h1>Interview Studio</h1>
-                <p>Practice with purpose. Answer like you. Improve with proof.</p>
             </div>
 
-            <div class="is__profile" aria-label="Active interview profile">
+            <div class="is__navigation">
+                {% set is_tablist = interview_initial_view != 'history' and not is_orientation %}
+                <nav class="is__modes"{% if is_tablist %} role="tablist"{% endif %} aria-label="Interview practice mode">
+                    <a
+                        class="is__mode"
+                        href="{{ url_for('interview_studio', mode='me') }}"
+                        aria-disabled="{{ 'false' if interview_entitlements.written_practice else 'true' }}"
+                        {% if is_tablist %}role="tab" aria-controls="is-panel-me" aria-selected="{{ 'true' if interview_initial_mode == 'me' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'me' else '-1' }}"{% elif not interview_entitlements.written_practice %}tabindex="-1"{% endif %}
+                        id="is-tab-me"
+                        data-is-mode="me"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
+                        <span><strong>Interview Me</strong><small>You answer. PeerSlate coaches.</small></span>
+                    </a>
+                    <a
+                        class="is__mode"
+                        href="{{ url_for('interview_studio', mode='ai') }}"
+                        aria-disabled="{{ 'false' if interview_entitlements.model_answers else 'true' }}"
+                        {% if is_tablist %}role="tab" aria-controls="is-panel-ai" aria-selected="{{ 'true' if interview_initial_mode == 'ai' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'ai' else '-1' }}"{% elif not interview_entitlements.model_answers %}tabindex="-1"{% endif %}
+                        id="is-tab-ai"
+                        data-is-mode="ai"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
+                        <span><strong>Interview AI</strong><small>You ask. AI answers with proof.</small></span>
+                    </a>
+                    <a
+                        class="is__mode"
+                        href="{{ url_for('interview_studio', mode='video') }}"
+                        aria-disabled="{{ 'false' if interview_entitlements.video_studio != 'disabled' else 'true' }}"
+                        {% if is_tablist %}role="tab" aria-controls="is-panel-video" aria-selected="{{ 'true' if interview_initial_mode == 'video' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'video' else '-1' }}"{% elif interview_entitlements.video_studio == 'disabled' %}tabindex="-1"{% endif %}
+                        id="is-tab-video"
+                        data-is-mode="video"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                        <span><strong>Video Practice</strong><small>Practice on camera.</small></span>
+                    </a>
+                </nav>
+
+                <a
+                    class="is__history-link"
+                    href="{{ url_for('interview_studio_history') }}"
+                    aria-current="{{ 'page' if interview_initial_view == 'history' else 'false' }}"
+                    aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}"
+                    {% if interview_entitlements.progress_history == 'disabled' %}tabindex="-1"{% endif %}
+                    data-is-history-link
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 3 6"/></svg>
+                    <span><strong>History</strong><small>Sessions and growth</small></span>
+                </a>
+            </div>
+
+            <div class="is__profile" aria-label="Public demo profile: {{ interview_profile.name }}">
                 <img
                     src="{{ url_for('static', filename=interview_profile.image_path) }}"
                     alt=""
                     aria-hidden="true"
                 >
-                <span>Preparing as <strong>{{ interview_profile.name }}</strong><i aria-hidden="true">&middot;</i>{{ interview_profile.role }}</span>
+                <div class="is__profile-copy">
+                    <span class="is__profile-eyebrow">Public demo profile</span>
+                    <strong>{{ interview_profile.name }}</strong>
+                </div>
             </div>
         </header>
 
-        <div class="is__navigation">
-            <nav class="is__modes"{% if interview_initial_view != 'history' %} role="tablist"{% endif %} aria-label="Interview practice mode">
-                <a
-                    class="is__mode"
-                    href="{{ url_for('interview_studio', mode='me') }}"
-                    aria-disabled="{{ 'false' if interview_entitlements.written_practice else 'true' }}"
-                    {% if interview_initial_view != 'history' %}role="tab"{% endif %}
-                    id="is-tab-me"
-                    {% if interview_initial_view != 'history' %}aria-controls="is-panel-me" aria-selected="{{ 'true' if interview_initial_mode == 'me' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'me' and interview_entitlements.written_practice else '-1' }}"{% elif not interview_entitlements.written_practice %}tabindex="-1"{% endif %}
-                    data-is-mode="me"
-                >
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
-                    <span><strong>Interview Me</strong><small>You answer. PeerSlate coaches.</small></span>
-                </a>
-                <a
-                    class="is__mode"
-                    href="{{ url_for('interview_studio', mode='ai') }}"
-                    aria-disabled="{{ 'false' if interview_entitlements.model_answers else 'true' }}"
-                    {% if interview_initial_view != 'history' %}role="tab"{% endif %}
-                    id="is-tab-ai"
-                    {% if interview_initial_view != 'history' %}aria-controls="is-panel-ai" aria-selected="{{ 'true' if interview_initial_mode == 'ai' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'ai' and interview_entitlements.model_answers else '-1' }}"{% elif not interview_entitlements.model_answers %}tabindex="-1"{% endif %}
-                    data-is-mode="ai"
-                >
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
-                    <span><strong>Interview AI</strong><small>You ask. AI answers with proof.</small></span>
-                </a>
-                <a
-                    class="is__mode"
-                    href="{{ url_for('interview_studio', mode='video') }}"
-                    aria-disabled="{{ 'false' if interview_entitlements.video_studio != 'disabled' else 'true' }}"
-                    {% if interview_initial_view != 'history' %}role="tab"{% endif %}
-                    id="is-tab-video"
-                    {% if interview_initial_view != 'history' %}aria-controls="is-panel-video" aria-selected="{{ 'true' if interview_initial_mode == 'video' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'video' and interview_entitlements.video_studio != 'disabled' else '-1' }}"{% elif interview_entitlements.video_studio == 'disabled' %}tabindex="-1"{% endif %}
-                    data-is-mode="video"
-                >
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-                    <span><strong>Video Me</strong><small>Practice on camera.</small></span>
-                </a>
-            </nav>
-
-            <a
-                class="is__history-link"
-                href="{{ url_for('interview_studio_history') }}"
-                aria-current="{{ 'page' if interview_initial_view == 'history' else 'false' }}"
-                aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}"
-                {% if interview_entitlements.progress_history == 'disabled' %}tabindex="-1"{% endif %}
-                data-is-history-link
-            >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 3 6"/></svg>
-                <span><strong>History</strong><small>Sessions and growth</small></span>
-            </a>
-        </div>
-
-        <section class="is__controls" aria-label="Session controls" data-is-controls {% if interview_initial_view == 'history' %}hidden{% endif %}>
-            <label class="is__select">
-                <span>Experience</span>
-                <select data-is-level>
-                    <option value="entry">Entry level</option>
-                    <option value="experienced" selected>Experienced</option>
-                    <option value="management">Management</option>
-                    <option value="leadership">Leadership</option>
-                    <option value="mixed">Mixed</option>
-                </select>
-            </label>
-            <label class="is__select">
-                <span>Question family</span>
-                <select data-is-family>
-                    <option value="situational">Situational</option>
-                    <option value="behavioral" selected>Behavioral</option>
-                    <option value="mixed">Mixed</option>
-                </select>
-            </label>
-            <label class="is__select" data-is-format-control>
-                <span>Session</span>
-                <select data-is-format>
-                    <option value="single">Single question</option>
-                    <option value="5" selected>5-question mock</option>
-                    <option value="10">10-question mock</option>
-                </select>
-            </label>
-            <button class="is__control-button" type="button" data-is-settings-open>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
-                Settings
-            </button>
-        </section>
+        <details class="is__disclosure" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' or is_orientation %}hidden{% endif %}>
+            <summary data-is-setup-summary>Session setup · Experienced · Behavioral · 5-question mock</summary>
+            <div class="is__disclosure-body is__setup-body">
+                <label class="is__select">
+                    <span>Experience</span>
+                    <select data-is-level>
+                        <option value="entry">Entry level</option>
+                        <option value="experienced" selected>Experienced</option>
+                        <option value="management">Management</option>
+                        <option value="leadership">Leadership</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </label>
+                <label class="is__select">
+                    <span>Question family</span>
+                    <select data-is-family>
+                        <option value="situational">Situational</option>
+                        <option value="behavioral" selected>Behavioral</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </label>
+                <label class="is__select" data-is-format-control>
+                    <span>Session</span>
+                    <select data-is-format>
+                        <option value="single">Single question</option>
+                        <option value="5" selected>5-question mock</option>
+                        <option value="10">10-question mock</option>
+                    </select>
+                </label>
+                <button class="is__control-button" type="button" data-is-settings-open>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+                    Settings
+                </button>
+            </div>
+        </details>
 
         <p class="is__live" role="status" aria-live="polite" data-is-live></p>
 
         <main class="is__workspace">
             <section
                 class="is__panel"
+                data-is-panel="orientation"
+                aria-labelledby="is-orientation-title"
+                {% if not is_orientation %}hidden{% endif %}
+            >
+                <div class="is__orientation-grid">
+                    <div class="is__orientation-copy">
+                        <p class="is__eyebrow">Real practice. Real coaching. Real growth.</p>
+                        <h2 id="is-orientation-title" class="is__title is__title--hero">Practice interviews that build confidence and clear answers.</h2>
+                        <p>Answer questions in your own words.</p>
+                        <p>Get coaching after you submit.</p>
+                        <p>Your practice stays in this browser until you submit an answer for coaching.</p>
+                        <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}" data-is-orientation-link="me" aria-disabled="{{ 'false' if interview_entitlements.written_practice else 'true' }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
+                            Start Interview Me
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+                        </a>
+                    </div>
+
+                    <div class="is__orientation-cards">
+                        <a class="is__card is__orientation-card" href="{{ url_for('interview_studio', mode='ai') }}" data-is-orientation-link="ai" aria-disabled="{{ 'false' if interview_entitlements.model_answers else 'true' }}">
+                            <span class="is__orientation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span>
+                            <strong>Interview AI</strong>
+                            <p>See a best-practice example, {{ interview_profile.first_name }}&rsquo;s public-profile example, and a side-by-side comparison — every answer labeled by source.</p>
+                        </a>
+                        <a class="is__card is__orientation-card" href="{{ url_for('interview_studio', mode='video') }}" data-is-orientation-link="video" aria-disabled="{{ 'false' if interview_entitlements.video_studio != 'disabled' else 'true' }}">
+                            <span class="is__orientation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m16 10 5-3v10l-5-3z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></span>
+                            <strong>Video Practice</strong>
+                            <p>Rehearse on camera locally. Review your recording here. Nothing is uploaded or analyzed.</p>
+                        </a>
+                        <a class="is__card is__orientation-card" href="{{ url_for('interview_studio_history') }}" data-is-orientation-link="history" aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}">
+                            <span class="is__orientation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2M5.6 5.6 3 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                            <strong>History</strong>
+                            <p>Your drafts, goals, attempts, and completed practice—saved only in this browser.</p>
+                        </a>
+                    </div>
+                </div>
+
+                <p class="is__baseline">
+                    <span>No sign-in. No account. No cloud history.</span>
+                    <span>Coaching happens after submission.</span>
+                </p>
+            </section>
+
+            <section
+                class="is__panel"
                 id="is-panel-me"
                 role="tabpanel"
                 aria-labelledby="is-tab-me"
                 data-is-panel="me"
-                {% if interview_initial_view == 'history' or interview_initial_mode != 'me' %}hidden{% endif %}
+                {% if interview_initial_view == 'history' or interview_initial_mode != 'me' or is_orientation %}hidden{% endif %}
             >
-                <article class="is__stage" data-is-practice-stage>
-                    <header class="is__progress-head">
-                        <span data-is-question-position>Question 1 of 5</span>
-                        <span data-is-progress-percent>20%</span>
-                    </header>
-                    <progress class="is__progress" data-is-progress max="100" value="20">20%</progress>
+                <article data-is-practice-stage>
+                    <div class="is__stage--compact-head">
+                        <div>
+                            <p class="is__section-label">Interview Me Practice</p>
+                            <h2 class="is__title is__title--stage" data-is-question>Tell me about a time you disagreed with a supervisor.</h2>
+                        </div>
+                        <div class="is__est-chip" data-is-est-chip hidden>Est. time<br><strong>15–20 min</strong></div>
+                    </div>
+
+                    <div class="is__progress-head">
+                        <span class="is__question-position" data-is-question-position>Question 1 of 5</span>
+                        <ol class="is__stages" data-is-stage-rail aria-label="Answer progress">
+                            <li data-is-stage="1" class="is-current" aria-current="step"><span class="is__sr-only">Draft</span><span aria-hidden="true">1</span></li>
+                            <li data-is-stage="2"><span class="is__sr-only">Coaching request</span><span aria-hidden="true">2</span></li>
+                            <li data-is-stage="3"><span class="is__sr-only">Review</span><span aria-hidden="true">3</span></li>
+                            <li data-is-stage="4"><span class="is__sr-only">Improve</span><span aria-hidden="true">4</span></li>
+                            <li data-is-stage="5"><span class="is__sr-only">Continue</span><span aria-hidden="true">5</span></li>
+                        </ol>
+                        <span class="is__save-pill" data-is-progress-percent hidden>20%</span>
+                        <progress class="is__sr-only" data-is-progress max="100" value="20">20%</progress>
+                    </div>
 
                     <div class="is__question-block">
                         <div class="is__question-icon" aria-hidden="true">?</div>
                         <div>
-                            <h2 data-is-question>Tell me about a time you disagreed with a supervisor.</h2>
                             <ul class="is__chips" aria-label="Question details">
                                 <li class="is__chip is__chip--family" data-is-family-chip>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-competency-chip>Competency: Conflict</li>
@@ -164,8 +233,7 @@
 
                     <p class="is__intent">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>
-                        <strong>What the interviewer is listening for:</strong>
-                        <span data-is-intent>Professional disagreement, sound judgment, and a constructive outcome.</span>
+                        <span><strong>What the interviewer is listening for:</strong> <span data-is-intent>Professional disagreement, sound judgment, and a constructive outcome.</span></span>
                     </p>
 
                     <details class="is__reference" data-is-ai-reference hidden>
@@ -173,153 +241,232 @@
                         <p data-is-ai-reference-text></p>
                     </details>
 
-                    <form data-is-answering data-is-answer-form>
-                        <div class="is__composer">
-                            <label for="is-answer">Your answer</label>
-                            <div class="is__composer-input">
-                                <textarea
-                                    id="is-answer"
-                                    rows="5"
-                                    maxlength="5000"
-                                    placeholder="Type your answer here or use the microphone to dictate…"
-                                    aria-describedby="is-answer-shortcut"
-                                    required
-                                    data-is-answer
-                                ></textarea>
-                                <div class="is__composer-controls">
-                                    <button class="is__mic" type="button" aria-label="Dictate your answer" data-is-mic="answer">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
-                                    </button>
+                    <p class="is__compose-note">
+                        <span>Write your answer in your own words.</span>
+                        <span>Your answer is saved in this browser.</span>
+                    </p>
+
+                    <div class="is__content-grid">
+                        <div class="is__main-column">
+                            <form data-is-answering data-is-answer-form>
+                                <div class="is__composer">
+                                    <label for="is-answer">Your answer</label>
+                                    <div class="is__composer-input">
+                                        <textarea
+                                            id="is-answer"
+                                            rows="6"
+                                            maxlength="5000"
+                                            placeholder="Type your answer here…"
+                                            aria-describedby="is-answer-shortcut"
+                                            required
+                                            data-is-answer
+                                        ></textarea>
+                                    </div>
+                                    <div class="is__composer-meta">
+                                        <span data-is-autosave>Draft ready</span>
+                                        <span><span data-is-word-count>0</span> words</span>
+                                    </div>
+                                </div>
+
+                                <p class="is__transmit-line">
+                                    <span class="is__truth-icon" aria-hidden="true">⇧</span>
+                                    <span>Questions and your answers are sent to PeerSlate only when you click Submit answer for coaching.</span>
+                                </p>
+
+                                <div class="is__actions">
                                     <button class="is__button is__button--primary is__composer-submit" type="submit" data-is-review disabled>
                                         Submit answer
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                                     </button>
                                 </div>
-                            </div>
-                            <div class="is__composer-meta">
-                                <span data-is-autosave>Draft ready</span>
-                                <span id="is-answer-shortcut"><span data-is-word-count>0</span> words · Ctrl/Command + Enter to submit</span>
-                            </div>
-                            <p class="is__error" data-is-mic-error="answer" hidden></p>
-                        </div>
 
-                        <p class="is__tip">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
-                            <span data-is-tip>For conflict questions, explain the disagreement, how you handled it professionally, and the outcome.</span>
-                        </p>
+                                <p class="is__tip">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
+                                    <span data-is-tip>For conflict questions, explain the disagreement, how you handled it professionally, and the outcome.</span>
+                                </p>
 
-                        <div class="is__actions is__actions--spread">
-                            <div class="is__actions-group">
-                                <button class="is__button is__button--quiet" type="button" data-is-new-question>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                                    New Question
-                                </button>
-                            </div>
-                            <button class="is__button is__button--soft" type="button" data-is-queue-open aria-haspopup="dialog">
-                                Up next: <span data-is-up-next-count>4</span> questions
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="is__reviewing" data-is-reviewing hidden aria-live="polite">
-                        <span class="is__spinner" aria-hidden="true"></span>
-                        <div><strong>Reviewing your answer</strong><span>Your response is safe while the coach builds a structured review.</span></div>
-                        <button class="is__button is__button--quiet" type="button" data-is-cancel-review>Cancel</button>
-                    </div>
-
-                    <div class="is__submitted" data-is-submitted hidden>
-                        <p class="is__section-label">Your submitted answer</p>
-                        <p data-is-submitted-text></p>
-                    </div>
-
-                    <section class="is__feedback is__feature-shell" data-is-feedback aria-labelledby="is-feedback-title">
-                        <header class="is__feedback-heading">
-                            <p class="is__section-label">Coach review</p>
-                            <h3 id="is-feedback-title">Your feedback</h3>
-                        </header>
-
-                        <div class="is__feature-empty" data-is-feedback-empty>
-                            <strong>Your review space is ready.</strong>
-                            <span>Submit any nonempty answer above to see your score, STAR completeness, strengths, and next improvements here.</span>
-                        </div>
-
-                        <p class="is__error" data-is-review-error hidden></p>
-
-                        <div data-is-feedback-content hidden>
-
-                        <div class="is__feedback-grid">
-                            <div class="is__score-summary">
-                                <div class="is__score" role="img" data-is-score-ring aria-label="No score yet" style="--score:0">
-                                    <strong data-is-score>—</strong><span>/100</span>
+                                <div class="is__actions is__actions--spread">
+                                    <div class="is__actions-group">
+                                        <button class="is__button is__button--quiet" type="button" data-is-new-question>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                            New Question
+                                        </button>
+                                    </div>
+                                    <button class="is__button is__button--soft" type="button" data-is-queue-open aria-haspopup="dialog">
+                                        Up next: <span data-is-up-next-count>4</span> questions
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+                                    </button>
                                 </div>
-                                <div><strong data-is-verdict></strong><p data-is-encouragement></p></div>
+                            </form>
+
+                            <div class="is__processing-banner" data-is-reviewing hidden aria-live="polite">
+                                <span class="is__spinner" aria-hidden="true"></span>
+                                <div><strong>Preparing your coaching review</strong><span>The submitted answer remains visible while the full response is prepared.</span></div>
+                                <button class="is__button is__button--quiet" type="button" data-is-cancel-review>Cancel</button>
                             </div>
-                            <section class="is__feedback-list is__feedback-list--worked">
-                                <h4>What worked</h4>
-                                <ul data-is-strengths></ul>
-                            </section>
-                            <section class="is__feedback-list is__feedback-list--improve">
-                                <h4>Improve next</h4>
-                                <ul data-is-improvements></ul>
-                            </section>
-                            <section class="is__star">
-                                <h4>STAR completeness</h4>
-                                <ul data-is-star></ul>
-                            </section>
-                        </div>
 
-                        <ul class="is__dimensions" data-is-dimensions aria-label="Scoring dimensions"></ul>
-
-                        <section class="is__evidence-suggestions" data-is-evidence-suggestions hidden>
-                            <h4>Relevant history you may have missed <span>Confirmed history that may strengthen your next draft</span></h4>
-                            <div data-is-evidence-options></div>
-                        </section>
-
-                        <div class="is__actions is__actions--spread">
-                            <div class="is__actions-group">
-                                <button class="is__button is__button--primary" type="button" data-is-improve>Improve with Coach</button>
-                                <button class="is__button" type="button" data-is-retry>Retry</button>
+                            <div class="is__card is__answer-card" data-is-submitted hidden>
+                                <p class="is__section-label" data-is-submitted-label>Your submitted answer · preserved</p>
+                                <p class="is__answer-copy" data-is-submitted-text></p>
                             </div>
-                            <button class="is__button is__button--primary" type="button" data-is-next-question>
-                                Next Question
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
-                            </button>
-                        </div>
-                        </div>
-                    </section>
 
-                    <section class="is__improve is__feature-shell" data-is-improve-panel aria-labelledby="is-improve-title">
-                        <p class="is__eyebrow">Keep your voice. Strengthen the proof.</p>
-                        <h3 id="is-improve-title">Compare your answer with the coach-assisted draft.</h3>
-                        <div class="is__feature-empty" data-is-improve-empty>
-                            <strong>The improvement workspace stays in view.</strong>
-                            <span>After your coach review, choose “Improve with Coach” to compare your original answer with an editable, evidence-grounded draft.</span>
-                        </div>
-                        <div data-is-improve-content hidden>
-                        <div class="is__compare">
-                            <section>
-                                <h4>Original answer</h4>
-                                <p data-is-original-answer></p>
+                            <div class="is__alert" data-is-review-error tabindex="-1" hidden>
+                                <span class="is__alert-icon" aria-hidden="true">!</span>
+                                <div>
+                                    <strong>Coaching could not be completed.</strong>
+                                    <p data-is-review-error-text></p>
+                                </div>
+                            </div>
+                            <div class="is__actions" data-is-error-actions hidden>
+                                <button class="is__button is__button--soft" type="button" data-is-keep-editing>Keep editing</button>
+                                <button class="is__button is__button--primary" type="button" data-is-retry-coaching>Retry coaching →</button>
+                            </div>
+
+                            <section class="is__card is__bottom-line-shell" data-is-feedback aria-labelledby="is-feedback-title">
+                                <div class="is__card-pad">
+                                <p class="is__eyebrow">Your coaching review</p>
+                                <h3 id="is-feedback-title" class="is__title is__title--section">Bottom line first.</h3>
+                                <p class="is__sub">Understand what worked, what is missing, and the clearest next improvement.</p>
+
+                                <div class="is__empty" data-is-feedback-empty>
+                                    <strong>Your review space is ready.</strong>
+                                    <span>Submit any nonempty answer above to see your score, STAR completeness, strengths, and next improvements here.</span>
+                                </div>
+
+                                <div data-is-feedback-content hidden>
+                                    <div class="is__bottom-line">
+                                        <div>
+                                            <p class="is__eyebrow">Bottom line</p>
+                                            <h2 data-is-verdict>Your verdict</h2>
+                                            <p class="is__success-line">✓ <span data-is-encouragement></span></p>
+                                        </div>
+                                        <div class="is__bl-score">
+                                            <div class="is__score" role="img" data-is-score-ring aria-label="No score yet" style="--score:0">
+                                                <strong data-is-score>—</strong><span>/100</span>
+                                            </div>
+                                            <span class="is__ring-caption">Practice signal — not an employer prediction</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="is__review-columns">
+                                        <section class="is__card is__review-card">
+                                            <h4 class="is__section-label">What worked well</h4>
+                                            <ul class="is__bullets" data-is-strengths></ul>
+                                        </section>
+                                        <section class="is__card is__review-card is__review-card--improve">
+                                            <h4 class="is__section-label">Improve next time</h4>
+                                            <ul class="is__bullets" data-is-improvements></ul>
+                                        </section>
+                                    </div>
+
+                                    <section class="is__card is__star">
+                                        <h4 class="is__section-label">Framework map · STAR</h4>
+                                        <ul class="is__star-grid" data-is-star aria-label="STAR framework completeness"></ul>
+                                    </section>
+
+                                    <details class="is__disclosure is__score-detail" data-is-score-detail>
+                                        <summary>Score detail</summary>
+                                        <div class="is__disclosure-body">
+                                            <ul class="is__dimensions" data-is-dimensions aria-label="Scoring dimensions"></ul>
+                                        </div>
+                                    </details>
+
+                                    <div class="is__actions is__actions--spread">
+                                        <div class="is__actions-group">
+                                            <button class="is__button" type="button" data-is-retry>Try again</button>
+                                            <button class="is__button is__button--primary" type="button" data-is-improve>Improve answer →</button>
+                                        </div>
+                                        <button class="is__button is__button--primary" type="button" data-is-next-question>
+                                            Next Question
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                </div>
                             </section>
-                            <section class="is__compare-draft">
-                                <div class="is__compare-title"><h4>Improved draft</h4><span>AI-assisted draft</span></div>
-                                <label class="is__sr-only" for="is-improved-draft">Editable improved draft</label>
-                                <textarea id="is-improved-draft" rows="10" maxlength="5000" data-is-improved-draft></textarea>
+
+                            <section class="is__card is__improve" data-is-improve-panel aria-labelledby="is-improve-title">
+                                <p class="is__eyebrow">Keep your voice. Strengthen the proof.</p>
+                                <h3 id="is-improve-title" class="is__title is__title--section" style="font-size:clamp(1.4rem,2.4vw,1.9rem)">Compare your answer with the coach-assisted draft.</h3>
+                                <div class="is__empty" data-is-improve-empty>
+                                    <strong>The improvement workspace stays in view.</strong>
+                                    <span>After your coach review, choose “Improve answer” to compare your original answer with an editable, evidence-grounded draft.</span>
+                                </div>
+                                <div data-is-improve-content hidden>
+                                <section class="is__evidence-suggestions" data-is-evidence-suggestions hidden>
+                                    <h4>Relevant history you may have missed <span>Confirmed history that may strengthen your next draft</span></h4>
+                                    <div data-is-evidence-options></div>
+                                </section>
+                                <div class="is__compare">
+                                    <section>
+                                        <h4>Original answer</h4>
+                                        <p data-is-original-answer></p>
+                                    </section>
+                                    <section class="is__compare-draft">
+                                        <div class="is__compare-title"><h4>Improved draft</h4><span>AI-assisted draft</span></div>
+                                        <label class="is__sr-only" for="is-improved-draft">Editable improved draft</label>
+                                        <textarea id="is-improved-draft" rows="10" maxlength="5000" data-is-improved-draft></textarea>
+                                    </section>
+                                </div>
+                                <section class="is__changes">
+                                    <h4>What changed</h4>
+                                    <ul data-is-changes></ul>
+                                </section>
+                                <p class="is__error" data-is-improve-error hidden></p>
+                                <div class="is__actions">
+                                    <button class="is__button is__button--primary" type="button" data-is-use-draft>Use This Draft</button>
+                                    <button class="is__button" type="button" data-is-retry-out-loud>Retry Out Loud</button>
+                                    <button class="is__button is__button--quiet" type="button" data-is-back-feedback>Back to Feedback</button>
+                                </div>
+                                </div>
                             </section>
+
                         </div>
-                        <section class="is__changes">
-                            <h4>What changed</h4>
-                            <ul data-is-changes></ul>
-                        </section>
-                        <p class="is__error" data-is-improve-error hidden></p>
-                        <div class="is__actions">
-                            <button class="is__button is__button--primary" type="button" data-is-use-draft>Use This Draft</button>
-                            <button class="is__button" type="button" data-is-retry-out-loud>Retry Out Loud</button>
-                            <button class="is__button is__button--quiet" type="button" data-is-back-feedback>Back to Feedback</button>
-                        </div>
-                        </div>
-                    </section>
+
+                        <aside class="is__side-column">
+                            <section class="is__card is__status-card" data-is-coaching-status>
+                                <p class="is__eyebrow">Coaching status</p>
+                                <h3 class="is__title" style="font-size:1.2rem">Your answer is safe.</h3>
+                                <div class="is__status-row" data-is-coaching-row="1">
+                                    <span class="is__status-dot">✓</span>
+                                    <div><strong>Answer received</strong><p>The submitted text is attached to this coaching request.</p></div>
+                                </div>
+                                <div class="is__status-row" data-is-coaching-row="2">
+                                    <span class="is__status-dot">2</span>
+                                    <div><strong>Checking the question rubric</strong><p>Reviewing relevance, structure, specificity, and result.</p></div>
+                                </div>
+                                <div class="is__status-row" data-is-coaching-row="3">
+                                    <span class="is__status-dot">3</span>
+                                    <div><strong>Preparing bottom-line feedback</strong><p>Feedback appears only when the complete review is ready.</p></div>
+                                </div>
+                            </section>
+
+                            <section class="is__card is__card-pad" aria-label="Answering aid">
+                                <p class="is__eyebrow">Answering aid</p>
+                                <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-label="Dictate your answer">
+                                    <span class="is__mic" style="width:2.2rem;height:2.2rem" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
+                                    Start dictation
+                                </button>
+                                <p class="is__error" data-is-mic-error="answer" hidden></p>
+                                <p style="margin-top:0.85rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.55">Dictation is optional. You can speak and we&rsquo;ll transcribe into the box.</p>
+                                <div class="is__divider"></div>
+                                <p class="is__section-label" style="font-size:0.68rem">Keyboard tips</p>
+                                <p id="is-answer-shortcut" style="margin-top:0.4rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.6">Tab to navigate<br>Ctrl/Command + Enter to submit</p>
+                            </section>
+
+                            <section class="is__card is__demo-card" data-is-demo-card>
+                                <p class="is__eyebrow">Public demo profile</p>
+                                <div class="is__demo-head">
+                                    <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="{{ interview_profile.name }}">
+                                    <div>
+                                        <p class="is__demo-name">{{ interview_profile.name }}</p>
+                                        <p class="is__demo-role">{{ interview_profile.role }}</p>
+                                    </div>
+                                </div>
+                                <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
+                            </section>
+                        </aside>
+                    </div>
                 </article>
             </section>
 
@@ -329,97 +476,127 @@
                 role="tabpanel"
                 aria-labelledby="is-tab-ai"
                 data-is-panel="ai"
-                {% if interview_initial_view == 'history' or interview_initial_mode != 'ai' %}hidden{% endif %}
+                {% if interview_initial_view == 'history' or interview_initial_mode != 'ai' or is_orientation %}hidden{% endif %}
             >
-                <article class="is__stage is__stage--ai">
-                    <fieldset class="is__mode" data-is-ai-mode-group>
-                        <legend class="is__section-label">Answer grounding</legend>
-                        <div class="is__mode-options" role="radiogroup" aria-label="Answer grounding mode">
-                            <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
-                            <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s history</span></label>
-                            <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="compare"><span>Compare</span></label>
-                        </div>
-                        <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
-                    </fieldset>
-                    <form class="is__ai-form" data-is-ai-form>
-                        <div class="is__ai-mark" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
-                        </div>
-                        <label for="is-ai-question">Ask a custom interview question</label>
-                        <div class="is__ai-input">
-                            <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
-                            <button class="is__mic" type="button" aria-label="Dictate an interview question" data-is-mic="ai">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                <p class="is__eyebrow">Interview AI</p>
+                <h2 class="is__title is__title--section">See the source. Compare the approach.</h2>
+                <p class="is__sub">Best-practice guidance, {{ interview_profile.first_name }}&rsquo;s approved public-profile example, and side-by-side comparison remain clearly labeled.</p>
+
+                <div class="is__content-grid">
+                    <div class="is__main-column">
+                        <fieldset class="is__ai-grounding" data-is-ai-mode-group>
+                            <legend class="is__section-label">Answer grounding</legend>
+                            <div class="is__mode-options" role="radiogroup" aria-label="Answer grounding mode">
+                                <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
+                                <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s public history</span></label>
+                                <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="compare"><span>Compare</span></label>
+                            </div>
+                            <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
+                        </fieldset>
+
+                        <form class="is__ai-form" data-is-ai-form>
+                            <div class="is__ai-mark" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
+                            </div>
+                            <label for="is-ai-question">Ask a custom interview question</label>
+                            <div class="is__ai-input">
+                                <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
+                                <button class="is__mic" type="button" aria-label="Dictate an interview question" data-is-mic="ai">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                </button>
+                            </div>
+                            <p class="is__error" data-is-mic-error="ai" hidden></p>
+                            <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
+                                Get Answer
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                             </button>
+                        </form>
+
+                        <p class="is__grounding-note">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+                            <span>Draft basis: <strong>{{ interview_profile.name }}&rsquo;s approved public history</strong>. Verify the generated wording before using it.</span>
+                        </p>
+
+                        <div class="is__processing-banner" data-is-ai-loading hidden aria-live="polite">
+                            <span class="is__spinner" aria-hidden="true"></span> <div><strong>Building your draft…</strong></div>
                         </div>
-                        <p class="is__error" data-is-mic-error="ai" hidden></p>
-                        <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
-                            Get Answer
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
-                        </button>
-                    </form>
+                        <p class="is__error" data-is-ai-error hidden></p>
 
-                    <p class="is__grounding-note">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-                        Draft basis: <strong>{{ interview_profile.name }}’s approved public history</strong>. Verify the generated wording before using it.
-                    </p>
+                        <section class="is__card is__ai-answer" data-is-ai-answer aria-labelledby="is-ai-answer-title">
+                            <p class="is__eyebrow">AI synthesis</p>
+                            <h2 id="is-ai-answer-title" class="is__title" style="font-size:clamp(1.4rem,2.6vw,1.9rem)">Answer workspace</h2>
 
-                    <div class="is__ai-loading" data-is-ai-loading hidden aria-live="polite">
-                        <span class="is__spinner" aria-hidden="true"></span> Building your draft…
-                    </div>
-                    <p class="is__error" data-is-ai-error hidden></p>
-
-                    <section class="is__ai-answer is__feature-shell" data-is-ai-answer aria-labelledby="is-ai-answer-title">
-                        <header>
-                            <p class="is__section-label">AI synthesis</p>
-                            <h2 id="is-ai-answer-title">Answer workspace</h2>
-                        </header>
-
-                        <div class="is__feature-empty" data-is-ai-answer-empty>
-                            <strong>Your answer workspace is open.</strong>
-                            <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every source from the approved history here for you to verify.</span>
-                        </div>
-
-                        <div data-is-ai-answer-content hidden>
-                            <p class="is__generic-flag" data-is-ai-generic hidden>
-                                Illustrative best-practice example — this is <strong>not</strong> {{ interview_profile.first_name }}&rsquo;s real history.
-                            </p>
-                            <h2 data-is-ai-answer-heading><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
-                            <p class="is__ai-answer-text" data-is-ai-answer-text></p>
-
-                            <div class="is__why">
-                                <h3>Why this answer works</h3>
-                                <ul data-is-ai-why></ul>
-                            </div>
-                            <div class="is__evidence-used">
-                                <h3>Relevant history used</h3>
-                                <div data-is-ai-evidence></div>
+                            <div class="is__empty" data-is-ai-answer-empty>
+                                <strong>Your answer workspace is open.</strong>
+                                <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every source from the approved history here for you to verify.</span>
                             </div>
 
-                            <div class="is__compare" data-is-ai-compare hidden>
-                                <h3>Best-practice example, for comparison</h3>
-                                <p class="is__generic-flag">Illustrative only — study the structure, not the story.</p>
-                                <p class="is__ai-answer-text" data-is-ai-compare-text></p>
+                            <div data-is-ai-answer-content hidden>
+                                <p class="is__generic-flag" data-is-ai-generic hidden>
+                                    Illustrative best-practice example — this is <strong>not</strong> {{ interview_profile.first_name }}&rsquo;s real history.
+                                </p>
+                                <h2 data-is-ai-answer-heading><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
+                                <p class="is__ai-answer-text" data-is-ai-answer-text></p>
+
                                 <div class="is__why">
-                                    <h3>Structural lessons</h3>
-                                    <ul data-is-ai-compare-why></ul>
+                                    <h3>Why this answer works</h3>
+                                    <ul data-is-ai-why></ul>
+                                </div>
+                                <div class="is__evidence-used">
+                                    <h3>Relevant history used</h3>
+                                    <div data-is-ai-evidence></div>
+                                </div>
+
+                                <div class="is__compare" data-is-ai-compare hidden>
+                                    <section>
+                                        <h4>Best-practice example, for comparison</h4>
+                                        <p class="is__generic-flag" style="margin-top:0.5rem">Illustrative only — study the structure, not the story.</p>
+                                        <p class="is__ai-answer-text" data-is-ai-compare-text></p>
+                                    </section>
+                                    <section>
+                                        <h4>Structural lessons</h4>
+                                        <ul class="is__why-list" data-is-ai-compare-why></ul>
+                                    </section>
+                                </div>
+
+                                <div class="is__actions is__actions--three" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+                                    <button class="is__button" type="button" data-is-follow-up-open>Go to Follow-up</button>
+                                    <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
+                                    <button class="is__button" type="button" data-is-ai-new>New Question</button>
                                 </div>
                             </div>
 
-                            <div class="is__actions is__actions--three">
-                                <button class="is__button" type="button" data-is-follow-up-open>Go to Follow-up</button>
-                                <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
-                                <button class="is__button" type="button" data-is-ai-new>New Question</button>
-                            </div>
-                        </div>
+                            <form class="is__follow-up" data-is-follow-up-form>
+                                <label for="is-ai-follow-up">Ask a follow-up</label>
+                                <p>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
+                                <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up disabled><button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button></div>
+                            </form>
+                        </section>
+                    </div>
 
-                        <form class="is__follow-up" data-is-follow-up-form>
-                            <label for="is-ai-follow-up">Ask a follow-up</label>
-                            <p>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
-                            <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up disabled><button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button></div>
-                        </form>
-                    </section>
-                </article>
+                    <aside class="is__side-column">
+                        <section class="is__card is__card-pad">
+                            <p class="is__eyebrow">Source boundaries</p>
+                            <h3 class="is__title" style="font-size:1.2rem">Three views. No private history.</h3>
+                            <ul class="is__bullets" style="margin-top:0.85rem">
+                                <li>Best-practice content is illustrative.</li>
+                                <li>{{ interview_profile.first_name }}&rsquo;s example uses approved public résumé information only.</li>
+                                <li>Compare shows differences without claiming an employer outcome.</li>
+                            </ul>
+                        </section>
+                        <section class="is__card is__demo-card" data-is-demo-card>
+                            <p class="is__eyebrow">Public demo profile</p>
+                            <div class="is__demo-head">
+                                <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="{{ interview_profile.name }}">
+                                <div>
+                                    <p class="is__demo-name">{{ interview_profile.name }}</p>
+                                    <p class="is__demo-role">{{ interview_profile.role }}</p>
+                                </div>
+                            </div>
+                            <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
+                        </section>
+                    </aside>
+                </div>
             </section>
 
             <section
@@ -428,17 +605,22 @@
                 role="tabpanel"
                 aria-labelledby="is-tab-video"
                 data-is-panel="video"
-                {% if interview_initial_view == 'history' or interview_initial_mode != 'video' %}hidden{% endif %}
+                {% if interview_initial_view == 'history' or interview_initial_mode != 'video' or is_orientation %}hidden{% endif %}
             >
-                <article class="is__stage is__stage--video" data-is-video-stage>
-                    <header class="is__progress-head">
-                        <span data-is-video-question-position>Question 1 of 5</span><span><span data-is-video-progress-percent>20%</span> · Local rehearsal</span>
-                    </header>
-                    <progress class="is__progress" data-is-video-progress max="100" value="20">20%</progress>
+                <article data-is-video-stage>
+                    <p class="is__eyebrow">Video Practice · local only</p>
+                    <h2 class="is__title is__title--section">Rehearse on camera. Keep the recording here.</h2>
+                    <p class="is__sub">Review your delivery locally. PeerSlate does not upload or analyze the recording.</p>
+
+                    <div class="is__progress-head" style="margin-top:1rem">
+                        <span class="is__question-position"><span data-is-video-question-position>Question 1 of 5</span> · Local rehearsal</span>
+                        <span class="is__save-pill" data-is-video-progress-percent hidden>20%</span>
+                        <progress class="is__sr-only" data-is-video-progress max="100" value="20">20%</progress>
+                    </div>
                     <div class="is__question-block is__question-block--compact">
                         <div class="is__question-icon" aria-hidden="true">?</div>
                         <div>
-                            <h2 data-is-video-question>Tell me about a time you disagreed with a supervisor.</h2>
+                            <h3 class="is__title" style="font-size:clamp(1.3rem,2.4vw,1.7rem)" data-is-video-question>Tell me about a time you disagreed with a supervisor.</h3>
                             <ul class="is__chips">
                                 <li class="is__chip is__chip--family" data-is-video-family>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-video-competency>Competency: Conflict</li>
@@ -448,130 +630,199 @@
                         </div>
                     </div>
 
-                    <div class="is__camera" data-is-camera>
-                        <video data-is-camera-preview playsinline muted></video>
-                        <div class="is__camera-empty" data-is-camera-empty>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-                            <strong>Camera rehearsal is off</strong>
-                            <span>Enable your camera when you are ready. Nothing is uploaded.</span>
-                            <button class="is__button is__button--primary" type="button" data-is-camera-enable{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Enable Camera</button>
-                        </div>
-                        <div class="is__recording-badge" data-is-recording-badge hidden><i aria-hidden="true"></i><span data-is-recording-time>00:00</span></div>
-                    </div>
-
-                    <div class="is__device-status" aria-live="polite">
-                        <span data-is-camera-status><i aria-hidden="true"></i>Camera not requested</span>
-                        <span data-is-mic-status><i aria-hidden="true"></i>Microphone not requested</span>
-                        <button class="is__button is__button--quiet" type="button" data-is-device-settings{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Device settings</button>
-                    </div>
-                    <p class="is__error" data-is-video-error hidden></p>
-
-                    <div class="is__actions">
-                        <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-                            Start Answer
-                        </button>
-                        <button class="is__button" type="button" data-is-record-stop hidden>Stop Recording</button>
-                        <button class="is__button is__button--quiet" type="button" data-is-record-discard hidden>Discard</button>
-                        <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
-                    </div>
-
-                    <section class="is__video-result is__feature-shell" data-is-video-result aria-labelledby="is-video-result-title">
-                        <h3 id="is-video-result-title">Local rehearsal result</h3>
-                        <div class="is__feature-empty" data-is-video-result-empty>
-                            <strong>Your recording summary is ready for the first attempt.</strong>
-                            <span>After you stop recording, the duration and honest local-playback status will appear here. Nothing is uploaded.</span>
-                        </div>
-                        <div data-is-video-result-content hidden>
-                            <h3>Rehearsal saved in this browser session</h3>
-                            <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
-                            <div class="is__analysis-unavailable">
-                                <strong>Delivery analysis is not enabled yet.</strong>
-                                <span>PeerSlate will not show pace, pauses, filler words, clarity, or replay moments until a real processing service produces them.</span>
+                    <div class="is__content-grid">
+                        <div class="is__main-column">
+                            <div class="is__camera" data-is-camera>
+                                <video data-is-camera-preview playsinline muted></video>
+                                <div class="is__camera-empty" data-is-camera-empty>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                                    <strong>Camera rehearsal is off</strong>
+                                    <span>Enable your camera when you are ready. Nothing is uploaded.</span>
+                                    <button class="is__button is__button--primary" type="button" data-is-camera-enable{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Enable Camera</button>
+                                </div>
+                                <div class="is__recording-badge" data-is-recording-badge hidden><i aria-hidden="true"></i><span data-is-recording-time>00:00</span></div>
                             </div>
-                        </div>
-                    </section>
 
-                    <form class="is__video-content-review is__feature-shell" data-is-video-transcript-form>
-                        <h3>Get content coaching from a transcript</h3>
-                        <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording.</p>
-                        <label for="is-video-transcript">Answer transcript</label>
-                        <div class="is__transcript-composer">
-                            <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript></textarea>
-                            <div class="is__transcript-actions">
-                                <button class="is__mic" type="button" aria-label="Dictate your answer transcript" data-is-mic="video">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                            <div class="is__device-status" aria-live="polite">
+                                <span data-is-camera-status><i aria-hidden="true"></i>Camera not requested</span>
+                                <span data-is-mic-status><i aria-hidden="true"></i>Microphone not requested</span>
+                                <button class="is__button is__button--quiet" type="button" data-is-device-settings{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Device settings</button>
+                            </div>
+                            <p class="is__error" data-is-video-error hidden></p>
+
+                            <div class="is__actions">
+                                <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                                    Start Answer
                                 </button>
-                                <button class="is__button is__button--primary" type="submit" data-is-video-review-content disabled>Submit transcript</button>
+                                <button class="is__button" type="button" data-is-record-stop hidden>Stop Recording</button>
+                                <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
+                                <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
                             </div>
+
+                            <form class="is__card is__video-content-review" data-is-video-transcript-form>
+                                <h3>Get content coaching from a transcript</h3>
+                                <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording.</p>
+                                <label for="is-video-transcript">Answer transcript</label>
+                                <div class="is__transcript-composer">
+                                    <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript></textarea>
+                                    <div class="is__transcript-actions">
+                                        <button class="is__mic" type="button" aria-label="Dictate your answer transcript" data-is-mic="video">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                        </button>
+                                        <button class="is__button is__button--primary" type="submit" data-is-video-review-content disabled>Submit transcript</button>
+                                    </div>
+                                </div>
+                                <p class="is__error" data-is-mic-error="video" hidden></p>
+                            </form>
                         </div>
-                        <p class="is__error" data-is-mic-error="video" hidden></p>
-                    </form>
+
+                        <aside class="is__side-column">
+                            <section class="is__card is__video-result" data-is-video-result aria-labelledby="is-video-result-title">
+                                <p class="is__eyebrow">Local rehearsal</p>
+                                <h3 id="is-video-result-title">Local rehearsal result</h3>
+                                <div class="is__empty" data-is-video-result-empty>
+                                    <strong>Your recording summary is ready for the first attempt.</strong>
+                                    <span>After you stop recording, the duration and honest local-playback status will appear here. Nothing is uploaded.</span>
+                                </div>
+                                <div data-is-video-result-content hidden>
+                                    <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
+                                    <div class="is__analysis-unavailable">
+                                        <strong>Delivery analysis is not enabled yet.</strong>
+                                        <span>PeerSlate will not show pace, pauses, filler words, clarity, or replay moments until a real processing service produces them.</span>
+                                    </div>
+                                    <div class="is__local-list">
+                                        <div>✓ Review the recording yourself</div>
+                                        <div>✓ Record another take</div>
+                                        <div>✓ Type or paste an answer for content coaching</div>
+                                        <div>✗ No pace, eye-contact, filler-word, or confidence analysis</div>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="is__card is__demo-card" data-is-demo-card>
+                                <p class="is__eyebrow">Public demo profile</p>
+                                <div class="is__demo-head">
+                                    <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="{{ interview_profile.name }}">
+                                    <div>
+                                        <p class="is__demo-name">{{ interview_profile.name }}</p>
+                                        <p class="is__demo-role">{{ interview_profile.role }}</p>
+                                    </div>
+                                </div>
+                                <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
+                            </section>
+                        </aside>
+                    </div>
 
                     <p class="is__privacy-note">This preview uses your browser’s local media APIs. The recording is not uploaded, analyzed, or retained by PeerSlate.</p>
                 </article>
             </section>
 
             <section class="is__panel" data-is-panel="history" {% if interview_initial_view != 'history' %}hidden{% endif %} aria-labelledby="is-history-title">
+                <p class="is__eyebrow">History · this browser only</p>
                 <div class="is__history-head">
-                    <div><p class="is__eyebrow">Practice history</p><h2 id="is-history-title">Sessions and growth</h2><p>Only completed attempts from this browser appear here.</p></div>
+                    <div><h2 id="is-history-title" class="is__title is__title--section">Your practice history on this device.</h2><p class="is__sub">Drafts, goals, completed attempts, and coaching results are stored only in this browser.</p></div>
                     <div class="is__history-filters">
-                        <label><span>Mode</span><select data-is-history-mode><option value="all">All modes</option><option value="me">Interview Me</option><option value="video">Video Me</option></select></label>
+                        <label><span>Mode</span><select data-is-history-mode><option value="all">All modes</option><option value="me">Interview Me</option><option value="video">Video Practice</option></select></label>
                         <label><span>Competency</span><select data-is-history-competency><option value="all">All competencies</option></select></label>
                         <label><span>Time</span><select data-is-history-time><option value="all">All time</option><option value="7">Past 7 days</option><option value="30">Past 30 days</option></select></label>
                     </div>
                 </div>
 
-                <div class="is__history-grid">
-                    <section class="is__history-card is__history-summary">
-                        <h3>Session summary</h3>
-                        <dl>
-                            <div><dt>Questions answered</dt><dd data-is-history-count>0</dd></div>
-                            <div><dt>Average score</dt><dd data-is-history-average>—</dd></div>
-                            <div><dt>Strongest competency</dt><dd data-is-history-strongest>Not enough practice yet</dd></div>
-                            <div><dt>Most important improvement</dt><dd data-is-history-improvement>Complete a scored answer</dd></div>
-                        </dl>
-                    </section>
-                    <section class="is__history-card is__recommendation">
-                        <h3>Recommended next session</h3>
-                        <p class="is__section-label" data-is-recommendation-reason>Start with one focused answer</p>
-                        <h4 data-is-recommendation-question>Tell me about a time you disagreed with a supervisor.</h4>
-                        <button class="is__button is__button--primary" type="button" data-is-practice-recommendation>Practice this</button>
-                    </section>
+                <div class="is__band is__band--caution" data-is-storage-note hidden>
+                    <strong>This browser is blocking local storage.</strong>
+                    Practice still works, but drafts, history, and goals cannot be saved on this device.
+                </div>
+                <div class="is__band" data-is-storage-ok>
+                    <strong>No account or cloud history.</strong>
+                    Clearing browser data, using another browser, or changing devices may remove or hide these records.
                 </div>
 
-                <div class="is__history-lower">
-                    <section class="is__history-card is__recent">
-                        <h3>Recent sessions</h3>
-                        <div class="is__history-empty" data-is-history-empty>
-                            <strong>No completed sessions yet</strong>
-                            <span>Submit a written answer or finish a camera rehearsal to begin your history.</span>
-                            <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}">Start practicing</a>
+                <div class="is__content-grid">
+                    <div class="is__main-column">
+                        <section class="is__card is__history-card is__recent">
+                            <h3 class="is__section-label" style="font-size:0.78rem;text-transform:uppercase">Recent completed attempts</h3>
+                            <div class="is__empty" data-is-history-empty>
+                                <strong>No completed sessions yet</strong>
+                                <span>Submit a written answer or finish a camera rehearsal to begin your history.</span>
+                                <a class="is__button is__button--primary" style="margin-top:0.6rem" href="{{ url_for('interview_studio', mode='me') }}">Start practicing</a>
+                            </div>
+                            <div class="is__session-list" data-is-session-list hidden></div>
+                        </section>
+
+                        <section class="is__card is__history-card is__goal" style="margin-top:1rem">
+                            <h3 class="is__section-label" style="font-size:0.78rem;text-transform:uppercase">Practice goals</h3>
+                            <label for="is-goal-score">Target average score</label>
+                            <div><input id="is-goal-score" type="number" min="1" max="100" value="85" data-is-goal-score><button class="is__button" type="button" data-is-goal-save>Save</button></div>
+                            <p data-is-goal-progress>No scored attempts yet.</p>
+                            <progress class="is__goal-progress" max="100" value="0" data-is-goal-progress>0%</progress>
+
+                            <div class="is__divider"></div>
+                            <h4 style="margin:0;color:var(--is-ink);font-family:var(--ps-font-display,Newsreader,Georgia,serif);font-size:1.05rem" data-is-recommendation-question>Tell me about a time you disagreed with a supervisor.</h4>
+                            <p class="is__section-label" style="margin-top:0.4rem" data-is-recommendation-reason>Start with one focused answer</p>
+                            <button class="is__button is__button--primary" style="margin-top:0.6rem" type="button" data-is-practice-recommendation>Practice this</button>
+                        </section>
+
+                        <details class="is__disclosure" style="margin-top:1rem" data-is-history-detail-toggle>
+                            <summary>Practice detail</summary>
+                            <div class="is__disclosure-body">
+                                <dl style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.75rem;margin:0">
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Questions answered</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-count>0</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Average score</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-average>—</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Strongest competency</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-strongest>Not enough practice yet</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Most important improvement</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-improvement>Complete a scored answer</dd></div>
+                                </dl>
+                                <div class="is__divider"></div>
+                                <p class="is__section-label">Growth</p>
+                                <p data-is-growth-empty style="color:var(--is-text-muted);font-size:0.78rem">Complete at least two scored answers in a competency to see a meaningful trend.</p>
+                                <div class="is__growth-list" data-is-growth-list></div>
+                            </div>
+                        </details>
+
+                        <div class="is__clear-row">
+                            <span style="color:var(--is-text-muted);font-size:0.76rem">Deletes local Studio records from this browser.</span>
+                            <button class="is__button is__button--danger" type="button" data-is-history-clear-local>Clear local history</button>
                         </div>
-                        <div class="is__session-list" data-is-session-list hidden></div>
-                    </section>
-                    <section class="is__history-card is__growth">
-                        <h3>Growth</h3>
-                        <p data-is-growth-empty>Complete at least two scored answers in a competency to see a meaningful trend.</p>
-                        <div data-is-growth-list></div>
-                    </section>
-                    <section class="is__history-card is__goal">
-                        <h3>Goal and plan</h3>
-                        <label for="is-goal-score">Target average score</label>
-                        <div><input id="is-goal-score" type="number" min="1" max="100" value="85" data-is-goal-score><button class="is__button" type="button" data-is-goal-save>Save</button></div>
-                        <p data-is-goal-progress>No scored attempts yet.</p>
-                        <progress max="100" value="0" data-is-goal-progress>0%</progress>
-                    </section>
+                    </div>
+
+                    <aside class="is__side-column">
+                        <section class="is__card is__card-pad">
+                            <p class="is__eyebrow">Local storage</p>
+                            <h3 class="is__title" style="font-size:1.2rem">Your history does not follow you.</h3>
+                            <p style="margin-top:0.6rem;color:var(--is-text-muted);font-size:0.78rem;line-height:1.55">There is no account-backed history or cross-device synchronization in the current public Studio.</p>
+                        </section>
+                        <section class="is__card is__demo-card" data-is-demo-card>
+                            <p class="is__eyebrow">Public demo profile</p>
+                            <div class="is__demo-head">
+                                <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="{{ interview_profile.name }}">
+                                <div>
+                                    <p class="is__demo-name">{{ interview_profile.name }}</p>
+                                    <p class="is__demo-role">{{ interview_profile.role }}</p>
+                                </div>
+                            </div>
+                            <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
+                        </section>
+                    </aside>
                 </div>
                 <p class="is__history-disclosure">History and goals in this preview are stored only in this browser for {{ interview_profile.name }}’s public profile. They are not synced to a PeerSlate account.</p>
             </section>
         </main>
+
+        <ul class="is__truth" data-is-truth-strip aria-label="Studio truth and privacy summary">
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">⇧</span><p>Questions and your answers are sent to PeerSlate only when you submit for coaching.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▤</span><p>Drafts, goals, attempts, and History are saved only in this browser.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▣</span><p>Video Practice remains local. Media is not uploaded or analyzed.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">◇</span><p>Scores are practice signals, not employer predictions.</p></li>
+        </ul>
+        <p style="margin-top:0.65rem;color:var(--is-text-muted);font-size:0.7rem;text-align:center">Public Interview Studio · browser-local practice</p>
     </div>
 
     <dialog class="is__dialog is__queue" data-is-queue aria-labelledby="is-queue-title">
         <div class="is__dialog-head">
             <div><p class="is__section-label">Current session</p><h2 id="is-queue-title">Up next</h2></div>
-            <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
+            <div class="is__dialog-actions">
+                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
+            </div>
         </div>
         <ol data-is-queue-list></ol>
         <form class="is__custom-question" data-is-custom-question-form>
@@ -581,7 +832,13 @@
     </dialog>
 
     <dialog class="is__dialog is__settings" data-is-settings aria-labelledby="is-settings-title">
-        <div class="is__dialog-head"><h2 id="is-settings-title">Interview Studio settings</h2><button type="button" class="is__icon-button" aria-label="Close settings" data-is-settings-close>&times;</button></div>
+        <div class="is__dialog-head">
+            <h2 id="is-settings-title">Interview Studio settings</h2>
+            <div class="is__dialog-actions">
+                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                <button type="button" class="is__icon-button" aria-label="Close settings" data-is-settings-close>&times;</button>
+            </div>
+        </div>
         <div class="is__settings-body">
             <label><input type="checkbox" data-is-confirm-navigation checked> Confirm before replacing a non-empty draft</label>
             <label><input type="checkbox" data-is-show-reference checked> Allow optional best-practice examples</label>
@@ -593,7 +850,10 @@
     <dialog class="is__dialog is__history-detail" data-is-history-detail aria-labelledby="is-history-detail-title">
         <div class="is__dialog-head">
             <div><p class="is__section-label" data-is-history-detail-mode>Completed attempt</p><h2 id="is-history-detail-title">Session detail</h2></div>
-            <button type="button" class="is__icon-button" aria-label="Close session detail" data-is-history-detail-close>&times;</button>
+            <div class="is__dialog-actions">
+                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                <button type="button" class="is__icon-button" aria-label="Close session detail" data-is-history-detail-close>&times;</button>
+            </div>
         </div>
         <div class="is__history-detail-body">
             <div class="is__history-detail-meta">
@@ -602,6 +862,7 @@
             </div>
             <h3 data-is-history-detail-question></h3>
             <p data-is-history-detail-context></p>
+            <p style="margin:-0.3rem 0 0;color:var(--is-text-muted);font-size:0.72rem">“Delete this browser record” removes only the copy stored in this browser. It cannot be undone.</p>
             <section data-is-history-detail-answer hidden>
                 <h4>Submitted answer</h4>
                 <p data-is-history-detail-answer-text></p>
@@ -630,5 +891,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-2" defer></script>
+<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-5a5c-2" defer></script>
 {% endblock %}

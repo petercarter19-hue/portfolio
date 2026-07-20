@@ -56,6 +56,17 @@
         try { window.localStorage.removeItem(key); } catch (error) { /* storage unavailable */ }
     }
 
+    function storageAvailable() {
+        try {
+            var probeKey = storagePrefix + ':probe';
+            window.localStorage.setItem(probeKey, '1');
+            window.localStorage.removeItem(probeKey);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     function draftKey(question) {
         var compact = String(question || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 96);
         return storagePrefix + ':draft:' + compact;
@@ -160,9 +171,11 @@
 
     var initialMode = root.getAttribute('data-initial-mode') || 'me';
     var initialView = root.getAttribute('data-initial-view') || 'me';
+    function currentModeParam() { return new URLSearchParams(window.location.search).get('mode'); }
+    var isOrientation = initialView !== 'history' && !currentModeParam();
     var persistedSession = readJSON(sessionKey, null);
     var session = {
-        mode: initialMode,
+        mode: isOrientation ? 'orientation' : initialMode,
         level: 'experienced',
         family: 'behavioral',
         format: '5',
@@ -195,6 +208,16 @@
             queue: session.queue,
             index: session.index
         });
+        updateSetupSummary();
+    }
+
+    function updateSetupSummary() {
+        var summary = one('[data-is-setup-summary]');
+        if (!summary) return;
+        var levelOption = levelSelect.options[levelSelect.selectedIndex];
+        var levelLabel = levelOption ? levelOption.text : session.level;
+        var formatLabelText = session.format === 'single' ? 'Single question' : session.format === '10' ? '10-question mock' : '5-question mock';
+        summary.textContent = 'Session setup · ' + levelLabel + ' · ' + labelFamily(session.family) + ' · ' + formatLabelText;
     }
 
     function currentQuestion() {
@@ -205,7 +228,39 @@
     var modeNavigation = one('.is__modes');
     var historyLink = one('[data-is-history-link]');
     var panels = all('[data-is-panel]');
+    var orientationPanel = one('[data-is-panel="orientation"]');
     var controls = one('[data-is-controls]');
+    var stageRailItems = all('[data-is-stage-rail] li');
+
+    function setStage(stage) {
+        stageRailItems.forEach(function (item) {
+            var n = Number(item.getAttribute('data-is-stage'));
+            var current = n === stage;
+            item.classList.toggle('is-done', n < stage);
+            item.classList.toggle('is-current', current);
+            // Exactly one step carries aria-current at any time, kept in
+            // sync with the visual current state.
+            if (current) {
+                item.setAttribute('aria-current', 'step');
+            } else {
+                item.removeAttribute('aria-current');
+            }
+        });
+        setCoachingStatus(stage);
+    }
+
+    var coachingRows = all('[data-is-coaching-row]');
+    function setCoachingStatus(stage) {
+        coachingRows.forEach(function (row) {
+            var n = Number(row.getAttribute('data-is-coaching-row'));
+            var done = stage >= 3 || (stage === 2 && n === 1);
+            var current = stage === 2 && n === 2;
+            row.classList.toggle('is-done', done);
+            row.classList.toggle('is-current', current);
+            var dot = row.querySelector('.is__status-dot');
+            if (dot) dot.textContent = done ? '✓' : String(n);
+        });
+    }
     var formatControl = one('[data-is-format-control]');
     var formatSelect = one('[data-is-format]');
     var formatLabel = formatControl ? formatControl.querySelector('span') : null;
@@ -226,6 +281,11 @@
     var improveEmpty = one('[data-is-improve-empty]');
     var improveContent = one('[data-is-improve-content]');
     var reviewError = one('[data-is-review-error]');
+    var reviewErrorText = one('[data-is-review-error-text]');
+    var errorActions = one('[data-is-error-actions]');
+    var retryCoachingButton = one('[data-is-retry-coaching]');
+    var keepEditingButton = one('[data-is-keep-editing]');
+    var submittedLabel = one('[data-is-submitted-label]');
     var improveError = one('[data-is-improve-error]');
     var reviewController = null;
     var reviewRequestId = 0;
@@ -248,8 +308,10 @@
     function syncModeControls(mode) {
         if (!formatControl || !formatSelect || !formatLabel) return;
         if (mode === 'ai') {
+            // Public demo: the basis is the named public profile's approved
+            // résumé history, never the visitor's own or any account data.
             formatLabel.textContent = 'Answer basis';
-            formatSelect.innerHTML = '<option value="my-history">My History</option>';
+            formatSelect.replaceChildren(new Option('Approved public résumé history', 'public-profile-history'));
             formatSelect.disabled = true;
         } else {
             if (formatLabel.textContent !== 'Session') {
@@ -286,13 +348,14 @@
             return false;
         }
         if (session.mode === 'video' && mode !== 'video') {
-            if (!prepareVideoContextChange('Discard the active recording or transcript draft and leave Video Me?')) return false;
+            if (!prepareVideoContextChange('Discard the active recording or transcript draft and leave Video Practice?')) return false;
             releaseMedia(true);
             resetVideoUi();
         }
         if (session.mode === 'me' && mode !== 'me') clearReviewState();
         if (session.mode === 'ai' && mode !== 'ai') cancelPendingAi(true);
         session.mode = mode;
+        isOrientation = false;
         if (modeNavigation) modeNavigation.setAttribute('role', 'tablist');
         modeTabs.forEach(function (tab) {
             var tabMode = tab.getAttribute('data-is-mode');
@@ -309,7 +372,7 @@
         if (historyLink) historyLink.removeAttribute('aria-current');
         syncModeControls(mode);
         if (updateUrl) window.history.pushState({ interviewMode: mode }, '', studioUrl + '?mode=' + encodeURIComponent(mode));
-        announce(mode === 'ai' ? 'Interview AI selected.' : mode === 'video' ? 'Video Me selected.' : 'Interview Me selected.');
+        announce(mode === 'ai' ? 'Interview AI selected.' : mode === 'video' ? 'Video Practice selected.' : 'Interview Me selected.');
         return true;
     }
 
@@ -356,6 +419,7 @@
             releaseMedia(true);
             resetVideoUi();
         }
+        isOrientation = false;
         panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== 'history'; });
         setHidden(controls, true);
         if (modeNavigation) modeNavigation.removeAttribute('role');
@@ -371,12 +435,61 @@
         return true;
     }
 
+    function showOrientationView() {
+        if (!orientationPanel) return false;
+        clearReviewState();
+        cancelPendingAi(true);
+        if (session.mode === 'video') {
+            releaseMedia(true);
+            resetVideoUi();
+        }
+        panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== 'orientation'; });
+        setHidden(controls, true);
+        if (modeNavigation) modeNavigation.removeAttribute('role');
+        modeTabs.forEach(function (tab) {
+            tab.removeAttribute('role');
+            tab.removeAttribute('aria-controls');
+            tab.removeAttribute('aria-selected');
+            tab.removeAttribute('tabindex');
+        });
+        if (historyLink) historyLink.removeAttribute('aria-current');
+        session.mode = 'orientation';
+        isOrientation = true;
+        announce('Interview Studio orientation selected.');
+        return true;
+    }
+
+    all('[data-is-orientation-link]').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            var target = link.getAttribute('data-is-orientation-link');
+            if (link.getAttribute('aria-disabled') === 'true') {
+                event.preventDefault();
+                announce('That Interview Studio mode is not available for this profile.');
+                return;
+            }
+            if (target === 'history') {
+                if (historyCapability === 'disabled') {
+                    event.preventDefault();
+                    announce('Interview History is not available for this profile.');
+                }
+                return;
+            }
+            event.preventDefault();
+            setMode(target, true);
+        });
+    });
+
     window.addEventListener('popstate', function () {
         if (window.location.pathname.indexOf('/history') !== -1) {
             if (!showHistoryView()) window.history.forward();
             return;
         }
-        var mode = new URLSearchParams(window.location.search).get('mode') || 'me';
+        if (!currentModeParam()) {
+            if (!showOrientationView()) window.history.forward();
+            return;
+        }
+        isOrientation = false;
+        var mode = currentModeParam() || 'me';
         if (!setMode(mode, false)) {
             var fallback = modeTabs.filter(function (tab) {
                 return modeIsEnabled(tab.getAttribute('data-is-mode'));
@@ -410,7 +523,10 @@
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(reviewError, true);
+        setHidden(errorActions, true);
+        text(submittedLabel, 'Your submitted answer · preserved');
         setHidden(improveError, true);
+        setStage(1);
         syncAnswerState();
     }
 
@@ -435,6 +551,7 @@
         text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total);
         text(one('[data-is-progress-percent]'), percent + '%');
         text(one('[data-is-up-next-count]'), Math.max(0, total - number));
+        setHidden(one('[data-is-est-chip]'), total < 5);
         var progress = one('[data-is-progress]');
         if (progress) { progress.value = percent; progress.textContent = percent + '%'; }
         text(one('[data-is-video-question]'), question.text);
@@ -460,6 +577,7 @@
         var words = value ? value.split(/\s+/).length : 0;
         text(wordCount, words);
         reviewButton.disabled = !writtenPracticeEnabled || !value || Boolean(reviewController);
+        if (retryCoachingButton) retryCoachingButton.disabled = Boolean(reviewController);
     }
 
     function saveDraft(showStatus) {
@@ -690,19 +808,28 @@
         renderList(one('[data-is-improvements]'), review.improvements);
 
         var starList = one('[data-is-star]');
+        var starDisplayStatus = { strong: 'strong', present: 'clear', partial: 'needs more', missing: 'missing' };
         starList.replaceChildren();
         ['situation', 'task', 'action', 'result'].forEach(function (part) {
             var item = review.star[part];
-            var li = document.createElement('li');
-            li.setAttribute('data-status', item.status);
-            var marker = document.createElement('i');
-            marker.setAttribute('aria-hidden', 'true');
-            var label = document.createElement('strong');
-            label.textContent = part.charAt(0).toUpperCase() + part.slice(1) + ' — ' + item.status.charAt(0).toUpperCase() + item.status.slice(1);
-            var reason = document.createElement('span');
-            reason.textContent = item.reason;
-            li.append(marker, label, reason);
-            starList.appendChild(li);
+            var partLabel = part.charAt(0).toUpperCase() + part.slice(1);
+            var tile = document.createElement('li');
+            tile.className = 'is__star-item';
+            tile.setAttribute('data-status', item.status);
+            tile.title = item.reason;
+            var letter = document.createElement('span');
+            letter.className = 'is__star-letter';
+            letter.setAttribute('aria-hidden', 'true');
+            letter.textContent = part.charAt(0).toUpperCase();
+            var label = document.createElement('span');
+            label.className = 'is__star-label';
+            label.setAttribute('aria-hidden', 'true');
+            label.textContent = partLabel + ' · ' + (starDisplayStatus[item.status] || item.status);
+            var srText = document.createElement('span');
+            srText.className = 'is__sr-only';
+            srText.textContent = partLabel + ' — ' + item.status.charAt(0).toUpperCase() + item.status.slice(1) + ': ' + item.reason;
+            tile.append(letter, label, srText);
+            starList.appendChild(tile);
         });
 
         var dimensions = one('[data-is-dimensions]');
@@ -764,6 +891,9 @@
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(reviewError, true);
+        setHidden(errorActions, true);
+        text(submittedLabel, 'Your submitted answer · preserved');
+        setStage(2);
         cancelPendingReview();
         reviewController = new AbortController();
         var controller = reviewController;
@@ -786,6 +916,7 @@
             answeringBlock.removeAttribute('aria-busy');
             syncAnswerState();
             setHidden(reviewingBlock, true);
+            setStage(3);
             renderReview(payload.review);
             setHidden(feedbackEmpty, true);
             setHidden(feedbackContent, false);
@@ -821,8 +952,11 @@
             setHidden(reviewingBlock, true);
             setHidden(feedbackEmpty, false);
             setHidden(feedbackContent, true);
-            text(reviewError, error.message + ' Your answer is still here.');
+            text(submittedLabel, 'Your answer · preserved and editable');
+            text(reviewErrorText, error.message + ' Your answer is still here. Edit it or retry the coaching request without re-entering your work.');
             setHidden(reviewError, false);
+            setHidden(errorActions, false);
+            if (reviewError) reviewError.focus();
             announce('The review could not be completed. Your answer is safe.');
         });
     }
@@ -845,15 +979,29 @@
         setHidden(reviewingBlock, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
+        setStage(1);
         announce('Review cancelled. Your draft is still editable.');
     });
+
+    if (keepEditingButton) {
+        keepEditingButton.addEventListener('click', function () {
+            answer.readOnly = false;
+            answer.focus();
+        });
+    }
+
+    if (retryCoachingButton) {
+        retryCoachingButton.addEventListener('click', function () {
+            submitReview();
+        });
+    }
 
     one('[data-is-retry]').addEventListener('click', function () {
         if (session.reviewSource === 'video') {
             if (!setMode('video', true)) return;
             resetVideoUi();
             one('[data-is-camera-enable]').focus();
-            announce('New Video Me attempt ready. The original score remains in History.');
+            announce('New Video Practice attempt ready. The original score remains in History.');
             return;
         }
         session.attemptNumber += 1;
@@ -866,12 +1014,14 @@
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(answeringBlock, false);
+        setStage(1);
         answer.focus();
         announce('New attempt started. Your original answer and score remain in History.');
     });
 
     one('[data-is-improve]').addEventListener('click', function () {
         if (!session.currentReview || !session.currentAnswer) return;
+        setStage(4);
         var selectedIds = all('[data-is-evidence-choice]:checked').map(function (item) { return item.value; });
         setHidden(improveEmpty, true);
         setHidden(improveContent, false);
@@ -936,6 +1086,7 @@
         setHidden(improveContent, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
+        setStage(1);
         answer.focus();
         announce('AI-assisted draft copied into a new editable attempt. Nothing was published.');
     });
@@ -949,7 +1100,7 @@
             session.aiReference = draft;
             session.aiReferenceQuestion = currentQuestion().text;
         }
-        announce('Video Me opened for a new out-loud attempt.');
+        announce('Video Practice opened for a new out-loud attempt.');
     });
 
     /* Speech input */
@@ -1285,7 +1436,7 @@
 
     function enableCamera() {
         if (videoCapability === 'disabled') {
-            announce('Video Me is not available for this profile.');
+            announce('Video Practice is not available for this profile.');
             return;
         }
         setHidden(videoError, true);
@@ -1499,6 +1650,8 @@
     var historyMode = one('[data-is-history-mode]');
     var historyCompetency = one('[data-is-history-competency]');
     var historyTime = one('[data-is-history-time]');
+    var storageNote = one('[data-is-storage-note]');
+    var storageOk = one('[data-is-storage-ok]');
     var historyDetail = one('[data-is-history-detail]');
     var historyDetailRecordId = '';
     var historyDetailOpenedWithPush = false;
@@ -1512,7 +1665,7 @@
     function openHistoryDetail(record, updateUrl) {
         if (!record || !historyDetail) return;
         historyDetailRecordId = record.id;
-        text(one('[data-is-history-detail-mode]'), record.mode === 'video' ? 'Video Me attempt' : 'Interview Me attempt');
+        text(one('[data-is-history-detail-mode]'), record.mode === 'video' ? 'Video Practice attempt' : 'Interview Me attempt');
         text(one('[data-is-history-detail-date]'), new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(record.createdAt)));
         text(one('[data-is-history-detail-score]'), record.score == null ? 'Not scored' : record.score + ' / 100');
         text(one('[data-is-history-detail-question]'), record.question);
@@ -1600,6 +1753,9 @@
     }
 
     function renderHistory() {
+        var hasStorage = storageAvailable();
+        setHidden(storageNote, hasStorage);
+        setHidden(storageOk, !hasStorage);
         var allRecords = readJSON(historyKey, []);
         populateHistoryCompetencies(allRecords);
         var records = filteredHistory(allRecords);
@@ -1656,7 +1812,7 @@
             var title = document.createElement('strong');
             title.textContent = record.question;
             var meta = document.createElement('small');
-            meta.textContent = (record.mode === 'video' ? 'Video Me' : 'Interview Me') + ' · ' + record.competency + ' · ' + record.status;
+            meta.textContent = (record.mode === 'video' ? 'Video Practice' : 'Interview Me') + ' · ' + record.competency + ' · ' + record.status;
             body.append(title, meta);
             var result = document.createElement('b');
             result.textContent = record.score == null ? '—' : record.score + '%';
@@ -1762,7 +1918,7 @@
     });
     one('[data-is-settings-close]').addEventListener('click', function () { settingsDialog.close(); });
     settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
-    one('[data-is-clear-local]').addEventListener('click', function () {
+    function clearLocalData() {
         if (!window.confirm('Clear Interview Studio drafts, sessions, and goals stored in this browser?')) return;
         try {
             Object.keys(window.localStorage).forEach(function (key) { if (key.indexOf(storagePrefix) === 0) window.localStorage.removeItem(key); });
@@ -1782,6 +1938,9 @@
         renderHistory();
         settingsDialog.close();
         announce('Interview Studio browser data cleared.');
+    }
+    all('[data-is-clear-local], [data-is-history-clear-local]').forEach(function (button) {
+        button.addEventListener('click', clearLocalData);
     });
 
     /* Initial render */
@@ -1789,7 +1948,9 @@
     syncModeControls(initialMode);
     if (initialView === 'history') {
         showHistoryView();
-    } else {
+    } else if (!isOrientation) {
+        // Orientation is server-rendered correctly (panel visible, tabs
+        // deselected/unroled, controls hidden) and needs no JS patch-up.
         setMode(initialMode, false);
     }
 })();

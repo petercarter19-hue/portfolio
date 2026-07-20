@@ -77,7 +77,7 @@ The 2026-07-19 Claude/Fable correction-and-feasibility response is recorded in
 [11_REAL_STUDIO_IMPLEMENTATION_ARCHITECTURE.md](11_REAL_STUDIO_IMPLEMENTATION_ARCHITECTURE.md)
 (the Gate 2 architecture record: shell resolution, semantic tokens with
 measured contrast, component/state contract, screen-by-screen mapping, theme
-no-state-loss proof plan, file mapping, risks, deviations D1–D21) and
+no-state-loss proof plan, file mapping, risks, deviations D1–D22) and
 [12_GATE_24_CORRECTION_AND_FEASIBILITY_ADDENDUM.md](12_GATE_24_CORRECTION_AND_FEASIBILITY_ADDENDUM.md)
 (closure of all eleven Codex corrections; implementation feasibility **Pass**).
 After a second Codex review returned `Conditional`, the round-2 closure
@@ -154,3 +154,26 @@ Close with `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` and the exact b
 
 The manager record for the real-Studio/demo sequencing update is
 [10_CONVERGENCE_MANAGER_COMPLETION_REPORT.md](10_CONVERGENCE_MANAGER_COMPLETION_REPORT.md).
+
+## Gate 2 V3 acceptance — 2026-07-20
+
+Pete explicitly directed Codex to recover the interrupted acceptance work,
+independently review the complete branch, correct any blocker, and proceed
+through release when green. That current owner instruction is recorded as a
+bounded delegation for this implementation gate and for the necessary
+shared-file correction described in D22. Codex reviewed the 5A/5C evidence,
+the complete implementation diff, current Bible v2.6 / Roadmap v2.5
+authority, and the narrow `tests/test_site_background.py` exception. The
+visual/product implementation and that test exception are **accepted**.
+
+The acceptance pass found one real blocker before approval: the header theme
+switch cannot be operated while a native modal is open. The correction adds
+synchronized modal-local switch proxies through the existing global theme
+controller, preserves modal semantics and focus containment, and leaves
+`static/js/interview-studio.js` theme-agnostic. Focused automated tests and
+desktop/mobile real-browser verification are green. Release is authorized
+subject to the complete configured suite and Azure release pipeline passing;
+the result must still be verified on production before it may be called
+live. The separate coaching-backend variability, manual screen-reader AT
+pass, sitewide theme-toggle scroll drift, and Gate 4 homepage convergence
+remain disclosed follow-ups rather than claims of this UI release.

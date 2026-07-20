@@ -13,11 +13,18 @@ class SiteBackgroundTests(unittest.TestCase):
         self.assertGreater(asset.stat().st_size, 100_000)
 
     def test_shared_and_interview_surfaces_use_the_new_background(self):
+        # PS-INTERVIEW-PUBLIC-GATE-001 (2026-07-19): the real public Interview
+        # Studio now follows its own owner-approved 5A/5C visual authority
+        # (docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/09_...md), whose
+        # Editorial Studio Ledger (light) and Cinematic Studio (dark)
+        # compositions are a flat/paper and layered-navy canvas with no photo
+        # texture. interview-studio.css intentionally no longer shares this
+        # sitewide photo background; sky-glass.css and editorial-glass.css
+        # are unaffected by that package and keep the shared asset.
         expected_url = f'../images/background-templates/{BACKGROUND_NAME}'
         for relative_path in (
             'static/css/sky-glass.css',
             'static/css/editorial-glass.css',
-            'static/css/interview-studio.css',
         ):
             with self.subTest(relative_path=relative_path):
                 source = (ROOT / relative_path).read_text(encoding='utf-8')

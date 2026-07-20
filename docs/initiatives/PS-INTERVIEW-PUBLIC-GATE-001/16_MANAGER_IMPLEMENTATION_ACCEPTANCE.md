@@ -68,3 +68,28 @@ relinquished it. On the Mac, the writer must:
 This acceptance does not authorize editing from the Windows manager branch,
 starting homepage convergence before the Studio is live, changing auth or
 database scope, or blending Owner Home work into the Interview branch.
+
+## Mac writer acceptance continuation — 2026-07-20
+
+The Mac writer resumed the exact accepted source, independently re-reviewed
+the complete diff and 73-file screenshot inventory, and merged current
+`origin/main` `9fbbf94ee5f4e1333487c9832308dab1b36bce8a` without rebasing. During real
+browser reproduction it found one release blocker not represented by the
+earlier acceptance: a native modal correctly makes the global header theme
+switch inert, so the claimed open-dialog theme proof could not be performed.
+
+Under Pete's current instruction to correct blockers and complete the release,
+the writer added an accessible, synchronized switch inside each Queue,
+Settings, and History-detail modal. The existing global theme controller
+remains the sole theme-state owner; `static/js/interview-studio.js` still
+contains no theme logic. The bounded shared-file expansion is limited to that
+controller and its base-template cache-key bump and is recorded as D22.
+
+Post-merge verification passed: **68 Interview tests**, **104 combined
+Interview/site-background/navigation/site-rules/governance tests**, and
+**599 full-suite tests with 2 unrelated isolated-SQL skips**. Real browser
+verification at desktop and 390×844 confirmed both theme directions, open
+dialog and focused-control retention, draft retention, synchronized
+`aria-checked`, no mobile horizontal overflow, and zero console errors. This
+continuation therefore preserves the manager decision: **accepted for Azure
+squash release and production verification**.

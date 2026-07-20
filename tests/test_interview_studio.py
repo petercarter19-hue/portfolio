@@ -103,7 +103,7 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertNotIn('tabindex="-1"', mode_nav)
 
     def test_ready_state_has_real_question_and_required_terminology(self):
-        html = self.html()
+        html = self.html('/interview-studio?mode=me')
         for value in (
             'Tell me about a time you disagreed with a supervisor.',
             'Question 1 of 5',
@@ -174,6 +174,9 @@ class InterviewStudioRouteTests(unittest.TestCase):
             'Practice It',
             'data-ic1',
             'data-ivw',
+            'Video Me',
+            'Preparing as',
+            'Design authority',
         ):
             self.assertNotIn(retired, html)
 
@@ -244,11 +247,218 @@ class InterviewStudioRouteTests(unittest.TestCase):
     def test_profile_context_and_evidence_are_server_derived(self):
         html = self.html()
         self.assertIn('data-profile-slug="petec"', html)
-        self.assertIn('Preparing as <strong>Pete Carter</strong>', html)
+        self.assertIn('Public demo profile', html)
+        self.assertIn('<strong>Pete Carter</strong>', html)
+        self.assertIn('You are not signed in as Pete.', html)
+        self.assertNotIn('Preparing as', html)
         evidence_json = html.split('<script id="is-evidence-data" type="application/json">', 1)[1].split('</script>', 1)[0]
         evidence = json.loads(evidence_json)
         self.assertGreaterEqual(len(evidence), 3)
         self.assertNotIn('micap', json.dumps(evidence).lower())
+
+
+class InterviewStudioRealStudioTests(unittest.TestCase):
+    """PS-INTERVIEW-PUBLIC-GATE-001: 5A-light/5C-dark real Studio (orientation
+    view, stage rail, truth strip, and theme no-state-loss guardrails)."""
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def html(self, path='/interview-studio'):
+        response = self.client.get(path, base_url='http://localhost')
+        self.assertEqual(response.status_code, 200)
+        return response.get_data(as_text=True)
+
+    def test_bare_route_shows_orientation_with_practice_panel_hidden(self):
+        html = self.html()
+        orientation = html.split('data-is-panel="orientation"', 1)[1].split('>', 1)[0]
+        self.assertNotIn('hidden', orientation)
+        me_panel = html.split('data-is-panel="me"', 1)[1].split('>', 1)[0]
+        self.assertIn('hidden', me_panel)
+        self.assertIn('Start Interview Me', html)
+        self.assertIn('data-is-orientation-link="me"', html)
+        self.assertIn('data-is-orientation-link="ai"', html)
+        self.assertIn('data-is-orientation-link="video"', html)
+        self.assertIn('data-is-orientation-link="history"', html)
+
+    def test_explicit_mode_param_bypasses_orientation(self):
+        for mode in ('me', 'ai', 'video'):
+            with self.subTest(mode=mode):
+                html = self.html(f'/interview-studio?mode={mode}')
+                orientation = html.split('data-is-panel="orientation"', 1)[1].split('>', 1)[0]
+                self.assertIn('hidden', orientation)
+
+    def test_history_route_does_not_show_orientation(self):
+        html = self.html('/interview-studio/history')
+        orientation = html.split('data-is-panel="orientation"', 1)[1].split('>', 1)[0]
+        self.assertIn('hidden', orientation)
+
+    def test_orientation_links_are_real_links_without_javascript(self):
+        html = self.html()
+        self.assertIn('href="/interview-studio?mode=me"', html)
+        self.assertIn('href="/interview-studio?mode=ai"', html)
+        self.assertIn('href="/interview-studio?mode=video"', html)
+        self.assertIn('href="/interview-studio/history"', html)
+        self.assertIn('<noscript>', html)
+        self.assertIn('Interactive practice needs JavaScript.', html)
+
+    def test_truth_strip_present_on_every_view(self):
+        for path in ('/interview-studio', '/interview-studio?mode=video', '/interview-studio/history'):
+            with self.subTest(path=path):
+                html = self.html(path)
+                self.assertEqual(html.count('data-is-truth-strip'), 1)
+                for value in (
+                    'sent to PeerSlate only when you submit for coaching',
+                    'saved only in this browser',
+                    'Video Practice remains local',
+                    'practice signals, not employer predictions',
+                ):
+                    self.assertIn(value, html)
+
+    def test_stage_rail_has_five_steps(self):
+        html = self.html('/interview-studio?mode=me')
+        rail = html.split('data-is-stage-rail', 1)[1].split('</ol>', 1)[0]
+        self.assertEqual(rail.count('data-is-stage='), 5)
+
+    def test_ai_grounding_uses_public_history_label(self):
+        html = self.html('/interview-studio?mode=ai')
+        self.assertIn('Use Pete&rsquo;s public history', html)
+
+    def test_score_ring_carries_practice_signal_label(self):
+        html = self.html('/interview-studio?mode=me')
+        ring_block = html.split('data-is-score-ring', 1)[1][:400]
+        self.assertIn('Practice signal', ring_block)
+        self.assertIn('not an employer prediction', ring_block)
+
+    def test_v01_and_v02_failure_recovery_controls_present(self):
+        html = self.html('/interview-studio?mode=me')
+        self.assertIn('data-is-keep-editing', html)
+        self.assertIn('data-is-retry-coaching', html)
+        self.assertIn('Coaching could not be completed.', html)
+        video_html = self.html('/interview-studio?mode=video')
+        self.assertIn('data-is-camera-enable', video_html)
+        self.assertIn('not uploaded, analyzed, or retained', video_html)
+
+    def test_history_storage_unavailable_hook_present(self):
+        html = self.html('/interview-studio/history')
+        self.assertIn('data-is-storage-note', html)
+        self.assertIn('data-is-storage-ok', html)
+
+    def test_coaching_status_rows_start_pending_not_prematurely_done(self):
+        # Regression: the coaching-status card must not claim "Answer
+        # received" before any answer has been submitted (architecture
+        # section 5.3 — the three rows must reflect real request lifecycle,
+        # not a hardcoded default).
+        html = self.html('/interview-studio?mode=me')
+        for row in ('1', '2', '3'):
+            block = html.split(f'data-is-coaching-row="{row}"', 1)[0].rsplit('<div', 1)[-1]
+            self.assertNotIn('is-done', block, f'row {row} must not be server-rendered as done')
+        self.assertIn('data-is-coaching-row="1"', html)
+        self.assertIn('data-is-coaching-row="2"', html)
+        self.assertIn('data-is-coaching-row="3"', html)
+
+    def test_coaching_status_wiring_present_in_js(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn('function setCoachingStatus', source)
+        self.assertIn('data-is-coaching-row', source)
+        self.assertIn('setCoachingStatus(stage)', source)
+
+    def test_mobile_history_link_can_wrap_below_mode_row(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        mobile_block = css.split('@media (max-width: 48rem) {', 1)[1].split('\n}\n', 1)[0]
+        self.assertIn('.is__navigation { flex-wrap: wrap', mobile_block)
+
+    def test_clear_local_hook_is_not_duplicated(self):
+        html = self.html('/interview-studio/history')
+        self.assertEqual(html.count('data-is-clear-local'), 1)
+        self.assertEqual(html.count('data-is-history-clear-local'), 1)
+
+    def test_star_renderer_emits_the_classes_the_css_styles(self):
+        # Codex correction 1: the STAR renderer previously created bare
+        # <li> elements with no is__star-* classes, so the four STAR areas
+        # ran together instead of rendering as the four framework tiles.
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        star_block = source.split("var starList = one('[data-is-star]')", 1)[1].split('var dimensions', 1)[0]
+        self.assertIn("'is__star-item'", star_block)
+        self.assertIn("'is__star-letter'", star_block)
+        self.assertIn("'is__star-label'", star_block)
+        self.assertIn("setAttribute('data-status'", star_block)
+        # The accessible reason text must still be conveyed, not dropped.
+        self.assertIn("is__sr-only", star_block)
+
+    def test_star_grid_is_a_real_list_matching_the_renderer(self):
+        html = self.html('/interview-studio?mode=me')
+        grid = html.split('data-is-star', 1)[0].rsplit('<', 1)[-1]
+        self.assertTrue(grid.startswith('ul'), f'STAR container should be a <ul>, got: {grid[:20]}')
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is__star-item', css)
+        self.assertIn('.is__star-letter', css)
+        self.assertIn('.is__star-label', css)
+
+    def test_stage_rail_marks_exactly_one_current_step_initially(self):
+        # Codex correction 2: aria-current="step" must identify the current
+        # stage, on exactly one item, in the server-rendered initial state.
+        html = self.html('/interview-studio?mode=me')
+        rail = html.split('data-is-stage-rail', 1)[1].split('</ol>', 1)[0]
+        self.assertEqual(rail.count('aria-current="step"'), 1)
+        first_item = rail.split('data-is-stage="1"', 1)[1].split('>', 1)[0]
+        self.assertIn('aria-current="step"', first_item)
+
+    def test_stage_transitions_keep_aria_current_synchronized(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        stage_block = source.split('function setStage(stage)', 1)[1].split('function setCoachingStatus', 1)[0]
+        self.assertIn("setAttribute('aria-current', 'step')", stage_block)
+        self.assertIn("removeAttribute('aria-current')", stage_block)
+        self.assertIn("classList.toggle('is-current', current)", stage_block)
+
+    def test_interview_ai_answer_basis_label_is_truthful(self):
+        # Codex correction 3: "My History" implied the visitor's own or
+        # account-backed history on a public demo route.
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertNotIn('My History', source)
+        self.assertNotIn('my-history', source)
+        self.assertIn('Approved public résumé history', source)
+        for forbidden in ('your private history', 'saved to your account', 'account history'):
+            self.assertNotIn(forbidden.lower(), source.lower())
+
+    def test_session_setup_is_a_quiet_disclosure(self):
+        html = self.html('/interview-studio?mode=me')
+        before = html.split('data-is-session-setup', 1)[0]
+        tag = before.rsplit('<', 1)[-1].split(None, 1)[0]
+        self.assertEqual(tag, 'details')
+        self.assertIn('data-is-level', html)
+        self.assertIn('data-is-settings-open', html)
+
+    def test_theme_guardrail_js_never_observes_theme(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        for forbidden in ('ps-theme', 'data-theme', 'theme-toggle', 'prefers-color-scheme'):
+            self.assertNotIn(forbidden, source)
+
+    def test_modal_dialogs_expose_synced_theme_controls(self):
+        html = self.html('/interview-studio?mode=me')
+        self.assertEqual(html.count('data-theme-toggle-proxy'), 3)
+        source = Path('static/js/theme-toggle.js').read_text(encoding='utf-8')
+        self.assertIn("querySelectorAll('[data-theme-toggle-proxy]')", source)
+        self.assertIn("toggle.setAttribute('aria-checked'", source)
+        self.assertIn("toggle.addEventListener('click'", source)
+        self.assertIn('toggles.forEach', source)
+
+    def test_theme_guardrail_css_has_one_dark_token_block(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        # The full token redefinition (--is-canvas etc.) must appear exactly
+        # once; a separate single-property @media (prefers-contrast: more)
+        # override is legitimate and not a competing theme system.
+        self.assertEqual(css.count('--is-canvas: #03101d;'), 1)
+        self.assertEqual(css.count('body[data-theme="dark"] .is {'), 2)
+        self.assertNotIn('background-templates', css)
+        self.assertNotIn('nth-child(n+5)', css)
+
+    def test_theme_guardrail_light_gold_text_is_accessible(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('#8A5A00', css)
+        light_block = css.split('body[data-theme="dark"] .is {', 1)[0]
+        self.assertNotIn('--is-gold-text: #b87900', light_block.lower())
+        self.assertNotIn('--is-gold-text: #B87900', light_block)
 
 
 class ReviewSchemaTests(unittest.TestCase):
