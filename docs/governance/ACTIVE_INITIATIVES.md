@@ -1,10 +1,8 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
-_Updated 2026-07-19 after the accepted Voice release, the Interview Studio
-Image 5 5A-light/5C-dark owner decision, the accepted live pre-convergence
-homepage walkthrough, planned Projects and Ask Pete AI expansion, and the
-cross-product homepage parity decision, plus the accepted finite Owner Home
-architecture and activated backend slice._
+_Updated 2026-07-20 after the flag-off Photo experience release, default-off
+Owner Home backend release, and owner-delegated manager acceptance of Claude
+Code's exact 5A-light/5C-dark Interview implementation._
 
 ## Operating model
 
@@ -22,10 +20,10 @@ Claude Code implementation.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Interview and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
-| Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 Photo visual gate after released flag-off backend | Photo design/experience sequencing, evidence gates | Voice rebuild, Journal, publication, Home files without a new reservation |
-| Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Image 5 Concept A light / Concept C dark design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
-| Owner Home backend | ChatGPT Codex self-managed writer; ChatGPT Work/Codex designated manager; cleared to start | PS-HOME-BACKEND-001 | default-off finite owner read procedure/service/JSON API, tests, SQL evidence | `/app` HTML, templates/CSS/JS, viewer modes, public/homepage surfaces, Capture/Moment/Voice internals |
+| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview release, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | editing Claude's active Interview branch; combining product lanes |
+| Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
+| Public Interview implementation | Claude Code sole writer | PS-INTERVIEW-PUBLIC-GATE-001 | merge preparation, one report correction, test reruns, Azure release and closeout for exact accepted SHA | auth, database, Capture/Moment/Placement, owner routes, global theme/nav, Owner Home |
+| Owner Home frontend | Unassigned; Claude Code preferred when separately assigned | PS-HOME-FRONTEND-001 ready but not active | exact accepted dark cinematic shell from post-backend main | Interview branch, broader viewer modes, Photo enablement, backend-contract expansion |
 
 ## Current active gate
 
@@ -37,7 +35,7 @@ and Deploy. Preserve the original and visual-correction worktrees as historical
 references; do not reuse them for later work. A future Voice change requires a
 new package and branch.
 
-### PS-INTERVIEW-PUBLIC-GATE-001 - Codex Gate 2.4 review / Claude Co-Work manager lane
+### PS-INTERVIEW-PUBLIC-GATE-001 - manager accepted / Claude Code release lane
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
@@ -45,22 +43,19 @@ new package and branch.
   Studio Ledger controls default/light and Concept C Cinematic Studio controls
   optional dark. Both themes share one public route, DOM, state machine,
   functionality, truth, responsive behavior, and accessibility model.
-- Current action: Pete may start a new Codex manager session, upload the
-  complete dual-theme Gate 2.4 package, and
-  let that session create a clean review branch from current `origin/main`.
-  The session reviews all nine states in both themes, responsive/accessibility
-  evidence, theme persistence/no-state-loss, the separately scoped homepage
-  walkthrough, truth/accessibility, and implementation mapping; it does not
-  write product code. It returns its exact branch/SHA and
-  `Pass`/`Conditional`/`Fail` report to Claude Co-Work.
-- Claude Co-Work receives the durable review as designated manager and sends
-  the accepted package to Claude Code for feasibility. No implementation branch
-  until feasibility and Pete/designated-manager visual approval pass.
-- The real Studio remains upstream of the homepage walkthrough. After design
-  approval, Claude Code records the real Studio implementation architecture,
-  implements/self-reviews it on a fresh branch, and returns focused visual and
-  technical evidence for acceptance. Azure release and live verification of the
-  real Studio must pass before the separate homepage-parity convergence starts.
+- Pete delegated the current ChatGPT Work/Codex manager to review and approve
+  the implementation gates needed for the cross-computer release handoff. The
+  exact Claude Code branch
+  `work/2026-07-19-interview-public-gate-001` at
+  `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2` passed manager visual/product
+  review, 70 focused tests, 518 full-suite tests with one skip, and diff checks.
+- Claude Code remains the sole active writer. On the Mac it must merge current
+  `origin/main` without rebasing, correct the one stale Bible/Roadmap sentence,
+  rerun evidence, push the exact corrected tip, and complete the Azure squash
+  PR, pipeline, live verification, completion report, and governance closeout.
+- The real Studio remains upstream of the homepage walkthrough. Its Azure
+  release and live verification must pass before a fresh homepage-parity
+  convergence branch starts.
 - Pete accepted the current fixed illustrative walkthrough for its present
   purpose. Claude's exact source tip
   `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
@@ -81,7 +76,7 @@ new package and branch.
   it does not make the new Studio design or homepage demo implemented or live.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
-### PS-CAPTURE-MEDIA-001 - Claude Co-Work manager-planning lane
+### PS-CAPTURE-MEDIA-001 - released flag-off / enablement gates unassigned
 
 - Source package: `docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`.
 - Photo-first planning and the default-off backend are complete. Azure PR 95
@@ -89,24 +84,27 @@ new package and branch.
   passed. Closeout PR 96 squash-merged at
   `67b7053fcf9ba8bf37c1bbdc5aa2d275e31dc1b7`; pipeline 140 passed. The Photo
   flag remains off and no new member-facing capability is live.
-- Current action: complete and accept `PS-CAPTURE-PHOTO-DESIGN-001`, then
-  assign the separate runtime experience package. Photo's Home intersections
-  are closed; future Photo work must reserve its own files without reclaiming
-  the active Home backend reservations.
+- The accepted Photo 1 experience source
+  `a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6` squash-merged through Azure PR 98
+  at `e5912c85d95dddbaed9c565d1e599efe2c8dd0b6`; automatic pipeline 143 passed
+  Build and Deploy. The flag remains off and no new member-facing capability is
+  live.
+- Current action: do not enable Photo. A separately assigned package must prove
+  the real signed-in Azure lifecycle, two-owner denial, production visuals, and
+  `PS-HOME-CAPTURE-PHOTO-PARITY-001` before an enablement decision.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
 
-### PS-HOME-BACKEND-001 - active finite Owner Home backend lane
+### PS-HOME-BACKEND-001 - released default-off / frontend unblocked
 
 - Source package: `docs/initiatives/PS-HOME-BACKEND-001/README.md`.
 - Accepted architecture and U1–U6 decisions:
   `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`.
-- Assigned writer: ChatGPT Codex on one fresh
-  `work/YYYY-MM-DD-home-backend-001` branch; designated manager: ChatGPT
-  Work/Codex manager session. Capture Photo PR 95 and closeout PR 96 are merged,
-  pipelines 139 and 140 passed, and both overlapping file reservations are
-  closed. The assignment is active and cleared to start from `origin/main`
-  after this manager correction merges.
+- ChatGPT Codex completed the self-managed backend at source
+  `efd19d820986a529d48e2fcf660655b9f4dfc492`. Azure PR 99 squash-merged it at
+  `2db2ca5c93fa221f7092b54ebc17f2068584c07d`; automatic pipeline 145 passed
+  Build and Deploy. Production SQL migration/verifier evidence passed through
+  the configured passwordless identity.
 - Scope is only the default-off `PEERSLATE_OWNER_HOME_ENABLED` config, bounded
   owner read procedure/service/serializer, flag-gated
   `GET /api/v1/owner/home`, exact migration/rollback/verification, and required
@@ -114,16 +112,19 @@ new package and branch.
   Owner Home template, or change `/app`.
 - First review kinds are fixed: failed Voice, pending Moment proposal, then
   ready Voice; oldest actionable item first within kind, then opaque key.
-- `PS-HOME-FRONTEND-001` is sequenced but not active. It starts only from the
-  merged backend main, owns the flag-on `/app` switch and exact dark cinematic
-  shell, and requires Pete plus manager visual acceptance.
-- Owner Home is not implemented, deployed, enabled, or live. Broader viewer,
-  preview, insight, connection, sharing, and publication packages remain gated.
+- `PEERSLATE_OWNER_HOME_ENABLED` remains false, `/app` is unchanged, and the
+  new API returns neutral 404. The backend is deployed; Owner Home remains
+  intentionally not member-visible.
+- `PS-HOME-FRONTEND-001` is unblocked but not assigned. It must start on a fresh
+  branch from then-current `origin/main`, own the controlled flag-on `/app`
+  switch and exact dark cinematic shell, and pass its own visual/product gate.
+  It must not be blended into Claude's active Interview branch.
 
 ## Later backend decisions
 
-The finite Owner Home backend is now active as the isolated package above.
-Owner Home frontend is sequenced after it. Broader viewer modes,
+The finite Owner Home backend is released. Owner Home frontend is ready for a
+separate assignment after the Interview writer lane is safely released, unless
+a different writer and isolated worktree are explicitly assigned. Broader viewer modes,
 photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/
 Feed/sharing/public-projection consumer remain separate later packages.
 PS-VOICE-001 does not authorize them.

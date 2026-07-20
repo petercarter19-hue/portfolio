@@ -67,6 +67,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-RESUME-PUBLIC-REFINE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "README.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "07_GATE_24_SESSION_REVIEW.md"),
+        ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "16_MANAGER_IMPLEMENTATION_ACCEPTANCE.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
@@ -92,6 +93,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"),
         ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "PHOTO_EXPERIENCE_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
@@ -112,6 +114,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "FABLE_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md"),
         ("docs", "initiatives", "PS-HOME-BACKEND-001", "README.md"),
+        ("docs", "initiatives", "PS-HOME-BACKEND-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -170,7 +173,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 139", self.baseline)
+        self.assertIn("application_behavior_pipeline: 145", self.baseline)
+        self.assertIn("capture_photo_experience_pipeline: 143", self.baseline)
+        self.assertIn("owner_home_backend_pipeline: 145", self.baseline)
         self.assertIn("a98cced519a1f853ad9f4462fd438efa67d6f260", self.baseline)
         self.assertIn("voice_visual_release_pipeline: 113", self.baseline)
         self.assertIn("864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82", self.baseline)
@@ -200,7 +205,6 @@ class BaselineCoherenceTests(unittest.TestCase):
             [
                 "PS-INTERVIEW-PUBLIC-GATE-001",
                 "PS-CAPTURE-MEDIA-001",
-                "PS-HOME-BACKEND-001",
             ],
             active_ids,
         )
@@ -255,7 +259,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
         self.assertIn("Pete / designated session manager visual acceptance", report)
 
-    def test_interview_dual_theme_authority_is_explicit_and_still_design_only(self):
+    def test_interview_dual_theme_authority_and_accepted_writer_state_are_explicit(self):
         brief = _read(
             "docs",
             "initiatives",
@@ -291,8 +295,10 @@ class BaselineCoherenceTests(unittest.TestCase):
         ):
             self.assertIn(expected, standard)
         self.assertIn("18 primary exports", review)
-        self.assertIn("Concept A Editorial Studio Ledger controls", self.state)
-        self.assertIn("Concept C", self.baseline)
+        self.assertIn("Concept A default/light and Concept C optional dark", self.state)
+        self.assertIn("manager accepted, writer release pending", self.state)
+        self.assertIn("39bc9a3f890ec8020eb84c4e3e416db6cd6912d2", self.state)
+        self.assertIn("5A-light/5C-dark", self.baseline)
 
     def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
         workflow = _read("docs", "AI_WORKFLOW.md")
@@ -330,9 +336,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         ):
             self.assertIn(expected, interview_review)
         for expected in (
-            "Manager/planning active",
-            "Implementation writer: Unassigned",
-            "No photo, video, or document Capture is implemented, deployed, or live",
+            "experience are released",
+            "Current writer: Unassigned",
+            "Photo code is deployed with the flag off",
             "Voice",
         ):
             self.assertIn(expected, capture)
@@ -492,9 +498,11 @@ class BaselineCoherenceTests(unittest.TestCase):
             "PS-OWNER-HOME-VIEWER-GATE-001",
             "PS-HOME-BACKEND-001",
             "PS-HOME-FRONTEND-001",
-            'status: "sequenced_after_backend_not_active"',
-            'status: "active_assigned_ready_to_start"',
+            'status: "ready_to_activate_from_post_backend_main"',
+            'status: "manager_accepted_writer_release_pending"',
             "capture_photo_closeout_pipeline: 140",
+            "capture_photo_experience_pipeline: 143",
+            "owner_home_backend_pipeline: 145",
         ):
             self.assertIn(expected, self.baseline)
 
@@ -519,7 +527,7 @@ class BaselineCoherenceTests(unittest.TestCase):
 
         self.assertIn("PS-HOME-BACKEND-001", self.state)
         self.assertIn("PS-HOME-BACKEND-001", self.initiatives)
-        self.assertIn("PS-HOME-FRONTEND-001` is sequenced but not active", self.initiatives)
+        self.assertIn("PS-HOME-FRONTEND-001` is unblocked but not assigned", self.initiatives)
 
     def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
         workflow = _read("docs", "AI_WORKFLOW.md")
@@ -564,7 +572,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         ):
             self.assertIn(expected, correction)
         self.assertIn("PS-VOICE-VISUAL-PARITY-001", self.baseline)
-        self.assertIn("PS-VOICE-001 is released and closed", self.baseline)
+        self.assertIn("  - PS-VOICE-001", self.baseline)
         self.assertIn("pipeline 105", self.state)
         self.assertIn("withdrew Voice visual acceptance", self.state)
         self.assertIn("pipeline 113", self.state)

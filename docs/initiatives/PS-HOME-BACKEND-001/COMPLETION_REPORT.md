@@ -3,17 +3,17 @@
 ## A. Status
 
 - Package: `PS-HOME-BACKEND-001` finite Owner Home backend.
-- Status: Complete and accepted for the default-off Azure release on
-  2026-07-20.
-- Branch and commit: `work/2026-07-19-home-backend-001`, based on authoritative
-  `origin/main` at `e5912c85d95dddbaed9c565d1e599efe2c8dd0b6`. The exact
-  pushed full HEAD SHA accompanies the external handoff because a commit cannot
-  contain its own SHA.
-- PR / pipeline / environment: PR, pipeline, production migration, and live
-  route evidence are recorded after the accepted branch is squash-merged. The
-  pre-merge SQL proof used the disposable Basic database described in section F.
-- Production state: not yet deployed by this report revision. The flag defaults
-  off and the visible `/app` owner workspace is unchanged.
+- Status: Complete, released, and production-verified at the accepted default-off boundary on 2026-07-20.
+- Source branch and accepted commit: `work/2026-07-19-home-backend-001` at
+  `efd19d820986a529d48e2fcf660655b9f4dfc492`, based on authoritative
+  `origin/main` at `e5912c85d95dddbaed9c565d1e599efe2c8dd0b6`.
+- PR / pipeline / environment: Azure PR 99 squash-merged at
+  `2db2ca5c93fa221f7092b54ebc17f2068584c07d`; automatic pipeline 145
+  (`20260720.16`) passed Build and Deploy for that exact commit. The production
+  SQL migration and verifier passed through the configured passwordless Azure
+  identity. The pre-merge proof used the disposable Basic database in section F.
+- Production state: deployed with `PEERSLATE_OWNER_HOME_ENABLED=false`; the
+  visible `/app` owner workspace is unchanged and the JSON route is neutral 404.
 - Visual authority and status: Not Applicable to this backend-only package. The
   accepted Owner Home visual authority remains binding on
   `PS-HOME-FRONTEND-001`.
@@ -31,7 +31,7 @@
   SQL evidence, PR readiness, and accepted release.
 - Self-certification: **Pass**.
 - Complete-diff review: **Issues corrected**; no unresolved failure remains.
-- Acceptance requested: release.
+- Acceptance requested: none; the backend release is complete.
 
 ## B. What changed technically
 
@@ -183,10 +183,26 @@ unreserved product lane or machine-local file is included.
 
 ### Production and real-member validation
 
-Not performed in this report revision because the accepted branch has not yet
-been squash-merged or deployed. Real-member Home validation belongs after the
-frontend exists and the flag is deliberately enabled for founding-alpha
-accounts; no visible or live Home claim is made here.
+- Before mutation, the production database was confirmed online and the Home
+  ledger entry and procedure were confirmed absent.
+- The additive production migration completed in **1,282 ms** through the
+  configured passwordless Azure CLI identity. The production verifier completed
+  in **1,431 ms** inside its outer rollback and proved the procedure, ledger,
+  two-owner isolation, ordering, and prohibited-content canaries without leaving
+  synthetic rows behind.
+- Azure PR 99 squash-merged the accepted source at
+  `2db2ca5c93fa221f7092b54ebc17f2068584c07d`. Automatic pipeline 145
+  (`20260720.16`) passed Build and Deploy for that exact commit. Redundant queued
+  manual pipeline 146 was canceled; it was not a failed release.
+- Live `/`, `/petec/resume`, and `/interview-studio` returned 200. Protected
+  `/app/capture` redirected logged-out requests to sign-in. Live
+  `/api/v1/owner/home` returned neutral `404 {"error":"not_found"}` with the
+  flag off, so no identity lookup, private payload, or new member-visible Home
+  behavior was exposed.
+
+Real-member Home validation remains correctly deferred until the separately
+accepted frontend exists and the flag is deliberately enabled for approved
+accounts.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -202,18 +218,18 @@ accounts; no visible or live Home claim is made here.
 - The route benchmark measures real Flask and serialization overhead with a
   deterministic fake database result; the real isolated database execution was
   measured separately. No production private content entered either benchmark.
-- Production migration, Azure pipeline, and neutral live-route verification
-  remain release steps and must be appended before final closeout.
+- The production migration, Azure pipeline, and neutral live-route checks are
+  complete. Flag-on signed-in visual and accessibility validation belongs to the
+  frontend package and is not a backend-release gap.
 - No deeper independent technical audit is required. The frontend retains its
   separate visual/product acceptance gate.
 
 ## H. Clear next step
 
-Squash-merge this accepted backend through Azure, apply and verify the additive
-read procedure through the configured secure production connection, deploy
-with `PEERSLATE_OWNER_HOME_ENABLED` still false, and prove `/app` plus the
-neutral JSON boundary are unchanged. A green backend release then unlocks the
-separate `PS-HOME-FRONTEND-001` branch from the new `origin/main`.
+Start `PS-HOME-FRONTEND-001` only on a fresh branch from current `origin/main`.
+It must implement the exact accepted dark cinematic authority, preserve the
+bounded backend contract, keep broader viewer modes out of scope, and obtain
+its own visual/product acceptance before any controlled flag enablement.
 
 ## I. What Pete needs to do or decide
 

@@ -2,11 +2,14 @@
 
 ## Assignment
 
-- Current Gate 2.4 reviewer: bounded Codex manager-review session
-- Designated session manager: Claude Co-Work
-- Later feasibility/implementation writer: Claude Code, only after all design gates
-- Review branch: `work/YYYY-MM-DD-interview-gate-24-review`
-- Later implementation branch: `work/YYYY-MM-DD-interview-public-gate-001`
+- Current status: owner-delegated manager acceptance passed; writer-owned merge
+  preparation and Azure release remain.
+- Designated session manager: ChatGPT Work/Codex for the 2026-07-20 acceptance
+  and cross-computer closeout.
+- Implementation/release writer: Claude Code, sole writer of
+  `work/2026-07-19-interview-public-gate-001`.
+- Accepted implementation SHA:
+  `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2`.
 - Entry gate: PS-NEXT-WAVE-MANAGER-001 is squash-merged, its Azure pipeline is green, and the branch starts from the resulting current `origin/main`.
 - Depends on: PS-INTERVIEW-002, PS-RESUME-PUBLIC-REFINE-001, and the verified public/auth route audit.
 
@@ -35,8 +38,9 @@ newer exact visual authority and definitive Claude package are in
 [09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md](09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md):
 Image 5 Concept A controls default/light and Image 5 Concept C controls optional
 dark. It supersedes the earlier assumption that the dark expression must wait
-for an authenticated Studio. Fable/Claude's next task remains design and
-feasibility only; it does not authorize implementation.
+for an authenticated Studio. That earlier design-only boundary governed the
+architecture phase; the later implementation and manager acceptance records
+now control the active release state.
 
 The real-Studio-first implementation and homepage-walkthrough sequence is in
 [10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md](10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md).
@@ -52,14 +56,15 @@ the real Studio passes doc-10 Gates 1–3 (accepted, implemented, released,
 verified live), a fresh downstream branch converges the walkthrough on the
 exact released product in a separate closeout (Gate 4).
 
-The Gate 2.4 review sequence has occurred. A bounded Codex manager-review
-session followed [07_GATE_24_SESSION_REVIEW.md](07_GATE_24_SESSION_REVIEW.md)
-and returned a durable `Conditional` on this branch; the Claude/Fable
-feasibility response and round-2 evidence follow below. Product
-implementation remains blocked until the remaining approvals in
-`12_…ADDENDUM.md` §E pass.
+The Gate 2.4 review, Claude/Fable feasibility, implementation, and designated
+manager acceptance have occurred. The durable acceptance is recorded in
+[16_MANAGER_IMPLEMENTATION_ACCEPTANCE.md](16_MANAGER_IMPLEMENTATION_ACCEPTANCE.md).
+Claude Code must now merge current `origin/main`, correct the one stale version
+sentence in its completion report, rerun evidence, and complete the Azure
+release. Homepage convergence remains blocked until that release is live.
 
-The 2026-07-19 final-image submission review is recorded in
+The historical 2026-07-19 pre-implementation final-image submission review is
+recorded in
 [08_GATE_24_FINAL_VISUAL_REVIEW.md](08_GATE_24_FINAL_VISUAL_REVIEW.md). Pete's
 approval of the supplied visual direction is recorded, and the seven
 PUBLIC-03-through-PUBLIC-V02 states are accepted as the target. The formal Gate
@@ -96,6 +101,11 @@ The next-phase instructions are packaged in
 [14_OPUS_REVIEW_CHARTER.md](14_OPUS_REVIEW_CHARTER.md) (independent
 reviewer). Product implementation stays blocked until the addendum §E
 blockers are recorded as resolved.
+
+Those pre-implementation blockers are now resolved. The current controlling
+state is the manager acceptance in
+`16_MANAGER_IMPLEMENTATION_ACCEPTANCE.md`, with only writer-owned merge
+preparation, Azure release, live verification, and closeout remaining.
 
 ## Route and identity decision
 

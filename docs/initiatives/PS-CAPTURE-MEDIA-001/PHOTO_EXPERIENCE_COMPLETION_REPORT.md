@@ -3,19 +3,19 @@
 ## A. Status
 
 - Package: `PS-CAPTURE-PHOTO-EXPERIENCE-001`
-- Status: In Progress - implementation and visual-product acceptance complete; flag-off release gate remains
-- Branch and commit: `work/2026-07-19-capture-photo-experience-001`; exact handoff SHA accompanies this report
-- PR / pipeline / environment: no PR or pipeline yet; isolated local evidence only
-- Production state: Photo backend and Azure foundation remain deployed with `CAPTURE_PHOTO_ENABLED=false`; this interface is not member-visible
-- Visual authority and status: Photo 1 at `visual-authority/photo-1-selected-authority.jpg`; implementation In Review
+- Status: Complete for the accepted flag-off release; enablement remains a separate gated decision
+- Source branch and accepted commit: `work/2026-07-19-capture-photo-experience-001` at `a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6`
+- PR / pipeline / environment: Azure PR 98 squash-merged at `e5912c85d95dddbaed9c565d1e599efe2c8dd0b6`; automatic pipeline 143 (`20260720.14`) passed Build and Deploy for that exact commit
+- Production state: released with `CAPTURE_PHOTO_ENABLED=false`; the protected interface is not member-visible and `POST /app/capture/photo` returns neutral 404
+- Visual authority and status: Photo 1 at `visual-authority/photo-1-selected-authority.jpg`; implementation accepted for flag-off release
 - Homepage product projection: Downstream Package Required - `PS-HOME-CAPTURE-PHOTO-PARITY-001`
 - Pete / designated session manager visual acceptance: accepted for flag-off release on 2026-07-20 in `PHOTO_MANAGER_ACCEPTANCE.md`; enablement remains unauthorized
 - Designated session manager: ChatGPT Work/Codex for this owner-authorized package exception
-- Manager handoff status and next receiver: visual-product gate passed; same writer proceeds through the Azure flag-off release and closeout
+- Manager handoff status and next receiver: flag-off release and closeout passed; a later enablement package must prove the signed-in production lifecycle and homepage parity
 - Lane owner and self-managed authority: ChatGPT Work/Codex, directly assigned by Pete to choose and implement one ChatGPT-originated design
-- Self-certification: Conditional
-- Complete-diff review: Issues corrected; release evidence remains intentionally open
-- Acceptance requested: release
+- Self-certification: **Pass for flag-off release; Conditional for enablement**
+- Complete-diff review: **Issues corrected; no unresolved flag-off release failure remains**
+- Acceptance requested: none; release is complete and enablement is not authorized
 
 ## B. What changed technically
 
@@ -76,9 +76,10 @@ On this branch with the flag enabled, an authenticated member can:
 - return to the refreshed private Capture list or download the private
   original through the owner-scoped application route.
 
-Nothing new is available in production while the flag remains off. The local
-visual server used synthetic identity/data and did not perform a real Azure
-upload or Defender scan.
+Nothing new is member-visible in production while the flag remains off. The
+release preserves the backend and assets for the later controlled enablement
+gate. The visual server used synthetic identity/data and did not perform a real
+Azure upload or Defender scan.
 
 ## E. How this connects to PeerSlate
 
@@ -153,17 +154,27 @@ Corrections made during complete-diff/visual review:
 
 ### Production verification and real-member validation
 
-Not performed because no PR/release is authorized before visual-product
-acceptance and the production flag remains off. The strict package plan still
-requires real Azure pending/clean/rejected/error/deletion lifecycle evidence,
-two-owner denial, production screenshots, and homepage parity before final
-`Pass` and enablement.
+- Azure PR 98 squash-merged the accepted source at
+  `e5912c85d95dddbaed9c565d1e599efe2c8dd0b6`.
+- Automatic pipeline 143 (`20260720.14`) passed Build and Deploy for that exact
+  merge. A later manual run 144 was redundant successful evidence, not a
+  replacement for the automatic release.
+- Live `/`, `/petec/resume`, and `/interview-studio` returned 200.
+- Live `/app/capture` redirected a logged-out request to sign-in, while
+  `POST /app/capture/photo` returned neutral 404 with the flag off.
+- The released Photo JavaScript asset returned 200. No unauthenticated private
+  content or mutation was exposed.
+
+Real-member Azure pending/clean/rejected/error/deletion lifecycle evidence,
+two-owner denial, production screenshots, and homepage parity remain required
+before `CAPTURE_PHOTO_ENABLED` may be enabled.
 
 ## G. Known gaps, risks, and exclusions
 
-- Self-certification remains `Conditional`, not `Pass`, until the accepted
-  flag-off release and its production evidence succeed. Visual-product
-  acceptance is recorded in `PHOTO_MANAGER_ACCEPTANCE.md`.
+- The package passes its accepted flag-off release boundary. Enablement remains
+  `Conditional` until the signed-in production and homepage-parity gates below
+  pass. Visual-product acceptance is recorded in
+  `PHOTO_MANAGER_ACCEPTANCE.md`.
 - Required production scanning, malicious rejection, storage-unavailable,
   stale-write, confirmed-list, correction/archive/restore/export, and Blob-
   absent deletion checks have not been run through a signed-in live member.
@@ -176,19 +187,18 @@ two-owner denial, production screenshots, and homepage parity before final
 - The logged-out homepage still truthfully says Photo is `Coming later`. It
   becomes stale if Photo is enabled before
   `PS-HOME-CAPTURE-PHOTO-PARITY-001` ships.
-- This owner-authorized Photo experience temporarily re-reserves
-  `owner_routes.py`. The clean `PS-HOME-BACKEND-001` worktree may proceed only
-  on non-overlapping files until this branch merges or relinquishes that file.
+- The temporary `owner_routes.py` reservation is released. Azure PR 98 merged
+  the experience before the separate Home backend source branch was finalized;
+  no shared-file conflict remains.
 - The branch contains no production flag change, migration, new dependency, or
   credential work.
 
 ## H. Clear next step
 
-Create the Azure PR and release this accepted code with the flag still off.
-Then record the exact pipeline and neutral production boundary, release the
-temporary `owner_routes.py` reservation, and keep real-member lifecycle proof
-plus homepage parity open before enablement. Interview work and non-overlapping
-Owner Home backend files may continue safely in parallel.
+Do not enable Photo yet. A newly assigned package must run the real signed-in
+Azure lifecycle and two-owner isolation evidence, close
+`PS-HOME-CAPTURE-PHOTO-PARITY-001`, obtain the required visual/product
+acceptance, and only then request controlled enablement.
 
 ## I. What Pete needs to do or decide
 

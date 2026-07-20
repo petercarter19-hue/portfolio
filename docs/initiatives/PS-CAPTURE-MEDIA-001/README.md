@@ -12,12 +12,14 @@
   `229bfba4cd31e0eb56b99a94e90f16aa3fabb396`
 - Synchronized baseline before closeout: Azure DevOps `origin/main` at
   `6a96878069e717b8b5455bf19729e9972cc435fa` (Bible v2.6 / Roadmap v2.5)
-- Current status: Manager/planning active - owner accepted on 2026-07-19;
-  Azure squash-merge pending
-- Implementation writer: Unassigned until this manager package is
-  squash-merged; ChatGPT Codex is the allocated writer for the isolated backend
-  branch that starts immediately afterward
-- Implementation status: No photo, video, or document Capture is implemented, deployed, or live.
+- Current status: Architecture, default-off Photo backend, and accepted Photo 1
+  experience are released; Photo enablement gates remain open.
+- Released implementation: backend PR 95 / pipeline 139, governance closeout
+  PR 96 / pipeline 140, and experience PR 98 / pipeline 143.
+- Current writer: Unassigned. A new package and branch are required for the
+  signed-in lifecycle, two-owner, homepage-parity, and enablement gates.
+- Production status: Photo code is deployed with the flag off; Photo, video,
+  and document Capture are not member-visible.
 
 This package-local assignment supersedes the earlier Claude Co-Work name for
 PS-CAPTURE-MEDIA-001. Shared governance files remain read-only on this branch;
@@ -37,7 +39,7 @@ deletion contracts. It deliberately adds no OCR, AI caption, matching,
 publication, placement, Moment automation, document extraction, or video
 transcoding.
 
-## Delivery order
+## Delivery order and progress
 
 1. Accept and squash-merge this manager package.
 2. Activate `PS-CAPTURE-PHOTO-BACKEND-001` for ChatGPT Codex on
@@ -51,6 +53,10 @@ transcoding.
    pipeline, and signed-in production gates pass.
 6. Run the required homepage parity package in the same release wave. The real
    protected product remains upstream authority.
+
+Steps 1-4 are complete. The accepted flag-off release boundary in step 5 is
+complete through PR 98/pipeline 143. Signed-in production lifecycle evidence
+and step 6 remain open and block Photo enablement.
 
 Only one writer owns one implementation branch at a time. Home/owner-viewer and
 Interview Studio may continue in parallel because their product decisions are
@@ -76,8 +82,9 @@ separate, but shared files remain serialized as described in
 - PS-VOICE-001 is released and protected. This package reuses its contracts but
   does not migrate, absorb, or rewrite its tables, storage adapter, Speech
   provider, or accepted UI.
-- Photo, video, and document upload are not available until later implementation
-  branches are accepted, merged, deployed, and verified.
+- Photo code is deployed but unavailable while its flag remains off. Video and
+  document upload are not implemented. Photo enablement still requires the
+  accepted signed-in lifecycle and homepage-parity packages.
 - New media always starts private and owner-scoped. It never creates a Moment,
   Placement, downstream room object, share, audience grant, public URL, or
   publication automatically.
