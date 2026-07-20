@@ -8,6 +8,8 @@
 # activated downstream homepage Interview parity architecture/implementation,
 # plus the activated exact-authority Owner Home frontend implementation lane
 # and the owner-authorized Journal memory-profile restart/architecture gate.
+# Bible v2.7 and Roadmap v2.6 are now the owner-approved connected-system
+# authority; this activation does not authorize a connective runtime package.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-20"
@@ -75,6 +77,12 @@ authority:
   interview_release_closeout_pr: 102
   interview_release_closeout_pipeline: 150
   interview_release_closeout_pipeline_build: "20260720.21"
+  connected_system_candidate_merge_commit: "938d2b8b3b4450b1f1e4d0796aa6b5b438e0e5ed"
+  connected_system_candidate_pr: 111
+  connected_system_candidate_pipeline: 162
+  journal_restart_merge_commit: "2bf989e074e274520558a9f3674e5c3f426c3d63"
+  journal_restart_pr: 116
+  journal_restart_pipeline: 168
   production_url: "https://peerslate.com"
   application_behavior_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
   application_behavior_pipeline: 149
@@ -92,15 +100,15 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-JOURNAL-001 is owner-restarted under the same designated manager; the current Codex task owns only its restart/reconciliation checkpoint, and a separate writer is assigned only after the architecture gate. Photo and Home backend remain released flag-off."
+  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-JOURNAL-001 is owner-restarted under the same designated manager; restart/reconciliation is released and a separate architecture/implementation writer remains unassigned. PS-GOV-CONNECTED-SYSTEM-001 is owner-approved and complete through this authority activation. Photo and Home backend remain released flag-off."
 
 governing_documents:
   bible:
-    version: "2.6"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
+    version: "2.7"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.7.docx"
   roadmap:
-    version: "2.5"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
+    version: "2.6"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -154,6 +162,7 @@ completed_packages:
   - PS-CAPTURE-PHOTO-EXPERIENCE-001
   - PS-HOME-BACKEND-001
   - PS-INTERVIEW-PUBLIC-GATE-001
+  - PS-GOV-CONNECTED-SYSTEM-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -186,6 +195,24 @@ active_packages:
     status: "owner_restart_authorized_definition_and_architecture_gate_active"
 
 planned_packages:
+  - id: PS-PUBLIC-CONNECTIVE-001
+    owner: "future designated manager and writer unassigned"
+    lane: candidate_public_connectedness_pilot
+    roadmap_phase: "Cross-phase connected-system candidate"
+    package_path: "docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md"
+    status: "candidate_unassigned_not_active"
+  - id: PS-CONNECTIVE-COMPONENT-001
+    owner: "future designated manager and writer unassigned"
+    lane: candidate_shared_connective_component
+    roadmap_phase: "Cross-phase connected-system candidate"
+    package_path: "docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md"
+    status: "candidate_unassigned_not_active"
+  - id: PS-RETURN-VALUE-001
+    owner: "future designated manager and writer unassigned"
+    lane: candidate_private_return_value_engine
+    roadmap_phase: "After Owner Home frontend and confirmed member history"
+    package_path: "docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md"
+    status: "candidate_unassigned_not_active"
   - id: PS-PROJECTS-001
     owner: "Pete product direction; future designated product/visual manager and implementation writer unassigned"
     lane: future_projects_workspace_and_projections
@@ -199,7 +226,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "planned_not_active"
 
-next_gate: "Release the Journal restart/reconciliation checkpoint through Azure, then create a fresh PS-JOURNAL-001 architecture branch from the resulting origin/main. Product code waits for the route, data, lifecycle, authorization, visual, migration, rollback, and two-member validation gate in the initiative package. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently with their assigned writers and acceptance gates. Capture Photo remains flag-off and separate. Do not blend Journal, Interview homepage parity, Owner Home, or Photo. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "Create a fresh PS-JOURNAL-001 architecture branch from post-authority origin/main and assign exactly one writer. Product code waits for the route, data, lifecycle, authorization, visual, migration, rollback, and two-member validation gate in the initiative package. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently with their assigned writers and acceptance gates. The three connected-system package IDs remain candidate/unassigned and must not interrupt Journal or Owner Home. Capture Photo remains flag-off and separate. Do not blend Journal, Interview homepage parity, Owner Home, Photo, or connective candidates. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -209,5 +236,8 @@ superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
+  - "docs/initiatives/PS-JOURNAL-001/source/PeerSlate_Company_and_Product_Bible_v1.5.1.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"

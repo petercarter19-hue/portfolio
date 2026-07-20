@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Approved:** July 16, 2026  
-**Status:** Subordinate implementation rules; current Bible v2.6 / Roadmap v2.5 control conflicts
+**Status:** Subordinate implementation rules; current Bible v2.7 / Roadmap v2.6 control conflicts
 
 > **Authority correction — 2026-07-18:** This file was written during the
 > v1.3/Iris program state. The Bible and Roadmap named in

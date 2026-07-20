@@ -27,7 +27,7 @@ server-side audience resolution exists.
 
 ## Authority and reconciliation
 
-The current controlled Bible v2.6 and Roadmap v2.5 remain the constitutional
+The current controlled Bible v2.7 and Roadmap v2.6 remain the constitutional
 and architecture baseline. The exact v1.5.1 source supplied by Peter is
 preserved under `source/` with SHA-256
 `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`.
@@ -119,7 +119,7 @@ The first gate is evidence-backed definition and architecture. It must:
 
 The controlling visual authority is
 `docs/governance/approved_owner_visual_baseline/03_dark_ui_concept_with_gold_accents.png`,
-interpreted through Bible v2.6 and Deep Navy Gold. Its hierarchy—private
+interpreted through Bible v2.7 and Deep Navy Gold. Its hierarchy—private
 profile hub, chronological timeline, explicit projection state, connected
 media, one person/many views—is binding. Its illustrative people, counts,
 content, and unavailable audience controls are not production data.

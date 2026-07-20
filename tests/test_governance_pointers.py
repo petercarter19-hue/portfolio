@@ -4,6 +4,7 @@ import hashlib
 import os
 import re
 import unittest
+import zipfile
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -126,6 +127,12 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-JOURNAL-001", "01_REQUIREMENTS_AND_ARCHITECTURE_GATE.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "source", "PeerSlate_Company_and_Product_Bible_v1.5.1.docx"),
+        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.7.docx"),
+        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"),
+        ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "README.md"),
+        ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "10_ACTIVATION_CHECKLIST.md"),
+        ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "11_OWNER_APPROVAL_AND_ACTIVATION.md"),
+        ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "ACTIVATION_COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -161,8 +168,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.6", self.baseline)
-        self.assertIn("Roadmap_v2.5", self.baseline)
+        self.assertIn("Bible_v2.7", self.baseline)
+        self.assertIn("Roadmap_v2.6", self.baseline)
         self.assertIn('role: "package_designated_session_manager"', self.baseline)
         self.assertIn(
             'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
@@ -207,6 +214,62 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("voice_visual_release_pr: 80", self.baseline)
         self.assertIn("voice_governance_closeout_pipeline: 115", self.baseline)
         self.assertIn("5cc5b69346ee354bcc36248f7ee5724ce13c9d08", self.baseline)
+        self.assertIn("connected_system_candidate_pipeline: 162", self.baseline)
+        self.assertIn("journal_restart_pipeline: 168", self.baseline)
+        self.assertIn("PS-GOV-CONNECTED-SYSTEM-001", self.baseline)
+
+    def test_connected_system_authority_is_approved_current_and_runtime_honest(self):
+        expected = {
+            "PeerSlate_Company_and_Product_Bible_v2.7.docx": (
+                "ceef99f1a84bf293217ad6d302a2b15e19b18104896de7f8ed560416deaf1836",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.6",
+                "Authority: v2.7 is CURRENT and controlling.",
+                "Version 2.7 Connected system and return-value authority",
+                "CURRENT BIBLE • JULY 20, 2026",
+            ),
+            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx": (
+                "7d615d3dfc2f463e25f86d166d6cefe799d093d03ac64fe107b6faae026edc4f",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.5",
+                "Roadmap authority: v2.6 is CURRENT and controlling.",
+                "Version 2.6 Connected-system sequencing",
+                "CURRENT ROADMAP • JULY 20, 2026",
+            ),
+        }
+        for filename, (
+            digest,
+            status_text,
+            authority_text,
+            header_text,
+            footer_text,
+        ) in expected.items():
+            path = os.path.join(ROOT, "docs", "governance", filename)
+            with self.subTest(document=filename), open(path, "rb") as document:
+                self.assertEqual(digest, hashlib.sha256(document.read()).hexdigest())
+                document.seek(0)
+                with zipfile.ZipFile(document) as archive:
+                    xml = "\n".join(
+                        archive.read(name).decode("utf-8")
+                        for name in archive.namelist()
+                        if name.endswith(".xml")
+                    )
+                self.assertIn(status_text, xml)
+                self.assertIn(authority_text, xml)
+                self.assertIn(header_text, xml)
+                self.assertIn(footer_text, xml)
+                self.assertNotIn("CANDIDATE AWAITING OWNER APPROVAL", xml)
+                self.assertNotIn("JULY 19, 2026", xml)
+
+        for candidate_id in (
+            "PS-PUBLIC-CONNECTIVE-001",
+            "PS-CONNECTIVE-COMPONENT-001",
+            "PS-RETURN-VALUE-001",
+        ):
+            self.assertIn(candidate_id, self.baseline)
+            self.assertIn(candidate_id, self.initiatives)
+            self.assertIn(candidate_id, self.state)
+        self.assertIn("candidate_unassigned_not_active", self.baseline)
+        self.assertIn("no application", self.state.lower())
+        self.assertIn("no runtime behavior", self.initiatives.lower())
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(

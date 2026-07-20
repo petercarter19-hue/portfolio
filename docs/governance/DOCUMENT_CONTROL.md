@@ -22,8 +22,8 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 | Record | Current version/status | Purpose |
 |---|---|---|
-| Company and Product Bible | v2.6 | Product language, boundaries, principles, visual integrity, Story composition authority, Projects system covenant, and intended model |
-| Product Strategy and Architecture Roadmap | v2.5 | Evidence state, package order, gates, architecture direction, Story Composer allocation, and Projects system sequencing |
+| Company and Product Bible | v2.7 | Product language, boundaries, principles, connected-system and return-value authority, visual integrity, Story composition authority, Projects system covenant, and intended model |
+| Product Strategy and Architecture Roadmap | v2.6 | Evidence state, package order, gates, connected-system sequencing, architecture direction, Story Composer allocation, and Projects system sequencing |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
 | Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
@@ -34,12 +34,18 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 ## Known supersessions
 
-- Bible v2.6 supersedes v2.5, v2.4, v2.3, and v1.1 through v1.4 for current product decisions.
-- Roadmap v2.5 supersedes Roadmap v2.4 and v2.3 for current sequencing and architecture decisions.
+- Bible v2.7 supersedes v2.6, v2.5, v2.4, v2.3, and v1.1 through v1.5.1 for current product decisions. The exact v1.5.1 source remains preserved as Journal decision provenance.
+- Roadmap v2.6 supersedes Roadmap v2.5, v2.4, and v2.3 for current sequencing and architecture decisions.
+- The connected-system spine, connected-room contract, and return-value engine
+  are constitutional. Connective patterns belong inside existing rooms and are
+  never new top-level destinations.
+- Preservation of a connective or return-value idea is not implementation
+  authorization. Each idea retains its Locked, Open, Later, Tabled, or
+  Rejected-current state and requires a separate package before product work.
 - Deep Navy Gold supersedes Iris/Direction C as the approved shared theme.
 - The controlled data sequence is private Capture source → reviewed canonical Moment → governed placement by reference. Journal is not the current canonical source model.
-- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.6
-  and Roadmap v2.5 still control the current architecture; the exact
+- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.7
+  and Roadmap v2.6 control the current architecture; the exact
   PS-JOURNAL-001 reconciliation controls the restart and preserves the deployed
   Capture → Moment → governed-reference sequence.
 - The current public wave is résumé refinement only. Interview Studio receives a later, separate public/private gate.

@@ -23,7 +23,7 @@ This is the explicit owner authorization required by the former hold. Under
   inspected include Section 4 (pages 14–16), Appendix J (pages 84–87), and
   Appendix K (pages 88–96 plus its build sequence).
 
-The source is retained as decision provenance. Bible v2.6 and Roadmap v2.5
+The source is retained as decision provenance. Bible v2.7 and Roadmap v2.6
 remain the controlled current documents except where Peter's July 20 decision
 explicitly changes the Journal hold and clarifies the memory-profile emphasis.
 
