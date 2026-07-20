@@ -1,8 +1,8 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
-Owner Home backend release, and live-verified 5A-light/5C-dark Interview
-Studio release._
+Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
+release, and exact-authority Owner Home frontend activation._
 
 ## Operating model
 
@@ -23,7 +23,7 @@ Claude Code implementation.
 | Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview homepage parity, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
 | Interview homepage convergence | Claude Code, architecture and implementation after activation | PS-HOME-INTERVIEW-PARITY-001 | mapping the live 5A/5C Studio into the existing fixed homepage walkthrough | modifying the real Studio; starting product edits before architecture review; Owner Home or Photo |
-| Owner Home frontend | Unassigned; Claude Code preferred when separately assigned | PS-HOME-FRONTEND-001 ready but not active | exact accepted dark cinematic shell from post-backend main | broader viewer modes, Photo enablement, backend-contract expansion |
+| Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend | broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 
 ## Current active gate
 
@@ -79,7 +79,7 @@ new package and branch.
   it did not itself make the new Studio design live; PR 101/pipeline 149 now do.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
-### PS-HOME-INTERVIEW-PARITY-001 - activated / architecture first
+### PS-HOME-INTERVIEW-PARITY-001 - architecture checkpoint / manager review
 
 - Source package:
   `docs/initiatives/PS-HOME-INTERVIEW-PARITY-001/README.md`.
@@ -92,6 +92,10 @@ new package and branch.
   `work/2026-07-20-home-interview-parity-001`, freshly created from exact
   post-activation `origin/main`. No product edit is authorized on the manager
   branch.
+- Claude Code's clean pushed architecture checkpoint is
+  `353a5810b18e7db22f35319fbecc9c2fa97d8b72`. It changes only
+  `PS-HOME-INTERVIEW-DEMO-001/04_REAL_STUDIO_CONVERGENCE.md` and awaits the
+  designated manager's architecture review before product edits.
 - Reserved product surface is limited to the Interview homepage partial,
   bounded Interview scene CSS/JavaScript, homepage include/cache references,
   exact tests, architecture record, completion report, and evidence named in
@@ -104,7 +108,8 @@ new package and branch.
 - Required visible outcome: written Interview Me is primary; light is
   Editorial Studio Ledger; dark is Cinematic Studio rather than a paper-white
   modal; fixed truth and no-side-effect boundaries remain explicit.
-- Implementation is not started, merged, deployed, live, or parity-closed.
+- Product implementation is not started, merged, deployed, live, or
+  parity-closed.
 
 ### PS-CAPTURE-MEDIA-001 - released flag-off / enablement gates unassigned
 
@@ -125,7 +130,7 @@ new package and branch.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
 
-### PS-HOME-BACKEND-001 - released default-off / frontend unblocked
+### PS-HOME-BACKEND-001 - released default-off / frontend activated
 
 - Source package: `docs/initiatives/PS-HOME-BACKEND-001/README.md`.
 - Accepted architecture and U1–U6 decisions:
@@ -145,16 +150,30 @@ new package and branch.
 - `PEERSLATE_OWNER_HOME_ENABLED` remains false, `/app` is unchanged, and the
   new API returns neutral 404. The backend is deployed; Owner Home remains
   intentionally not member-visible.
-- `PS-HOME-FRONTEND-001` is unblocked but not assigned. It must start on a fresh
-  branch from then-current `origin/main`, own the controlled flag-on `/app`
-  switch and exact dark cinematic shell, and pass its own visual/product gate.
-  It must remain separate from later Interview homepage convergence.
+- `PS-HOME-FRONTEND-001` is activated under the current ChatGPT Work/Codex
+  designated manager. The separately assigned Codex frontend task is its sole
+  writer and must create `work/2026-07-20-home-frontend-001` from exact
+  post-activation `origin/main` only after this governance release and pipeline
+  pass. It owns the controlled flag-on `/app` selection, exact dark cinematic
+  shell, bounded tests, package-local evidence, and no other product surface.
+- The released `owner-home.v1` backend remains the complete first-release data
+  contract. The frontend must not invent partial-failure, stale/`409`, or
+  restricted runtime states that the contract cannot provide. First-release
+  runtime evidence covers empty, populated, complete-unavailable, real
+  retry/recovery, flag-off fallback, responsive/accessibility, and truthful
+  `coming_later` availability. The deferred states remain design authority for
+  a separately gated future backend-contract package.
+- The frontend must remain default-off through implementation and deployment,
+  preserve `templates/owner_workspace.html` exactly as the flag-off fallback,
+  and obtain Pete plus designated-manager visual-product acceptance before its
+  Azure implementation PR. It remains separate from Interview homepage parity
+  and Capture Photo.
 
 ## Later backend decisions
 
 The finite Owner Home backend and Interview writer lane are released. Owner
-Home frontend is ready for a separate assignment when a manager and writer are
-explicitly assigned. Broader viewer modes,
+Home frontend now has an explicit manager, writer, branch contract, and
+truthful first-release evidence boundary. Broader viewer modes,
 photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/
 Feed/sharing/public-projection consumer remain separate later packages.
 PS-VOICE-001 does not authorize them.

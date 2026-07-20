@@ -117,6 +117,9 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md"),
         ("docs", "initiatives", "PS-HOME-BACKEND-001", "README.md"),
         ("docs", "initiatives", "PS-HOME-BACKEND-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-HOME-FRONTEND-001", "README.md"),
+        ("docs", "initiatives", "PS-HOME-FRONTEND-001", "01_MANAGER_ACTIVATION_AND_EVIDENCE_DISPOSITION.md"),
+        ("docs", "initiatives", "PS-HOME-FRONTEND-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -207,7 +210,11 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-CAPTURE-MEDIA-001", "PS-HOME-INTERVIEW-PARITY-001"],
+            [
+                "PS-CAPTURE-MEDIA-001",
+                "PS-HOME-INTERVIEW-PARITY-001",
+                "PS-HOME-FRONTEND-001",
+            ],
             active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
@@ -302,6 +309,15 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.state)
         self.assertIn("pipeline 149", self.state)
         self.assertIn("5A-light/5C-dark", self.baseline)
+        self.assertIn(
+            'status: "architecture_checkpoint_pushed_manager_review_pending"',
+            self.baseline,
+        )
+        self.assertIn(
+            "353a5810b18e7db22f35319fbecc9c2fa97d8b72",
+            self.baseline,
+        )
+        self.assertIn("architecture checkpoint / manager review", self.initiatives)
 
     def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
         workflow = _read("docs", "AI_WORKFLOW.md")
@@ -484,7 +500,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("planned Phase 10 expansion", self.initiatives)
         self.assertIn("no authenticated canonical Projects product is live", self.state)
 
-    def test_owner_home_architecture_is_accepted_and_backend_only_is_active(self):
+    def test_owner_home_frontend_activation_preserves_the_finite_backend(self):
         decision = _read(
             "docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001",
             "11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md",
@@ -496,12 +512,19 @@ class BaselineCoherenceTests(unittest.TestCase):
             "docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001",
             "CODEX_BACKEND_IMPLEMENTATION_BRIEF.md",
         )
+        frontend = _read(
+            "docs", "initiatives", "PS-HOME-FRONTEND-001", "README.md"
+        )
+        activation = _read(
+            "docs", "initiatives", "PS-HOME-FRONTEND-001",
+            "01_MANAGER_ACTIVATION_AND_EVIDENCE_DISPOSITION.md",
+        )
 
         for expected in (
             "PS-OWNER-HOME-VIEWER-GATE-001",
             "PS-HOME-BACKEND-001",
             "PS-HOME-FRONTEND-001",
-            'status: "ready_to_activate_from_post_backend_main"',
+            'status: "activated_writer_branch_pending"',
             "interview_studio_pipeline: 149",
             "capture_photo_closeout_pipeline: 140",
             "capture_photo_experience_pipeline: 143",
@@ -530,7 +553,31 @@ class BaselineCoherenceTests(unittest.TestCase):
 
         self.assertIn("PS-HOME-BACKEND-001", self.state)
         self.assertIn("PS-HOME-BACKEND-001", self.initiatives)
-        self.assertIn("PS-HOME-FRONTEND-001` is unblocked but not assigned", self.initiatives)
+        self.assertIn("PS-HOME-FRONTEND-001` is activated", self.initiatives)
+
+        for expected in (
+            "work/2026-07-20-home-frontend-001",
+            "separately assigned Codex frontend task",
+            "owner-home.v1",
+            "templates/owner_workspace.html",
+            "PEERSLATE_OWNER_HOME_ENABLED=false",
+            "Partial category failure",
+            "stale/`409 state_changed`",
+            "restricted runtime",
+            "may not be simulated",
+            "visual-product acceptance before opening",
+        ):
+            self.assertIn(expected, frontend)
+
+        for expected in (
+            "HFA1",
+            "HFA7",
+            "Evidence mismatch resolved by narrowing",
+            "first-release runtime rows",
+            "Default-off release",
+            "No production enablement occurs",
+        ):
+            self.assertIn(expected, activation)
 
     def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
         workflow = _read("docs", "AI_WORKFLOW.md")

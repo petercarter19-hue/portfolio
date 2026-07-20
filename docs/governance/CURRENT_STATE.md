@@ -1,9 +1,9 @@
 # PeerSlate - Current State
 
 _Updated 2026-07-20 for the released flag-off Photo experience, released
-default-off Owner Home backend, and released/live-verified 5A-light/5C-dark
-Interview Studio. Every manager and writer must still fetch `origin` before
-starting._
+default-off Owner Home backend, released/live-verified 5A-light/5C-dark
+Interview Studio, and the exact-authority Owner Home frontend activation.
+Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -168,10 +168,11 @@ manager sessions may coordinate separate packages, but shared-governance-file
 reservations must be serialized.
 
 The Interview Studio writer-release, Owner Home backend, and Voice correction
-lanes are closed. Capture Media Photo enablement remains active but unassigned;
-Interview homepage convergence is now manager-activated with Claude Code
-assigned architecture-first implementation. Owner Home frontend is unblocked
-but not assigned:
+lanes are closed. Capture Media Photo enablement remains active under its
+separate lifecycle gate; Interview homepage convergence is manager-activated
+with Claude Code assigned architecture-first implementation. Owner Home
+frontend is separately manager-activated with a Codex frontend task assigned
+as sole writer:
 
 1. **PS-INTERVIEW-PUBLIC-GATE-001 - released and verified live:** the exact
    Image 5 Concept A default/light and Concept C optional dark implementation
@@ -189,20 +190,30 @@ but not assigned:
    Studio release gate is now satisfied. The current ChatGPT Work/Codex manager
    assigned Claude Code to write the convergence architecture and then
    implement on fresh branch `work/2026-07-20-home-interview-parity-001` from
-   exact post-activation `origin/main`. Product work has not started; parity
-   remains open until separate acceptance, Azure release, and live proof.
+   exact post-activation `origin/main`. The clean pushed architecture checkpoint
+   is `353a5810b18e7db22f35319fbecc9c2fa97d8b72` and now awaits manager review;
+   product edits have not started. Parity remains open until implementation,
+   acceptance, Azure release, and live proof.
 3. **PS-CAPTURE-MEDIA-001 - Photo released flag-off; enablement gates open:**
    the backend, foundation, and accepted Photo 1 experience are deployed through
    PRs 95, 96, and 98 with successful pipelines 139, 140, and 143. Nothing new
    is member-visible while the flag remains off. A new assignment is required
    for real signed-in lifecycle, two-owner denial, homepage parity, and any
    enablement decision.
-4. **PS-HOME-BACKEND-001 complete / PS-HOME-FRONTEND-001 unblocked:** the finite
+4. **PS-HOME-BACKEND-001 complete / PS-HOME-FRONTEND-001 activated:** the finite
    backend and production SQL are released through PR 99 at
    `2db2ca5c93fa221f7092b54ebc17f2068584c07d` with pipeline 145. The feature
-   remains off and `/app` is unchanged. The exact-authority frontend may now be
-   separately assigned on a fresh branch from current `origin/main`; broader
-   viewer modes remain inactive.
+   remains off and `/app` is unchanged. After the governance-only activation
+   release and green pipeline, the separately assigned Codex writer creates
+   `work/2026-07-20-home-frontend-001` from that exact `origin/main` and owns
+   only the accepted finite frontend surface. The first release consumes the
+   existing `owner-home.v1` contract without backend expansion or fabricated
+   client state. Empty, populated, complete-unavailable, actual retry/recovery,
+   flag-off fallback, and truthful `coming_later` availability are runtime
+   evidence. Partial-failure, stale/`409`, and restricted runtime states remain
+   deferred design authority until a separate backend-contract package can
+   represent them. Broader viewer modes remain inactive, and Owner Home stays
+   default-off until a later explicit enablement decision.
 
 `PS-ASK-PETE-AI-001` is separately planned under Roadmap Phase 11. Its first
 gate is an owner product discussion, not implementation. The future concept
@@ -233,10 +244,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122 | Complete PS-HOME-INTERVIEW-PARITY-001 activation, then Claude records architecture before bounded implementation; keep parity open until accepted and live |
+| Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122; homepage-convergence architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` is pushed | Manager reviews the convergence architecture before bounded product edits; keep parity open until accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Photo backend plus accepted Photo 1 experience released flag-off through PRs 95/96/98 and pipelines 139/140/143; no Photo intake is member-visible | Keep Photo off; separately assign signed-in lifecycle, isolation, homepage parity, and enablement gates |
-| Owner Home | Dark cinematic authority accepted; finite backend and production SQL released default-off through PR 99/pipeline 145; `/app` unchanged and API neutral 404 | Assign the exact-authority frontend on a fresh branch from current main; keep broader viewer modes separate |
+| Owner Home | Dark cinematic authority accepted; finite backend and production SQL released default-off through PR 99/pipeline 145; `/app` unchanged and API neutral 404; exact-authority frontend activation prepared | Release the activation through Azure, then create `work/2026-07-20-home-frontend-001` from that exact main and implement only truthful `owner-home.v1` states; keep broader viewer modes separate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
 | Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |
