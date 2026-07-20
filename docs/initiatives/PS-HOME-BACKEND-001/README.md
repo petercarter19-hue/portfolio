@@ -2,8 +2,8 @@
 
 ## Assignment
 
-- Status: **Active, assigned, and cleared to start; implementation not started
-  by this record**.
+- Status: **Implementation complete and self-certified Pass; accepted for the
+  default-off Azure release by the designated manager on 2026-07-20**.
 - Activated: 2026-07-19 by the designated ChatGPT Work/Codex manager session.
 - Implementation writer: ChatGPT Codex, self-managed on one fresh branch.
 - Required branch: `work/YYYY-MM-DD-home-backend-001` from current Azure DevOps
@@ -16,7 +16,9 @@
   `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/CODEX_BACKEND_IMPLEMENTATION_BRIEF.md`.
 - Manager decisions and corrections:
   `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`.
-- Production status: not implemented, deployed, enabled, or live.
+- Production status: implementation and isolated SQL proof are complete on the
+  task branch. The visible Owner Home remains unavailable; release evidence is
+  recorded in `COMPLETION_REPORT.md` and the flag remains default-off.
 
 ## Scope
 

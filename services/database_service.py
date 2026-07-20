@@ -30,6 +30,7 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetVoiceDraftForOwner",
         "usp_GetVoiceMediaForOwner",
         "usp_GetMomentForOwner",
+        "usp_GetOwnerHomeForOwner",
         "usp_GetPeerSlateUserDashboard",
         "usp_ListCapturesForOwner",
         "usp_ListMomentPlacementsForOwner",

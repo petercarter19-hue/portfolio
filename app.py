@@ -96,6 +96,9 @@ app.config.update(
     PEERSLATE_LIVING_RESUME_DB_ENABLED=(
         os.environ.get('PEERSLATE_LIVING_RESUME_DB_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_OWNER_HOME_ENABLED=(
+        os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
+    ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
     ),
