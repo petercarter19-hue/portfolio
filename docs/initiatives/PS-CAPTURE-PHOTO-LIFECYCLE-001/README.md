@@ -10,12 +10,17 @@
   `work/2026-07-20-capture-photo-lifecycle-implementation-001`
 - Exact implementation base: Azure DevOps `origin/main` at
   `531013dd8c1a05e2443becd881a226755f27ca14`
+- Implementation source:
+  `f74afcea11f74b8be1b8034d98080c0c5cc38b32`
+- Released gate: Azure PR 108 squash
+  `919adba534d70c4f3f30979b8d43e000912079c8`; automatic pipeline 158 passed
+  Build and Deploy
 - Sole implementation writer: current Codex session
 - Implementation scope: only the reserved server gate, Photo route integration,
   nonsecret configuration example, focused tests, and package-local records
-- Release boundary: both Photo flags remain false through release; no production
+- Release boundary: gate released with both Photo flags false; no production
   proof window, ordinary-member enablement, homepage change, or malicious
-  fixture is authorized by this continuation
+  fixture was authorized or performed by this continuation
 - Lifecycle-readiness result: **Conditional** until the signed-in production
   evidence and teardown matrix is completed; under choice B the production
   Defender-malicious row remains Conditional

@@ -11,8 +11,16 @@
   `531013dd8c1a05e2443becd881a226755f27ca14`
 - Owner approval: recorded 2026-07-20
 - Defender decision: choice **B** - no production malicious-file test
-- Current implementation result: local gate implementation complete and
-  validation green; Azure release and production lifecycle proof pending
+- Exact implementation source:
+  `f74afcea11f74b8be1b8034d98080c0c5cc38b32`
+- Azure release: PR 108 squash merge
+  `919adba534d70c4f3f30979b8d43e000912079c8`
+- Pipeline: automatic run 158 passed Build and Deploy for the exact merge
+- Package-local closeout branch:
+  `work/2026-07-20-capture-photo-lifecycle-closeout-001`, exact base
+  `919adba534d70c4f3f30979b8d43e000912079c8`
+- Current implementation result: gate released flag-off; production lifecycle
+  proof pending
 - Lifecycle-readiness result: **Conditional**
 - Ordinary-member status: `CAPTURE_PHOTO_ENABLED=false`; Photo is not claimed
   live
@@ -97,8 +105,25 @@ Blob locator was read, printed, committed, or placed in evidence.
 
 The local full suite used a temporary Python 3.13 virtual environment with the
 repository's exact requirements because a Python 3.12 executable was not
-available locally. The Azure pipeline's Python 3.12 result remains the release
-authority and is pending.
+available locally. Azure automatic pipeline 158 supplied the authoritative
+Python 3.12 result and passed Build and Deploy. A redundant manual run 159 was
+canceled before its deployment job began after the hidden active automatic run
+was identified.
+
+## Release and public verification
+
+- Azure PR 108 source commit matched the exact pushed implementation SHA.
+- PR target matched exact base
+  `531013dd8c1a05e2443becd881a226755f27ca14`.
+- Merge status succeeded with squash strategy and source-branch deletion.
+- Automatic pipeline 158 passed against exact merge
+  `919adba534d70c4f3f30979b8d43e000912079c8`.
+- Public `GET /` returned 200 after deployment.
+- Signed-out `GET /app/capture` preserved the existing sign-in redirect.
+- Direct signed-out Photo GET and same-origin POST both returned the neutral
+  flag-off 404 and `Photo Capture is unavailable.`
+- No setting was inspected or changed, no proof identity was configured, no
+  production record was created, and no Photo mode was enabled.
 
 ## Deliberate exclusions
 
@@ -131,8 +156,8 @@ active Interview homepage lane, plus a new explicit owner/manager decision.
 
 ## Recommendation
 
-**Conditional.** The bounded gate implementation is locally ready for release
-with both flags off. Lifecycle readiness cannot become Pass until the approved
-production matrix and teardown are complete; choice B permanently leaves the
-production Defender-malicious row Conditional unless a later owner decision
-replaces it with coordinated choice A.
+**Conditional.** The bounded gate implementation is released with both flags
+off. Lifecycle readiness cannot become Pass until the approved production
+matrix and teardown are complete; choice B permanently leaves the production
+Defender-malicious row Conditional unless a later owner decision replaces it
+with coordinated choice A.

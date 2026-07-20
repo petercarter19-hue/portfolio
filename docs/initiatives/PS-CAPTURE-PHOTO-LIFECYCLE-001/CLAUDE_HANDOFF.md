@@ -11,10 +11,19 @@
   `work/2026-07-20-capture-photo-lifecycle-implementation-001`
 - Exact base: Azure `origin/main` at
   `531013dd8c1a05e2443becd881a226755f27ca14`
-- Current writer: Codex remains the sole writer on this branch; this handoff is
-  independent review/coordination input and does not transfer branch ownership
-- Current result: local implementation tests pass; release and signed-in
-  production proof are not yet complete; lifecycle readiness is **Conditional**
+- Exact pushed implementation source:
+  `f74afcea11f74b8be1b8034d98080c0c5cc38b32`
+- Azure release: PR 108 squash-merged successfully at
+  `919adba534d70c4f3f30979b8d43e000912079c8`; source branch deleted
+- Pipeline: automatic run 158 passed Build and Deploy for exact merge
+  `919adba534d70c4f3f30979b8d43e000912079c8`
+- Package-local closeout branch:
+  `work/2026-07-20-capture-photo-lifecycle-closeout-001`, based exactly on
+  `919adba534d70c4f3f30979b8d43e000912079c8`
+- Current writer: Codex remains the sole writer on that closeout branch; this
+  handoff is independent review input and does not transfer branch ownership
+- Current result: gate implementation is released flag-off; signed-in
+  production proof is not complete; lifecycle readiness is **Conditional**
 - Ordinary member status: `CAPTURE_PHOTO_ENABLED` remains false; Photo is not
   live or available to ordinary members
 
@@ -61,21 +70,28 @@ governance, Voice, Moment, or Placement file is changed.
   malformed-source denial ordering is preserved
 
 The local validation environment is an isolated temporary Python 3.13 virtual
-environment with the repository's exact requirements. The Azure pipeline is
-the authoritative Python 3.12 validation and remains pending until release.
+environment with the repository's exact requirements. Azure automatic pipeline
+158 is the authoritative Python 3.12 validation and passed Build and Deploy. A
+redundant manual run 159, queued while the active automatic run was hidden from
+the list response, was canceled before its Deploy job began.
+
+Public signed-out verification after pipeline 158 passed:
+
+- `GET /` returned 200;
+- `GET /app/capture` returned the existing sign-in redirect;
+- direct Photo GET returned neutral 404 with `Photo Capture is unavailable.`;
+  and
+- direct Photo POST returned the same neutral 404 without a record or payload.
 
 ## What remains
 
-1. Complete the final diff/privacy/scope review, commit, and push.
-2. Release only through an Azure PR and green pipeline with both Photo flags
-   false.
-3. Obtain a separately approved attended proof window and secure operator
+1. Obtain a separately approved attended proof window and secure operator
    provisioning of exactly two synthetic cohort identities plus synthetic C.
-4. Run the complete production evidence matrix, production screenshots,
+2. Run the complete production evidence matrix, production screenshots,
    second-owner denial checks, owner-scoped teardown, active original/
    derivative Blob absence, soft-delete retention classification, rollback,
    and final privacy review.
-5. Under choice B, do not upload EICAR or any malicious-test fixture. Do not use
+3. Under choice B, do not upload EICAR or any malicious-test fixture. Do not use
    an application-invalid image as Defender proof.
 
 Dark-launch proof does not depend on homepage parity. Ordinary-member Photo
@@ -85,8 +101,8 @@ enablement.
 
 ## Review guardrails for Claude
 
-Review this report and the branch independently. Do not edit this branch or
-blend a separate Claude document set into the package while Codex remains the
-sole writer. Flag any safety, scope, or test concern back to the owner/Codex.
-Do not inspect secret settings, create production records, change Azure,
-Defender, SQL, homepage files, or enable either Photo mode.
+Review this report and the released merge independently. Do not blend a
+separate Claude document set into this package. Flag any safety, scope, or test
+concern back to the owner. Do not inspect secret settings, create production
+records, change Azure, Defender, SQL, homepage files, or enable either Photo
+mode without a new explicit production-proof assignment.
