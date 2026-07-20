@@ -3,7 +3,7 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.6 + Roadmap v2.5).
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.7 + Roadmap v2.6).
 
 ## Mandatory shared AI and Git workflow
 
@@ -32,8 +32,8 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 ## Source of truth
 
 The current authority is the Bible, Roadmap, Sync Standard, and design baseline
-named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.6 + Roadmap v2.5 as of
-2026-07-19). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.7 + Roadmap v2.6 as of
+2026-07-20). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
 Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
 as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported

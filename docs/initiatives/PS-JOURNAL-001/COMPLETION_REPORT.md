@@ -20,7 +20,7 @@
 ## B. What changed technically
 
 - Preserved the exact supplied v1.5.1 DOCX as package-local historical decision evidence and recorded its SHA-256.
-- Compared the source with current Bible v2.6, Roadmap v2.5, deployed Capture/Moment/Placement foundations, legacy Journal endpoints, and approved visual authority.
+- Compared the source with the then-current Bible v2.6 and Roadmap v2.5, deployed Capture/Moment/Placement foundations, legacy Journal endpoints, and approved visual authority. Bible v2.7 and Roadmap v2.6 now control and preserve that foundation.
 - Activated PS-JOURNAL-001 in current baseline/state/lane governance and removed it from holds.
 - Locked the product relationship among source Capture, confirmed canonical Moment, Journal memory profile, private Memory Intelligence, and explicit activation.
 - Added eighteen minimum requirements, architecture decisions, security/privacy boundaries, verification allocation, member validation, and stop conditions.
@@ -56,7 +56,7 @@ The restart restores the Phase 5 product spine described in the supplied source 
 - Owner Home is an active adjacent lane; the Journal writer must not overlap its files or silently expand `owner-home.v1`.
 - No public/audience projection may begin before shared server authorization and payload isolation are proven.
 - Memory Intelligence and Replay do not precede the usable private Journal and explicit Use This Moment slice.
-- The source document is historical evidence, not a replacement for current Bible v2.6.
+- The source document is historical evidence, not a replacement for current Bible v2.7.
 
 ## H. Clear next step
 

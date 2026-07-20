@@ -305,7 +305,7 @@ not interrupt the active Interview or Capture Media lanes.
 
 ## Owner-wide visual decision
 
-The current Bible is v2.6 and the
+The current Bible is v2.7 and the
 `OWNER_VISUAL_INTEGRITY_STANDARD.md` is part of mandatory startup. Selected
 demonstrations are visual promises: the real experience must match or exceed
 them. Visual polish is a release gate across all user-facing PeerSlate work,

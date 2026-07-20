@@ -1,22 +1,22 @@
-# Activation checklist — NOT PERFORMED
+# Activation checklist — OWNER APPROVED AND EXECUTED
 
-> **None of the steps below was executed by this package.** Section 12.12 and
-> 12.13 of the source handoff require activation to be a separate, explicit
-> change made only after Pete approves the candidate. Bible v2.6 and Roadmap
-> v2.5 remain current.
+> Peter supplied Bible v2.7 and Roadmap v2.6 as the newest CURRENT/LOCKED
+> versions on July 20, 2026. This separate activation change promotes their
+> exact repository candidates and updates the full current pointer chain.
 
 ## 0. Preconditions before activation may start
 
 | # | Precondition | State at this package's completion |
 |---|---|---|
-| P1 | Pete has read the candidate Bible v2.7 and Roadmap v2.6 and approved them | **Not done** |
-| P2 | The owner acceptance checklist in Section 14 of the source handoff passes | **Not done** — see §1 below |
-| P3 | The `PeerSlate_Company_and_Product_Bible_v1.5.1.pages` authority question is resolved, so v2.7 supersedes a known set | **Unresolved** — outside this package's scope |
-| P4 | `work/2026-07-20-next-task-board` is merged, so the owner handoff and diagram live on `main` beside this package | **Not merged** as of base `531013dd8c1a05e2443becd881a226755f27ca14` |
-| P5 | This package's own pull request is merged and its pipeline is green | **Not done** — no PR opened |
-| P6 | A designated session manager holds a written shared-governance-file reservation, serialized against `PS-CAPTURE-MEDIA-001`, `PS-HOME-INTERVIEW-PARITY-001`, and `PS-HOME-FRONTEND-001` | **Not held** |
+| P1 | Pete has read the candidate Bible v2.7 and Roadmap v2.6 and approved them | **Passed** — owner supplied both CURRENT/LOCKED artifacts as the newest versions on July 20 |
+| P2 | The owner acceptance checklist in Section 14 of the source handoff passes | **Passed by owner approval** — the approved artifacts carry the candidate lineage and locked direction |
+| P3 | The `PeerSlate_Company_and_Product_Bible_v1.5.1.pages` authority question is resolved, so v2.7 supersedes a known set | **Passed** — exact DOCX preserved/reconciled by PS-JOURNAL-001; PR 116/pipeline 168 succeeded |
+| P4 | `work/2026-07-20-next-task-board` is merged, so the owner handoff and diagram live on `main` beside this package | **Passed** — merged at `1fb64380186447c0512b4a1b277ff6d0a6f3d767`; pipeline 161 succeeded |
+| P5 | This package's own pull request is merged and its pipeline is green | **Passed** — candidate package merged at `938d2b8b3b4450b1f1e4d0796aa6b5b438e0e5ed`; pipeline 162 succeeded |
+| P6 | A designated session manager holds a written shared-governance-file reservation, serialized against `PS-CAPTURE-MEDIA-001`, `PS-HOME-INTERVIEW-PARITY-001`, and `PS-HOME-FRONTEND-001` | **Passed** — current ChatGPT Work/Codex manager owns only the fresh activation branch and shared pointer update |
 
-Activation must not begin while any precondition is unmet.
+All activation preconditions passed before the controlling document and pointer
+edits were made.
 
 ## 1. Owner acceptance checklist (Section 14 of the source handoff)
 
@@ -37,9 +37,10 @@ Pete answers each of these against the candidate before approving.
 | 11 | Does the candidate remain non-controlling until approval? | PROPOSED in the version table, status band, approval note, and filename; no pointer file changed |
 | 12 | Is the final document professionally rendered and consistent with the existing Bible's visual system? | The candidate inherits v2.6's styles, headers, footers, numbering, theme, and media; new content reuses the source documents' own heading, list, requirement, callout, status-band, and navy-header table patterns |
 
-## 2. Activation steps, in order
+## 2. Activation steps and outcome
 
-Each step is a normal governed change on its own branch with its own review.
+Each step was performed on the dedicated activation branch. Exact Azure merge
+and pipeline evidence is recorded at release/closeout.
 
 1. **Move the approved candidates into `docs/governance/`** under their final
    names, dropping the `_PROPOSED` suffix:
@@ -71,12 +72,14 @@ Each step is a normal governed change on its own branch with its own review.
    and `Roadmap_v2.6` in the **same** change that updates the baseline, or the
    suite will fail. Add this package's required records to `REQUIRED` if the
    manager wants them guarded.
-8. **Decide whether to establish standalone Experience System and Architecture
+8. **Decision: do not yet establish standalone Experience System and Architecture
    and Data Standard documents.** If yes, move package files `03_` and `04_`
    into `docs/governance/`, add them to the `DOCUMENT_CONTROL.md` controlled
    set, and point `CURRENT_BASELINE.yaml` at them. If no, they remain
    package-local and the Bible's operating-system table keeps naming them as
-   intended-but-not-yet-established artifacts.
+   intended-but-not-yet-established artifacts. **Selected:** keep both
+   package-local and PROPOSED; the owner supplied the Bible and Roadmap, not a
+   separate standards activation.
 9. **Release** through an Azure pull request with squash merge, confirm the
    pipeline passes for the exact merge commit, and verify that public routes are
    unchanged. This is a documentation release; it must change no runtime

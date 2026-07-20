@@ -4,22 +4,24 @@
 
 - Package: `PS-GOV-CONNECTED-SYSTEM-001`
 - Work type: documentation and governance only
-- Status: **staged — owner-supplied handoff preserved; writer unassigned**
+- Status: **complete — owner approved and authority activated**
 - Owner decision date: 2026-07-20
 - Source handoff: `source/PeerSlate_Connected_System_and_Hooks_Bible_Update_Handoff_v1.md`
   (handoff version 1.0, prepared 2026-07-20), with the rendered PDF and the
   architecture diagram preserved beside it
-- Designated session manager: unassigned — Pete to name a manager before the
-  writer opens a branch
-- Writer: unassigned. The source handoff names Codex; Pete may reassign to a
-  Claude session. Whoever is assigned is the sole writer.
-- Required branch: `docs/connected-system-return-value-authority`, created from
-  the exact then-current Azure `origin/main`
+- Designated session manager: ChatGPT Work/Codex manager session for activation
+- Candidate writer: Claude Code on `docs/connected-system-return-value-authority`
+- Activation writer: Codex on
+  `work/2026-07-20-bible-v27-roadmap-v26-activation`
 - Runtime impact: **none permitted**
 
-This package exists so the owner-supplied connected-system strategy is visible
-in the repository to every agent and session. Staging it here is not approval of
-its contents and does not make Bible v2.7 controlling.
+This package made the owner-approved connected-system strategy durable for every
+agent and session. Peter supplied Bible v2.7 and Roadmap v2.6 as the newest
+CURRENT/LOCKED versions on July 20, 2026. Their preserved candidates were
+promoted into `docs/governance/`, and the current pointer chain now names them.
+
+Activation changed governance only. It did not implement any connective
+pattern, return-value engine, route, schema, feature flag, or live behavior.
 
 ## Governing product decision
 
@@ -78,17 +80,11 @@ Before a writer begins:
 4. The open decisions in Section 8.2 of the source handoff are acknowledged as
    open. They are not for the writer to silently close.
 
-## Relationship to the unresolved v1.5.1 question
+## Relationship to the resolved v1.5.1 question
 
-A separate owner document, `PeerSlate_Company_and_Product_Bible_v1.5.1.pages`,
-sits untracked in the repository root. It is dated July 17, 2026, presents
-itself as an implementation baseline superseding v1.3 and v1.4, and appears in
-no supersession list in `DOCUMENT_CONTROL.md`, which stops at v1.4. It also
-carries at least two positions that collide with current authority: "the Journal
-is the member profile" while Journal UI is held, and Iris Foundry color
-direction, which Deep Navy Gold retired.
-
-That authority question is unresolved and is **not** in this package's scope.
-It should be settled before a candidate v2.7 is approved, so the new Bible
-supersedes a known set rather than an ambiguous one. Tracked separately on the
-next-task board.
+Peter supplied the exact v1.5.1 DOCX and explicitly restarted Journal as the
+memory profile. `PS-JOURNAL-001` preserves and reconciles it: the Journal
+direction is carried forward, Iris remains superseded by Deep Navy Gold, and
+Capture → confirmed Moment → governed Journal/activation references remains the
+current canonical sequence. Azure PR 116 and pipeline 168 completed that gate
+before v2.7/v2.6 activation.

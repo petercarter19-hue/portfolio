@@ -3,7 +3,8 @@
 _Updated 2026-07-20 for the released flag-off Photo experience, released
 default-off Owner Home backend, released/live-verified 5A-light/5C-dark
 Interview Studio, the exact-authority Owner Home frontend activation, and the
-owner-authorized Journal memory-profile restart.
+owner-authorized Journal memory-profile restart. Bible v2.7 and Roadmap v2.6
+are the current connected-system and return-value authority.
 Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
@@ -128,6 +129,13 @@ Every manager and writer must still fetch `origin` before starting._
   `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`; automatic pipeline 150
   (`20260720.21`) passed Build and Deploy. It changed governance only and
   formally closed the release lane.
+- The connected-system candidate package merged through Azure PR 111 at
+  `938d2b8b3b4450b1f1e4d0796aa6b5b438e0e5ed`; pipeline 162
+  (`20260720.33`) passed. Peter then supplied the owner-approved CURRENT/LOCKED
+  Bible v2.7 and Roadmap v2.6 artifacts. This activation promotes their exact
+  repository candidate lineage into the controlled governance set. It changes
+  no application, route, schema, feature flag, deployment configuration, or
+  member-facing behavior.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -243,7 +251,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
+| Governance and baseline | Bible v2.7, Roadmap v2.6, connected-system/return-value authority, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122; homepage-convergence architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` is pushed | Manager reviews the convergence architecture before bounded product edits; keep parity open until accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
@@ -284,6 +292,13 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   target Journal route, audience projection, Memory Intelligence experience,
   Replay, or Use This Moment UI is live. Legacy `/api/journal/*` endpoints are
   prompt/response implementation history, not proof of the memory profile.
+- Bible v2.7 and Roadmap v2.6 make the visible connected-system trunk current
+  direction, but no Slate Spine, Backstory Drawer, Studio Return Ticket, Then
+  and Now, Focus Theme, Progress Keepsake, public connective pilot, shared
+  connective component, or private return-value engine is implemented,
+  assigned, enabled, deployed, or live. `PS-PUBLIC-CONNECTIVE-001`,
+  `PS-CONNECTIVE-COMPONENT-001`, and `PS-RETURN-VALUE-001` are candidate IDs
+  only.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source;
   it is public, so advancing it requires explicit owner approval.
@@ -293,7 +308,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner visual-integrity decision
 
-- Bible v2.6 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+- Bible v2.7 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
   production-intent demonstrations binding visual minimums. The real experience
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production
@@ -333,7 +348,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner Story composition decision
 
-- Bible v2.6, Roadmap v2.5, and
+- Bible v2.7, Roadmap v2.6, and
   `OWNER_STORY_COMPOSITION_STANDARD.md` make Story composition member-directed.
 - The future authenticated editor must let a member move and resize supported
   notes, text, images, and media; control overlap/layering; use keyboard and

@@ -3,7 +3,8 @@
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
 release, exact-authority Owner Home frontend activation, and the
-owner-authorized Journal memory-profile restart._
+owner-authorized Journal memory-profile restart. Bible v2.7 and Roadmap v2.6
+are activated as current connected-system/return-value authority._
 
 ## Operating model
 
@@ -238,7 +239,7 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 - Peter explicitly lifted the Journal hold on July 20, 2026. The supplied
   Foundation Edition v1.5.1 is preserved with SHA-256
   `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`
-  and reconciled against the current Bible v2.6 and Roadmap v2.5.
+  and reconciled against the current Bible v2.7 and Roadmap v2.6.
 - Journal is the member's private-first memory profile over confirmed canonical
   Moments. Memory Intelligence remains private, source-linked interpretation;
   Use This Moment requires explicit member approval and may not copy or publish
@@ -252,6 +253,23 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 ## Holds
 
 No current package holds. Product-code entry gates still apply.
+
+### PS-GOV-CONNECTED-SYSTEM-001 - owner approved / authority activated
+
+- Candidate source package:
+  `docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md`.
+- Candidate lineage merged through Azure PR 111 at
+  `938d2b8b3b4450b1f1e4d0796aa6b5b438e0e5ed`; pipeline 162 passed.
+- Peter supplied the CURRENT/LOCKED Bible v2.7 and Roadmap v2.6 artifacts on
+  July 20. Their exact repository candidates are promoted to the controlled
+  governance paths and all current pointers now name them.
+- The package is complete and changes no runtime behavior. Its Architecture
+  and Data Standard and Experience System files remain PROPOSED/package-local;
+  they are supporting detail, not separate controlled standards.
+- `PS-PUBLIC-CONNECTIVE-001`, `PS-CONNECTIVE-COMPONENT-001`, and
+  `PS-RETURN-VALUE-001` are candidate, unassigned, and inactive. None may begin
+  without its own entry gate, manager, writer, branch, visual authority, and
+  acceptance.
 
 ## Shared rules
 
