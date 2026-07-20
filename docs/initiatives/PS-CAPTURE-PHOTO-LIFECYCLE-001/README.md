@@ -1,11 +1,45 @@
 # PS-CAPTURE-PHOTO-LIFECYCLE-001 - Photo Lifecycle Readiness
 
+## Proof-readiness continuation - 2026-07-20
+
+This continuation closes the two gaps that blocked scheduling the attended
+production proof window. It changes no route, schema, migration, template, CSS,
+or JavaScript, and it enables nothing.
+
+- Branch: `work/2026-07-20-photo-proof-readiness-001`
+- Exact base: Azure DevOps `origin/main` at
+  `ed3409a902f38e9437f6fbf70d3f2f61625037f4`
+- Writer: current Claude Code session
+- Both Photo flags remain false. No production, Azure, Defender, or SQL action
+  was taken, and no proof window was run.
+
+**Gap 1 - the proof window left no server-side record.**
+`CAPTURE_PHOTO_LIFECYCLE_PROOF_RUN_ID` was parsed, validated, and stored on the
+configuration object but consumed nowhere in application code. Every other
+logger call on the Photo paths is an error branch, so an attended window would
+have produced no positive evidence that proof mode was active or that a cohort
+member was admitted; the run would have rested entirely on operator
+screenshots. `services/photo_lifecycle_access_service.py` now emits one
+privacy-safe audit record - access mode and run id only - the first time each
+proof window actually admits a cohort request. See
+[`06_PROOF_ADMISSION_AUDIT_RECORD.md`](06_PROOF_ADMISSION_AUDIT_RECORD.md).
+
+**Gap 2 - Defender choice B excluded the malicious path.** The owner replaced
+choice B with **choice A**, the coordinated inert production test, on
+2026-07-20. The malicious row is now an in-scope production row with a full
+operational plan in
+[`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
+
+The window itself is now schedulable using
+[`05_PROOF_WINDOW_RUN_CHECKLIST.md`](05_PROOF_WINDOW_RUN_CHECKLIST.md).
+
 ## Approved implementation continuation - 2026-07-20
 
 - Architecture release: Azure PR 107; squash
   `531013dd8c1a05e2443becd881a226755f27ca14`
-- Owner decision: architecture approved and Defender choice **B** recorded -
-  no production malicious-file test
+- Owner decision: architecture approved; Defender choice **B** recorded, then
+  explicitly replaced the same day by choice **A** - a coordinated inert
+  production test using a security-approved EICAR-based fixture
 - Implementation branch:
   `work/2026-07-20-capture-photo-lifecycle-implementation-001`
 - Exact implementation base: Azure DevOps `origin/main` at
@@ -22,8 +56,8 @@
   proof window, ordinary-member enablement, homepage change, or malicious
   fixture was authorized or performed by this continuation
 - Lifecycle-readiness result: **Conditional** until the signed-in production
-  evidence and teardown matrix is completed; under choice B the production
-  Defender-malicious row remains Conditional
+  evidence and teardown matrix is completed; under recorded choice A the
+  production Defender-malicious row is in scope and can reach Pass
 
 The sections below preserve the accepted architecture context. The approval
 above supersedes the original pending-writer and approval-stop statements for
@@ -123,26 +157,31 @@ owner IDs, email addresses, headers outside the trusted authentication
 boundary, query values, source keys, Capture keys, Blob names, and UI state
 never grant cohort access.
 
-The owner selected Defender path **B**: no production malicious test. Retain
-the sanctioned isolated-account proof and mark the production
-Defender-malicious path Conditional. A malformed or dimension-invalid image
-proves only application image validation and never proves Defender malware
-rejection.
+The owner selected Defender path **A**: a coordinated inert production test
+using one security-approved EICAR-based fixture, run only inside the attended
+window with advance security notification. A malformed or dimension-invalid
+image proves only application image validation and never proves Defender
+malware rejection, so the two rejection rows stay separate with separate
+evidence.
 
 See:
 
 1. [Threat model and authorization boundary](01_THREAT_MODEL_AND_AUTHORIZATION_BOUNDARY.md)
 2. [Proof mechanism, configuration, rollback, and file reservations](02_PROOF_MECHANISM_AND_ROLLOUT.md)
 3. [Lifecycle, two-owner, evidence, and screenshot matrix](03_PRODUCTION_EVIDENCE_MATRIX.md)
-4. [Architecture completion and approval handoff](COMPLETION_REPORT.md)
-5. [Gate implementation completion report](IMPLEMENTATION_COMPLETION_REPORT.md)
-6. [Claude independent-review handoff](CLAUDE_HANDOFF.md)
+4. [Defender choice A operational plan](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md)
+5. [Runnable proof-window checklist](05_PROOF_WINDOW_RUN_CHECKLIST.md)
+6. [Proof-mode admission audit record](06_PROOF_ADMISSION_AUDIT_RECORD.md)
+7. [Architecture completion and approval handoff](COMPLETION_REPORT.md)
+8. [Gate implementation completion report](IMPLEMENTATION_COMPLETION_REPORT.md)
+9. [Claude independent-review handoff](CLAUDE_HANDOFF.md)
+10. [Proof-readiness completion report](PROOF_READINESS_COMPLETION_REPORT.md)
 
 ## Alternatives evaluated
 
 | Method | Decision | Reason |
 | --- | --- | --- |
-| Server-enforced production dark launch | **Recommended** | Proves the exact released production identity, SQL, Blob, clean-Defender, route, UI, and deletion paths while the global flag stays false and ordinary members receive neutral denial. Production Defender-malicious proof additionally requires choice A. |
+| Server-enforced production dark launch | **Recommended** | Proves the exact released production identity, SQL, Blob, clean-Defender, route, UI, and deletion paths while the global flag stays false and ordinary members receive neutral denial. With choice A recorded, it also proves the production Defender-malicious binding. |
 | Properly isolated staging slot/environment | **Conditional supporting method** | Appropriate for rehearsal and deliberate failure injection only if identity, SQL, Storage, Defender, callbacks, telemetry, settings, managed identity, and release permissions are all isolated. Current governance does not verify that complete environment. Staging cannot by itself close production proof. |
 | Temporary global flag-on production window | **Rejected now; later fallback only** | It exposes Photo to ordinary members. It requires explicit Pete and designated-manager approval, accepted and live homepage parity, an attended short window, prewritten rollback, and every dark-launch control that can still apply. |
 
@@ -161,6 +200,18 @@ approved implementation continuation may add or edit only:
 It may not edit any other application/runtime file, shared governance,
 templates, CSS, JavaScript, SQL, Azure scripts/resources, Defender, production
 data, homepage files, or the released `PS-CAPTURE-MEDIA-001` package.
+
+The 2026-07-20 proof-readiness continuation used a strict subset of that
+reservation:
+
+- `services/photo_lifecycle_access_service.py` - the proof-admission audit
+  record only; no change to any access decision; and
+- `tests/test_photo_lifecycle_access.py` plus
+  `docs/initiatives/PS-CAPTURE-PHOTO-LIFECYCLE-001/`.
+
+It did not touch `.env.example`, `owner_routes.py`,
+`tests/test_owner_photo_capture.py`, `app.py`, or
+`static/js/interview-studio.js`.
 
 ## Approval stop
 

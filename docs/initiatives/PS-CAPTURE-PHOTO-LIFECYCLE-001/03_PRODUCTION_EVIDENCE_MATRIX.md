@@ -16,7 +16,7 @@ Use one run-specific inventory maintained in transient process memory:
 | `A-clean-confirmed` | A | Pending -> clean -> review -> confirm -> correction -> archive -> restore -> export/download -> confirmed delete | Capture/link content removed under existing tombstone contract; original and derivative actively absent; soft-deleted retention recorded separately |
 | `A-clean-draft-delete` | A | Known-clean draft with both Blobs, deleted before confirmation | Source body-free deleted tombstone; original and derivative actively absent; soft-deleted retention recorded separately; no Capture/link |
 | `A-image-invalid` | A | Safe malformed or dimension-invalid JPEG/PNG; application validation only | Application rejection/validation failure; no Defender-malicious claim; no preview/confirm/Capture/link; any accepted original actively absent after cleanup |
-| `A-defender-malicious` | A | Choice A only: exact security-approved inert EICAR-based fixture reaches production Defender quarantine | Defender-owned malicious result; no delivery/confirm; provider remediation; active absence plus seven-day soft-deleted retention evidence |
+| `A-defender-malicious` | A | **In scope under recorded choice A.** The exact security-approved inert EICAR-based fixture reaches production Defender quarantine. Handled per [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md); bytes are supplied through the approved security channel and never committed here | Defender-owned malicious result; application state `rejected`; no delivery/confirm; provider remediation; active absence plus seven-day soft-deleted retention evidence |
 | `A-stale-error` | A | Obsolete row-version or validation failure | No mutation; recoverable error evidence; delete afterward |
 | `B-owner-control` | B | Prove B can create only B-owned state while inside cohort | Fully deleted; both Blobs actively absent where created; retention recorded separately |
 | `C-noncohort` | C | Gate-denial requests only | No source or Capture can be created |
@@ -34,7 +34,7 @@ and metadata-audited; production keys and identity values never accompany them.
 | Pending | A uploads one supported synthetic JPEG/PNG | 201 owner-safe application response; state becomes `scanning`; status remains pending until Defender result | No preview/original URL in pending response; preview/original/confirm unavailable; no Capture/link; B denied; C neutral |
 | Clean | A reconciles after Defender reports clean | State reaches `needs_review`; independently decoded metadata-free derivative has bounded type/bytes/dimensions | No Blob locator/digest/filename; exact original remains private; B denied on status/preview/original/reconcile |
 | Application image-validation rejection | A submits the approved safe malformed or dimension-invalid image fixture | Initial validation rejects it or, after a clean scan, independent decode/dimension validation reaches the documented rejected/failed state with a stable safe code | Evidence names the application validator, not Defender; no preview, original product delivery, confirm, Capture, link, or downstream write; any accepted original is cleaned up without provider-detail logging |
-| Defender-malicious rejection | Choice A only: A submits the exact security-approved inert EICAR-based fixture during the coordinated alert window and it reaches Defender quarantine | Defender-owned result reports malicious; application reaches `rejected`; expected alert/remediation occurs | No preview, download, confirm, derivative, Capture, link, or downstream write; original and derivative locator slots actively absent after remediation; seven-day retained soft-delete state documented. Application rejection before a Defender malicious result is not proof. Under choice B, do not run this row in production; cite isolated-account evidence and mark it Conditional. |
+| Defender-malicious rejection | **In scope.** A submits the exact security-approved inert EICAR-based fixture during the coordinated alert window and it reaches Defender quarantine | Defender-owned result reports malicious; application reaches `rejected` with a stable safe code; the expected Defender alert and remediation occur and are acknowledged by the notified alert owner as the planned test | No preview, download, confirm, derivative, Capture, link, or downstream write; original and derivative locator slots actively absent after remediation; seven-day retained soft-delete state documented as retention, not erasure. Application rejection before a Defender malicious result is not proof. If security coordination lapses before upload, skip the row and record it Conditional rather than substituting another fixture. |
 | Error | A submits an obsolete row-version or an invalid required-note confirmation | Existing changed/validation error appears and recovery is understandable | State and both Blobs unchanged; no duplicate Capture/link; do not induce a production Storage/Defender outage merely to make an error screenshot |
 | Confirmed | A supplies a nonempty synthetic note and explicit save confirmation | Exactly one private `capture_type=photo` Capture and one source link; source `confirmed`; replay returns existing result | No Moment/Placement/audience/share/publication; concurrent/replayed save does not duplicate; B denied |
 | Correction | A corrects only the confirmed Capture note | One new Capture revision; immutable original note and source bytes unchanged | No Blob change or downstream write; stale token denied; B denied |
@@ -53,15 +53,16 @@ network, or Storage configuration to manufacture one.
 
 ## Defender decision evidence
 
-The production run record must contain the owner's explicit choice:
+The recorded owner decision as of 2026-07-20 is **choice A**. The production run
+record must therefore identify the advance security-alert coordination record
+without exposing operational secrets, and capture the Defender-owned malicious
+outcome, the neutral application rejection, the expected alert and remediation,
+active absence, and the seven-day soft-deleted retention classification.
 
-- **A:** identify the advance security-alert coordination record without
-  exposing operational secrets; capture the Defender-owned malicious outcome,
-  neutral application rejection, expected alert/remediation, active absence,
-  and seven-day soft-deleted retention classification; or
-- **B:** state that no production malicious fixture was used, cite only the
-  accepted disposable isolated-account proof, and mark the production
-  Defender-malicious row and overall lifecycle result Conditional.
+Choice B remains only as the superseded record and the same-day fallback. If it
+is used, the run record must state that no production malicious fixture was
+uploaded, cite only the accepted disposable isolated-account proof, and mark the
+production Defender-malicious row Conditional.
 
 The `A-image-invalid` fixture cannot satisfy either choice's Defender evidence.
 If choice A's fixture is stopped by application validation before Defender
@@ -138,7 +139,16 @@ Committed evidence may include only:
   viewport, browser version, test case ID, route class, HTTP outcome, state
   name, duration bucket, and Pass/Conditional/Fail;
 - synthetic fixture description and synthetic note text;
-- screenshot files that contain viewport pixels only; and
+- screenshot files that contain viewport pixels only;
+- the server-side proof-mode admission audit line, quoted verbatim. The
+  released application emits
+  `PeerSlate Photo lifecycle proof admission. access_mode=proof run_id=<run id>`
+  at warning level the first time each proof window actually admits a cohort
+  request. It carries only the access mode and the nonsecret run label, never a
+  user key, cohort value, expiry, source key, or content, so it may be quoted
+  directly into evidence. It is the only positive server record that proof mode
+  was live and admitted someone; without it the window rests entirely on
+  operator screenshots; and
 - booleans/counts such as `capture_count=1`, `link_count=1`,
   `original_active_absent=true`, `derivative_active_absent=true`, and a neutral
   soft-delete retention classification for A/B-scoped data.
@@ -172,9 +182,9 @@ Required named production images for the later evidence package:
 3. desktop and mobile known-clean safe-review states with synthetic image/note;
 4. desktop and mobile application image-validation rejection with no image
    preview;
-5. if Defender choice A is approved, desktop and mobile neutral
-   Defender-malicious rejection with no malware detail or image preview; under
-   choice B this screenshot is not manufactured and the production path stays
+5. desktop and mobile neutral Defender-malicious rejection with no malware
+   detail, no provider payload, and no image preview - required under recorded
+   choice A, and omitted only if the row itself is skipped and recorded
    Conditional;
 6. desktop and mobile stale/concurrency error plus recovery states;
 7. desktop and mobile confirmed private Capture/list state;
@@ -221,19 +231,21 @@ global flag-on fallback is also forbidden until homepage parity is live.
 Use only after the later dark-launch implementation, flag-off deployment,
 non-cohort checks, complete A lifecycle, every B denial, production screenshots,
 privacy review, rollback/expiry proof, both-Blob active absence, accurate
-soft-delete retention evidence, final teardown, and evidence review pass. A
-production Defender-malicious Pass additionally requires successful choice A;
-choice B retains a Conditional production-malicious result. An ordinary-member
-enablement Pass additionally requires accepted/live homepage parity and a
-separate explicit manager/owner decision.
+soft-delete retention evidence, final teardown, and evidence review pass. Under
+recorded choice A the production Defender-malicious row is in scope and a
+Defender-owned malicious result plus every required negative proof is part of
+the Pass condition; a skipped or uncoordinated malicious row keeps that row
+Conditional. An ordinary-member enablement Pass additionally requires
+accepted/live homepage parity and a separate explicit manager/owner decision.
 
 ### Conditional - current recommendation
 
-The architecture is accepted and the cohort gate implementation is in bounded
-continuation work, but it has not yet been released and none of the signed-in
-production evidence in this matrix exists. Keep `CAPTURE_PHOTO_ENABLED=false`.
-Defender choice B is recorded, so the production Defender-malicious row remains
-Conditional even after all other production rows pass.
+The architecture is accepted, the cohort gate is released flag-off, and the
+proof-mode admission audit record is added, but none of the signed-in production
+evidence in this matrix exists yet. Keep `CAPTURE_PHOTO_ENABLED=false` and
+`CAPTURE_PHOTO_LIFECYCLE_PROOF_ENABLED=false`. Defender choice A is now the
+recorded decision, so the production Defender-malicious row is no longer
+excluded by the owner decision; it is simply unrun, like every other row here.
 
 ### Fail
 

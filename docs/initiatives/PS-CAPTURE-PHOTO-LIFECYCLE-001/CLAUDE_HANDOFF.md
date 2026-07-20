@@ -1,12 +1,20 @@
 # Claude Handoff - Photo Lifecycle Readiness
 
+> **Superseded in part, 2026-07-20.** This handoff was written while Defender
+> choice B was recorded. The owner later replaced it with **choice A** the same
+> day. Every choice-B instruction below is superseded by
+> [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
+> The gate, release, and pipeline facts recorded here remain accurate.
+
 ## One-minute status
 
 - Package: `PS-CAPTURE-PHOTO-LIFECYCLE-001`
 - Architecture: accepted and merged through Azure PR 107 at
   `531013dd8c1a05e2443becd881a226755f27ca14`
-- Owner decision: Defender choice **B** - no production malicious-file test;
-  the production Defender-malicious case remains Conditional
+- Owner decision: Defender choice **B** was recorded here, then replaced the
+  same day by choice **A**, the coordinated inert production test; the
+  production Defender-malicious case is now an in-scope row rather than an
+  owner-excluded Conditional
 - Implementation branch:
   `work/2026-07-20-capture-photo-lifecycle-implementation-001`
 - Exact base: Azure `origin/main` at
@@ -91,8 +99,12 @@ Public signed-out verification after pipeline 158 passed:
    second-owner denial checks, owner-scoped teardown, active original/
    derivative Blob absence, soft-delete retention classification, rollback,
    and final privacy review.
-3. Under choice B, do not upload EICAR or any malicious-test fixture. Do not use
-   an application-invalid image as Defender proof.
+3. Under recorded choice A, run the malicious row using only the exact
+   security-approved inert EICAR-based fixture, only inside the attended
+   window, and only after the advance notification in
+   [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md)
+   is acknowledged. Never commit the fixture bytes to this repository. Never
+   use an application-invalid image as Defender proof.
 
 Dark-launch proof does not depend on homepage parity. Ordinary-member Photo
 enablement does, and Photo homepage work remains serialized after active

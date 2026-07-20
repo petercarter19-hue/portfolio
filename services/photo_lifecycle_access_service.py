@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import os
 import re
+import threading
 
 from flask import current_app
 
@@ -25,6 +26,13 @@ PROOF_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 FALSE_VALUES = frozenset({"", "0", "false", "no", "off"})
 
+# The only two fields that may ever reach a log record. The format string is a
+# module constant so the audit evidence and its tests cannot drift apart.
+PROOF_ADMISSION_LOG_FORMAT = (
+    "PeerSlate Photo lifecycle proof admission. access_mode=%s run_id=%s"
+)
+PROOF_ADMISSION_UNSET_RUN_ID = "unset"
+
 
 @dataclass(frozen=True)
 class PhotoLifecycleConfiguration:
@@ -32,6 +40,12 @@ class PhotoLifecycleConfiguration:
 
     Values remain server-side and this object must never be serialized into a
     response, log record, screenshot, or evidence artifact.
+
+    One narrow exception exists and is enumerated here so it cannot widen by
+    accident: ``PhotoLifecycleAccessService._announce_proof_window`` writes
+    ``mode`` and ``run_id`` to the application log. ``cohort_user_keys``,
+    ``expires_at_utc``, the admitted user key, and the object itself are never
+    written anywhere.
     """
 
     mode: str
@@ -42,6 +56,21 @@ class PhotoLifecycleConfiguration:
 
 class PhotoLifecycleAccessService:
     """Resolve ordinary release or an expiring two-owner proof cohort."""
+
+    def __init__(self):
+        # Windows already announced by this process. The fingerprint holds the
+        # mode, the nonsecret run label, and the expiry instant so a second
+        # approved window can never be silently attributed to the first. It
+        # deliberately excludes the cohort keys, so no identity material is
+        # retained by the audit path.
+        self._announced_proof_windows = set()
+        self._announcement_lock = threading.Lock()
+
+    def reset_audit_state(self):
+        """Forget which proof windows this process has already announced."""
+
+        with self._announcement_lock:
+            self._announced_proof_windows.clear()
 
     @staticmethod
     def _setting(name, default=""):
@@ -140,8 +169,38 @@ class PhotoLifecycleAccessService:
             run_id=run_id or None,
         )
 
-    @staticmethod
-    def allows_identity(identity, configuration):
+    def _announce_proof_window(self, configuration):
+        """Record once that a proof window actually admitted a cohort request.
+
+        Only ``mode`` and the nonsecret ``run_id`` are written. The admitted
+        user key, the cohort, the expiry, and the configuration object itself
+        are never serialized into the log record.
+
+        The record is emitted at warning level because proof mode is a
+        deliberate, temporary bypass of the ordinary release flag in
+        production, and because this application configures no logging
+        handlers or levels of its own; an info-level record would be dropped
+        by the default level and would leave exactly the silent evidence gap
+        this audit closes.
+        """
+
+        fingerprint = (
+            configuration.mode,
+            configuration.run_id,
+            configuration.expires_at_utc,
+        )
+        with self._announcement_lock:
+            if fingerprint in self._announced_proof_windows:
+                return False
+            self._announced_proof_windows.add(fingerprint)
+        current_app.logger.warning(
+            PROOF_ADMISSION_LOG_FORMAT,
+            configuration.mode,
+            configuration.run_id or PROOF_ADMISSION_UNSET_RUN_ID,
+        )
+        return True
+
+    def allows_identity(self, identity, configuration):
         """Authorize only the trusted server-resolved identity for this mode."""
 
         if configuration.mode not in {PHOTO_ACCESS_ORDINARY, PHOTO_ACCESS_PROOF}:
@@ -151,7 +210,10 @@ class PhotoLifecycleAccessService:
             return False
         if configuration.mode == PHOTO_ACCESS_ORDINARY:
             return True
-        return user_key in configuration.cohort_user_keys
+        if user_key not in configuration.cohort_user_keys:
+            return False
+        self._announce_proof_window(configuration)
+        return True
 
 
 photo_lifecycle_access_service = PhotoLifecycleAccessService()
@@ -163,6 +225,8 @@ __all__ = [
     "PHOTO_ACCESS_OFF",
     "PHOTO_ACCESS_ORDINARY",
     "PHOTO_ACCESS_PROOF",
+    "PROOF_ADMISSION_LOG_FORMAT",
+    "PROOF_ADMISSION_UNSET_RUN_ID",
     "PhotoLifecycleAccessService",
     "PhotoLifecycleConfiguration",
     "photo_lifecycle_access_service",

@@ -8,9 +8,11 @@ Keep the general member release flag false. Admit exactly two synthetic owners
 by the internal key that the server resolves after authentication. Use a third
 synthetic identity to prove non-cohort neutrality.
 
-The owner approved the bounded server-only implementation on 2026-07-20 and
-selected Defender choice B. This document still does not authorize a
-production proof window or any production configuration change.
+The owner approved the bounded server-only implementation on 2026-07-20. On the
+same date the owner replaced the earlier Defender choice B with **choice A**,
+the coordinated inert production test. This document still does not authorize a
+production proof window or any production configuration change; it records the
+decision and the plan choice A requires.
 
 ## Access-policy contract
 
@@ -75,12 +77,14 @@ All conditions must pass before a later operator sets the proof flag:
 6. The synthetic JPEG/PNG fixtures and synthetic notes are approved as
    nonpersonal, nonconfidential, and safe. The application-rejection fixture is
    malformed or dimension-invalid and is not evidence of malware detection.
-7. The owner has recorded Defender choice A or B from the decision section
-   below. If A is chosen, security/operations has supplied and approved the
-   exact inert EICAR-based fixture and coordinated the expected production
-   alert/remediation response in advance. If B is chosen, no malicious fixture
-   enters production and the production Defender-malicious path remains
-   Conditional.
+7. Defender **choice A** is the recorded owner decision as of 2026-07-20.
+   Before the window opens, security/operations has supplied and approved the
+   exact inert EICAR-based fixture, the advance-notification list in
+   [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md)
+   has acknowledged the window, and the expected production alert and
+   remediation response are coordinated in writing. If that coordination is not
+   complete on the day, the malicious row is skipped and recorded Conditional;
+   the rest of the window may still proceed.
 8. The screenshot list, endpoint matrix, cleanup inventory, rollback command,
    expiry, evidence owner, and incident contact are prepared.
 9. Defender cap/health, application health, pipeline health, and deletion
@@ -100,10 +104,11 @@ All conditions must pass before a later operator sets the proof flag:
    stale/recoverable error, confirmed, export, archive, restore, original
    download, draft-delete, confirmed-delete, and both-Blob active-absence cases
    in `03_PRODUCTION_EVIDENCE_MATRIX.md`.
-6. Run the Defender-malicious case only if the owner selected choice A and all
-   security-alert prerequisites remain satisfied. Under choice B, cite the
-   sanctioned isolated-account proof and record the production case
-   Conditional without uploading a malicious fixture.
+6. Run the Defender-malicious case under recorded choice A, following
+   [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md)
+   exactly, only while every security-alert prerequisite in that plan remains
+   satisfied. If any prerequisite lapses, skip the row and record it
+   Conditional rather than improvising.
 7. Run every B-versus-A endpoint denial immediately after the relevant A object
    exists and compare it with a random absent key.
 8. Capture only the required privacy-safe viewport screenshots.
@@ -116,16 +121,27 @@ All conditions must pass before a later operator sets the proof flag:
 
 ## Owner decision: production Defender-malicious proof
 
-**Recorded decision, 2026-07-20: Choice B.** No production malicious-test
-fixture will be uploaded. The sanctioned isolated-account evidence is retained
-and the production Defender-malicious path remains Conditional. This decision
-does not affect the separate application image-validation rejection case.
+**Recorded decision, 2026-07-20: Choice A.** The owner explicitly replaced the
+earlier same-day choice B with choice A, the coordinated inert production test.
+One security-approved inert EICAR-based fixture will be uploaded during the
+attended window so the production Defender binding is proved end to end rather
+than inferred. This decision does not affect the separate application
+image-validation rejection case, which remains a distinct row with distinct
+evidence.
 
-The alternatives below remain as the decision record. Choice A is not
-authorized unless the owner explicitly replaces the recorded decision in a
-later approved package update.
+EICAR is the industry-standard harmless antivirus test string. It is not
+malware and contains no executable payload; it exists specifically so scanners
+can be verified. Microsoft Defender **will** report it malicious and quarantine
+it. That is the intended and expected outcome of this row, not an incident.
+Because the alert is real and will reach whoever watches the security queue,
+choice A is authorized only with the advance notification, fixture handling,
+remediation, and stop conditions specified in
+[`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
 
-### Choice A - coordinated inert production test
+Choice B below is retained as the superseded decision record. Reverting to it
+requires a new explicit owner decision recorded in this section.
+
+### Choice A - coordinated inert production test (recorded decision)
 
 Use one security-approved inert EICAR-based test only after advance
 coordination with the security/operations alert owner. The coordination record
@@ -143,7 +159,16 @@ is actively absent after provider remediation, and retained soft-deleted state
 is recorded accurately. A post-retention check requires its own approved
 follow-up if permanent absence is to be claimed.
 
-### Choice B - no production malicious test
+The full operational plan this choice requires - advance notification, fixture
+custody, expected `rejected` application state, required negative proofs,
+remediation, cleanup, active-absence checks, retention honesty, and stop
+conditions - is
+[`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
+The fixture bytes are never committed to this repository, quoted in any
+package document, pasted into chat, or stored outside the approved security
+channel.
+
+### Choice B - no production malicious test (superseded 2026-07-20)
 
 Do not upload any malicious-test fixture in production. Retain the existing
 sanctioned harmless-malware proof from a disposable, isolated Storage/Defender
@@ -152,9 +177,15 @@ but mark the production Defender-malicious route **Conditional**. This is the
 lower-production-risk choice and it cannot be promoted to Pass by a malformed,
 dimension-invalid, or otherwise application-rejected image.
 
-Choice B is now recorded, so the production Defender-malicious case remains
-**Conditional** and is not run. The overall lifecycle-readiness result also
-remains Conditional until the remaining production matrix and teardown pass.
+Choice B is superseded. It remains available as a same-day fallback: if the
+security coordination in the operational plan is not complete when the window
+opens, or a stop condition fires before the fixture is uploaded, the operator
+skips the malicious row, cites the sanctioned isolated-account evidence, and
+records that single row **Conditional** while the rest of the window proceeds.
+
+Under recorded choice A the production Defender-malicious row is an in-scope
+row that can reach **Pass**. The overall lifecycle-readiness result remains
+Conditional until every production matrix row and the teardown pass.
 
 ## Blob deletion evidence vocabulary
 
@@ -238,7 +269,14 @@ Hard-stop and disable the proof gate immediately for:
 - any real member content read;
 - any deletion success before both active Blob absences; or
 - any high-risk security, privacy, Defender, Storage, SQL, identity, or
-  application alert.
+  application alert, **except** the single expected Defender malicious alert
+  for the approved inert EICAR-based fixture under recorded choice A, which the
+  notified security owner has acknowledged in advance as this planned test.
+
+That exception is narrow. Treat a Defender alert as a real stop condition if it
+names more than the one synthetic fixture, arrives outside the attended window,
+reaches an owner who was not notified, or is accompanied by any exposure,
+delivery, confirmation, or cross-owner signal above.
 
 Pause new work and return **Conditional** for transient service failure,
 missing screenshots, incomplete evidence, or a cleanup retry with no exposure.
