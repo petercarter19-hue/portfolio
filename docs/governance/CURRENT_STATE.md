@@ -137,7 +137,7 @@ Claude Co-Work management is distinct from Claude Code implementation. Parallel
 manager sessions may coordinate separate packages, but shared-governance-file
 reservations must be serialized.
 
-The Interview Studio review lane, Capture Media manager-planning lane, and
+The Interview Studio review lane, Capture Media Photo visual lane, and
 finite Owner Home backend lane are active independently. The Voice correction
 lane is closed:
 
@@ -158,18 +158,24 @@ lane is closed:
    predate the controlling 5A/5C and written-practice decisions. After the real
    Studio is accepted, implemented, released, and verified live, use a fresh
    downstream branch to converge the homepage projection and close parity.
-3. **PS-CAPTURE-MEDIA-001 - manager planning:** Claude Co-Work is the designated
-   session manager for requirements, architecture, decomposition, and writer
-   allocation. No authoritative Azure implementation branch was observed at
-   activation, so Capture Media is not implemented, deployed, or live.
+3. **PS-CAPTURE-MEDIA-001 - Photo visual gate:** Claude Co-Work is the
+   designated session manager. Photo backend PR 95 squash-merged at
+   `e4863a57f9642731073f232a973508615e116d72`; pipeline 139 passed. Closeout
+   PR 96 squash-merged at `67b7053fcf9ba8bf37c1bbdc5aa2d275e31dc1b7`;
+   pipeline 140 passed. The backend and production foundation are deployed
+   with Photo off, so nothing new is member-visible. The next Capture Media
+   action is the separately accepted Photo design gate.
 4. **PS-HOME-BACKEND-001 - finite Owner Home backend:** the designated
    ChatGPT Work/Codex manager accepted the Fable architecture, resolved U1–U6,
    and assigned ChatGPT Codex to a fresh post-activation backend branch. The
    package may add only the default-off finite read model and flag-gated JSON
-   endpoint; it does not change `/app`. The assignment is queued until the
-   already allocated Capture Photo backend merges or relinquishes its
-   overlapping `owner_routes.py` and `services/database_service.py`
-   reservations. `PS-HOME-FRONTEND-001` is sequenced
+   endpoint; it does not change `/app`. Capture Photo PR 95 merged at
+   `e4863a57f9642731073f232a973508615e116d72` with pipeline 139, and its
+   closeout PR 96 merged at `67b7053fcf9ba8bf37c1bbdc5aa2d275e31dc1b7`
+   with pipeline 140. Its overlapping `owner_routes.py` and
+   `services/database_service.py` reservations are closed, so the assigned
+   Home backend is cleared to start from post-correction `origin/main`.
+   `PS-HOME-FRONTEND-001` is sequenced
    after the backend merge and is not active. No Owner Home implementation,
    deployment, enablement, or live behavior exists yet.
 
@@ -204,8 +210,8 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; the fixed illustrative homepage walkthrough is accepted and live through PR 86/pipeline 122, while final 5A/5C projection parity remains open | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the updated homepage projection |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
-| Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
-| Owner Home | Dark cinematic production-intent authority and finite owner-only architecture accepted; U1–U6 resolved; `PS-HOME-BACKEND-001` assigned behind Capture Photo shared files and frontend sequenced; no runtime implementation or live route change | After Capture Photo merges/relinquishes overlapping files, implement and merge the default-off owner-isolated backend without changing `/app`; then start the exact-authority frontend from post-backend main |
+| Capture Media | Photo backend and production foundation released flag-off through PRs 95/96 and pipelines 139/140; no Photo intake is member-visible | Complete and accept the Photo design gate, then assign the separate experience package without reclaiming Home's files |
+| Owner Home | Dark cinematic production-intent authority and finite owner-only architecture accepted; U1–U6 resolved; Capture Photo overlap cleared by PRs 95/96 and pipelines 139/140; `PS-HOME-BACKEND-001` assigned and ready; no runtime implementation or live route change | Implement and merge the default-off owner-isolated backend from corrected current main without changing `/app`; then start the exact-authority frontend from post-backend main |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
 | Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |

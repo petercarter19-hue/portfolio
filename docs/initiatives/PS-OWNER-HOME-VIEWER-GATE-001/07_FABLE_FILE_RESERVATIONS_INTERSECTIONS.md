@@ -74,14 +74,14 @@ migrations, `templates/owner_workspace.html`, `static/css/owner-app.css`,
 | I5 | `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/**` | This architecture branch (current writer) | Owned by `work/2026-07-19-owner-home-fable-architecture` until merged; implementation packages create their own package directories instead of editing this one |
 | I6 | Interview lane worktree (`portfolio`, branch `work/2026-07-19-interview-public-gate-001`, uncommitted files) | Separate active lane | Untouched by this package; Owner Home packages must not modify `templates/interview_studio.html`, `static/css/interview-studio.css`, `static/js/interview-studio.js`, `tests/test_interview_studio.py` |
 | I7 | Governance activation records | Manager lane | Resolved 2026-07-19: close the architecture gate, activate `PS-HOME-BACKEND-001`, and sequence `PS-HOME-FRONTEND-001` after backend merge; implementation writers do not edit shared governance records |
-| I8 | `owner_routes.py` and `services/database_service.py` | `PS-CAPTURE-PHOTO-BACKEND-001` ↔ `PS-HOME-BACKEND-001` | Current main assigns Capture Photo first and its worktree/branch already exists. Home is assigned but queued; create its fresh branch only after Capture Photo merges or explicitly relinquishes both reservations, then start from that current main. No unmerged branch blending. |
+| I8 | `owner_routes.py` and `services/database_service.py` | `PS-CAPTURE-PHOTO-BACKEND-001` ↔ `PS-HOME-BACKEND-001` | Resolved: Capture Photo PR 95 and closeout PR 96 merged with successful pipelines 139 and 140. Its reservations are closed. Home may create its fresh branch from post-correction current main. No unmerged branch blending. |
 
 ## 5. Sequencing summary
 
 1. This architecture/manager-acceptance branch merges (docs, artifacts, and
    shared governance activation only).
-2. The already allocated `PS-CAPTURE-PHOTO-BACKEND-001` lane merges or
-   explicitly relinquishes its two overlapping shared files.
+2. Completed: `PS-CAPTURE-PHOTO-BACKEND-001` and its closeout merged through
+   PRs 95/96; pipelines 139/140 passed and both shared files were released.
 3. `PS-HOME-BACKEND-001` creates its fresh branch, implements, and merges
    (flag off; no `/app` change).
 4. `PS-HOME-FRONTEND-001` implements from post-backend main, passes visual

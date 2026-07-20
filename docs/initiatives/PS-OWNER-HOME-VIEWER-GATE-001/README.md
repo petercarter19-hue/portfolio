@@ -84,8 +84,8 @@ Architecture only: nothing is implemented, deployed, or live.
 The designated ChatGPT Work/Codex manager accepted the architecture after
 synchronizing it with current `origin/main`. U1–U6 are closed. The backend
 package is assigned to ChatGPT Codex from a fresh post-merge branch and must
-leave `/app` completely unchanged. That assignment is queued behind the
-already allocated Capture Photo backend's overlapping shared files. The
+leave `/app` completely unchanged. Capture Photo PRs 95/96 and pipelines
+139/140 cleared the overlapping shared-file gate; the assignment is ready. The
 frontend package alone owns the later flag-on template switch and exact dark
 cinematic shell. See
 `11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md` for the controlling decisions.

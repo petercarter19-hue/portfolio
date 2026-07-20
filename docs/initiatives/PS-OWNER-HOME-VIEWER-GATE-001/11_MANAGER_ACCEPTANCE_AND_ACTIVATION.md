@@ -27,10 +27,10 @@
   acceptance of implementation is pending.
 - Designated session manager: ChatGPT Work/Codex manager session.
 - Manager handoff status and next receiver: `PS-HOME-BACKEND-001` is activated
-  and assigned to a ChatGPT Codex backend writer, queued behind the already
-  allocated `PS-CAPTURE-PHOTO-BACKEND-001` shared-file lane. Its fresh branch
-  starts from `origin/main` only after that lane merges or relinquishes its
-  overlapping reservations.
+  and assigned to a ChatGPT Codex backend writer. Capture Photo PR 95 and
+  closeout PR 96 merged with successful pipelines 139 and 140, closing the
+  overlapping shared-file reservations. The Home backend is cleared to start
+  from current `origin/main` after the manager correction merges.
 - Lane owner and self-managed authority: the backend writer owns its fresh
   branch through implementation, complete-diff review, evidence, PR readiness,
   and accepted release/closeout.
@@ -132,9 +132,9 @@ Visual Integrity Standard.
 
 ## H. Clear next step
 
-Complete and merge (or explicitly relinquish) the already allocated
-`PS-CAPTURE-PHOTO-BACKEND-001` shared-file lane. Then the assigned ChatGPT Codex
-writer creates `work/YYYY-MM-DD-home-backend-001` from that current Azure
+Capture Photo PRs 95/96 are merged and their overlapping reservations are
+closed. The assigned ChatGPT Codex writer now creates
+`work/YYYY-MM-DD-home-backend-001` from post-correction Azure
 DevOps `origin/main`, using `CODEX_BACKEND_IMPLEMENTATION_BRIEF.md` as corrected
 by this record. Merge and verify the default-off Home backend before starting
 the frontend package.

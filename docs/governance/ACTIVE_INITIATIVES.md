@@ -23,9 +23,9 @@ Claude Code implementation.
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
 | Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Interview and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
-| Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 planning | requirements, architecture, slice decomposition, writer allocation, evidence gates | implementation claims, Voice rebuild, Journal, publication, shared runtime files before reservation |
+| Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 Photo visual gate after released flag-off backend | Photo design/experience sequencing, evidence gates | Voice rebuild, Journal, publication, Home files without a new reservation |
 | Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Image 5 Concept A light / Concept C dark design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
-| Owner Home backend | ChatGPT Codex self-managed writer; ChatGPT Work/Codex designated manager; queued behind Capture Photo shared files | PS-HOME-BACKEND-001 | default-off finite owner read procedure/service/JSON API, tests, SQL evidence | `/app` HTML, templates/CSS/JS, viewer modes, public/homepage surfaces, Capture/Moment/Voice internals |
+| Owner Home backend | ChatGPT Codex self-managed writer; ChatGPT Work/Codex designated manager; cleared to start | PS-HOME-BACKEND-001 | default-off finite owner read procedure/service/JSON API, tests, SQL evidence | `/app` HTML, templates/CSS/JS, viewer modes, public/homepage surfaces, Capture/Moment/Voice internals |
 
 ## Current active gate
 
@@ -84,14 +84,15 @@ new package and branch.
 ### PS-CAPTURE-MEDIA-001 - Claude Co-Work manager-planning lane
 
 - Source package: `docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`.
-- Current action: inventory the released Voice/private-media foundation; define
-  separate photo, video, and document vertical slices; select the first slice;
-  allocate one implementation writer/branch; and return requirements,
-  architecture, privacy/lifecycle, accessibility, infrastructure, test,
-  rollout, and rollback gates.
-- No authoritative remote Capture Media implementation branch was observed at
-  activation. Planning may proceed, but implementation, deployment, and live
-  status remain false until exact branch/PR/pipeline/production evidence exists.
+- Photo-first planning and the default-off backend are complete. Azure PR 95
+  squash-merged at `e4863a57f9642731073f232a973508615e116d72`; pipeline 139
+  passed. Closeout PR 96 squash-merged at
+  `67b7053fcf9ba8bf37c1bbdc5aa2d275e31dc1b7`; pipeline 140 passed. The Photo
+  flag remains off and no new member-facing capability is live.
+- Current action: complete and accept `PS-CAPTURE-PHOTO-DESIGN-001`, then
+  assign the separate runtime experience package. Photo's Home intersections
+  are closed; future Photo work must reserve its own files without reclaiming
+  the active Home backend reservations.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
 
@@ -102,11 +103,10 @@ new package and branch.
   `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`.
 - Assigned writer: ChatGPT Codex on one fresh
   `work/YYYY-MM-DD-home-backend-001` branch; designated manager: ChatGPT
-  Work/Codex manager session. The assignment is active but queued behind the
-  already allocated Capture Photo backend because both reserve
-  `owner_routes.py` and `services/database_service.py`. Create the Home branch
-  only after Capture Photo merges or explicitly relinquishes those files, then
-  start from that current `origin/main`.
+  Work/Codex manager session. Capture Photo PR 95 and closeout PR 96 are merged,
+  pipelines 139 and 140 passed, and both overlapping file reservations are
+  closed. The assignment is active and cleared to start from `origin/main`
+  after this manager correction merges.
 - Scope is only the default-off `PEERSLATE_OWNER_HOME_ENABLED` config, bounded
   owner read procedure/service/serializer, flag-gated
   `GET /api/v1/owner/home`, exact migration/rollback/verification, and required

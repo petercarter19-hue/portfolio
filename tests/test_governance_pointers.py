@@ -170,7 +170,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 122", self.baseline)
+        self.assertIn("application_behavior_pipeline: 139", self.baseline)
         self.assertIn("a98cced519a1f853ad9f4462fd438efa67d6f260", self.baseline)
         self.assertIn("voice_visual_release_pipeline: 113", self.baseline)
         self.assertIn("864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82", self.baseline)
@@ -493,7 +493,8 @@ class BaselineCoherenceTests(unittest.TestCase):
             "PS-HOME-BACKEND-001",
             "PS-HOME-FRONTEND-001",
             'status: "sequenced_after_backend_not_active"',
-            'status: "active_assigned_waiting_for_capture_photo_shared_files"',
+            'status: "active_assigned_ready_to_start"',
+            "capture_photo_closeout_pipeline: 140",
         ):
             self.assertIn(expected, self.baseline)
 

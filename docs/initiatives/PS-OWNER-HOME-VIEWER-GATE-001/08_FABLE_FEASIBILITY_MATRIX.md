@@ -69,7 +69,7 @@ presentation states fed by the server-owned availability registry.
 | Gate | Result | Basis / condition |
 |---|---|---|
 | Architecture package completeness | **Pass** | This branch |
-| Governance activation records | **Pass** | U5 resolved in `11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md` and shared governance: backend active/assigned but queued behind Capture Photo shared files; frontend sequenced |
+| Governance activation records | **Pass** | U5 resolved in `11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`; Capture Photo PRs 95/96 and pipelines 139/140 clear the backend queue; frontend remains sequenced after Home backend |
 | Guardrail + full suite | **Pass** | Architecture writer: 25/25 and 494 pass / 1 environmental skip; manager disposition on current merged baseline: 27/27 and 496 tests run / 1 environmental skip |
 | Windows generator fix (R4) | **Conditional** | Patch + dependency record complete; runtime execution pending a machine with Node.js (documented in `GENERATOR_NOTES.md`) |
 | Viewer modes / My Slate preview / insights / connections activation | **Out of scope** | Gated exactly as the Codex decomposition states; not scored here because the first slice never activates them |

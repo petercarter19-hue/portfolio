@@ -2,14 +2,15 @@
 
 ## Assignment
 
-- Status: **Active and assigned; queued behind the Capture Photo backend
-  shared-file lane; implementation not started by this record**.
+- Status: **Active, assigned, and cleared to start; implementation not started
+  by this record**.
 - Activated: 2026-07-19 by the designated ChatGPT Work/Codex manager session.
 - Implementation writer: ChatGPT Codex, self-managed on one fresh branch.
-- Required branch: `work/YYYY-MM-DD-home-backend-001` from then-current Azure
-  DevOps `origin/main`, created only after the architecture-activation PR is
-  squash-merged and `PS-CAPTURE-PHOTO-BACKEND-001` has merged or explicitly
-  relinquished `owner_routes.py` and `services/database_service.py`.
+- Required branch: `work/YYYY-MM-DD-home-backend-001` from current Azure DevOps
+  `origin/main` after the manager unblock correction merges. Capture Photo PR
+  95 and closeout PR 96 are complete; pipelines 139 and 140 passed; the
+  overlapping `owner_routes.py` and `services/database_service.py`
+  reservations are closed.
 - Designated session manager: ChatGPT Work/Codex manager session.
 - Controlling brief:
   `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/CODEX_BACKEND_IMPLEMENTATION_BRIEF.md`.
@@ -37,8 +38,8 @@ backend is merged.
 
 ## Entry and exit gates
 
-Before editing, confirm the Capture Photo shared-file lane has merged or
-relinquished its reservations. Then follow `START_HERE.md`, synchronize from `origin/main`, read the
+The Capture Photo shared-file gate is cleared by PRs 95/96 and pipelines
+139/140. Follow `START_HERE.md`, synchronize from post-correction `origin/main`, read the
 current governance authority and the complete architecture package, and recheck
 file reservations. Exit requires focused tests, both guardrail suites, the full
 suite, isolated SQL apply/verify/rollback/reapply evidence, two-owner and byte

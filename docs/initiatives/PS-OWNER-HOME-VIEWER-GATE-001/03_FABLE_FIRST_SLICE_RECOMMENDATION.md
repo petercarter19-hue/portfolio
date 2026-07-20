@@ -74,8 +74,9 @@ The binding detail is in `11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`:
 - **U4:** `/app` stays canonical and `owner_workspace.html` remains the exact
   flag-off fallback through founding-alpha stabilization.
 - **U5:** the architecture gate is closed, `PS-HOME-BACKEND-001` is active and
-  assigned but queued behind Capture Photo's overlapping shared files, and
-  `PS-HOME-FRONTEND-001` is sequenced after the Home backend merge.
+  assigned, and `PS-HOME-FRONTEND-001` is sequenced after the Home backend
+  merge. The temporary Capture Photo overlap is now cleared by PRs 95/96 and
+  pipelines 139/140.
 - **U6:** all three real workflows are eligible: failed Voice, pending Moment
   proposal, and Voice ready for review, in that urgency order; oldest first
   within kind, then stable opaque key.
