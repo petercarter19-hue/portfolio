@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import unittest
@@ -6,6 +7,10 @@ from unittest.mock import patch
 
 from app import (
     app,
+    limiter,
+    INTERVIEW_FAILURE_REASONS,
+    INTERVIEW_UNCLASSIFIED_REASON,
+    _interview_failure_reason,
     _load_interview_model_context,
     _sign_interview_model_context,
     validate_interview_improvement,
@@ -712,3 +717,292 @@ class InterviewV12ModeTests(unittest.TestCase):
         self.assertNotIn('Proof you may have missed', self.html)
         self.assertNotIn('approved evidence for your next draft', self.html)
         self.assertNotIn('model-answer reference', self.html)
+
+
+# ---------------------------------------------------------------------------
+# Interview coaching provider-reliability path.
+#
+# Every provider interaction below is a fake. These tests must never make a
+# live AI call. They lock in the honest behavior: when the model returns a
+# reply the server cannot fully validate, the request fails with 502 and the
+# response body carries no coaching content whatsoever.
+# ---------------------------------------------------------------------------
+
+class _FakeContentBlock:
+    def __init__(self, text):
+        self.text = text
+
+
+class _FakeProviderResponse:
+    """Minimal stand-in for anthropic Message (text block + stop_reason)."""
+
+    def __init__(self, text, stop_reason='end_turn'):
+        self.content = [_FakeContentBlock(text)]
+        self.stop_reason = stop_reason
+
+
+def review_payload(**overrides):
+    """A model reply that would validate, before any override is applied."""
+    scores = (12, 12, 12, 12, 12)
+    payload = {
+        'overallScore': sum(scores),
+        'verdict': 'Solid but thin',
+        'encouragement': 'You have a real example here worth expanding.',
+        'dimensions': [
+            {
+                'key': key,
+                'score': score,
+                'rationale': f'{key} is present but brief.',
+                'nextAction': f'Add one concrete detail to {key}.',
+            }
+            for key, score in zip(DIMENSIONS, scores)
+        ],
+        'star': {
+            part: {'status': 'partial', 'reason': 'Only lightly covered.'}
+            for part in ('situation', 'task', 'action', 'result')
+        },
+        'strengths': ['You gave a real example.'],
+        'improvements': ['Name the measurable result.'],
+        'evidenceSuggestions': [],
+    }
+    payload.update(overrides)
+    return payload
+
+
+class InterviewCoachingFailurePathTests(unittest.TestCase):
+    """Characterize and lock the validated-502 coaching failure path."""
+
+    REVIEW_ERROR = 'The coach returned an unreadable review. Please try again.'
+
+    def setUp(self):
+        self.client = app.test_client()
+        # The route carries a 6/minute cap; several requests per test would
+        # otherwise turn into 429s and hide the behavior under test.
+        self._limiter_enabled = limiter.enabled
+        limiter.enabled = False
+
+    def tearDown(self):
+        limiter.enabled = self._limiter_enabled
+
+    def post_review(self, reply_text, stop_reason='end_turn', answer='I led a small migration and it shipped on time.'):
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.return_value = _FakeProviderResponse(
+                reply_text, stop_reason,
+            )
+            return self.client.post(
+                '/api/interview/review',
+                json={
+                    'profile_slug': 'petec',
+                    'question': 'Tell me about a time you led a change.',
+                    'answer': answer,
+                    'level': 'experienced',
+                    'family': 'behavioral',
+                    'competency': 'Leadership',
+                },
+                base_url='http://localhost',
+            )
+
+    # -- the recorded production symptom ---------------------------------
+
+    def test_empty_strengths_is_rejected_and_no_coaching_is_fabricated(self):
+        """The exact shape behind the recorded 'review summary is incomplete'.
+
+        A candidate answer weak enough that the coach honestly finds nothing to
+        praise produces a well-formed reply with an empty `strengths` array.
+        The server must refuse it rather than invent a strength.
+        """
+        response = self.post_review(json.dumps(review_payload(strengths=[])))
+        self.assertEqual(response.status_code, 502)
+        body = response.get_json()
+        self.assertEqual(body['error'], self.REVIEW_ERROR)
+        self.assertNotIn('review', body)
+
+    def test_empty_improvements_is_rejected_the_same_way(self):
+        response = self.post_review(json.dumps(review_payload(improvements=[])))
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('review', response.get_json())
+
+    def test_empty_strengths_is_logged_as_an_empty_required_field(self):
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            self.post_review(json.dumps(review_payload(strengths=[])))
+        line = '\n'.join(logged.output)
+        self.assertIn('reason=empty_required_field', line)
+        self.assertIn('provider_stop_reason=end_turn', line)
+
+    # -- truncation is a different cause and must look different ---------
+
+    def test_truncated_reply_is_logged_as_unparseable_with_its_stop_reason(self):
+        truncated = json.dumps(review_payload())[:400]
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_review(truncated, stop_reason='max_tokens')
+        self.assertEqual(response.status_code, 502)
+        line = '\n'.join(logged.output)
+        self.assertIn('reason=unparseable_json', line)
+        self.assertIn('provider_stop_reason=max_tokens', line)
+        self.assertIn('reply_chars=400', line)
+
+    def test_prose_only_reply_is_logged_as_no_json_object(self):
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_review('I am sorry, I cannot score that answer.')
+        self.assertEqual(response.status_code, 502)
+        self.assertIn('reason=no_json_object', '\n'.join(logged.output))
+
+    def test_score_arithmetic_mismatch_is_its_own_distinguishable_cause(self):
+        """Dimension scores that do not sum to overallScore.
+
+        This one is genuinely stochastic, unlike the empty-field cause, so the
+        two must not be conflated in the logs.
+        """
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_review(json.dumps(review_payload(overallScore=77)))
+        self.assertEqual(response.status_code, 502)
+        self.assertIn('reason=score_arithmetic_mismatch', '\n'.join(logged.output))
+
+    def test_the_distinct_causes_produce_distinct_labels(self):
+        seen = set()
+        for reply, stop_reason in (
+            (json.dumps(review_payload(strengths=[])), 'end_turn'),
+            (json.dumps(review_payload(overallScore=77)), 'end_turn'),
+            (json.dumps(review_payload())[:400], 'max_tokens'),
+            ('no json here at all', 'end_turn'),
+        ):
+            with self.assertLogs(app.logger, level='WARNING') as logged:
+                self.post_review(reply, stop_reason)
+            for entry in logged.output:
+                for token in entry.split():
+                    if token.startswith('reason='):
+                        seen.add(token)
+        self.assertEqual(len(seen), 4, f'causes were conflated: {sorted(seen)}')
+
+    # -- privacy -----------------------------------------------------------
+
+    def test_failure_log_never_contains_candidate_or_model_text(self):
+        answer_sentinel = 'CANDIDATEANSWERSENTINEL confidential career detail'
+        model_sentinel = 'MODELREPLYSENTINEL'
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            self.post_review(
+                json.dumps(review_payload(verdict=model_sentinel, strengths=[])),
+                answer=answer_sentinel,
+            )
+        line = '\n'.join(logged.output)
+        self.assertNotIn('CANDIDATEANSWERSENTINEL', line)
+        self.assertNotIn('MODELREPLYSENTINEL', line)
+
+    # -- the success path must be untouched --------------------------------
+
+    def test_a_valid_reply_still_returns_the_review(self):
+        response = self.post_review(json.dumps(review_payload()))
+        self.assertEqual(response.status_code, 200)
+        review = response.get_json()['review']
+        self.assertEqual(review['overallScore'], 60)
+        self.assertEqual(len(review['dimensions']), 5)
+
+    def test_a_valid_reply_wrapped_in_code_fences_still_returns_the_review(self):
+        fenced = '```json\n' + json.dumps(review_payload()) + '\n```'
+        response = self.post_review(fenced)
+        self.assertEqual(response.status_code, 200)
+
+    # -- the sibling AI routes share the architecture ----------------------
+
+    def test_improve_failure_is_labelled_and_returns_no_draft(self):
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.return_value = _FakeProviderResponse(
+                json.dumps({'draft': '', 'changes': [], 'evidenceIds': []}),
+                'max_tokens',
+            )
+            with self.assertLogs(app.logger, level='WARNING') as logged:
+                response = self.client.post(
+                    '/api/interview/improve',
+                    json={
+                        'profile_slug': 'petec',
+                        'question': 'Tell me about a time you led a change.',
+                        'answer': 'I led a small migration and it shipped.',
+                        'improvements': ['Name the measurable result.'],
+                        'evidence_ids': [],
+                    },
+                    base_url='http://localhost',
+                )
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('improvement', response.get_json())
+        line = '\n'.join(logged.output)
+        self.assertIn('reason=empty_required_field', line)
+        self.assertIn('provider_stop_reason=max_tokens', line)
+
+    def test_model_answer_failure_is_labelled_and_returns_no_answer(self):
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.return_value = _FakeProviderResponse(
+                json.dumps({'status': 'maybe'}), 'end_turn',
+            )
+            with self.assertLogs(app.logger, level='WARNING') as logged:
+                response = self.client.post(
+                    '/api/interview/model-answer',
+                    json={
+                        'profile_slug': 'petec',
+                        'question': 'Tell me about a time you led a change.',
+                    },
+                    base_url='http://localhost',
+                )
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('modelAnswer', response.get_json())
+        self.assertIn('reason=invalid_status', '\n'.join(logged.output))
+
+
+class InterviewFailureReasonTests(unittest.TestCase):
+    """Unit-level guarantees for the cause classifier."""
+
+    def test_parse_and_shape_failures_map_to_their_own_labels(self):
+        try:
+            json.loads('{"a":')
+        except json.JSONDecodeError as error:
+            self.assertEqual(_interview_failure_reason(error), 'unparseable_json')
+        self.assertEqual(_interview_failure_reason(TypeError('x')), 'unexpected_shape')
+        self.assertEqual(_interview_failure_reason(KeyError('x')), 'unexpected_shape')
+
+    def test_an_unknown_message_is_reported_rather_than_silently_grouped(self):
+        self.assertEqual(
+            _interview_failure_reason(ValueError('brand new failure mode')),
+            INTERVIEW_UNCLASSIFIED_REASON,
+        )
+
+    def test_every_validator_rejection_message_has_a_cause_label(self):
+        """Drift guard.
+
+        Any new `raise ValueError(...)` added to the interview validators must
+        also be classified, or coaching failures silently become unattributable
+        again.
+        """
+        source = (Path(__file__).parents[1] / 'app.py').read_text(encoding='utf-8')
+        tree = ast.parse(source)
+        watched = {
+            '_clamp_score',
+            '_dimension_score',
+            '_string_list',
+            '_extract_json_object',
+            'validate_interview_review',
+            'validate_interview_model_answer',
+            'validate_interview_improvement',
+        }
+        messages = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef) or node.name not in watched:
+                continue
+            for inner in ast.walk(node):
+                if (
+                    isinstance(inner, ast.Raise)
+                    and isinstance(inner.exc, ast.Call)
+                    and getattr(inner.exc.func, 'id', '') == 'ValueError'
+                    and inner.exc.args
+                    and isinstance(inner.exc.args[0], ast.Constant)
+                ):
+                    messages.append(inner.exc.args[0].value)
+
+        self.assertGreaterEqual(len(messages), 15, 'validator messages not found')
+        unclassified = sorted({
+            message for message in messages
+            if INTERVIEW_FAILURE_REASONS.get(message, INTERVIEW_UNCLASSIFIED_REASON)
+            == INTERVIEW_UNCLASSIFIED_REASON
+        })
+        self.assertEqual(
+            unclassified, [],
+            'add these to INTERVIEW_FAILURE_REASONS in app.py: %s' % unclassified,
+        )
