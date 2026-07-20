@@ -242,9 +242,18 @@ The later real-Studio release gate is now complete. Final source
 `0aaf41768a33810b089f5fea3a66a5272e8b61d8` squash-merged through Azure PR 101
 at `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
 (`20260720.20`) passed Build and Deploy, and desktop/390px production
-verification plus exact versioned-asset hashes passed. Step 6 above is therefore
-unblocked, but it remains unassigned and must start on a fresh branch with its
-own acceptance and release gates.
+verification plus exact versioned-asset hashes passed. Release-governance PR
+102 then merged at `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`; pipeline 150
+(`20260720.21`) passed Build and Deploy.
+
+Step 6 is now activated as `PS-HOME-INTERVIEW-PARITY-001` under the current
+ChatGPT Work/Codex manager. Claude Code is assigned architecture-first
+implementation after the activation merges. It must create fresh branch
+`work/2026-07-20-home-interview-parity-001` from exact post-activation
+`origin/main`, write `PS-HOME-INTERVIEW-DEMO-001/04_REAL_STUDIO_CONVERGENCE.md`
+before product edits, and use only the files reserved by the activation
+package. Its implementation, acceptance, Azure PR, and live closeout remain
+separate gates.
 
 Do not authorize Claude implementation from the three-direction art package
 alone.

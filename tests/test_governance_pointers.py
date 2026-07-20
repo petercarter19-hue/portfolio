@@ -69,6 +69,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "07_GATE_24_SESSION_REVIEW.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "16_MANAGER_IMPLEMENTATION_ACCEPTANCE.md"),
         ("docs", "initiatives", "PS-INTERVIEW-PUBLIC-GATE-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-HOME-INTERVIEW-PARITY-001", "README.md"),
+        ("docs", "initiatives", "PS-HOME-INTERVIEW-PARITY-001", "01_CLAUDE_ARCHITECTURE_AND_IMPLEMENTATION_BRIEF.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "README.md"),
         ("docs", "initiatives", "PS-MOMENT-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-PLACEMENT-001", "README.md"),
@@ -175,6 +177,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-PLACEMENT-001", self.baseline)
         self.assertIn("application_behavior_pipeline: 149", self.baseline)
         self.assertIn("interview_studio_pipeline: 149", self.baseline)
+        self.assertIn("interview_release_closeout_pipeline: 150", self.baseline)
         self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.baseline)
         self.assertIn("capture_photo_experience_pipeline: 143", self.baseline)
         self.assertIn("owner_home_backend_pipeline: 145", self.baseline)
@@ -204,7 +207,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-CAPTURE-MEDIA-001"],
+            ["PS-CAPTURE-MEDIA-001", "PS-HOME-INTERVIEW-PARITY-001"],
             active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))

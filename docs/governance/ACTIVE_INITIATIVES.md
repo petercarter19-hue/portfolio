@@ -20,9 +20,9 @@ Claude Code implementation.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement, Owner Home sequencing, later Interview homepage convergence | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes; starting unassigned downstream work |
+| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview homepage parity, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
-| Interview homepage convergence | Unassigned | Downstream Gate 4, ready but not active | mapping the live 5A/5C Studio into the existing homepage walkthrough | modifying the real Studio; starting without fresh branch and acceptance |
+| Interview homepage convergence | Claude Code, architecture and implementation after activation | PS-HOME-INTERVIEW-PARITY-001 | mapping the live 5A/5C Studio into the existing fixed homepage walkthrough | modifying the real Studio; starting product edits before architecture review; Owner Home or Photo |
 | Owner Home frontend | Unassigned; Claude Code preferred when separately assigned | PS-HOME-FRONTEND-001 ready but not active | exact accepted dark cinematic shell from post-backend main | broader viewer modes, Photo enablement, backend-contract expansion |
 
 ## Current active gate
@@ -78,6 +78,33 @@ new package and branch.
   pipeline 117 passed Build and Deploy. This release records sequencing only;
   it did not itself make the new Studio design live; PR 101/pipeline 149 now do.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
+
+### PS-HOME-INTERVIEW-PARITY-001 - activated / architecture first
+
+- Source package:
+  `docs/initiatives/PS-HOME-INTERVIEW-PARITY-001/README.md`.
+- Designated manager: current ChatGPT Work/Codex session. Claude Code is the
+  sole architecture and implementation writer after this activation merges.
+- Activation branch/base:
+  `work/2026-07-20-home-interview-parity-manager` at
+  `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`.
+- Required writer branch:
+  `work/2026-07-20-home-interview-parity-001`, freshly created from exact
+  post-activation `origin/main`. No product edit is authorized on the manager
+  branch.
+- Reserved product surface is limited to the Interview homepage partial,
+  bounded Interview scene CSS/JavaScript, homepage include/cache references,
+  exact tests, architecture record, completion report, and evidence named in
+  the package. Real Studio, global shell/theme code, Owner Home, and Photo are
+  forbidden.
+- Architecture first: Claude must write
+  `PS-HOME-INTERVIEW-DEMO-001/04_REAL_STUDIO_CONVERGENCE.md`, map poster plus
+  four fixed steps to the exact released Studio, and return it for manager
+  scope confirmation before product edits.
+- Required visible outcome: written Interview Me is primary; light is
+  Editorial Studio Ledger; dark is Cinematic Studio rather than a paper-white
+  modal; fixed truth and no-side-effect boundaries remain explicit.
+- Implementation is not started, merged, deployed, live, or parity-closed.
 
 ### PS-CAPTURE-MEDIA-001 - released flag-off / enablement gates unassigned
 

@@ -131,3 +131,14 @@ Voice-default framing and paper-light modal in dark theme are accepted
 pre-convergence limitations, not the controlling real-Studio design. After the
 real 5A/5C Studio is accepted, released, and verified live, a fresh downstream
 branch must converge and separately release the homepage projection.
+
+## Gate 4 activation — 2026-07-20
+
+The real Studio and release-governance gates have passed through PRs 101/102
+and pipelines 149/150. Downstream convergence is now activated under
+`PS-HOME-INTERVIEW-PARITY-001`. Claude Code must use a fresh post-activation
+branch, write `04_REAL_STUDIO_CONVERGENCE.md` as the architecture before product
+edits, preserve this package's accepted interaction shell and truth boundary,
+and return the bounded implementation for manager visual-product acceptance.
+The existing illustration remains live until that separate result is accepted,
+released, and verified.

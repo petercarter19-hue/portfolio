@@ -123,6 +123,10 @@ starting._
   Interview/theme assets hash byte-for-byte to the release, and modal theme
   controls retain dialog state and focus with zero console errors. The source
   branch is deleted and the implementation/release lane is closed.
+- Interview release-governance PR 102 squash-merged at
+  `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`; automatic pipeline 150
+  (`20260720.21`) passed Build and Deploy. It changed governance only and
+  formally closed the release lane.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -165,24 +169,28 @@ reservations must be serialized.
 
 The Interview Studio writer-release, Owner Home backend, and Voice correction
 lanes are closed. Capture Media Photo enablement remains active but unassigned;
-Owner Home frontend and Interview homepage convergence are unblocked but not yet
-assigned:
+Interview homepage convergence is now manager-activated with Claude Code
+assigned architecture-first implementation. Owner Home frontend is unblocked
+but not assigned:
 
 1. **PS-INTERVIEW-PUBLIC-GATE-001 - released and verified live:** the exact
    Image 5 Concept A default/light and Concept C optional dark implementation
    is live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, Azure
    PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and automatic
    pipeline 149. The implementation/release branch was deleted.
-2. **Interview homepage demo - accepted live pre-convergence walkthrough:**
-   `PS-HOME-INTERVIEW-DEMO-001` is implemented, accepted for its fixed
-   illustrative purpose, deployed, and live through source
+2. **PS-HOME-INTERVIEW-PARITY-001 - activated, architecture first:** the
+   `PS-HOME-INTERVIEW-DEMO-001` walkthrough is implemented and accepted for its
+   fixed illustrative purpose, deployed, and live through source
    `90d035a25344c850e6ed732c1efb6e4d0a240787`, Azure PR 86, merge
    `a98cced519a1f853ad9f4462fd438efa67d6f260`, and automatic pipeline 122.
    Its modal, static-state, accessibility, responsive, and no-JavaScript work
    is real. Its paper-light dark treatment and Voice-default framing still
    predate the controlling 5A/5C and written-practice decisions. The real
-   Studio release gate is now satisfied; use a fresh, separately assigned
-   downstream branch to converge the homepage projection and close parity.
+   Studio release gate is now satisfied. The current ChatGPT Work/Codex manager
+   assigned Claude Code to write the convergence architecture and then
+   implement on fresh branch `work/2026-07-20-home-interview-parity-001` from
+   exact post-activation `origin/main`. Product work has not started; parity
+   remains open until separate acceptance, Azure release, and live proof.
 3. **PS-CAPTURE-MEDIA-001 - Photo released flag-off; enablement gates open:**
    the backend, foundation, and accepted Photo 1 experience are deployed through
    PRs 95, 96, and 98 with successful pipelines 139, 140, and 143. Nothing new
@@ -225,7 +233,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122 | Separately assign a fresh homepage-convergence branch; keep parity open until that mapped projection is accepted and live |
+| Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122 | Complete PS-HOME-INTERVIEW-PARITY-001 activation, then Claude records architecture before bounded implementation; keep parity open until accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Photo backend plus accepted Photo 1 experience released flag-off through PRs 95/96/98 and pipelines 139/140/143; no Photo intake is member-visible | Keep Photo off; separately assign signed-in lifecycle, isolation, homepage parity, and enablement gates |
 | Owner Home | Dark cinematic authority accepted; finite backend and production SQL released default-off through PR 99/pipeline 145; `/app` unchanged and API neutral 404 | Assign the exact-authority frontend on a fresh branch from current main; keep broader viewer modes separate |
@@ -294,10 +302,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   current fixed, fictional, no-side-effect version is accepted and live as a
   pre-convergence demonstration, but it is not final visual parity. Its
   light/dark composition, written-practice hierarchy, product labels, truth,
-  and mapped states must converge on the exact accepted and live Studio in a
-  fresh later package before homepage parity can close. The live Voice-default
-  copy and paper-light dark modal are known downstream work, not the real
-  Studio's controlling visual or product authority.
+  and mapped states must converge on the exact accepted and live Studio under
+  active `PS-HOME-INTERVIEW-PARITY-001` before homepage parity can close. The
+  live Voice-default copy and paper-light dark modal are known downstream work,
+  not the real Studio's controlling visual or product authority.
 - Every current and future homepage product section now follows the same
   cross-product projection contract. A material real-product change triggers a
   homepage-impact assessment and either a same-wave accepted update or an exact
