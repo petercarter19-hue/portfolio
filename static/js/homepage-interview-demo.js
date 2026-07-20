@@ -17,8 +17,8 @@
     function all(selector) { return Array.prototype.slice.call(root.querySelectorAll(selector)); }
     function text(element, value) { if (element) element.textContent = value == null ? '' : String(value); }
 
-    var STATE_NAMES = { 1: 'Question', 2: 'Sample answer', 3: 'Coaching review', 4: 'Improved retry' };
-    var NEXT_LABELS = { 1: 'Show illustrative answer', 2: 'Submit sample answer', 3: 'Show improved retry' };
+    var STATE_NAMES = { 1: 'Write your answer', 2: 'Submit for coaching', 3: 'Bottom line', 4: 'Improve and retry' };
+    var NEXT_LABELS = { 1: 'Submit sample answer', 2: 'Show the bottom line', 3: 'Show the improved retry' };
 
     var openButton = one('[data-int-open]');
     var overlay = one('[data-int-overlay]');
@@ -27,8 +27,6 @@
     var count = one('[data-int-count]');
     var steps = all('[data-int-step]');
     var panels = all('[data-int-state]');
-    var methodButtons = all('[data-int-method]');
-    var methodPanels = all('[data-int-method-panel]');
     var backButton = one('[data-int-back]');
     var nextButton = one('[data-int-next]');
     var nextLabel = one('[data-int-next-label]');
@@ -38,6 +36,8 @@
     var isOpen = false;
     var invoker = null;
     var previousBodyOverflow = '';
+    var inertedElements = [];
+    var portal = null;
 
     // The homepage's main.main-content sets `isolation: isolate`, which traps
     // a fixed overlay below the sticky global header (z-index 1200). Portal the
@@ -47,7 +47,7 @@
     // Voice hero overlay. Element references were captured above before the
     // move, so they remain valid.
     if (overlay && overlay.parentNode) {
-        var portal = document.createElement('div');
+        portal = document.createElement('div');
         portal.className = 'home-v3 hv-int-portal';
         document.body.appendChild(portal);
         portal.appendChild(overlay);
@@ -99,13 +99,23 @@
         }
     }
 
-    function setMethod(method) {
-        methodButtons.forEach(function (button) {
-            button.setAttribute('aria-pressed', button.getAttribute('data-int-method') === method ? 'true' : 'false');
+    function makeBackgroundInert() {
+        inertedElements = [];
+        Array.prototype.forEach.call(document.body.children, function (element) {
+            var tagName = element.tagName.toLowerCase();
+            if (element === portal || tagName === 'script' || tagName === 'style' || tagName === 'template') return;
+            if (!element.hasAttribute('inert')) {
+                element.setAttribute('inert', '');
+                inertedElements.push(element);
+            }
         });
-        methodPanels.forEach(function (panel) {
-            panel.hidden = panel.getAttribute('data-int-method-panel') !== method;
+    }
+
+    function restoreBackgroundInertness() {
+        inertedElements.forEach(function (element) {
+            element.removeAttribute('inert');
         });
+        inertedElements = [];
     }
 
     function openModal() {
@@ -119,9 +129,9 @@
         overlay.classList.add('is-open');
         previousBodyOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
+        makeBackgroundInert();
         isOpen = true;
         go(1, false);
-        setMethod('voice');
         // Focus the first step's heading so the step is announced.
         var heading = panelFor(1).querySelector('.hv-int-state__title');
         if (heading) heading.focus();
@@ -132,6 +142,7 @@
         overlay.classList.remove('is-open');
         overlay.hidden = true;
         document.body.style.overflow = previousBodyOverflow;
+        restoreBackgroundInertness();
         isOpen = false;
         if (invoker && document.contains(invoker)) invoker.focus();
     }
@@ -147,8 +158,6 @@
         if (event.target.closest('[data-int-next]')) { go(current + 1, true); return; }
         var stepButton = event.target.closest('[data-int-step]');
         if (stepButton) { go(Number(stepButton.getAttribute('data-int-step')), true); return; }
-        var methodButton = event.target.closest('[data-int-method]');
-        if (methodButton) { setMethod(methodButton.getAttribute('data-int-method')); return; }
         // The finish link (data-int-finish) is a normal anchor — never intercepted.
         if (event.target === overlay) { closeModal(); return; }  // backdrop
     });

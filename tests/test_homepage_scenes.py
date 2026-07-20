@@ -199,7 +199,7 @@ class HomepageInterviewDemoTests(unittest.TestCase):
 
     def test_truth_bar_server_rendered(self):
         for label in ('Fictional example', 'No visitor input',
-                      'No AI request', 'Nothing stored'):
+                      'No AI request', 'No answer or practice data stored'):
             self.assertIn(label, self.scene)
 
     def test_no_pete_attribution_in_walkthrough(self):
@@ -234,10 +234,11 @@ class HomepageInterviewDemoTests(unittest.TestCase):
     # ---- interaction and accessibility contract ----
 
     def test_buttons_have_explicit_type(self):
-        button_count = self.scene.count('<button')
-        self.assertGreater(button_count, 0)
-        self.assertEqual(self.scene.count('<button type="button"'),
-                         button_count)
+        import re
+        buttons = re.findall(r'<button\b[^>]*>', self.scene)
+        self.assertGreater(len(buttons), 0)
+        for button in buttons:
+            self.assertIn('type="button"', button)
 
     def test_step_rail_semantics(self):
         self.assertEqual(self.scene.count('data-int-step="'), 4)
@@ -283,14 +284,56 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         self.assertIn('Tell me about a time you led a team through a '
                       'major change', poster)
         for label in ('Fictional example', 'No visitor input',
-                      'No AI request', 'Nothing stored'):
+                      'No AI request', 'No answer or practice data stored'):
             self.assertIn(label, poster)
 
-    def test_method_switch_semantics(self):
-        self.assertIn('data-int-method="voice" aria-pressed="true"',
+    def test_written_practice_replaces_voice_first_switch(self):
+        self.assertIn('Write your answer in your own words', self.scene)
+        self.assertIn('Dictation is optional in the real Studio', self.scene)
+        for banned in ('Voice first', 'Voice is front and center',
+                       'Illustrative voice transcript', 'data-int-method'):
+            self.assertNotIn(banned, self.scene)
+
+    def test_processing_status_matches_released_studio(self):
+        for label in ('Answer received', 'Checking the question rubric',
+                      'Preparing bottom-line feedback',
+                      'The submitted text is attached to this coaching request.',
+                      'Reviewing relevance, structure, specificity, and result.',
+                      'Feedback appears only when the complete review is ready.'):
+            self.assertIn(label, self.scene)
+        self.assertEqual(self.scene.count('hv-int-status-row'), 3)
+        self.assertEqual(self.scene.count('hv-int-status-row is-done'), 1)
+        self.assertEqual(self.scene.count('hv-int-status-row is-current'), 1)
+
+    def test_bottom_line_score_is_truthfully_labelled(self):
+        self.assertIn('Bottom line first.', self.scene)
+        self.assertIn('aria-label="Overall interview score: 72 out of 100"',
                       self.scene)
-        self.assertIn('data-int-method="text" aria-pressed="false"',
+        self.assertIn('Practice signal &mdash; not an employer prediction',
                       self.scene)
+
+    def test_modal_theme_proxy_uses_released_contract(self):
+        self.assertEqual(self.scene.count('data-theme-toggle-proxy'), 1)
+        self.assertIn('role="switch"', self.scene)
+        self.assertIn('hv-int-theme-label">Theme</span>', self.scene)
+        self.assertIn('theme-toggle__track', self.scene)
+        self.assertIn('theme-toggle__thumb', self.scene)
+
+    def test_modal_truth_is_accessible(self):
+        start = self.scene.index('class="hv-int-modal__truth"')
+        end = self.scene.index('>', start)
+        self.assertNotIn('aria-hidden', self.scene[start:end])
+
+    def test_controller_restores_only_inertness_it_added(self):
+        self.assertIn("element.setAttribute('inert', '')", self.js)
+        self.assertIn("element.removeAttribute('inert')", self.js)
+        self.assertIn('inertedElements.push(element)', self.js)
+
+    def test_cinematic_dark_tokens_are_demo_scoped(self):
+        self.assertIn('body[data-theme="dark"] .hv-int-portal', self.css)
+        for value in ('#03101d', '#071a2b', '#091827', '#0c2235',
+                      '#f4efe6', '#f4bd58', '#f1bd5c'):
+            self.assertIn(value, self.css)
 
     def test_nojs_fallback_present(self):
         # Without JS the modal can't open, so the poster keeps a normal anchor
@@ -346,8 +389,8 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         # panel (display:flex), the modal overlay (display:grid), and the
         # Back/Next/Finish controls (shared .hv-btn display:inline-flex) — all
         # of which JS toggles via the `hidden` attribute.
-        for selector in ('.hv-int-explain[hidden]', '.hv-int-overlay[hidden]',
-                         '.hv-int-back[hidden]', '.hv-int-next[hidden]',
+        for selector in ('.hv-int-overlay[hidden]', '.hv-int-back[hidden]',
+                         '.hv-int-next[hidden]',
                          '.hv-int-finish[hidden]'):
             self.assertIn(selector, self.css)
             idx = self.css.index(selector)

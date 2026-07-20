@@ -6,11 +6,11 @@
    On the page: an inviting POSTER (question preview + one primary button).
    Clicking "Walk me through it" opens a MODAL that pops out over a dimmed,
    blurred backdrop — the same guided pattern as the Voice capture overlay —
-   and steps through Question -> Sample answer -> Coaching review ->
-   Improved retry, ending on a normal link to the real public Studio.
+   and steps through Write your answer -> Submit for coaching -> Bottom line
+   -> Improve and retry, ending on a normal link to the real public Studio.
 
    Every word is fixed fictional content. No microphone, no visitor input,
-   no AI request, no network call, and no storage — see
+   no AI request, no network call, and no answer or practice-data storage — see
    docs/initiatives/PS-HOME-INTERVIEW-DEMO-001/01_BOUNDARY_AND_STATE_CONTRACT.md.
    The four steps are all server-rendered inside the modal (steps 2-4 ship
    `hidden`); JavaScript only opens/closes the modal and toggles which step
@@ -25,7 +25,7 @@
                 Practice how your <em>experience sounds.</em>
             </h2>
             <p class="hv-scene-lede">
-                Voice first. Text always available. One realistic question,
+                Write your answer in your own words. One realistic question,
                 clear coaching, and one stronger retry.
             </p>
             <span class="hv-chip hv-chip--amber hv-int-badge">Illustrative walkthrough</span>
@@ -52,7 +52,7 @@
         <article class="hv-int-poster">
             <header class="hv-int-poster__head">
                 <p class="hv-int-kicker">Interview Studio &middot; Illustrative walkthrough</p>
-                <h3 class="hv-int-poster__title">Answer &rarr; understand &rarr; improve</h3>
+                <h3 class="hv-int-poster__title">Real practice. Clear coaching. Stronger answers.</h3>
             </header>
 
             <div class="hv-int-poster__question">
@@ -66,6 +66,7 @@
                     <strong>What the interviewer is listening for:</strong>
                     clear ownership, communication through resistance, and a measurable result.
                 </p>
+                <p class="hv-int-browser-note">Practice stays in your browser until you submit an answer for coaching.</p>
             </div>
 
             <div class="hv-int-poster__actions">
@@ -81,7 +82,7 @@
                 <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-7 3v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/></svg> Fictional example</span>
                 <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-7 3v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/></svg> No visitor input</span>
                 <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-7 3v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/></svg> No AI request</span>
-                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-7 3v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/></svg> Nothing stored</span>
+                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-7 3v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/></svg> No answer or practice data stored</span>
             </footer>
         </article>
     </div>
@@ -92,9 +93,13 @@
             <header class="hv-int-modal__head">
                 <div>
                     <p class="hv-int-kicker">Illustrative walkthrough</p>
-                    <h2 class="hv-int-modal__title" id="hv-int-modal-title">Answer &rarr; understand &rarr; improve</h2>
+                    <h2 class="hv-int-modal__title" id="hv-int-modal-title">Interview Me practice</h2>
                 </div>
                 <span class="hv-int-count" data-int-count>Step 1 of 4</span>
+                <button class="theme-toggle hv-int-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy>
+                    <span class="hv-int-theme-label">Theme</span>
+                    <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span>
+                </button>
                 <button type="button" class="hv-int-close" data-int-close aria-label="Close walkthrough">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
                 </button>
@@ -104,25 +109,25 @@
                 <li>
                     <button type="button" class="hv-int-step" data-int-step="1" aria-current="step">
                         <span class="hv-int-step__num" aria-hidden="true">1</span>
-                        Question
+                        Write your answer
                     </button>
                 </li>
                 <li>
                     <button type="button" class="hv-int-step" data-int-step="2">
                         <span class="hv-int-step__num" aria-hidden="true">2</span>
-                        Sample answer
+                        Submit for coaching
                     </button>
                 </li>
                 <li>
                     <button type="button" class="hv-int-step" data-int-step="3">
                         <span class="hv-int-step__num" aria-hidden="true">3</span>
-                        Coaching review
+                        Bottom line
                     </button>
                 </li>
                 <li>
                     <button type="button" class="hv-int-step" data-int-step="4">
                         <span class="hv-int-step__num" aria-hidden="true">4</span>
-                        Improved retry
+                        Improve &amp; retry
                     </button>
                 </li>
             </ol>
@@ -131,7 +136,7 @@
 
             <div class="hv-int-modal__body">
 
-                {# ---- Step 1 — Question (voice-first framing) ---- #}
+                {# ---- Step 1 — fixed written practice ---- #}
                 <section class="hv-int-state" data-int-state="1">
                     <div class="hv-int-meta-row">
                         <ul class="hv-int-chips">
@@ -142,88 +147,72 @@
                         <span class="hv-int-meta">Approx. 2 minutes</span>
                     </div>
 
-                    <h3 class="hv-int-state__title" tabindex="-1">Tell me about a time you led a team through a major change.</h3>
+                    <h3 class="hv-int-state__title" tabindex="-1">Write your answer in your own words.</h3>
+
+                    <p class="hv-int-question">Tell me about a time you led a team through a major change.</p>
 
                     <p class="hv-int-listen">
                         <strong>What the interviewer is listening for:</strong>
                         clear ownership, communication through resistance, and a measurable result.
                     </p>
 
-                    <div class="hv-int-method" role="group" aria-label="Answer method">
-                        <button type="button" class="hv-int-method__btn" data-int-method="voice" aria-pressed="true">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>
-                            Voice
-                            <span class="hv-int-method__default">Default</span>
-                        </button>
-                        <button type="button" class="hv-int-method__btn" data-int-method="text" aria-pressed="false">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M7 14.5h10"/></svg>
-                            Text
-                        </button>
+                    <div class="hv-int-composer" aria-label="Fixed fictional written answer">
+                        <div class="hv-int-composer__label"><strong>Your answer</strong><span>53 words</span></div>
+                        <p>During a major schedule change, I brought engineering, program management, and test together around one recovery plan. We met twice a week, tracked decisions visibly, and escalated only the issues that threatened the critical path. The team completed the transition without missing the delivery, but I would make the measurable result more explicit.</p>
                     </div>
 
-                    <div class="hv-int-explain" data-int-method-panel="voice">
-                        <span class="hv-int-explain__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>
-                        </span>
-                        <div>
-                            <strong>Voice is front and center in the real Studio.</strong>
-                            <p>Speak naturally, review the transcript, or switch to text before submitting. This homepage walkthrough does not activate the microphone.</p>
-                        </div>
-                    </div>
-                    <div class="hv-int-explain" data-int-method-panel="text" hidden>
-                        <span class="hv-int-explain__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="2"/><path d="M7 11h.01M11 11h.01M15 11h.01M7 14.5h10"/></svg>
-                        </span>
-                        <div>
-                            <strong>Text is a first-class way to answer.</strong>
-                            <p>Type instead of speaking&mdash;both methods edit the same single answer and share one explicit Submit answer step in the real Studio. This homepage walkthrough does not accept typing.</p>
-                        </div>
-                    </div>
+                    <p class="hv-int-transmit">In the real Studio, questions and your answers are sent to PeerSlate only when you click Submit answer for coaching.</p>
+                    <p class="hv-int-aid"><strong>Optional aid:</strong> Dictation is optional in the real Studio &mdash; speak and it transcribes into the answer box. Written practice comes first.</p>
 
                     <p class="hv-int-inline-note">
-                        <strong>Illustrative only.</strong> The next step reveals a fixed fictional answer. No visitor response is captured.
+                        <strong>Illustrative only.</strong> The next step shows this fixed sample submitted for coaching. No visitor response is captured.
                     </p>
                 </section>
 
-                {# ---- Step 2 — Sample answer ---- #}
+                {# ---- Step 2 — processing with answer preserved ---- #}
                 <section class="hv-int-state" data-int-state="2" hidden>
                     <div class="hv-int-meta-row">
                         <ul class="hv-int-chips">
-                            <li class="hv-chip hv-chip--amber">Illustrative voice transcript</li>
+                            <li class="hv-chip hv-chip--amber">Fixed coaching walkthrough</li>
                             <li class="hv-chip">Fictional example</li>
                         </ul>
                         <span class="hv-int-meta">Sample only</span>
                     </div>
 
-                    <h3 class="hv-int-state__title" tabindex="-1">A clear beginning&mdash;with one result still missing.</h3>
+                    <h3 class="hv-int-state__title" tabindex="-1">Preparing your coaching review</h3>
 
-                    <div class="hv-int-transcript-card">
-                        <span class="hv-int-transcript-badge" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>
-                            <span class="hv-int-wave">
-                                {% for h in [8, 16, 24, 14, 20, 10, 18, 26, 12] %}<i style="height:{{ h }}px"></i>{% endfor %}
-                            </span>
-                        </span>
-                        <div>
-                            <p class="hv-int-transcript-label">Fictional sample answer</p>
-                            <p class="hv-int-transcript-text">During a major schedule change, I brought engineering, program management, and test together around one recovery plan. We met twice a week, tracked decisions visibly, and escalated only the issues that threatened the critical path. The team completed the transition without missing the delivery, but I would make the measurable result more explicit.</p>
-                        </div>
+                    <div class="hv-int-preserved">
+                        <p class="hv-int-section-label">Your submitted answer &middot; preserved</p>
+                        <p>During a major schedule change, I brought engineering, program management, and test together around one recovery plan. We met twice a week, tracked decisions visibly, and escalated only the issues that threatened the critical path. The team completed the transition without missing the delivery, but I would make the measurable result more explicit.</p>
                     </div>
 
-                    <p class="hv-int-inline-note">Real Studio action shown: Voice and text both lead to one explicit Submit answer step. Here, the button reveals predetermined coaching only.</p>
+                    <div class="hv-int-status" aria-label="Illustrative coaching status">
+                        <div class="hv-int-status-row is-done"><span class="hv-int-status-dot" aria-hidden="true">&check;</span><div><strong>Answer received</strong><p>The submitted text is attached to this coaching request.</p></div></div>
+                        <div class="hv-int-status-row is-current"><span class="hv-int-status-dot" aria-hidden="true">2</span><div><strong>Checking the question rubric</strong><p>Reviewing relevance, structure, specificity, and result.</p></div></div>
+                        <div class="hv-int-status-row"><span class="hv-int-status-dot" aria-hidden="true">3</span><div><strong>Preparing bottom-line feedback</strong><p>Feedback appears only when the complete review is ready.</p></div></div>
+                    </div>
+
+                    <p class="hv-int-inline-note">The real Studio sends your question and answer only after you explicitly submit. This walkthrough sends nothing.</p>
                 </section>
 
                 {# ---- Step 3 — Coaching review ---- #}
                 <section class="hv-int-state" data-int-state="3" hidden>
+                    <h3 class="hv-int-state__title" tabindex="-1">Bottom line first.</h3>
                     <div class="hv-int-bottomline">
-                        <p class="hv-int-bottomline-label">Bottom line</p>
-                        <h3 class="hv-int-state__title" tabindex="-1">Strong ownership and clear coordination. The result needs one sharper measure.</h3>
-                        <p>The fictional answer explains the change and leadership actions well. Its ending describes success, but does not yet make the impact specific enough.</p>
+                        <div>
+                            <p class="hv-int-bottomline-label">Bottom line</p>
+                            <h4>Strong ownership and clear coordination. The result needs one sharper measure.</h4>
+                            <p>The fictional answer explains the change and leadership actions well. Its ending describes success, but does not yet make the impact specific enough.</p>
+                        </div>
+                        <div class="hv-int-score-wrap">
+                            <div class="hv-int-score" role="img" aria-label="Overall interview score: 72 out of 100"><strong>72</strong><span>/100</span></div>
+                            <span class="hv-int-ring-caption">Practice signal &mdash; not an employer prediction</span>
+                        </div>
                     </div>
 
                     <div class="hv-int-review-grid">
                         <div class="hv-int-review-col">
-                            <h4>What worked</h4>
+                            <h4>What worked well</h4>
                             <ul>
                                 <li>Clear situation and leadership role</li>
                                 <li>Specific coordination actions</li>
@@ -231,7 +220,7 @@
                             </ul>
                         </div>
                         <div class="hv-int-review-col">
-                            <h4>Improve next</h4>
+                            <h4>Improve next time</h4>
                             <ul>
                                 <li>Name the resistance or tradeoff</li>
                                 <li>Quantify the delivery impact</li>
@@ -240,6 +229,7 @@
                         </div>
                     </div>
 
+                    <p class="hv-int-section-label">Framework map &middot; STAR</p>
                     <ul class="hv-int-star" aria-label="STAR framework completeness">
                         <li class="hv-int-star__tile hv-int-star__tile--complete"><strong>S</strong><span>Situation clear</span></li>
                         <li class="hv-int-star__tile hv-int-star__tile--complete"><strong>T</strong><span>Task clear</span></li>
@@ -260,7 +250,8 @@
                         <span class="hv-int-meta">Illustrative retry</span>
                     </div>
 
-                    <h3 class="hv-int-state__title" tabindex="-1">Same experience. Stronger ending. Still the speaker&rsquo;s voice.</h3>
+                    <h3 class="hv-int-state__title" tabindex="-1">Keep your voice. Strengthen the proof.</h3>
+                    <p class="hv-int-state__sub">Same experience. Stronger ending. Still the speaker&rsquo;s voice.</p>
 
                     <div class="hv-int-retry-grid">
                         <div class="hv-int-retry-panel">
@@ -279,17 +270,17 @@
                         <li><strong>Voice preserved</strong><span>Refines rather than replaces.</span></li>
                     </ul>
 
-                    <p class="hv-int-inline-note">Ready for real practice. Open the full public Studio to answer by voice or text and submit for real coaching.</p>
+                    <p class="hv-int-inline-note">Ready for real practice. Open the full public Studio to write your answer and submit for real coaching.</p>
                 </section>
 
             </div>
 
             <footer class="hv-int-modal__foot">
-                <div class="hv-int-modal__truth" aria-hidden="true">
+                <div class="hv-int-modal__truth">
                     <span>Fictional example</span>
                     <span>No visitor input</span>
                     <span>No AI request</span>
-                    <span>Nothing stored</span>
+                    <span>No answer or practice data stored</span>
                 </div>
                 <div class="hv-int-modal__actions">
                     <button type="button" class="hv-btn hv-btn--ghost hv-int-back" data-int-back hidden>
@@ -297,7 +288,7 @@
                         Back
                     </button>
                     <button type="button" class="hv-btn hv-btn--primary hv-int-next" data-int-next>
-                        <span data-int-next-label>Show illustrative answer</span>
+                        <span data-int-next-label>Submit sample answer</span>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                     </button>
                     <a class="hv-btn hv-btn--primary hv-int-finish" href="{{ interview_studio_url }}" data-int-finish hidden>

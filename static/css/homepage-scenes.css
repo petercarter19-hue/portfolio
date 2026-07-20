@@ -1578,11 +1578,7 @@ body[data-theme="dark"] .home-v3 button:focus-visible {
    composition keeps them as the light stages between dark hero and dark
    footer, so their internals stay legible and the page alternates. */
 body[data-theme="dark"] .home-v3 .hv-resume,
-body[data-theme="dark"] .home-v3 .hv-story,
-body[data-theme="dark"] .home-v3 .hv-interview {
-    /* PS-HOME-INTERVIEW-DEMO-001: the walkthrough scene sits between the
-       two existing paper bands, so it joins the same light/cream override
-       to keep the dark-theme light/dark alternation intact. */
+body[data-theme="dark"] .home-v3 .hv-story {
     --hv-indigo: #8a6500;
     --hv-indigo-strong: #6f5100;
     --hv-indigo-soft: rgb(216 169 40 / 16%);
@@ -1605,27 +1601,23 @@ body[data-theme="dark"] .home-v3 .hv-interview {
 
 /* Paper-band buttons flip back to gold-on-light rules. */
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--primary,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--primary {
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--primary {
     background: #d8a928;
     color: #0a1730;
     box-shadow: 0 12px 26px rgb(216 169 40 / 26%);
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--ghost {
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost {
     color: #0a1730;
     border-color: #cfc9bd;
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-btn--ghost:hover,
-body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost:hover,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-btn--ghost:hover { background: #f1efea; }
+body[data-theme="dark"] .home-v3 .hv-story .hv-btn--ghost:hover { background: #f1efea; }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-eyebrow,
-body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-eyebrow {
+body[data-theme="dark"] .home-v3 .hv-story .hv-eyebrow {
     background: rgb(216 169 40 / 15%);
     color: #6f5100;
 }
@@ -1653,21 +1645,17 @@ body[data-theme="dark"] .home-v3 .hv-week__summary {
 /* Chips inside the paper bands go back to warm light pills (the graphite
    chip style above is for the dark hero only). */
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip,
-body[data-theme="dark"] .home-v3 .hv-story .hv-chip,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-chip {
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip {
     background: #f1efea;
     color: #55534e;
 }
 
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--amber,
 body[data-theme="dark"] .home-v3 .hv-story .hv-chip--amber,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--amber,
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--cyan,
 body[data-theme="dark"] .home-v3 .hv-story .hv-chip--cyan,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--cyan,
 body[data-theme="dark"] .home-v3 .hv-resume .hv-chip--green,
-body[data-theme="dark"] .home-v3 .hv-story .hv-chip--green,
-body[data-theme="dark"] .home-v3 .hv-interview .hv-chip--green {
+body[data-theme="dark"] .home-v3 .hv-story .hv-chip--green {
     background: rgb(216 169 40 / 16%);
     color: #6f5100;
 }
@@ -1722,7 +1710,71 @@ body[data-theme="dark"] .home-v3 .hv-chip--green { background: rgb(105 174 146 /
     border: 0;
 }
 
-.home-v3 .hv-interview { padding: clamp(3rem, 6vw, 5.5rem) 0; }
+.home-v3 .hv-interview {
+    --hvi-canvas: #fbf8f2;
+    --hvi-canvas-2: #fffdfa;
+    --hvi-surface: #fffefa;
+    --hvi-surface-2: #f7f1e7;
+    --hvi-ink: #0c2345;
+    --hvi-text: #283b58;
+    --hvi-muted: #60708a;
+    --hvi-gold-text: #8A5A00;
+    --hvi-gold: #B87900;
+    --hvi-gold-bright: #d2a24b;
+    --hvi-gold-soft: #f6e9c9;
+    --hvi-line: #d9d1c4;
+    --hvi-line-strong: #c9bca9;
+    --hvi-action: #0d356d;
+    --hvi-action-strong: #092954;
+    --hvi-action-text: #ffffff;
+    --hvi-focus: #0b2f62;
+    --hvi-success: #1E725F;
+    --hvi-success-soft: #e4f1ed;
+    --hvi-overlay: rgb(10 27 54 / 30%);
+    --hvi-shadow: 0 16px 45px rgb(31 45 66 / 10%), 0 2px 8px rgb(31 45 66 / 6%);
+    padding: clamp(3rem, 6vw, 5.5rem) 0;
+}
+
+body[data-theme="dark"] .home-v3 .hv-interview {
+    /* D1: the walkthrough scene sits between the existing paper bands, so
+       retain that light band while the product object itself uses the
+       released Cinematic Studio tokens below. */
+    --hv-indigo: #8a6500;
+    --hv-indigo-strong: #6f5100;
+    --hv-indigo-soft: rgb(216 169 40 / 16%);
+    --hv-amber: #d8a928;
+    --hv-ink: #0a1730;
+    --hv-text: #3a3d42;
+    --hv-muted: #66645f;
+    --hv-line: #ddd9d0;
+    --hv-surface: #ffffff;
+    --hv-cloud: #faf9f5;
+    --hv-green: #2f7a62;
+    background: #faf9f5;
+    color: var(--hv-text);
+
+    --hvi-canvas: #03101d;
+    --hvi-canvas-2: #071a2b;
+    --hvi-surface: #091827;
+    --hvi-surface-2: #0c2235;
+    --hvi-ink: #f4efe6;
+    --hvi-text: #d7dde6;
+    --hvi-muted: #9facbd;
+    --hvi-gold-text: #d99a2b;
+    --hvi-gold: #d99a2b;
+    --hvi-gold-bright: #f1bd5c;
+    --hvi-gold-soft: rgb(217 154 43 / 12%);
+    --hvi-line: rgb(207 159 70 / 26%);
+    --hvi-line-strong: rgb(207 159 70 / 42%);
+    --hvi-action: #f4bd58;
+    --hvi-action-strong: #d79220;
+    --hvi-action-text: #101722;
+    --hvi-focus: #f1bd5c;
+    --hvi-success: #54b696;
+    --hvi-success-soft: rgb(44 139 112 / 16%);
+    --hvi-overlay: rgb(0 0 0 / 55%);
+    --hvi-shadow: 0 24px 64px rgb(0 0 0 / 35%), inset 0 1px rgb(255 255 255 / 2%);
+}
 
 .home-v3 .hv-interview__inner {
     display: grid;
@@ -2281,38 +2333,225 @@ body[data-theme="dark"] .home-v3 .hv-chip--green { background: rgb(105 174 146 /
 @keyframes hv-int-sheet-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: none; } }
 
 /* =====================================================================
-   PS-HOME-INTERVIEW-DEMO-001 — portaled-modal theming
-   The walkthrough modal is portaled to <body> (inside a `home-v3` wrapper)
-   so it escapes main.main-content's isolation and covers the full viewport
-   like the Voice hero overlay. Because the wrapper is a `.home-v3`, it would
-   otherwise inherit the dark-theme gold variable overrides — but the modal
-   must always read as the same paper-light card as the poster, so pin its
-   palette here for both themes and restate the two components that use
-   hard-coded theme colors (chips + ghost button) rather than --hv-* tokens.
+   PS-HOME-INTERVIEW-PARITY-001 — released Studio projection layer.
+   The poster and portaled modal share the exact 5A-light/5C-dark semantic
+   values without importing the Studio stylesheet or changing global tokens.
    ===================================================================== */
-.hv-int-portal,
-body[data-theme="dark"] .hv-int-portal {
-    --hv-indigo: #203767;
-    --hv-indigo-strong: #132447;
-    --hv-indigo-soft: #E7ECF4;
-    --hv-amber: #B87900;
-    --hv-ink: #0A1B36;
-    --hv-text: #22334E;
-    --hv-muted: #66778F;
-    --hv-line: #DDE2EB;
-    --hv-surface: #FFFFFF;
-    --hv-cloud: #F6F7FA;
-    --hv-green: #2B9B6D;
-    --hv-shadow-lift: 0 24px 60px rgb(17 31 68 / 12%);
+.hv-int-portal {
+    --hvi-canvas: #fbf8f2;
+    --hvi-canvas-2: #fffdfa;
+    --hvi-surface: #fffefa;
+    --hvi-surface-2: #f7f1e7;
+    --hvi-ink: #0c2345;
+    --hvi-text: #283b58;
+    --hvi-muted: #60708a;
+    --hvi-gold-text: #8A5A00;
+    --hvi-gold: #B87900;
+    --hvi-gold-bright: #d2a24b;
+    --hvi-gold-soft: #f6e9c9;
+    --hvi-line: #d9d1c4;
+    --hvi-line-strong: #c9bca9;
+    --hvi-action: #0d356d;
+    --hvi-action-strong: #092954;
+    --hvi-action-text: #ffffff;
+    --hvi-focus: #0b2f62;
+    --hvi-success: #1E725F;
+    --hvi-success-soft: #e4f1ed;
+    --hvi-overlay: rgb(10 27 54 / 30%);
+    --hvi-shadow: 0 16px 45px rgb(31 45 66 / 10%), 0 2px 8px rgb(31 45 66 / 6%);
     --hv-radius-lg: 1.5rem;
     --hv-radius-md: 1rem;
     --hv-serif: "Newsreader", Georgia, serif;
+    background: none;
 }
 
-.hv-int-portal { background: none; }
+body[data-theme="dark"] .hv-int-portal {
+    --hvi-canvas: #03101d;
+    --hvi-canvas-2: #071a2b;
+    --hvi-surface: #091827;
+    --hvi-surface-2: #0c2235;
+    --hvi-ink: #f4efe6;
+    --hvi-text: #d7dde6;
+    --hvi-muted: #9facbd;
+    --hvi-gold-text: #d99a2b;
+    --hvi-gold: #d99a2b;
+    --hvi-gold-bright: #f1bd5c;
+    --hvi-gold-soft: rgb(217 154 43 / 12%);
+    --hvi-line: rgb(207 159 70 / 26%);
+    --hvi-line-strong: rgb(207 159 70 / 42%);
+    --hvi-action: #f4bd58;
+    --hvi-action-strong: #d79220;
+    --hvi-action-text: #101722;
+    --hvi-focus: #f1bd5c;
+    --hvi-success: #54b696;
+    --hvi-success-soft: rgb(44 139 112 / 16%);
+    --hvi-overlay: rgb(0 0 0 / 55%);
+    --hvi-shadow: 0 24px 64px rgb(0 0 0 / 35%), inset 0 1px rgb(255 255 255 / 2%);
+}
 
-body[data-theme="dark"] .hv-int-portal .hv-chip { background: #EEF1F8; color: #5B6B82; }
-body[data-theme="dark"] .hv-int-portal .hv-chip--amber { background: #FBF3E1; color: #8A6A1E; }
-body[data-theme="dark"] .hv-int-portal .hv-chip--green { background: #E4F5EC; color: #1F7A52; }
-body[data-theme="dark"] .hv-int-portal .hv-btn--ghost { color: #45566F; border-color: var(--hv-line); }
-body[data-theme="dark"] .hv-int-portal .hv-btn--ghost:hover { background: #F5F7FC; }
+/* The product object owns the Studio palette; the surrounding editorial
+   column continues to use the homepage paper-band variables. */
+.home-v3 .hv-int-poster,
+.home-v3 .hv-int-modal {
+    color: var(--hvi-text);
+    background: var(--hvi-canvas);
+    border: 1px solid var(--hvi-line);
+    box-shadow: var(--hvi-shadow);
+}
+
+.home-v3 .hv-int-poster__question,
+.home-v3 .hv-int-composer,
+.home-v3 .hv-int-preserved,
+.home-v3 .hv-int-status,
+.home-v3 .hv-int-review-col,
+.home-v3 .hv-int-retry-panel,
+.home-v3 .hv-int-changes li {
+    color: var(--hvi-text);
+    background: var(--hvi-surface);
+    border-color: var(--hvi-line);
+}
+
+.home-v3 .hv-int-poster__title,
+.home-v3 .hv-int-poster__q,
+.home-v3 .hv-int-modal__title,
+.home-v3 .hv-int-state__title,
+.home-v3 .hv-int-question,
+.home-v3 .hv-int-bottomline h4,
+.home-v3 .hv-int-review-col h4,
+.home-v3 .hv-int-retry-panel p,
+.home-v3 .hv-int-changes strong { color: var(--hvi-ink); }
+
+.home-v3 .hv-int-kicker,
+.home-v3 .hv-int-bottomline-label,
+.home-v3 .hv-int-section-label { color: var(--hvi-gold-text); }
+
+.home-v3 .hv-int-meta,
+.home-v3 .hv-int-listen,
+.home-v3 .hv-int-browser-note,
+.home-v3 .hv-int-inline-note,
+.home-v3 .hv-int-state__sub,
+.home-v3 .hv-int-review-col ul,
+.home-v3 .hv-int-retry-panel h4,
+.home-v3 .hv-int-changes span { color: var(--hvi-muted); }
+
+.home-v3 .hv-int-listen strong,
+.home-v3 .hv-int-inline-note strong,
+.home-v3 .hv-int-aid strong { color: var(--hvi-ink); }
+
+.home-v3 .hv-int-browser-note,
+.home-v3 .hv-int-state__sub {
+    margin: 0.85rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.home-v3 .hv-int-question {
+    margin: 0 0 0.9rem;
+    font-family: var(--hv-serif);
+    font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.home-v3 .hv-int-composer,
+.home-v3 .hv-int-preserved,
+.home-v3 .hv-int-status {
+    margin-top: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--hvi-line);
+    border-radius: var(--hv-radius-md);
+}
+
+.home-v3 .hv-int-composer { box-shadow: 0 0 0 2px color-mix(in srgb, var(--hvi-gold) 22%, transparent); }
+.home-v3 .hv-int-composer__label { display: flex; justify-content: space-between; gap: 1rem; color: var(--hvi-gold-text); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.home-v3 .hv-int-composer p,
+.home-v3 .hv-int-preserved > p:last-child { margin: 0.8rem 0 0; color: var(--hvi-text); font-size: 0.9rem; line-height: 1.6; }
+
+.home-v3 .hv-int-transmit,
+.home-v3 .hv-int-aid {
+    margin: 0.85rem 0 0;
+    padding: 0.75rem 0.9rem;
+    color: var(--hvi-text);
+    background: var(--hvi-gold-soft);
+    border: 1px solid var(--hvi-line);
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.home-v3 .hv-int-aid { background: var(--hvi-surface-2); }
+.home-v3 .hv-int-section-label { margin: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+
+.home-v3 .hv-int-status { padding-block: 0.2rem; }
+.home-v3 .hv-int-status-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start; padding: 0.85rem 0; border-bottom: 1px solid var(--hvi-line); }
+.home-v3 .hv-int-status-row:last-child { border-bottom: 0; }
+.home-v3 .hv-int-status-dot { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; color: var(--hvi-muted); border: 1px solid var(--hvi-line-strong); border-radius: 50%; font-size: 0.72rem; font-weight: 800; }
+.home-v3 .hv-int-status-row.is-done .hv-int-status-dot { color: #fff; background: #1E725F; border-color: var(--hvi-success); }
+.home-v3 .hv-int-status-row.is-current .hv-int-status-dot { color: var(--hvi-action-text); background: var(--hvi-action); border-color: var(--hvi-action); box-shadow: 0 0 0 4px color-mix(in srgb, var(--hvi-gold) 14%, transparent); }
+.home-v3 .hv-int-status-row strong { color: var(--hvi-ink); font-size: 0.84rem; }
+.home-v3 .hv-int-status-row p { margin: 0.2rem 0 0; color: var(--hvi-muted); font-size: 0.76rem; line-height: 1.45; }
+
+.home-v3 .hv-int-bottomline { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--hvi-line); border-left: 4px solid var(--hvi-gold); border-radius: var(--hv-radius-md); background: var(--hvi-surface); }
+.home-v3 .hv-int-bottomline h4 { margin: 0; font-family: var(--hv-serif); font-size: 1.15rem; line-height: 1.25; }
+.home-v3 .hv-int-score-wrap { display: grid; justify-items: center; gap: 0.45rem; }
+.home-v3 .hv-int-score { --hvi-score: 72%; display: grid; grid-template-columns: auto auto; place-content: center; width: 5.2rem; height: 5.2rem; color: var(--hvi-ink); background: radial-gradient(circle at center, var(--hvi-surface) 64%, transparent 66%), conic-gradient(var(--hvi-gold-bright) var(--hvi-score), var(--hvi-line) 0); border-radius: 50%; }
+.home-v3 .hv-int-score strong { font-family: var(--hv-serif); font-size: 1.7rem; line-height: 1; }
+.home-v3 .hv-int-score span { align-self: end; margin-bottom: 0.15rem; color: var(--hvi-muted); font-size: 0.62rem; }
+.home-v3 .hv-int-ring-caption { max-width: 7.5rem; color: var(--hvi-muted); font-size: 0.62rem; line-height: 1.35; text-align: center; }
+
+.home-v3 .hv-int-review-col,
+.home-v3 .hv-int-retry-panel,
+.home-v3 .hv-int-changes li { border: 1px solid var(--hvi-line); }
+.home-v3 .hv-int-retry-panel--improved { background: var(--hvi-success-soft); border-color: color-mix(in srgb, var(--hvi-success) 45%, var(--hvi-line)); }
+.home-v3 .hv-int-retry-panel--improved h4 { color: var(--hvi-success); }
+.home-v3 .hv-int-retry-panel mark { color: var(--hvi-ink); background: var(--hvi-gold-soft); }
+.home-v3 .hv-int-star { margin-top: 0.65rem; }
+.home-v3 .hv-int-star__tile { border: 1px solid var(--hvi-line); background: var(--hvi-surface-2); }
+.home-v3 .hv-int-star__tile span { color: var(--hvi-muted); }
+.home-v3 .hv-int-star__tile--complete strong { color: var(--hvi-success); }
+.home-v3 .hv-int-star__tile--target strong { color: var(--hvi-gold-text); }
+
+.home-v3 .hv-int-overlay { background: var(--hvi-overlay); }
+.home-v3 .hv-int-modal__head,
+.home-v3 .hv-int-steps,
+.home-v3 .hv-int-modal__foot { border-color: var(--hvi-line); }
+.home-v3 .hv-int-modal__foot { background: var(--hvi-canvas); }
+.home-v3 .hv-int-count,
+.home-v3 .hv-int-modal__truth span { color: var(--hvi-muted); }
+.home-v3 .hv-int-close,
+.home-v3 .hv-int-step { color: var(--hvi-muted); background: var(--hvi-surface); border-color: var(--hvi-line); }
+.home-v3 .hv-int-close:hover { color: var(--hvi-ink); background: var(--hvi-surface-2); }
+.home-v3 .hv-int-step__num { color: var(--hvi-muted); background: var(--hvi-surface-2); }
+.home-v3 .hv-int-step[aria-current="step"] { color: var(--hvi-ink); border-color: var(--hvi-gold-bright); }
+.home-v3 .hv-int-step[aria-current="step"] .hv-int-step__num { color: var(--hvi-action-text); background: var(--hvi-action); }
+.home-v3 .hv-int-step[data-done="true"] .hv-int-step__num { color: #fff; background: #1E725F; border: 1px solid var(--hvi-success); }
+.home-v3 .hv-int-state__title:focus-visible { outline: 3px solid var(--hvi-focus); }
+
+.home-v3 .hv-int-theme { min-height: 2.75rem; padding: 0.45rem 0.55rem; color: var(--hvi-muted); border: 1px solid var(--hvi-line); border-radius: 999px; }
+.home-v3 .hv-int-theme-label { color: var(--hvi-ink); font-size: 0.68rem; font-weight: 700; }
+
+.home-v3 .hv-int-poster .hv-chip,
+.hv-int-portal .hv-chip { color: var(--hvi-muted); background: var(--hvi-surface-2); border-color: var(--hvi-line); }
+.home-v3 .hv-int-poster .hv-chip--amber,
+.hv-int-portal .hv-chip--amber { color: var(--hvi-gold-text); background: var(--hvi-gold-soft); }
+.home-v3 .hv-int-poster .hv-chip--green,
+.hv-int-portal .hv-chip--green { color: var(--hvi-success); background: var(--hvi-success-soft); }
+
+.home-v3 .hv-int-poster .hv-btn--primary,
+.hv-int-portal .hv-btn--primary { color: var(--hvi-action-text); background: var(--hvi-action); box-shadow: 0 9px 24px color-mix(in srgb, var(--hvi-action) 24%, transparent); }
+.home-v3 .hv-int-poster .hv-btn--primary:hover,
+.hv-int-portal .hv-btn--primary:hover { background: var(--hvi-action-strong); }
+.home-v3 .hv-int-poster .hv-btn--ghost,
+.hv-int-portal .hv-btn--ghost { color: var(--hvi-text); border-color: var(--hvi-line); }
+
+.home-v3 .hv-int-truthbar { background: var(--hvi-ink); }
+.home-v3 .hv-int-truthbar span { color: var(--hvi-canvas-2); }
+.home-v3 .hv-int-truthbar svg { stroke: var(--hvi-gold-bright); }
+
+@media (max-width: 640px) {
+    .home-v3 .hv-int-modal__head { align-items: center; flex-wrap: wrap; }
+    .home-v3 .hv-int-modal__head > div { flex-basis: calc(100% - 3.5rem); }
+    .home-v3 .hv-int-count { order: 4; }
+    .home-v3 .hv-int-theme { margin-left: auto; }
+    .home-v3 .hv-int-bottomline { grid-template-columns: 1fr; }
+}
