@@ -2,8 +2,8 @@
 
 _Updated 2026-07-19 after the accepted Voice release, the Interview Studio
 Image 5 5A-light/5C-dark owner decision, the accepted live pre-convergence
-homepage walkthrough, planned Ask Pete AI discovery, and the cross-product
-homepage parity decision._
+homepage walkthrough, planned Projects and Ask Pete AI expansion, and the
+cross-product homepage parity decision._
 
 ## Operating model
 
@@ -102,6 +102,29 @@ It will add member-controlled move, resize, layering, responsive layout drafts,
 and explicit Story publication under
 `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`. It is not active, has no
 writer or implementation branch, and must not interrupt Voice or Interview.
+
+### PS-PROJECTS-001 - planned Phase 10 expansion
+
+- Source package: `docs/initiatives/PS-PROJECTS-001/README.md`.
+- Product direction: a private-first, member-owned Project Workspace connects a
+  meaningful endeavor to exact governed records and relationships without
+  copying canonical facts. Purpose- and audience-specific Project Projections
+  are separate later objects with explicit draft, preview, publication, and
+  revocation boundaries.
+- Work remains the broader roles-and-contributions domain. Slate Board Project
+  notes remain planning objects and are not canonical Projects. Historical Pete
+  fixtures and redirects do not define the authenticated product model.
+- The first eventual implementation slice is owner-only Project creation and
+  lifecycle, Slate entity registration, reuse of exact-version Moment
+  Placements, a Project Ledger, and two-owner isolation. It excludes public
+  projection, collaboration, task management, homepage work, and route revival.
+- Entry requires Project/Work/Slate Board boundary validation, one selected
+  production-intent Project Workspace authority, joint product/architecture
+  baseline, named manager and writer, fresh branch, reserved files, and explicit
+  Pete/designated-manager approval.
+- No manager, writer, implementation branch, start date, schema migration,
+  accepted product mockup, deployment, or live claim exists. This package must
+  not interrupt active Interview Studio or Capture Media gates.
 
 ### PS-ASK-PETE-AI-001 - planned Phase 11 discovery
 

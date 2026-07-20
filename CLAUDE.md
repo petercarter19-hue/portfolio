@@ -4,12 +4,12 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.5 + Roadmap v2.4).** This supersedes any version-specific note below.
+> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.6 + Roadmap v2.5).** This supersedes any version-specific note below.
 
 # Claude / Claude Code instructions
 
 The live authority is `docs/governance/CURRENT_BASELINE.yaml` and its referenced
-Bible v2.5 / Roadmap v2.4 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
+Bible v2.6 / Roadmap v2.5 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
 an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
 language as current merely because it remains in repository history.
 
@@ -57,6 +57,15 @@ Story Composer is member-directed: supported items can be moved and resized,
 dragging has keyboard/structured equivalents, layout metadata stays separate
 from canonical content, and AI suggestions never silently apply or publish.
 `PS-STORY-COMPOSER-001` is future work until the manager explicitly activates it.
+
+Before Project product, schema, workspace, projection, migration, or route work,
+read `docs/initiatives/PS-PROJECTS-001/README.md`. Projects are private-first
+connected containers: link exact canonical records rather than copying facts,
+keep Project Workspace separate from Project Projection, preserve the Work and
+Slate Board boundaries, and leave lifecycle/audience/publication under explicit
+member-controlled deterministic actions. `PS-PROJECTS-001` is planned Phase 10
+work, not active implementation, and it is not authorization to revive the
+retired public fixture or build a task-management suite.
 
 - Treat `AGENTS.md` as the shared PeerSlate product and quality rules.
 - Treat `docs/PEERSLATE_SITE_RULES.md` as binding where it does not conflict

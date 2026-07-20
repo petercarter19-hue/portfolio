@@ -3,7 +3,7 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.5 + Roadmap v2.4).
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.6 + Roadmap v2.5).
 
 ## Mandatory shared AI and Git workflow
 
@@ -32,8 +32,8 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 ## Source of truth
 
 The current authority is the Bible, Roadmap, Sync Standard, and design baseline
-named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.5 + Roadmap v2.4 as of
-2026-07-18). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.6 + Roadmap v2.5 as of
+2026-07-19). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
 Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
 as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported
@@ -181,6 +181,27 @@ If any source document is missing, stop and report the missing path. Do not reco
   publish it. The member remains the authority over composition and audience.
 - `PS-STORY-COMPOSER-001` is reserved future work, not an active package. Do not
   modify the current public My Story fixture under this direction-only package.
+
+## Projects future direction
+
+- Read `docs/initiatives/PS-PROJECTS-001/README.md` before any Project product,
+  schema, workspace, projection, migration, or public-route work.
+- A Project is a private-first member-owned container that links exact governed
+  records and relationships. Do not copy canonical Moment, source, role,
+  outcome, Story, resume, or publication content into Project relationships.
+- Keep the authenticated Project Workspace separate from any purpose- and
+  audience-specific Project Projection. Completing or editing a Project does
+  not publish it.
+- Work is the broader roles-and-contributions domain. Slate Board Project notes
+  are planning objects, not canonical Projects, and may not create one silently.
+- AI may propose Project structure, relationships, reflection, or wording, but
+  deterministic software and explicit member actions control lifecycle,
+  audience, sharing, publication, archive, deletion, and collaboration.
+- PeerSlate Projects must not become a Jira/Trello-style task manager or revive
+  the retired Pete-only Projects fixture as the product system of record.
+- `PS-PROJECTS-001` is planned Phase 10 work, not an active implementation
+  package. Current Project redirects, fixtures, schema, and production behavior
+  remain unchanged until the package's full entry gate is approved.
 
 ## Navigation
 

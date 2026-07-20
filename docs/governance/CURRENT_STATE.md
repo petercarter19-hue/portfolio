@@ -2,8 +2,8 @@
 
 _Updated 2026-07-19 for the completed Voice release, Interview Studio Image 5
 5A-light/5C-dark authority, the accepted live pre-convergence homepage
-walkthrough, Capture Media manager planning, planned Ask Pete AI discovery, and
-cross-product homepage parity. Every manager and writer must still fetch
+walkthrough, Capture Media manager planning, planned Projects and Ask Pete AI
+expansion, and cross-product homepage parity. Every manager and writer must still fetch
 `origin` before starting._
 
 ## Verified production and repository baseline
@@ -167,6 +167,13 @@ must explore Type, Speak, documents, and screenshot/OCR input while preserving
 an explicit public Ask Pete AI versus private owner-analysis boundary. It has no
 manager, writer, implementation branch, start date, deployment, or live claim.
 
+`PS-PROJECTS-001` is separately planned under Roadmap Phase 10. It defines a
+private-first Project Workspace that connects exact governed records without
+copying canonical facts, plus separately gated purpose- and audience-specific
+Project Projections. It has no active manager, writer, implementation branch,
+schema migration, accepted production-intent mockup, deployment, or live claim.
+Current `/projects` and `/petec/projects` behavior remains the existing redirect.
+
 The completed Voice lane preserves its original worktrees as historical
 references. They are not active writing lanes and must not be reused for later
 Voice changes. The released code and evidence on `origin/main` are authority.
@@ -177,7 +184,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Bible v2.5, Roadmap v2.4, visual-integrity enforcement, Story composition authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
+| Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; the fixed illustrative homepage walkthrough is accepted and live through PR 86/pipeline 122, while final 5A/5C projection parity remains open | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the updated homepage projection |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
@@ -187,6 +194,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |
 | Homepage product projections | Cross-product parity governance is active; Voice and Interview Studio are the current named examples | Every material user-facing package assesses `/`; update affected sections in the same wave or activate an exact downstream parity package and keep parity open until accepted and live |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
+| Projects | Historical public Project material and redirects exist; no authenticated canonical Projects product is live | Preserve PS-PROJECTS-001 as planned Phase 10 work; validate Project/Work/Slate Board boundaries and approve a private-workspace visual authority before implementation |
 | Journal UI | On hold | Owner must explicitly restart it |
 
 ## Honest boundaries
@@ -204,6 +212,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   posting screenshot cannot currently be uploaded to Ask Pete AI; voice and
   private Slate grounding are not live there. Uploaded targets must never be
   inferred to be public, indexed, recommended, or part of a job marketplace.
+- PS-PROJECTS-001 is a planned direction package only. No canonical Project
+  aggregate, Project Workspace, Project Projection, Project collaboration,
+  Project task management, or new public Project route is implemented or live.
+  Slate Board Project notes and historical fixtures are not canonical Projects.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source.
@@ -213,7 +225,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner visual-integrity decision
 
-- Bible v2.5 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+- Bible v2.6 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
   production-intent demonstrations binding visual minimums. The real experience
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production
@@ -251,7 +263,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner Story composition decision
 
-- Bible v2.5, Roadmap v2.4, and
+- Bible v2.6, Roadmap v2.5, and
   `OWNER_STORY_COMPOSITION_STANDARD.md` make Story composition member-directed.
 - The future authenticated editor must let a member move and resize supported
   notes, text, images, and media; control overlap/layering; use keyboard and

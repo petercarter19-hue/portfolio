@@ -2,7 +2,7 @@
 # Updated for the completed Voice release, Interview Studio Image 5
 # 5A-light/5C-dark owner authority, real-Studio-first demo convergence,
 # the live pre-convergence Interview walkthrough, planned Ask Pete AI discovery,
-# and cross-product homepage parity.
+# cross-product homepage parity, and the planned Projects system expansion.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-19"
@@ -65,11 +65,11 @@ manager:
 
 governing_documents:
   bible:
-    version: "2.5"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
+    version: "2.6"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
   roadmap:
-    version: "2.4"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
+    version: "2.5"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -138,6 +138,12 @@ active_packages:
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
 
 planned_packages:
+  - id: PS-PROJECTS-001
+    owner: "Pete product direction; future designated product/visual manager and implementation writer unassigned"
+    lane: future_projects_workspace_and_projections
+    roadmap_phase: "Phase 10 - Moment Lab, Story, Work, Projects, and connected views"
+    package_path: "docs/initiatives/PS-PROJECTS-001/README.md"
+    status: "planned_not_active"
   - id: PS-ASK-PETE-AI-001
     owner: "Pete product direction; future designated discovery manager and implementation writer unassigned"
     lane: future_ask_pete_ai_discovery
@@ -145,7 +151,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "planned_not_active"
 
-next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before a fresh downstream homepage-convergence branch maps the already-live illustrative walkthrough to that exact released 5A/5C product. The current walkthrough may remain live as an explicitly fictional, no-side-effect pre-convergence demonstration; it is not final homepage parity, and its Voice-default framing and paper-light dark modal are known convergence work. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-ASK-PETE-AI-001 is planned under Phase 11 and begins with owner discovery, not implementation. Every user-facing package must perform the homepage-product parity check. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
+next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before a fresh downstream homepage-convergence branch maps the already-live illustrative walkthrough to that exact released 5A/5C product. The current walkthrough may remain live as an explicitly fictional, no-side-effect pre-convergence demonstration; it is not final homepage parity, and its Voice-default framing and paper-light dark modal are known convergence work. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-PROJECTS-001 is planned under Phase 10 and must not interrupt active lanes; its later entry gate begins with Project/Work/Slate Board boundary validation and one accepted private-workspace visual authority, not implementation. PS-ASK-PETE-AI-001 is planned under Phase 11 and begins with owner discovery, not implementation. Every user-facing package must perform the homepage-product parity check. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -154,4 +160,6 @@ superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"

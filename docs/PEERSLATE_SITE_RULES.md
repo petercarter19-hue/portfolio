@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Approved:** July 16, 2026  
-**Status:** Subordinate implementation rules; current Bible v2.5 / Roadmap v2.4 control conflicts
+**Status:** Subordinate implementation rules; current Bible v2.6 / Roadmap v2.5 control conflicts
 
 > **Authority correction — 2026-07-18:** This file was written during the
 > v1.3/Iris program state. The Bible and Roadmap named in
@@ -214,3 +214,28 @@ These rules govern product copy, information architecture, data behavior, AI beh
     duplicate authoritative Story text or media.
 97. Saving a private layout draft and publishing an audience-visible Story are
     separate explicit actions with exact responsive and audience preview.
+
+## 15. Projects system rules
+
+98. Follow `docs/initiatives/PS-PROJECTS-001/README.md` before Project product,
+    schema, workspace, projection, migration, or public-route work.
+99. A Project is private-first and owner-scoped. It connects exact approved
+    canonical records and relationships; Project relationships shall not copy
+    authoritative Capture, Moment, source, role, outcome, Story, resume, or
+    publication content.
+100. The authenticated Project Workspace and any audience-specific Project
+     Projection are separate purpose, revision, lifecycle, and publication
+     states. Saving, editing, or completing a Project never publishes it.
+101. Work is the broader roles-and-contributions domain. Slate Board Project
+     notes are planning objects and may point to or propose a Project, but they
+     are not canonical Projects and cannot create one silently.
+102. AI may propose Project structure, relationships, questions, reflection,
+     milestones, or wording. Deterministic software and explicit member actions
+     control creation, lifecycle, relationships, sharing, audience,
+     publication, archive, deletion, and collaboration.
+103. Do not turn PeerSlate Projects into task-management, issue-tracking,
+     timesheet, procurement, or delivery-management software. Do not revive the
+     retired Pete-only Projects fixture as the authenticated product model.
+104. `PS-PROJECTS-001` is planned Phase 10 expansion, not an active
+     implementation package. It changes no current route, fixture, schema,
+     Slate Board behavior, publication state, or production capability.

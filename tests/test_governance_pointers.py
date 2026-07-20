@@ -101,6 +101,13 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"),
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "01_DISCOVERY_AGENDA.md"),
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "README.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "01_REQUIREMENTS.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "02_EXPERIENCE_AND_VISUAL_DIRECTION.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "03_ARCHITECTURE_AND_DATA.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "04_TRACEABILITY_AND_SLICE_PLAN.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "05_TEST_VALIDATION_RELEASE_PLAN.md"),
+        ("docs", "initiatives", "PS-PROJECTS-001", "COMPLETION_REPORT.md"),
     )
 
     def test_required_records_exist(self):
@@ -136,8 +143,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.5", self.baseline)
-        self.assertIn("Roadmap_v2.4", self.baseline)
+        self.assertIn("Bible_v2.6", self.baseline)
+        self.assertIn("Roadmap_v2.5", self.baseline)
         self.assertIn('role: "package_designated_session_manager"', self.baseline)
         self.assertIn(
             'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
@@ -408,6 +415,57 @@ class BaselineCoherenceTests(unittest.TestCase):
             with self.subTest(path=relative_path):
                 body = _read(*relative_path.split("/"))
                 self.assertRegex(body, r"(?i)homepage.*parity")
+
+    def test_projects_is_planned_connected_and_not_claimed_live(self):
+        package = _read(
+            "docs", "initiatives", "PS-PROJECTS-001", "README.md"
+        )
+        architecture = _read(
+            "docs", "initiatives", "PS-PROJECTS-001", "03_ARCHITECTURE_AND_DATA.md"
+        )
+        requirements = _read(
+            "docs", "initiatives", "PS-PROJECTS-001", "01_REQUIREMENTS.md"
+        )
+
+        for expected in (
+            "PS-PROJECTS-001",
+            'status: "planned_not_active"',
+            "Phase 10 - Moment Lab, Story, Work, Projects, and connected views",
+        ):
+            self.assertIn(expected, self.baseline)
+
+        for expected in (
+            "Planned - not active",
+            "Private Project Workspace",
+            "Project Projection",
+            "Projects are not a task-management suite",
+            "No authenticated Project create/edit route",
+            "one exact confirmed Moment",
+        ):
+            self.assertIn(expected, package)
+
+        for expected in (
+            "Canonical Project aggregate",
+            "opaque Project key",
+            "slate_entities",
+            "moment_placements",
+            "row-version concurrency token",
+            "cross-owner",
+            "no-text-copy",
+        ):
+            self.assertIn(expected, architecture)
+
+        for expected in (
+            "AI may propose Project titles",
+            "and publication as separate explicit actions",
+            "Slate Board",
+            "shall not require or imitate sprint planning",
+        ):
+            self.assertIn(expected, requirements)
+
+        self.assertIn("PS-PROJECTS-001", self.state)
+        self.assertIn("planned Phase 10 expansion", self.initiatives)
+        self.assertIn("no authenticated canonical Projects product is live", self.state)
 
     def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
         workflow = _read("docs", "AI_WORKFLOW.md")

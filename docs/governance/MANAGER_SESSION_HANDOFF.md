@@ -255,6 +255,22 @@ failure, infrastructure, test, rollout, and rollback contracts. It then selects
 one first vertical slice and assigns one implementation writer/branch. Planning
 does not mean implemented, deployed, or live.
 
+## Planned package - PS-PROJECTS-001
+
+Projects are planned under Roadmap Phase 10 and are not an active writer lane.
+The future product begins as a private-first Project Workspace that connects
+exact governed records and relationships without copying canonical facts. Any
+purpose- and audience-specific Project Projection is a separate later object
+with explicit draft, preview, publication, revocation, and correction behavior.
+
+The first entry gate is defined in
+`docs/initiatives/PS-PROJECTS-001/README.md`: validate Project versus Work versus
+Slate Board boundaries, select one production-intent private-workspace visual
+authority, baseline the aggregate/authorization/exact-version architecture,
+and assign one manager and writer on a fresh branch. Do not revive the retired
+Pete-only Projects page, treat Board notes as canonical Projects, build a task
+manager, or interrupt Interview Studio and Capture Media.
+
 ## Planned package - PS-ASK-PETE-AI-001
 
 Ask Pete AI is planned under Roadmap Phase 11 and is not an active writer lane.
@@ -272,7 +288,7 @@ not interrupt the active Interview or Capture Media lanes.
 
 ## Owner-wide visual decision
 
-The current Bible is v2.5 and the
+The current Bible is v2.6 and the
 `OWNER_VISUAL_INTEGRITY_STANDARD.md` is part of mandatory startup. Selected
 demonstrations are visual promises: the real experience must match or exceed
 them. Visual polish is a release gate across all user-facing PeerSlate work,
@@ -319,12 +335,14 @@ Near-term sequencing is:
    separately approved identity, persistence, authorization, and lifecycle
    packages;
 5. conduct the broader public/homepage visual convergence after its entry gate;
-6. hold PS-ASK-PETE-AI-001 Phase A discovery when Pete is ready; do not start
+6. hold PS-PROJECTS-001 until its boundary validation, private-workspace visual
+   authority, joint architecture baseline, and explicit activation gate pass;
+7. hold PS-ASK-PETE-AI-001 Phase A discovery when Pete is ready; do not start
    implementation before the multimodal, public/private, visual, architecture,
    safety, and homepage-parity gates pass;
-7. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
+8. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
    layout persistence, accessible interaction, and publication design gate;
-8. run a two-member founding alpha with Pete and Danielle, then structured
+9. run a two-member founding alpha with Pete and Danielle, then structured
    feedback, fixes, a small invited cohort, and measured rollout.
 
 Journal UI remains on hold. Do not duplicate Capture or Moment text, create a
@@ -349,7 +367,7 @@ backend reference as a visible member feature.
 8. Apply the homepage-impact and parity check to every user-facing package;
    keep exact downstream parity packages visible until their homepage sections
    are accepted and live.
-9. Keep Interview, Capture Media, planned Ask Pete AI, and homepage parity
+9. Keep Interview, Capture Media, planned Projects and Ask Pete AI, and homepage parity
    status and next gates current in
    the repository after each material handoff or release.
 
@@ -373,6 +391,9 @@ backend reference as a visible member feature.
 > live-production boundaries. For every user-facing package, identify any
 > homepage product projection and require the same-wave update or exact
 > downstream parity package defined by the Owner Visual Integrity Standard.
+> Keep `PS-PROJECTS-001` planned until its boundary, visual, architecture, and
+> owner-route entry gates pass; it is a private-first connected Project system,
+> not the retired public fixture or a task-management suite.
 > Keep `PS-ASK-PETE-AI-001` planned until Pete completes the product discussion;
 > Ask Pete AI is the correct name, not PAI.
 

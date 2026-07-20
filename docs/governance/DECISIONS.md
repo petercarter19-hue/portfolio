@@ -295,3 +295,33 @@ This is an append-only operational decision record. The current Bible and Roadma
 - Each affected real-product package and homepage package requires its own
   desktop/mobile comparison, truth review, Pete/designated-manager acceptance,
   Azure release, and live verification evidence.
+
+## 2026-07-19 - Establish Projects as planned Phase 10 product architecture
+
+- Owner direction: Projects are a natural later PeerSlate expansion and should
+  be defined now as a real connected product system, without interrupting the
+  early release sequence or prematurely implementing it.
+- Adopt Bible v2.6 and Roadmap v2.5. Preserve the production, visual-integrity,
+  member-directed Story, delivery, and active-lane baseline while adding the
+  Projects covenant and `PS-PROJECTS-001` Phase 10 allocation.
+- A Project is a private-first member-owned container for a meaningful endeavor.
+  It connects exact approved canonical records and relationships without
+  copying authoritative Moment, source, role, outcome, Story, resume, or
+  publication content.
+- The authenticated Project Workspace and any purpose- and audience-specific
+  Project Projection are separate lifecycle and publication objects. Editing or
+  completing a Project never publishes it.
+- Work remains the broader roles-and-contributions domain. Slate Board Project
+  notes are planning objects, not canonical Projects. The retired Pete-only
+  Project fixture and its redirects are historical behavior, not the future
+  product system of record.
+- AI may propose structure, relationships, questions, reflection, milestones,
+  or wording. Deterministic software and explicit member actions control
+  Project creation, lifecycle, relationships, audience, sharing, publication,
+  archive, deletion, and collaboration.
+- PeerSlate Projects are not a Jira/Trello-style task manager, timesheet,
+  procurement tool, issue tracker, or enterprise delivery suite.
+- Reserve `PS-PROJECTS-001` as planned, not active. Its first later slice is the
+  owner-only Project foundation and Ledger using exact-version Moment Placement;
+  public projections, collaboration, task management, homepage work, and route
+  revival remain outside that slice and require later gates.
