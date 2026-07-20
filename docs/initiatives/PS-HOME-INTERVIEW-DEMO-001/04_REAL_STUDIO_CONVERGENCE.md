@@ -89,7 +89,7 @@ stage carried by step 4's real-Studio CTA.
 |---|---|---|---|
 | Poster | Kicker, "Answer → understand → improve", fixed question card, listening line, truth bar, "Walk me through it" | Orientation (`PUBLIC-01`): "Real practice. Real coaching. Real growth.", one dominant Start Interview Me action, baseline "No sign-in. No account. No cloud history." | Keep poster shape and fixed question; reword orientation copy to written-first; keep truth bar; primary button stays the walkthrough trigger; ledger-card treatment in light, cinematic card in dark (D1) |
 | Step 1 "Question" — **Voice-first** framing: Voice/Text toggle with `Voice (Default)`, "Voice is front and center in the real Studio" | **Stale.** Released `PUBLIC-02`: written composer is dominant ("Your answer" label, word count, transmit line, gold Submit answer); dictation is a quiet side-rail aid ("Start dictation… Dictation is optional.") | **Step 1 "Write your answer":** fixed written-answer surface presenting the existing fictional answer as a composed draft (no textarea/input/form — a styled static block); transmit-truth line quoted from the released Studio; dictation demoted to one optional-aid note; Voice/Text toggle removed (D2) |
-| Step 2 "Sample answer" — "Illustrative voice transcript" chip, decorative waveform | **Stale framing.** Released `PUBLIC-03`: processing with answer preserved — "Preparing your coaching review / The submitted answer remains visible…", coaching-status card rows: **Answer received / Checking the question rubric / Preparing bottom-line feedback** | **Step 2 "Submit for coaching":** same fixed answer shown preserved (verbatim repeat), static three-row coaching-status sequence using the released row copy, explanation that the real Studio sends the question and answer only after explicit submit; waveform and voice-transcript chips removed |
+| Step 2 "Sample answer" — "Illustrative voice transcript" chip, decorative waveform | **Stale framing.** Released `PUBLIC-03`: processing with answer preserved — "Preparing your coaching review / The submitted answer remains visible…", coaching-status card rows pinned **row 1 done / row 2 current / row 3 pending**: **Answer received / Checking the question rubric / Preparing bottom-line feedback** | **Step 2 "Submit for coaching":** same fixed answer shown preserved (verbatim repeat), static three-row coaching-status sequence pinned to the exact released row states and verbatim supporting copy (§6), explanation that the real Studio sends the question and answer only after explicit submit; waveform and voice-transcript chips removed |
 | Step 3 "Coaching review" — bottom line, What worked / Improve next, STAR tiles | Aligned in shape. Released `PUBLIC-04` hierarchy: "Bottom line first.", verdict, score ring + **"Practice signal — not an employer prediction"**, "What worked well", "Improve next time", "Framework map · STAR" | **Step 3 "Bottom line first":** adopt released headings verbatim; add fixed score ring (D3); keep existing fixed verdict/bullets/STAR content (already coherent with the fictional answer); practice-signal caption always visible |
 | Step 4 "Improved retry" — original vs improved compare, change tiles, CTA | Aligned in shape. Released improve panel: "Keep your voice. Strengthen the proof.", Original answer / Improved draft compare, "What changed" | **Step 4 "Improve and practice again":** adopt released heading language; keep the fixed original/retry pair verbatim (accepted fictional content, §2.6 of the boundary contract including the owner copy corrections); keep change tiles; CTA "Practice this question in Interview Studio" → `/interview-studio` unchanged |
 | Modal chrome | Step rail `Question / Sample answer / Coaching review / Improved retry`; white card both themes | Released stage rail semantics (`aria-current="step"`, done states) and the two theme expressions | Rail labels become **Write your answer / Submit for coaching / Bottom line / Improve & retry**; `aria-current`/done semantics kept; dark modal becomes Cinematic Studio (§7) |
@@ -121,8 +121,22 @@ section.hv-interview[data-home-interview-demo]
       ├─ .hv-int-modal__body      4 × section[data-int-state="1..4"],
       │                           2–4 ship `hidden`; each leads with
       │                           h3.hv-int-state__title[tabindex="-1"]
-      └─ footer: truth strip, Back / Next / Finish controls
+      └─ footer: truth strip (accessible — see correction below),
+          Back / Next / Finish controls
 ```
+
+**Correction — modal truth strip accessibility.** The current released markup
+at `templates/partials/homepage/_interview_demo_scene.html:287` sets
+`aria-hidden="true"` on the modal footer's `.hv-int-modal__truth` block. That
+was tolerable only because the on-page poster's own truth bar (`hv-int-
+truthbar`) remained in the accessibility tree as a redundant source. Once
+background inertness (§6 below) makes the entire poster — including its
+truth bar — inaccessible while the modal is open, `aria-hidden="true"` on the
+modal's own truth strip would leave assistive-technology users with **no**
+accessible truth statement anywhere in the open dialog. This is corrected:
+**`aria-hidden="true"` is removed from `.hv-int-modal__truth`.** It renders as
+a normal, perceivable footer element in both themes; no other attribute on
+that block changes.
 
 New within-state structures project released components with demo-scoped
 classes (never `is__*`, so demo and Studio styles can never collide):
@@ -132,20 +146,47 @@ classes (never `is__*`, so demo and Studio styles can never collide):
   demo-honest primary advance; `.hv-int-aid` one-line optional-dictation note.
 - Step 2: `.hv-int-preserved` — preserved-answer card ("Your submitted answer ·
   preserved" pattern); `.hv-int-status` — three static
-  `.hv-int-status-row`s with done/current/pending treatment matching the
-  released rows' copy.
+  `.hv-int-status-row`s in a fixed, pinned state (this is a walkthrough of
+  the moment just after submission, not a live progression): **row 1 done**,
+  **row 2 current**, **row 3 pending**. Each row transcribes its released
+  supporting line verbatim from `templates/interview_studio.html:427-441`:
+  - Row 1 (done, ✓): **Answer received** — "The submitted text is attached
+    to this coaching request."
+  - Row 2 (current): **Checking the question rubric** — "Reviewing
+    relevance, structure, specificity, and result."
+  - Row 3 (pending): **Preparing bottom-line feedback** — "Feedback appears
+    only when the complete review is ready."
 - Step 3: `.hv-int-bottomline` (kept) + `.hv-int-score` fixed ring +
   `.hv-int-ring-caption` practice-signal caption + existing review columns and
   STAR grid.
 - Step 4: existing compare/changes structure, released heading language.
 
-The modal header gains the Studio's exact released proxy markup:
+The modal header gains the Studio's **exact** released proxy composition —
+not only the `role="switch"`/`aria-checked` attribute contract, but the full
+visible markup, transcribed verbatim from the released reference at
+`templates/interview_studio.html:823` (the Queue/Settings/History-detail
+dialog proxies):
 
 ```html
 <button class="theme-toggle hv-int-theme" type="button" role="switch"
         aria-checked="false" aria-label="Dark theme" title="Dark theme"
-        data-theme-toggle-proxy>…track/thumb spans…</button>
+        data-theme-toggle-proxy>
+    <span class="hv-int-theme-label">Theme</span>
+    <span class="theme-toggle__track" aria-hidden="true">
+        <span class="theme-toggle__thumb"></span>
+    </span>
+</button>
 ```
+
+The visible `Theme` label span (`hv-int-theme-label`, mirroring the Studio's
+`is__dialog-theme-label`) and the `theme-toggle__track`/`theme-toggle__thumb`
+spans are load-bearing, not decorative shorthand — they are what makes the
+proxy visually legible as a theme switch rather than an unlabeled icon
+button, matching the released Studio dialogs exactly. `hv-int-theme` is the
+demo-scoped modifier class (parallel to the Studio's `is__dialog-theme`); the
+base `theme-toggle` class is what `theme-toggle.js` and its existing CSS
+already style, so the proxy inherits correct visual treatment in both themes
+with zero new CSS beyond the demo-scoped modifier's placement rules.
 
 `static/js/theme-toggle.js` (v `ps-theme-001-2`, loaded by `base.html` on every
 page) discovers `[data-theme-toggle-proxy]` at init, binds it, and keeps all
@@ -274,7 +315,12 @@ choice; the modal treatment above is fixed by the handoff and not optional.
 Demo-boundary truth (retained):
 
 1. Truth bar (poster and modal footer): `Fictional example` · `No visitor
-   input` · `No AI request` · `Nothing stored`.
+   input` · `No AI request` · `No answer or practice data stored`. (Corrected
+   from `Nothing stored`: the modal theme proxy invokes the shared global
+   theme controller, which legitimately writes the `ps-theme` preference to
+   `localStorage` — see `static/js/theme-toggle.js` lines 22–23. The absolute
+   claim would be false the moment the proxy exists; the corrected claim is
+   true and matches the actual scope of what the demo protects.)
 2. Editorial checklist item 1: `Fictional answer—not Pete's and not the
    visitor's.` (retained; the walkthrough content itself never names Pete).
 3. Editorial checklist item 2: `No microphone, AI request, draft, attempt,
@@ -298,13 +344,18 @@ Studio copy):
 9. Step-1 aid note (mirrors the released aid card): `Dictation is optional in
    the real Studio — speak and it transcribes into the answer box. Written
    practice comes first.`
-10. Step-2 status rows (released copy): `Answer received` / `Checking the
-    question rubric` / `Preparing bottom-line feedback`, with the released
-    supporting lines.
+10. Step-2 status rows, pinned **row 1 done / row 2 current / row 3 pending**,
+    verbatim released copy (`templates/interview_studio.html:427-441`):
+    `Answer received` — "The submitted text is attached to this coaching
+    request."; `Checking the question rubric` — "Reviewing relevance,
+    structure, specificity, and result."; `Preparing bottom-line feedback` —
+    "Feedback appears only when the complete review is ready."
 11. Step-2 explanation: `The real Studio sends your question and answer only
     after you explicitly submit. This walkthrough sends nothing.`
-12. Step-3 score caption (verbatim, always visible): `Practice signal — not an
-    employer prediction`.
+12. Step-3 score ring: pinned to **72/100** (D3), `role="img"`,
+    `aria-label="Overall interview score: 72 out of 100"`, with the caption
+    (verbatim, always visible): `Practice signal — not an employer
+    prediction`.
 13. Step-4 footer note: `Ready for real practice. Open the full public Studio
     to write your answer and submit for real coaching.` (de-voiced from the
     current `answer by voice or text` line).
@@ -386,22 +437,39 @@ PUBLIC-04 vs step 3, improve panel vs step 4 — light and dark. An
 
 | # | Deviation | Reason | Status |
 |---|---|---|---|
-| D1 | **Poster dark treatment.** Recommended: in dark theme the poster card renders as a cinematic navy/gold Studio card while the surrounding scene band keeps the homepage's existing dark-mode band alternation (currently a light paper band). Alternative (not recommended): darken the whole band — a homepage-composition change beyond convergence. | The handoff's hard "no paper floating over the dark homepage" requirement names the modal; the poster must still read as the released product in dark. Restyling the card, not the band, converges the product object without redesigning homepage rhythm. | **Needs manager confirmation** |
-| D2 | Voice/Text method toggle removed; replaced by a static optional-dictation aid note. | The toggle's `Voice (Default)` framing is the exact stale claim this package retires; the released Studio has no such switch — dictation is a quiet optional aid. Removing it also removes two demo-only interactive controls that existed to present a retired model. | Proposed |
-| D3 | Fixed score ring added to step 3 (a fixed fictional value in the low-70s with the released caption). | The released PUBLIC-04 hierarchy leads with verdict + score + practice-signal disclaimer; a review state without it would not be recognizably the released review. Fixed value, fictional, labeled. | Proposed; exact value set at implementation |
-| D4 | Bounded exception to byte-for-byte preservation: the released dark-band CSS groups `.hv-resume`, `.hv-story`, and `.hv-interview` in shared selector lists; converging the Interview scene requires removing `.hv-interview` from those grouped selectors. | The other scenes' rules remain textually present and functionally identical; only the Interview membership changes. A pure-addition approach would leave conflicting stale rules fighting new ones on specificity. | Proposed |
-| D5 | Advance-button labels are demo-honest variants (`Submit sample answer`, not `Submit answer`). | A control labeled exactly as the real submission action would overclaim inside a walkthrough that sends nothing; this follows the accepted demo pattern. | Proposed |
-| D6 | Modal-local theme proxy added using the released `data-theme-toggle-proxy` mechanism and the Studio's exact proxy markup. | Ordered by the handoff; mirrors the Studio's D22 acceptance correction (header switch is unavailable during a properly modal interaction). No `theme-toggle.js` change needed — the proxy contract is already released. | Ordered by handoff |
+| D1 | **Poster dark treatment.** In dark theme the poster card renders as a cinematic navy/gold Studio card while the surrounding scene band keeps the homepage's existing dark-mode band alternation (currently a light paper band). | The handoff's hard "no paper floating over the dark homepage" requirement names the modal; the poster must still read as the released product in dark. Restyling the card, not the band, converges the product object without redesigning homepage rhythm. | **Approved as recommended** |
+| D2 | Voice/Text method toggle removed; replaced by a static optional-dictation aid note. | The toggle's `Voice (Default)` framing is the exact stale claim this package retires; the released Studio has no such switch — dictation is a quiet optional aid. Removing it also removes two demo-only interactive controls that existed to present a retired model. | Approved |
+| D3 | Fixed score ring added to step 3, pinned to **72/100**. The ring carries `role="img"` and `aria-label="Overall interview score: 72 out of 100"`, plus the mandatory `Practice signal — not an employer prediction` caption always visible beside it. | The released PUBLIC-04 hierarchy leads with verdict + score + practice-signal disclaimer; a review state without it would not be recognizably the released review. 72 is fixed, fictional, mid-range (consistent with the accepted review copy: strong ownership/coordination, one improvable dimension), and labeled exactly as required. | **Approved — value pinned** |
+| D4 | Bounded exception to byte-for-byte preservation: the released dark-band CSS groups `.hv-resume`, `.hv-story`, and `.hv-interview` in shared selector lists; converging the Interview scene requires removing `.hv-interview` from those grouped selectors. | The other scenes' rules remain textually present and functionally identical; only the Interview membership changes. A pure-addition approach would leave conflicting stale rules fighting new ones on specificity. | Approved |
+| D5 | Advance-button labels are demo-honest variants (`Submit sample answer`, not `Submit answer`). | A control labeled exactly as the real submission action would overclaim inside a walkthrough that sends nothing; this follows the accepted demo pattern. | Approved |
+| D6 | Modal-local theme proxy added using the released `data-theme-toggle-proxy` mechanism and the Studio's exact proxy markup, including the visible `Theme` label plus track/thumb spans (§6). | Ordered by the handoff; mirrors the Studio's D22 acceptance correction (header switch is unavailable during a properly modal interaction). No `theme-toggle.js` change needed — the proxy contract is already released. | Ordered by handoff; markup pinned |
 | D7 | Background regions programmatically `inert` while the modal is open, restored exactly on close (previously scroll-lock + focus trap only). | Ordered by the handoff as the background-contract correction. | Ordered by handoff |
-| D8 | Editorial-column lede and orientation copy rewritten from voice-first to written-first. | Scene copy is inside the reservation; the old lede is a retired product claim. | Proposed |
-| D9 | Step rail labels renamed to the converged journey names. | The old names described the voice-era journey; the new names mirror the released stages. | Proposed |
+| D8 | Editorial-column lede and orientation copy rewritten from voice-first to written-first. | Scene copy is inside the reservation; the old lede is a retired product claim. | Approved |
+| D9 | Step rail labels renamed to the converged journey names. | The old names described the voice-era journey; the new names mirror the released stages. | Approved |
+| D10 | Truth-bar corrected string: `No answer or practice data stored` replaces `Nothing stored` in both the poster and modal truth strips. | The modal theme proxy invokes the shared global controller, which writes `ps-theme` to `localStorage` (`static/js/theme-toggle.js:22`); the absolute claim would be false once the proxy exists. | Manager-required correction |
+| D11 | `aria-hidden="true"` removed from the modal footer's `.hv-int-modal__truth` block (currently present at `_interview_demo_scene.html:287`). | Background inertness (§6, D7) makes the poster's own truth bar inaccessible while the modal is open; leaving the modal's truth strip `aria-hidden` would leave no accessible truth statement anywhere in the open dialog. | Manager-required correction |
 
 No other deviation is intended. If implementation discovers that any change
 requires a file outside §4, work stops for a manager reservation before that
 file is touched.
 
+## 12. Manager review disposition — 2026-07-20
+
+Conditionally approved. D1 approved as recommended: cinematic navy/gold
+poster card in dark theme; the surrounding scene band keeps the homepage's
+existing light paper-band alternation. All other deviations (D2, D4–D9)
+approved. Five required documentation corrections applied in this revision
+before any product edit: the truth-strip wording (D10), modal truth-strip
+accessibility (D11), the D3 score pinned to 72/100 with its `role="img"`
+label, the exact modal theme-proxy composition (D6, including the visible
+`Theme` label and track/thumb spans), and the pinned Step 2 row states with
+verbatim released supporting copy. `origin/main` advanced to
+`5217247d811d81af6ca92504dda62d9a2c756563` during review (Owner Home
+governance/package files and `tests/test_governance_pointers.py` only, no
+reserved-file overlap) and was merged into this branch, not rebased.
+
 ---
 
-_Architecture only. No product file has been edited on this branch. Product
-implementation begins after Codex/manager confirmation of this document —
-including a decision on D1._
+_Architecture approved with the corrections above. No product file has been
+edited on this branch. Product implementation may proceed without a further
+architecture stop._
