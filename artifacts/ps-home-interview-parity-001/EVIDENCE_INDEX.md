@@ -54,3 +54,19 @@ is the visual and product authority.
 - Full repository suite: 603 passed, 2 skipped, 205 subtests passed.
 - `git diff --check`: passed.
 
+## Production release evidence
+
+Captured after Azure PR 105 squash-merged and automatic pipeline 154
+(`20260720.25`) passed Build and Deploy for exact merge
+`4deb0a07b6faf2d93d445e212207aeb84b1a71c4`:
+
+- `production-desktop-dark-poster.png`: the live cinematic poster within the
+  retained homepage paper-band rhythm.
+- `production-desktop-dark-step-3.png`: live score, practice-signal caption,
+  focus treatment, and Cinematic Studio modal at 1440 x 900.
+- `production-mobile-dark-step-4.png`: live final retry and Studio CTA at
+  390 x 844, with internal modal scrolling and no horizontal overflow.
+- Live HTML returned HTTP 200 with `interview-parity-1`, `int-parity-1`, the
+  converged poster title, and the scoped no-answer/practice-data truth label.
+- `/interview-studio` and `/interview-studio/history` each returned HTTP 200.
+- Live desktop and mobile browser consoles contained no warnings or errors.
