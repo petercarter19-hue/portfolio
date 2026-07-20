@@ -46,8 +46,39 @@ stubbed; every code path below is the shipped code.
 | No horizontal overflow at 390px | Pass |
 | Touch target 186×53 CSS px | Pass (≥44×44) |
 
-Screenshots captured: desktop 1280 light and dark (listening state), 390×844
-light and dark (listening state).
+## Committed screenshots
+
+All images are in `evidence/`, regenerable with `evidence/capture_evidence.py`
+against a local app on port 5077.
+
+| File | Shows |
+|---|---|
+| `01_listening_desktop_5A_light.png` | Listening state, desktop 1280, 5A light |
+| `02_listening_desktop_5C_dark.png` | Listening state, desktop 1280, 5C dark |
+| `03_listening_mobile390_5A_light.png` | Listening state, 390px, 5A light |
+| `04_listening_mobile390_5C_dark.png` | Listening state, 390px, 5C dark |
+| `05_permission_denied_desktop_5A_light.png` | Permission-denied truthful state; typed answer intact; control reset |
+| `06_composer_row_D2_desktop_5A_light.png` | D-2 close-up: relocated control beside Submit answer (cropped from 01, same render) |
+
+### How they were captured, exactly
+
+Headless Chrome loads the **real server-rendered** `/interview-studio?mode=me`
+HTML with two additions: a `<base>` tag so assets resolve to the running app,
+and a `SpeechRecognition` stub installed before `interview-studio.js` runs. A
+small driver then clicks the real control and feeds real result/error events.
+The template, CSS, JavaScript, and state machine are the shipped code; only the
+recogniser is stubbed, because a microphone grant is impossible headless.
+
+Chrome enforces a **500 CSS px minimum window width**, so a `--window-size=390`
+capture silently lays the page out at 500 and crops — which produced clipped,
+misleading first attempts. The 390px images are therefore rendered inside an
+exactly-390px iframe and cropped, giving the inner document a genuine 390px
+layout viewport for media queries. The committed mobile images match what the
+interactive browser at 390px showed.
+
+The clipped mode navigation at the right edge of the 390px images is
+pre-existing released behaviour (a horizontally scrollable mode row), not
+introduced here.
 
 ## Deviations from the released implementation
 
