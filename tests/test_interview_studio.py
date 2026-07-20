@@ -534,6 +534,47 @@ class ReviewSchemaTests(unittest.TestCase):
                 {'approved': {'id': 'approved', 'metric': '42%', 'label': 'Approved result'}},
             )
 
+    def test_illustrative_answer_may_cite_no_evidence(self):
+        """A generic best-practice example is not anyone's real history.
+
+        Its own system prompt instructs the model to return `"evidenceIds": []`,
+        so zero citations is the correct result rather than a rejection.
+        """
+        answer = validate_interview_model_answer(
+            {
+                'status': 'answered',
+                'answer': 'On a cross-functional project at a previous employer, I...',
+                'whyItWorks': ['Clear situation, task, action, and result.'],
+                'evidenceIds': [],
+            },
+            {},
+            require_evidence=False,
+        )
+        self.assertEqual(answer['status'], 'answered')
+        self.assertEqual(answer['evidenceUsed'], [])
+
+    def test_illustrative_answer_still_may_not_cite_anything(self):
+        """Relaxing the citation requirement must not authorize a citation."""
+        with self.assertRaisesRegex(ValueError, 'unauthorized evidence'):
+            validate_interview_model_answer(
+                {
+                    'status': 'answered',
+                    'answer': 'A generic example that wrongly claims profile evidence.',
+                    'whyItWorks': ['Structured'],
+                    'evidenceIds': ['modernization'],
+                },
+                {},
+                require_evidence=False,
+            )
+
+    def test_grounded_answer_requires_evidence_by_default(self):
+        """The grounded path must not be weakened by the illustrative fix."""
+        with self.assertRaisesRegex(ValueError, 'no approved evidence'):
+            validate_interview_model_answer(
+                {'status': 'answered', 'answer': 'Unsupported.', 'whyItWorks': ['Clear'], 'evidenceIds': []},
+                {'approved': {'id': 'approved', 'metric': '42%', 'label': 'Approved result'}},
+            )
+
     def test_model_answer_has_a_safe_insufficient_evidence_state(self):
         answer = validate_interview_model_answer(
             {
@@ -804,27 +845,60 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
 
     # -- the recorded production symptom ---------------------------------
 
-    def test_empty_strengths_is_rejected_and_no_coaching_is_fabricated(self):
-        """The exact shape behind the recorded 'review summary is incomplete'.
+    def test_empty_strengths_is_delivered_rather_than_discarded(self):
+        """Owner decision (2026-07-20), Option B: the honest option.
 
         A candidate answer weak enough that the coach honestly finds nothing to
         praise produces a well-formed reply with an empty `strengths` array.
-        The server must refuse it rather than invent a strength.
+        The system prompt sets a MAXIMUM of four bullets and never a minimum, so
+        zero strengths is correct model behavior. The server must deliver that
+        review rather than throw it away as a 502 or pressure the model into
+        manufacturing praise. PeerSlate preserves rather than manufactures.
         """
         response = self.post_review(json.dumps(review_payload(strengths=[])))
+        self.assertEqual(response.status_code, 200)
+        review = response.get_json()['review']
+        self.assertEqual(review['strengths'], [])
+        # The rest of the review is still real coaching, not a degraded stub.
+        self.assertEqual(review['verdict'], 'Solid but thin')
+        self.assertEqual(len(review['dimensions']), 5)
+        self.assertEqual(review['improvements'], ['Name the measurable result.'])
+
+    def test_empty_improvements_is_delivered_the_same_way(self):
+        response = self.post_review(json.dumps(review_payload(improvements=[])))
+        self.assertEqual(response.status_code, 200)
+        review = response.get_json()['review']
+        self.assertEqual(review['improvements'], [])
+        self.assertEqual(review['strengths'], ['You gave a real example.'])
+
+    def test_a_review_with_neither_strengths_nor_improvements_still_renders(self):
+        response = self.post_review(
+            json.dumps(review_payload(strengths=[], improvements=[])),
+        )
+        self.assertEqual(response.status_code, 200)
+        review = response.get_json()['review']
+        self.assertEqual(review['strengths'], [])
+        self.assertEqual(review['improvements'], [])
+        self.assertTrue(review['verdict'])
+        self.assertTrue(review['encouragement'])
+
+    # -- the genuinely essential fields are still required ----------------
+
+    def test_a_review_missing_its_verdict_is_still_rejected(self):
+        response = self.post_review(json.dumps(review_payload(verdict='')))
         self.assertEqual(response.status_code, 502)
         body = response.get_json()
         self.assertEqual(body['error'], self.REVIEW_ERROR)
         self.assertNotIn('review', body)
 
-    def test_empty_improvements_is_rejected_the_same_way(self):
-        response = self.post_review(json.dumps(review_payload(improvements=[])))
+    def test_a_review_missing_its_encouragement_is_still_rejected(self):
+        response = self.post_review(json.dumps(review_payload(encouragement='')))
         self.assertEqual(response.status_code, 502)
         self.assertNotIn('review', response.get_json())
 
-    def test_empty_strengths_is_logged_as_an_empty_required_field(self):
+    def test_a_missing_verdict_is_logged_as_an_empty_required_field(self):
         with self.assertLogs(app.logger, level='WARNING') as logged:
-            self.post_review(json.dumps(review_payload(strengths=[])))
+            self.post_review(json.dumps(review_payload(verdict='')))
         line = '\n'.join(logged.output)
         self.assertIn('reason=empty_required_field', line)
         self.assertIn('provider_stop_reason=end_turn', line)
@@ -861,7 +935,7 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
     def test_the_distinct_causes_produce_distinct_labels(self):
         seen = set()
         for reply, stop_reason in (
-            (json.dumps(review_payload(strengths=[])), 'end_turn'),
+            (json.dumps(review_payload(verdict='')), 'end_turn'),
             (json.dumps(review_payload(overallScore=77)), 'end_turn'),
             (json.dumps(review_payload())[:400], 'max_tokens'),
             ('no json here at all', 'end_turn'),
@@ -881,7 +955,7 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
         model_sentinel = 'MODELREPLYSENTINEL'
         with self.assertLogs(app.logger, level='WARNING') as logged:
             self.post_review(
-                json.dumps(review_payload(verdict=model_sentinel, strengths=[])),
+                json.dumps(review_payload(verdict=model_sentinel, overallScore=77)),
                 answer=answer_sentinel,
             )
         line = '\n'.join(logged.output)
@@ -945,6 +1019,179 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertNotIn('modelAnswer', response.get_json())
         self.assertIn('reason=invalid_status', '\n'.join(logged.output))
+
+
+class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
+    """A zero-strengths review must read as a truthful absence, not an empty box."""
+
+    def source(self, path):
+        return Path(path).read_text(encoding='utf-8')
+
+    def test_empty_review_lists_state_the_absence(self):
+        js = self.source('static/js/interview-studio.js')
+        # renderList must accept and render an explicit empty message.
+        self.assertIn('function renderList(element, items, emptyMessage)', js)
+        self.assertIn('is__bullets-empty', js)
+        self.assertIn('IS_NO_STRENGTHS', js)
+        self.assertIn('IS_NO_IMPROVEMENTS', js)
+        # Both the live review and the history detail use it.
+        self.assertEqual(js.count('IS_NO_STRENGTHS'), 3)
+        self.assertEqual(js.count('IS_NO_IMPROVEMENTS'), 3)
+
+    def test_the_absence_message_does_not_manufacture_praise(self):
+        js = self.source('static/js/interview-studio.js')
+        line = [row for row in js.splitlines() if 'IS_NO_STRENGTHS =' in row][0]
+        self.assertIn('did not find', line)
+        for forbidden in ('great job', 'well done', 'nice work'):
+            self.assertNotIn(forbidden, line.lower())
+
+    def test_the_empty_state_is_styled_in_both_themes(self):
+        css = self.source('static/css/interview-studio.css')
+        self.assertIn('.is__bullets-empty', css)
+        # Theme-value-only token, so 5A light and 5C dark both carry it without
+        # a second component rule branching on theme.
+        self.assertIn('.is__bullets-empty { list-style: none; color: var(--is-text-muted)', css)
+        # The gold finding-marker must not appear beside a statement of absence.
+        self.assertIn('.is__bullets li.is__bullets-empty::before { content: none; }', css)
+
+    def test_studio_asset_version_was_bumped_for_the_changed_bytes(self):
+        html = self.source('templates/interview_studio.html')
+        self.assertEqual(html.count('?v=studio-5a5c-3'), 2)
+        self.assertNotIn('?v=studio-5a5c-2', html)
+
+
+class InterviewGroundingModeGenerationTests(unittest.TestCase):
+    """The grounding modes must actually be reachable.
+
+    Before the fix, `best_practice` and `compare` could never succeed. The
+    best-practice system prompt instructs the model to return
+    `"evidenceIds": []`, but the generator validated that reply against an EMPTY
+    evidence map while the validator unconditionally rejected an empty citation
+    list. Obeying the prompt raised 'no approved evidence references'; citing
+    anything instead raised 'unauthorized evidence' because nothing was in the
+    map. Both branches raised, so every request to those two modes returned 502.
+
+    Every provider interaction here is a fake. No live AI call is made.
+    """
+
+    QUESTION = 'Tell me about a time you led a change.'
+
+    def setUp(self):
+        self.client = app.test_client()
+        self._limiter_enabled = limiter.enabled
+        limiter.enabled = False
+
+    def tearDown(self):
+        limiter.enabled = self._limiter_enabled
+
+    @staticmethod
+    def illustrative_reply():
+        return json.dumps({
+            'status': 'answered',
+            'answer': 'On a cross-functional project at a previous employer, I led the change.',
+            'whyItWorks': ['Situation, task, action, and result are all present.'],
+            'evidenceIds': [],
+        })
+
+    @staticmethod
+    def grounded_reply(evidence_id='modernization'):
+        return json.dumps({
+            'status': 'answered',
+            'answer': 'I led the approved modernization and it shipped.',
+            'whyItWorks': ['Anchored in an approved result.'],
+            'evidenceIds': [evidence_id],
+        })
+
+    def post_mode(self, mode, replies):
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.side_effect = [
+                _FakeProviderResponse(reply) for reply in replies
+            ]
+            return self.client.post(
+                '/api/interview/model-answer',
+                json={
+                    'profile_slug': 'petec',
+                    'question': self.QUESTION,
+                    'mode': mode,
+                },
+                base_url='http://localhost',
+            )
+
+    def test_best_practice_succeeds_with_empty_evidence_ids(self):
+        response = self.post_mode('best_practice', [self.illustrative_reply()])
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['mode'], 'best_practice')
+        self.assertEqual(payload['modelAnswer']['status'], 'answered')
+        self.assertEqual(payload['modelAnswer']['evidenceUsed'], [])
+        # The generic example must stay labeled as illustrative.
+        self.assertTrue(payload['modelAnswer']['generic'])
+
+    def test_compare_returns_both_a_grounded_and_an_illustrative_answer(self):
+        response = self.post_mode(
+            'compare', [self.grounded_reply(), self.illustrative_reply()],
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['mode'], 'compare')
+        # The grounded half still cites approved evidence.
+        self.assertEqual(
+            [item['id'] for item in payload['modelAnswer']['evidenceUsed']],
+            ['modernization'],
+        )
+        # The illustrative half legitimately cites nothing.
+        self.assertEqual(payload['bestPractice']['evidenceUsed'], [])
+        self.assertTrue(payload['bestPractice']['generic'])
+
+    def test_illustrative_answer_citing_evidence_is_still_rejected(self):
+        """The relaxed requirement must not become a grounding loophole."""
+        leaking = json.dumps({
+            'status': 'answered',
+            'answer': 'A generic example that wrongly claims profile evidence.',
+            'whyItWorks': ['Structured'],
+            'evidenceIds': ['modernization'],
+        })
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_mode('best_practice', [leaking])
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('modelAnswer', response.get_json())
+        self.assertIn('reason=unauthorized_evidence', '\n'.join(logged.output))
+
+    # -- the grounded path must be unchanged -------------------------------
+
+    def test_grounded_mode_still_requires_a_citation(self):
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_mode('member_history', [self.illustrative_reply()])
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('modelAnswer', response.get_json())
+        self.assertIn('reason=no_evidence_reference', '\n'.join(logged.output))
+
+    def test_grounded_mode_still_rejects_unauthorized_evidence(self):
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            response = self.post_mode(
+                'member_history', [self.grounded_reply('private-record')],
+            )
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('modelAnswer', response.get_json())
+        self.assertIn('reason=unauthorized_evidence', '\n'.join(logged.output))
+
+    def test_grounded_mode_still_succeeds_on_approved_evidence(self):
+        response = self.post_mode('member_history', [self.grounded_reply()])
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(
+            [item['id'] for item in payload['modelAnswer']['evidenceUsed']],
+            ['modernization'],
+        )
+        self.assertNotIn('generic', payload['modelAnswer'])
+
+    def test_compare_still_fails_when_the_grounded_half_is_unsupported(self):
+        """Compare must not launder an ungrounded member answer."""
+        response = self.post_mode(
+            'compare', [self.illustrative_reply(), self.illustrative_reply()],
+        )
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('modelAnswer', response.get_json())
 
 
 class InterviewFailureReasonTests(unittest.TestCase):

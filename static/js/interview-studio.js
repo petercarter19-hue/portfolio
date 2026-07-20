@@ -786,14 +786,31 @@
         writeJSON(historyKey, records);
     }
 
-    function renderList(element, items) {
+    // A review list can legitimately be empty: the coach sets a maximum of four
+    // bullets, never a minimum, so a genuinely weak answer can return zero
+    // strengths. When a caller supplies emptyMessage the absence is stated
+    // plainly instead of leaving a heading above an empty box.
+    function renderList(element, items, emptyMessage) {
         element.replaceChildren();
-        (items || []).forEach(function (item) {
+        var list = items || [];
+        if (!list.length) {
+            if (emptyMessage) {
+                var empty = document.createElement('li');
+                empty.className = 'is__bullets-empty';
+                empty.textContent = emptyMessage;
+                element.appendChild(empty);
+            }
+            return;
+        }
+        list.forEach(function (item) {
             var li = document.createElement('li');
             li.textContent = item;
             element.appendChild(li);
         });
     }
+
+    var IS_NO_STRENGTHS = 'The coach did not find a clear strength in this answer.';
+    var IS_NO_IMPROVEMENTS = 'The coach did not list an improvement for this answer.';
 
     function renderReview(review) {
         session.currentReview = review;
@@ -804,8 +821,8 @@
         ring.setAttribute('aria-label', 'Overall interview score: ' + score + ' out of 100');
         text(one('[data-is-verdict]'), review.verdict);
         text(one('[data-is-encouragement]'), review.encouragement);
-        renderList(one('[data-is-strengths]'), review.strengths);
-        renderList(one('[data-is-improvements]'), review.improvements);
+        renderList(one('[data-is-strengths]'), review.strengths, IS_NO_STRENGTHS);
+        renderList(one('[data-is-improvements]'), review.improvements, IS_NO_IMPROVEMENTS);
 
         var starList = one('[data-is-star]');
         var starDisplayStatus = { strong: 'strong', present: 'clear', partial: 'needs more', missing: 'missing' };
@@ -1680,8 +1697,8 @@
         text(one('[data-is-history-detail-answer-text]'), record.answer || '');
         text(one('[data-is-history-detail-verdict]'), record.verdict || '');
         text(one('[data-is-history-detail-encouragement]'), record.encouragement || '');
-        renderList(one('[data-is-history-detail-strengths]'), record.strengths || []);
-        renderList(one('[data-is-history-detail-improvements]'), record.improvements || []);
+        renderList(one('[data-is-history-detail-strengths]'), record.strengths || [], IS_NO_STRENGTHS);
+        renderList(one('[data-is-history-detail-improvements]'), record.improvements || [], IS_NO_IMPROVEMENTS);
         text(one('[data-is-history-detail-duration]'), record.durationSeconds ? formatDuration(record.durationSeconds) : 'A local rehearsal');
 
         if (!historyDetail.open) {

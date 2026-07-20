@@ -2015,7 +2015,14 @@ def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None
         'strengths': _string_list(raw.get('strengths', []), 4),
         'improvements': _string_list(raw.get('improvements', []), 4),
     }
-    if not review['verdict'] or not review['encouragement'] or not review['strengths'] or not review['improvements']:
+    # Owner decision (2026-07-20): strengths and improvements may legitimately be
+    # empty. The system prompt sets a MAXIMUM ("max 4 short bullets") and never a
+    # minimum, so for a genuinely weak answer zero strengths is the honest result.
+    # PeerSlate preserves what the coach actually found rather than pressuring it
+    # to manufacture praise, so an empty list renders as a truthful absence
+    # instead of being thrown away as a 502. The verdict, encouragement,
+    # dimensions, STAR assessment, and scores below remain required.
+    if not review['verdict'] or not review['encouragement']:
         raise ValueError('review summary is incomplete')
 
     dimensions = raw.get('dimensions')
@@ -2085,7 +2092,21 @@ def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None
     return review
 
 
-def validate_interview_model_answer(raw, evidence_by_id):
+def validate_interview_model_answer(raw, evidence_by_id, require_evidence=True):
+    """Validate one model answer.
+
+    Two legitimately different kinds of answer arrive here.
+
+    A *grounded* answer (member_history) speaks as the profile owner and must
+    cite at least one approved evidence id, so `require_evidence` stays True.
+
+    An *illustrative* answer (best_practice) is a deliberately generic example
+    that is not anyone's real history. Its own system prompt instructs the model
+    to return `"evidenceIds": []`, so zero citations is the correct result, not
+    a validation failure. Callers pass `require_evidence=False` together with an
+    empty evidence map: the unauthorized-evidence check below therefore still
+    rejects an illustrative answer that tries to cite anything at all.
+    """
     if not isinstance(raw, dict):
         raise ValueError('model answer is not an object')
     status = str(raw.get('status') or '').strip().lower()
@@ -2108,7 +2129,7 @@ def validate_interview_model_answer(raw, evidence_by_id):
         raise ValueError('model answer is incomplete')
     if len(evidence_ids) != len(set(evidence_ids)):
         raise ValueError('duplicate evidence references')
-    if not evidence_ids:
+    if require_evidence and not evidence_ids:
         raise ValueError('model answer has no approved evidence references')
     if any(item not in evidence_by_id for item in evidence_ids):
         raise ValueError('model answer referenced unauthorized evidence')
@@ -2195,7 +2216,7 @@ def _extract_json_object(text):
 # return 502 rather than render partial or invented coaching. That behavior is
 # correct and is deliberately unchanged here. The problem is that roughly a
 # dozen genuinely different provider outcomes -- a reply truncated mid-JSON, a
-# reply carrying an empty "strengths" array, dimension scores that do not add
+# reply missing its verdict, dimension scores that do not add
 # up to the stated overall score -- all collapse into one log line and one
 # status code, so the observed failure rate cannot be attributed to a cause.
 #
@@ -2550,7 +2571,11 @@ def interview_model_answer():
     # cause. Only the stop reason and a character count are ever logged.
     last_reply = {'text': '', 'stop_reason': ''}
 
-    def _generate(system_text, empty_evidence=False):
+    def _generate(system_text, illustrative=False):
+        # An illustrative best-practice example is not grounded in this member's
+        # approved evidence, so it is validated against an empty evidence map
+        # and is not required to cite anything. It is still rejected if it cites
+        # an id, because nothing is authorized for a generic example.
         api_response = client.messages.create(
             model='claude-haiku-4-5-20251001',
             max_tokens=1300,
@@ -2561,7 +2586,8 @@ def interview_model_answer():
         last_reply['text'] = api_response.content[0].text
         return validate_interview_model_answer(
             _extract_json_object(last_reply['text']),
-            {} if empty_evidence else evidence_by_id,
+            {} if illustrative else evidence_by_id,
+            require_evidence=not illustrative,
         )
 
     user_content = 'Interview question: %s' % question
@@ -2574,11 +2600,11 @@ def interview_model_answer():
     try:
         best_practice_answer = None
         if mode == 'best_practice':
-            model_answer = _generate(best_practice_system, empty_evidence=True)
+            model_answer = _generate(best_practice_system, illustrative=True)
             model_answer['generic'] = True
         elif mode == 'compare':
             model_answer = _generate(system_prompt)
-            best_practice_answer = _generate(best_practice_system, empty_evidence=True)
+            best_practice_answer = _generate(best_practice_system, illustrative=True)
             best_practice_answer['generic'] = True
         else:
             model_answer = _generate(system_prompt)
