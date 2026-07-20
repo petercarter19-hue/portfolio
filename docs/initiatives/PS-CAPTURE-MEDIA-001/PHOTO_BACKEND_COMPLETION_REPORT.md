@@ -4,19 +4,19 @@
 
 - Package: `PS-CAPTURE-PHOTO-BACKEND-001`
 - Status: Complete
-- Branch and commit: `work/2026-07-19-capture-photo-backend-001`; exact final commit supplied in the manager handoff
+- Branch and commit: deleted remote `work/2026-07-19-capture-photo-backend-001` at writer SHA `169d0acfe78dbfe57402c76add737f48681c68c6`; squash merge `e4863a57f9642731073f232a973508615e116d72`
 - Base: started from accepted Azure `origin/main` at `8da639fd47df5af7c1a146fb8ccb8992805bd7a5`; final PR rebased onto current nonoverlapping `origin/main` at `79a0ced30f55f1a44c039059a07d4e936dbecc29`
-- PR / pipeline / environment: backend PR and pipeline pending manager acceptance; architecture pipeline 135 succeeded at the exact base SHA
-- Production state: unchanged; Photo remains unavailable and `CAPTURE_PHOTO_ENABLED` defaults to `false`
+- PR / pipeline / environment: Azure PR 95 squash-merged; pipeline 139 succeeded at exact merge SHA `e4863a57f9642731073f232a973508615e116d72`; production Azure and SQL foundation applied and verified
+- Production state: backend and foundation deployed; Photo remains unavailable because `CAPTURE_PHOTO_ENABLED=false`
 - Visual authority and status: Not Started; backend-only package with no runtime template, CSS, JavaScript, or visible control
 - Homepage product projection: Downstream Package Required (`PS-HOME-CAPTURE-PHOTO-PARITY-001`) after the protected product is accepted
 - Pete / designated session manager visual acceptance: Not applicable to this backend-only package; Photo V1 visual acceptance remains a separate gate
 - Designated session manager: this package-designated ChatGPT Work/Codex manager session
-- Manager handoff status and next receiver: ready for technical acceptance, Azure PR, and flag-off merge; Photo visual design may continue independently
+- Manager handoff status and next receiver: backend accepted and released flag-off; `PS-CAPTURE-PHOTO-DESIGN-001` is the next receiver, followed by the runtime experience writer after Pete/manager visual acceptance
 - Lane owner and self-managed authority: ChatGPT Codex, backend writer
 - Self-certification: Pass
 - Complete-diff review: Issues corrected
-- Acceptance requested: technical report
+- Acceptance requested: release closeout
 
 ## B. What changed technically
 
@@ -111,10 +111,10 @@ finished the existing Capture/Moment tombstone lifecycle.
 Nothing new is visible in production. Type and Voice remain unchanged. Photo,
 Document, and Video remain unavailable.
 
-The merged backend will be deploy-safe with Photo off. After production Azure
-and SQL foundation approval, the accepted Photo visual package, and the later
-experience implementation, a synthetic signed-in lifecycle can prove the real
-feature before the flag is enabled.
+The backend and its production Azure/SQL foundation are deployed with Photo
+off. After the Photo visual package is accepted and the later experience is
+implemented, a synthetic signed-in lifecycle can prove the real feature before
+the flag is enabled.
 
 ## E. How this connects to PeerSlate
 
@@ -199,30 +199,37 @@ service, Moment, Placement, publication, or shared-governance file changed.
 - The entire disposable SQL resource group was deleted after proof; Azure
   subsequently reported it absent.
 
-### Production evidence boundary
+### Production release evidence
 
-No production migration, role, setting, container, or storage control was
-changed. Read-only verification currently shows:
+- Azure PR 95 squash-merged to authoritative `origin/main` at
+  `e4863a57f9642731073f232a973508615e116d72`; its remote task branch was
+  deleted and `origin/main` matched that SHA.
+- Manually queued pipeline 139 because no automatic run appeared for the merge;
+  application/security tests and the App Service deployment succeeded against
+  the exact merge SHA.
+- Production `peerslatecapturemedia` verification passed GPv2 Standard_LRS,
+  HTTPS, TLS 1.2, public Blob access off, shared key off, default OAuth on,
+  final private `peerslate-private-capture-media` container, seven-day soft
+  delete, account Defender override, on-upload scanning, 10 GB/month cap, Blob
+  index result tags, malicious-Blob soft-delete response, sensitive-data
+  discovery off, exact container-scoped Blob contributor, and exact
+  tag-read-only custom role.
+- Only the reviewed nonsecret App Service settings were written and the Photo
+  flag was explicitly kept off; verification did not list setting values.
+- The existing production Voice/foundation verifier passed before the Photo
+  migration. `PS-CAPTURE-MEDIA-001` then applied to `peerslate-database` through
+  passwordless Entra authentication and its complete owner-isolation verifier
+  passed.
+- The live App Service root returned HTTP 200 and a same-origin POST to the
+  Photo upload route returned HTTP 404, proving the deployed flag-off boundary.
 
-- `peerslatecapturemedia` is GPv2 Standard_LRS in `centralus`, HTTPS-only,
-  TLS 1.2, public Blob access off, and seven-day Blob soft delete on;
-- account Defender override and on-upload malware scanning are on at the
-  accepted 10 GB/month cap, and Blob index result tags are on;
-- shared-key access is still on and default OAuth is off;
-- the existing private container is named `photos`, not the reviewed final
-  `peerslate-private-capture-media`;
-- malicious-Blob automated response is `None`; and
-- sensitive-data discovery is on even though it is outside the Photo v1 scope.
-
-Therefore this report does not claim that production is ready for Photo intake.
-No real-member validation or live signed-in Photo lifecycle is possible while
-the backend is unmerged, the schema/infrastructure are unapplied, the visual
-gate is open, and the feature flag is off.
+Production is ready for later Photo experience integration, but not for Photo
+intake. No real-member Photo lifecycle or product claim is authorized while the
+visual gate, runtime frontend, product acceptance, and flag enablement remain
+open.
 
 ## G. Known gaps, risks, and exclusions
 
-- Production Azure and SQL still require a separately approved, reviewed apply
-  after the flag-off backend merge.
 - Photo V1 desktop/mobile/error designs and Pete/manager visual acceptance are
   not complete. No screenshots are applicable to this backend-only package.
 - The runtime Photo frontend, signed-in synthetic lifecycle, accessibility and
@@ -236,17 +243,18 @@ gate is open, and the feature flag is off.
 - HEIC/HEIF, WebP input, GIF, SVG, RAW, multiple photos, OCR, AI captions,
   moderation, extraction, public upload, browser Blob credentials, and
   automatic publication are excluded.
-- No deeper independent audit is required before manager technical acceptance;
-  production apply and real-member release each retain their own gates.
+- No deeper independent backend audit is required. The visual/product gate and
+  real-member release verification retain their own acceptance boundaries.
 
 ## H. Clear next step
 
-Accept this technical report, commit/push the branch, complete the Azure PR with
-Photo still off, and verify the normal flag-off deployment. That unlocks the
-reviewed production Azure/SQL foundation apply and lets the accepted Photo
-visual package hand off to the runtime experience writer. Photo visual design
-may safely continue in parallel now; the runtime frontend still waits for both
-the backend merge and visual acceptance.
+Complete and accept `PS-CAPTURE-PHOTO-DESIGN-001`: the desktop, mobile,
+accessibility, pending-scan, error, malicious/rejected, review, save, and delete
+state set. This is next because the backend and production foundation are now
+ready, but the runtime frontend is forbidden from inventing the member
+experience. Pete plus manager visual acceptance unlocks
+`PS-CAPTURE-PHOTO-EXPERIENCE-001`; Owner Home and Interview work may continue
+independently in parallel.
 
 ## I. What Pete needs to do or decide
 
