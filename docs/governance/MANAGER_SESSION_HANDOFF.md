@@ -223,7 +223,7 @@ The four fixed stages, explicit fictional/no-input/no-AI/no-storage truth, final
 real-Studio link, desktop modal, and 390px reflow passed manager review. This
 closes the current demonstration only. Its paper-light dark modal and
 Voice-default copy remain known downstream 5A/5C convergence work. Preserve the
-historical worktree; do not delete or reuse it during the active Studio gate.
+historical worktree; do not reuse it for the downstream convergence branch.
 File
 `10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` contains the definitive
 real-Studio and demo instructions.
@@ -237,6 +237,14 @@ That sequencing record is authoritative on `origin/main`: implementation tip
 and is not evidence that the new Studio or the later 5A/5C-converged homepage
 projection is implemented. The separate PR 86 release is evidence only for the
 current pre-convergence illustration.
+
+The later real-Studio release gate is now complete. Final source
+`0aaf41768a33810b089f5fea3a66a5272e8b61d8` squash-merged through Azure PR 101
+at `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
+(`20260720.20`) passed Build and Deploy, and desktop/390px production
+verification plus exact versioned-asset hashes passed. Step 6 above is therefore
+unblocked, but it remains unassigned and must start on a fresh branch with its
+own acceptance and release gates.
 
 Do not authorize Claude implementation from the three-direction art package
 alone.

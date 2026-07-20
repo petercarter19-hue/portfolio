@@ -173,7 +173,9 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 145", self.baseline)
+        self.assertIn("application_behavior_pipeline: 149", self.baseline)
+        self.assertIn("interview_studio_pipeline: 149", self.baseline)
+        self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.baseline)
         self.assertIn("capture_photo_experience_pipeline: 143", self.baseline)
         self.assertIn("owner_home_backend_pipeline: 145", self.baseline)
         self.assertIn("a98cced519a1f853ad9f4462fd438efa67d6f260", self.baseline)
@@ -202,10 +204,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            [
-                "PS-INTERVIEW-PUBLIC-GATE-001",
-                "PS-CAPTURE-MEDIA-001",
-            ],
+            ["PS-CAPTURE-MEDIA-001"],
             active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
@@ -259,7 +258,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
         self.assertIn("Pete / designated session manager visual acceptance", report)
 
-    def test_interview_dual_theme_authority_and_accepted_writer_state_are_explicit(self):
+    def test_interview_dual_theme_authority_and_live_release_state_are_explicit(self):
         brief = _read(
             "docs",
             "initiatives",
@@ -296,8 +295,9 @@ class BaselineCoherenceTests(unittest.TestCase):
             self.assertIn(expected, standard)
         self.assertIn("18 primary exports", review)
         self.assertIn("Concept A default/light and Concept C optional dark", self.state)
-        self.assertIn("manager accepted, writer release pending", self.state)
-        self.assertIn("39bc9a3f890ec8020eb84c4e3e416db6cd6912d2", self.state)
+        self.assertIn("released and verified live", self.state)
+        self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.state)
+        self.assertIn("pipeline 149", self.state)
         self.assertIn("5A-light/5C-dark", self.baseline)
 
     def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
@@ -499,7 +499,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             "PS-HOME-BACKEND-001",
             "PS-HOME-FRONTEND-001",
             'status: "ready_to_activate_from_post_backend_main"',
-            'status: "manager_accepted_writer_release_pending"',
+            "interview_studio_pipeline: 149",
             "capture_photo_closeout_pipeline: 140",
             "capture_photo_experience_pipeline: 143",
             "owner_home_backend_pipeline: 145",

@@ -177,3 +177,21 @@ the result must still be verified on production before it may be called
 live. The separate coaching-backend variability, manual screen-reader AT
 pass, sitewide theme-toggle scroll drift, and Gate 4 homepage convergence
 remain disclosed follow-ups rather than claims of this UI release.
+
+## Release closeout — 2026-07-20
+
+Final source `0aaf41768a33810b089f5fea3a66a5272e8b61d8` squash-merged through Azure
+PR 101 at `39002f5130a1766d2090007c16582e0dbe07226c`; Azure deleted the source
+branch. Automatic pipeline 149 (`20260720.20`) passed Build and Deploy for the
+exact merge. Production then served the new `studio-5a5c-2` and
+`ps-theme-001-2` assets, whose bytes matched the release; desktop and 390px
+browser verification passed the public truth, orientation/History, stage,
+modal theme/focus/state-retention, overflow, and console gates.
+
+PS-INTERVIEW-PUBLIC-GATE-001 is implemented, demonstrated, accepted, merged,
+deployed, and live. The real Studio is now the released upstream authority for
+a separately assigned Gate 4 homepage-convergence package. Homepage parity,
+the coaching-response follow-up, and the manual screen-reader AT pass remain
+open and are not claimed complete by this closeout. The GitHub backup mirror
+also remains behind because it is public and requires explicit owner approval
+before this session may advance it.

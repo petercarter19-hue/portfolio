@@ -93,3 +93,25 @@ dialog and focused-control retention, draft retention, synchronized
 `aria-checked`, no mobile horizontal overflow, and zero console errors. This
 continuation therefore preserves the manager decision: **accepted for Azure
 squash release and production verification**.
+
+## Release outcome — 2026-07-20
+
+- Final source: `0aaf41768a33810b089f5fea3a66a5272e8b61d8`
+- Azure PR: 101, completed by squash with source-branch deletion
+- Main merge: `39002f5130a1766d2090007c16582e0dbe07226c`
+- Automatic pipeline: 149 (`20260720.20`), Build **succeeded**, Deploy
+  **succeeded**
+- Production: `https://peerslate.com/interview-studio` and
+  `/interview-studio/history` verified live after propagation
+- Asset proof: the live `ps-theme-001-2` controller and both
+  `studio-5a5c-2` assets matched the released SHA-256 bytes
+- Browser proof: desktop and 390×844, orientation, History, truth labels,
+  exactly one current stage, Queue and History-detail modal theme switching,
+  focus/state retention, no horizontal overflow, and zero console errors
+
+The implementation and release lane is **closed**. Gate 4 homepage convergence
+is now unblocked but remains unassigned, must use a fresh branch, and is not
+claimed complete here. The coaching-response variability and named manual
+screen-reader AT pass remain separate follow-ups. The GitHub backup mirror is
+still behind because it is public; advancing it requires explicit owner
+approval and was not part of the Azure production release.

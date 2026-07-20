@@ -25,9 +25,12 @@ Visual Integrity Standard, and the PS-INTERVIEW-PUBLIC-GATE-001 package._
     real-browser review; found and corrected the native-modal theme-switch
     blocker described below; and accepted the visual/product result plus the
     narrow `tests/test_site_background.py` exception.
-  - **PR / merged:** no. No Azure PR exists for this branch.
-  - **Deployed:** no.
-  - **Live production:** no. The live public Studio is untouched.
+  - **PR / merged:** yes — Azure PR 101 squash-merged at
+    `39002f5130a1766d2090007c16582e0dbe07226c`.
+  - **Deployed:** yes — automatic pipeline 149 (`20260720.20`) passed Build
+    and Deploy for that exact merge.
+  - **Live production:** yes — production verification passed after App
+    Service propagation on 2026-07-20.
 - Branch: `work/2026-07-19-interview-public-gate-001`
 - Original base SHA: `6d5ef46ce05bd7c3a3f6e4b4c356bdf9c9bc6fcd` (the Gate 1
   design-package merge). Post-review synchronization: `origin/main`
@@ -38,12 +41,12 @@ Visual Integrity Standard, and the PS-INTERVIEW-PUBLIC-GATE-001 package._
   `d0af6645743f943f9e1f38419cb124af752afafa`; the only Interview-package
   overlap was the new manager-acceptance record and README status update,
   merged cleanly. Owner Home files remain an unrelated mainline lane.
-- Commit: recorded at push time in the handoff message accompanying this
-  report
-- PR / pipeline / environment: not started. This report requests **product
-  and visual acceptance first**, per `OWNER_VISUAL_INTEGRITY_STANDARD.md`
-  V3 — implementation completion is not itself authorization to merge or
-  deploy.
+- Final pushed source commit:
+  `0aaf41768a33810b089f5fea3a66a5272e8b61d8`; Azure deleted the source branch
+  after PR completion.
+- PR / pipeline / environment: Azure PR 101; squash merge
+  `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
+  (`20260720.20`); production `https://peerslate.com`.
 - Visual authority and status: Image 5 Concept A (light) / Concept C (dark) —
   **Accepted 2026-07-20** under the current owner-delegated Codex acceptance
   session. Evidence inventory in section F.
@@ -78,7 +81,8 @@ Visual Integrity Standard, and the PS-INTERVIEW-PUBLIC-GATE-001 package._
   corrections + evidence and documentation corrections, all closed; section
   F records every pass).
 - Acceptance result: **Approved for release**, subject to the complete suite,
-  Azure PR/pipeline, and production verification all passing.
+  Azure PR/pipeline, and production verification all passing. All three passed;
+  the package is released and live.
 
 ## B. What changed technically
 
@@ -198,8 +202,8 @@ source labels, local camera rehearsal with a typed-transcript fallback, and
 browser-local history with goals and growth tracking. Nothing new is
 implemented and nothing existing was removed. `/app/interview-studio`
 remains unimplemented and is not simulated anywhere. This branch changes no
-live behavior — it exists only on this task branch until accepted and
-released.
+authenticated-owner behavior. The accepted public Studio is now released and
+live.
 
 ## E. How this connects to PeerSlate
 
@@ -341,6 +345,20 @@ Studio-local bar (D1). This began as the writer's parity self-certification;
 the independent Codex acceptance pass reviewed it against the authority and
 recorded V3 acceptance under Pete's current bounded delegation.
 
+**Release and production verification.** Final source
+`0aaf41768a33810b089f5fea3a66a5272e8b61d8` was pushed and verified at the
+Azure branch tip. PR 101 squash-merged it at
+`39002f5130a1766d2090007c16582e0dbe07226c` and deleted the source branch.
+Automatic pipeline 149 (`20260720.20`) passed Build and Deploy for that exact
+merge. After App Service propagation, live HTML exposed
+`studio-5a5c-2`/`ps-theme-001-2`; the live theme controller, Studio script,
+and Studio CSS SHA-256 values matched the released bytes exactly. Browser
+verification passed the orientation and History routes, desktop and 390×844
+layouts, exactly one current stage, public/browser-local truth labels, Queue
+and History-detail theme switching with dialog/focus/state retention, no
+horizontal overflow, and zero console errors. The temporary verification
+draft was cleared without deleting pre-existing browser-local History.
+
 ## G. Known gaps, risks, and exclusions
 
 - **Separate backend follow-up item (not corrected by this branch, and this
@@ -366,27 +384,26 @@ recorded V3 acceptance under Pete's current bounded delegation.
   rather than reverted because it is essential to this package: the approved
   5A visual authority removes the shared photo background from the Studio,
   and without the two-line assertion change the complete repository suite
-  cannot pass against the approved visual. The designated manager should
-  either ratify this narrow test-only expansion as part of V3 acceptance or
-  direct an alternative (e.g., relocating the assertion into the package's
-  own test file). No other shared file was touched.
+  cannot pass against the approved visual. The designated manager ratified
+  this expansion during V3 acceptance. The later D22 correction also touched
+  only the existing shared theme controller and its base-template cache key,
+  under the owner's bounded release instruction.
 - Screen-reader announcement timing/content could not be proven by static
   evidence or these tools; the architecture requires it as implementation
   evidence and it is covered by the existing `announce()` live-region
   mechanism (unchanged), but a screen-reader-specific pass is not included
   here.
-- Independent Codex sign-off has occurred under the owner's current bounded
-  delegation. Release and live status remain separate until the Azure and
-  production gates complete.
+- Independent Codex sign-off occurred under the owner's current bounded
+  delegation. Azure release and production verification are complete.
 
 ## H. Clear next step
 
-Open the Azure PR, merge through the governed squash path, verify the
-automatic pipeline, and verify production. Do not call the Studio live until
-all three release facts are proven. After release and live verification, the
-Gate 4 homepage-walkthrough convergence package (open downstream, section A)
-is the next sequenced work. Separately, assign the coaching-backend response
-variability and manual screen-reader AT pass (section G) as follow-ups.
+The Gate 4 homepage-walkthrough convergence package (open downstream, section
+A) is now unblocked and is the next sequenced Interview work; it requires a
+fresh branch and separate assignment. Separately, assign the coaching-backend
+response variability and manual screen-reader AT pass (section G) as
+follow-ups. The GitHub backup mirror remains behind because the configured
+repository is public and advancing it requires explicit owner approval.
 
 ## I. What Pete needs to do or decide
 

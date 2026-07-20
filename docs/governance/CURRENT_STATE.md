@@ -1,13 +1,14 @@
 # PeerSlate - Current State
 
 _Updated 2026-07-20 for the released flag-off Photo experience, released
-default-off Owner Home backend, and owner-delegated manager acceptance of the
-5A-light/5C-dark Interview implementation. Every manager and writer must still
-fetch `origin` before starting._
+default-off Owner Home backend, and released/live-verified 5A-light/5C-dark
+Interview Studio. Every manager and writer must still fetch `origin` before
+starting._
 
 ## Verified production and repository baseline
 
-- `origin` is Azure DevOps and the only source of truth. `github` is a backup mirror whose pushes remain on hold.
+- `origin` is Azure DevOps and the only source of truth. `github` is a public
+  backup mirror whose pushes remain on hold pending explicit owner approval.
 - PS-RESUME-PUBLIC-REFINE-001 squash-merged through Azure PR 62 at `d88ca480a2cfcdc697d3bfffd219268c20368520`; pipeline 83 (`20260718.6`) succeeded for that exact commit.
 - PS-CAPTURE-002 squash-merged through Azure PR 63 at `65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd`; pipeline 85 (`20260718.8`) succeeded for that exact commit.
 - PS-MOMENT-001 squash-merged through Azure PR 66 at `43afd9353af1a0693aafab0c918f3dff92802376`; pipeline 91 (`20260718.14`) succeeded for that exact commit after both Build and Deploy passed.
@@ -111,12 +112,17 @@ fetch `origin` before starting._
   `/app` is unchanged, and `/api/v1/owner/home` returns neutral 404. Queued
   duplicate manual pipeline 146 was canceled and is not a failed release.
 - Pete delegated the current ChatGPT Work/Codex manager to complete the needed
-  review and approvals. Claude Code's Interview implementation at exact branch
-  `work/2026-07-19-interview-public-gate-001` and SHA
-  `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2` passed manager visual/product
-  review, 70 focused tests, 518 full-suite tests with one skip, and diff checks.
-  Claude Code remains sole writer and must merge current main, correct one stale
-  version sentence, rerun evidence, and complete its Azure release from the Mac.
+  review, corrections, and release. The final source
+  `0aaf41768a33810b089f5fea3a66a5272e8b61d8` passed 68 Interview tests, 104
+  combined package/governance tests, 599 full-suite tests with two unrelated
+  isolated-SQL skips, clean JavaScript parsing, diff checks, and desktop/390px
+  browser verification. Azure PR 101 squash-merged it at
+  `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
+  (`20260720.20`) passed Build and Deploy. Live `/interview-studio` and
+  `/interview-studio/history` serve the accepted product, the three versioned
+  Interview/theme assets hash byte-for-byte to the release, and modal theme
+  controls retain dialog state and focus with zero console errors. The source
+  branch is deleted and the implementation/release lane is closed.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -157,16 +163,16 @@ Claude Co-Work management is distinct from Claude Code implementation. Parallel
 manager sessions may coordinate separate packages, but shared-governance-file
 reservations must be serialized.
 
-The Interview Studio writer-release lane and Capture Media Photo enablement lane
-are active independently. The Owner Home backend and Voice correction lanes are
-closed; Owner Home frontend is unblocked but not yet assigned:
+The Interview Studio writer-release, Owner Home backend, and Voice correction
+lanes are closed. Capture Media Photo enablement remains active but unassigned;
+Owner Home frontend and Interview homepage convergence are unblocked but not yet
+assigned:
 
-1. **PS-INTERVIEW-PUBLIC-GATE-001 - manager accepted, writer release pending:**
-   the exact Image 5 Concept A default/light and Concept C optional dark
-   implementation at `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2` passed the
-   owner-delegated manager gate. Claude Code retains sole branch ownership and
-   must complete the current-main merge, one stale-version correction, test
-   reruns, Azure PR/pipeline, live verification, and closeout on the Mac.
+1. **PS-INTERVIEW-PUBLIC-GATE-001 - released and verified live:** the exact
+   Image 5 Concept A default/light and Concept C optional dark implementation
+   is live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, Azure
+   PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and automatic
+   pipeline 149. The implementation/release branch was deleted.
 2. **Interview homepage demo - accepted live pre-convergence walkthrough:**
    `PS-HOME-INTERVIEW-DEMO-001` is implemented, accepted for its fixed
    illustrative purpose, deployed, and live through source
@@ -174,8 +180,8 @@ closed; Owner Home frontend is unblocked but not yet assigned:
    `a98cced519a1f853ad9f4462fd438efa67d6f260`, and automatic pipeline 122.
    Its modal, static-state, accessibility, responsive, and no-JavaScript work
    is real. Its paper-light dark treatment and Voice-default framing still
-   predate the controlling 5A/5C and written-practice decisions. After the real
-   Studio is accepted, implemented, released, and verified live, use a fresh
+   predate the controlling 5A/5C and written-practice decisions. The real
+   Studio release gate is now satisfied; use a fresh, separately assigned
    downstream branch to converge the homepage projection and close parity.
 3. **PS-CAPTURE-MEDIA-001 - Photo released flag-off; enablement gates open:**
    the backend, foundation, and accepted Photo 1 experience are deployed through
@@ -219,7 +225,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 |---|---|---|
 | Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
-| Interview Studio | Exact 5A-light/5C-dark implementation at `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2` is manager-accepted; the fixed illustrative homepage walkthrough remains live through PR 86/pipeline 122 | Claude Code merges current main, corrects the stale version sentence, reruns evidence, releases and verifies the real Studio; only then start a fresh homepage-convergence branch |
+| Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122 | Separately assign a fresh homepage-convergence branch; keep parity open until that mapped projection is accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Photo backend plus accepted Photo 1 experience released flag-off through PRs 95/96/98 and pipelines 139/140/143; no Photo intake is member-visible | Keep Photo off; separately assign signed-in lifecycle, isolation, homepage parity, and enablement gates |
 | Owner Home | Dark cinematic authority accepted; finite backend and production SQL released default-off through PR 99/pipeline 145; `/app` unchanged and API neutral 404 | Assign the exact-authority frontend on a fresh branch from current main; keep broader viewer modes separate |
@@ -255,7 +261,8 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Slate Board Project notes and historical fixtures are not canonical Projects.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
-- The GitHub mirror is not current and must not be used as a release source.
+- The GitHub mirror is not current and must not be used as a release source;
+  it is public, so advancing it requires explicit owner approval.
 - The current public My Story separates fixture content from repository-authored
   layout metadata, but a signed-in member cannot yet move, resize, save, or
   publish a personal composition. `PS-STORY-COMPOSER-001` is planned, not live.
@@ -279,9 +286,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   controls optional dark. They are two themes of the same public Studio, not
   separate products. Theme switching may not reset Studio state. The complete
   dual-theme Gate 2.4 set, truth/accessibility review, Claude/Fable feasibility,
-  implementation, and owner-delegated manager visual approval have passed for
-  exact SHA `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2`; writer-owned Azure release and
-  live verification remain.
+  implementation, and owner-delegated manager visual approval culminated in
+  source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, live merge
+  `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149. Azure release
+  and live verification have passed.
 - The homepage Interview walkthrough is downstream of the real Studio. Its
   current fixed, fictional, no-side-effect version is accepted and live as a
   pre-convergence demonstration, but it is not final visual parity. Its

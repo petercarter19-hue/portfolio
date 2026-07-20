@@ -1,8 +1,8 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
-Owner Home backend release, and owner-delegated manager acceptance of Claude
-Code's exact 5A-light/5C-dark Interview implementation._
+Owner Home backend release, and live-verified 5A-light/5C-dark Interview
+Studio release._
 
 ## Operating model
 
@@ -20,10 +20,10 @@ Claude Code implementation.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview release, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | editing Claude's active Interview branch; combining product lanes |
+| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement, Owner Home sequencing, later Interview homepage convergence | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes; starting unassigned downstream work |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
-| Public Interview implementation | Claude Code sole writer | PS-INTERVIEW-PUBLIC-GATE-001 | merge preparation, one report correction, test reruns, Azure release and closeout for exact accepted SHA | auth, database, Capture/Moment/Placement, owner routes, global theme/nav, Owner Home |
-| Owner Home frontend | Unassigned; Claude Code preferred when separately assigned | PS-HOME-FRONTEND-001 ready but not active | exact accepted dark cinematic shell from post-backend main | Interview branch, broader viewer modes, Photo enablement, backend-contract expansion |
+| Interview homepage convergence | Unassigned | Downstream Gate 4, ready but not active | mapping the live 5A/5C Studio into the existing homepage walkthrough | modifying the real Studio; starting without fresh branch and acceptance |
+| Owner Home frontend | Unassigned; Claude Code preferred when separately assigned | PS-HOME-FRONTEND-001 ready but not active | exact accepted dark cinematic shell from post-backend main | broader viewer modes, Photo enablement, backend-contract expansion |
 
 ## Current active gate
 
@@ -35,7 +35,7 @@ and Deploy. Preserve the original and visual-correction worktrees as historical
 references; do not reuse them for later work. A future Voice change requires a
 new package and branch.
 
-### PS-INTERVIEW-PUBLIC-GATE-001 - manager accepted / Claude Code release lane
+### PS-INTERVIEW-PUBLIC-GATE-001 - released and verified live / lane closed
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
@@ -45,17 +45,20 @@ new package and branch.
   functionality, truth, responsive behavior, and accessibility model.
 - Pete delegated the current ChatGPT Work/Codex manager to review and approve
   the implementation gates needed for the cross-computer release handoff. The
-  exact Claude Code branch
-  `work/2026-07-19-interview-public-gate-001` at
-  `39bc9a3f890ec8020eb84c4e3e416db6cd6912d2` passed manager visual/product
-  review, 70 focused tests, 518 full-suite tests with one skip, and diff checks.
-- Claude Code remains the sole active writer. On the Mac it must merge current
-  `origin/main` without rebasing, correct the one stale Bible/Roadmap sentence,
-  rerun evidence, push the exact corrected tip, and complete the Azure squash
-  PR, pipeline, live verification, completion report, and governance closeout.
-- The real Studio remains upstream of the homepage walkthrough. Its Azure
-  release and live verification must pass before a fresh homepage-parity
-  convergence branch starts.
+  accepted source was synchronized with current main and corrected for the
+  native-modal theme-switch blocker at final source
+  `0aaf41768a33810b089f5fea3a66a5272e8b61d8`.
+- Azure PR 101 squash-merged the release at
+  `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
+  (`20260720.20`) passed both Build and Deploy. Azure deleted the source branch.
+- Live `/interview-studio` and `/interview-studio/history` serve the new
+  `studio-5a5c-2` / `ps-theme-001-2` signatures. Their JavaScript and CSS
+  hashes match the released bytes. Desktop and 390px browser verification
+  passed the orientation, truth boundary, stage-current, modal-theme,
+  focus/state-retention, overflow, and console checks.
+- The real Studio remains upstream of the homepage walkthrough. Its release is
+  now green and live, so a fresh homepage-parity convergence package may be
+  separately assigned. It has not started, and parity remains open.
 - Pete accepted the current fixed illustrative walkthrough for its present
   purpose. Claude's exact source tip
   `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
@@ -69,11 +72,11 @@ new package and branch.
   not as final homepage parity. A fresh downstream branch must later replace
   the Voice-default emphasis and paper-light dark modal with a mapped projection
   of the exact accepted and live 5A/5C Studio. Preserve the historical demo
-  worktree; do not reuse or delete it during the active Studio gate.
+  worktree; do not reuse it for the downstream convergence branch.
 - The convergence governance is authoritative on `origin/main`: Azure PR 83
   squash-merged at `cee015f6291fe5460a6a5d5795c445bb6b25c6f9`, and
   pipeline 117 passed Build and Deploy. This release records sequencing only;
-  it does not make the new Studio design or homepage demo implemented or live.
+  it did not itself make the new Studio design live; PR 101/pipeline 149 now do.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
 ### PS-CAPTURE-MEDIA-001 - released flag-off / enablement gates unassigned
@@ -118,13 +121,13 @@ new package and branch.
 - `PS-HOME-FRONTEND-001` is unblocked but not assigned. It must start on a fresh
   branch from then-current `origin/main`, own the controlled flag-on `/app`
   switch and exact dark cinematic shell, and pass its own visual/product gate.
-  It must not be blended into Claude's active Interview branch.
+  It must remain separate from later Interview homepage convergence.
 
 ## Later backend decisions
 
-The finite Owner Home backend is released. Owner Home frontend is ready for a
-separate assignment after the Interview writer lane is safely released, unless
-a different writer and isolated worktree are explicitly assigned. Broader viewer modes,
+The finite Owner Home backend and Interview writer lane are released. Owner
+Home frontend is ready for a separate assignment when a manager and writer are
+explicitly assigned. Broader viewer modes,
 photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/
 Feed/sharing/public-projection consumer remain separate later packages.
 PS-VOICE-001 does not authorize them.
@@ -156,7 +159,7 @@ writer or implementation branch, and must not interrupt Voice or Interview.
   Pete/designated-manager approval.
 - No manager, writer, implementation branch, start date, schema migration,
   accepted product mockup, deployment, or live claim exists. This package must
-  not interrupt active Interview Studio or Capture Media gates.
+  not interrupt Capture Media or any separately assigned convergence gate.
 
 ### PS-ASK-PETE-AI-001 - planned Phase 11 discovery
 
@@ -175,8 +178,8 @@ writer or implementation branch, and must not interrupt Voice or Interview.
   first action is the owner discovery agenda, followed by complete experience,
   visual-authority, architecture, privacy, AI-safety, and traceability gates.
 - No designated discovery manager, implementation writer, product branch, or
-  start date is assigned. This package must not interrupt the active Interview
-  Studio or Capture Media gates.
+  start date is assigned. This package must not interrupt Capture Media or any
+  separately assigned convergence gate.
 - Any homepage section that presents or links Ask Pete AI is subject to the
   cross-product homepage projection parity contract before future product
   implementation can close.

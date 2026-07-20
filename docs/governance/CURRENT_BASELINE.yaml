@@ -4,7 +4,7 @@
 # the live pre-convergence Interview walkthrough, planned Ask Pete AI discovery,
 # cross-product homepage parity, the planned Projects system expansion, and
 # the released flag-off Photo experience, the released default-off Owner Home
-# backend, and the accepted Interview implementation awaiting writer release.
+# backend, and the accepted 5A/5C Interview Studio release verified live.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-20"
@@ -63,16 +63,21 @@ authority:
   owner_home_backend_merge_commit: "2db2ca5c93fa221f7092b54ebc17f2068584c07d"
   owner_home_backend_pr: 99
   owner_home_backend_pipeline: 145
+  interview_studio_source_commit: "0aaf41768a33810b089f5fea3a66a5272e8b61d8"
+  interview_studio_merge_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
+  interview_studio_pr: 101
+  interview_studio_pipeline: 149
+  interview_studio_pipeline_build: "20260720.20"
   production_url: "https://peerslate.com"
-  application_behavior_commit: "2db2ca5c93fa221f7092b54ebc17f2068584c07d"
-  application_behavior_pipeline: 145
-  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. The exact 5A-light/5C-dark Interview implementation at 39bc9a3f890ec8020eb84c4e3e416db6cd6912d2 is manager-accepted but remains on Claude Code's active writer branch pending merge of current origin/main, one stale-version correction, test reruns, Azure PR/pipeline, and live verification. Fetch origin for the exact current tip."
+  application_behavior_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
+  application_behavior_pipeline: 149
+  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. Homepage convergence is now unblocked but remains a fresh, separately assigned downstream package. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
   role: backup_only
   observed_main_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"
-  status: push_on_hold_and_behind_origin
+  status: push_on_hold_public_remote_requires_explicit_owner_approval
 
 manager:
   role: "package_designated_session_manager"
@@ -80,7 +85,7 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "Claude Code remains sole writer of work/2026-07-19-interview-public-gate-001 at accepted SHA 39bc9a3f890ec8020eb84c4e3e416db6cd6912d2 and must complete its Mac merge-preparation and Azure release; Photo and Home backend are released flag-off; PS-HOME-FRONTEND-001 is unblocked but has no writer or branch until separately assigned"
+  current_assignments: "The Interview implementation/release lane is closed and its source branch was deleted after PR 101. Homepage Interview convergence is unblocked but unassigned and must start on a fresh branch. Photo and Home backend are released flag-off; PS-HOME-FRONTEND-001 is unblocked but has no writer or branch until separately assigned."
 
 governing_documents:
   bible:
@@ -141,6 +146,7 @@ completed_packages:
   - PS-CAPTURE-PHOTO-BACKEND-001
   - PS-CAPTURE-PHOTO-EXPERIENCE-001
   - PS-HOME-BACKEND-001
+  - PS-INTERVIEW-PUBLIC-GATE-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -151,11 +157,6 @@ holds:
   - PS-JOURNAL-001
 
 active_packages:
-  - id: PS-INTERVIEW-PUBLIC-GATE-001
-    owner: "ChatGPT Work/Codex owner-delegated manager; Claude Code sole implementation/release writer"
-    lane: public_experience
-    package_path: "docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md"
-    status: "manager_accepted_writer_release_pending"
   - id: PS-CAPTURE-MEDIA-001
     owner: "ChatGPT Work/Codex owner-delegated manager; enablement writer unassigned"
     lane: capture_media_photo_enablement_and_homepage_parity
@@ -182,7 +183,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "planned_not_active"
 
-next_gate: "Claude Code first resumes work/2026-07-19-interview-public-gate-001 from accepted SHA 39bc9a3f890ec8020eb84c4e3e416db6cd6912d2 on the Mac, merges current origin/main without rebasing, corrects the one stale Bible/Roadmap sentence, reruns its evidence, and completes the Azure squash PR, pipeline, live verification, and report closeout. Only after the real Studio is live may a fresh homepage-convergence branch map the accepted pre-convergence walkthrough to that exact 5A/5C product. PS-HOME-BACKEND-001 is released default-off at 2db2ca5c93fa221f7092b54ebc17f2068584c07d with pipeline 145 and production SQL proof, so PS-HOME-FRONTEND-001 is unblocked but remains unassigned and must start on a separate fresh branch from then-current origin/main using the exact accepted dark cinematic authority; it must not be blended into Interview work. Capture Photo is released flag-off at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6 with pipeline 143 and must remain disabled until a separately assigned package completes real signed-in lifecycle, two-owner denial, homepage parity, and enablement acceptance. Broader viewer modes remain inactive. Planned Projects and Ask Pete AI work do not interrupt these lanes."
+next_gate: "The real 5A/5C Interview Studio is released and verified live through PR 101/pipeline 149. A fresh, separately assigned homepage-convergence branch may now map the accepted pre-convergence walkthrough to that exact live product; parity remains open until that downstream package is accepted and live. PS-HOME-BACKEND-001 is released default-off at 2db2ca5c93fa221f7092b54ebc17f2068584c07d with pipeline 145 and production SQL proof, so PS-HOME-FRONTEND-001 is unblocked but remains unassigned and must start on a separate fresh branch from then-current origin/main using the exact accepted dark cinematic authority. Capture Photo is released flag-off at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6 with pipeline 143 and must remain disabled until a separately assigned package completes real signed-in lifecycle, two-owner denial, homepage parity, and enablement acceptance. The GitHub backup mirror remains on hold because the configured repository is public and pushing requires explicit owner approval. Broader viewer modes remain inactive. Planned Projects and Ask Pete AI work do not interrupt these lanes."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
