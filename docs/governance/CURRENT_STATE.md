@@ -3,7 +3,8 @@
 _Updated 2026-07-19 for the completed Voice release, Interview Studio Image 5
 5A-light/5C-dark authority, the accepted live pre-convergence homepage
 walkthrough, Capture Media manager planning, planned Projects and Ask Pete AI
-expansion, and cross-product homepage parity. Every manager and writer must still fetch
+expansion, cross-product homepage parity, and the accepted finite Owner Home
+architecture/backend activation. Every manager and writer must still fetch
 `origin` before starting._
 
 ## Verified production and repository baseline
@@ -136,8 +137,9 @@ Claude Co-Work management is distinct from Claude Code implementation. Parallel
 manager sessions may coordinate separate packages, but shared-governance-file
 reservations must be serialized.
 
-The Interview Studio review lane and Capture Media manager-planning lane are
-active independently. The Voice correction lane is closed:
+The Interview Studio review lane, Capture Media manager-planning lane, and
+finite Owner Home backend lane are active independently. The Voice correction
+lane is closed:
 
 1. **PS-INTERVIEW-PUBLIC-GATE-001 - Gate 2.4 review:** the exact Image 5
    authority is recorded: Concept A Editorial Studio Ledger controls
@@ -160,6 +162,16 @@ active independently. The Voice correction lane is closed:
    session manager for requirements, architecture, decomposition, and writer
    allocation. No authoritative Azure implementation branch was observed at
    activation, so Capture Media is not implemented, deployed, or live.
+4. **PS-HOME-BACKEND-001 - finite Owner Home backend:** the designated
+   ChatGPT Work/Codex manager accepted the Fable architecture, resolved U1–U6,
+   and assigned ChatGPT Codex to a fresh post-activation backend branch. The
+   package may add only the default-off finite read model and flag-gated JSON
+   endpoint; it does not change `/app`. The assignment is queued until the
+   already allocated Capture Photo backend merges or relinquishes its
+   overlapping `owner_routes.py` and `services/database_service.py`
+   reservations. `PS-HOME-FRONTEND-001` is sequenced
+   after the backend merge and is not active. No Owner Home implementation,
+   deployment, enablement, or live behavior exists yet.
 
 `PS-ASK-PETE-AI-001` is separately planned under Roadmap Phase 11. Its first
 gate is an owner product discussion, not implementation. The future concept
@@ -193,6 +205,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Interview Studio | Public browser-local slice shipped; Approach A approved; Image 5 Concept A controls default/light and Concept C controls optional dark for the same public Studio; the fixed illustrative homepage walkthrough is accepted and live through PR 86/pipeline 122, while final 5A/5C projection parity remains open | Complete dual-theme Gate 2.4 and feasibility/approval; architecture and implement the real Studio; release and verify it live; then converge and separately release the updated homepage projection |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
 | Capture Media | Manager planning active under Claude Co-Work; no implementation branch or release evidence is authoritative yet | Define photo/video/document vertical slices, shared private-media/provenance/lifecycle contracts, first writer, and exact entry gate |
+| Owner Home | Dark cinematic production-intent authority and finite owner-only architecture accepted; U1–U6 resolved; `PS-HOME-BACKEND-001` assigned behind Capture Photo shared files and frontend sequenced; no runtime implementation or live route change | After Capture Photo merges/relinquishes overlapping files, implement and merge the default-off owner-isolated backend without changing `/app`; then start the exact-authority frontend from post-backend main |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
 | Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |
@@ -212,6 +225,9 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Speech roles. The active correction must not change those backend contracts.
 - PS-CAPTURE-MEDIA-001 planning does not make photo, video, or document Capture
   available. Voice is not to be rebuilt inside the broader media package.
+- Owner Home architecture acceptance and backend activation do not make Owner
+  Home available. `/app` remains the released owner workspace until a separate
+  frontend package is accepted, merged, deployed, and explicitly enabled.
 - PS-ASK-PETE-AI-001 is a planned discovery package only. A document or job-
   posting screenshot cannot currently be uploaded to Ask Pete AI; voice and
   private Slate grounding are not live there. Uploaded targets must never be

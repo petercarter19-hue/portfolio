@@ -2,7 +2,8 @@
 # Updated for the completed Voice release, Interview Studio Image 5
 # 5A-light/5C-dark owner authority, real-Studio-first demo convergence,
 # the live pre-convergence Interview walkthrough, planned Ask Pete AI discovery,
-# cross-product homepage parity, and the planned Projects system expansion.
+# cross-product homepage parity, the planned Projects system expansion, and
+# the accepted finite Owner Home architecture/backend activation.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-19"
@@ -64,7 +65,7 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "Codex manager session reviews Interview Gate 2.4; Claude Co-Work receives that review and manages PS-CAPTURE-MEDIA-001 planning; Claude Code remains the separate implementation writer when assigned"
+  current_assignments: "Codex manager session reviews Interview Gate 2.4 and manages the accepted Owner Home sequence; PS-CAPTURE-MEDIA-001 has already allocated ChatGPT Codex to PS-CAPTURE-PHOTO-BACKEND-001 on the overlapping backend files, so assigned PS-HOME-BACKEND-001 waits for that lane to merge or relinquish reservations; Claude Code remains a separate frontend implementation writer when assigned"
 
 governing_documents:
   bible:
@@ -121,6 +122,7 @@ completed_packages:
   - PS-VOICE-001
   - PS-VOICE-VISUAL-PARITY-001
   - PS-HOME-INTERVIEW-DEMO-001
+  - PS-OWNER-HOME-VIEWER-GATE-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -139,8 +141,19 @@ active_packages:
     owner: "Claude Co-Work designated session manager; implementation writer unassigned"
     lane: capture_media_manager_planning
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
+  - id: PS-HOME-BACKEND-001
+    owner: "ChatGPT Work/Codex designated manager; ChatGPT Codex self-managed backend writer, queued behind Capture Photo shared files"
+    lane: owner_home_backend
+    package_path: "docs/initiatives/PS-HOME-BACKEND-001/README.md"
+    status: "active_assigned_waiting_for_capture_photo_shared_files"
 
 planned_packages:
+  - id: PS-HOME-FRONTEND-001
+    owner: "ChatGPT Work/Codex designated manager; frontend writer assigned only after backend merge"
+    lane: owner_home_frontend_sequenced
+    roadmap_phase: "Phase 4 - Owner Home and viewer modes"
+    package_path: "docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md"
+    status: "sequenced_after_backend_not_active"
   - id: PS-PROJECTS-001
     owner: "Pete product direction; future designated product/visual manager and implementation writer unassigned"
     lane: future_projects_workspace_and_projections
@@ -154,7 +167,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "planned_not_active"
 
-next_gate: "The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before a fresh downstream homepage-convergence branch maps the already-live illustrative walkthrough to that exact released 5A/5C product. The current walkthrough may remain live as an explicitly fictional, no-side-effect pre-convergence demonstration; it is not final homepage parity, and its Voice-default framing and paper-light dark modal are known convergence work. Claude Co-Work manages PS-CAPTURE-MEDIA-001 requirements/architecture and must not claim implementation without a separately assigned writer branch. PS-PROJECTS-001 is planned under Phase 10 and must not interrupt active lanes; its later entry gate begins with Project/Work/Slate Board boundary validation and one accepted private-workspace visual authority, not implementation. PS-ASK-PETE-AI-001 is planned under Phase 11 and begins with owner discovery, not implementation. Every user-facing package must perform the homepage-product parity check. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
+next_gate: "The already allocated PS-CAPTURE-PHOTO-BACKEND-001 lane merges or explicitly relinquishes owner_routes.py and services/database_service.py. Then assigned PS-HOME-BACKEND-001 starts on a fresh branch from that current origin/main and ships only the default-off finite Home read model/API; it must not change /app. After its squash merge and green pipeline, PS-HOME-FRONTEND-001 may implement the exact accepted dark cinematic Owner Home and manager-approved standalone shell. Broader viewer modes remain inactive. The Codex Interview session reviews all nine current-public screens in both controlling themes (Image 5 Concept A default/light and Concept C optional dark), responsive/accessibility evidence, truth review, and theme no-state-loss behavior, then hands its exact branch/SHA/report to Claude Co-Work. After Claude/Fable feasibility and Pete/designated-manager visual approval, Claude Code records the real Studio architecture and implements it on a fresh branch. The real Studio must pass acceptance, Azure release, and live verification before a fresh downstream homepage-convergence branch maps the already-live illustrative walkthrough to that exact released 5A/5C product. The current walkthrough may remain live as an explicitly fictional, no-side-effect pre-convergence demonstration; it is not final homepage parity, and its Voice-default framing and paper-light dark modal are known convergence work. PS-PROJECTS-001 is planned under Phase 10 and must not interrupt active lanes; its later entry gate begins with Project/Work/Slate Board boundary validation and one accepted private-workspace visual authority, not implementation. PS-ASK-PETE-AI-001 is planned under Phase 11 and begins with owner discovery, not implementation. Every user-facing package must perform the homepage-product parity check. PS-VOICE-001 is released and closed; later Voice refinements require a new package."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

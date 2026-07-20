@@ -3,7 +3,8 @@
 _Updated 2026-07-19 after the accepted Voice release, the Interview Studio
 Image 5 5A-light/5C-dark owner decision, the accepted live pre-convergence
 homepage walkthrough, planned Projects and Ask Pete AI expansion, and the
-cross-product homepage parity decision._
+cross-product homepage parity decision, plus the accepted finite Owner Home
+architecture and activated backend slice._
 
 ## Operating model
 
@@ -24,6 +25,7 @@ Claude Code implementation.
 | Governance and orchestration | Package-designated ChatGPT Work/Codex or Claude Co-Work manager | Portable management; Interview and Capture Media gates | Current authority/state, lane sequencing, shared-file reservations, final acceptance | routine duplicate technical audits; active product implementation files |
 | Capture Media manager | Claude Co-Work | PS-CAPTURE-MEDIA-001 planning | requirements, architecture, slice decomposition, writer allocation, evidence gates | implementation claims, Voice rebuild, Journal, publication, shared runtime files before reservation |
 | Public experience review | Codex Gate 2.4 review session -> Claude Co-Work designated manager -> Claude Code feasibility/implementation after approval | PS-INTERVIEW-PUBLIC-GATE-001 | complete Image 5 Concept A light / Concept C dark design review; implementation only after all gates | auth, database, Capture/Moment/Placement, owner routes, global theme/nav |
+| Owner Home backend | ChatGPT Codex self-managed writer; ChatGPT Work/Codex designated manager; queued behind Capture Photo shared files | PS-HOME-BACKEND-001 | default-off finite owner read procedure/service/JSON API, tests, SQL evidence | `/app` HTML, templates/CSS/JS, viewer modes, public/homepage surfaces, Capture/Moment/Voice internals |
 
 ## Current active gate
 
@@ -93,9 +95,38 @@ new package and branch.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
 
+### PS-HOME-BACKEND-001 - active finite Owner Home backend lane
+
+- Source package: `docs/initiatives/PS-HOME-BACKEND-001/README.md`.
+- Accepted architecture and U1–U6 decisions:
+  `docs/initiatives/PS-OWNER-HOME-VIEWER-GATE-001/11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md`.
+- Assigned writer: ChatGPT Codex on one fresh
+  `work/YYYY-MM-DD-home-backend-001` branch; designated manager: ChatGPT
+  Work/Codex manager session. The assignment is active but queued behind the
+  already allocated Capture Photo backend because both reserve
+  `owner_routes.py` and `services/database_service.py`. Create the Home branch
+  only after Capture Photo merges or explicitly relinquishes those files, then
+  start from that current `origin/main`.
+- Scope is only the default-off `PEERSLATE_OWNER_HOME_ENABLED` config, bounded
+  owner read procedure/service/serializer, flag-gated
+  `GET /api/v1/owner/home`, exact migration/rollback/verification, and required
+  tests/evidence. The backend package does not edit `auth_routes.py`, render an
+  Owner Home template, or change `/app`.
+- First review kinds are fixed: failed Voice, pending Moment proposal, then
+  ready Voice; oldest actionable item first within kind, then opaque key.
+- `PS-HOME-FRONTEND-001` is sequenced but not active. It starts only from the
+  merged backend main, owns the flag-on `/app` switch and exact dark cinematic
+  shell, and requires Pete plus manager visual acceptance.
+- Owner Home is not implemented, deployed, enabled, or live. Broader viewer,
+  preview, insight, connection, sharing, and publication packages remain gated.
+
 ## Later backend decisions
 
-Owner Home/viewer mode, photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/Feed/sharing/public-projection consumer remain separate later packages. PS-VOICE-001 does not authorize them.
+The finite Owner Home backend is now active as the isolated package above.
+Owner Home frontend is sequenced after it. Broader viewer modes,
+photo/video/document Capture, and each Story/Work/Project/resume/Studio/Journal/
+Feed/sharing/public-projection consumer remain separate later packages.
+PS-VOICE-001 does not authorize them.
 
 `PS-STORY-COMPOSER-001` is now reserved as a planned future cross-lane package.
 It will add member-controlled move, resize, layering, responsive layout drafts,

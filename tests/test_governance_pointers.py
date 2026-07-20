@@ -108,6 +108,10 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-PROJECTS-001", "04_TRACEABILITY_AND_SLICE_PLAN.md"),
         ("docs", "initiatives", "PS-PROJECTS-001", "05_TEST_VALIDATION_RELEASE_PLAN.md"),
         ("docs", "initiatives", "PS-PROJECTS-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "README.md"),
+        ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "FABLE_COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001", "11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md"),
+        ("docs", "initiatives", "PS-HOME-BACKEND-001", "README.md"),
     )
 
     def test_required_records_exist(self):
@@ -193,7 +197,11 @@ class BaselineCoherenceTests(unittest.TestCase):
         active_ids = re.findall(r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1))
         package_paths = re.findall(r'package_path:\s*"([^"]+)"', active_block.group(1))
         self.assertEqual(
-            ["PS-INTERVIEW-PUBLIC-GATE-001", "PS-CAPTURE-MEDIA-001"],
+            [
+                "PS-INTERVIEW-PUBLIC-GATE-001",
+                "PS-CAPTURE-MEDIA-001",
+                "PS-HOME-BACKEND-001",
+            ],
             active_ids,
         )
         self.assertEqual(len(active_ids), len(package_paths))
@@ -466,6 +474,51 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-PROJECTS-001", self.state)
         self.assertIn("planned Phase 10 expansion", self.initiatives)
         self.assertIn("no authenticated canonical Projects product is live", self.state)
+
+    def test_owner_home_architecture_is_accepted_and_backend_only_is_active(self):
+        decision = _read(
+            "docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001",
+            "11_MANAGER_ACCEPTANCE_AND_ACTIVATION.md",
+        )
+        backend = _read(
+            "docs", "initiatives", "PS-HOME-BACKEND-001", "README.md"
+        )
+        brief = _read(
+            "docs", "initiatives", "PS-OWNER-HOME-VIEWER-GATE-001",
+            "CODEX_BACKEND_IMPLEMENTATION_BRIEF.md",
+        )
+
+        for expected in (
+            "PS-OWNER-HOME-VIEWER-GATE-001",
+            "PS-HOME-BACKEND-001",
+            "PS-HOME-FRONTEND-001",
+            'status: "sequenced_after_backend_not_active"',
+            'status: "active_assigned_waiting_for_capture_photo_shared_files"',
+        ):
+            self.assertIn(expected, self.baseline)
+
+        for expected in (
+            "U1",
+            "U6",
+            "standalone_owner_shell",
+            "voice_draft_failed",
+            "moment_proposal_pending",
+            "voice_draft_ready",
+            "modify `auth_routes.py`",
+            "PS-CAPTURE-PHOTO-BACKEND-001",
+            "not implemented, deployed, enabled, or live",
+        ):
+            self.assertIn(expected, decision)
+
+        for body in (backend, brief):
+            self.assertIn("PEERSLATE_OWNER_HOME_ENABLED", body)
+            self.assertIn("neutral", body)
+            self.assertIn("404", body)
+            self.assertIn("does not edit `auth_routes.py`", body)
+
+        self.assertIn("PS-HOME-BACKEND-001", self.state)
+        self.assertIn("PS-HOME-BACKEND-001", self.initiatives)
+        self.assertIn("PS-HOME-FRONTEND-001` is sequenced but not active", self.initiatives)
 
     def test_self_managed_delivery_is_enforced_across_agents_and_reports(self):
         workflow = _read("docs", "AI_WORKFLOW.md")
