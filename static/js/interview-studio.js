@@ -809,8 +809,20 @@
         });
     }
 
-    var IS_NO_STRENGTHS = 'The coach did not find a clear strength in this answer.';
-    var IS_NO_IMPROVEMENTS = 'The coach did not list an improvement for this answer.';
+    // ---------------------------------------------------------------------
+    // SINGLE EDIT POINT for the empty-strengths wording.
+    //
+    // A review may legitimately carry zero strengths (owner decision,
+    // 2026-07-20), and this is the one line the reader sees when that happens.
+    // Pete is still choosing the final wording, so change ONLY this string --
+    // every place that needs it references this constant.
+    //
+    // Improvements are now server-required and can never be empty in a rendered
+    // review, so EMPTY_IMPROVEMENTS_MESSAGE is a defensive fallback for
+    // browser-local history records only (localStorage is not server-validated).
+    // ---------------------------------------------------------------------
+    var EMPTY_STRENGTHS_MESSAGE = 'The coach did not find a clear strength in this answer.';
+    var EMPTY_IMPROVEMENTS_MESSAGE = 'The coach did not list an improvement for this answer.';
 
     function renderReview(review) {
         session.currentReview = review;
@@ -821,8 +833,8 @@
         ring.setAttribute('aria-label', 'Overall interview score: ' + score + ' out of 100');
         text(one('[data-is-verdict]'), review.verdict);
         text(one('[data-is-encouragement]'), review.encouragement);
-        renderList(one('[data-is-strengths]'), review.strengths, IS_NO_STRENGTHS);
-        renderList(one('[data-is-improvements]'), review.improvements, IS_NO_IMPROVEMENTS);
+        renderList(one('[data-is-strengths]'), review.strengths, EMPTY_STRENGTHS_MESSAGE);
+        renderList(one('[data-is-improvements]'), review.improvements, EMPTY_IMPROVEMENTS_MESSAGE);
 
         var starList = one('[data-is-star]');
         var starDisplayStatus = { strong: 'strong', present: 'clear', partial: 'needs more', missing: 'missing' };
@@ -1697,8 +1709,8 @@
         text(one('[data-is-history-detail-answer-text]'), record.answer || '');
         text(one('[data-is-history-detail-verdict]'), record.verdict || '');
         text(one('[data-is-history-detail-encouragement]'), record.encouragement || '');
-        renderList(one('[data-is-history-detail-strengths]'), record.strengths || [], IS_NO_STRENGTHS);
-        renderList(one('[data-is-history-detail-improvements]'), record.improvements || [], IS_NO_IMPROVEMENTS);
+        renderList(one('[data-is-history-detail-strengths]'), record.strengths || [], EMPTY_STRENGTHS_MESSAGE);
+        renderList(one('[data-is-history-detail-improvements]'), record.improvements || [], EMPTY_IMPROVEMENTS_MESSAGE);
         text(one('[data-is-history-detail-duration]'), record.durationSeconds ? formatDuration(record.durationSeconds) : 'A local rehearsal');
 
         if (!historyDetail.open) {

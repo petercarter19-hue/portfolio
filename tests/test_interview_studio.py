@@ -864,25 +864,50 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
         self.assertEqual(len(review['dimensions']), 5)
         self.assertEqual(review['improvements'], ['Name the measurable result.'])
 
-    def test_empty_improvements_is_delivered_the_same_way(self):
-        response = self.post_review(json.dumps(review_payload(improvements=[])))
-        self.assertEqual(response.status_code, 200)
-        review = response.get_json()['review']
-        self.assertEqual(review['improvements'], [])
-        self.assertEqual(review['strengths'], ['You gave a real example.'])
+    # -- the genuinely essential fields are still required ----------------
 
-    def test_a_review_with_neither_strengths_nor_improvements_still_renders(self):
-        response = self.post_review(
-            json.dumps(review_payload(strengths=[], improvements=[])),
-        )
+    def test_empty_improvements_is_rejected(self):
+        """Owner decision (2026-07-20): improvements is NOT optional.
+
+        Pete: "There should never be a blank, but there can be something to
+        encourage to do better." An empty strengths list is legitimate -- a weak
+        answer may genuinely have nothing to praise. An empty improvements list
+        is not plausible coaching: if the coach found no way to improve a weak
+        answer, that is a degraded response we should not render. The page header
+        promises "what is missing, and the clearest next improvement", so that
+        column is the actual deliverable.
+        """
+        response = self.post_review(json.dumps(review_payload(improvements=[])))
+        self.assertEqual(response.status_code, 502)
+        body = response.get_json()
+        self.assertEqual(body['error'], self.REVIEW_ERROR)
+        self.assertNotIn('review', body)
+
+    def test_empty_improvements_is_rejected_even_when_strengths_are_present(self):
+        response = self.post_review(json.dumps(review_payload(
+            strengths=['You gave a real example.'], improvements=[],
+        )))
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn('review', response.get_json())
+
+    def test_empty_strengths_alone_still_returns_the_review(self):
+        """The two lists are deliberately asymmetric; guard against a regression
+        that quietly makes strengths required again alongside improvements."""
+        response = self.post_review(json.dumps(review_payload(
+            strengths=[], improvements=['Name the measurable result.'],
+        )))
         self.assertEqual(response.status_code, 200)
         review = response.get_json()['review']
         self.assertEqual(review['strengths'], [])
-        self.assertEqual(review['improvements'], [])
-        self.assertTrue(review['verdict'])
-        self.assertTrue(review['encouragement'])
+        self.assertEqual(review['improvements'], ['Name the measurable result.'])
 
-    # -- the genuinely essential fields are still required ----------------
+    def test_empty_improvements_is_logged_as_an_empty_required_field(self):
+        """The rejection must stay attributable in the logs."""
+        with self.assertLogs(app.logger, level='WARNING') as logged:
+            self.post_review(json.dumps(review_payload(improvements=[])))
+        line = '\n'.join(logged.output)
+        self.assertIn('reason=empty_required_field', line)
+        self.assertIn('provider_stop_reason=end_turn', line)
 
     def test_a_review_missing_its_verdict_is_still_rejected(self):
         response = self.post_review(json.dumps(review_payload(verdict='')))
@@ -1032,15 +1057,33 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
         # renderList must accept and render an explicit empty message.
         self.assertIn('function renderList(element, items, emptyMessage)', js)
         self.assertIn('is__bullets-empty', js)
-        self.assertIn('IS_NO_STRENGTHS', js)
-        self.assertIn('IS_NO_IMPROVEMENTS', js)
+        self.assertIn('EMPTY_STRENGTHS_MESSAGE', js)
+        self.assertIn('EMPTY_IMPROVEMENTS_MESSAGE', js)
         # Both the live review and the history detail use it.
-        self.assertEqual(js.count('IS_NO_STRENGTHS'), 3)
-        self.assertEqual(js.count('IS_NO_IMPROVEMENTS'), 3)
+        self.assertEqual(js.count('EMPTY_STRENGTHS_MESSAGE'), 3)
+
+    def test_the_empty_strengths_wording_lives_in_exactly_one_place(self):
+        """Pete is still choosing the wording, so it must stay a one-line edit.
+
+        The literal may appear only on the constant's own declaration; every
+        consumer must reference the constant instead of repeating the string.
+        """
+        js = self.source('static/js/interview-studio.js')
+        literal = 'The coach did not find a clear strength in this answer.'
+        self.assertEqual(js.count(literal), 1)
+        declarations = [
+            row for row in js.splitlines()
+            if 'EMPTY_STRENGTHS_MESSAGE =' in row
+        ]
+        self.assertEqual(len(declarations), 1)
+        self.assertIn(literal, declarations[0])
 
     def test_the_absence_message_does_not_manufacture_praise(self):
         js = self.source('static/js/interview-studio.js')
-        line = [row for row in js.splitlines() if 'IS_NO_STRENGTHS =' in row][0]
+        line = [
+            row for row in js.splitlines()
+            if 'EMPTY_STRENGTHS_MESSAGE =' in row
+        ][0]
         self.assertIn('did not find', line)
         for forbidden in ('great job', 'well done', 'nice work'):
             self.assertNotIn(forbidden, line.lower())

@@ -2015,14 +2015,23 @@ def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None
         'strengths': _string_list(raw.get('strengths', []), 4),
         'improvements': _string_list(raw.get('improvements', []), 4),
     }
-    # Owner decision (2026-07-20): strengths and improvements may legitimately be
-    # empty. The system prompt sets a MAXIMUM ("max 4 short bullets") and never a
-    # minimum, so for a genuinely weak answer zero strengths is the honest result.
-    # PeerSlate preserves what the coach actually found rather than pressuring it
-    # to manufacture praise, so an empty list renders as a truthful absence
-    # instead of being thrown away as a 502. The verdict, encouragement,
-    # dimensions, STAR assessment, and scores below remain required.
-    if not review['verdict'] or not review['encouragement']:
+    # Owner decision (2026-07-20): strengths may be empty; improvements may not.
+    # "There should never be a blank, but there can be something to encourage to
+    # do better."
+    #
+    # The system prompt sets a MAXIMUM ("max 4 short bullets") and never a
+    # minimum, so for a genuinely weak answer zero strengths is the honest
+    # result: PeerSlate preserves what the coach actually found rather than
+    # pressuring it to manufacture praise, and an empty strengths list renders as
+    # a truthful absence instead of being thrown away as a 502.
+    #
+    # An empty improvements list is different. It is not plausible coaching -- if
+    # the coach found no way to improve a weak answer, that indicates a degraded
+    # response we should not render. The page's own header promises "what is
+    # missing, and the clearest next improvement", so that column is the actual
+    # deliverable. Verdict, encouragement, dimensions, STAR, and scores below
+    # also remain required.
+    if not review['verdict'] or not review['encouragement'] or not review['improvements']:
         raise ValueError('review summary is incomplete')
 
     dimensions = raw.get('dimensions')
