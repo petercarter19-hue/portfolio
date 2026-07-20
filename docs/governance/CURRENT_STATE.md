@@ -172,7 +172,11 @@ private-first Project Workspace that connects exact governed records without
 copying canonical facts, plus separately gated purpose- and audience-specific
 Project Projections. It has no active manager, writer, implementation branch,
 schema migration, accepted production-intent mockup, deployment, or live claim.
-Current `/projects` and `/petec/projects` behavior remains the existing redirect.
+The direction package and controlled Bible v2.6/Roadmap v2.5 baseline were
+released through Azure PR 91 at squash merge
+`bb6fa7057d12537a4076b4c8dfd7ce1e0cf77d90`; pipeline 131 passed Build and
+Deploy for that exact commit. Live `/projects`, `/petec/projects`, `/work`, and
+`/petec/work` still redirect to `/petec/resume#experience`, as intended.
 
 The completed Voice lane preserves its original worktrees as historical
 references. They are not active writing lanes and must not be reused for later

@@ -4,9 +4,12 @@
 
 - Package: PS-PROJECTS-001 - Projects Workspace and Project Projections
 - Status: Complete for direction registration; planned and not active for product implementation
-- Branch and commit: `work/2026-07-19-projects-future-architecture`; exact release SHA pending Azure squash merge
-- PR / pipeline / environment: pending release; governance-only package
-- Production state: unchanged; current Project and Work paths keep their existing redirects
+- Branch and release commit: `work/2026-07-19-projects-future-architecture`;
+  Azure squash merge `bb6fa7057d12537a4076b4c8dfd7ce1e0cf77d90`
+- PR / pipeline / environment: Azure PR 91; pipeline 131 passed Build and Deploy
+  for the exact release commit; production `https://peerslate.com`
+- Production state: verified unchanged; current Project and Work paths keep
+  their existing redirects
 - Visual authority and status: Not Started; no product UI was implemented
 - Homepage product projection: Not Applicable today; no dedicated Projects product section or canonical Projects link exists on `/`
 - Pete / designated session manager visual acceptance: Not required for this non-visual direction registration; future product visuals require explicit acceptance
@@ -14,8 +17,9 @@
 - Manager handoff status and next receiver: durable planned package registered; next receiver is the future manager Pete assigns after the Phase A/B entry gate
 - Lane owner and self-managed authority: Codex owns this direction-registration branch through complete-diff review, Azure PR, pipeline, live boundary check, and closeout
 - Self-certification: Pass
-- Complete-diff review: Issues corrected; final release identifiers to be recorded after merge
-- Acceptance requested: product-direction and governance release
+- Complete-diff review: Pass; issues corrected and final release evidence recorded
+- Acceptance: product-direction and governance package released; future product
+  activation still requires Pete's explicit Phase 10 decision
 
 ## B. What changed technically
 
@@ -81,8 +85,10 @@ the private workspace.
   TOCs structurally inspected, and were rendered for visual review. Bible v2.6
   is 45 portrait pages. Roadmap v2.5 is 55 pages with portrait/landscape section
   transitions around only the two inherited wide-table ranges.
-- Production verification: after Azure Deploy, the four existing Project/Work
-  paths are checked to prove the governance release did not change behavior.
+- Production verification after pipeline 131: `/projects`, `/petec/projects`,
+  `/work`, and `/petec/work` returned 302 to `/petec/resume#experience`; `/`,
+  `/petec/resume`, and `/interview-studio` returned 200; signed-out
+  `/app/capture` returned 302 to `/auth/sign-in?return_to=/app/capture`.
 - Real-member validation: not applicable; no member-facing feature exists.
 - Visual comparison: not applicable to this documentation-only package. The
   historical Projects fixture is explicitly not a production-intent authority.
