@@ -2188,6 +2188,78 @@ def _extract_json_object(text):
     return json.loads(cleaned[start:end + 1])
 
 
+# -------------------------------------------------------
+# Coaching failure diagnostics.
+#
+# The interview AI routes reject any model reply they cannot fully validate and
+# return 502 rather than render partial or invented coaching. That behavior is
+# correct and is deliberately unchanged here. The problem is that roughly a
+# dozen genuinely different provider outcomes -- a reply truncated mid-JSON, a
+# reply carrying an empty "strengths" array, dimension scores that do not add
+# up to the stated overall score -- all collapse into one log line and one
+# status code, so the observed failure rate cannot be attributed to a cause.
+#
+# These labels are low-cardinality and stable so logs can be grouped by cause.
+# They never carry candidate answer text or model output text.
+# -------------------------------------------------------
+
+INTERVIEW_FAILURE_REASONS = {
+    'no JSON object in reply': 'no_json_object',
+    'review is not an object': 'not_an_object',
+    'model answer is not an object': 'not_an_object',
+    'improvement is not an object': 'not_an_object',
+    'expected a list': 'wrong_field_type',
+    'model answer evidence is not a list': 'wrong_field_type',
+    'improvement evidence is not a list': 'wrong_field_type',
+    'review summary is incomplete': 'empty_required_field',
+    'model answer is incomplete': 'empty_required_field',
+    'improvement is incomplete': 'empty_required_field',
+    'dimensions missing': 'incomplete_dimensions',
+    'incomplete dimensions': 'incomplete_dimensions',
+    'dimension explanation is incomplete': 'incomplete_dimensions',
+    'score out of range': 'score_out_of_range',
+    'dimension score out of range': 'score_out_of_range',
+    'overall score does not equal dimension total': 'score_arithmetic_mismatch',
+    'STAR assessment missing': 'invalid_star',
+    'invalid STAR assessment': 'invalid_star',
+    'STAR reason missing': 'invalid_star',
+    'review referenced unauthorized evidence': 'unauthorized_evidence',
+    'model answer referenced unauthorized evidence': 'unauthorized_evidence',
+    'improvement referenced unauthorized evidence': 'unauthorized_evidence',
+    'model answer has no approved evidence references': 'no_evidence_reference',
+    'duplicate evidence references': 'duplicate_evidence',
+    'model answer status is invalid': 'invalid_status',
+}
+
+INTERVIEW_UNCLASSIFIED_REASON = 'unclassified'
+
+
+def _interview_failure_reason(error):
+    """Map one rejected model reply to a stable, low-cardinality cause label."""
+    if isinstance(error, json.JSONDecodeError):
+        return 'unparseable_json'
+    if isinstance(error, (KeyError, TypeError)):
+        return 'unexpected_shape'
+    return INTERVIEW_FAILURE_REASONS.get(str(error), INTERVIEW_UNCLASSIFIED_REASON)
+
+
+def _log_interview_failure(label, error, stop_reason, reply_length):
+    """Record why a model reply was rejected, without logging its content.
+
+    `reply_length` is a character count only. Candidate answers and model text
+    never enter the log line.
+    """
+    app.logger.warning(
+        '%s: reason=%s error_class=%s provider_stop_reason=%s reply_chars=%d detail=%s',
+        label,
+        _interview_failure_reason(error),
+        type(error).__name__,
+        stop_reason or 'unknown',
+        reply_length,
+        error,
+    )
+
+
 @app.route('/api/interview/review', methods=['POST'])
 @limiter.limit('6 per minute')
 def interview_review():
@@ -2264,6 +2336,8 @@ def interview_review():
         'Keep rationales under 25 words and bullets under 15 words. Output complete, valid JSON.'
     ) % (level, family, competency, grounding)
 
+    raw_reply = ''
+    stop_reason = ''
     try:
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
@@ -2279,6 +2353,7 @@ def interview_review():
                 }
             ],
         )
+        stop_reason = getattr(response, 'stop_reason', '') or ''
         raw_reply = response.content[0].text
         review = validate_interview_review(
             _extract_json_object(raw_reply),
@@ -2288,7 +2363,9 @@ def interview_review():
         return jsonify({'review': review})
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
         # Never render a partial or malformed score as real feedback.
-        app.logger.warning('Interview review validation error: %s', e)
+        _log_interview_failure(
+            'Interview review validation error', e, stop_reason, len(raw_reply),
+        )
         return jsonify({'error': 'The coach returned an unreadable review. Please try again.'}), 502
     except Exception as e:
         app.logger.error('Interview review API error: %s', e)
@@ -2356,6 +2433,8 @@ def interview_improve():
     ) % evidence_lines
     improvement_notes = '\n'.join('- ' + item for item in improvements) or '- Make the answer clearer and more specific.'
 
+    raw_reply = ''
+    stop_reason = ''
     try:
         response = client.messages.create(
             model='claude-haiku-4-5-20251001',
@@ -2368,13 +2447,17 @@ def interview_improve():
                 ) % (question, answer, improvement_notes),
             }],
         )
+        stop_reason = getattr(response, 'stop_reason', '') or ''
+        raw_reply = response.content[0].text
         improvement = validate_interview_improvement(
-            _extract_json_object(response.content[0].text),
+            _extract_json_object(raw_reply),
             selected_evidence,
         )
         return jsonify({'improvement': improvement})
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
-        app.logger.warning('Interview improvement validation error: %s', error)
+        _log_interview_failure(
+            'Interview improvement validation error', error, stop_reason, len(raw_reply),
+        )
         return jsonify({'error': 'The coach returned an unreadable draft. Please try again.'}), 502
     except Exception as error:
         app.logger.error('Interview improvement API error: %s', error)
@@ -2463,6 +2546,10 @@ def interview_model_answer():
         '"whyItWorks":["<2-4 structural lessons this example demonstrates>"], "evidenceIds":[]}.'
     ) % (level, family)
 
+    # Holds the most recent provider reply so a rejection can be attributed to a
+    # cause. Only the stop reason and a character count are ever logged.
+    last_reply = {'text': '', 'stop_reason': ''}
+
     def _generate(system_text, empty_evidence=False):
         api_response = client.messages.create(
             model='claude-haiku-4-5-20251001',
@@ -2470,8 +2557,10 @@ def interview_model_answer():
             system=system_text,
             messages=[{'role': 'user', 'content': user_content}],
         )
+        last_reply['stop_reason'] = getattr(api_response, 'stop_reason', '') or ''
+        last_reply['text'] = api_response.content[0].text
         return validate_interview_model_answer(
-            _extract_json_object(api_response.content[0].text),
+            _extract_json_object(last_reply['text']),
             {} if empty_evidence else evidence_by_id,
         )
 
@@ -2513,7 +2602,12 @@ def interview_model_answer():
             payload['bestPractice'] = best_practice_answer
         return jsonify(payload)
     except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
-        app.logger.warning('Interview model-answer validation error: %s', error)
+        _log_interview_failure(
+            'Interview model-answer validation error',
+            error,
+            last_reply['stop_reason'],
+            len(last_reply['text']),
+        )
         return jsonify({'error': 'The answer could not be validated against the profile evidence. Please try again.'}), 502
     except Exception as error:
         app.logger.error('Interview model-answer API error: %s', error)
