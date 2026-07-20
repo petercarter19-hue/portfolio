@@ -155,8 +155,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.6", self.baseline)
-        self.assertIn("Roadmap_v2.5", self.baseline)
+        self.assertIn("Bible_v2.7", self.baseline)
+        self.assertIn("Roadmap_v2.6", self.baseline)
         self.assertIn('role: "package_designated_session_manager"', self.baseline)
         self.assertIn(
             'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',

@@ -2,8 +2,9 @@
 
 _Updated 2026-07-20 for the released flag-off Photo experience, released
 default-off Owner Home backend, released/live-verified 5A-light/5C-dark
-Interview Studio, and the exact-authority Owner Home frontend activation.
-Every manager and writer must still fetch `origin` before starting._
+Interview Studio, the exact-authority Owner Home frontend activation, and the
+2026-07-20 activation of Bible v2.7 and Roadmap v2.6 as the controlling
+authority. Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
 
@@ -242,7 +243,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Bible v2.6, Roadmap v2.5, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
+| Governance and baseline | Bible v2.7, Roadmap v2.6, visual-integrity enforcement, Story composition and Projects system authority, the connected-system and return-value direction, self-managed writers, and portable package managers are current; PS-GOV-CONNECTED-SYSTEM-001 is complete and activated | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates; resolve the open `PeerSlate_Company_and_Product_Bible_v1.5.1.pages` authority question recorded in `DOCUMENT_CONTROL.md` |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122; homepage-convergence architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` is pushed | Manager reviews the convergence architecture before bounded product edits; keep parity open until accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
@@ -285,10 +286,29 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - The current public My Story separates fixture content from repository-authored
   layout metadata, but a signed-in member cannot yet move, resize, save, or
   publish a personal composition. `PS-STORY-COMPOSER-001` is planned, not live.
+- Bible v2.7 and Roadmap v2.6 are activated as the controlling authority, but
+  **no connective pattern is implemented, assigned, or live.** Slate Spine,
+  Resume Backstory Drawer, Studio Return Ticket, Then and Now, Focus Themes, and
+  Progress Keepsakes exist only as written canonical patterns. None has a
+  manager, writer, branch, entry gate, schema, route, accepted visual authority,
+  release, or deployment. `PS-PUBLIC-CONNECTIVE-001`,
+  `PS-CONNECTIVE-COMPONENT-001`, and `PS-RETURN-VALUE-001` are candidate and
+  unassigned; none is authorized, scheduled, or started.
+- The v2.7 activation is documentation and governance only. It changed no
+  feature flag, route, schema, migration, application code, deployment, or
+  production setting; enabled no gated capability; and closed none of the eleven
+  Open decisions in Bible v2.7 Section 19. Owner Home remains default-off, Photo
+  Capture remains flag-off, Journal UI remains on hold, and Projects remain
+  planned. No proof graph, relationship view, or return-value behavior exists in
+  the product.
+- The supersession record is **known-incomplete**. The authority status of the
+  untracked repository-root file `PeerSlate_Company_and_Product_Bible_v1.5.1.pages`
+  is unresolved and awaits an owner decision; Pete approved v2.7 without
+  answering it. See `OPEN-DOC-001` in `docs/governance/DOCUMENT_CONTROL.md`.
 
 ## Owner visual-integrity decision
 
-- Bible v2.6 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+- Bible v2.7 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
   production-intent demonstrations binding visual minimums. The real experience
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production

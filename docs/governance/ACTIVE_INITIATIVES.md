@@ -2,7 +2,8 @@
 
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
-release, and exact-authority Owner Home frontend activation._
+release, exact-authority Owner Home frontend activation, and the Bible v2.7 /
+Roadmap v2.6 governance activation._
 
 ## Operating model
 
@@ -168,6 +169,40 @@ new package and branch.
   and obtain Pete plus designated-manager visual-product acceptance before its
   Azure implementation PR. It remains separate from Interview homepage parity
   and Capture Photo.
+
+### PS-GOV-CONNECTED-SYSTEM-001 - complete / Bible v2.7 and Roadmap v2.6 activated
+
+- Source package: `docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md`.
+- Status: **complete**. Pete approved candidate Bible v2.7 and candidate Roadmap
+  v2.6 on 2026-07-20. The activation change moved both documents into
+  `docs/governance/` as `CURRENT` / `LOCKED`, repointed
+  `CURRENT_BASELINE.yaml`, updated `DOCUMENT_CONTROL.md`, appended the Decision
+  Register entry, and moved the guardrail assertions to `Bible_v2.7` and
+  `Roadmap_v2.6`. Bible v2.6 and Roadmap v2.5 remain in the repository as
+  historical decision records.
+- The activation is documentation and governance only. It changed no feature
+  flag, route, schema, migration, application code, deployment, or production
+  setting, and closed none of the eleven Open decisions in Bible v2.7
+  Section 19.
+- **No connective pattern is implemented, assigned, or live.** Slate Spine,
+  Resume Backstory Drawer, Studio Return Ticket, Then and Now, Focus Themes, and
+  Progress Keepsakes are canonical written patterns only.
+- `PS-PUBLIC-CONNECTIVE-001`, `PS-CONNECTIVE-COMPONENT-001`, and
+  `PS-RETURN-VALUE-001` are registered as **candidate and unassigned**. None is
+  active. None has a manager, writer, branch, entry gate, schema, accepted
+  production-intent visual authority, or start date. The public pilot requires an
+  accepted production-intent mockup plus an assigned manager and writer before
+  any branch; the shared component is blocked behind that pilot; and the
+  return-value engine is blocked behind the Owner Home frontend and real
+  confirmed history.
+- Open follow-up owned by Pete: the authority status of the untracked
+  repository-root file `PeerSlate_Company_and_Product_Bible_v1.5.1.pages` is
+  unresolved, so the supersession record is known-incomplete. Tracked as
+  `OPEN-DOC-001` in `docs/governance/DOCUMENT_CONTROL.md`.
+- Activation step 8 was answered "no": the standalone Experience System and
+  Architecture and Data Standard documents were **not** established. Package
+  files `03_` and `04_` remain PROPOSED and package-local. Tracked as
+  `OPEN-DOC-002`.
 
 ## Later backend decisions
 

@@ -325,3 +325,49 @@ This is an append-only operational decision record. The current Bible and Roadma
   owner-only Project foundation and Ledger using exact-version Moment Placement;
   public projections, collaboration, task management, homepage work, and route
   revival remain outside that slice and require later gates.
+
+## 2026-07-20 - Adopt the connected-system and return-value direction
+
+- Owner decision: PeerSlate does not need more destinations. It needs a stronger
+  visible trunk. **Every page should feel like a different use of the same
+  life.**
+- Adopt Bible v2.7 and Roadmap v2.6, superseding Bible v2.6 and Roadmap v2.5.
+  The entire v2.6 constitution is preserved: member-first and private-first
+  direction, capture-once/connect-many, one connected Slate, visual-integrity
+  covenant, member-directed Story covenant, and the Projects covenant.
+- Every major room shall state what it helps the member do, whose space and
+  which truth state the viewer is in, where its material came from, how it
+  relates to the larger Slate, and one best safe next move.
+- Connection is created through canonical references and member-directed
+  actions. No room copies another room's authoritative facts, and no generic
+  "related content" or promotional rail substitutes for a governed relationship.
+- Public and owner modes use the same interaction grammar with different
+  server-authorized payloads. Private context is never retrieved and filtered in
+  the browser.
+- A focused task room is not interrupted. The default connective budget is one
+  primary bridge and no more than two secondary paths.
+- Return value shall be created through useful memory, preparation, reflection,
+  and gentle continuation. Guilt, loss framing, punitive streak recovery, public
+  consistency pressure, and popularity manipulation are rejected for the current
+  program. Returning after absence is continuation, not failure.
+- Voice and text are first-class paths into the same ownership, provenance,
+  review, correction, privacy, lifecycle, and activation architecture.
+  Voice-derived emotional cues may be humble optional observations only, never
+  diagnosis.
+- The proof graph is an acceptance outcome of `PS-PLACEMENT-001` and later
+  connected-view packages, not a new product, destination, or truth store.
+- Preserve Slate Spine, Resume Backstory Drawer, Studio Return Ticket, Then and
+  Now, Focus Themes, and Progress Keepsakes as canonical experience patterns
+  inside existing rooms. Preservation is not implementation authorization: none
+  has a manager, writer, branch, schema, accepted visual authority, or release.
+- Register `PS-PUBLIC-CONNECTIVE-001`, `PS-CONNECTIVE-COMPONENT-001`, and
+  `PS-RETURN-VALUE-001` as candidate, unassigned packages. The public pilot
+  requires an accepted production-intent mockup and an assigned manager and
+  writer before any branch. The return-value engine is blocked behind the Owner
+  Home frontend and real confirmed history.
+- The eleven Open decisions recorded in Bible v2.7 Section 19 remain **open**.
+  No implementation assumption may silently close them.
+- This decision changes no feature flag, route, schema, deployment, or
+  production setting, and enables no gated capability. Owner Home remains
+  default-off, Photo Capture remains flag-off, Journal UI remains on hold, and
+  Projects remain planned.

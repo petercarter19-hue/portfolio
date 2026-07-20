@@ -6,7 +6,9 @@
 # the released flag-off Photo experience, the released default-off Owner Home
 # backend, the accepted 5A/5C Interview Studio release verified live, and the
 # activated downstream homepage Interview parity architecture/implementation,
-# plus the activated exact-authority Owner Home frontend implementation lane.
+# plus the activated exact-authority Owner Home frontend implementation lane,
+# and the 2026-07-20 activation of Bible v2.7 and Roadmap v2.6 as the current
+# controlling authority under PS-GOV-CONNECTED-SYSTEM-001.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-20"
@@ -74,10 +76,14 @@ authority:
   interview_release_closeout_pr: 102
   interview_release_closeout_pipeline: 150
   interview_release_closeout_pipeline_build: "20260720.21"
+  bible_v27_activation_base_commit: "ed3409a902f38e9437f6fbf70d3f2f61625037f4"
+  bible_v27_activation_owner_approval_date: "2026-07-20"
+  bible_v27_activation_merge_commit: "not_merged_documentation_only_change"
+  bible_v27_activation_pipeline: "not_run_documentation_only_change"
   production_url: "https://peerslate.com"
   application_behavior_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
   application_behavior_pipeline: 149
-  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. This governance activation assigns the exact-authority Owner Home frontend while preserving the default-off boundary and finite owner-home.v1 contract. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. PR 102/pipeline 150 closed its release governance. PS-HOME-INTERVIEW-PARITY-001 has a clean pushed architecture checkpoint at 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaiting manager review before product edits. Fetch origin for the exact current tip."
+  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. This governance activation assigns the exact-authority Owner Home frontend while preserving the default-off boundary and finite owner-home.v1 contract. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. PR 102/pipeline 150 closed its release governance. PS-HOME-INTERVIEW-PARITY-001 has a clean pushed architecture checkpoint at 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaiting manager review before product edits. On 2026-07-20 Pete approved candidate Bible v2.7 and Roadmap v2.6, and PS-GOV-CONNECTED-SYSTEM-001 activation from base ed3409a902f38e9437f6fbf70d3f2f61625037f4 made them the controlling authority. That activation is documentation and governance only: it changed no feature flag, route, schema, migration, application code, deployment, or production setting, closed none of the eleven Open decisions, and authorized no connective package. It is not yet merged or deployed. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -95,11 +101,11 @@ manager:
 
 governing_documents:
   bible:
-    version: "2.6"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
+    version: "2.7"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.7.docx"
   roadmap:
-    version: "2.5"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
+    version: "2.6"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -153,6 +159,7 @@ completed_packages:
   - PS-CAPTURE-PHOTO-EXPERIENCE-001
   - PS-HOME-BACKEND-001
   - PS-INTERVIEW-PUBLIC-GATE-001
+  - PS-GOV-CONNECTED-SYSTEM-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -203,5 +210,15 @@ superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.3.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
+
+# Known-incomplete: the authority status of the untracked repository-root file
+# PeerSlate_Company_and_Product_Bible_v1.5.1.pages is unresolved and awaits an
+# owner decision. See the open item in docs/governance/DOCUMENT_CONTROL.md.
+superseded_documents_open_question:
+  file: "PeerSlate_Company_and_Product_Bible_v1.5.1.pages"
+  state: "unresolved_pending_owner_decision"
+  effect: "the supersession list above is known-incomplete until Pete rules on it"
