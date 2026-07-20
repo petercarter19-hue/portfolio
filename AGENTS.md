@@ -39,6 +39,14 @@ as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported
 rather than implemented.
 
+**Journal restart (owner decision 2026-07-20):** Peter lifted the Journal hold.
+Journal is the member's private-first memory profile over confirmed canonical
+Moments; Memory Intelligence is private, source-linked, correctable
+interpretation; and activation always requires explicit member approval.
+Product code remains gated by `docs/initiatives/PS-JOURNAL-001/README.md` and
+its architecture allocation. Do not revive Iris styling, copy Moment narrative
+into a second truth store, or infer that a public Journal is live.
+
 **Portable manager assignment (owner decisions through 2026-07-19):** the
 manager is a package-designated role, not a single tool. A ChatGPT Work/Codex
 manager session or Claude Co-Work may own package sequencing, governance truth,

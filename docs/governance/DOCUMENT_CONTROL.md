@@ -38,7 +38,10 @@ No agent may silently choose an older instruction because it is more detailed. S
 - Roadmap v2.5 supersedes Roadmap v2.4 and v2.3 for current sequencing and architecture decisions.
 - Deep Navy Gold supersedes Iris/Direction C as the approved shared theme.
 - The controlled data sequence is private Capture source → reviewed canonical Moment → governed placement by reference. Journal is not the current canonical source model.
-- Journal UI remains on hold even when older backlogs describe it as active.
+- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.6
+  and Roadmap v2.5 still control the current architecture; the exact
+  PS-JOURNAL-001 reconciliation controls the restart and preserves the deployed
+  Capture → Moment → governed-reference sequence.
 - The current public wave is résumé refinement only. Interview Studio receives a later, separate public/private gate.
 
 ## Change rule

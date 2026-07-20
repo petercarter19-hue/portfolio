@@ -132,4 +132,5 @@ Before implementation begins, the package must provide:
   is changed by this governance package.
 - The current public My Story page is not converted into an editor.
 - AI auto-layout is not authorized as a final or automatically saved state.
-- Journal UI remains on hold.
+- Journal is separately activated under PS-JOURNAL-001; this Story decision
+  does not implement or change it.

@@ -346,8 +346,8 @@ Near-term sequencing is:
 2. after the real Studio is accepted and live, open the separate downstream
    branch that converges the existing live homepage walkthrough on that exact
    release;
-3. choose the next backend consumer or owner-shell slice without automatically
-   starting Journal;
+3. after the restart checkpoint merges, open the activated Journal architecture
+   branch without overlapping Owner Home files or starting product code early;
 4. build the real owner Home/viewer modes and authenticated Studio only through
    separately approved identity, persistence, authorization, and lifecycle
    packages;
@@ -362,7 +362,8 @@ Near-term sequencing is:
 9. run a two-member founding alpha with Pete and Danielle, then structured
    feedback, fixes, a small invited cohort, and measured rollout.
 
-Journal UI remains on hold. Do not duplicate Capture or Moment text, create a
+The Journal hold was lifted by Peter on July 20, 2026, but product code remains
+gated by `PS-JOURNAL-001`. Do not duplicate Capture or Moment text, create a
 second résumé dataset, imply account-backed public Studio history, or treat a
 backend reference as a visible member feature.
 
@@ -370,21 +371,23 @@ backend reference as a visible member feature.
 
 1. Fetch `origin` and verify the exact current `main`, current Bible pointer,
    pipeline, and production routes.
-2. Confirm the self-managed delivery workflow is merged and green.
-3. Inspect all worktrees without changing them; confirm each active branch has
+2. Confirm the PS-JOURNAL-001 restart checkpoint is merged and green; then
+   assign one architecture writer on a fresh branch before any product edits.
+3. Confirm the self-managed delivery workflow is merged and green.
+4. Inspect all worktrees without changing them; confirm each active branch has
    one writer and non-overlapping files.
-4. Treat Voice as released and closed; preserve its worktrees and require a new
+5. Treat Voice as released and closed; preserve its worktrees and require a new
    package for any future refinement.
-5. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
+6. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
    Co-Work, confirm it, then send the accepted package to Claude Code/Fable for
    feasibility review.
-6. Obtain Pete/designated-manager visual approval before Interview code.
-7. Claude Co-Work completes Capture Media manager planning before assigning an
+7. Obtain Pete/designated-manager visual approval before Interview code.
+8. Claude Co-Work completes Capture Media manager planning before assigning an
    implementation writer.
-8. Apply the homepage-impact and parity check to every user-facing package;
+9. Apply the homepage-impact and parity check to every user-facing package;
    keep exact downstream parity packages visible until their homepage sections
    are accepted and live.
-9. Keep Interview, Capture Media, planned Projects and Ask Pete AI, and homepage parity
+10. Keep Interview, Capture Media, planned Projects and Ask Pete AI, and homepage parity
    status and next gates current in
    the repository after each material handoff or release.
 

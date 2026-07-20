@@ -1,5 +1,6 @@
 """Dependency-free guardrails for PeerSlate's repository authority chain."""
 
+import hashlib
 import os
 import re
 import unittest
@@ -120,6 +121,11 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-HOME-FRONTEND-001", "README.md"),
         ("docs", "initiatives", "PS-HOME-FRONTEND-001", "01_MANAGER_ACTIVATION_AND_EVIDENCE_DISPOSITION.md"),
         ("docs", "initiatives", "PS-HOME-FRONTEND-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "README.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "00_OWNER_RESTART_AND_V151_RECONCILIATION.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "01_REQUIREMENTS_AND_ARCHITECTURE_GATE.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "source", "PeerSlate_Company_and_Product_Bible_v1.5.1.docx"),
     )
 
     def test_required_records_exist(self):
@@ -214,6 +220,7 @@ class BaselineCoherenceTests(unittest.TestCase):
                 "PS-CAPTURE-MEDIA-001",
                 "PS-HOME-INTERVIEW-PARITY-001",
                 "PS-HOME-FRONTEND-001",
+                "PS-JOURNAL-001",
             ],
             active_ids,
         )
@@ -223,6 +230,56 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertTrue(_exists(*relative_path.split("/")))
                 self.assertIn(package_id, self.initiatives)
                 self.assertIn(package_id, self.state)
+
+    def test_journal_restart_is_active_preserved_and_runtime_honest(self):
+        readme = _read("docs", "initiatives", "PS-JOURNAL-001", "README.md")
+        reconciliation = _read(
+            "docs",
+            "initiatives",
+            "PS-JOURNAL-001",
+            "00_OWNER_RESTART_AND_V151_RECONCILIATION.md",
+        )
+        architecture = _read(
+            "docs",
+            "initiatives",
+            "PS-JOURNAL-001",
+            "01_REQUIREMENTS_AND_ARCHITECTURE_GATE.md",
+        )
+        source_path = os.path.join(
+            ROOT,
+            "docs",
+            "initiatives",
+            "PS-JOURNAL-001",
+            "source",
+            "PeerSlate_Company_and_Product_Bible_v1.5.1.docx",
+        )
+        with open(source_path, "rb") as source_file:
+            digest = hashlib.sha256(source_file.read()).hexdigest()
+
+        self.assertIn("holds: []", self.baseline)
+        self.assertIn("journal_memory_profile_and_activation", self.baseline)
+        self.assertIn(
+            "owner_restart_authorized_definition_and_architecture_gate_active",
+            self.baseline,
+        )
+        self.assertEqual(
+            "01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b",
+            digest,
+        )
+        self.assertIn(
+            "Journal is the member's private-first memory profile", readme
+        )
+        self.assertIn("The issue was therefore not wholesale loss", reconciliation)
+        self.assertIn("Activated, not yet approved for product code", architecture)
+        self.assertIn("no target Journal UI is live", self.state)
+        for current_record in (
+            self.baseline,
+            self.state,
+            self.initiatives,
+            _read("docs", "governance", "DOCUMENT_CONTROL.md"),
+            _read("docs", "PEERSLATE_SITE_RULES.md"),
+        ):
+            self.assertNotIn("Journal UI remains on hold", current_record)
 
     def test_state_records_verified_snapshot_and_honest_boundaries(self):
         for expected in (

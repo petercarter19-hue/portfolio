@@ -8,17 +8,18 @@
 > v1.3/Iris program state. The Bible and Roadmap named in
 > `docs/governance/CURRENT_BASELINE.yaml` now control. In particular: Capture is
 > the private original/source intake; reviewed canonical Moment and governed
-> placement follow later; Journal UI is on hold; Deep Navy Gold is the approved
-> shared theme; and only the résumé refinement plus Interview public/private
-> gate are currently authorized public changes. Unconflicted privacy, ownership,
-> accessibility, data-rights, and truthfulness rules below remain binding.
+> placement follow later; Peter explicitly restarted Journal on July 20, 2026,
+> with the PS-JOURNAL-001 architecture gate controlling product work; Deep Navy
+> Gold is the approved shared theme. No target Journal UI is live. Unconflicted
+> privacy, ownership, accessibility, data-rights, and truthfulness rules below
+> remain binding.
 
 These rules govern product copy, information architecture, data behavior, AI behavior, design, implementation, and release decisions. They apply to human contributors and AI coding agents.
 
 ## 1. Product center
 
-1. The Journal is the canonical member-owned timeline and the center of the recurring product loop.
-2. A Feed post is a projection of a Journal record, not a second copy of the same information.
+1. The Journal is the member's private-first memory profile, chronological timeline, and center of the recurring product loop. Confirmed Moment remains the canonical content record.
+2. A Feed post is an authorized projection by reference, not a second copy of the same information.
 3. Pages are views of one connected Slate. Do not create another source of truth for Story, Work, Resume, Projects, Slate Board, Feed, or Interview Studio.
 4. The primary member loop is: capture something real, understand it, review it, keep it private or share it, and receive more value from it later.
 5. The working professional is the primary user. Recruiters and hiring managers are secondary viewers of member-approved output.
