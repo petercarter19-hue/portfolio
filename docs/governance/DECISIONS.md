@@ -325,3 +325,34 @@ This is an append-only operational decision record. The current Bible and Roadma
   owner-only Project foundation and Ledger using exact-version Moment Placement;
   public projections, collaboration, task management, homepage work, and route
   revival remain outside that slice and require later gates.
+
+## 2026-07-20 - Restart Journal as the memory profile and reconnect Member Intelligence and Activation
+
+- Peter explicitly lifted the Journal hold after supplying Foundation Edition
+  v1.5.1 and identifying Journal, Memory Intelligence, and Activation as a
+  product relationship that might not have been carried through operationally.
+- The exact source is preserved at
+  `docs/initiatives/PS-JOURNAL-001/source/PeerSlate_Company_and_Product_Bible_v1.5.1.docx`
+  with SHA-256
+  `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`.
+- Bible v2.6 already contains much of the conceptual direction. It and Roadmap
+  v2.5 remain current authority; `PS-JOURNAL-001` records the precise
+  reconciliation and supersedes the earlier operational hold only.
+- Journal is the member's private-first memory profile over confirmed canonical
+  Moments. It is not a second narrative store. Capture preserves source,
+  confirmed Moment preserves member-approved meaning, and Journal presents the
+  governed chronological experience over that truth.
+- Memory Intelligence is private, source-linked, uncertain, correctable,
+  dismissible, exportable, and deletable interpretation. It may never silently
+  become a public fact or canonical profile claim.
+- Activation is explicit. Use This Moment may propose a reference, placement,
+  private draft, reminder, Goal/Project step, or Studio scenario, but may not
+  publish, broaden an audience, or copy canonical truth without member action.
+- Deep Navy Gold and the approved Journal/My Slate board control the visual
+  direction; v1.5.1 Iris styling does not return.
+- This decision activates definition and architecture only. No target Journal
+  route, schema consumer, UI, feature flag, AI output, audience view, or
+  production behavior is implemented by the restart checkpoint.
+- The next product gate is a fresh architecture branch that resolves route,
+  data, lifecycle, server authorization, visual mapping, migration, rollback,
+  and two-member validation before a private owner Journal vertical slice.

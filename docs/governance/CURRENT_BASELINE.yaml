@@ -6,7 +6,8 @@
 # the released flag-off Photo experience, the released default-off Owner Home
 # backend, the accepted 5A/5C Interview Studio release verified live, and the
 # activated downstream homepage Interview parity architecture/implementation,
-# plus the activated exact-authority Owner Home frontend implementation lane.
+# plus the activated exact-authority Owner Home frontend implementation lane
+# and the owner-authorized Journal memory-profile restart/architecture gate.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-20"
@@ -91,7 +92,7 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is now activated under the same designated manager with the separately assigned Codex frontend task as sole writer; it must create work/2026-07-20-home-frontend-001 from exact post-activation origin/main after this governance release and green pipeline. Photo and Home backend remain released flag-off."
+  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-JOURNAL-001 is owner-restarted under the same designated manager; the current Codex task owns only its restart/reconciliation checkpoint, and a separate writer is assigned only after the architecture gate. Photo and Home backend remain released flag-off."
 
 governing_documents:
   bible:
@@ -159,8 +160,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-holds:
-  - PS-JOURNAL-001
+holds: []
 
 active_packages:
   - id: PS-CAPTURE-MEDIA-001
@@ -178,6 +178,12 @@ active_packages:
     lane: owner_home_exact_authority_frontend
     package_path: "docs/initiatives/PS-HOME-FRONTEND-001/README.md"
     status: "activated_writer_branch_pending"
+  - id: PS-JOURNAL-001
+    owner: "ChatGPT Work/Codex designated manager; implementation writer assigned after architecture gate"
+    lane: journal_memory_profile_and_activation
+    roadmap_phase: "Phase 5 - Universal Capture and private Journal"
+    package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
+    status: "owner_restart_authorized_definition_and_architecture_gate_active"
 
 planned_packages:
   - id: PS-PROJECTS-001
@@ -193,7 +199,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "planned_not_active"
 
-next_gate: "Release this governance-only Owner Home frontend activation through Azure, then the separately assigned Codex writer creates work/2026-07-20-home-frontend-001 from exact post-activation origin/main and implements only the accepted finite owner-home.v1 frontend. First-release runtime evidence is limited to states the released backend can truthfully provide; partial-failure, stale/409, and restricted runtime states remain deferred and may not be fabricated. Claude Code continues PS-HOME-INTERVIEW-PARITY-001 independently on its own branch. Capture Photo remains flag-off and separate. Neither frontend may open its implementation PR before the required manager/Pete visual-product acceptance, and Owner Home must remain default-off through deployment. Do not blend Interview homepage parity, Owner Home, or Photo. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "Release the Journal restart/reconciliation checkpoint through Azure, then create a fresh PS-JOURNAL-001 architecture branch from the resulting origin/main. Product code waits for the route, data, lifecycle, authorization, visual, migration, rollback, and two-member validation gate in the initiative package. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently with their assigned writers and acceptance gates. Capture Photo remains flag-off and separate. Do not blend Journal, Interview homepage parity, Owner Home, or Photo. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

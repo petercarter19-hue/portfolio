@@ -2,7 +2,8 @@
 
 _Updated 2026-07-20 for the released flag-off Photo experience, released
 default-off Owner Home backend, released/live-verified 5A-light/5C-dark
-Interview Studio, and the exact-authority Owner Home frontend activation.
+Interview Studio, the exact-authority Owner Home frontend activation, and the
+owner-authorized Journal memory-profile restart.
 Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
@@ -254,7 +255,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Homepage product projections | Cross-product parity governance is active; Voice and Interview Studio are the current named examples | Every material user-facing package assesses `/`; update affected sections in the same wave or activate an exact downstream parity package and keep parity open until accepted and live |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
 | Projects | Historical public Project material and redirects exist; no authenticated canonical Projects product is live | Preserve PS-PROJECTS-001 as planned Phase 10 work; validate Project/Work/Slate Board boundaries and approve a private-workspace visual authority before implementation |
-| Journal UI | On hold | Owner must explicitly restart it |
+| Journal memory profile | Owner restart authorized; PS-JOURNAL-001 definition and architecture gate active; no target Journal UI is live | Complete route/data/auth/lifecycle/visual architecture, then implement the private owner vertical slice over confirmed Moments |
 
 ## Honest boundaries
 
@@ -279,6 +280,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Project task management, or new public Project route is implemented or live.
   Slate Board Project notes and historical fixtures are not canonical Projects.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
+- The July 20 Journal restart activates definition and architecture only. No
+  target Journal route, audience projection, Memory Intelligence experience,
+  Replay, or Use This Moment UI is live. Legacy `/api/journal/*` endpoints are
+  prompt/response implementation history, not proof of the memory profile.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source;
   it is public, so advancing it requires explicit owner approval.

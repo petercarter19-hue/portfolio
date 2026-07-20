@@ -2,7 +2,8 @@
 
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
-release, and exact-authority Owner Home frontend activation._
+release, exact-authority Owner Home frontend activation, and the
+owner-authorized Journal memory-profile restart._
 
 ## Operating model
 
@@ -24,6 +25,7 @@ Claude Code implementation.
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
 | Interview homepage convergence | Claude Code, architecture and implementation after activation | PS-HOME-INTERVIEW-PARITY-001 | mapping the live 5A/5C Studio into the existing fixed homepage walkthrough | modifying the real Studio; starting product edits before architecture review; Owner Home or Photo |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend | broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
+| Journal memory profile | Assigned after architecture gate; current Codex task is the activation writer only | PS-JOURNAL-001 | definition, architecture, private Journal, and explicit activation sequence | product code before gate; overlap with Owner Home files; public projection; broad Memory Intelligence before the core |
 
 ## Current active gate
 
@@ -230,9 +232,26 @@ writer or implementation branch, and must not interrupt Voice or Interview.
   cross-product homepage projection parity contract before future product
   implementation can close.
 
-## Held
+### PS-JOURNAL-001 - owner restart authorized / architecture gate active
 
-- **PS-JOURNAL-001:** Journal UI remains on hold by explicit owner decision.
+- Source package: `docs/initiatives/PS-JOURNAL-001/README.md`.
+- Peter explicitly lifted the Journal hold on July 20, 2026. The supplied
+  Foundation Edition v1.5.1 is preserved with SHA-256
+  `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`
+  and reconciled against the current Bible v2.6 and Roadmap v2.5.
+- Journal is the member's private-first memory profile over confirmed canonical
+  Moments. Memory Intelligence remains private, source-linked interpretation;
+  Use This Moment requires explicit member approval and may not copy or publish
+  canonical truth.
+- This restart branch changes governance only. It does not add a route, schema,
+  UI, service, feature flag, audience view, AI output, or production behavior.
+- Next action: merge the restart checkpoint, then assign one writer on a fresh
+  branch to close the route/data/auth/lifecycle/visual architecture gate before
+  product edits.
+
+## Holds
+
+No current package holds. Product-code entry gates still apply.
 
 ## Shared rules
 
@@ -257,4 +276,4 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 - Manager-to-manager transfer requires a durable package report naming the
   current gate, exact branch/SHA, evidence, shared-file reservation, unresolved
   issues, and single next action. Chat history alone is not a handoff.
-- Do not duplicate Capture or Moment text into destinations, introduce a second resume dataset, rewrite authentication, start Journal UI, or claim private/public behavior the backend does not enforce.
+- Do not duplicate Capture or Moment text into destinations, introduce a second resume dataset, rewrite authentication, implement Journal product code before the PS-JOURNAL-001 architecture gate, or claim private/public behavior the backend does not enforce.
