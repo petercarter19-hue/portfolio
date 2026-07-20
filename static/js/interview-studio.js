@@ -821,7 +821,7 @@
     // review, so EMPTY_IMPROVEMENTS_MESSAGE is a defensive fallback for
     // browser-local history records only (localStorage is not server-validated).
     // ---------------------------------------------------------------------
-    var EMPTY_STRENGTHS_MESSAGE = 'The coach did not find a clear strength in this answer.';
+    var EMPTY_STRENGTHS_MESSAGE = 'No clear strength stood out yet — start with the improvements.';
     var EMPTY_IMPROVEMENTS_MESSAGE = 'The coach did not list an improvement for this answer.';
 
     function renderReview(review) {

@@ -1069,7 +1069,7 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
         consumer must reference the constant instead of repeating the string.
         """
         js = self.source('static/js/interview-studio.js')
-        literal = 'The coach did not find a clear strength in this answer.'
+        literal = 'No clear strength stood out yet — start with the improvements.'
         self.assertEqual(js.count(literal), 1)
         declarations = [
             row for row in js.splitlines()
@@ -1084,8 +1084,14 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
             row for row in js.splitlines()
             if 'EMPTY_STRENGTHS_MESSAGE =' in row
         ][0]
-        self.assertIn('did not find', line)
-        for forbidden in ('great job', 'well done', 'nice work'):
+        # Assert the property, not one phrasing: the message must state an
+        # absence. Pinning a specific wording made this test fail the first
+        # time the owner exercised the single-edit-point it is meant to protect.
+        self.assertRegex(
+            line.lower(),
+            r"did not find|no clear strength|nothing stood out|did not list",
+        )
+        for forbidden in ('great job', 'well done', 'nice work', 'strong answer'):
             self.assertNotIn(forbidden, line.lower())
 
     def test_the_empty_state_is_styled_in_both_themes(self):
