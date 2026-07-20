@@ -1682,3 +1682,1018 @@ body[data-theme="dark"] .owner-app__voice-save:focus-visible {
     outline: 3px solid #f5e7b6;
     outline-offset: 3px;
 }
+
+/* ============================================================
+   PS-CAPTURE-PHOTO-EXPERIENCE-001
+   Selected authority: Photo 1, preserved in
+   docs/initiatives/PS-CAPTURE-MEDIA-001/visual-authority/.
+   The Photo surface is deliberately scoped so it cannot redefine the global
+   owner shell or the released Type/Voice composition.
+   ============================================================ */
+
+#photo-overlay-root {
+    position: relative;
+    z-index: 2100;
+}
+
+.owner-app__photo-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    padding: clamp(0.75rem, 2.5vw, 2rem);
+    background:
+        radial-gradient(circle at 74% 12%, rgba(184, 121, 0, 0.13), transparent 30rem),
+        rgba(3, 10, 22, 0.94);
+    backdrop-filter: blur(12px);
+}
+
+.owner-app__photo-shell {
+    --photo-navy-950: #07111f;
+    --photo-navy-900: #0b1320;
+    --photo-navy-800: #111b2e;
+    --photo-navy-700: #203767;
+    --photo-ink: #141a28;
+    --photo-muted: #4a5568;
+    --photo-ivory: #f7f4ee;
+    --photo-white: #fffdf9;
+    --photo-gold: #b87900;
+    --photo-gold-bright: #d4a017;
+    --photo-gold-soft: #f4e4b4;
+    --photo-line: rgba(20, 26, 40, 0.16);
+    width: min(1180px, 100%);
+    max-height: min(900px, 94vh);
+    overflow: hidden;
+    border: 1px solid rgba(212, 160, 23, 0.58);
+    border-radius: 14px;
+    background: var(--photo-navy-950);
+    color: var(--photo-ink);
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.5);
+    font-family: Inter, sans-serif;
+}
+
+.owner-app__photo-backdrop .owner-app__photo-shell {
+    display: flex;
+    flex-direction: column;
+}
+
+.owner-app__photo-topbar {
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    min-height: 60px;
+    padding: 0.75rem 1rem 0.75rem 1.5rem;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.28);
+    background: linear-gradient(90deg, #07111f, #0b1320 55%, #111b2e);
+    color: #fff;
+}
+
+.owner-app__photo-topbar-title {
+    font: 700 0.88rem/1.2 Inter, sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.owner-app__photo-topbar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #f7f1e4;
+    font: 650 0.78rem/1.2 Inter, sans-serif;
+}
+
+.owner-app__photo-topbar-status .owner-app__photo-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--photo-gold-bright);
+}
+
+.owner-app__photo-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-left: 0.8rem;
+    border: 1px solid rgba(212, 160, 23, 0.35);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    cursor: pointer;
+}
+
+.owner-app__photo-close:hover {
+    background: rgba(212, 160, 23, 0.12);
+}
+
+.owner-app__photo-layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.owner-app__photo-backdrop .owner-app__photo-layout {
+    flex: 1 1 auto;
+}
+
+.owner-app__photo-rail {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-height: 660px;
+    padding: 1.5rem 1rem;
+    border-right: 1px solid rgba(212, 160, 23, 0.24);
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px) 0 0 / 100% 52px,
+        linear-gradient(145deg, #091424, #07111f 70%);
+    color: #eef1f6;
+}
+
+.owner-app__photo-wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: #f4df9d;
+    font: 600 1.25rem/1 Newsreader, serif;
+    text-decoration: none;
+}
+
+.owner-app__photo-wordmark::before {
+    content: "P";
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 2.1rem;
+    margin-right: 0.55rem;
+    border: 1px solid var(--photo-gold-bright);
+    border-radius: 50% 50% 42% 42% / 34% 34% 60% 60%;
+    color: var(--photo-gold-bright);
+    font: 700 0.78rem/1 Inter, sans-serif;
+}
+
+.owner-app__photo-rail-label {
+    margin: 2rem 0 0.65rem;
+    color: #d8ad3a;
+    font: 700 0.66rem/1.2 Inter, sans-serif;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.owner-app__photo-rail-place {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 44px;
+    padding: 0.75rem;
+    border-left: 2px solid transparent;
+    color: #c7cfdb;
+    font-size: 0.78rem;
+}
+
+.owner-app__photo-rail-place--active {
+    border-left-color: var(--photo-gold-bright);
+    background: linear-gradient(90deg, rgba(212, 160, 23, 0.13), transparent);
+    color: #fff;
+}
+
+.owner-app__photo-rail-place .owner-app__voice-icon {
+    width: 1rem;
+    height: 1rem;
+    color: #d8ad3a;
+}
+
+.owner-app__photo-back,
+.owner-app__photo-link {
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: 700 0.78rem/1.2 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.owner-app__photo-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    border: 1px solid rgba(212, 160, 23, 0.45);
+    border-radius: 8px;
+    color: #f1c65a;
+}
+
+.owner-app__photo-rail-trust {
+    display: flex;
+    gap: 0.65rem;
+    margin: 1rem -1rem -1.5rem;
+    padding: 1rem;
+    border-top: 1px solid rgba(212, 160, 23, 0.2);
+    color: #c9d0da;
+}
+
+.owner-app__photo-rail-trust .owner-app__photo-icon {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    color: #f1c65a;
+}
+
+.owner-app__photo-rail-trust span {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+
+.owner-app__photo-rail-trust strong {
+    color: #fff;
+}
+
+.owner-app__photo-stage {
+    position: relative;
+    min-width: 0;
+    min-height: 660px;
+    overflow: auto;
+    padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 5vw, 4.5rem) 2rem;
+    background:
+        radial-gradient(circle at 8% 4%, rgba(255, 255, 255, 0.9), transparent 19rem),
+        linear-gradient(135deg, #fffefa, var(--photo-ivory));
+}
+
+.owner-app__photo-copy,
+.owner-app__photo-view,
+.owner-app__photo-trust,
+.owner-app__photo-global-status {
+    position: relative;
+    z-index: 2;
+}
+
+.owner-app__photo-view[hidden] {
+    display: none !important;
+}
+
+.owner-app__photo-copy {
+    max-width: 31rem;
+}
+
+.owner-app__photo-eyebrow,
+.owner-app__photo-state-kicker {
+    margin: 0 0 0.85rem;
+    color: #8a5a00;
+    font: 800 0.7rem/1.25 Inter, sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.owner-app__photo-copy h2 {
+    max-width: 16ch;
+    margin: 0;
+    color: var(--photo-ink);
+    font: 600 clamp(2.5rem, 4vw, 3.25rem)/1.03 Newsreader, serif;
+    letter-spacing: -0.025em;
+}
+
+.owner-app__photo-copy h2:focus,
+.owner-app__photo-view h3:focus {
+    outline: none;
+}
+
+.owner-app__photo-intro {
+    max-width: 44ch;
+    margin: 1.5rem 0 0;
+    color: #2f394b;
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+.owner-app__photo-architecture {
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 0 auto;
+    width: 49%;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(83, 67, 42, 0.28), transparent 40%),
+        linear-gradient(120deg, #d8d0c2, #aa987a 55%, #5d513f);
+    opacity: 0.82;
+}
+
+.owner-app__photo-architecture::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 34%;
+    background:
+        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0 9px, rgba(77, 62, 43, 0.14) 10px 18px),
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62));
+    clip-path: polygon(0 100%, 100% 100%, 100% 0, 28% 46%);
+}
+
+.owner-app__photo-architecture::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--photo-ivory) 0, rgba(247, 244, 238, 0.78) 8%, transparent 45%);
+}
+
+.owner-app__photo-arch {
+    position: absolute;
+    bottom: 24%;
+    border: clamp(1.3rem, 3vw, 2.8rem) solid rgba(245, 239, 226, 0.64);
+    border-bottom: 0;
+    border-radius: 50% 50% 0 0 / 32% 32% 0 0;
+    box-shadow: inset 0 22px 32px rgba(40, 31, 20, 0.2), 0 16px 30px rgba(45, 34, 21, 0.12);
+}
+
+.owner-app__photo-arch--one {
+    inset: 7% 3% 24% 12%;
+}
+
+.owner-app__photo-arch--two {
+    inset: 18% 20% 24% 31%;
+}
+
+.owner-app__photo-arch--three {
+    inset: 30% 34% 24% 47%;
+}
+
+.owner-app__photo-architecture-shield {
+    position: absolute;
+    z-index: 2;
+    right: 15%;
+    top: 43%;
+    display: grid;
+    place-items: center;
+    width: 5.5rem;
+    height: 6.5rem;
+    border: 2px solid rgba(212, 160, 23, 0.78);
+    border-radius: 50% 50% 42% 42% / 34% 34% 62% 62%;
+    background: rgba(7, 17, 31, 0.2);
+    color: #f4c95e;
+    box-shadow: 0 0 0 8px rgba(212, 160, 23, 0.12), 0 20px 48px rgba(0, 0, 0, 0.24);
+}
+
+.owner-app__photo-architecture-shield .owner-app__voice-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.owner-app__photo-shell[data-photo-state="uploading"] .owner-app__photo-architecture,
+.owner-app__photo-shell[data-photo-state="status"] .owner-app__photo-architecture,
+.owner-app__photo-shell[data-photo-state="review"] .owner-app__photo-architecture,
+.owner-app__photo-shell[data-photo-state="confirmed"] .owner-app__photo-architecture {
+    opacity: 0.18;
+}
+
+.owner-app__photo-view {
+    width: min(100%, 35rem);
+    margin-top: 2rem;
+}
+
+.owner-app__photo-entry-actions {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.owner-app__photo-file-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.owner-app__photo-primary-file,
+.owner-app__photo-camera-file,
+.owner-app__photo-primary,
+.owner-app__photo-secondary,
+.owner-app__photo-save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 52px;
+    padding: 0.85rem 1.25rem;
+    border-radius: 8px;
+    font: 800 0.92rem/1.2 Inter, sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.owner-app__photo-primary-file,
+.owner-app__photo-primary {
+    width: min(100%, 25rem);
+    border: 1px solid #d4a017;
+    background: linear-gradient(180deg, #0e1d34, #07111f);
+    color: #f5c957;
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.17), 0 10px 24px rgba(7, 17, 31, 0.2);
+}
+
+.owner-app__photo-camera-file,
+.owner-app__photo-secondary {
+    width: fit-content;
+    border: 1px solid rgba(20, 26, 40, 0.28);
+    background: rgba(255, 255, 255, 0.72);
+    color: #203767;
+}
+
+.owner-app__photo-primary-file:hover,
+.owner-app__photo-primary:hover {
+    background: linear-gradient(180deg, #152a4b, #0a182a);
+}
+
+.owner-app__photo-camera-file:hover,
+.owner-app__photo-secondary:hover {
+    border-color: #8a5a00;
+    background: #fff;
+}
+
+.owner-app__photo-file-native:focus-visible + label,
+.owner-app__photo-shell button:focus-visible,
+.owner-app__photo-shell a:focus-visible,
+.owner-app__photo-shell textarea:focus-visible,
+.owner-app__photo-shell input[type="checkbox"]:focus-visible,
+.owner-app__photo-shell summary:focus-visible {
+    outline: 3px solid #d4a017;
+    outline-offset: 3px;
+}
+
+.owner-app__photo-icon {
+    flex: 0 0 auto;
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
+.owner-app__photo-guidance {
+    margin: 0.9rem 0 0;
+    color: var(--photo-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.owner-app__photo-guidance span {
+    padding: 0 0.35rem;
+    color: #8a5a00;
+}
+
+.owner-app__photo-trust,
+.owner-app__photo-provenance {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: min(100%, 36rem);
+    margin-top: 2rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba(20, 26, 40, 0.15);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.52);
+}
+
+.owner-app__photo-trust .owner-app__photo-icon,
+.owner-app__photo-provenance .owner-app__photo-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #8a5a00;
+}
+
+.owner-app__photo-trust p,
+.owner-app__photo-provenance p {
+    margin: 0;
+    color: #303a4a;
+    font-size: 0.76rem;
+    line-height: 1.55;
+}
+
+.owner-app__photo-trust strong,
+.owner-app__photo-provenance strong {
+    color: var(--photo-ink);
+}
+
+.owner-app__photo-local {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.85fr) minmax(14rem, 1fr);
+    width: min(100%, 46rem);
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.owner-app__photo-preview-frame,
+.owner-app__photo-server-preview,
+.owner-app__photo-confirmed-preview {
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    border: 1px solid rgba(20, 26, 40, 0.18);
+    border-radius: 12px;
+    background: #e9e4da;
+    box-shadow: 0 14px 34px rgba(20, 26, 40, 0.14);
+}
+
+.owner-app__photo-preview-frame {
+    aspect-ratio: 4 / 3;
+}
+
+.owner-app__photo-preview-frame img,
+.owner-app__photo-server-preview img,
+.owner-app__photo-confirmed-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #ede8df;
+}
+
+.owner-app__photo-preview-badge {
+    position: absolute;
+    left: 0.65rem;
+    bottom: 0.65rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 999px;
+    background: rgba(7, 17, 31, 0.88);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.owner-app__photo-local-copy h3,
+.owner-app__photo-status h3,
+.owner-app__photo-review h3,
+.owner-app__photo-success h3,
+.owner-app__photo-progress h3 {
+    margin: 0;
+    color: var(--photo-ink);
+    font: 600 clamp(1.65rem, 3vw, 2.35rem)/1.08 Newsreader, serif;
+}
+
+.owner-app__photo-local-copy > p,
+.owner-app__photo-status > p,
+.owner-app__photo-success > p,
+.owner-app__photo-progress > p,
+.owner-app__photo-note > p {
+    color: var(--photo-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.owner-app__photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.owner-app__photo-actions .owner-app__photo-primary,
+.owner-app__photo-actions .owner-app__photo-secondary {
+    width: auto;
+}
+
+.owner-app__photo-link {
+    color: #203767;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.owner-app__photo-progress,
+.owner-app__photo-status,
+.owner-app__photo-success {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--photo-line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.66);
+}
+
+.owner-app__photo-state-symbol {
+    display: grid;
+    place-items: center;
+    width: 3.75rem;
+    height: 3.75rem;
+    margin-bottom: 1.15rem;
+    border: 1px solid rgba(184, 121, 0, 0.35);
+    border-radius: 50%;
+    background: rgba(244, 228, 180, 0.48);
+    color: #8a5a00;
+}
+
+.owner-app__photo-state-symbol--success {
+    border-color: rgba(30, 114, 95, 0.35);
+    background: rgba(30, 114, 95, 0.1);
+    color: #1e725f;
+}
+
+.owner-app__photo-status.is-error {
+    border-color: rgba(132, 45, 45, 0.34);
+}
+
+.owner-app__photo-status.is-error .owner-app__photo-state-symbol {
+    border-color: rgba(132, 45, 45, 0.35);
+    background: rgba(132, 45, 45, 0.08);
+    color: #842d2d;
+}
+
+.owner-app__photo-status-live,
+.owner-app__photo-global-status {
+    min-height: 1.5rem;
+    color: #203767;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.owner-app__photo-global-status {
+    width: min(100%, 44rem);
+    margin: 0.8rem 0 0;
+}
+
+.owner-app__photo-global-status.is-error {
+    color: #842d2d;
+}
+
+.owner-app__photo-progress progress {
+    width: 100%;
+    height: 0.75rem;
+    margin-top: 1rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: 999px;
+    background: #ded8cc;
+    accent-color: #b87900;
+}
+
+.owner-app__photo-progress progress::-webkit-progress-bar {
+    border-radius: 999px;
+    background: #ded8cc;
+}
+
+.owner-app__photo-progress progress::-webkit-progress-value {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #b87900, #d4a017);
+}
+
+.owner-app__photo-progress-label {
+    margin: 0.45rem 0 0;
+}
+
+.owner-app__photo-review {
+    width: 100%;
+}
+
+.owner-app__photo-review-grid {
+    display: grid;
+    grid-template-columns: minmax(13rem, 0.92fr) minmax(18rem, 1.08fr);
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    align-items: start;
+}
+
+.owner-app__photo-server-preview {
+    aspect-ratio: 4 / 5;
+}
+
+.owner-app__photo-server-preview figcaption,
+.owner-app__photo-confirmed-preview figcaption {
+    position: absolute;
+    inset: auto 0 0;
+    padding: 0.7rem;
+    background: rgba(7, 17, 31, 0.88);
+    color: #fff;
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+.owner-app__photo-note {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.owner-app__photo-note label:not(.owner-app__photo-confirm) {
+    color: var(--photo-ink);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.owner-app__photo-note textarea {
+    width: 100%;
+    min-height: 11rem;
+    resize: vertical;
+    padding: 0.95rem;
+    border: 1px solid rgba(20, 26, 40, 0.3);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--photo-ink);
+    font: 400 0.95rem/1.6 Inter, sans-serif;
+}
+
+.owner-app__photo-note-help {
+    margin: -0.3rem 0 0;
+    font-size: 0.74rem !important;
+}
+
+.owner-app__photo-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    color: #293445;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.owner-app__photo-confirm input,
+.owner-app__photo-delete input {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.05rem;
+    accent-color: #b87900;
+}
+
+.owner-app__photo-save {
+    width: 100%;
+    border: 1px solid #a26a00;
+    background: linear-gradient(180deg, #e3b83a, #d4a017);
+    color: #241a00;
+    box-shadow: 0 12px 26px rgba(184, 121, 0, 0.24);
+}
+
+.owner-app__photo-save:hover {
+    background: linear-gradient(180deg, #dcae2d, #c8920f);
+}
+
+.owner-app__photo-provenance {
+    width: 100%;
+    align-items: center;
+}
+
+.owner-app__photo-provenance p {
+    flex: 1 1 auto;
+}
+
+.owner-app__photo-provenance a {
+    flex: 0 0 auto;
+    color: #203767;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.owner-app__photo-delete {
+    width: min(100%, 38rem);
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--photo-line);
+    color: #842d2d;
+}
+
+.owner-app__photo-delete summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.owner-app__photo-delete p,
+.owner-app__photo-delete label {
+    color: #5a3b3b;
+    font-size: 0.78rem;
+    line-height: 1.55;
+}
+
+.owner-app__photo-delete label {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+}
+
+.owner-app__photo-delete button {
+    min-height: 44px;
+    margin-top: 0.8rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid #842d2d;
+    border-radius: 8px;
+    background: transparent;
+    color: #842d2d;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.owner-app__photo-confirmed-preview {
+    width: min(100%, 28rem);
+    aspect-ratio: 16 / 10;
+    margin-top: 1.25rem;
+}
+
+.owner-app__photo-success-footnote {
+    font-size: 0.78rem !important;
+}
+
+.owner-app__photo-noscript {
+    max-width: 58ch;
+    margin: 1rem 0 0;
+    padding: 0.85rem 1rem;
+    border-left: 3px solid #b87900;
+    background: #fff7df;
+    color: #493b1a;
+    font: 700 0.82rem/1.5 Inter, sans-serif;
+}
+
+.owner-app__photo-noscript--inside {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid rgba(212, 160, 23, 0.3);
+}
+
+@media (max-width: 900px) {
+    .owner-app__photo-backdrop {
+        align-items: end;
+        padding: 0;
+    }
+
+    .owner-app__photo-shell {
+        width: 100%;
+        min-height: 100dvh;
+        max-height: 100dvh;
+        border-width: 0;
+        border-radius: 0;
+    }
+
+    .owner-app__photo-layout {
+        display: block;
+        overflow: auto;
+    }
+
+    .owner-app__photo-rail {
+        display: none;
+    }
+
+    .owner-app__photo-stage {
+        min-height: calc(100dvh - 60px);
+        padding: 2.4rem clamp(1rem, 5vw, 2rem) 2rem;
+    }
+
+    .owner-app__photo-architecture {
+        inset: 0 0 auto auto;
+        width: 48%;
+        height: 15rem;
+        opacity: 0.22;
+    }
+
+    .owner-app__photo-copy h2 {
+        font-size: clamp(2.25rem, 11vw, 3.35rem);
+    }
+
+    .owner-app__photo-local,
+    .owner-app__photo-review-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .owner-app__photo-preview-frame {
+        max-height: 38vh;
+    }
+
+    .owner-app__photo-server-preview {
+        max-height: 48vh;
+        aspect-ratio: 4 / 3;
+    }
+}
+
+@media (max-width: 540px) {
+    .owner-app__photo-topbar {
+        min-height: 56px;
+        grid-template-columns: 1fr auto auto;
+        padding: 0.55rem 0.65rem 0.55rem 1rem;
+    }
+
+    .owner-app__photo-topbar-title {
+        font-size: 0;
+    }
+
+    .owner-app__photo-topbar-title::after {
+        content: "PeerSlate";
+        font: 600 1.05rem/1 Newsreader, serif;
+    }
+
+    .owner-app__photo-topbar-status {
+        font-size: 0.7rem;
+    }
+
+    .owner-app__photo-close {
+        width: 44px;
+        height: 44px;
+        margin-left: 0.35rem;
+    }
+
+    .owner-app__photo-stage {
+        padding: 1.8rem 1rem max(1.5rem, env(safe-area-inset-bottom));
+    }
+
+    .owner-app__photo-copy {
+        text-align: center;
+    }
+
+    .owner-app__photo-copy h2 {
+        max-width: 10ch;
+        margin-inline: auto;
+    }
+
+    .owner-app__photo-intro {
+        margin-top: 1rem;
+        font-size: 0.86rem;
+        line-height: 1.55;
+    }
+
+    .owner-app__photo-view,
+    .owner-app__photo-trust,
+    .owner-app__photo-provenance {
+        width: 100%;
+    }
+
+    .owner-app__photo-entry-actions {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .owner-app__photo-camera-file {
+        order: -1;
+        width: 100%;
+        border-color: #d4a017;
+        background: linear-gradient(180deg, #0e1d34, #07111f);
+        color: #f5c957;
+        box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.17);
+    }
+
+    .owner-app__photo-primary-file {
+        width: 100%;
+        border-color: rgba(20, 26, 40, 0.28);
+        background: rgba(255, 255, 255, 0.78);
+        color: #203767;
+        box-shadow: none;
+    }
+
+    .owner-app__photo-guidance {
+        text-align: center;
+    }
+
+    .owner-app__photo-actions,
+    .owner-app__photo-actions .owner-app__photo-primary,
+    .owner-app__photo-actions .owner-app__photo-secondary,
+    .owner-app__photo-progress .owner-app__photo-secondary {
+        width: 100%;
+    }
+
+    .owner-app__photo-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .owner-app__photo-trust,
+    .owner-app__photo-provenance {
+        align-items: flex-start;
+    }
+
+    .owner-app__photo-provenance {
+        flex-wrap: wrap;
+    }
+
+    .owner-app__photo-provenance a {
+        flex-basis: 100%;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+    .owner-app__photo-backdrop {
+        display: block;
+        padding: 0;
+    }
+
+    .owner-app__photo-shell {
+        max-height: none;
+        min-height: 100dvh;
+        border-radius: 0;
+    }
+
+    .owner-app__photo-stage {
+        min-height: 32rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .owner-app__photo-backdrop,
+    .owner-app__photo-shell,
+    .owner-app__photo-shell * {
+        scroll-behavior: auto !important;
+        animation: none !important;
+        transition: none !important;
+    }
+}

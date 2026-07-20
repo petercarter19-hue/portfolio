@@ -70,6 +70,8 @@ CAPTURE_SUCCESS_MESSAGES = {
     "deleted": "Capture and its correction history were permanently deleted.",
     "moment-discarded": "Private Moment proposal discarded.",
     "voice-deleted": "Private voice draft and original audio were deleted.",
+    "photo-saved": "Photo saved as one private Capture. Nothing was shared or published.",
+    "photo-deleted": "Private photo draft and its stored files were deleted.",
 }
 MOMENT_VALIDATION_MESSAGES = {
     "required": "Choose a type and add both a title and member-approved narrative.",
@@ -336,7 +338,12 @@ def capture():
             ],
         )
         voice_draft = None
+        photo_draft = None
+        photo_enabled = _photo_capture_enabled()
         voice_key = request.args.get("voice")
+        photo_key = request.args.get("photo")
+        if voice_key and photo_key:
+            return "Open one private Capture draft at a time.", 400
         if voice_key:
             normalized_voice_key = _normalize_capture_key(voice_key)
             if not normalized_voice_key:
@@ -346,9 +353,21 @@ def capture():
             )
             if not voice_draft:
                 return "Voice draft not found.", 404
+        if photo_key:
+            if not photo_enabled:
+                return _photo_unavailable()
+            normalized_photo_key = _normalize_capture_key(photo_key)
+            if not normalized_photo_key:
+                return "Photo source not found.", 404
+            photo_source = photo_capture_service.get_source(
+                identity.user_key, normalized_photo_key
+            )
+            if not photo_source:
+                return "Photo source not found.", 404
+            photo_draft = _photo_source_payload(photo_source)
     except AuthenticationRequired:
         return redirect(url_for("auth.sign_in", return_to="/app/capture"))
-    except DatabaseServiceError:
+    except (DatabaseServiceError, PhotoCaptureError):
         current_app.logger.error("PeerSlate private capture storage is unavailable.")
         return _render_owner_unavailable()
 
@@ -361,10 +380,13 @@ def capture():
         saved=request.args.get("saved") == "1",
         archived=archived,
         voice_draft=voice_draft,
+        photo_draft=photo_draft,
+        photo_enabled=photo_enabled,
         max_body_length=MAX_CAPTURE_BODY_LENGTH,
         max_correction_note_length=MAX_CORRECTION_NOTE_LENGTH,
         max_voice_bytes=MAX_VOICE_BYTES,
         max_voice_duration_seconds=MAX_VOICE_DURATION_SECONDS,
+        max_photo_bytes=MAX_PHOTO_BYTES,
     )
 
 

@@ -1,5 +1,6 @@
 import io
 import json
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -62,6 +63,97 @@ class OwnerPhotoCaptureRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         create.assert_not_called()
+
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_capture_page_hides_photo_experience_when_flag_is_off(self, _list_captures):
+        app.config["CAPTURE_PHOTO_ENABLED"] = False
+
+        response = self.client.get("/app/capture")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b'data-capture-mode="photo"', response.data)
+        self.assertNotIn(b"owner-capture-photo.js", response.data)
+
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_capture_page_exposes_accessible_photo_entry_when_flag_is_on(self, _list_captures):
+        response = self.client.get("/app/capture")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'data-capture-mode="photo"', response.data)
+        self.assertIn(b"Add a photo worth remembering", response.data)
+        self.assertIn(b'id="photo-file-choice" type="file"', response.data)
+        self.assertIn(b'accept="image/jpeg,image/png"', response.data)
+        self.assertIn(b'capture="environment"', response.data)
+        self.assertIn(b"Selected photo, not saved yet", response.data)
+        self.assertIn(b"Save private Capture", response.data)
+        self.assertIn(b"Nothing is shared or published", response.data)
+        self.assertIn(b"owner-capture-photo.js", response.data)
+
+    @patch("owner_routes.photo_capture_service.get_source")
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_capture_page_hydrates_owner_scoped_photo_review(
+        self, _list_captures, get_source
+    ):
+        get_source.return_value = source("needs_review")
+
+        response = self.client.get(f"/app/capture?photo={SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 200)
+        get_source.assert_called_once_with("owner-a", SOURCE_KEY)
+        self.assertIn(f'data-source-key="{SOURCE_KEY}"'.encode(), response.data)
+        self.assertIn(b'data-source-state="needs_review"', response.data)
+        self.assertIn(f"/app/capture/photo/{SOURCE_KEY}/preview".encode(), response.data)
+        self.assertIn(b"Private photo awaiting your description", response.data)
+        self.assertNotIn(b"blob.core.windows.net", response.data)
+
+    @patch("owner_routes.photo_capture_service.get_source", return_value=None)
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_capture_page_uses_neutral_not_found_for_other_owner_photo(
+        self, _list_captures, _get_source
+    ):
+        response = self.client.get(f"/app/capture?photo={SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_data(as_text=True), "Photo source not found.")
+
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_capture_page_rejects_two_private_drafts_at_once(self, _list_captures):
+        response = self.client.get(
+            f"/app/capture?voice={CAPTURE_KEY}&photo={SOURCE_KEY}"
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"Open one private Capture draft at a time", response.data)
+
+    def test_photo_client_contract_has_private_state_and_accessibility_controls(self):
+        root = Path(__file__).parents[1]
+        script = (root / "static" / "js" / "owner-capture-photo.js").read_text(
+            encoding="utf-8"
+        )
+        template = (root / "templates" / "owner_capture.html").read_text(
+            encoding="utf-8"
+        )
+
+        for required in (
+            "Selected photo, not saved yet",
+            "Safe preview",
+            "Embedded metadata removed",
+            "Save private Capture",
+        ):
+            self.assertIn(required, template)
+        for required in (
+            "Upload cancelled in this browser",
+            r"Scanning\u2026 Nothing is shared or published.",
+            "save-private-capture",
+            "confirm_delete",
+            "aria-modal",
+            "Escape",
+            "URL.revokeObjectURL",
+        ):
+            self.assertIn(required, script)
+        self.assertNotIn("localStorage", script)
+        self.assertNotIn("sessionStorage", script)
+        self.assertNotIn("file.name", script)
 
     @patch("owner_routes.photo_capture_service.create_source")
     def test_upload_is_same_origin_owner_scoped_and_returns_no_storage_locator(self, create):

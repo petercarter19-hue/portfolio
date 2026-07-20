@@ -64,24 +64,23 @@ class OwnerVoiceUiContractTests(unittest.TestCase):
         self.assertIn(":focus-visible", STYLES)
         self.assertIn("resize: vertical", STYLES)
         # PS-VOICE-VISUAL-PARITY-001 (2026-07-19, owner-approved revision):
-        # the Voice recording/review overlay portals to <body> and uses
-        # position: fixed for its full-viewport backdrop only, because
+        # the Voice and Photo Capture overlays portal to <body> and use
+        # position: fixed for their full-viewport backdrops only, because
         # main.main-content's isolation:isolate establishes a stacking
         # context that otherwise traps a nested fixed overlay below the
         # sticky global header (verified against templates/base.html and
-        # static/css/style.css, not merely asserted). Every other Voice/
+        # static/css/style.css, not merely asserted). Every other private/
         # Capture rule must stay in normal, non-fixed document flow.
         fixed_rule_selectors = re.findall(r"([^{}]+)\{[^{}]*position:\s*fixed[^{}]*\}", STYLES)
         self.assertTrue(
             fixed_rule_selectors,
-            "expected the Voice overlay backdrop rule to use position: fixed",
+            "expected a private Capture overlay backdrop rule to use position: fixed",
         )
         for selector in fixed_rule_selectors:
-            self.assertIn(
-                "voice-backdrop",
-                selector,
-                "position: fixed must stay scoped to the Voice overlay backdrop, "
-                f"found on: {selector.strip()}",
+            self.assertTrue(
+                "voice-backdrop" in selector or "photo-backdrop" in selector,
+                "position: fixed must stay scoped to a private Capture overlay "
+                f"backdrop, found on: {selector.strip()}",
             )
 
     def test_homepage_voice_authority_is_reflected_without_faking_behavior(self):
