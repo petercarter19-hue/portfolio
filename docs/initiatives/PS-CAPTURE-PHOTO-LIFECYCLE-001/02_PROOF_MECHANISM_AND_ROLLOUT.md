@@ -2,13 +2,15 @@
 
 ## Decision
 
-Implement a later, server-enforced and expiring production dark-launch gate.
+Implement a server-enforced and expiring production dark-launch gate on the
+separately approved continuation branch.
 Keep the general member release flag false. Admit exactly two synthetic owners
 by the internal key that the server resolves after authentication. Use a third
 synthetic identity to prove non-cohort neutrality.
 
-This document specifies a future implementation. It does not change current
-configuration or authorize a production proof window.
+The owner approved the bounded server-only implementation on 2026-07-20 and
+selected Defender choice B. This document still does not authorize a
+production proof window or any production configuration change.
 
 ## Access-policy contract
 
@@ -114,8 +116,14 @@ All conditions must pass before a later operator sets the proof flag:
 
 ## Owner decision: production Defender-malicious proof
 
-The owner must record exactly one choice before a later proof window. Neither
-choice is implied by accepting this architecture.
+**Recorded decision, 2026-07-20: Choice B.** No production malicious-test
+fixture will be uploaded. The sanctioned isolated-account evidence is retained
+and the production Defender-malicious path remains Conditional. This decision
+does not affect the separate application image-validation rejection case.
+
+The alternatives below remain as the decision record. Choice A is not
+authorized unless the owner explicitly replaces the recorded decision in a
+later approved package update.
 
 ### Choice A - coordinated inert production test
 
@@ -144,8 +152,9 @@ but mark the production Defender-malicious route **Conditional**. This is the
 lower-production-risk choice and it cannot be promoted to Pass by a malformed,
 dimension-invalid, or otherwise application-rejected image.
 
-Until the owner records A or B, the Defender-malicious case and the overall
-lifecycle-readiness result remain **Conditional**.
+Choice B is now recorded, so the production Defender-malicious case remains
+**Conditional** and is not run. The overall lifecycle-readiness result also
+remains Conditional until the remaining production matrix and teardown pass.
 
 ## Blob deletion evidence vocabulary
 
@@ -277,9 +286,9 @@ The global-window option is unavailable now. It may be reconsidered only if:
 A global flag-on window is not a substitute for second-owner evidence or
 homepage parity and cannot be authorized by this architecture branch.
 
-## Later implementation file reservations
+## Approved implementation file reservations
 
-If the manager approves implementation, reserve only:
+The approved implementation may reserve only:
 
 - `.env.example` - names/defaults for the nonsecret proof configuration only;
 - `owner_routes.py` - central cohort-policy calls and neutral response behavior

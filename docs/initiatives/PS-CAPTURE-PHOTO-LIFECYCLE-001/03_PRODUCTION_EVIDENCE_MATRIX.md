@@ -229,10 +229,11 @@ separate explicit manager/owner decision.
 
 ### Conditional - current recommendation
 
-The architecture is viable and scoped, but the cohort gate is not implemented
-and none of the signed-in production evidence in this matrix exists. Keep
-`CAPTURE_PHOTO_ENABLED=false`; request manager approval only for a future
-bounded implementation package.
+The architecture is accepted and the cohort gate implementation is in bounded
+continuation work, but it has not yet been released and none of the signed-in
+production evidence in this matrix exists. Keep `CAPTURE_PHOTO_ENABLED=false`.
+Defender choice B is recorded, so the production Defender-malicious row remains
+Conditional even after all other production rows pass.
 
 ### Fail
 

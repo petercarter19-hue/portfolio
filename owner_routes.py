@@ -1,7 +1,6 @@
 """Protected owner-only routes for the PeerSlate application."""
 
 import json
-import os
 import re
 from datetime import date, datetime
 from uuid import UUID
@@ -42,6 +41,11 @@ from services.photo_capture_service import (
     MAX_PHOTO_BYTES,
     PhotoCaptureError,
     photo_capture_service,
+)
+from services.photo_lifecycle_access_service import (
+    PHOTO_ACCESS_ORDINARY,
+    PHOTO_ACCESS_PROOF,
+    photo_lifecycle_access_service,
 )
 from services.owner_home_service import (
     OwnerHomeContractError,
@@ -121,15 +125,6 @@ def _allow_bounded_voice_upload():
         request.max_content_length = MAX_VOICE_BYTES + (64 * 1024)
     elif request.endpoint == "owner.upload_photo_capture":
         request.max_content_length = MAX_PHOTO_BYTES + (64 * 1024)
-
-
-def _photo_capture_enabled():
-    value = current_app.config.get("CAPTURE_PHOTO_ENABLED")
-    if value is None:
-        value = os.getenv("CAPTURE_PHOTO_ENABLED", "false")
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _photo_unavailable():
@@ -373,7 +368,10 @@ def capture():
         )
         voice_draft = None
         photo_draft = None
-        photo_enabled = _photo_capture_enabled()
+        photo_configuration = photo_lifecycle_access_service.configuration()
+        photo_enabled = photo_lifecycle_access_service.allows_identity(
+            identity, photo_configuration
+        )
         voice_key = request.args.get("voice")
         photo_key = request.args.get("photo")
         if voice_key and photo_key:
@@ -591,20 +589,39 @@ def voice_capture_audio(source_key):
 
 
 def _photo_action_identity(source_key=None, require_write=True):
-    if not _photo_capture_enabled():
+    configuration = photo_lifecycle_access_service.configuration()
+    if configuration.mode not in {PHOTO_ACCESS_ORDINARY, PHOTO_ACCESS_PROOF}:
         return None, None, _photo_unavailable()
-    if require_write and not _is_same_origin_write():
-        return None, None, ("Cross-site capture requests are not allowed.", 403)
-    normalized = _normalize_capture_key(source_key) if source_key else None
-    if source_key and not normalized:
-        return None, None, ("Photo source not found.", 404)
+
+    normalized = None
+    if configuration.mode == PHOTO_ACCESS_ORDINARY:
+        if require_write and not _is_same_origin_write():
+            return None, None, ("Cross-site capture requests are not allowed.", 403)
+        normalized = _normalize_capture_key(source_key) if source_key else None
+        if source_key and not normalized:
+            return None, None, ("Photo source not found.", 404)
+
     try:
-        return get_current_identity(), normalized, None
+        identity = get_current_identity()
     except AuthenticationRequired:
+        if configuration.mode == PHOTO_ACCESS_PROOF:
+            return None, None, _photo_unavailable()
         return None, None, redirect(url_for("auth.sign_in", return_to="/app/capture"))
     except DatabaseServiceError:
+        if configuration.mode == PHOTO_ACCESS_PROOF:
+            return None, None, _photo_unavailable()
         current_app.logger.error("PeerSlate private Photo Capture identity is unavailable.")
         return None, None, _render_owner_unavailable()
+
+    if not photo_lifecycle_access_service.allows_identity(identity, configuration):
+        return None, None, _photo_unavailable()
+    if configuration.mode == PHOTO_ACCESS_PROOF:
+        if require_write and not _is_same_origin_write():
+            return None, None, ("Cross-site capture requests are not allowed.", 403)
+        normalized = _normalize_capture_key(source_key) if source_key else None
+        if source_key and not normalized:
+            return None, None, ("Photo source not found.", 404)
+    return identity, normalized, None
 
 
 def _photo_source_payload(source):

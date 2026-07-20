@@ -1,5 +1,12 @@
 # PeerSlate Completion & Handoff Report
 
+> Historical architecture checkpoint: this report records the five-document
+> architecture branch before approval. The owner subsequently approved the
+> bounded server-only implementation and selected Defender choice B on
+> 2026-07-20. Current continuation status is recorded in `README.md`,
+> `IMPLEMENTATION_COMPLETION_REPORT.md`, and `CLAUDE_HANDOFF.md`; this report is
+> not rewritten as an implementation result.
+
 ## A. Status
 
 - Package: `PS-CAPTURE-PHOTO-LIFECYCLE-001`

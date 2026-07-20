@@ -1,11 +1,13 @@
 import io
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 from app import app
-from identity import PeerSlateIdentity
+from identity import AuthenticationRequired, PeerSlateIdentity
+from services.database_service import DatabaseServiceError
 from services.photo_capture_service import PhotoCaptureError
 
 
@@ -17,8 +19,31 @@ IDENTITY = PeerSlateIdentity(
     display_name="Owner A",
     email="owner-a@example.test",
 )
+IDENTITY_B = PeerSlateIdentity(
+    user_key="owner-b",
+    auth_provider="aad",
+    auth_issuer="https://issuer.example/",
+    auth_subject="subject-b",
+    display_name="Owner B",
+    email="owner-b@example.test",
+)
+IDENTITY_C = PeerSlateIdentity(
+    user_key="owner-c",
+    auth_provider="aad",
+    auth_issuer="https://issuer.example/",
+    auth_subject="subject-c",
+    display_name="Owner C",
+    email="owner-a@example.test",
+)
 SOURCE_KEY = "11111111-1111-1111-1111-111111111111"
 CAPTURE_KEY = "22222222-2222-2222-2222-222222222222"
+PROOF_CONFIG_NAMES = (
+    "CAPTURE_PHOTO_ENABLED",
+    "CAPTURE_PHOTO_LIFECYCLE_PROOF_ENABLED",
+    "CAPTURE_PHOTO_LIFECYCLE_PROOF_USER_KEYS",
+    "CAPTURE_PHOTO_LIFECYCLE_PROOF_EXPIRES_AT_UTC",
+    "CAPTURE_PHOTO_LIFECYCLE_PROOF_RUN_ID",
+)
 
 
 def source(state="scanning"):
@@ -39,18 +64,306 @@ def source(state="scanning"):
 
 class OwnerPhotoCaptureRouteTests(unittest.TestCase):
     def setUp(self):
-        app.config.update(TESTING=True, CAPTURE_PHOTO_ENABLED=True)
+        self.original_config = {
+            name: (name in app.config, app.config.get(name))
+            for name in PROOF_CONFIG_NAMES
+        }
+        app.config.update(
+            TESTING=True,
+            CAPTURE_PHOTO_ENABLED=True,
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_ENABLED=False,
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_USER_KEYS="",
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_EXPIRES_AT_UTC="",
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_RUN_ID="",
+        )
         self.client = app.test_client()
-        self.identity = patch("owner_routes.get_current_identity", return_value=IDENTITY)
-        self.identity.start()
+        self.identity_patch = patch(
+            "owner_routes.get_current_identity", return_value=IDENTITY
+        )
+        self.identity = self.identity_patch.start()
 
     def tearDown(self):
-        app.config["CAPTURE_PHOTO_ENABLED"] = False
         patch.stopall()
+        for name, (existed, value) in self.original_config.items():
+            if existed:
+                app.config[name] = value
+            else:
+                app.config.pop(name, None)
 
     @staticmethod
     def same_origin_headers():
         return {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
+
+    @staticmethod
+    def enable_dark_launch():
+        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+        app.config.update(
+            CAPTURE_PHOTO_ENABLED=False,
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_ENABLED=True,
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_USER_KEYS="owner-a,owner-b",
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_EXPIRES_AT_UTC=expiry.isoformat().replace(
+                "+00:00", "Z"
+            ),
+            CAPTURE_PHOTO_LIFECYCLE_PROOF_RUN_ID=(
+                "PS-CAPTURE-PHOTO-LIFECYCLE-001-test"
+            ),
+        )
+
+    def test_photo_route_inventory_matches_the_server_gate(self):
+        expected = {
+            ("/app/capture/photo", "POST"),
+            ("/app/capture/photo/<source_key>", "GET"),
+            ("/app/capture/photo/<source_key>/reconcile", "POST"),
+            ("/app/capture/photo/<source_key>/confirm", "POST"),
+            ("/app/capture/photo/<source_key>/delete", "POST"),
+            ("/app/capture/photo/<source_key>/preview", "GET"),
+            ("/app/capture/photo/<source_key>/original", "GET"),
+        }
+        actual = {
+            (rule.rule, method)
+            for rule in app.url_map.iter_rules()
+            if rule.rule.startswith("/app/capture/photo")
+            for method in rule.methods
+            if method in {"GET", "POST"}
+        }
+
+        self.assertEqual(actual, expected)
+
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_dark_launch_page_admits_only_the_two_resolved_owners(
+        self, _list_captures
+    ):
+        self.enable_dark_launch()
+
+        for identity, expected in ((IDENTITY, True), (IDENTITY_B, True), (IDENTITY_C, False)):
+            with self.subTest(user_key=identity.user_key):
+                self.identity.return_value = identity
+                response = self.client.get("/app/capture")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    b'data-capture-mode="photo"' in response.data,
+                    expected,
+                )
+
+    @patch("owner_routes.photo_capture_service.get_source")
+    @patch("owner_routes.database_service.first_result", return_value=[])
+    def test_noncohort_photo_query_is_neutral_before_photo_lookup(
+        self, _list_captures, get_source
+    ):
+        self.enable_dark_launch()
+        self.identity.return_value = IDENTITY_C
+
+        response = self.client.get(f"/app/capture?photo={SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_data(as_text=True), "Photo Capture is unavailable.")
+        get_source.assert_not_called()
+
+    @patch("owner_routes.photo_capture_service.create_source")
+    def test_noncohort_cannot_forge_a_cohort_identity(self, create_source):
+        self.enable_dark_launch()
+        self.identity.return_value = IDENTITY_C
+
+        response = self.client.post(
+            "/app/capture/photo",
+            data={
+                "user_key": "owner-a",
+                "email": "owner-a@example.test",
+                "photo": (io.BytesIO(b"synthetic"), "private.jpg"),
+            },
+            headers=self.same_origin_headers(),
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_data(as_text=True), "Photo Capture is unavailable.")
+        create_source.assert_not_called()
+
+    def test_signed_out_dark_launch_request_is_neutral_not_a_sign_in_redirect(self):
+        self.enable_dark_launch()
+        self.identity.side_effect = AuthenticationRequired("Sign in is required.")
+
+        response = self.client.get(f"/app/capture/photo/{SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("Location", response.headers)
+        self.assertEqual(response.get_data(as_text=True), "Photo Capture is unavailable.")
+
+    def test_identity_storage_failure_during_dark_launch_is_neutral(self):
+        self.enable_dark_launch()
+        self.identity.side_effect = DatabaseServiceError("unavailable")
+
+        response = self.client.get(f"/app/capture/photo/{SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_data(as_text=True), "Photo Capture is unavailable.")
+
+    def test_signed_out_ordinary_release_keeps_existing_sign_in_redirect(self):
+        self.identity.side_effect = AuthenticationRequired("Sign in is required.")
+
+        response = self.client.get(f"/app/capture/photo/{SOURCE_KEY}")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/auth/sign-in", response.headers["Location"])
+
+    def test_signed_out_ordinary_cross_site_write_keeps_existing_denial_order(self):
+        self.identity.side_effect = AuthenticationRequired("Sign in is required.")
+
+        response = self.client.post(
+            "/app/capture/photo",
+            headers={"Origin": "https://cross-site.example"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.identity.assert_not_called()
+
+    def test_signed_out_ordinary_invalid_source_keeps_existing_denial_order(self):
+        self.identity.side_effect = AuthenticationRequired("Sign in is required.")
+
+        response = self.client.get("/app/capture/photo/not-a-source-key")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_data(as_text=True), "Photo source not found.")
+        self.identity.assert_not_called()
+
+    @patch("owner_routes.photo_capture_service.create_source")
+    def test_conflicting_flags_fail_closed_before_identity_or_service(self, create_source):
+        self.enable_dark_launch()
+        app.config["CAPTURE_PHOTO_ENABLED"] = True
+
+        response = self.client.post(
+            "/app/capture/photo", headers=self.same_origin_headers()
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.identity.assert_not_called()
+        create_source.assert_not_called()
+
+    @patch("owner_routes.photo_capture_service.create_source")
+    @patch("owner_routes.photo_capture_service.get_source")
+    @patch("owner_routes.photo_capture_service.reconcile_and_process")
+    @patch("owner_routes.photo_capture_service.confirm_capture")
+    @patch("owner_routes.photo_capture_service.delete_draft")
+    @patch("owner_routes.photo_capture_service.open_media")
+    def test_noncohort_denial_matches_flag_off_for_every_direct_photo_route(
+        self,
+        open_media,
+        delete_draft,
+        confirm_capture,
+        reconcile,
+        get_source,
+        create_source,
+    ):
+        routes = (
+            ("post", "/app/capture/photo", {}),
+            ("get", f"/app/capture/photo/{SOURCE_KEY}", {}),
+            ("post", f"/app/capture/photo/{SOURCE_KEY}/reconcile", {}),
+            ("post", f"/app/capture/photo/{SOURCE_KEY}/confirm", {}),
+            ("post", f"/app/capture/photo/{SOURCE_KEY}/delete", {}),
+            ("get", f"/app/capture/photo/{SOURCE_KEY}/preview", {}),
+            ("get", f"/app/capture/photo/{SOURCE_KEY}/original", {}),
+        )
+
+        for method, path, data in routes:
+            with self.subTest(method=method, path=path):
+                app.config.update(
+                    CAPTURE_PHOTO_ENABLED=False,
+                    CAPTURE_PHOTO_LIFECYCLE_PROOF_ENABLED=False,
+                )
+                baseline = getattr(self.client, method)(
+                    path, data=data, headers=self.same_origin_headers()
+                )
+                self.enable_dark_launch()
+                self.identity.return_value = IDENTITY_C
+                denied = getattr(self.client, method)(
+                    path, data=data, headers=self.same_origin_headers()
+                )
+                self.assertEqual(denied.status_code, baseline.status_code)
+                self.assertEqual(denied.data, baseline.data)
+
+        for service_method in (
+            open_media,
+            delete_draft,
+            confirm_capture,
+            reconcile,
+            get_source,
+            create_source,
+        ):
+            service_method.assert_not_called()
+
+    @patch("owner_routes.photo_capture_service.create_source")
+    @patch("owner_routes.photo_capture_service.get_source", return_value=None)
+    @patch("owner_routes.photo_capture_service.reconcile_and_process")
+    @patch("owner_routes.photo_capture_service.confirm_capture")
+    @patch("owner_routes.photo_capture_service.delete_draft")
+    @patch("owner_routes.photo_capture_service.open_media", return_value=None)
+    def test_second_cohort_owner_is_used_at_every_protected_photo_service_boundary(
+        self,
+        open_media,
+        delete_draft,
+        confirm_capture,
+        reconcile,
+        get_source,
+        create_source,
+    ):
+        self.enable_dark_launch()
+        self.identity.return_value = IDENTITY_B
+        create_source.return_value = source("scanning")
+        reconcile.side_effect = PhotoCaptureError("changed")
+        confirm_capture.side_effect = PhotoCaptureError("changed")
+        delete_draft.side_effect = PhotoCaptureError("changed")
+
+        upload = self.client.post(
+            "/app/capture/photo",
+            data={"photo": (io.BytesIO(b"synthetic"), "private.jpg")},
+            headers=self.same_origin_headers(),
+            content_type="multipart/form-data",
+        )
+        status = self.client.get(f"/app/capture/photo/{SOURCE_KEY}")
+        reconciliation = self.client.post(
+            f"/app/capture/photo/{SOURCE_KEY}/reconcile",
+            data={"expected_row_version": "0101010101010101"},
+            headers=self.same_origin_headers(),
+        )
+        confirmation = self.client.post(
+            f"/app/capture/photo/{SOURCE_KEY}/confirm",
+            data={
+                "approved_body": "Synthetic proof",
+                "expected_row_version": "0101010101010101",
+                "confirm_photo": "save-private-capture",
+            },
+            headers=self.same_origin_headers(),
+        )
+        deletion = self.client.post(
+            f"/app/capture/photo/{SOURCE_KEY}/delete",
+            data={
+                "confirm_delete": "delete",
+                "expected_row_version": "0101010101010101",
+            },
+            headers=self.same_origin_headers(),
+        )
+        preview = self.client.get(f"/app/capture/photo/{SOURCE_KEY}/preview")
+        original = self.client.get(f"/app/capture/photo/{SOURCE_KEY}/original")
+
+        self.assertEqual(upload.status_code, 201)
+        self.assertEqual(status.status_code, 404)
+        self.assertEqual(reconciliation.status_code, 409)
+        self.assertEqual(confirmation.status_code, 409)
+        self.assertEqual(deletion.status_code, 409)
+        self.assertEqual(preview.status_code, 404)
+        self.assertEqual(original.status_code, 404)
+        self.assertEqual(create_source.call_args.args[0], "owner-b")
+        get_source.assert_called_once_with("owner-b", SOURCE_KEY)
+        self.assertEqual(reconcile.call_args.args[0], "owner-b")
+        self.assertEqual(confirm_capture.call_args.args[0], "owner-b")
+        self.assertEqual(delete_draft.call_args.args[0], "owner-b")
+        self.assertEqual(
+            [call.args for call in open_media.call_args_list],
+            [
+                ("owner-b", SOURCE_KEY, "preview"),
+                ("owner-b", SOURCE_KEY, "original"),
+            ],
+        )
 
     @patch("owner_routes.photo_capture_service.create_source")
     def test_feature_flag_is_fail_closed_before_service_call(self, create):

@@ -1,5 +1,30 @@
 # PS-CAPTURE-PHOTO-LIFECYCLE-001 - Photo Lifecycle Readiness
 
+## Approved implementation continuation - 2026-07-20
+
+- Architecture release: Azure PR 107; squash
+  `531013dd8c1a05e2443becd881a226755f27ca14`
+- Owner decision: architecture approved and Defender choice **B** recorded -
+  no production malicious-file test
+- Implementation branch:
+  `work/2026-07-20-capture-photo-lifecycle-implementation-001`
+- Exact implementation base: Azure DevOps `origin/main` at
+  `531013dd8c1a05e2443becd881a226755f27ca14`
+- Sole implementation writer: current Codex session
+- Implementation scope: only the reserved server gate, Photo route integration,
+  nonsecret configuration example, focused tests, and package-local records
+- Release boundary: both Photo flags remain false through release; no production
+  proof window, ordinary-member enablement, homepage change, or malicious
+  fixture is authorized by this continuation
+- Lifecycle-readiness result: **Conditional** until the signed-in production
+  evidence and teardown matrix is completed; under choice B the production
+  Defender-malicious row remains Conditional
+
+The sections below preserve the accepted architecture context. The approval
+above supersedes the original pending-writer and approval-stop statements for
+the bounded implementation only. It does not authorize production settings,
+records, Azure, Defender, SQL, homepage, or ordinary enablement changes.
+
 ## Assignment and control boundary
 
 - Package: `PS-CAPTURE-PHOTO-LIFECYCLE-001`
@@ -11,9 +36,10 @@
   `git fetch origin --prune` on 2026-07-20
 - Architecture writer: current Codex session
 - Designated session manager: the existing ChatGPT Work/Codex
-  owner-delegated Capture Media manager role; acceptance of this new package is
-  pending
-- Later implementation writer: unassigned
+  owner-delegated Capture Media manager role; architecture accepted by the
+  owner for the bounded continuation recorded above
+- Later implementation writer: current Codex session on the separate
+  implementation branch recorded above
 - Current recommendation: **Conditional**
 - Production status: the released Photo backend and experience are deployed
   with `CAPTURE_PHOTO_ENABLED=false`; Photo remains unavailable to ordinary
@@ -92,13 +118,11 @@ owner IDs, email addresses, headers outside the trusted authentication
 boundary, query values, source keys, Capture keys, Blob names, and UI state
 never grant cohort access.
 
-Before a production proof run, the owner must explicitly choose one Defender
-path: (A) an approved inert EICAR-based production test with advance
-security-alert coordination and documented seven-day soft-delete behavior, or
-(B) no production malicious test, retaining the sanctioned isolated-account
-proof and marking the production Defender-malicious path Conditional. There is
-no default. A malformed or dimension-invalid image proves only application
-image validation and never proves Defender malware rejection.
+The owner selected Defender path **B**: no production malicious test. Retain
+the sanctioned isolated-account proof and mark the production
+Defender-malicious path Conditional. A malformed or dimension-invalid image
+proves only application image validation and never proves Defender malware
+rejection.
 
 See:
 
@@ -106,6 +130,8 @@ See:
 2. [Proof mechanism, configuration, rollback, and file reservations](02_PROOF_MECHANISM_AND_ROLLOUT.md)
 3. [Lifecycle, two-owner, evidence, and screenshot matrix](03_PRODUCTION_EVIDENCE_MATRIX.md)
 4. [Architecture completion and approval handoff](COMPLETION_REPORT.md)
+5. [Gate implementation completion report](IMPLEMENTATION_COMPLETION_REPORT.md)
+6. [Claude independent-review handoff](CLAUDE_HANDOFF.md)
 
 ## Alternatives evaluated
 
@@ -115,20 +141,26 @@ See:
 | Properly isolated staging slot/environment | **Conditional supporting method** | Appropriate for rehearsal and deliberate failure injection only if identity, SQL, Storage, Defender, callbacks, telemetry, settings, managed identity, and release permissions are all isolated. Current governance does not verify that complete environment. Staging cannot by itself close production proof. |
 | Temporary global flag-on production window | **Rejected now; later fallback only** | It exposes Photo to ordinary members. It requires explicit Pete and designated-manager approval, accepted and live homepage parity, an attended short window, prewritten rollback, and every dark-launch control that can still apply. |
 
-## Package-local writable scope
+## Writable-scope record
 
-This branch may add or edit only:
+The completed architecture branch was package-local documentation only. The
+approved implementation continuation may add or edit only:
 
-- `docs/initiatives/PS-CAPTURE-PHOTO-LIFECYCLE-001/`
+- `.env.example`;
+- `owner_routes.py` for Photo gate integration only;
+- `services/photo_lifecycle_access_service.py`;
+- `tests/test_owner_photo_capture.py`;
+- `tests/test_photo_lifecycle_access.py`; and
+- `docs/initiatives/PS-CAPTURE-PHOTO-LIFECYCLE-001/`.
 
-It may not edit shared governance. It also may not edit application code,
-routes, templates, CSS, JavaScript, tests, configuration, SQL, Azure scripts or
-resources, Defender, production data, homepage files, or the released
-`PS-CAPTURE-MEDIA-001` package.
+It may not edit any other application/runtime file, shared governance,
+templates, CSS, JavaScript, SQL, Azure scripts/resources, Defender, production
+data, homepage files, or the released `PS-CAPTURE-MEDIA-001` package.
 
 ## Approval stop
 
-After these documents are committed and pushed, stop for designated-manager
-approval. A separate assignment and fresh authorization are required before
-any implementation, configuration, infrastructure, SQL, production, or
-homepage action. Architecture acceptance does not authorize Photo enablement.
+The architecture approval stop was satisfied on 2026-07-20 for the bounded
+implementation continuation recorded at the top of this document. Stop again
+before any production proof configuration or record, infrastructure, SQL,
+Azure/Defender, homepage, or ordinary-member enablement action. Architecture
+and gate implementation acceptance do not authorize Photo enablement.
