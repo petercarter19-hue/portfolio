@@ -18,52 +18,65 @@ SAME_ORIGIN = {"X-PeerSlate-Request": "same-origin"}
 
 
 class PeopleInterestsPageTests(unittest.TestCase):
+    """The People & Interests board retired as the /the-slate landing on
+    2026-07-21 (PS-COMMUNITY-TABS-001) in favor of the seamless Feed / The
+    Break / Saved tab shell. Its own template stays on disk for rollback,
+    matching this repository's existing convention for a retired landing
+    view (the_slate_feed.html). Tab-shell-specific coverage lives in
+    tests/test_community_tabs.py."""
+
     def setUp(self):
         self.client = app.test_client()
 
-    def test_the_slate_landing_is_the_board(self):
-        # The board took over /the-slate (Pete, 2026-07-14).
+    def test_the_slate_landing_is_the_feed_tab(self):
         response = self.client.get("/the-slate")
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
-        self.assertIn("People &amp; Interests", html)
-        self.assertIn("pi-board", html)
-        self.assertIn("pi-initial-feed", html)
+        self.assertNotIn("People &amp; Interests", html)
+        self.assertNotIn("pi-board", html)
+        self.assertNotIn("pi-initial-feed", html)
+        self.assertIn('id="feed-app"', html)
+        self.assertIn('id="feedColumn"', html)
+        self.assertIn("What people are building, learning, and living.", html)
 
     def test_old_board_address_forwards_to_the_slate(self):
         response = self.client.get("/the-slate/people-interests")
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
-    def test_board_keeps_the_hub_links(self):
+    def test_slate_board_remains_reachable_from_the_landing(self):
+        # The retired board's left-rail hub links (Slate Board / My Slate /
+        # Daily Slate) are gone with the sidebar itself — Slate Board stays
+        # one click away via the standard profile sub-header every page
+        # shares, and My Slate / Daily Slate keep working at their own URLs
+        # (asserted below and in test_existing_routes_unaffected).
         html = self.client.get("/the-slate").get_data(as_text=True)
         self.assertIn("Slate Board", html)
-        self.assertIn("My Slate", html)
-        self.assertIn("Daily Slate", html)
-        self.assertIn("/the-slate/my-slate", html)
-        self.assertIn("/the-slate/daily", html)
+        self.assertIn('class="profile-tabs', html)
 
-    def test_page_keeps_existing_headers_and_feed_strip(self):
+    def test_page_keeps_existing_headers_and_switcher(self):
         html = self.client.get("/the-slate").get_data(as_text=True)
         # The untouched global header and profile sub-header render as-is.
         self.assertIn("platform-nav", html)
         self.assertIn("profile-tabs", html)
-        # The contextual strip switches between the community views —
-        # People & Interests, the Feed, and The Break (restored 2026-07-17;
-        # the "News Feed soon" placeholder chip retired with the real Feed
-        # tab in place).
-        self.assertIn("People &amp; Interests", html)
+        # The seamless Feed / The Break / Saved switcher (PS-COMMUNITY-TABS-001)
+        # replaces the old People & Interests / Feed / The Break strip.
+        self.assertNotIn("People &amp; Interests", html)
         self.assertIn("The Break", html)
+        self.assertIn('data-comm-tab="saved"', html)
         self.assertNotIn("News Feed", html)
 
     def test_existing_routes_unaffected(self):
-        for path in ("/the-slate/break", "/the-slate/daily", "/the-slate/my-slate", "/the-slate/pulse"):
+        for path in (
+            "/the-slate/break", "/the-slate/saved", "/the-slate/daily",
+            "/the-slate/my-slate", "/the-slate/pulse",
+        ):
             response = self.client.get(path, base_url="http://localhost")
             self.assertEqual(response.status_code, 200, path)
 
-    def test_no_category_filter_row_above_the_board(self):
-        # The mockup's All/People/Goals/... filter buttons were intentionally
-        # removed to give the board more space.
+    def test_no_category_filter_row_above_the_feed(self):
+        # The retired board mockup's All/People/Goals/... filter buttons
+        # never return.
         html = self.client.get("/the-slate").get_data(as_text=True)
         self.assertNotIn("pi-filters", html)
 
@@ -326,23 +339,54 @@ if __name__ == "__main__":
 
 
 class FeedV12RuleTests(unittest.TestCase):
-    """PS-FEED-002: rail cleanup, Respond vocabulary, no Ask AI in Community."""
+    """PS-FEED-002: rail cleanup, Respond vocabulary, no Ask AI in Community.
+
+    PS-COMMUNITY-TABS-001 (2026-07-21) embeds The Break's own accepted
+    bento panel (which legitimately keeps its Weekend Challenge / Community
+    Poll cards — unredesigned, per that package's boundary) in the same
+    /the-slate response as Feed, hidden until its tab is selected. The
+    filler-module ban below is therefore scoped to the Feed panel's own
+    markup, matching the same scoping technique test_feed_prototype.py
+    already uses for its "no banned filler language" check.
+    """
 
     @classmethod
     def setUpClass(cls):
         app.config["TESTING"] = True
         cls.html = app.test_client().get("/the-slate").get_data(as_text=True)
+        start = cls.html.index('data-tab-panel="feed"')
+        end = cls.html.index('data-tab-panel="break"')
+        cls.feed_panel_html = cls.html[start:end]
 
-    def test_banned_rail_modules_removed(self):
-        for banned in ("pi-pickme", "pi-challenge", "pi-poll",
-                       "pi-sharegood", "Community poll", "Weekend Challenge"):
+    def test_banned_rail_modules_removed_page_wide(self):
+        # The retired People & Interests board's own filler-rail CSS hooks
+        # never return anywhere on the page.
+        for banned in ("pi-pickme", "pi-challenge", "pi-poll", "pi-sharegood"):
             self.assertNotIn(banned, self.html)
 
+    def test_no_filler_modules_beside_the_feed_itself(self):
+        # Scoped to the Feed panel only — The Break's own accepted content
+        # (embedded elsewhere on the same page, hidden until its tab is
+        # selected) is unredesigned and keeps these terms.
+        for banned in ("Community poll", "Weekend Challenge"):
+            self.assertNotIn(banned, self.feed_panel_html)
+
     def test_respond_vocabulary(self):
+        # PS-COMMUNITY-TABS-001: the Feed panel's posts (and their Respond
+        # tray) are entirely client-rendered by feed-living-stream.js — the
+        # vocabulary no longer sits inline in the HTML response (there is no
+        # server-rendered reaction config on this page any more), so the
+        # guard checks the actual source of truth directly, plus that the
+        # page really loads that script.
+        self.assertIn('src="/static/js/feed-living-stream.js', self.html)
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        js_path = os.path.join(root, "static", "js", "feed-living-stream.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
         for intent in ("celebrate", "support", "i_relate", "ask", "offer_help"):
-            self.assertIn(intent, self.html)
-        self.assertNotIn('"applaud"', self.html)
-        self.assertNotIn("Rooting for you", self.html)
+            self.assertIn(intent, js)
+        self.assertNotIn('"applaud"', js)
+        self.assertNotIn("Rooting for you", js)
 
     def test_no_ask_ai_inside_community(self):
         self.assertNotIn("data-open-chat", self.html)

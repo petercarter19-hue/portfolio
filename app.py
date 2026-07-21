@@ -23,12 +23,7 @@ from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
-from services.people_interests_feed import (
-    GOAL_REACTION,
-    POST_BODY_MAX,
-    REACTION_TYPES,
-    people_interests_feed,
-)
+from services.people_interests_feed import people_interests_feed
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -1045,10 +1040,8 @@ def skills():
 # internal tabs — Slate Feed / My Slate / Daily Slate / Slate
 # Paths (from Pete's four 2026-07-08 mockups). The old separate
 # top-level "Slate Feed" and "Slate Board" nav links now live
-# inside it. The feed's deeper layers (Progress / Pulse / Break)
-# kept their own pages and simply moved under /the-slate/*; the
-# People layer is the hub's landing view. Old /slate-feed URLs
-# redirect so no bookmark or shared link ever breaks.
+# inside it. The feed's deeper layers (Progress / Pulse) kept
+# their own pages and simply moved under /the-slate/*.
 #
 # The feed is built to aggregate events from EVERY member's
 # slate — each item in static/data/slate_feed.json names its
@@ -1059,14 +1052,34 @@ def skills():
 # -------------------------------------------------------
 
 
+def _render_community_tabs(initial_tab):
+    # PS-COMMUNITY-TABS-001 (2026-07-21, owner): Feed / The Break / Saved
+    # share ONE seamless Studio-style tab shell — the same "all panels
+    # render server-side, JavaScript swaps which one is visible" pattern as
+    # Interview Studio's Interview Me / AI / Video / History. `initial_tab`
+    # only decides which panel starts visible and which of the three real
+    # URLs (/the-slate, /the-slate/break, /the-slate/saved) this exact
+    # request answers; every panel's full markup is always present so a
+    # tab click never reloads the page. Saved folds the retired People &
+    # Interests board's "Saved notes" fixture value in, honestly labeled as
+    # sample data — the read-only service is untouched.
+    saved_notes = people_interests_feed.left_rail.get('saved_notes', [])
+    return render_template(
+        'the_slate.html',
+        initial_tab=initial_tab,
+        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
+        saved_notes=saved_notes,
+    )
+
+
 @app.route('/the-slate')
 def the_slate():
-    # THE SLATE LANDING = the People & Interests living board (2026-07-14,
-    # Pete): the approved corkboard feed replaced the old Slate Feed landing
-    # at this address. The previous landing template (the_slate_feed.html)
-    # stays on disk for easy rollback, and its hub links (Slate Board /
-    # My Slate / Daily Slate) now live in the board's feed strip.
-    return _render_people_interests_board()
+    # THE SLATE LANDING = Feed (owner decision, 2026-07-21): the People &
+    # Interests corkboard that lived here since 2026-07-14 is retired — it
+    # overlapped Feed almost completely. Its own template
+    # (the_slate_people_interests.html) stays on disk for rollback, matching
+    # the site's existing convention for a retired landing view.
+    return _render_community_tabs('feed')
 
 
 @app.route('/the-slate/my-slate')
@@ -1182,38 +1195,30 @@ def slate_feed_pulse():
 
 @app.route('/the-slate/break')
 def slate_feed_break():
-    # The Break view — the "step back and recharge" tab: an encouragement
-    # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
-    # the platform human, not just a metrics grind. Static preview for now.
-    return render_template(
-        'slate_break.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
+    # The Break — now presented inside the same seamless Feed / The Break /
+    # Saved tab shell (PS-COMMUNITY-TABS-001). Its own accepted bento
+    # content (hero, transformation, weekend challenge, poll, local
+    # discovery, mood switch) is unchanged; only the surrounding chrome
+    # moved from a standalone page into the shared tab panel. The old
+    # standalone template (slate_break.html) stays on disk for rollback.
+    return _render_community_tabs('break')
 
 
-# PS-FEAT-002: the People & Interests living board — the corkboard-style
-# continuous social feed built from Pete's two approved mockups. Approved on
-# 2026-07-14 to BE The Slate landing (the_slate() above). The board is
-# rendered by static/js/people-interests.js from /api/feed/people-interests
-# (cursor pagination); the supporting rails render server-side from the same
-# fixture file. Every non-Pete author is a representative sample member.
-def _render_people_interests_board():
-    return render_template(
-        'the_slate_people_interests.html',
-        initial_feed=people_interests_feed.get_page(limit=16),
-        feed_authors=people_interests_feed.authors,
-        left_rail=people_interests_feed.left_rail,
-        right_rail=people_interests_feed.right_rail,
-        reaction_types=list(REACTION_TYPES),
-        goal_reaction=GOAL_REACTION,
-        post_body_max=POST_BODY_MAX,
-    )
+@app.route('/the-slate/saved')
+def the_slate_saved():
+    # Saved — the third Community tab (PS-COMMUNITY-TABS-001, owner
+    # decision 2026-07-21): folds the retired People & Interests board's
+    # "Saved notes" fixture value into a calm, honestly labeled list inside
+    # the same seamless tab shell as Feed and The Break.
+    return _render_community_tabs('saved')
 
 
 @app.route('/the-slate/people-interests')
 def the_slate_people_interests():
-    # The board launched at this address (2026-07-13) and became The Slate
-    # landing the next day — forward so any shared link keeps working.
+    # The board launched at this address (2026-07-13), became The Slate
+    # landing the next day, and was retired as the landing on 2026-07-21 in
+    # favor of the Feed / The Break / Saved tab shell — forward so any
+    # shared link keeps working.
     return redirect(url_for('the_slate'), code=302)
 
 
@@ -2717,7 +2722,7 @@ def sitemap_xml():
         '/petec/slate-board', '/interview-studio', '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
-        '/the-slate/pulse', '/the-slate/break',
+        '/the-slate/pulse', '/the-slate/break', '/the-slate/saved',
         '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
     ]
     base = request.url_root.rstrip('/')

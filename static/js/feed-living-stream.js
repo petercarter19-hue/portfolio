@@ -445,6 +445,23 @@
     pageSubtitle.textContent = SUBTITLES[key] || SUBTITLES['default'];
   }
 
+  /* PS-COMMUNITY-TABS-001 (2026-07-21): inside the shared Feed / The Break /
+     Saved tab shell, #feed-app IS the whole comm-shell (not just the Feed
+     panel) — #pageTitle/#pageSubtitle are the ONE page header all three
+     panels share. Feed's own render() still needs to populate #feedColumn /
+     #contextRail even while Break or Saved is the active tab (so switching
+     to Feed later is instant, with no flash of empty content), but it must
+     never overwrite that shared header while a different tab is the one the
+     visitor is actually looking at — community-tabs.js owns the header text
+     whenever Feed isn't active. On the standalone /feed-living-stream preview
+     (#feed-app carries no data-community-tabs attribute) Feed is always "the"
+     page, so this always resolves true and behavior there is unchanged. */
+  function feedTabIsActive() {
+    if (!APP_ROOT || !APP_ROOT.hasAttribute('data-community-tabs')) { return true; }
+    var active = APP_ROOT.getAttribute('data-active-tab') || APP_ROOT.getAttribute('data-initial-tab') || 'feed';
+    return active === 'feed';
+  }
+
   function setRail(visible) {
     if (visible) {
       contextRail.innerHTML = catchUpRailHTML();
@@ -458,9 +475,12 @@
   }
 
   function render() {
+    var headerIsFeeds = feedTabIsActive();
     if (state.view === 'loading') {
-      pageTitle.textContent = 'Feed';
-      setSubtitle(state.subtitleKey || 'default');
+      if (headerIsFeeds) {
+        pageTitle.textContent = 'Feed';
+        setSubtitle(state.subtitleKey || 'default');
+      }
       setRail(false);
       feedColumn.setAttribute('aria-busy', 'true');
       feedColumn.innerHTML = skeletonHTML();
@@ -468,20 +488,22 @@
     }
     feedColumn.removeAttribute('aria-busy');
     if (state.view === 'detail') {
-      pageTitle.textContent = 'Conversation';
-      setSubtitle('detail');
+      if (headerIsFeeds) {
+        pageTitle.textContent = 'Conversation';
+        setSubtitle('detail');
+      }
       setRail(false);
       feedColumn.innerHTML = detailHTML(state.detailPost || DETAIL_POST);
       return;
     }
-    pageTitle.textContent = 'Feed';
+    if (headerIsFeeds) { pageTitle.textContent = 'Feed'; }
     if (state.view === 'error') {
-      setSubtitle('error');
+      if (headerIsFeeds) { setSubtitle('error'); }
       setRail(false);
       feedColumn.innerHTML = errorHTML();
       return;
     }
-    setSubtitle(state.composition);
+    if (headerIsFeeds) { setSubtitle(state.composition); }
     /* The reminders + Catch Up rail is a standing part of the desktop feed
        (Pete, 2026-07-17), not a special composition. */
     setRail(true);

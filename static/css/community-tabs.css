@@ -1,0 +1,123 @@
+/* PS-COMMUNITY-TABS-001 — Community tab shell (Sonnet, 2026-07-21).
+   Feed and The Break keep reusing the already pixel-matched #feed-app
+   system in feed-living-stream.css untouched (composer, posts, sticky
+   Reminders pad, Catch Up rail, the bk-* bento). This stylesheet only
+   covers what this package adds directly: the new Saved tab, a defensive
+   [hidden] guard for the tab panels, and the isolation fix this page needs
+   for its inherited voice-capture / publish-review modal overlays.
+
+   Tokens are scoped to .comm-shell (not global) per the Journal's
+   precedent, reusing the exact approved Deep Navy Gold values. */
+
+.comm-shell {
+  --comm-navy: #203767;
+  --comm-navy-strong: #132447;
+  --comm-gold: #b87900;
+  --comm-gold-text: #8a5a00;
+  --comm-gold-soft: #f4e4b4;
+  --comm-ink: #141a28;
+  --comm-muted: #6f7f99;
+  --comm-line: #dde4f0;
+  --comm-cloud: #f6f8fc;
+}
+
+/* [hidden] guard: The Break panel also carries .break-embed, which
+   feed-living-stream.css declares as `#feed-app .break-embed { display:
+   block; }` (specificity 1 id + 1 class). A bare `[hidden]` loses that tie
+   (feed-living-stream.css already documents this exact gotcha for the
+   respond tray) — so this guard is written at #feed-app specificity too
+   (1 id + 2 attributes), which wins the tie and keeps every inactive tab
+   panel truly hidden regardless of what display value its own content
+   classes declare. */
+#feed-app [data-tab-panel][hidden] { display: none; }
+
+/* ---- Saved tab ---- */
+.comm-saved {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+  margin-top: 6px;
+}
+.comm-saved-card {
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid var(--comm-line);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(32, 48, 90, 0.06);
+}
+.comm-saved-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.comm-saved-card__head strong {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--comm-ink);
+}
+.comm-saved-time {
+  flex: 0 0 auto;
+  color: var(--comm-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.comm-saved-chip {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--comm-gold-soft);
+  color: var(--comm-gold-text);
+  font-size: 11px;
+  font-weight: 750;
+}
+.comm-saved-preview {
+  margin: 10px 0 0;
+  color: #3b4a62;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.comm-empty {
+  padding: 60px 10px;
+  text-align: center;
+  color: var(--comm-muted);
+  font-size: 14px;
+}
+.comm-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--comm-ink);
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+body[data-theme="dark"] .comm-saved-card {
+  background: #ffffff;
+  border-color: rgba(116, 150, 215, 0.22);
+  box-shadow: 0 5px 14px rgba(34, 66, 120, 0.055), 0 18px 44px rgba(34, 66, 120, 0.09);
+}
+body[data-theme="dark"] .comm-saved-chip {
+  background: rgb(216 169 40 / 16%);
+  color: #6f5100;
+}
+
+/* Same reasoning as the old Feed preview page: this page's voice-capture
+   and publish-review dialogs must cover the whole viewport, chrome
+   included, so isolation must not trap them beneath the sticky header. */
+body.community-tabs-page .main-content { isolation: auto; }
+
+@media (max-width: 700px) {
+  .comm-saved { margin: 0 15px; }
+  .comm-empty { padding: 48px 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comm-shell *, .comm-shell *::before, .comm-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
