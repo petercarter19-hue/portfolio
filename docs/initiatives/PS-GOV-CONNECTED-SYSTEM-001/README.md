@@ -1,5 +1,12 @@
 # PS-GOV-CONNECTED-SYSTEM-001 — Connected-System and Return-Value Authority
 
+> **HISTORICAL ACTIVATION PACKAGE — CONTINUE FROM CURRENT AUTHORITY.** Files
+> 01–11 and the completion report preserve the Bible v2.7/Roadmap v2.6
+> activation and candidate evidence. Bible v2.8, Roadmap v2.7, and
+> `12_SUPERSESSION_AND_CONTINUATION.md` now control where assumptions differ.
+> Do not dispatch a Capture destination, Journal hold, direct fact pipeline, or
+> categorical badge ban from the historical files below.
+
 ## Assignment and control boundary
 
 - Package: `PS-GOV-CONNECTED-SYSTEM-001`
@@ -18,7 +25,8 @@
 This package made the owner-approved connected-system strategy durable for every
 agent and session. Peter supplied Bible v2.7 and Roadmap v2.6 as the newest
 CURRENT/LOCKED versions on July 20, 2026. Their preserved candidates were
-promoted into `docs/governance/`, and the current pointer chain now names them.
+promoted into `docs/governance/`; Bible v2.8 and Roadmap v2.7 later superseded
+them in the current pointer chain.
 
 Activation changed governance only. It did not implement any connective
 pattern, return-value engine, route, schema, feature flag, or live behavior.

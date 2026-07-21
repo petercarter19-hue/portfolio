@@ -3,8 +3,9 @@
 _Updated 2026-07-20 for the released flag-off Photo experience, released
 default-off Owner Home backend, released/live-verified 5A-light/5C-dark
 Interview Studio, the exact-authority Owner Home frontend activation, and the
-owner-authorized Journal memory-profile restart. Bible v2.7 and Roadmap v2.6
-are the current connected-system and return-value authority.
+owner-authorized one-Journal system architecture. Bible v2.8 and Roadmap v2.7
+are the current universal-Capture, Journal, return-value, AI, and future
+messaging authority.
 Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
@@ -136,6 +137,14 @@ Every manager and writer must still fetch `origin` before starting._
   repository candidate lineage into the controlled governance set. It changes
   no application, route, schema, feature flag, deployment configuration, or
   member-facing behavior.
+- The July 20 one-Journal authority replaces the candidate connected-system
+  assumptions that required a Capture destination, a draft-to-Journal
+  promotion, or a separately authored Journal-entry body. Bible v2.8, Roadmap
+  v2.7, `PS-GOV-JOURNAL-SYSTEM-001`, the controlling `PS-JOURNAL-001`
+  architecture, `PS-RETURN-VALUE-001`, `PS-ASK-SLATE-AI-001`,
+  `PS-MESSAGING-001`, and the legal/model-routing standards are governance and
+  implementation authority. This release changes no current route, schema,
+  feature flag, deployment configuration, or member-facing behavior.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 
@@ -224,11 +233,13 @@ as sole writer:
    represent them. Broader viewer modes remain inactive, and Owner Home stays
    default-off until a later explicit enablement decision.
 
-`PS-ASK-PETE-AI-001` is separately planned under Roadmap Phase 11. Its first
-gate is an owner product discussion, not implementation. The future concept
-must explore Type, Speak, documents, and screenshot/OCR input while preserving
-an explicit public Ask Pete AI versus private owner-analysis boundary. It has no
-manager, writer, implementation branch, start date, deployment, or live claim.
+`PS-ASK-PETE-AI-001` is the public Ask Pete / reusable Ask [Name] AI package.
+Its real typed public slice remains live; future work may refine only the
+public-audience experience and approved public grounding. Signed-in private
+history, Type/Speak/file/screenshot workflows, and member-action proposals now
+belong to planned `PS-ASK-SLATE-AI-001`. Neither planned package has an assigned
+manager, writer, implementation branch, start date, deployment, or new live
+claim.
 
 `PS-PROJECTS-001` is separately planned under Roadmap Phase 10. It defines a
 private-first Project Workspace that connects exact governed records without
@@ -251,7 +262,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 | Area | Evidence state | Next gate |
 |---|---|---|
-| Governance and baseline | Bible v2.7, Roadmap v2.6, connected-system/return-value authority, visual-integrity enforcement, Story composition and Projects system authority, self-managed writers, and portable package managers are current | Use self-certified lane reports plus focused Pete/designated-manager acceptance; serialize shared-governance updates |
+| Governance and baseline | Bible v2.8, Roadmap v2.7, one-Journal and trusted-return authority, visual-integrity enforcement, Story composition and Projects system authority, early legal readiness, self-managed writers, and portable package managers are current | Use one durable manager, one self-managed writer, and risk-based independent review; serialize shared-governance updates |
 | Public resume | Refined and live through PR 62 / pipeline 83 | Preserve; no second dataset |
 | Interview Studio | Exact 5A-light/5C-dark product is released and verified live through source `0aaf41768a33810b089f5fea3a66a5272e8b61d8`, PR 101, merge `39002f5130a1766d2090007c16582e0dbe07226c`, and pipeline 149; the illustrative homepage walkthrough remains live through PR 86/pipeline 122; homepage-convergence architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` is pushed | Manager reviews the convergence architecture before bounded product edits; keep parity open until accepted and live |
 | Capture | Text lifecycle and private Voice Capture are deployed; Pete verified the signed-in workflow; Pete and ChatGPT Work accepted the corrected responsive visuals; PR 80 / pipeline 113 released them | Preserve the released privacy, lifecycle, Speak/Type, and visual contracts; any refinement is a new package |
@@ -259,11 +270,14 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 | Owner Home | Dark cinematic authority accepted; finite backend and production SQL released default-off through PR 99/pipeline 145; `/app` unchanged and API neutral 404; exact-authority frontend activation prepared | Release the activation through Azure, then create `work/2026-07-20-home-frontend-001` from that exact main and implement only truthful `owner-home.v1` states; keep broader viewer modes separate |
 | Canonical Moment | Live through PR 66 / pipeline 91 | Preserve confirmation, source pinning, and privacy contracts |
 | Placement references | Backend foundation live through PR 68 / pipeline 93 | Add UI or downstream consumption only through a separately approved package |
-| Ask Pete AI | Public typed assistant is live against approved public knowledge; the multimodal/private concept is only planned | Hold Phase A discovery; later define Type, Speak, document and screenshot/OCR flows, public/private permissions, visual authority, architecture, safety, and one bounded Phase 11 implementation slice |
+| Ask Pete / Ask [Name] AI | Public typed Ask Pete is live against approved public knowledge; no private Slate access or uploads are live | Preserve the public-only boundary and later generalize only through a separately accepted public package |
+| Ask Slate AI | Signed-in member-intelligence umbrella is architecture only; Ask My Slate is a contextual CTA and specialist workflows are not separate bots | Sequence after private Journal and authorization foundations; gate private multimodal inputs, proposals, retention, and source display independently |
 | Homepage product projections | Cross-product parity governance is active; Voice and Interview Studio are the current named examples | Every material user-facing package assesses `/`; update affected sections in the same wave or activate an exact downstream parity package and keep parity open until accepted and live |
 | My Story composition | Current public Pete Story is a fixed fixture-driven projection; member editing is not live | Preserve PS-STORY-COMPOSER-001 as planned future work until its full design, schema, authorization, accessibility, and publication entry gate is approved |
 | Projects | Historical public Project material and redirects exist; no authenticated canonical Projects product is live | Preserve PS-PROJECTS-001 as planned Phase 10 work; validate Project/Work/Slate Board boundaries and approve a private-workspace visual authority before implementation |
-| Journal memory profile | Owner restart authorized; PS-JOURNAL-001 definition and architecture gate active; no target Journal UI is live | Complete route/data/auth/lifecycle/visual architecture, then implement the private owner vertical slice over confirmed Moments |
+| Journal system | Controlling architecture is complete; Capture is an action, Save Moment is the single member commit, and owner-Journal membership is derived from eligible private canonical Moments; no target Journal UI is live | Assign one writer to the private-core entry gate and prove route/data/auth/lifecycle/visual/accessibility/migration/rollback/two-member behavior |
+| Return value | Replay/resurfacing, Momentum, Prompt/Ritual, What PeerSlate Noticed, and Slate Mirror have committed staged architecture only | Begin only after the private Journal core; keep every output private, source-linked, dismissible, correctable, non-diagnostic, and non-shaming |
+| Messaging | Consent- and safety-gated future architecture only | Require identity, Connection/consent, authorization, moderation, retention/deletion, notification, abuse, and legal gates before implementation |
 
 ## Honest boundaries
 
@@ -279,26 +293,34 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - Owner Home architecture acceptance and backend activation do not make Owner
   Home available. `/app` remains the released owner workspace until a separate
   frontend package is accepted, merged, deployed, and explicitly enabled.
-- PS-ASK-PETE-AI-001 is a planned discovery package only. A document or job-
-  posting screenshot cannot currently be uploaded to Ask Pete AI; voice and
-  private Slate grounding are not live there. Uploaded targets must never be
-  inferred to be public, indexed, recommended, or part of a job marketplace.
+- Ask Pete AI's typed public slice is live, but a document or job-posting
+  screenshot cannot currently be uploaded there; voice and private Slate
+  grounding are not live there. Those private capabilities are planned under
+  Ask Slate AI, not Ask Pete. Uploaded targets must never be inferred to be
+  public, indexed, recommended, or part of a job marketplace.
 - PS-PROJECTS-001 is a planned direction package only. No canonical Project
   aggregate, Project Workspace, Project Projection, Project collaboration,
   Project task management, or new public Project route is implemented or live.
   Slate Board Project notes and historical fixtures are not canonical Projects.
 - Interview Studio history on the public route is browser-local demonstration state, not private account history or server persistence.
-- The July 20 Journal restart activates definition and architecture only. No
-  target Journal route, audience projection, Memory Intelligence experience,
-  Replay, or Use This Moment UI is live. Legacy `/api/journal/*` endpoints are
-  prompt/response implementation history, not proof of the memory profile.
-- Bible v2.7 and Roadmap v2.6 make the visible connected-system trunk current
-  direction, but no Slate Spine, Backstory Drawer, Studio Return Ticket, Then
-  and Now, Focus Theme, Progress Keepsake, public connective pilot, shared
-  connective component, or private return-value engine is implemented,
-  assigned, enabled, deployed, or live. `PS-PUBLIC-CONNECTIVE-001`,
-  `PS-CONNECTIVE-COMPONENT-001`, and `PS-RETURN-VALUE-001` are candidate IDs
-  only.
+- Bible v2.8 and Roadmap v2.7 activate the one-Journal architecture only. No
+  target Journal route, public/Connection projection, replay/resurfacing,
+  Momentum, Prompt/Ritual, What PeerSlate Noticed, Slate Mirror, Ask Slate AI,
+  or messaging runtime is live. Legacy `/api/journal/*` endpoints are
+  prompt/response implementation history, not proof of the one Journal.
+- The currently deployed Capture page and Capture-to-Moment review mechanics
+  remain real implementation history and must be preserved until an approved
+  migration replaces their presentation. They do not lock Capture as a future
+  navigation destination, require an Add to Journal step, or authorize copied
+  Journal content. The future member-facing commit is Save Moment; derived
+  Journal membership and downstream reference projections still require a new
+  implementation package.
+- `PS-RETURN-VALUE-001`, `PS-ASK-SLATE-AI-001`, and `PS-MESSAGING-001` are
+  committed planned architectures, not active implementations. Slate Spine,
+  Backstory Drawer, Studio Return Ticket, Then and Now, Focus Theme, Progress
+  Keepsake, Life Constellation, synthetic own-voice playback, and remaining
+  research options are preserved in the Revisit Register, not promised for the
+  first release.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
 - The GitHub mirror is not current and must not be used as a release source;
   it is public, so advancing it requires explicit owner approval.
@@ -308,7 +330,7 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner visual-integrity decision
 
-- Bible v2.7 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
+- Bible v2.8 and `OWNER_VISUAL_INTEGRITY_STANDARD.md` make selected
   production-intent demonstrations binding visual minimums. The real experience
   must be recognizable as the approved demonstration and match or exceed it.
 - Functional, privacy, security, accessibility, test, pipeline, and production
@@ -348,8 +370,14 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Owner Story composition decision
 
-- Bible v2.7, Roadmap v2.6, and
+- Bible v2.8, Roadmap v2.7, and
   `OWNER_STORY_COMPOSITION_STANDARD.md` make Story composition member-directed.
+- Journal and My Story remain architecturally distinct views over shared exact
+  Moment references. The owner Journal is complete, chronological, searchable,
+  and lifecycle-oriented; a public Journal is a curated timeline/profile
+  projection; My Story is a finite, intentionally selected and visually
+  composed narrative. Saving a Moment adds nothing to Story, removing a Story
+  item does not remove it from Journal, and neither view owns a second fact body.
 - The future authenticated editor must let a member move and resize supported
   notes, text, images, and media; control overlap/layering; use keyboard and
   structured alternatives; preview responsive/audience states; save a private

@@ -1,5 +1,10 @@
 # Activation checklist — OWNER APPROVED AND EXECUTED
 
+> **HISTORICAL EXECUTION EVIDENCE.** This checklist records the v2.7/v2.6
+> activation as it occurred. It is not a current dispatch checklist. Continue
+> through Bible v2.8, Roadmap v2.7, and
+> `12_SUPERSESSION_AND_CONTINUATION.md`.
+
 > Peter supplied Bible v2.7 and Roadmap v2.6 as the newest CURRENT/LOCKED
 > versions on July 20, 2026. This separate activation change promotes their
 > exact repository candidates and updates the full current pointer chain.

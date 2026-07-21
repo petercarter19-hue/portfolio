@@ -1,450 +1,261 @@
 # PeerSlate Manager Session Handoff
 
-_Prepared 2026-07-18 and updated 2026-07-19 after the completed Voice visual
-release, with Interview Gate 2.4 review and Capture Media planning still active.
-Repository and branch facts are a snapshot; fetch `origin` before acting._
-
-## Start here on any computer
-
-1. Open the authoritative Azure clone and follow root `START_HERE.md` exactly.
-2. Fetch `origin`, inspect the current branch/worktree, and fast-forward a clean
-   `main`. Never disturb a dirty task worktree to make it current.
-3. Read `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`,
-   `ACTIVE_INITIATIVES.md`, this handoff, the current Bible/Roadmap, and the
-   assigned initiative.
-4. Treat the merged repository as authority. Chat memory, downloaded ZIPs,
-   local worktrees, and this dated snapshot do not replace current `origin/main`.
-
-## Manager role and lane model
-
-- **Designated session manager:** a package-specific role that may be held by a
-  ChatGPT Work/Codex manager session or Claude Co-Work. Both have the same
-  sequencing, governance, file-boundary, visual-authority, exception,
-  acceptance, and Azure-closeout authority when assigned.
-- **ChatGPT Codex:** may be a bounded manager/reviewer session or a self-managed
-  implementation writer; the assigned initiative must say which role applies.
-- **Claude Co-Work:** currently receives the Interview Gate 2.4 review and
-  manages PS-CAPTURE-MEDIA-001 planning.
-- **Claude Code / Fable:** self-managed implementation writer for assigned
-  front-end packages, including a protected owner surface when explicitly
-  assigned. Claude Co-Work management does not grant Claude Code ownership of a
-  manager or writer branch.
-- Each writer owns implementation, complete-diff review, correction, tests,
-  evidence, PR readiness, and, after Pete/designated-manager acceptance, Azure
-  release/closeout. Every report states `Pass`, `Conditional`, or `Fail`.
-- One manager per package and one writer per branch remain mandatory. Parallel
-  managers may coordinate separate packages but may not overlap shared-file
-  reservations. A branch/SHA handoff is required when
-  a different writer continues; it is not required merely because the same
-  self-managed writer reached self-review or PR readiness.
-
-## Verified released foundation
-
-Before this visual-integrity governance package, Azure `main` was
-`5488819ad13d3f411319d7e184fde3779d62b8d2` after PR 70 and pipeline 97.
-Always fetch for the actual current tip.
-
-The visual-integrity governance package then squash-merged through Azure PR 71
-at `28ec01097677219bbe466ff2c731707d0e4a2b89`; pipeline 99
-(`20260719.7`) passed Build and Deploy. This released Bible v2.4, the Owner
-Visual Integrity Standard, and this handoff without changing website behavior.
-
-The later Story-composition direction adopts Bible v2.5 and Roadmap v2.4. The
-next manager must treat the current baseline pointers as controlling and fetch
-`origin` for the exact release evidence.
-
-That direction squash-merged through Azure PR 73 at
-`aaee6e563a94e19d1786ded3f636d8376e20d500`; pipeline 102
-(`20260719.10`) passed Build and Deploy. Production behavior remained
-unchanged, including the canonical My Story redirect and the protected Capture
-sign-in boundary.
-
-- Public résumé refinement: PR 62 / pipeline 83.
-- Capture lifecycle: PR 63 / pipeline 85.
-- Canonical Moment: PR 66 / pipeline 91.
-- Private placement reference foundation: PR 68 / pipeline 93.
-- Placement governance closeout: PR 69 / pipeline 95.
-- Voice activation package: PR 70 / pipeline 97.
-- Visual-integrity governance and manager handoff: PR 71 / pipeline 99.
-- Member-directed Story composition authority: PR 73 / pipeline 102.
-- Private Voice Capture implementation: PR 75 at
-  `eede8565d703a466bd788962d494e8b385b53409` / pipeline 105.
-- Self-managed delivery lanes and Claude Voice correction allocation: PR 76 at
-  `fe03d49ca57bde2c4d0bfc4c66726c132da81ebf` / pipeline 107.
-- Protected Voice visual parity: accepted Claude tip
-  `e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`, Azure PR 80, merge
-  `864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`, pipeline 113
-  (`20260719.21`) Build and Deploy passed.
-- Voice governance closeout: Azure PR 81, merge
-  `5cc5b69346ee354bcc36248f7ee5724ce13c9d08`, pipeline 115
-  (`20260719.23`) Build and Deploy passed; public, Interview, Voice walkthrough,
-  and protected Capture auth-boundary checks passed.
-- Production checks after PR 70: `/`, `/petec/resume`, and
-  `/interview-studio` returned 200; `/app/capture` redirected a signed-out
-  visitor to sign-in.
-
-Reusable and not to be rebuilt: real identity and two-owner isolation, Owner
-Settings, private text Capture lifecycle, canonical Moment confirmation,
-private exact-version Placement reference foundation, refined public résumé,
-public browser-local Interview Studio, and Deep Navy Gold foundations.
-
-## Completed lane - PS-VOICE-001
-
-### Honest current state
-
-Voice is implemented, deployed, visually accepted, and closed. Production
-private Blob/RBAC, managed-identity Speech, SQL migration/verification, Azure
-PR 75, pipeline 105, and Pete's signed-in functional validation remain the
-backend evidence. Claude Code completed the protected visual correction,
-self-certified `Pass`, and relinquished exact tip
-`e32b31d7c351ac2f8601a4467bcd1c9450f52c3b`. Pete and ChatGPT Work accepted the
-real responsive implementation at V3. Azure PR 80 released it at
-`864a79d1bc1fc61e62f2d2a544dd54a01ebdcb82`; pipeline 113 passed Build and
-Deploy.
-
-Live verification returned 200 for `/` and the Voice walkthrough, the expected
-signed-out 302 from `/app/capture` to sign-in, and the accepted Voice CSS/JS
-signatures from production. The available verification browser had no signed-in
-member session, so no new post-deploy authenticated screenshot or repeated real
-Speech transaction is claimed. The accepted implementation evidence remains the
-visual proof; pipeline and live asset/auth checks are the V4 release proof.
-
-Preserve `C:\Users\peter\Documents\portfolio-voice-001` and
-`C:\Users\peter\Documents\portfolio-voice-visual-parity`; do not switch, clean,
-edit, stash, or reuse them. They are historical references, not active lanes.
-
-### Required product outcome
-
-The first slice is short private voice recording (3 minutes / 20 MB, `en-US`),
-private original audio in Azure Blob Storage, Azure Speech transcription through
-managed identity, editable transcript review, and explicit **Save private
-Capture** into the existing lifecycle. Text remains available. No Moment,
-Placement, Journal, résumé, Studio, share, audience, or publication is created
-automatically.
-
-### Closed visual contract
-
-The released UI satisfies `OWNER_VISUAL_INTEGRITY_STANDARD.md`:
-
-- the homepage Voice walkthrough is the minimum visual/interaction authority;
-- the real protected UI must be recognizably the same or better;
-- Speak and Type are both first-class opening choices;
-- switching paths must not silently destroy member work;
-- microphone, waveform/timer, stop, playback/retry, editable transcript,
-  privacy, explicit save, failures, desktop/mobile/keyboard/zoom evidence, and
-  owner/manager visual acceptance are mandatory.
-
-The approved future Community, Connections, selected-audience, My Story, Slate
-Board, résumé, attachment, AI-draft, and publication affordances appear only as
-polished, disabled `Coming later` scaffolding. **Save private Capture** remains
-the only live completion action. Later activation requires separate backend,
-authorization, product, visual, and release packages.
-
-## Active lane 1 - PS-INTERVIEW-PUBLIC-GATE-001
-
-### Product decision already approved
-
-Keep the current interactive, unauthenticated `/interview-studio` under Approach
-A. Preserve written answers, real coaching requests, Interview AI, comparison,
-browser-local history, and local camera rehearsal. Keep the route light-first
-Deep Navy Gold. Pete is a clearly labeled public demo profile, not signed-in
-identity. Current mode names are Interview Me, Interview AI, and Video Practice.
-The current written-practice flow remains primary.
-
-### Design state and selected direction
-
-The exact owner authority is
-`C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`.
-Image 5 Concept A, **Editorial Studio Ledger**, controls default/light. Image 5
-Concept C, **Cinematic Studio**, controls optional dark. Image 1A and Image 2A
-are not co-authorities. Light and dark are two themes of the same public route,
-semantic DOM, functionality, state machine, truth, and accessibility behavior;
-dark is not a separate or authenticated product. File
-`09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md` is the definitive Claude
-design/feasibility package. It is not yet implementation authority. Known
-corrections remain:
-
-- use one dominant opening CTA;
-- keep **Interview Me** as the mode name; "written practice" may describe it;
-- show Continue local draft only when a real browser draft exists;
-- split video permission, recording, and playback/delete into truthful states;
-- map Improve Answer to the existing public coaching behavior and do not invent
-  a save or account capability.
-
-### Required next design gate
-
-The assigned Codex manager-review session must receive and evaluate Gate 2.4:
-the complete nine current-public screens in both controlling themes (18 primary
-exports),
-editable responsive source, mobile portrait/landscape, 200% reflow, keyboard
-focus, reduced motion, long content, failure and media-denied states, component
-inventory, theme persistence/no-state-loss, truth/accessibility review, and
-implementation mapping. It should
-also review the relationship to the separate homepage Interview Studio
-walkthrough. The current walkthrough is an accepted, live, illustrative
-pre-convergence release. It must not replace or visually control the real
-public Studio, and final 5A/5C homepage parity remains a later separate
-closeout.
-
-The Codex session creates a clean review branch, records the package matrix,
-truth/accessibility review, implementation mapping, and `Pass`, `Conditional`,
-or `Fail` result, then pushes and gives Claude Co-Work the exact branch/SHA.
-It does not edit product implementation files.
-
-Then:
-
-1. Claude Co-Work receives and confirms the durable Codex review as designated
-   package manager.
-2. Claude Code/Fable performs feasibility review only.
-3. Pete and the designated manager approve the final visual baseline.
-4. Only then may Claude receive real Studio implementation authorization on a
-   fresh branch. Claude records the implementation architecture first, then
-   self-manages implementation, tests, evidence, and `Pass` review.
-5. Pete and the manager accept the real implementation and visuals; Azure PR,
-   pipeline, and live verification close the real Studio release.
-6. Only after that live verification may Claude start a fresh downstream branch
-   and converge the already-live illustrative walkthrough on the exact released
-   5A/5C Studio. The updated projection receives separate acceptance, Azure
-   release, and live homepage verification.
-
-Pete accepted the fixed illustrative homepage walkthrough for its current
-purpose. Claude's exact source tip
-`90d035a25344c850e6ed732c1efb6e4d0a240787` on
-`work/2026-07-19-home-interview-demo-001` squash-merged through Azure PR 86 at
-`a98cced519a1f853ad9f4462fd438efa67d6f260`. Automatic pipeline 122
-(`20260719.30`) passed Build and Deploy for that exact merge. Automatic
-pipeline 123 (`20260719.31`) then passed for descendant main
-`6cb49f135cc3a2749dd4539f8261d176b43dad9a`, with no changes in demo-owned
-paths. Manual pipeline 124 (`20260719.32`) also passed for that same SHA and
-was redundant evidence, not a CI-trigger failure.
-
-The live homepage, versioned demo CSS, and versioned demo JavaScript return 200.
-The four fixed stages, explicit fictional/no-input/no-AI/no-storage truth, final
-real-Studio link, desktop modal, and 390px reflow passed manager review. This
-closes the current demonstration only. Its paper-light dark modal and
-Voice-default copy remain known downstream 5A/5C convergence work. Preserve the
-historical worktree; do not reuse it for the downstream convergence branch.
-File
-`10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md` contains the definitive
-real-Studio and demo instructions.
-
-That sequencing record is authoritative on `origin/main`: implementation tip
-`9ea02196f6410fbbe40aa60355f6013815a7e625`, Azure PR 83, squash merge
-`cee015f6291fe5460a6a5d5795c445bb6b25c6f9`, and pipeline 117
-(`20260719.25`) with Build and Deploy passed. Live `/`,
-`/interview-studio`, and `/interview-studio/history` returned 200; protected
-`/app/capture` kept its signed-out redirect. This was a governance-only release
-and is not evidence that the new Studio or the later 5A/5C-converged homepage
-projection is implemented. The separate PR 86 release is evidence only for the
-current pre-convergence illustration.
-
-The later real-Studio release gate is now complete. Final source
-`0aaf41768a33810b089f5fea3a66a5272e8b61d8` squash-merged through Azure PR 101
-at `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
-(`20260720.20`) passed Build and Deploy, and desktop/390px production
-verification plus exact versioned-asset hashes passed. Release-governance PR
-102 then merged at `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`; pipeline 150
-(`20260720.21`) passed Build and Deploy.
-
-Step 6 is now activated as `PS-HOME-INTERVIEW-PARITY-001` under the current
-ChatGPT Work/Codex manager. Claude Code is assigned architecture-first
-implementation after the activation merges. It must create fresh branch
-`work/2026-07-20-home-interview-parity-001` from exact post-activation
-`origin/main`, write `PS-HOME-INTERVIEW-DEMO-001/04_REAL_STUDIO_CONVERGENCE.md`
-before product edits, and use only the files reserved by the activation
-package. Its implementation, acceptance, Azure PR, and live closeout remain
-separate gates.
-
-Do not authorize Claude implementation from the three-direction art package
-alone.
-
-## Active lane 2 - PS-CAPTURE-MEDIA-001
-
-Claude Co-Work is the designated manager for Capture Media planning. No remote
-Capture Media implementation branch was visible when this package was
-activated. Treat any unpushed session work as non-authoritative until it is on a
-clean Azure task branch with an exact full SHA.
-
-The manager must inventory the released private Voice/Blob/Speech foundation,
-keep Voice separate, and define photo, video, and document source slices through
-the shared owner, provenance, review, lifecycle, export/delete, accessibility,
-failure, infrastructure, test, rollout, and rollback contracts. It then selects
-one first vertical slice and assigns one implementation writer/branch. Planning
-does not mean implemented, deployed, or live.
-
-## Planned package - PS-PROJECTS-001
-
-Projects are planned under Roadmap Phase 10 and are not an active writer lane.
-The future product begins as a private-first Project Workspace that connects
-exact governed records and relationships without copying canonical facts. Any
-purpose- and audience-specific Project Projection is a separate later object
-with explicit draft, preview, publication, revocation, and correction behavior.
-
-The first entry gate is defined in
-`docs/initiatives/PS-PROJECTS-001/README.md`: validate Project versus Work versus
-Slate Board boundaries, select one production-intent private-workspace visual
-authority, baseline the aggregate/authorization/exact-version architecture,
-and assign one manager and writer on a fresh branch. Do not revive the retired
-Pete-only Projects page, treat Board notes as canonical Projects, build a task
-manager, or interrupt Interview Studio and Capture Media.
-
-## Planned package - PS-ASK-PETE-AI-001
-
-Ask Pete AI is planned under Roadmap Phase 11 and is not an active writer lane.
-The current production assistant remains public, typed, and grounded only in
-approved public profile knowledge. The future product discussion must explore
-Type, Speak, PDF/DOCX/TXT, and screenshot/OCR inputs while defining an explicit
-public Ask Pete AI versus private owner-analysis boundary.
-
-The first gate is the owner discussion in
-`docs/initiatives/PS-ASK-PETE-AI-001/01_DISCOVERY_AGENDA.md`. Do not assign an
-implementation writer until the role, primary scenario, inputs/outputs,
-complete visual authority, privacy/lifecycle, architecture, AI-safety,
-evaluation, homepage impact, and release gates are approved. This package must
-not interrupt the active Interview or Capture Media lanes.
-
-## Owner-wide visual decision
-
-The current Bible is v2.7 and the
-`OWNER_VISUAL_INTEGRITY_STANDARD.md` is part of mandatory startup. Selected
-demonstrations are visual promises: the real experience must match or exceed
-them. Visual polish is a release gate across all user-facing PeerSlate work,
-alongside function, privacy, security, accessibility, tests, and deployment.
-The current homepage overall is not the target; a broader homepage redesign is
-still future work.
-
-Every logged-out homepage section is also a governed product projection. When
-the real product changes materially in function, hierarchy, theme, truth, or
-visual finish, the affected homepage section must be updated in the same wave
-or through an exact downstream parity package. The real product is upstream
-authority. The manager may let it release first when sequencing requires that,
-but must keep homepage parity open until the visitor-facing section is current,
-showcase-quality, separately accepted, released, and verified. Voice and
-Interview Studio are current examples; the rule applies to every homepage
-product section.
-
-## Owner Story composition decision
-
-The future authenticated My Story editor is member-directed. Members shall be
-able to move and resize supported notes, text, pictures, and media; control
-overlap/layering; undo and restore; preview desktop/tablet/mobile and exact
-audiences; save a private layout draft; and publish separately. Dragging requires
-keyboard and structured-editor equivalents. AI may propose a layout but may not
-silently apply, save, overwrite, or publish it.
-
-Pete's concrete acceptance case is the current **I went back at 36** card: he
-must be able to make it smaller or move it so the sailboat in the Maui image
-remains visible. `PS-STORY-COMPOSER-001` is planned future work, not active, and
-does not interrupt Voice or Interview.
-
-## Roadmap looking forward
-
-Near-term sequencing is:
-
-1. finish Interview Gate 2.4, feasibility review, owner approval, and then the
-   bounded public Studio implementation;
-2. after the real Studio is accepted and live, open the separate downstream
-   branch that converges the existing live homepage walkthrough on that exact
-   release;
-3. after the restart checkpoint merges, open the activated Journal architecture
-   branch without overlapping Owner Home files or starting product code early;
-4. build the real owner Home/viewer modes and authenticated Studio only through
-   separately approved identity, persistence, authorization, and lifecycle
-   packages;
-5. conduct the broader public/homepage visual convergence after its entry gate;
-6. hold PS-PROJECTS-001 until its boundary validation, private-workspace visual
-   authority, joint architecture baseline, and explicit activation gate pass;
-7. hold PS-ASK-PETE-AI-001 Phase A discovery when Pete is ready; do not start
-   implementation before the multimodal, public/private, visual, architecture,
-   safety, and homepage-parity gates pass;
-8. schedule PS-STORY-COMPOSER-001 only after its full authenticated projection,
-   layout persistence, accessible interaction, and publication design gate;
-9. run a two-member founding alpha with Pete and Danielle, then structured
-   feedback, fixes, a small invited cohort, and measured rollout.
-
-The Journal hold was lifted by Peter on July 20, 2026, but product code remains
-gated by `PS-JOURNAL-001`. Do not duplicate Capture or Moment text, create a
-second résumé dataset, imply account-backed public Studio history, or treat a
-backend reference as a visible member feature.
-
-## First actions for the next manager session
-
-1. Fetch `origin` and verify the exact current `main`, current Bible pointer,
-   pipeline, and production routes.
-2. Confirm the PS-JOURNAL-001 restart checkpoint is merged and green; then
-   assign one architecture writer on a fresh branch before any product edits.
-3. Confirm the self-managed delivery workflow is merged and green.
-4. Inspect all worktrees without changing them; confirm each active branch has
-   one writer and non-overlapping files.
-5. Treat Voice as released and closed; preserve its worktrees and require a new
-   package for any future refinement.
-6. Receive the Codex Interview Gate 2.4 review branch/SHA/report in Claude
-   Co-Work, confirm it, then send the accepted package to Claude Code/Fable for
-   feasibility review.
-7. Obtain Pete/designated-manager visual approval before Interview code.
-8. Claude Co-Work completes Capture Media manager planning before assigning an
-   implementation writer.
-9. Apply the homepage-impact and parity check to every user-facing package;
-   keep exact downstream parity packages visible until their homepage sections
-   are accepted and live.
-10. Keep Interview, Capture Media, planned Projects and Ask Pete AI, and homepage parity
-   status and next gates current in
-   the repository after each material handoff or release.
-
-## Paste-ready kickoff for a designated manager session
-
-> You are the designated PeerSlate package manager. Open and follow
-> `START_HERE.md`, then read
-> `docs/governance/MANAGER_SESSION_HANDOFF.md` and every authority file it names.
-> Fetch authoritative Azure `origin/main` and inspect all worktrees before any
-> write. Apply the self-managed lane model: each assigned writer implements,
-> reviews its complete diff, corrects issues, runs tests/evidence, prepares the
-> PR, and returns `Pass`, `Conditional`, or `Fail`; after focused Pete/manager
-> acceptance the same writer completes Azure release/closeout. Preserve the
-> completed PS-VOICE-001 worktrees; Voice is released and any later change
-> requires a new package. Preserve its accepted Speak/Type, privacy, lifecycle,
-> accessibility, and walkthrough-parity contracts.
-> Continue Interview only at Gate 2.4 design review. Image 5 Concept A controls
-> default/light and Concept C controls optional dark for the same public Studio.
-> Require file `09`'s complete dual-theme package, feasibility, and approvals.
-> Maintain honest implementation, demonstration, deployment, and
-> live-production boundaries. For every user-facing package, identify any
-> homepage product projection and require the same-wave update or exact
-> downstream parity package defined by the Owner Visual Integrity Standard.
-> Keep `PS-PROJECTS-001` planned until its boundary, visual, architecture, and
-> owner-route entry gates pass; it is a private-first connected Project system,
-> not the retired public fixture or a task-management suite.
-> Keep `PS-ASK-PETE-AI-001` planned until Pete completes the product discussion;
-> Ask Pete AI is the correct name, not PAI.
-
-## Paste-ready kickoff for the new Codex Interview Gate 2.4 session
-
-> Open authoritative Azure `origin/main` and follow `START_HERE.md`. You are the
-> bounded manager-review session for `PS-INTERVIEW-PUBLIC-GATE-001` Gate 2.4,
-> not the implementation writer. Create a clean
-> `work/YYYY-MM-DD-interview-gate-24-review` branch. Review the attached complete
-> Image 5 Concept A light / Concept C dark package against files `01` through
-> `07` and `09_DUAL_THEME_VISUAL_AUTHORITY_AND_CLAUDE_BRIEF.md`: nine
-> full-screen states in both themes (18 primary exports), responsive source,
-> mobile portrait/landscape, focus, 200% reflow, reduced motion, long content,
-> failure/media-denied states, truth/accessibility, component inventory, shared
-> DOM/state architecture, theme persistence/no-state-loss,
-> homepage walkthrough separation, and implementation mapping. Do not edit
-> Interview product code. Return `Pass`, `Conditional`, or `Fail`, commit/push
-> the durable review, and give Claude Co-Work the exact branch/full SHA and
-> report for manager confirmation and Claude Code feasibility review.
-
-## Paste-ready kickoff for Claude Co-Work
-
-> Open the authoritative Azure repository and follow `START_HERE.md`. You are a
-> package-designated PeerSlate session manager with the same governed manager
-> authority as ChatGPT Work/Codex. Read `MANAGER_SESSION_HANDOFF.md`, current
-> authority/state/initiatives, and every assigned package. Receive writer or
-> manager-review branches read-only by exact full SHA; rely on coherent
-> self-certification while escalating conflicts; keep implementation,
-> demonstration, deployment, and live status separate; and close accepted work
-> through Azure evidence. You currently receive the Codex Interview Gate 2.4
-> review and manage `PS-CAPTURE-MEDIA-001` planning. Do not take over Claude Code
-> implementation branches without explicit writer relinquishment. Capture Media
-> planning must define bounded photo/video/document slices and assign a separate
-> writer before any implementation claim.
+_Current snapshot: 2026-07-20. Fetch `origin` before relying on any recorded
+commit or lane status._
+
+## Current authority
+
+- Azure DevOps remote `origin` and `origin/main` are the only source of truth.
+  GitHub is a backup mirror and is not a release source.
+- `docs/governance/CURRENT_BASELINE.yaml` names Bible v2.8 and Roadmap v2.7 as
+  current.
+- The current one-Journal decision is controlled by:
+  - `docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/README.md`
+  - `docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md`
+  - `docs/initiatives/PS-JOURNAL-001/README.md`
+  - `docs/initiatives/PS-RETURN-VALUE-001/README.md`
+  - `docs/initiatives/PS-ASK-SLATE-AI-001/README.md`
+  - `docs/initiatives/PS-MESSAGING-001/README.md`
+  - `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`
+  - `docs/governance/EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md`
+  - `docs/AI_MODEL_AND_ROLE_ROUTING.md`
+- `docs/governance/CURRENT_STATE.md` is the verified product/release snapshot.
+  `docs/governance/ACTIVE_INITIATIVES.md` is the lane allocation. This handoff
+  does not replace either record.
+
+## Mandatory session start
+
+1. Open and follow `START_HERE.md`.
+2. Read `docs/AI_WORKFLOW.md` in full.
+3. Inspect branch, status, remotes, worktrees, stashes, and active writers.
+4. Fetch and prune `origin`; compare the intended base to current
+   `origin/main`.
+5. Read `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`,
+   `ACTIVE_INITIATIVES.md`, the exact Bible/Roadmap named there, and the
+   assigned initiative package.
+6. Confirm exactly one manager, one writer, one task branch, writable files,
+   forbidden files, visual authority, and entry/acceptance evidence.
+7. Stop if the authority pointer, branch owner, or shared-file reservation is
+   unclear. Do not reconstruct a product decision from chat memory.
+
+## Manager and writer model
+
+- The manager is a package-designated role. A ChatGPT Work/Codex manager or
+  Claude Co-Work may hold it when the package says so.
+- The manager owns sequencing, governance truth, shared-file reservations,
+  visual authority, exception escalation, and final manager acceptance.
+- The assigned writer owns implementation, complete-diff review, correction,
+  tests, evidence, PR readiness, and approved release/closeout.
+- One manager does not routinely pay a second model to re-author an accepted
+  package. Use `docs/AI_MODEL_AND_ROLE_ROUTING.md`: one manager, one
+  self-managed writer, and a fresh independent reviewer only when risk or the
+  package requires it.
+- Claude Co-Work management is distinct from Claude Code branch ownership.
+  Codex or Claude may be a writer only when the package assigns that branch.
+- A handoff to another writer requires the exact branch, full pushed SHA,
+  status, evidence, open findings, writable/forbidden scope, and explicit
+  relinquishment.
+
+## Released and live boundaries to preserve
+
+- The accepted Interview Studio 5A-light/5C-dark implementation released
+  through Azure PR 101 at merge
+  `39002f5130a1766d2090007c16582e0dbe07226c`; pipeline 149 passed and the
+  released assets/live desktop and 390px behavior were verified. PR 102 and
+  pipeline 150 closed its governance.
+- Private text and Voice Capture are deployed. Speak and Type remain
+  first-class. Preserve ownership, source, correction, lifecycle, export,
+  deletion, Blob/Speech, and signed-in authorization contracts.
+- Canonical Moment confirmation is released through PS-MOMENT-001. The current
+  deployed multi-step mechanics are valid implementation history, but they do
+  not lock future information architecture or authorize a separate Journal
+  truth body.
+- The Placement backend is released as an exact-reference foundation. No live
+  control is thereby authorized to create a Story, Journal, Work, Project,
+  Resume, Feed, Studio, or public projection.
+- Capture Photo is released flag-off. Do not enable its source-only journey.
+  A later package must integrate universal composer/Save Moment/derived
+  Journal behavior or obtain an explicit owner-approved temporary exception,
+  in addition to lifecycle, two-owner, homepage-parity, and enablement gates.
+- The finite Owner Home backend is released default-off; `/app` remains
+  unchanged and the neutral API boundary remains expected until the approved
+  frontend/enablement work completes.
+- Public typed Ask Pete AI is live against approved public knowledge only. It
+  has no private Slate retrieval, upload, OCR, voice, or message authority.
+- The public My Story route is a fixed fixture-driven projection. The future
+  member Story Composer is planned, not live.
+
+## Active and independently sequenced lanes
+
+| Lane | Current state | Next controlled action |
+|---|---|---|
+| PS-HOME-INTERVIEW-PARITY-001 | Claude Code architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` awaits designated-manager review | Review exact checkpoint before any bounded product edit |
+| PS-HOME-FRONTEND-001 | Exact-authority frontend package activated; separate Codex writer assignment is recorded in current governance | Implement only the finite truthful `owner-home.v1` contract; preserve default-off behavior; treat `/app/capture` only as the recorded temporary bridge, never target IA |
+| PS-CAPTURE-MEDIA-001 | Photo is released flag-off; enablement writer unassigned | Keep disabled; later integrate Save Moment/derived Journal or obtain an explicit temporary exception, then pass lifecycle/isolation/homepage-parity/enablement gates |
+| PS-JOURNAL-001 | Architecture is current; private-core runtime writer unassigned | Start one fresh branch from post-authority `origin/main` and prove the bounded private core |
+
+These lanes do not share a branch. Shared-governance edits require an explicit
+reservation and must be serialized.
+
+## One-Journal constitutional decisions
+
+1. Capture is an action that may open wherever the member is authorized to use
+   it. It is not a required page, tab, or destination.
+2. The final navigation/route map is still open. Do not lock a permanent mobile
+   or desktop navigation set merely to expose Capture.
+3. The member-facing commit is **Save Moment**. Opening or dismissing Capture
+   does not create a member record.
+4. Technical upload, original-source, transcription, revision, processing, and
+   AI-proposal states may exist underneath or inline. They are not user-facing
+   navigation gates.
+5. Save Moment creates one private canonical Moment in member-authored or
+   explicitly accepted/reviewed language. AI enrichment may not delay,
+   replace, or silently rewrite it.
+6. Every eligible saved Moment belongs to that owner's one Journal by
+   deterministic derived membership. No Journal Placement, Add to Journal step,
+   copied `journal_entry.body`, or second fact store is allowed.
+7. The owner Journal is the complete private chronology. Public, Connection,
+   and selected-person Journal experiences are separately gated,
+   server-authorized, owner-curated projections over the same exact Moments.
+8. Authorization occurs before retrieval. Client filtering is never a privacy
+   boundary.
+9. Journal and My Story remain distinct. Journal is complete, chronological,
+   searchable, and lifecycle-oriented. My Story is finite, intentionally
+   selected, authored, and visually composed. Both use exact governed Moment
+   references.
+10. Saving a Moment adds no Story item. Removing a Story item leaves the Moment
+    in Journal. Publishing either view is a separate explicit action.
+11. Feed, Work, Projects, Board, Resume, Studio, Story, and future messaging
+    consume governed references or projections after Save Moment; they do not
+    create competing canonical fact pipelines.
+
+## Private Journal implementation entry gate
+
+The next Journal writer must implement only the private core described in
+`docs/initiatives/PS-JOURNAL-001/05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md`.
+Before product edits, the package must name:
+
+- exact current-main base, branch, manager, sole writer, reserved files, and
+  forbidden files;
+- route and modal/drawer/inline Capture behavior without a Capture destination;
+- owner-derived Journal query and deterministic eligibility rules;
+- exact Moment/version/lifecycle semantics and no copied body;
+- authorization-before-retrieval and two-member isolation;
+- private-default audience behavior and later-projection exclusions;
+- migration, compatibility, rollback, observability, and failure recovery;
+- production-intent desktop/mobile/zoom/keyboard/reduced-motion visual authority;
+- focused, full, accessibility, security, lifecycle, and production evidence;
+- homepage-impact assessment and named Pete/designated-manager acceptance gate.
+
+Do not include public Journal, replay, Momentum, prompts, observations, Slate
+Mirror, Ask Slate AI, messaging, Story Composer, Projects, or navigation lock in
+the first private-core implementation unless a later owner decision explicitly
+changes the bounded package.
+
+## Planned committed architecture
+
+### PS-RETURN-VALUE-001
+
+- Committed services: replay/resurfacing, Momentum, Prompt/Ritual, What
+  PeerSlate Noticed, and Slate Mirror.
+- Sequence after the private Journal core. The package may take bounded slices;
+  it is not an all-at-once implementation promise.
+- Every output is private, source-linked, correctable, dismissible,
+  rate-limited, and non-diagnostic.
+- Momentum is not necessarily daily. Quiet, purposeful, truthful,
+  non-competitive acknowledgements/badges are allowed. No points, levels,
+  public rankings, punitive reset/loss state, shame, or trophy spam.
+- Life Constellation, synthetic own-voice playback, and other unselected ideas
+  remain in `03_REVISIT_REGISTER.md`.
+
+### PS-ASK-SLATE-AI-001 and PS-ASK-PETE-AI-001
+
+- **Ask Slate AI** is the planned signed-in umbrella. **Ask My Slate** is a
+  contextual CTA. Interview, qualification alignment, and other specialist
+  experiences remain workflows, not separate bots.
+- Ashley AI is retired terminology.
+- **Ask Pete AI** is Pete's public instance of **Ask [Name] AI**. It retrieves
+  only approved public sources.
+- Private Type/Speak/file/screenshot/OCR inputs, private Slate retrieval,
+  source display, proposals, retention/deletion, and consequential workflows
+  belong to Ask Slate and require separate risk gates.
+
+### PS-MESSAGING-001
+
+- Messaging is committed later direction and need not be in the first version.
+- No implementation begins without identity, Connection/consent,
+  authorization, safety/moderation, mute/block/report, retention/deletion,
+  notification, abuse-response, rate-limit, accessibility, and legal gates.
+- AI may propose text but cannot address or send a message.
+
+### Early legal and site readiness
+
+- Use `docs/governance/EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md` now to
+  inventory Terms, Privacy, cookies/tracking, accessibility, AI disclosures,
+  community rules, media/voice, retention/deletion, export, minors/age,
+  reporting/moderation, and incident contacts.
+- Repository drafting is not legal advice or counsel approval. Counsel and
+  security gates precede public Journal, broad community/messaging, private
+  multimodal AI, and broad launch claims.
+
+## Story and public-Journal boundary
+
+- A public Journal may eventually feel like a curated profile/timeline, but it
+  is not live merely because the owner Journal architecture exists.
+- My Story preserves the visual presentation Pete values. The Composer stores
+  owner-scoped layout/presentation metadata separately from exact canonical
+  Moment references and never creates a second copy of the facts.
+- Public Journal and My Story need separate audience, publication, revision,
+  preview, accessibility, moderation, failure, and withdrawal evidence.
+
+## Stop conditions
+
+Stop and escalate if any proposed work would:
+
+- write directly to `main`, use GitHub as release authority, or take an active
+  writer's branch without exact relinquishment;
+- encode Capture as a required destination or add another permanent nav layer;
+- create a Journal-entry narrative body or Add to Journal gate;
+- retrieve private records before authorization or rely on client filtering;
+- silently publish, broaden audience, create a Story item, place a Moment, send
+  a message, or apply an AI proposal;
+- merge the complete Journal with the finite My Story composition;
+- claim planned return, AI, messaging, public Journal, legal, or moderation
+  behavior is implemented or live;
+- mix Journal, Owner Home, Interview homepage parity, or Capture Photo into one
+  writer branch without a new owner-approved package.
+- enable Home or Photo while an inherited Capture destination/source-only save
+  conflicts with the current transition record.
+
+## First actions for the next manager
+
+1. Fetch `origin` and verify current `main`, authority hashes, pipeline state,
+   and the production/auth boundaries relevant to the assigned package.
+2. Read the current initiative package end to end and confirm there is no
+   active writer conflict.
+3. For Journal, assign one manager and one writer to the private core only.
+4. Name the production-intent visual authority before user-facing edits.
+5. Keep public Journal, My Story Composer, return services, Ask Slate AI, and
+   messaging as separate later gates.
+6. Require complete-diff self-review, focused/full tests, responsive and
+   accessibility evidence, exact branch/SHA, and truthful `Pass`, `Conditional`,
+   or `Fail` certification.
+7. After Pete/designated-manager acceptance, use Azure PR squash merge, monitor
+   the Azure pipeline, verify exact `origin/main`, and record production truth.
+
+## Paste-ready kickoff
+
+> You are the designated PeerSlate package manager or writer named by the active
+> initiative. Work only from current Azure `origin/main`. Read `START_HERE.md`,
+> `docs/AI_WORKFLOW.md`, `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`,
+> `ACTIVE_INITIATIVES.md`, the exact Bible/Roadmap named there, this handoff, and
+> the assigned initiative package before planning or editing. Confirm one
+> manager, one writer, branch ownership, reserved and forbidden files, visual
+> authority, and entry evidence. For Journal, preserve Capture as an action,
+> Save Moment as the one member commit, derived owner-Journal membership, no
+> copied Journal body, authorization-before-retrieval, and the distinct My Story
+> projection. Implement only the package's bounded slice, self-review the entire
+> diff, correct findings, run all required evidence, and return an exact pushed
+> branch/SHA with `Pass`, `Conditional`, or `Fail`. Do not claim a planned or
+> flag-off capability is live. Merge only through an accepted Azure pull request
+> and verify the exact pipeline and production boundary afterward.

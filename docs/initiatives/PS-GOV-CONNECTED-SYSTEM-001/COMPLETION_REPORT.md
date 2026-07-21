@@ -1,5 +1,10 @@
 # PeerSlate Completion & Handoff Report — PS-GOV-CONNECTED-SYSTEM-001
 
+> **HISTORICAL CANDIDATE HANDOFF.** This report predates activation and is kept
+> as evidence of the candidate state. The later activation evidence remains in
+> this package; Bible v2.8, Roadmap v2.7, and
+> `12_SUPERSESSION_AND_CONTINUATION.md` control current product direction.
+
 ## A. Status
 
 - Package: `PS-GOV-CONNECTED-SYSTEM-001` — Connected-System and Return-Value Authority

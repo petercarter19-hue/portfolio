@@ -1,15 +1,19 @@
 # PeerSlate current authority record
 # Updated for the completed Voice release, Interview Studio Image 5
 # 5A-light/5C-dark owner authority, real-Studio-first demo convergence,
-# the live pre-convergence Interview walkthrough, planned Ask Pete AI discovery,
+# the live pre-convergence Interview walkthrough, public Ask Pete / Ask [Name]
+# AI boundary and future public-only refinement,
 # cross-product homepage parity, the planned Projects system expansion, and
 # the released flag-off Photo experience, the released default-off Owner Home
 # backend, the accepted 5A/5C Interview Studio release verified live, and the
 # activated downstream homepage Interview parity architecture/implementation,
 # plus the activated exact-authority Owner Home frontend implementation lane
-# and the owner-authorized Journal memory-profile restart/architecture gate.
-# Bible v2.7 and Roadmap v2.6 are now the owner-approved connected-system
-# authority; this activation does not authorize a connective runtime package.
+# and the owner-authorized one-Journal system architecture.
+# Bible v2.8 and Roadmap v2.7 are now the owner-approved authority for
+# universal Capture, derived Journal membership, trusted return services,
+# Ask Slate AI, later messaging, and the Journal/My Story boundary. This
+# activation is architecture and governance only; it does not claim that any
+# new Journal, return-value, AI, messaging, or public-projection runtime is live.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
 updated_at: "2026-07-20"
@@ -100,15 +104,17 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-JOURNAL-001 is owner-restarted under the same designated manager; restart/reconciliation is released and a separate architecture/implementation writer remains unassigned. PS-GOV-CONNECTED-SYSTEM-001 is owner-approved and complete through this authority activation. Photo and Home backend remain released flag-off."
+  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-GOV-JOURNAL-SYSTEM-001 is complete when this authority activation reaches main. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
 
 governing_documents:
   bible:
-    version: "2.7"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.7.docx"
+    version: "2.8"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.8.docx"
+    sha256: "47F9771C29A3FAEA18858865F402DF0E342840DAD80ECF4650B8ABCC537DE963"
   roadmap:
-    version: "2.6"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"
+    version: "2.7"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx"
+    sha256: "899F0054483E886F79AACB4115AE0E160ACC44FA3BFFE5EEA2882A5C70EE6A83"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -122,10 +128,16 @@ governing_documents:
     path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
   story_composition:
     path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
+  legal_and_site_readiness:
+    path: "docs/governance/EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
   delivery_workflow:
     path: "docs/AI_WORKFLOW.md"
+  ai_model_and_role_routing:
+    path: "docs/AI_MODEL_AND_ROLE_ROUTING.md"
+  journal_system_active_lane_transition:
+    path: "docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md"
 
 theme: deep_navy_gold
 
@@ -163,6 +175,7 @@ completed_packages:
   - PS-HOME-BACKEND-001
   - PS-INTERVIEW-PUBLIC-GATE-001
   - PS-GOV-CONNECTED-SYSTEM-001
+  - PS-GOV-JOURNAL-SYSTEM-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -188,11 +201,11 @@ active_packages:
     package_path: "docs/initiatives/PS-HOME-FRONTEND-001/README.md"
     status: "activated_writer_branch_pending"
   - id: PS-JOURNAL-001
-    owner: "ChatGPT Work/Codex designated manager; implementation writer assigned after architecture gate"
+    owner: "future package-designated manager and exactly one implementation writer unassigned"
     lane: journal_memory_profile_and_activation
     roadmap_phase: "Phase 5 - Universal Capture and private Journal"
     package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
-    status: "owner_restart_authorized_definition_and_architecture_gate_active"
+    status: "architecture_current_private_core_entry_gate_unassigned"
 
 planned_packages:
   - id: PS-PUBLIC-CONNECTIVE-001
@@ -209,10 +222,22 @@ planned_packages:
     status: "candidate_unassigned_not_active"
   - id: PS-RETURN-VALUE-001
     owner: "future designated manager and writer unassigned"
-    lane: candidate_private_return_value_engine
-    roadmap_phase: "After Owner Home frontend and confirmed member history"
-    package_path: "docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md"
-    status: "candidate_unassigned_not_active"
+    lane: trusted_private_return_services
+    roadmap_phase: "Phased after the private Journal core"
+    package_path: "docs/initiatives/PS-RETURN-VALUE-001/README.md"
+    status: "committed_architecture_planned_not_active"
+  - id: PS-ASK-SLATE-AI-001
+    owner: "future designated manager and writer unassigned"
+    lane: signed_in_member_intelligence_umbrella
+    roadmap_phase: "After private Journal and authorization foundations"
+    package_path: "docs/initiatives/PS-ASK-SLATE-AI-001/README.md"
+    status: "committed_architecture_planned_not_active"
+  - id: PS-MESSAGING-001
+    owner: "future designated manager and writer unassigned"
+    lane: consent_and_safety_gated_member_messaging
+    roadmap_phase: "Later community wave after identity, consent, safety, and legal gates"
+    package_path: "docs/initiatives/PS-MESSAGING-001/README.md"
+    status: "committed_architecture_planned_not_active"
   - id: PS-PROJECTS-001
     owner: "Pete product direction; future designated product/visual manager and implementation writer unassigned"
     lane: future_projects_workspace_and_projections
@@ -220,13 +245,13 @@ planned_packages:
     package_path: "docs/initiatives/PS-PROJECTS-001/README.md"
     status: "planned_not_active"
   - id: PS-ASK-PETE-AI-001
-    owner: "Pete product direction; future designated discovery manager and implementation writer unassigned"
-    lane: future_ask_pete_ai_discovery
-    roadmap_phase: "Phase 11 - Next Chapter and Qualification Alignment"
+    owner: "Pete product direction; future public-refinement manager and implementation writer unassigned"
+    lane: future_public_ask_pete_and_ask_name_ai
+    roadmap_phase: "Public Ask [Name] AI refinement; private Qualification Alignment belongs to PS-ASK-SLATE-AI-001"
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
-    status: "planned_not_active"
+    status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "Create a fresh PS-JOURNAL-001 architecture branch from post-authority origin/main and assign exactly one writer. Product code waits for the route, data, lifecycle, authorization, visual, migration, rollback, and two-member validation gate in the initiative package. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently with their assigned writers and acceptance gates. The three connected-system package IDs remain candidate/unassigned and must not interrupt Journal or Owner Home. Capture Photo remains flag-off and separate. Do not blend Journal, Interview homepage parity, Owner Home, Photo, or connective candidates. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently under the active-lane transition record. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -237,7 +262,9 @@ superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.4.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.7.docx"
   - "docs/initiatives/PS-JOURNAL-001/source/PeerSlate_Company_and_Product_Bible_v1.5.1.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"

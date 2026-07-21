@@ -3,11 +3,11 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.7 + Roadmap v2.6).
+> Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.8 + Roadmap v2.7).
 
 ## Mandatory shared AI and Git workflow
 
-Before planning changes, editing files, or running Git write operations, read `docs/AI_WORKFLOW.md` in full. It is the canonical collaboration workflow for Peter, Codex, Claude, every computer, and every worktree.
+Before planning changes, editing files, or running Git write operations, read `docs/AI_WORKFLOW.md` in full. It is the canonical collaboration workflow for Peter, Codex, Claude, every computer, and every worktree. For model selection and manager/writer/reviewer routing, also read `docs/AI_MODEL_AND_ROLE_ROUTING.md`; model names are operational guidance, not product authority.
 
 Non-negotiable summary:
 
@@ -32,20 +32,26 @@ PeerSlate is a multi-user, evidence-backed professional story and growth platfor
 ## Source of truth
 
 The current authority is the Bible, Roadmap, Sync Standard, and design baseline
-named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.7 + Roadmap v2.6 as of
+named in `docs/governance/CURRENT_BASELINE.yaml` (Bible v2.8 + Roadmap v2.7 as of
 2026-07-20). `docs/governance/DOCUMENT_CONTROL.md` defines the authority order.
 Older v1.1-v1.4 documents and Direction C / Iris-era specifications are retained
 as decision history or supporting detail only. Where they conflict with the
 current baseline, the current baseline wins and the conflict must be reported
 rather than implemented.
 
-**Journal restart (owner decision 2026-07-20):** Peter lifted the Journal hold.
-Journal is the member's private-first memory profile over confirmed canonical
-Moments; Memory Intelligence is private, source-linked, correctable
-interpretation; and activation always requires explicit member approval.
-Product code remains gated by `docs/initiatives/PS-JOURNAL-001/README.md` and
-its architecture allocation. Do not revive Iris styling, copy Moment narrative
-into a second truth store, or infer that a public Journal is live.
+**One-Journal system (owner decision 2026-07-20):** Capture is an action that
+may be offered in any authorized context; it is not a required page, tab, or
+destination. The member-facing commit is **Save Moment**. One saved private
+canonical Moment becomes part of that owner's Journal by deterministic derived
+membership, without an Add to Journal gate or copied Journal body. The owner
+Journal is the complete private chronology. Public, Connection, and selected-
+person Journal views are server-authorized projections over those same Moments.
+My Story remains a finite, member-authored visual composition referencing exact
+Moment versions; it is not a duplicate Journal. Return services and Slate
+Mirror/What PeerSlate Noticed must be private, source-linked, correctable, and
+member-controlled. Product code remains gated by
+`docs/initiatives/PS-JOURNAL-001/README.md`. Do not infer that a target Journal,
+public Journal, Ask Slate AI, return-value service, or messaging runtime is live.
 
 **Portable manager assignment (owner decisions through 2026-07-19):** the
 manager is a package-designated role, not a single tool. A ChatGPT Work/Codex
@@ -124,7 +130,11 @@ If any source document is missing, stop and report the missing path. Do not reco
 - Every profile-owned record must preserve tenant ownership.
 - Default new Board content and voice-created drafts to private.
 - AI output is a proposal, not an automatic edit.
-- Voice flow is transcript → structured proposal → source/visibility review → explicit approval → save. Publishing is a separate explicit action.
+- Type and Speak use the same Save Moment contract. Retained voice preserves
+  the authorized source and editable transcript, with applicable correction
+  inline. Optional structured or AI proposals remain separate and may not
+  delay, replace, or silently rewrite the member-saved canonical Moment.
+  Publishing is a separate explicit action.
 - Never imply production privacy, matching, verification, or AI behavior unless the backend enforces it.
 
 ## Living Résumé direction — PS-FEAT-001

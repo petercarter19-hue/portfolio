@@ -57,7 +57,9 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "governance", "DECISIONS.md"),
         ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
         ("docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"),
+        ("docs", "governance", "EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md"),
         ("docs", "governance", "MANAGER_SESSION_HANDOFF.md"),
+        ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
         ("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-GOV-001", "README.md"),
         ("docs", "initiatives", "PS-GOV-001", "COMPLETION_REPORT.md"),
@@ -125,14 +127,43 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-JOURNAL-001", "README.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "00_OWNER_RESTART_AND_V151_RECONCILIATION.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "01_REQUIREMENTS_AND_ARCHITECTURE_GATE.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "02_EXPERIENCE_AND_INFORMATION_ARCHITECTURE.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "03_DATA_AUTHORIZATION_AND_LIFECYCLE.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "04_JOURNAL_MY_STORY_AND_PROJECTION_BOUNDARY.md"),
+        ("docs", "initiatives", "PS-JOURNAL-001", "05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "source", "PeerSlate_Company_and_Product_Bible_v1.5.1.docx"),
-        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.7.docx"),
-        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"),
+        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.8.docx"),
+        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "README.md"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "10_ACTIVATION_CHECKLIST.md"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "11_OWNER_APPROVAL_AND_ACTIVATION.md"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "ACTIVATION_COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "12_SUPERSESSION_AND_CONTINUATION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "README.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "00_OWNER_DECISION_AND_SUPERSESSION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "01_SYSTEM_TRACEABILITY_MATRIX.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "02_BIBLE_V2_8_AMENDMENT_SOURCE.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "03_ROADMAP_V2_7_AMENDMENT_SOURCE.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "05_AUTHORITY_ACTIVATION_AND_TRACEABILITY.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "build_authority_documents.py"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "evidence", "BIBLE_V2_7_TEMPLATE_DISTILLATION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "evidence", "ROADMAP_V2_6_TEMPLATE_DISTILLATION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "evidence", "DOCX_RENDER_AND_ACCESSIBILITY_VERIFICATION.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "source", "README.md"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "source", "1-PeerSlate-Hooks-and-Connected-Site-Research-Report-2.docx"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "source", "2-PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"),
+        ("docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001", "source", "3-Deep-Research-Report-on-Hooks-for-a-Voice-First-Journaling-and-Growth-Website-2.docx"),
+        ("docs", "initiatives", "PS-RETURN-VALUE-001", "README.md"),
+        ("docs", "initiatives", "PS-RETURN-VALUE-001", "01_REQUIREMENTS_AND_EXPERIENCE_ARCHITECTURE.md"),
+        ("docs", "initiatives", "PS-RETURN-VALUE-001", "02_SERVICE_DATA_AND_ROLLOUT_ARCHITECTURE.md"),
+        ("docs", "initiatives", "PS-RETURN-VALUE-001", "03_REVISIT_REGISTER.md"),
+        ("docs", "initiatives", "PS-ASK-SLATE-AI-001", "README.md"),
+        ("docs", "initiatives", "PS-ASK-SLATE-AI-001", "01_ARCHITECTURE.md"),
+        ("docs", "initiatives", "PS-MESSAGING-001", "README.md"),
+        ("docs", "initiatives", "PS-MESSAGING-001", "01_ARCHITECTURE_AND_SAFETY.md"),
     )
 
     def test_required_records_exist(self):
@@ -168,8 +199,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.7", self.baseline)
-        self.assertIn("Roadmap_v2.6", self.baseline)
+        self.assertIn("Bible_v2.8", self.baseline)
+        self.assertIn("Roadmap_v2.7", self.baseline)
         self.assertIn('role: "package_designated_session_manager"', self.baseline)
         self.assertIn(
             'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
@@ -217,22 +248,25 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("connected_system_candidate_pipeline: 162", self.baseline)
         self.assertIn("journal_restart_pipeline: 168", self.baseline)
         self.assertIn("PS-GOV-CONNECTED-SYSTEM-001", self.baseline)
+        self.assertIn("PS-GOV-JOURNAL-SYSTEM-001", self.baseline)
+        self.assertIn("EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md", self.baseline)
+        self.assertIn("AI_MODEL_AND_ROLE_ROUTING.md", self.baseline)
 
-    def test_connected_system_authority_is_approved_current_and_runtime_honest(self):
+    def test_journal_system_authority_is_current_traceable_and_runtime_honest(self):
         expected = {
-            "PeerSlate_Company_and_Product_Bible_v2.7.docx": (
-                "ceef99f1a84bf293217ad6d302a2b15e19b18104896de7f8ed560416deaf1836",
-                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.6",
-                "Authority: v2.7 is CURRENT and controlling.",
-                "Version 2.7 Connected system and return-value authority",
-                "CURRENT BIBLE • JULY 20, 2026",
+            "PeerSlate_Company_and_Product_Bible_v2.8.docx": (
+                "47f9771c29a3faea18858865f402df0e342840dad80ecf4650b8abcc537de963",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.7",
+                "Authority: v2.8 is CURRENT and controlling.",
+                "Version 2.8 Universal Capture, one Journal, and trusted return authority",
+                "CURRENT BIBLE v2.8 • JULY 20, 2026",
             ),
-            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx": (
-                "7d615d3dfc2f463e25f86d166d6cefe799d093d03ac64fe107b6faae026edc4f",
-                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.5",
-                "Roadmap authority: v2.6 is CURRENT and controlling.",
-                "Version 2.6 Connected-system sequencing",
-                "CURRENT ROADMAP • JULY 20, 2026",
+            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx": (
+                "899f0054483e886f79aacb4115ae0e160acc44fa3bffe5eea2882a5c70ee6a83",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.6",
+                "Roadmap authority: v2.7 is CURRENT and controlling.",
+                "Version 2.7 Journal-system execution sequence",
+                "CURRENT ROADMAP v2.7 • JULY 20, 2026",
             ),
         }
         for filename, (
@@ -245,6 +279,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             path = os.path.join(ROOT, "docs", "governance", filename)
             with self.subTest(document=filename), open(path, "rb") as document:
                 self.assertEqual(digest, hashlib.sha256(document.read()).hexdigest())
+                self.assertIn(f'sha256: "{digest.upper()}"', self.baseline)
                 document.seek(0)
                 with zipfile.ZipFile(document) as archive:
                     xml = "\n".join(
@@ -258,18 +293,63 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn(footer_text, xml)
                 self.assertNotIn("CANDIDATE AWAITING OWNER APPROVAL", xml)
                 self.assertNotIn("JULY 19, 2026", xml)
+                self.assertIn("Save Moment", xml)
+                self.assertNotIn("Journal UI remains on hold", xml)
+                self.assertIn("derived", xml.lower())
+                self.assertIn("complete accessible chooser", xml)
+                self.assertIn("every currently supported and authorized", xml)
+                for stale_gate in (
+                    "After a member reviews a Moment",
+                    "owner-scoped private draft before placement",
+                    "owner-scoped private draft before publication",
+                    "The member can connect the reviewed Moment",
+                    "Private draft, review, promotion",
+                    "1Capture",
+                    "confirmed text Moments",
+                    "same review and lifecycle architecture as text",
+                    "Figure N-1. Voice to value: retained audio becomes",
+                ):
+                    self.assertNotIn(stale_gate, xml)
+                if "Bible" in filename:
+                    self.assertIn("Ask Slate AI", xml)
+                    self.assertIn("PS-CORE-USE-002", xml)
+                else:
+                    self.assertIn("PS-GOV-JOURNAL-SYSTEM-001", xml)
+                    self.assertIn("PS-ASK-SLATE-AI-001", xml)
+                    self.assertIn("does not wait for", xml)
+                    self.assertIn("public Journal", xml)
 
-        for candidate_id in (
-            "PS-PUBLIC-CONNECTIVE-001",
-            "PS-CONNECTIVE-COMPONENT-001",
-            "PS-RETURN-VALUE-001",
-        ):
+        source_hashes = {
+            "1-PeerSlate-Hooks-and-Connected-Site-Research-Report-2.docx":
+                "1cf16a02a33a6b73be13ad60361a4ddf3ffef5d33c3f7cc7af2b4ee54f4aa63f",
+            "2-PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx":
+                "e9c8b8102c6416ac9739da427726cf09907142f34082ea1930d621446ec003e6",
+            "3-Deep-Research-Report-on-Hooks-for-a-Voice-First-Journaling-and-Growth-Website-2.docx":
+                "9c485b71906fb643d1f418478d21ca4c3e19a41b74c1fef770a57437c76cfce6",
+        }
+        source_readme = _read(
+            "docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001",
+            "source", "README.md",
+        )
+        for filename, digest in source_hashes.items():
+            path = os.path.join(
+                ROOT, "docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001",
+                "source", filename,
+            )
+            with self.subTest(source=filename), open(path, "rb") as source:
+                self.assertEqual(digest, hashlib.sha256(source.read()).hexdigest())
+                self.assertIn(filename, source_readme)
+                self.assertIn(digest.upper(), source_readme)
+
+        for candidate_id in ("PS-PUBLIC-CONNECTIVE-001", "PS-CONNECTIVE-COMPONENT-001"):
             self.assertIn(candidate_id, self.baseline)
-            self.assertIn(candidate_id, self.initiatives)
-            self.assertIn(candidate_id, self.state)
-        self.assertIn("candidate_unassigned_not_active", self.baseline)
-        self.assertIn("no application", self.state.lower())
-        self.assertIn("no runtime behavior", self.initiatives.lower())
+        for committed_id in ("PS-RETURN-VALUE-001", "PS-ASK-SLATE-AI-001", "PS-MESSAGING-001"):
+            self.assertIn(committed_id, self.baseline)
+            self.assertIn(committed_id, self.initiatives)
+            self.assertIn(committed_id, self.state)
+        self.assertIn("committed_architecture_planned_not_active", self.baseline)
+        self.assertIn("changes no current route", self.state)
+        self.assertIn("changes governance only", self.initiatives)
 
     def test_active_package_paths_and_coordination_agree(self):
         active_block = re.search(
@@ -294,7 +374,7 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn(package_id, self.initiatives)
                 self.assertIn(package_id, self.state)
 
-    def test_journal_restart_is_active_preserved_and_runtime_honest(self):
+    def test_journal_architecture_is_controlling_preserved_and_runtime_honest(self):
         readme = _read("docs", "initiatives", "PS-JOURNAL-001", "README.md")
         reconciliation = _read(
             "docs",
@@ -322,18 +402,21 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("holds: []", self.baseline)
         self.assertIn("journal_memory_profile_and_activation", self.baseline)
         self.assertIn(
-            "owner_restart_authorized_definition_and_architecture_gate_active",
+            "architecture_current_private_core_entry_gate_unassigned",
             self.baseline,
         )
         self.assertEqual(
             "01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b",
             digest,
         )
-        self.assertIn(
-            "Journal is the member's private-first memory profile", readme
-        )
+        self.assertIn("Capture is an action, not a place", readme)
+        self.assertIn("Save Moment is the single member commit", readme)
+        self.assertIn("Journal membership is derived", readme)
         self.assertIn("The issue was therefore not wholesale loss", reconciliation)
-        self.assertIn("Activated, not yet approved for product code", architecture)
+        self.assertIn("controlling architecture, not evidence of runtime", architecture)
+        self.assertIn("It is not a destination", architecture)
+        self.assertIn("complete accessible", architecture)
+        self.assertIn("not a fact-bearing body table", architecture)
         self.assertIn("no target Journal UI is live", self.state)
         for current_record in (
             self.baseline,
@@ -460,10 +543,10 @@ class BaselineCoherenceTests(unittest.TestCase):
         ):
             self.assertIn(expected, workflow)
         for expected in (
-            "Codex Interview Gate 2.4 session",
-            "Claude Co-Work",
+            "package-designated role",
+            "Claude Co-Work management is distinct",
             "PS-CAPTURE-MEDIA-001",
-            "implementation, demonstration, deployment",
+            "implementation, complete-diff review",
         ):
             self.assertIn(expected, handoff)
         for expected in (
@@ -508,13 +591,19 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("PS-STORY-COMPOSER-001", self.state)
         self.assertIn("not active", self.initiatives)
 
-    def test_ask_pete_ai_is_planned_and_homepage_parity_is_governed(self):
-        package = _read(
+    def test_public_ask_pete_and_private_ask_slate_are_separate(self):
+        ask_pete = _read(
             "docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"
         )
         agenda = _read(
             "docs", "initiatives", "PS-ASK-PETE-AI-001",
             "01_DISCOVERY_AGENDA.md",
+        )
+        ask_slate = _read(
+            "docs", "initiatives", "PS-ASK-SLATE-AI-001", "README.md"
+        )
+        ask_slate_architecture = _read(
+            "docs", "initiatives", "PS-ASK-SLATE-AI-001", "01_ARCHITECTURE.md"
         )
         visual_standard = _read(
             "docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"
@@ -522,29 +611,46 @@ class BaselineCoherenceTests(unittest.TestCase):
 
         for expected in (
             "PS-ASK-PETE-AI-001",
-            'status: "planned_not_active"',
+            "public_typed_slice_live_future_refinement_not_active",
+            "PS-ASK-SLATE-AI-001",
+            "committed_architecture_planned_not_active",
             "homepage_product_projection",
         ):
             self.assertIn(expected, self.baseline)
 
         for expected in (
-            "Ask Pete AI",
-            'does not use or define\n"PAI."',
-            "Type, Speak, and Attach",
-            "PDF, DOCX, or TXT",
-            "PNG/JPEG screenshots",
-            "Roadmap placement: Phase 11",
-            "No product route",
+            "Public typed assistant live",
+            "approved public Pete sources only",
+            "Ask [Name] AI",
+            "Private member intelligence: `PS-ASK-SLATE-AI-001`",
+            "No private uploads",
         ):
-            self.assertIn(expected, package)
+            self.assertIn(expected, ask_pete)
 
         for expected in (
-            "job posting",
-            "OCR",
-            "public/private mode",
-            "no implementation yet",
+            "future public-profile assistance only",
+            "authorization before retrieval",
+            "no private counts",
+            "no new implementation",
         ):
             self.assertIn(expected, agenda)
+
+        for expected in (
+            "Ask Slate AI",
+            "Ask My Slate",
+            "Ask [Name] AI",
+            "Ashley AI is retired",
+            "Qualification Alignment",
+            "No signed-in Ask Slate AI product is claimed live",
+        ):
+            self.assertIn(expected, ask_slate)
+        for expected in (
+            "constrain retrieval before",
+            "shall never send a message",
+            "shall not create/edit a Moment",
+            "private",
+        ):
+            self.assertIn(expected, ask_slate_architecture)
 
         for expected in (
             "Cross-product homepage projection parity",
@@ -568,6 +674,142 @@ class BaselineCoherenceTests(unittest.TestCase):
             with self.subTest(path=relative_path):
                 body = _read(*relative_path.split("/"))
                 self.assertRegex(body, r"(?i)homepage.*parity")
+
+    def test_journal_projection_return_and_revisit_contracts_are_complete(self):
+        bible_amendment = _read(
+            "docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001",
+            "02_BIBLE_V2_8_AMENDMENT_SOURCE.md",
+        )
+        roadmap_amendment = _read(
+            "docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001",
+            "03_ROADMAP_V2_7_AMENDMENT_SOURCE.md",
+        )
+        transition = _read(
+            "docs", "initiatives", "PS-GOV-JOURNAL-SYSTEM-001",
+            "04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md",
+        )
+        requirements = _read(
+            "docs", "initiatives", "PS-JOURNAL-001",
+            "01_REQUIREMENTS_AND_ARCHITECTURE_GATE.md",
+        )
+        data = _read(
+            "docs", "initiatives", "PS-JOURNAL-001",
+            "03_DATA_AUTHORIZATION_AND_LIFECYCLE.md",
+        )
+        story = _read(
+            "docs", "initiatives", "PS-JOURNAL-001",
+            "04_JOURNAL_MY_STORY_AND_PROJECTION_BOUNDARY.md",
+        )
+        sequence = _read(
+            "docs", "initiatives", "PS-JOURNAL-001",
+            "05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md",
+        )
+        return_requirements = _read(
+            "docs", "initiatives", "PS-RETURN-VALUE-001",
+            "01_REQUIREMENTS_AND_EXPERIENCE_ARCHITECTURE.md",
+        )
+        return_service = _read(
+            "docs", "initiatives", "PS-RETURN-VALUE-001",
+            "02_SERVICE_DATA_AND_ROLLOUT_ARCHITECTURE.md",
+        )
+        revisit = _read(
+            "docs", "initiatives", "PS-RETURN-VALUE-001", "03_REVISIT_REGISTER.md",
+        )
+
+        for expected in (
+            "It is not a destination",
+            "Save Moment shall explicitly create or confirm exactly one",
+            "membership shall be derived",
+            "complete accessible",
+            "every currently supported and authorized destination",
+            "shall never hide an",
+        ):
+            self.assertIn(expected, requirements)
+        self.assertIn("authorized predicate before retrieving", data.lower())
+        self.assertIn("Substantive new text must be a Moment", data)
+        self.assertIn("should Journal and My Story become one?", story)
+        self.assertIn("Removing the chapter from Story keeps the Moment in Journal", story)
+        self.assertIn("default-off internal/owner pilot", sequence)
+        self.assertIn("does not satisfy the universal-anywhere promise by itself", sequence)
+        self.assertIn("J-labels allocate scope; they do not impose one serial train", sequence)
+        self.assertIn("Neither waits for J3 public", sequence)
+
+        self.assertIn("PS-CORE-USE-002", bible_amendment)
+        self.assertIn("complete keyboard- and screen-reader-accessible chooser", bible_amendment)
+        self.assertIn("complete accessible chooser", roadmap_amendment)
+        self.assertIn("neither waits for public Journal", roadmap_amendment)
+        for expected in (
+            "`/app/capture` link only as a truthful temporary",
+            "default-off compatibility bridge",
+            "explicit owner-approved temporary exception",
+            "Projects itself is not activated",
+            "Journal architecture is active",
+        ):
+            self.assertIn(expected, transition)
+        for expected in (
+            "without waiting for public Journal",
+            "temporary default-off compatibility, not target IA",
+            "Save Moment/derived-Journal integration",
+        ):
+            self.assertIn(expected, self.baseline)
+
+        for expected in (
+            "including day, week, month",
+            "daily rhythm is optional and member-chosen",
+            "Purposeful acknowledgements/badges",
+            "What PeerSlate Noticed and Slate Mirror",
+            "not a persona, diagnosis",
+        ):
+            self.assertIn(expected, return_requirements)
+        self.assertIn("without punitive reset/loss framing", return_service)
+        self.assertIn("PS-LEGAL-018", return_service)
+        for expected in (
+            "Chaptered Audio Journal",
+            "Guided Journeys",
+            "Open to Mic",
+            "Life Constellation",
+            "synthetic",
+        ):
+            self.assertIn(expected, revisit)
+
+    def test_messaging_legal_and_model_routing_gates_are_durable(self):
+        messaging = _read(
+            "docs", "initiatives", "PS-MESSAGING-001",
+            "01_ARCHITECTURE_AND_SAFETY.md",
+        )
+        legal = _read(
+            "docs", "governance", "EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md",
+        )
+        routing = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")
+
+        for expected in (
+            "relationship/consent state",
+            "shall not authorize a DM",
+            "Mute",
+            "Block",
+            "Report",
+            "AI shall never\n  press Send",
+            "Formal counsel",
+            "Two-member validation",
+        ):
+            self.assertIn(expected, messaging)
+        for expected in (
+            "does not mean counsel approved",
+            "Public/permissioned Journal shall not release",
+            "Messaging shall not pilot",
+            "PS-LEGAL-018",
+            "security/threat-model",
+        ):
+            self.assertIn(expected, legal)
+        for expected in (
+            "exactly one manager and one active writer",
+            "governance-only package",
+            "independent reviewer",
+            "Verify the available model",
+            "exact branch/SHA",
+            "do not send it to another premium model",
+        ):
+            self.assertIn(expected, routing)
 
     def test_projects_is_planned_connected_and_not_claimed_live(self):
         package = _read(

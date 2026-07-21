@@ -9,9 +9,13 @@ When repository documents disagree, use this order and report the conflict:
 1. The owner’s current explicit decision.
 2. `docs/governance/CURRENT_BASELINE.yaml` for current versions, packages, holds, lane ownership, and verified repository/production evidence.
 3. The Bible and Roadmap paths named in that baseline.
-4. `OWNER_VISUAL_INTEGRITY_STANDARD.md` for the operational interpretation of
-   owner-approved visual authority, demonstration parity, and visual release gates.
-5. The Repository Source-of-Truth and Multi-Agent Sync Standard named there, plus `docs/AI_WORKFLOW.md`, for Git, handoff, and release procedure.
+4. `OWNER_VISUAL_INTEGRITY_STANDARD.md`,
+   `OWNER_STORY_COMPOSITION_STANDARD.md`, and
+   `EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md` for their bounded operational
+   interpretation and release gates.
+5. The Repository Source-of-Truth and Multi-Agent Sync Standard named there,
+   plus `docs/AI_WORKFLOW.md` and `docs/AI_MODEL_AND_ROLE_ROUTING.md`, for Git,
+   handoff, release procedure, and non-duplicative AI-role routing.
 6. The active initiative package for its bounded scope, files, acceptance criteria, and exclusions.
 7. `AGENTS.md`, `CLAUDE.md`, and `docs/PEERSLATE_SITE_RULES.md` for non-conflicting shared implementation rules.
 8. Older Bibles, roadmaps, design documents, and initiative records as historical context only.
@@ -22,33 +26,43 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 | Record | Current version/status | Purpose |
 |---|---|---|
-| Company and Product Bible | v2.7 | Product language, boundaries, principles, connected-system and return-value authority, visual integrity, Story composition authority, Projects system covenant, and intended model |
-| Product Strategy and Architecture Roadmap | v2.6 | Evidence state, package order, gates, connected-system sequencing, architecture direction, Story Composer allocation, and Projects system sequencing |
+| Company and Product Bible | v2.8 | Product language, boundaries, one-Journal system, universal Capture action, derived Journal membership, audience projections, trusted return services, Ask Slate AI, later messaging, visual integrity, Story composition, Projects covenant, and intended model |
+| Product Strategy and Architecture Roadmap | v2.7 | Evidence state, package order, private-Journal-first execution, return-value staging, AI and messaging gates, Story Composer allocation, and Projects sequencing |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
 | Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
 | Deep Navy Gold visual baseline | Approved | Shared owner visual foundation |
 | Owner Visual Integrity Standard | Approved | Demonstration parity, product-to-homepage projection convergence, visual evidence, and owner/manager acceptance gates |
 | Owner Story Composition Standard | Approved | Member-controlled Story layout, accessible manipulation, responsive projection, persistence, and publication gates |
+| Early Legal and Site Readiness Standard | Approved architecture gate | Terms/privacy/cookie/accessibility/community/AI/media/messaging readiness inventory and counsel/security activation gates |
+| AI Model and Role Routing | Current operational guidance | One manager, one self-managed writer, risk-based reviewer, current-model verification, and token-efficient Claude/Codex routing |
 | Manager Session Handoff | Current snapshot | Active-lane state, stop conditions, and next-manager kickoff |
 
 ## Known supersessions
 
-- Bible v2.7 supersedes v2.6, v2.5, v2.4, v2.3, and v1.1 through v1.5.1 for current product decisions. The exact v1.5.1 source remains preserved as Journal decision provenance.
-- Roadmap v2.6 supersedes Roadmap v2.5, v2.4, and v2.3 for current sequencing and architecture decisions.
-- The connected-system spine, connected-room contract, and return-value engine
-  are constitutional. Connective patterns belong inside existing rooms and are
-  never new top-level destinations.
+- Bible v2.8 supersedes v2.7, v2.6, v2.5, v2.4, v2.3, and v1.1 through v1.5.1 for current product decisions. The exact v1.5.1 source remains preserved as Journal decision provenance.
+- Roadmap v2.7 supersedes Roadmap v2.6, v2.5, v2.4, and v2.3 for current sequencing and architecture decisions.
+- The one Journal, universal Capture action, exact-reference projection model,
+  and trusted return services are constitutional. Capture and connective
+  patterns belong in authorized contexts and existing rooms; Capture is not a
+  required page and connective patterns are never new top-level destinations.
 - Preservation of a connective or return-value idea is not implementation
   authorization. Each idea retains its Locked, Open, Later, Tabled, or
   Rejected-current state and requires a separate package before product work.
 - Deep Navy Gold supersedes Iris/Direction C as the approved shared theme.
-- The controlled data sequence is private Capture source → reviewed canonical Moment → governed placement by reference. Journal is not the current canonical source model.
-- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.7
-  and Roadmap v2.6 control the current architecture; the exact
-  PS-JOURNAL-001 reconciliation controls the restart and preserves the deployed
-  Capture → Moment → governed-reference sequence.
-- The current public wave is résumé refinement only. Interview Studio receives a later, separate public/private gate.
+- The controlled user-facing commit is Save Moment. Technical source,
+  transcription, upload, revision, and proposal states may exist underneath;
+  one private canonical Moment in member-authored or explicitly
+  accepted/reviewed language is authoritative. Optional AI enrichment cannot
+  delay, replace, or silently rewrite it. Owner-Journal membership is derived
+  from eligible saved Moments and stores no second fact body. Downstream rooms
+  and audience views use exact governed references.
+- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.8,
+  Roadmap v2.7, and `PS-JOURNAL-001` control the architecture while preserving
+  the safety and provenance value of the deployed Capture-to-Moment sequence.
+- Existing public résumé, Story, Interview Studio, and Ask Pete surfaces remain
+  governed by their released packages. The one-Journal authority does not make
+  a public Journal, Ask Slate AI, messaging, or any new audience view live.
 
 ## Change rule
 

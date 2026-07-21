@@ -25,6 +25,30 @@ That current page is useful design evidence, not proof that a multi-user Story
 Composer exists. No package may represent this future capability as live before
 the authenticated, owner-scoped persistence and publication contracts ship.
 
+## Relationship to the one Journal
+
+Journal and My Story are one truth system with different jobs.
+
+- Journal is the member's complete, chronological, searchable, lifecycle-
+  governed record over canonical Moments.
+- A public or permissioned Journal is an owner-curated, server-authorized
+  timeline/profile projection over selected eligible Moments.
+- My Story is a finite, authored, visually composed explanation built from
+  selected governed Moment/projection references.
+
+My Story shall not automatically display every Journal Moment or become a
+recent-activity timeline. Journal shall not absorb Story's freeform composition
+metadata or become a drag-and-drop canvas. Both may share cinematic editorial
+quality, typography, media treatment, and chapter rhythm, but Journal must
+preserve functional chronology, search, correction, lifecycle, and stable
+semantic order while Story preserves purposeful selection and authored
+composition.
+
+Removing an item from Story keeps its canonical Moment in the owner's Journal.
+Saving a Moment adds no Story item. Public Journal publication and Story
+publication are separate explicit actions and may use different eligible
+subsets, wording, audience, and presentation state without copying facts.
+
 ## Member-owned composition covenant
 
 - The member, not AI, is the final authority over Story selection, emphasis,
@@ -80,7 +104,8 @@ Reduced motion shall remove animated rearrangement without removing control.
 ## Data and architecture contract
 
 - Canonical Capture and Moment content remains single-source. Story items refer
-  to approved canonical versions or governed projection records; layout records
+  to exact governed Moment versions or projection records also available
+  through the owner's one Journal; layout records
   do not copy authoritative story text.
 - Story selection, purpose-specific wording, audience, and layout are governed
   projection data with owner scope, lifecycle, provenance, and revision state.

@@ -4,12 +4,12 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.7 + Roadmap v2.6).** This supersedes any version-specific note below.
+> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.8 + Roadmap v2.7).** This supersedes any version-specific note below.
 
 # Claude / Claude Code instructions
 
 The live authority is `docs/governance/CURRENT_BASELINE.yaml` and its referenced
-Bible v2.7 / Roadmap v2.6 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
+Bible v2.8 / Roadmap v2.7 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
 an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
 language as current merely because it remains in repository history.
 
@@ -23,6 +23,13 @@ protected owner surface when the package says so. Before editing, read that
 initiative's README, confirm its designated manager, reserved branch and files,
 and exact `origin/main` base. Do not begin another lane unless it has a separate
 writer, branch, worktree, and non-overlapping files.
+
+Use `docs/AI_MODEL_AND_ROLE_ROUTING.md` for current Claude/Codex role and model
+routing. Keep one durable package manager, one implementation writer, and an
+independent reviewer only when the package's risk warrants it. Do not spend a
+second model on re-authoring an already accepted package merely to
+cross-pollinate. Verify the actual model shown by the tool before relying on a
+marketing nickname or remembered label.
 
 Owner decision, 2026-07-19: Claude self-manages its assigned branch. That means
 implementing, reviewing the complete diff, finding and fixing its own issues,

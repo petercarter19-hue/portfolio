@@ -1,5 +1,16 @@
 # PeerSlate Next-Task Board
 
+> **SUPERSEDED SNAPSHOT — DO NOT DISPATCH THESE TASKS.** This board records a
+> July 20 review against an older `origin/main`. Its Connected-System v2.7 and
+> v1.5.1 authority questions are resolved by Bible v2.8, Roadmap v2.7, and
+> `PS-GOV-JOURNAL-SYSTEM-001`. Current work must be dispatched only from
+> `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, `ACTIVE_INITIATIVES.md`, and
+> `MANAGER_SESSION_HANDOFF.md` after fetching `origin`. The current available
+> Journal gate is the bounded default-off `PS-JOURNAL-001` private core with one
+> manager and one writer; Capture is an action, Save Moment is the member
+> commit, and Journal membership is derived. This historical body is retained
+> as review provenance, not current instruction.
+
 _Prepared 2026-07-20 by a Claude Code review session at Azure `origin/main`
 `531013dd8c1a05e2443becd881a226755f27ca14`. This board is a dispatch aid, not an
 authority record. `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and

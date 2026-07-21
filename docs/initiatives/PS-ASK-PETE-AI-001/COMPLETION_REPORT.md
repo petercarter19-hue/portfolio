@@ -1,5 +1,12 @@
 # PeerSlate Completion & Handoff Report
 
+> **HISTORICAL DOCKET REPORT — CURRENT SPLIT APPLIES.** This report preserves
+> the original Ask Pete discovery registration. The current package README and
+> agenda limit Ask Pete / Ask [Name] AI to public or audience-authorized use.
+> Signed-in private history, documents, Qualification Alignment, and future
+> multimodal workflows belong to `PS-ASK-SLATE-AI-001`; Ashley AI is retired
+> terminology and Owner AI is internal authorization language only.
+
 ## A. Status
 
 - Package: PS-ASK-PETE-AI-001 - docket-registration slice

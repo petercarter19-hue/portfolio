@@ -1,5 +1,12 @@
 # PeerSlate Completion & Handoff Report
 
+> **HISTORICAL RESTART CHECKPOINT — DO NOT DISPATCH FROM THIS REPORT.** This
+> report preserves the July 20 restart evidence. Bible v2.8, Roadmap v2.7, the
+> current `PS-JOURNAL-001/README.md`, and files 01–05 now control. In
+> particular, Save Moment creates the private canonical Moment and derived
+> Journal membership without a mandatory draft-promotion or Add to Journal
+> gate. Runtime manager and writer remain unassigned.
+
 ## A. Status
 
 - Package: PS-JOURNAL-001 restart activation and v1.5.1 reconciliation

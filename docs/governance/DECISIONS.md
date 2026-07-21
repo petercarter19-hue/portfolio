@@ -403,3 +403,59 @@ This is an append-only operational decision record. The current Bible and Roadma
   default-off, Photo Capture remains flag-off, Projects remain planned, and the
   PS-JOURNAL-001 definition/architecture gate is active while the target Journal
   UI remains not live.
+
+## 2026-07-20 - Adopt universal Capture, one derived Journal, trusted return services, and bounded AI/messaging architecture
+
+- Adopt Bible v2.8 and Roadmap v2.7, superseding Bible v2.7 and Roadmap v2.6
+  wherever they conflict. Preserve the earlier versions as decision history.
+- Capture is an action that can open in any authorized context. It is not a
+  required page, tab, or destination. The final route/navigation map remains
+  open and must be approved separately.
+- The member-facing commit is **Save Moment**. Technical source, upload,
+  transcription, revision, processing, and proposal states may exist inline or
+  underneath, but the action creates one private canonical Moment in
+  member-authored or explicitly accepted/reviewed language. AI enrichment may
+  not delay, replace, or silently rewrite that commit.
+- Every eligible saved Moment belongs to its owner's one Journal by
+  deterministic derived membership. Do not create a Journal Placement, Add to
+  Journal gate, copied `journal_entry.body`, or second canonical narrative.
+- The owner Journal is the complete private chronology. Public, Connection, and
+  selected-person Journals are server-authorized, owner-curated projections
+  over the same exact Moments and may feel like a timeline/profile. Authorization
+  occurs before retrieval.
+- Journal and My Story are not merged. Journal is complete, chronological,
+  searchable, and lifecycle-oriented; My Story is finite, intentionally
+  selected, authored, and visually composed. Both reference exact governed
+  Moment versions. Saving a Moment adds no Story item, and removing a Story item
+  does not remove the Moment from Journal.
+- Downstream Feed, Story, Work, Projects, Board, Resume, Studio, and future
+  messaging use exact references and purpose-specific projection metadata after
+  Save Moment. No consumer independently creates a competing fact pipeline.
+- Commit `PS-RETURN-VALUE-001` as staged future architecture for replay and
+  resurfacing, Momentum, Prompt/Ritual, What PeerSlate Noticed, and Slate Mirror.
+  Outputs are private, source-linked, correctable, dismissible, rate-limited,
+  non-diagnostic, and non-shaming. Momentum is not necessarily daily. Quiet
+  acknowledgements or badges may be used for truthful, purposeful,
+  non-competitive criteria; points, levels, public rank, loss/reset framing, and
+  trophy spam remain rejected.
+- The signed-in intelligence umbrella is **Ask Slate AI**. **Ask My Slate** is a
+  contextual CTA. Specialist experiences are workflows, not separate bots.
+  **Ashley AI** is retired terminology. **Ask Pete AI** remains Pete's public
+  instance of reusable **Ask [Name] AI** and cannot retrieve private Slate data.
+- Messaging is a committed later direction, not a first-release capability. It
+  requires identity, Connection/consent, authorization, safety and moderation,
+  blocking/reporting, retention/deletion, notification, abuse response, and
+  legal gates. AI may propose wording but never sends a message.
+- Original authorized audio playback may remain possible. Synthetic or cloned
+  own-voice playback is not committed. Life Constellation and other unselected
+  research concepts remain in the Revisit Register.
+- Adopt the Early Legal and Site Readiness Standard now. Counsel and security
+  gates must precede public Journal, broad community/messaging, private
+  multimodal AI, or broad launch claims.
+- Adopt the AI Model and Role Routing standard: one durable package manager,
+  one self-managed writer, and an independent reviewer only when risk warrants
+  it. Do not spend tokens re-authoring an already accepted architecture merely
+  to pass it between Claude and Codex.
+- This authority package changes no route, schema, feature flag, deployment
+  setting, audience, AI service, message path, or live product behavior. The
+  next product gate is one bounded private-Journal-core implementation package.

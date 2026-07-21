@@ -1,5 +1,13 @@
 # PS-JOURNAL-001 — Owner Restart and v1.5.1 Reconciliation
 
+> **July 20, 2026 continuation:** This record remains the historical restart
+> provenance. Peter's later same-day universal-Capture and one-Journal decision
+> is controlling through this package's README and files 01–05. In particular,
+> it supersedes “reviewed Moments only,” any separate Add to Journal step, and
+> any interpretation of Capture as a destination. Journal membership is now
+> derived from every eligible member-saved canonical Moment and creates no
+> Placement or copied Journal body.
+
 ## Decision record
 
 On July 20, 2026, Peter Carter supplied
@@ -23,9 +31,10 @@ This is the explicit owner authorization required by the former hold. Under
   inspected include Section 4 (pages 14–16), Appendix J (pages 84–87), and
   Appendix K (pages 88–96 plus its build sequence).
 
-The source is retained as decision provenance. Bible v2.7 and Roadmap v2.6
-remain the controlled current documents except where Peter's July 20 decision
-explicitly changes the Journal hold and clarifies the memory-profile emphasis.
+The source is retained as decision provenance. Bible v2.7 and Roadmap v2.6 were
+current at this restart checkpoint; Bible v2.8 and Roadmap v2.7 now supersede
+them and incorporate Peter's later July 20 universal-Capture, one-Journal,
+return-value, AI, and messaging decisions.
 
 ## Comparison result
 
