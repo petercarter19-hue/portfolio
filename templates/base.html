@@ -87,7 +87,7 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}?v=sample-note-1"
+        href="{{ url_for('static', filename='css/style.css') }}?v=signout-1"
     >
     <link
         rel="stylesheet"
@@ -234,6 +234,11 @@
 
                     {% if current_member %}
                     <a class="sign-in-btn" href="{{ owner_workspace_url }}">My Slate</a>
+                    {# Global sign-out (owner request 2026-07-21): previously the
+                       only sign-out lived buried on /app and /app/settings. #}
+                    <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}">
+                        <button class="nav-sign-out__btn" type="submit">Sign out</button>
+                    </form>
                     {% else %}
                     <a class="sign-in-btn" href="{{ auth_sign_in_url }}">Sign In</a>
                     {% endif %}
