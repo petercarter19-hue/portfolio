@@ -1,0 +1,172 @@
+BEGIN COPY FOR CHATGPT
+
+You are helping create a production-intent visual concept set for PeerSlate.
+Treat everything below as controlling product context for this assignment.
+The attached images control visual ambition and material character only where
+their roles are explicitly stated. They do not override the current product
+rules below.
+
+STATUS AND PURPOSE
+
+PeerSlate is a multi-user, private-first professional memory, growth, and
+expression platform. This assignment creates design reference images for a
+future Journal experience. It is not a claim that Journal is implemented,
+deployed, or live. Use generic fictional member data. Do not use Pete's real
+employers, dates, biography, photos, or other personal information.
+
+The governing product loop is:
+
+Capture anywhere -> Save one private Moment -> find it immediately in the one
+Journal -> optionally use that same Moment elsewhere now or later through a
+governed reference.
+
+LOCKED PRODUCT RULES
+
+1. Capture is an action, not a place.
+   - It may open from any eligible signed-in room.
+   - It is not a page, tab, room, or required navigation destination.
+   - The current page remains visible behind or around the composer where the
+     form factor permits.
+   - Opening and closing the composer preserves the member's origin context.
+
+2. The universal composer has Type and Speak as equal first-class choices.
+   - Neither choice is hidden behind the other.
+   - Text remains usable if microphone, speech, AI, or another provider is
+     unavailable.
+   - Later media inputs may join the same architecture, but this visual round
+     does not imply that every media type is live.
+
+3. Save Moment is the single member-facing commit.
+   - The successful action is labeled exactly: Save Moment.
+   - It creates exactly one private canonical Moment in the member's own
+     language.
+   - That Moment becomes part of the owner's Journal by definition.
+   - There is no Add to Journal step, draft-promotion journey, destination
+     picker before writing, or forced trip to Journal after saving.
+   - AI never delays, replaces, or silently rewrites the member's saved words.
+
+4. The owner has one Journal.
+   - It is the complete private chronological, searchable, correctable,
+     exportable, deletable, and reusable record of eligible saved Moments.
+   - Journal membership is derived from the canonical Moments. There is no
+     copied Journal entry body and no separate Journal fact store.
+   - Timeline, manage/list, detail, archive, and curation are local modes of
+     the same Journal, not additional top-level products.
+
+5. Journal and My Story are one truth system but different experiences.
+   - Journal answers: What have I saved, how has it changed, who can see it,
+     and what can I do with it?
+   - My Story answers: How do I want someone to understand a selected set of
+     experiences together?
+   - Journal is complete, chronological, searchable, editable, and lifecycle
+     oriented.
+   - My Story is finite, intentionally selected, authored, cinematic, and
+     visually composed for a purpose or audience.
+   - Saving a Moment never adds it to My Story automatically.
+   - Removing an item from My Story never removes its Moment from Journal.
+   - Journal may reach My Story's level of editorial quality, media craft,
+     chapter rhythm, and emotional care without becoming a drag-and-drop
+     canvas or a prettier activity feed.
+
+6. Privacy, audience, and publication are explicit.
+   - New Moments default to Private to you / Only Me.
+   - Save Moment does not publish, share, message, post to Feed, change a
+     resume, alter My Story, create a Project, or broaden an audience.
+   - The owner sees the complete Journal.
+   - Selected-person, Connection, signed-in member, and Public views are later
+     owner-curated, server-authorized projections of permitted fields only.
+   - Authorization happens before data retrieval. A browser never downloads a
+     private Journal and hides rows client-side.
+   - Do not visually imply that public Journal, Connection views, or sharing
+     are currently live in this first-round concept.
+
+7. Reuse happens after save.
+   - A saved state may offer View in Journal and Use This Moment as optional
+     next actions.
+   - The member can simply finish and remain in the origin room.
+   - Story, Work, resume, Project, Board, Studio, Feed, public Journal, and
+     messaging consume governed references later; they do not create a second
+     canonical fact pipeline.
+
+8. Navigation remains open.
+   - Do not invent or finalize a permanent desktop or mobile navigation map.
+   - Do not add a Capture tab or a second navigation layer.
+   - A quiet Capture a Moment control may appear in the shell as an action, but
+     it must not read as a route or destination.
+   - Timeline, Manage, and similar Journal controls must read as local view
+     controls, not global navigation.
+
+VISUAL SYSTEM
+
+PeerSlate uses the Deep Navy Gold design foundation.
+
+- Light-first, cinematic, premium, editorial, and calm.
+- A deep navy architectural frame may surround a warm ivory or Cloud White
+  working surface.
+- Cloud White canvas: #F6F7FA.
+- Surface white: #FFFFFF.
+- Ink Navy text: #141A28.
+- Primary Navy: #203767.
+- Strong Navy: #132447.
+- Marigold: #B87900.
+- Text-safe gold: #8A5A00.
+- Soft gold: #F4E4B4.
+- Success Teal: #1E725F.
+- Newsreader-style editorial headings.
+- Inter-style navigation, controls, metadata, and body UI.
+- Generous vertical spacing and progressive disclosure.
+- One dominant product object in the opening viewport.
+- Restrained glass, depth, light, and material texture; no decorative excess.
+- Do not use pink, rose, magenta, coral, purple, or iris as semantic accents.
+- Do not make the product look like a generic analytics dashboard, CRM, task
+  manager, social feed, card grid, sci-fi HUD, or crypto product.
+
+The Journal's dominant object is the member's longitudinal record. It should
+feel like a beautifully edited life ledger that remains genuinely usable for
+search, correction, privacy, source inspection, and long history.
+
+TRUTH AND ACCESSIBILITY
+
+- Add a small annotation outside the product frame: Production-intent concept
+  - Journal is not currently live.
+- Never label a planned capability as live.
+- Do not use color alone to convey privacy, status, or selection.
+- Maintain strong contrast and readable type.
+- Preserve a clear chronological semantic order even if the desktop layout has
+  editorial layering.
+- Mobile must be a purpose-built readable document flow, not a shrunken
+  desktop screen.
+- Controls need visible focus treatment and comfortable touch targets.
+- Reduced motion removes decorative movement without hiding state.
+- Avoid tiny labels, dense tables, and long paragraphs inside the generated
+  screens.
+
+CURRENT FIRST-ROUND BOUNDARY
+
+This first round contains four visual anchors:
+
+1. Owner Journal opening on desktop.
+2. Universal Type/Speak composer opened from Journal on desktop.
+3. The same composer as a purpose-built mobile sheet.
+4. A successful private save while preserving the member's My Story origin.
+
+This first round does not complete the full visual-authority gate. Voice
+recording/transcription/review, save failures, enrichment pending, owner
+manage/detail/curation, audience projections, Home and Studio origins, empty
+and long-history states, 200-percent reflow, visible keyboard focus, reduced
+motion, and restriction/recovery states remain explicitly required follow-up
+boards.
+
+If an attached older image shows a Capture page, Add to Journal, forced feed,
+automatic destination, separate Journal body, or conflicting navigation,
+ignore that behavior. Preserve only the mapped visual quality.
+
+Before generating, briefly restate these five non-negotiables:
+
+- Capture is an action, not a destination.
+- Type and Speak are equal.
+- Save Moment is the only commit.
+- One private canonical Moment appears in one owner Journal without copying.
+- Journal and My Story share truth but remain different experiences.
+
+END COPY FOR CHATGPT

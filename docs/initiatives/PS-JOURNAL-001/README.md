@@ -70,6 +70,11 @@ messaging remain purpose-specific uses of the same governed Moments.
    public/permissioned projection model.
 6. `05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md` — bounded slices, gates,
    evidence, and stop conditions.
+7. `visual-authority/chatgpt-first-set/` — phone-friendly, copy/paste-ready
+   briefing material for the first Journal visual-generation round. This is
+   design preparation only; generated screens do not become the accepted
+   visual authority until Pete and the designated manager review and accept a
+   complete production-intent state set under the Visual Integrity Standard.
 
 ## Adjacent packages
 

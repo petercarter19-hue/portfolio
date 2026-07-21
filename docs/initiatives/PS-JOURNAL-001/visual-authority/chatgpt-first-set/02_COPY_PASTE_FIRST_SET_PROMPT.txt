@@ -1,0 +1,168 @@
+BEGIN FIRST-SET GENERATION PROMPT
+
+Use the PeerSlate context already pasted in this conversation and the three
+uploaded reference images in this exact role order:
+
+1. 03_dark_ui_concept_with_gold_accents.png
+   Primary reference for architectural framing, navy-and-gold atmosphere,
+   material depth, restrained glass, and premium Journal tone. Do not copy any
+   outdated product behavior or navigation shown in it.
+
+2. 04_polished_ui_ux_storyboard_mockup.png
+   Reference for cinematic editorial quality, media treatment, authored
+   rhythm, and the emotional care My Story should preserve. Do not turn
+   Journal into a freeform Story canvas.
+
+3. 02_capturing_moments_with_peerslate.png
+   Reference for the warmth and immediacy of capturing a meaningful moment.
+   Do not reproduce a separate Capture page, an Add to Journal step, automatic
+   placement, or a forced destination.
+
+Create a coherent four-image product-design set. Generate one image at a time
+and wait for approval after each image. Keep the same fictional member,
+typography, color tokens, shell, spacing rhythm, component language, and level
+of finish across all four.
+
+Use full-screen application compositions, not laptop or phone hardware
+mockups, hands holding devices, marketing collages, floating screens, or
+photorealistic office scenes. Keep text short, sharp, and legible. Do not use
+lorem ipsum.
+
+Use the fictional member name MAYA THOMPSON and these sample Moments where
+needed:
+
+- I led the first client workshop without reading from my notes.
+- I realized I enjoy translating technical ideas for new teammates.
+- After interview practice, I changed how I explain the product launch.
+- I asked Jordan to review the launch plan before Friday.
+
+Use only short exact interface labels from this list:
+
+- Journal
+- Private to you
+- Capture a Moment
+- Timeline
+- Manage
+- Type
+- Speak
+- What happened - or what do you want to remember?
+- Cancel
+- Save Moment
+- Moment saved privately
+- It is now in your Journal.
+- Done
+- View in Journal
+- Use This Moment
+
+Do not invent permanent top-level navigation labels. If shell context is
+needed, keep it understated and incomplete rather than defining PeerSlate's
+final route map. Capture a Moment is an action, never an active navigation tab.
+
+IMAGE JOURNAL-01 - OWNER JOURNAL OPENING, DESKTOP
+
+Create a 16:10 widescreen product screen, approximately 1440 by 900 in
+composition.
+
+Dominant object: Maya's private chronological Journal, designed as a premium
+editorial life ledger rather than a dashboard.
+
+Show:
+
+- a deep navy architectural frame around a warm ivory working stage;
+- the heading Journal and a clear Private to you status;
+- one restrained Capture a Moment action;
+- local Timeline and Manage controls that do not resemble global navigation;
+- three chronological Moment entries with generous rhythm, dates, short source
+  or privacy metadata, and restrained media or typographic emphasis;
+- enough source/privacy/lifecycle cues to communicate trust without clutter;
+- a clear vertical reading order that could reflow accessibly;
+- one dominant record, not a grid of equal cards;
+- a small annotation outside the product frame: Production-intent concept -
+  Journal is not currently live.
+
+Do not show:
+
+- a Capture page or selected Capture tab;
+- Add to Journal;
+- social engagement counts;
+- public/profile controls as if live;
+- automatic AI summaries presented as fact;
+- a permanent navigation design;
+- a Story canvas;
+- generic KPI cards or charts.
+
+Generate JOURNAL-01 first and stop. Do not generate the remaining images until
+I approve the direction.
+
+AFTER JOURNAL-01 IS APPROVED, IMAGE JOURNAL-02 - UNIVERSAL COMPOSER, DESKTOP
+
+Keep the accepted JOURNAL-01 shell and Journal visible behind a contained
+right-side sheet or calm dialog. The origin Journal must still feel present.
+
+Dominant object: the context-preserving Capture a Moment composer.
+
+Show:
+
+- Type and Speak as equally prominent opening choices;
+- Type active for this frame without diminishing Speak;
+- one spacious writing field with the approved placeholder;
+- Private to you with a non-color privacy cue;
+- Cancel as secondary and Save Moment as the single dominant commit;
+- a visible close control and clear focus hierarchy;
+- no destination, audience expansion, or Journal placement choice;
+- the same outside annotation that the concept is not currently live.
+
+The composer must look like an action opened in place, never a separate route
+or page.
+
+AFTER JOURNAL-02 IS APPROVED, IMAGE JOURNAL-03 - UNIVERSAL COMPOSER, MOBILE
+
+Create a purpose-built 390 by 844 portrait composition using the accepted
+visual system. Show the composer as a mobile full-height or bottom sheet over
+the Journal context, not as a scaled desktop panel.
+
+Show:
+
+- Capture a Moment;
+- equally first-class Type and Speak choices;
+- a comfortable writing area;
+- Private to you;
+- close, Cancel, and Save Moment with large touch targets;
+- readable hierarchy with no horizontal clipping;
+- enough background context to show that the member did not navigate to a
+  Capture destination;
+- the small planned-concept truth annotation outside the product frame.
+
+Do not add a fixed Capture tab, tiny desktop controls, dense metadata, or a
+miniature timeline.
+
+AFTER JOURNAL-03 IS APPROVED, IMAGE JOURNAL-04 - SAVED FROM MY STORY, DESKTOP
+
+Create a 16:10 widescreen frame showing the same composer flow completing over
+or beside a cinematic My Story origin. Use the accepted PeerSlate visual
+language and the Story reference's authored quality without claiming that the
+future Story Composer is live.
+
+Dominant object: a calm successful private-save confirmation while the My Story
+origin remains unchanged and recognizable.
+
+Show this exact hierarchy:
+
+- Moment saved privately
+- It is now in your Journal.
+- Done as the dominant completion action.
+- View in Journal and Use This Moment as quieter optional actions.
+
+Show no automatic Story insertion, layout change, publication, audience
+change, or Add to Journal step. The saved Moment is private and the member can
+finish without leaving My Story. Add the same outside annotation that this is
+a production-intent concept and Journal is not currently live.
+
+CONSISTENCY AND QUALITY REQUIREMENT
+
+Every later image must look like the same product as the approved JOURNAL-01,
+not a new redesign. Preserve the accepted frame, palette, typographic voice,
+component geometry, spacing, lighting, and restraint. When revising, change
+only the item requested and keep accepted elements fixed.
+
+END FIRST-SET GENERATION PROMPT
