@@ -14506,3 +14506,43 @@ body[data-theme="dark"] .peerslate-home-page,
 body[data-theme="dark"].peerslate-home-page {
     background: var(--home-bg);
 }
+
+/* ============================================================
+   SAMPLE COMMUNITY NOTE (2026-07-21)
+   Honest disclosure banner for pre-launch community surfaces.
+   Self-contained (own bg + fg) so it reads on light OR dark /
+   navy community backgrounds. Soft-gold on ink-navy = 13.7:1,
+   well past WCAG AA. Markup: partials/sample_community_note.html
+   ============================================================ */
+.ps-sample-note {
+    display: flex;
+    gap: .55rem;
+    align-items: flex-start;
+    width: fit-content;
+    max-width: 640px;
+    margin: .85rem 0 0;
+    padding: .55rem .8rem;
+    background: var(--ps-soft-gold, #f4e4b4);
+    color: #141a28;
+    border: 1px solid rgba(20, 26, 40, .14);
+    border-radius: 12px;
+    font-family: var(--ps-font-ui, "Inter", system-ui, sans-serif);
+    font-size: .8rem;
+    line-height: 1.45;
+    text-align: left;
+}
+.ps-sample-note svg {
+    flex: none;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: .06rem;
+    fill: none;
+    stroke: #8a5a00;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.ps-sample-note strong { font-weight: 700; }
+@media (max-width: 640px) {
+    .ps-sample-note { font-size: .76rem; max-width: 100%; }
+}
