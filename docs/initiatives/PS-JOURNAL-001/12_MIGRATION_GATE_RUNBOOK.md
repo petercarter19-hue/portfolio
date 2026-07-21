@@ -69,6 +69,24 @@ second apply is not a clean no-op; row counts change unexpectedly; the apply
 path errors mid-transaction; or production smoke shows any public change.
 The flag stays off in every failure case.
 
+## Recorded gate conditions from Opus reviews (PRs 129 and 140)
+
+1. **The SQL trio must execute live before flag-on** — migration, second-apply
+   idempotency no-op, rollback-readiness, and the full verification script
+   (sections 1–15, now including search isolation §10–15). Static review is
+   not a substitute; this is where escaping literalness, two-owner isolation,
+   pagination order, and forged-owner behavior get executable proof.
+2. **Collation decision to record as accepted:** search comparisons are forced
+   to `Latin1_General_CI_AS` — case-insensitive but **accent-sensitive**
+   ("café" will not match "cafe") and Latin-centric. Confirm or revise at the
+   gate; CI_AI is the friendlier alternative for a personal journal.
+3. **Performance note to record:** search is a leading-wildcard LIKE over
+   nvarchar(max) narrative — non-SARGable, owner-bounded scan. Acceptable for
+   the pilot; revisit (full-text or trigram index) before broad enablement.
+4. **Optional API polish (J1.x):** the endpoint length-checks `q` before
+   stripping while the service checks after — a whitespace-padded 200-char
+   query 400s at the API. Harmless; align when convenient.
+
 ## After the gate
 
 Only after this runbook's evidence is recorded and Pete accepts it may
