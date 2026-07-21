@@ -1,7 +1,20 @@
 # PeerSlate Manager Session Handoff
 
-_Current snapshot: 2026-07-20. Fetch `origin` before relying on any recorded
+_Current snapshot: 2026-07-21. Fetch `origin` before relying on any recorded
 commit or lane status._
+
+> **Reconciled 2026-07-21.** A manager session found that Azure PRs 103-110,
+> 112-114, 116, 117, and 119 had never been recorded in the controlling
+> governance pointers, and that two closed lanes were still described as open.
+> See `docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md` for the full
+> finding and `docs/governance/OPEN_BRANCH_REGISTER.md` for pushed work that
+> sits outside every lane record.
+>
+> **Standing instruction for every future manager:** when a package closes,
+> update `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and
+> `ACTIVE_INITIATIVES.md` in the closeout pull request itself. A governance
+> release that rewrites these files must reconcile every merged pull request
+> since the last recorded one, not only its own lineage.
 
 ## Current authority
 
@@ -92,7 +105,9 @@ commit or lane status._
 
 | Lane | Current state | Next controlled action |
 |---|---|---|
-| PS-HOME-INTERVIEW-PARITY-001 | Claude Code architecture checkpoint `353a5810b18e7db22f35319fbecc9c2fa97d8b72` awaits designated-manager review | Review exact checkpoint before any bounded product edit |
+| PS-HOME-INTERVIEW-PARITY-001 | **Closed.** Released by PR 105 at `4deb0a07b6faf2d93d445e212207aeb84b1a71c4`, pipeline 154; closed out by PR 106, pipeline 156; verified live | None. Homepage Interview parity is closed; a further change needs a new package |
+| PS-CAPTURE-PHOTO-LIFECYCLE-001 | **Closed.** PRs 107/108/109, pipelines 157/158/160; Photo still flag-off; Defender choice B recorded | Settle the Defender A/B contradiction in the open-branch register before any production proof planning |
+| PS-GOV-TRUTH-RECONCILIATION-001 | In progress on `work/2026-07-21-governance-truth-reconciliation` from `0717e03c9f1d4e6b67f355fd1556651086ddc351`; Claude Code sole manager; governance records only | Obtain Pete's acceptance of the corrected record, then complete the Azure PR and closeout |
 | PS-HOME-FRONTEND-001 | Exact-authority frontend package activated; separate Codex writer assignment is recorded in current governance | Implement only the finite truthful `owner-home.v1` contract; preserve default-off behavior; treat `/app/capture` only as the recorded temporary bridge, never target IA |
 | PS-CAPTURE-MEDIA-001 | Photo is released flag-off; enablement writer unassigned | Keep disabled; later integrate Save Moment/derived Journal or obtain an explicit temporary exception, then pass lifecycle/isolation/homepage-parity/enablement gates |
 | PS-JOURNAL-001 | Architecture is current; private-core runtime writer unassigned | Start one fresh branch from post-authority `origin/main` and prove the bounded private core |

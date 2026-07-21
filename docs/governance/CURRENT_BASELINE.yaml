@@ -14,9 +14,17 @@
 # Ask Slate AI, later messaging, and the Journal/My Story boundary. This
 # activation is architecture and governance only; it does not claim that any
 # new Journal, return-value, AI, messaging, or public-projection runtime is live.
+# Reconciled on 2026-07-21 by PS-GOV-TRUTH-RECONCILIATION-001. The July 20
+# governance releases advanced the authority documents but did not record
+# Azure PRs 103-110 and 112-117 and 119, and they carried forward a stale
+# PS-HOME-INTERVIEW-PARITY-001 status after that package had already been
+# implemented, released, closed out, and verified live. Those omissions are
+# corrected here. This reconciliation changes governance records only; it adds
+# no route, schema, feature flag, template, application behavior, or member
+# capability, and it makes no new live claim.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
-updated_at: "2026-07-20"
+updated_at: "2026-07-21"
 
 authority:
   remote: origin
@@ -94,10 +102,82 @@ authority:
   journal_system_authority_pipeline_build: "20260721.1"
   journal_system_authority_redundant_pipeline: 172
   journal_system_authority_redundant_pipeline_build: "20260721.2"
+  journal_system_authority_closeout_source_commit: "ba4e9c30b1e615842cc97a5625426449cf9e1c08"
+  journal_system_authority_closeout_merge_commit: "0717e03c9f1d4e6b67f355fd1556651086ddc351"
+  journal_system_authority_closeout_pr: 119
+  journal_system_authority_closeout_pipeline: 173
+  journal_system_authority_closeout_pipeline_build: "20260721.3"
+  home_interview_parity_activation_merge_commit: "b7b674415f1f7c9ac2844fa0482091b62a7ec979"
+  home_interview_parity_activation_pr: 103
+  home_interview_parity_activation_pipeline: 151
+  home_frontend_activation_merge_commit: "5217247d811d81af6ca92504dda62d9a2c756563"
+  home_frontend_activation_pr: 104
+  home_frontend_activation_pipeline: 153
+  home_interview_parity_source_commit: "6625b52ca4620b503ec56dcc15567470b6ef2499"
+  home_interview_parity_merge_commit: "4deb0a07b6faf2d93d445e212207aeb84b1a71c4"
+  home_interview_parity_pr: 105
+  home_interview_parity_pipeline: 154
+  home_interview_parity_pipeline_build: "20260720.25"
+  home_interview_parity_closeout_merge_commit: "8fb501da2405d30b76613902648ac1eb0232c058"
+  home_interview_parity_closeout_pr: 106
+  home_interview_parity_closeout_pipeline: 156
+  capture_photo_lifecycle_gate_merge_commit: "531013dd8c1a05e2443becd881a226755f27ca14"
+  capture_photo_lifecycle_gate_pr: 107
+  capture_photo_lifecycle_gate_pipeline: 157
+  capture_photo_lifecycle_source_commit: "f74afcea11f74b8be1b8034d98080c0c5cc38b32"
+  capture_photo_lifecycle_merge_commit: "919adba534d70c4f3f30979b8d43e000912079c8"
+  capture_photo_lifecycle_pr: 108
+  capture_photo_lifecycle_pipeline: 158
+  capture_photo_lifecycle_closeout_merge_commit: "df8b1872740435f2baeddc204f130202ab73e87e"
+  capture_photo_lifecycle_closeout_pr: 109
+  capture_photo_lifecycle_closeout_pipeline: 160
+  next_task_board_merge_commit: "1fb64380186447c0512b4a1b277ff6d0a6f3d767"
+  next_task_board_pr: 110
+  next_task_board_pipeline: 161
+  branch_disposition_merge_commit: "ef918e05421e9a8d048018f0f9fd71549ea822fc"
+  branch_disposition_pr: 112
+  branch_disposition_pipeline: 163
+  interview_history_salvage_merge_commit: "45f4a338a838fa013aea08e3f2bc4e3641abee83"
+  interview_history_salvage_pr: 113
+  interview_history_salvage_pipeline: 164
+  interview_coaching_diagnostics_merge_commit: "ed3409a902f38e9437f6fbf70d3f2f61625037f4"
+  interview_coaching_diagnostics_pr: 114
+  interview_coaching_diagnostics_pipeline: 165
+  journal_restart_automatic_pipeline: 167
+  bible_v27_roadmap_v26_activation_merge_commit: "efd34335284d6c823d47cd7bac3cd2f901533612"
+  bible_v27_roadmap_v26_activation_pr: 117
+  bible_v27_roadmap_v26_activation_pipeline: 169
+  abandoned_pull_requests: "PR 115 (PS-GOV-CONNECTED-SYSTEM-001 Bible v2.7 activation, source 4fa0a3670dcf1d117381df56b83f8ea57a86830d) was abandoned and superseded by PR 117. Its unmerged source branch work/2026-07-20-bible-v27-activation is still on origin."
+  journal_visual_handoff_merge_commit: "6496d3f8747fb5e2bbfeaf06fc43ac3f52480ac6"
+  journal_visual_handoff_pr: 121
+  journal_visual_handoff_pipeline: 174
+  journal_visual_handoff_closeout_merge_commit: "6cd8cffb46841e896f0458a1a8e371d9c59626c1"
+  journal_visual_handoff_closeout_pr: 122
+  journal_visual_handoff_closeout_pipeline: 176
+  interview_validator_source_commit: "56a3232859952647f21f35a4e11cb19ea3381700"
+  interview_validator_merge_commit: "f3749d86c308ab0884882bdaff71c2543f4e8a8a"
+  interview_validator_pr: 123
+  interview_validator_pipeline: 177
+  interview_validator_pipeline_build: "20260721.7"
+  interview_mic_source_commit: "60461958051681b9e2fb6b741fa2966cdca54c9d"
+  interview_mic_merge_commit: "6d36bd48c9fff97d7dcb1a00ebed36e55c5d658b"
+  interview_mic_pr: 124
+  interview_mic_pipeline: 178
+  interview_mic_pipeline_build: "20260721.8"
+  photo_proof_readiness_source_commit: "c69bd8181b6376e5d6c41d327d240365ebb85986"
+  photo_proof_readiness_merge_commit: "74a7427e775d3b49df839fbecc1ffa20c545c471"
+  photo_proof_readiness_pr: 125
+  photo_proof_readiness_pipeline: 179
+  photo_proof_readiness_redundant_pipeline: 180
+  interview_studio_asset_signature: "studio-5a5c-4"
   production_url: "https://peerslate.com"
-  application_behavior_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
-  application_behavior_pipeline: 149
-  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. This governance activation assigns the exact-authority Owner Home frontend while preserving the default-off boundary and finite owner-home.v1 contract. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. PR 102/pipeline 150 closed its release governance. PS-HOME-INTERVIEW-PARITY-001 has a clean pushed architecture checkpoint at 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaiting manager review before product edits. Fetch origin for the exact current tip."
+  deployed_main_commit: "74a7427e775d3b49df839fbecc1ffa20c545c471"
+  deployed_pipeline: 179
+  application_behavior_commit: "74a7427e775d3b49df839fbecc1ffa20c545c471"
+  application_behavior_pipeline: 179
+  application_behavior_note: "Updated 2026-07-21 after the release wave PRs 123, 124, and 125. PR 123 (merge f3749d8, pipeline 177) repaired two live Interview Studio 502 defects in app.py. PR 124 (merge 6d36bd4, pipeline 178) released continuous speak-your-answer dictation and moved the Studio asset signature to studio-5a5c-4. PR 125 (merge 74a7427, pipeline 179) changed services/photo_lifecycle_access_service.py behind the still-off Photo flag and resolved the Defender A/B contradiction. Live https://peerslate.com/interview-studio serves studio-5a5c-4 and its JavaScript carries both the PR 123 and PR 124 changes. Earlier history: PR 114 (merge ed3409a, pipeline 165) added coaching diagnostics; PR 105 (merge 4deb0a0, pipeline 154) released the converged homepage Interview walkthrough. The long-recorded 39002f5 / pipeline 149 pairing described the Interview Studio release and had already been superseded when the July 20 governance releases restated it."
+  concurrent_session_note: "PRs 121 and 122 merged on 2026-07-21 from work/2026-07-21-journal-visual-handoff and its closeout, while PS-GOV-TRUTH-RECONCILIATION-001 held the shared governance reservation. That lane is a separate active writer producing PS-JOURNAL-001 visual-handoff material for a ChatGPT first screen set. It touched only docs/initiatives/PS-JOURNAL-001/**, so it did not contend for any reserved governance record, but its existence contradicts the single-session assumption this reconciliation started from. Any manager must re-check for concurrent writers rather than assume exclusivity."
+  note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. This governance activation assigns the exact-authority Owner Home frontend while preserving the default-off boundary and finite owner-home.v1 contract. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. PR 102/pipeline 150 closed its release governance. PS-HOME-INTERVIEW-PARITY-001 then progressed from its architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 through manager-required corrections to implementation source 6625b52ca4620b503ec56dcc15567470b6ef2499; Azure PR 105 squash-merged it at 4deb0a07b6faf2d93d445e212207aeb84b1a71c4 and automatic pipeline 154 (20260720.25) passed Build and Deploy. PR 106/pipeline 156 closed its release governance. Live https://peerslate.com/ serves the converged assets homepage-scenes.css?v=interview-parity-1 and homepage-interview-demo.js?v=int-parity-1, matching main. The homepage Interview parity gate is therefore closed, not open. Fetch origin for the exact current tip."
 
 mirror:
   remote: github
@@ -109,9 +189,11 @@ manager:
   role: "package_designated_session_manager"
   eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
   owner_decision_date: "2026-07-19"
+  current_session_manager: "Claude Code, designated by Pete on 2026-07-21 as the sole session manager for PS-GOV-TRUTH-RECONCILIATION-001"
+  current_session_manager_scope: "This designation reserves the shared governance records docs/governance/CURRENT_BASELINE.yaml, CURRENT_STATE.md, ACTIVE_INITIATIVES.md, MANAGER_SESSION_HANDOFF.md, NEXT_TASK_BOARD.md, OPEN_BRANCH_REGISTER.md, and tests/test_governance_pointers.py for the duration of this reconciliation. Pete stated at the outset that no concurrent session was running; PRs 121 and 122 later proved a second writer lane was in fact active, so that assumption was wrong and is corrected in concurrent_session_note above. No product lane, writer branch, or visual authority transfers with this designation."
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-GOV-JOURNAL-SYSTEM-001 completed authority activation through source 578081f5191dd74daa154941604a2b199c5fed58, PR 118, merge 3d7c9e10811dcbcc763d965d7770bd0d35e51d4b, and automatic pipeline 171. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
+  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is complete: activated by PR 103/pipeline 151, implemented and released by PR 105/pipeline 154, closed out by PR 106/pipeline 156, and verified live. It has no remaining writer. PS-CAPTURE-PHOTO-LIFECYCLE-001 is likewise complete through PRs 107, 108, and 109 with pipelines 157, 158, and 160; Photo remains flag-off. PS-HOME-FRONTEND-001 was activated by PR 104/pipeline 153 under the ChatGPT Work/Codex manager with the separately assigned Codex frontend task as sole writer; as of 2026-07-21 no home-frontend writer branch exists on origin, so that lane is activated but not started. PS-GOV-JOURNAL-SYSTEM-001 completed authority activation through source 578081f5191dd74daa154941604a2b199c5fed58, PR 118, merge 3d7c9e10811dcbcc763d965d7770bd0d35e51d4b, and automatic pipeline 171. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
 
 governing_documents:
   bible:
@@ -139,6 +221,10 @@ governing_documents:
     path: "docs/governance/EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md"
   manager_handoff:
     path: "docs/governance/MANAGER_SESSION_HANDOFF.md"
+  open_branch_register:
+    path: "docs/governance/OPEN_BRANCH_REGISTER.md"
+  branch_disposition_record:
+    path: "docs/governance/BRANCH_DISPOSITION_RECORD.md"
   delivery_workflow:
     path: "docs/AI_WORKFLOW.md"
   ai_model_and_role_routing:
@@ -151,7 +237,7 @@ theme: deep_navy_gold
 homepage_product_projection:
   standard: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
   rule: "When the logged-out homepage presents or links a product, every material product or visual change requires a same-wave homepage parity update or an exact downstream parity package; the real product remains upstream authority."
-  current_examples: "Private Voice Capture and public Interview Studio; the current Interview walkthrough is live as an accepted pre-convergence illustration, but parity remains open until a later package maps it to the accepted and live 5A/5C real Studio; applies to every present and future homepage product section"
+  current_examples: "Private Voice Capture and public Interview Studio. Interview homepage parity is now closed: PS-HOME-INTERVIEW-PARITY-001 mapped the walkthrough to the accepted and live 5A/5C real Studio and released through PR 105/pipeline 154, and the live converged assets were verified on 2026-07-21. Voice parity closed through PR 80/pipeline 113. Capture Photo homepage parity remains open and is gated behind Photo enablement. The contract applies to every present and future homepage product section."
 
 completed_packages:
   - PS-AUTH-001
@@ -183,6 +269,8 @@ completed_packages:
   - PS-INTERVIEW-PUBLIC-GATE-001
   - PS-GOV-CONNECTED-SYSTEM-001
   - PS-GOV-JOURNAL-SYSTEM-001
+  - PS-HOME-INTERVIEW-PARITY-001
+  - PS-CAPTURE-PHOTO-LIFECYCLE-001
 
 public_safe_slices:
   - PS-BRAND-NAV-001
@@ -197,11 +285,11 @@ active_packages:
     lane: capture_media_photo_enablement_and_homepage_parity
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
     status: "released_flag_off_enablement_gates_open"
-  - id: PS-HOME-INTERVIEW-PARITY-001
-    owner: "ChatGPT Work/Codex designated manager; Claude Code architecture and implementation writer"
-    lane: homepage_interview_real_studio_parity
-    package_path: "docs/initiatives/PS-HOME-INTERVIEW-PARITY-001/README.md"
-    status: "architecture_checkpoint_pushed_manager_review_pending"
+  - id: PS-GOV-TRUTH-RECONCILIATION-001
+    owner: "Claude Code sole session manager designated by Pete on 2026-07-21"
+    lane: governance_record_reconciliation
+    package_path: "docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md"
+    status: "in_progress_governance_only_awaiting_owner_acceptance"
   - id: PS-HOME-FRONTEND-001
     owner: "ChatGPT Work/Codex designated manager; separate Codex frontend task sole writer"
     lane: owner_home_exact_authority_frontend
@@ -258,7 +346,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 and PS-HOME-INTERVIEW-PARITY-001 continue independently under the active-lane transition record. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 continues independently under the active-lane transition record; PS-HOME-INTERVIEW-PARITY-001 is closed and needs no further writer. The four previously unrecorded branches are all resolved as of 2026-07-21: three released through PRs 123, 124, and 125 with pipelines 177, 178, and 179, and one archived under tag archive/2026-07-21/bible-v27-activation; docs/governance/OPEN_BRANCH_REGISTER.md is now a historical record rather than an open queue. A separate PS-JOURNAL-001 visual-handoff writer lane is active and released PRs 121 and 122; verify concurrent writers by fetching origin rather than assuming exclusivity. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

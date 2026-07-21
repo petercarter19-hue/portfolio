@@ -92,6 +92,53 @@ separate, but shared files remain serialized as described in
   Feed, global navigation/theme, and owner Home/viewer mode are outside this
   package.
 
+## Blocking enablement entry gates
+
+Recorded 2026-07-21 by `PS-GOV-TRUTH-RECONCILIATION-001` under Pete's delegated
+decision. These are **gates, not plans**. Photo enablement may not be scheduled
+or approved until each is satisfied and the result is recorded here.
+
+| # | Gate | State 2026-07-21 |
+|---|---|---|
+| 1 | Universal composer / Save Moment / derived-Journal integration, or an explicit owner-approved temporary exception | Open. Controlled by `PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md` |
+| 2 | Real signed-in Azure lifecycle proof and two-owner denial in production | Open |
+| 3 | **Defender production malicious-path proof (choice A)** | **Open and blocking. See below.** |
+| 4 | Homepage Capture Photo parity | Open |
+| 5 | Explicit owner-and-manager enablement decision | Open |
+
+### Gate 3 — Defender choice A, deferred not cancelled
+
+The production Defender-malicious row is `Conditional` because **choice B is the
+controlling decision** as of 2026-07-21. Two contradictory decisions were
+recorded on 2026-07-20: `main` recorded choice B, and
+`work/2026-07-20-photo-proof-readiness-001` recorded a same-day reversal to
+choice A. Pete delegated the resolution; the manager resolved it as **B controls
+now, A runs at enablement**.
+
+This gate exists so that resolution cannot be quietly lost. Enablement requires
+**one** of:
+
+- **(a)** executing the prepared choice-A plan in
+  `PS-CAPTURE-PHOTO-LIFECYCLE-001/04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`
+  inside an attended window, having first obtained the six-party written
+  acknowledgement it requires — including a security contact who "must be a real
+  second person", an on-call rotation holder, and a SIEM/MDR provider or written
+  confirmation that none is connected; or
+- **(b)** a fresh, explicit, written owner decision that enablement may proceed
+  with the production malicious path left `Conditional`, recorded here with its
+  reasoning.
+
+**Neither has happened. No production Defender test is authorized.** A future
+session must not read the merged choice-A operational plan as authorization: the
+plan is deliberately merged in a prepared-and-deferred state so it is ready when
+this gate is worked, rather than drifting on an unmerged branch.
+
+Reasoning for the deferral is recorded in
+`docs/governance/OPEN_BRANCH_REGISTER.md`. In short: the coordinating parties do
+not currently exist for PeerSlate, and a production proof evidences
+configuration at the moment it runs rather than at enablement, so running it far
+ahead of enablement would very likely need repeating.
+
 ## Manager acceptance record
 
 Pete accepted this architecture on 2026-07-19: Photo first, the isolated Azure

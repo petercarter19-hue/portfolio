@@ -222,7 +222,16 @@ class BaselineCoherenceTests(unittest.TestCase):
         )
         self.assertIn("visual_integrity_pipeline: 99", self.baseline)
         self.assertIn("PS-PLACEMENT-001", self.baseline)
-        self.assertIn("application_behavior_pipeline: 149", self.baseline)
+        # Deliberately not a literal pipeline number. Pinning one here is the
+        # same mistake that let the asset-signature collision form: the rule is
+        # "the baseline states which commit and pipeline define current
+        # application behaviour", not "that value is exactly N". Pinning it
+        # guarantees this assertion goes stale on the next release and blocks
+        # the correction, which is what PS-GOV-TRUTH-RECONCILIATION-001 found.
+        self.assertRegex(self.baseline, r"(?m)^  application_behavior_commit: \"[0-9a-f]{40}\"$")
+        self.assertRegex(self.baseline, r"(?m)^  application_behavior_pipeline: \d+$")
+        self.assertRegex(self.baseline, r"(?m)^  deployed_main_commit: \"[0-9a-f]{40}\"$")
+        self.assertRegex(self.baseline, r"(?m)^  deployed_pipeline: \d+$")
         self.assertIn("interview_studio_pipeline: 149", self.baseline)
         self.assertIn("interview_release_closeout_pipeline: 150", self.baseline)
         self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.baseline)
@@ -367,7 +376,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual(
             [
                 "PS-CAPTURE-MEDIA-001",
-                "PS-HOME-INTERVIEW-PARITY-001",
+                "PS-GOV-TRUTH-RECONCILIATION-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
             ],
@@ -379,6 +388,77 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertTrue(_exists(*relative_path.split("/")))
                 self.assertIn(package_id, self.initiatives)
                 self.assertIn(package_id, self.state)
+
+    def test_active_packages_are_not_already_closed(self):
+        """An active package may not already be recorded as released and live.
+
+        Added by PS-GOV-TRUTH-RECONCILIATION-001. On 2026-07-21 the pointers
+        listed PS-HOME-INTERVIEW-PARITY-001 as awaiting manager review while its
+        own completion report read "Complete, released, and verified live" and
+        the converged assets were serving in production. Nothing caught it,
+        because the guardrails asserted a snapshot instead of an invariant.
+
+        Two invariants close that gap:
+
+        1. No id may appear in both `active_packages` and `completed_packages`.
+        2. No id in `active_packages` may have a package completion report whose
+           status claims the package is released or verified live.
+        """
+        active_block = re.search(
+            r"(?ms)^active_packages:\s*$\n(.*?)(?=^[a-z_]+:|\Z)", self.baseline
+        )
+        completed_block = re.search(
+            r"(?ms)^completed_packages:\s*$\n(.*?)(?=^[a-z_]+:|\Z)", self.baseline
+        )
+        self.assertIsNotNone(active_block)
+        self.assertIsNotNone(completed_block)
+
+        active_ids = re.findall(
+            r"(?m)^\s+- id:\s+([A-Z0-9-]+)\s*$", active_block.group(1)
+        )
+        completed_ids = re.findall(
+            r"(?m)^\s+- ([A-Z0-9-]+)\s*$", completed_block.group(1)
+        )
+        self.assertTrue(active_ids)
+        self.assertTrue(completed_ids)
+
+        both = sorted(set(active_ids) & set(completed_ids))
+        self.assertEqual(
+            [],
+            both,
+            f"Packages recorded as active and completed at once: {both}",
+        )
+
+        # Phrases that assert a finished, shipped, member-visible package. These
+        # are deliberately narrow so that a legitimately partial status such as
+        # "Complete for the restart checkpoint; product implementation remains
+        # gated" does not trip the check.
+        closed_claims = (
+            r"complete,\s*released",
+            r"released,?\s*and\s*verified\s*live",
+            r"released\s*and\s*live",
+        )
+        contradictions = []
+        for package_id in active_ids:
+            report_parts = ("docs", "initiatives", package_id, "COMPLETION_REPORT.md")
+            if not _exists(*report_parts):
+                continue
+            status_section = re.search(
+                r"(?ms)^## A\.\s.*?(?=^## B\.|\Z)", _read(*report_parts)
+            )
+            if status_section is None:
+                continue
+            status_text = status_section.group(0).lower()
+            for pattern in closed_claims:
+                if re.search(pattern, status_text):
+                    contradictions.append((package_id, pattern))
+                    break
+        self.assertEqual(
+            [],
+            contradictions,
+            "Packages listed as active whose completion report says they "
+            f"already shipped: {contradictions}",
+        )
 
     def test_journal_architecture_is_controlling_preserved_and_runtime_honest(self):
         readme = _read("docs", "initiatives", "PS-JOURNAL-001", "README.md")
@@ -518,15 +598,31 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.state)
         self.assertIn("pipeline 149", self.state)
         self.assertIn("5A-light/5C-dark", self.baseline)
+        # The homepage Interview parity lane is closed, not pending. It released
+        # through PR 105 at 4deb0a0 with pipeline 154 and closed out through
+        # PR 106 with pipeline 156. These assertions previously required the
+        # stale "architecture_checkpoint_pushed_manager_review_pending" status
+        # and so blocked the correction; see PS-GOV-TRUTH-RECONCILIATION-001.
+        self.assertIn("home_interview_parity_pr: 105", self.baseline)
+        self.assertIn("home_interview_parity_pipeline: 154", self.baseline)
         self.assertIn(
-            'status: "architecture_checkpoint_pushed_manager_review_pending"',
+            'home_interview_parity_merge_commit: "4deb0a07b6faf2d93d445e212207aeb84b1a71c4"',
             self.baseline,
         )
+        self.assertIn("home_interview_parity_closeout_pr: 106", self.baseline)
+        # The architecture checkpoint remains recorded as lineage.
         self.assertIn(
             "353a5810b18e7db22f35319fbecc9c2fa97d8b72",
             self.baseline,
         )
-        self.assertIn("architecture checkpoint / manager review", self.initiatives)
+        self.assertIn(
+            "PS-HOME-INTERVIEW-PARITY-001 - complete, released, and verified live",
+            self.initiatives,
+        )
+        self.assertNotIn(
+            'status: "architecture_checkpoint_pushed_manager_review_pending"',
+            self.baseline,
+        )
 
     def test_portable_manager_and_gate_24_handoffs_are_explicit(self):
         workflow = _read("docs", "AI_WORKFLOW.md")

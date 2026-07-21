@@ -10,6 +10,20 @@
 > manager and one writer; Capture is an action, Save Moment is the member
 > commit, and Journal membership is derived. This historical body is retained
 > as review provenance, not current instruction.
+>
+> **Task outcomes recorded 2026-07-21.** Task 1 (Photo dark-launch) was
+> completed through Azure PRs 107/108/109 with pipelines 157/158/160, though it
+> selected Defender choice B and an unmerged branch now proposes choice A.
+> Task 2 (connected-system authority) was completed through PR 111 and then
+> superseded by Bible v2.8 / Roadmap v2.7 via PR 118. Task 3 (v1.5.1
+> disposition) was resolved by `PS-JOURNAL-001`, which preserved the source with
+> a recorded SHA-256 and listed it as superseded; the two untracked `.pages`
+> files in the repository root still have no recorded disposition. Task 4
+> (member-history salvage) was completed through PR 113. Task 5 (Interview
+> coaching reliability) was completed through PR 114. Task 6 (GitHub mirror)
+> remains an open owner decision. Task 7 (branch disposition) produced
+> `docs/governance/BRANCH_DISPOSITION_RECORD.md` through PR 112 and awaits
+> Pete's row-by-row approval.
 
 _Prepared 2026-07-20 by a Claude Code review session at Azure `origin/main`
 `531013dd8c1a05e2443becd881a226755f27ca14`. This board is a dispatch aid, not an

@@ -1,5 +1,12 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
+_Reconciled 2026-07-21 by `PS-GOV-TRUTH-RECONCILIATION-001`. Two lanes recorded
+here as active had already been implemented, released, closed out, and verified
+live: `PS-HOME-INTERVIEW-PARITY-001` (PRs 103/105/106, pipelines 151/154/156)
+and `PS-CAPTURE-PHOTO-LIFECYCLE-001` (PRs 107/108/109, pipelines 157/158/160).
+Fifteen merged pull requests in the 103-119 range were absent from this record
+entirely. Both defects are corrected below._
+
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
 release, exact-authority Owner Home frontend activation, and the
@@ -28,9 +35,9 @@ only for high-risk or expressly required packages.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview homepage parity, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
+| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement and Owner Home sequencing (Interview homepage parity closed 2026-07-20) | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later universal-composer/Save Moment integration or explicit temporary exception, plus signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling the current source-only Photo path; rebuilding Voice; blending Owner Home work |
-| Interview homepage convergence | Claude Code, architecture and implementation after activation | PS-HOME-INTERVIEW-PARITY-001 | mapping the live 5A/5C Studio into the existing fixed homepage walkthrough | modifying the real Studio; starting product edits before architecture review; Owner Home or Photo |
+| Governance reconciliation | Claude Code sole session manager, designated 2026-07-21 | PS-GOV-TRUTH-RECONCILIATION-001 | the shared governance pointer records, the open-branch register, and the governance guardrail suite | any application code; the Bible, Roadmap, DOCUMENT_CONTROL, or DECISIONS; other packages' files; executing any branch or worktree deletion |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
 
@@ -67,7 +74,9 @@ new package and branch.
   focus/state-retention, overflow, and console checks.
 - The real Studio remains upstream of the homepage walkthrough. Its release is
   now green and live, so a fresh homepage-parity convergence package may be
-  separately assigned. It has not started, and parity remains open.
+  separately assigned. That package, `PS-HOME-INTERVIEW-PARITY-001`, was
+  assigned, implemented, released through PR 105/pipeline 154, and closed out
+  through PR 106/pipeline 156. Interview homepage parity is closed.
 - Pete accepted the current fixed illustrative walkthrough for its present
   purpose. Claude's exact source tip
   `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
@@ -88,12 +97,35 @@ new package and branch.
   it did not itself make the new Studio design live; PR 101/pipeline 149 now do.
 - Outcome: an honest public practice experience with clear public-profile grounding, browser-local state, media behavior, and a defined-but-not-faked future `/app/interview-studio` owner boundary.
 
-### PS-HOME-INTERVIEW-PARITY-001 - architecture checkpoint / manager review
+### PS-HOME-INTERVIEW-PARITY-001 - complete, released, and verified live
+
+**Corrected 2026-07-21.** This section previously read "architecture checkpoint
+/ manager review" and stated that product implementation had not started. That
+was wrong. The lane is closed:
+
+- Activation: Azure PR 103 at `b7b674415f1f7c9ac2844fa0482091b62a7ec979`;
+  pipeline 151 passed.
+- Implementation: source `6625b52ca4620b503ec56dcc15567470b6ef2499`, Azure
+  PR 105, squash merge `4deb0a07b6faf2d93d445e212207aeb84b1a71c4`, automatic
+  pipeline 154 (`20260720.25`) passed Build and Deploy.
+- Closeout: Azure PR 106 at `8fb501da2405d30b76613902648ac1eb0232c058`;
+  pipeline 156 passed.
+- Self-certification: `Pass`. The completion report records "Complete,
+  released, and verified live" with desktop/mobile light and dark evidence
+  across the poster and four steps, plus landscape and 720x450 reflow.
+- Live verification 2026-07-21: `https://peerslate.com/` serves
+  `homepage-scenes.css?v=interview-parity-1` and
+  `homepage-interview-demo.js?v=int-parity-1`, matching `main`.
+- No writer remains assigned. Homepage Interview parity is closed. A further
+  Interview change requires a new package and a fresh homepage-impact
+  assessment.
+
+The pre-release lineage is retained below as history:
 
 - Source package:
   `docs/initiatives/PS-HOME-INTERVIEW-PARITY-001/README.md`.
-- Designated manager: current ChatGPT Work/Codex session. Claude Code is the
-  sole architecture and implementation writer after this activation merges.
+- Designated manager: ChatGPT Work/Codex session. Claude Code was the
+  sole architecture and implementation writer after activation merged.
 - Activation branch/base:
   `work/2026-07-20-home-interview-parity-manager` at
   `2e811f4eec3e915bdb6a0aefa7bd744d6bc7553b`.
@@ -101,8 +133,8 @@ new package and branch.
   `work/2026-07-20-home-interview-parity-001`, freshly created from exact
   post-activation `origin/main`. No product edit is authorized on the manager
   branch.
-- Claude Code's clean pushed architecture checkpoint is
-  `353a5810b18e7db22f35319fbecc9c2fa97d8b72`. It changes only
+- Claude Code's clean pushed architecture checkpoint was
+  `353a5810b18e7db22f35319fbecc9c2fa97d8b72`. It changed only
   `PS-HOME-INTERVIEW-DEMO-001/04_REAL_STUDIO_CONVERGENCE.md` and awaits the
   designated manager's architecture review before product edits.
 - Reserved product surface is limited to the Interview homepage partial,
@@ -116,9 +148,8 @@ new package and branch.
   scope confirmation before product edits.
 - Required visible outcome: written Interview Me is primary; light is
   Editorial Studio Ledger; dark is Cinematic Studio rather than a paper-white
-  modal; fixed truth and no-side-effect boundaries remain explicit.
-- Product implementation is not started, merged, deployed, live, or
-  parity-closed.
+  modal; fixed truth and no-side-effect boundaries remain explicit. This
+  outcome was delivered and verified live by PR 105.
 
 ### PS-CAPTURE-MEDIA-001 - released flag-off / enablement gates unassigned
 
@@ -144,6 +175,46 @@ new package and branch.
   to enable the final member journey.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
+
+### PS-CAPTURE-PHOTO-LIFECYCLE-001 - complete and closed
+
+**Recorded 2026-07-21.** This lane completed on 2026-07-20 but was never
+entered here.
+
+- Proof definition: Azure PR 107 at
+  `531013dd8c1a05e2443becd881a226755f27ca14`; pipeline 157 passed.
+- Implementation: source `f74afcea11f74b8be1b8034d98080c0c5cc38b32`, Azure
+  PR 108, squash merge `919adba534d70c4f3f30979b8d43e000912079c8`; pipeline
+  158 passed. It added the server-only fail-closed
+  `services/photo_lifecycle_access_service.py`, route coverage in
+  `owner_routes.py`, and focused tests.
+- Closeout: Azure PR 109 at `df8b1872740435f2baeddc204f130202ab73e87e`;
+  pipeline 160 passed.
+- `CAPTURE_PHOTO_ENABLED` remains `false`. No ordinary member gained Photo
+  access and no new member-facing capability is live.
+- The package records **Defender choice B**: no production EICAR or malware
+  test; the production malicious path stays `Conditional`.
+- **Unresolved contradiction.** The unmerged branch
+  `work/2026-07-20-photo-proof-readiness-001` records that the owner replaced
+  choice B with choice A and builds a coordinated inert production test plan.
+  `main` still records B, so B controls until Pete confirms otherwise. See
+  `docs/governance/OPEN_BRANCH_REGISTER.md`.
+
+### PS-GOV-TRUTH-RECONCILIATION-001 - in progress, governance only
+
+- Source package:
+  `docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md`.
+- Designated manager and writer: Claude Code, designated by Pete on
+  2026-07-21 as sole session manager. Pete confirmed no concurrent ChatGPT
+  Work/Codex manager session.
+- Branch `work/2026-07-21-governance-truth-reconciliation` from
+  `origin/main` at `0717e03c9f1d4e6b67f355fd1556651086ddc351`.
+- It reserves the shared governance pointer records and
+  `tests/test_governance_pointers.py` for the duration of the reconciliation.
+- It changes governance records only: no route, schema, feature flag,
+  template, service, migration, application behavior, or member capability.
+- It authorizes no branch, worktree, or stash deletion and resolves no product
+  decision.
 
 ### PS-HOME-BACKEND-001 - released default-off / frontend activated
 
@@ -322,6 +393,23 @@ No current package holds. Product-code entry gates still apply.
 - Each package is committed architecture but inactive. Each needs its own
   manager, single writer, branch, visual authority, implementation scope,
   evidence, owner acceptance, and release gate.
+
+## Unmerged work outside every lane
+
+Four branches are pushed to `origin`, unmerged, not abandoned, and named in no
+initiative above. They are inventoried with exact tips, contents, and the
+decision each needs in `docs/governance/OPEN_BRANCH_REGISTER.md`:
+
+| Branch | Ahead | Needs |
+|---|---|---|
+| `work/2026-07-20-interview-me-microphone-001` | 2 | Decision on speak-your-answer dictation; would need a package, lane, and visual acceptance |
+| `work/2026-07-20-interview-validator-truthfulness-001` | 4 | Decision on the empty-output truthfulness fix; overlaps the branch above |
+| `work/2026-07-20-photo-proof-readiness-001` | 1 | Pete's Defender choice A/B decision first |
+| `work/2026-07-20-bible-v27-activation` | 1 | Archive; its PR 115 was abandoned and its authority is two versions stale |
+
+None of this work has passed a manager review or visual-acceptance gate
+recorded on `main`. Treat every row as unaccepted. A manager dispatching new
+work must check this register so the same work is not assigned twice.
 
 ## Shared rules
 
