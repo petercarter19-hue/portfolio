@@ -1,8 +1,15 @@
-# PS-JOURNAL-001 — J0 Route Map and Legacy Disposition (proposal)
+# PS-JOURNAL-001 — J0 Route Map and Legacy Disposition
 
 **Author:** Claude Code (Fable), architect/manager · 2026-07-21
-**Status:** PROPOSAL — requires Pete's approval before any route is locked
-(per `PS-JRN-IA-002`, no production route map may lock without owner approval).
+**Status:** **APPROVED — owner decision, Pete, 2026-07-21** ("Options A. Close
+all three"). Option A route names are the approved J1 route map; the
+`/app/capture` → composer-opening 302 transition is approved for the J1
+frontend release wave; and the legacy prompt-journal API remains untouched
+until its own package. This satisfies §5 and closes the PS-JRN-IA-002 route
+gate for the J1 slice: the approval locks the collision-audited J1 route
+paths. The desktop/mobile navigation-placement map remains an explicit later
+decision per site rule 69 and IA-002's map clause. Routes beyond this slice
+still require their own approval.
 
 ## 1. Current inventory (audited on `main` @ 9d2efe3)
 
@@ -48,9 +55,11 @@ shell, does not collide with the public `/the-slate` world, and honors
   shell files; the Journal frontend must reserve files only after that lane's
   state is checked at its own J1-frontend entry gate.
 
-## 5. What Pete needs to say to close this gate
+## 5. Gate closure record (was: what Pete needs to say)
 
-1. "Option A" (or edits) for the route names.
-2. OK on the `/app/capture` → composer deep-link transition (302 after the
+All three were approved verbatim by Pete on 2026-07-21:
+
+1. ✔ "Option A" for the route names.
+2. ✔ The `/app/capture` → composer deep-link transition (302 after the
    frontend ships).
-3. OK on leaving the legacy prompt-journal API alone until its own package.
+3. ✔ Leaving the legacy prompt-journal API alone until its own package.
