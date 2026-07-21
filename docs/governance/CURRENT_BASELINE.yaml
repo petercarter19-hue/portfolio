@@ -285,6 +285,11 @@ active_packages:
     lane: capture_media_photo_enablement_and_homepage_parity
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
     status: "released_flag_off_enablement_gates_open"
+  - id: PS-COMMUNITY-TABS-001
+    owner: "Pete owner; Fable architect/manager; Sonnet implementation writer; Opus reviewer"
+    lane: community_tab_model_and_people_interests_removal
+    package_path: "docs/initiatives/PS-COMMUNITY-TABS-001/README.md"
+    status: "active_owner_started_early_visual_authority_owner_feed_example"
   - id: PS-GOV-TRUTH-RECONCILIATION-001
     owner: "Claude Code sole session manager designated by Pete on 2026-07-21"
     lane: governance_record_reconciliation
@@ -308,12 +313,6 @@ planned_packages:
     lane: site_shell_width_headers_ground_type
     roadmap_phase: "After Journal J1 release wave"
     package_path: "docs/initiatives/PS-SHELL-001/README.md"
-    status: "planned_setup_awaiting_visual_authority"
-  - id: PS-COMMUNITY-TABS-001
-    owner: "Pete product direction; Fable architect; writer unassigned"
-    lane: community_tab_model_and_people_interests_removal
-    roadmap_phase: "After Journal J1 release wave"
-    package_path: "docs/initiatives/PS-COMMUNITY-TABS-001/README.md"
     status: "planned_setup_awaiting_visual_authority"
   - id: PS-RESUME-STUDIO-001
     owner: "Pete product direction; future designated manager and implementation writer unassigned"

@@ -1,7 +1,10 @@
 # PS-COMMUNITY-TABS-001 — Community: remove People & Interests, adopt the Studio tab model
 
-**Status:** Planned — set up 2026-07-21 per Pete; may start after the Journal
-J1 release wave. **Owner direction source:** Pete's 12-thought review
+**Status:** ACTIVE — owner started it early 2026-07-21 ("do we really need to
+wait?" — no file overlap with the Journal lane). Visual authority: the
+owner-supplied Feed mockup at `visual-authority/community-feed-owner-example.png`
+(pixel rule applies), the LIVE Interview Studio tab implementation as the
+interaction reference, and the existing accepted Break design. **Owner direction source:** Pete's 12-thought review
 (2026-07-21, items 1–2) + his Feed example image.
 
 ## Owner direction

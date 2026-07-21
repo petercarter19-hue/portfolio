@@ -376,6 +376,7 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual(
             [
                 "PS-CAPTURE-MEDIA-001",
+                "PS-COMMUNITY-TABS-001",
                 "PS-GOV-TRUTH-RECONCILIATION-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
