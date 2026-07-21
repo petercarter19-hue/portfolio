@@ -135,6 +135,192 @@ class JournalServiceListTests(unittest.TestCase):
         self.database.first_result.assert_not_called()
 
 
+class JournalServiceSearchTests(unittest.TestCase):
+    def setUp(self):
+        self.database = Mock()
+        self.service = JournalService(database=self.database)
+
+    def test_search_shapes_items_like_list_and_omits_internal_fields(self):
+        self.database.first_result.return_value = [moment_row()]
+
+        result = self.service.search_owner_journal("owner-a", "confirmed")
+
+        self.assertEqual(len(result["items"]), 1)
+        item = result["items"][0]
+        self.assertEqual(
+            set(item),
+            {
+                "moment_key",
+                "moment_kind",
+                "title",
+                "occurred_on",
+                "occurred_precision",
+                "visibility",
+                "source_type",
+                "lifecycle_state",
+                "version_number",
+            },
+        )
+        self.assertNotIn("cursor_token", item)
+        self.assertNotIn("display_at_utc", item)
+
+    def test_search_calls_the_search_procedure(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "shipped")
+
+        procedure_name = self.database.first_result.call_args.args[0]
+        self.assertEqual(procedure_name, "usp_SearchJournalMomentsForOwner")
+
+    def test_search_threads_owner_key_search_text_include_archived_limit_and_cursor(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal(
+            "owner-a",
+            "shipped the thing",
+            include_archived=True,
+            limit=10,
+            cursor="some-cursor",
+        )
+
+        parameters = self.database.first_result.call_args.args[1]
+        self.assertEqual(
+            parameters,
+            [
+                ("@UserKey", "owner-a"),
+                ("@SearchText", "shipped the thing"),
+                ("@IncludeArchived", 1),
+                ("@Limit", 10),
+                ("@Cursor", "some-cursor"),
+            ],
+        )
+
+    def test_search_trims_search_text_before_sending_to_database(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "  shipped  ")
+
+        parameters = dict(self.database.first_result.call_args.args[1])
+        self.assertEqual(parameters["@SearchText"], "shipped")
+
+    def test_search_wildcard_characters_reach_the_database_unescaped(self):
+        """Escaping is the stored procedure's job on a bound parameter, not
+        the service's: the service must pass the literal search text
+        through unchanged so the procedure sees the real %, _, and [
+        characters it is responsible for escaping."""
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "50%_off[sale]")
+
+        parameters = dict(self.database.first_result.call_args.args[1])
+        self.assertEqual(parameters["@SearchText"], "50%_off[sale]")
+
+    def test_search_default_excludes_archived(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "shipped")
+
+        parameters = self.database.first_result.call_args.args[1]
+        self.assertIn(("@IncludeArchived", 0), parameters)
+
+    def test_search_clamps_limit_to_bounds(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "shipped", limit=0)
+        self.assertIn(("@Limit", 1), self.database.first_result.call_args.args[1])
+
+        self.service.search_owner_journal("owner-a", "shipped", limit=9000)
+        self.assertIn(("@Limit", 100), self.database.first_result.call_args.args[1])
+
+        self.service.search_owner_journal("owner-a", "shipped", limit="not-a-number")
+        self.assertIn(("@Limit", 50), self.database.first_result.call_args.args[1])
+
+    def test_search_full_page_returns_next_cursor_short_page_does_not(self):
+        self.database.first_result.return_value = [
+            moment_row(moment_key="1" * 8 + "-1111-1111-1111-111111111111", cursor_token="cursor-1"),
+            moment_row(moment_key="2" * 8 + "-2222-2222-2222-222222222222", cursor_token="cursor-2"),
+        ]
+
+        full_page = self.service.search_owner_journal("owner-a", "shipped", limit=2)
+        self.assertEqual(full_page["next_cursor"], "cursor-2")
+
+        self.database.first_result.return_value = [moment_row(cursor_token="cursor-only")]
+        short_page = self.service.search_owner_journal("owner-a", "shipped", limit=2)
+        self.assertIsNone(short_page["next_cursor"])
+
+    def test_search_empty_result_set_is_tolerated_not_an_error(self):
+        self.database.first_result.return_value = []
+
+        result = self.service.search_owner_journal("owner-a", "no such text exists")
+
+        self.assertEqual(result, {"items": [], "next_cursor": None})
+
+    def test_search_none_and_falsy_rows_are_skipped_without_error(self):
+        self.database.first_result.return_value = [None, {}, moment_row()]
+
+        result = self.service.search_owner_journal("owner-a", "shipped")
+
+        self.assertEqual(len(result["items"]), 1)
+
+    def test_search_missing_user_key_raises_without_calling_database(self):
+        with self.assertRaises(JournalServiceError):
+            self.service.search_owner_journal("", "shipped")
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_empty_text_raises_required_without_calling_database(self):
+        try:
+            self.service.search_owner_journal("owner-a", "")
+            self.fail("Expected JournalServiceError")
+        except JournalServiceError as error:
+            self.assertEqual(error.code, "required")
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_whitespace_only_text_raises_required_without_calling_database(self):
+        with self.assertRaises(JournalServiceError):
+            self.service.search_owner_journal("owner-a", "    ")
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_none_text_raises_required_without_calling_database(self):
+        with self.assertRaises(JournalServiceError):
+            self.service.search_owner_journal("owner-a", None)
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_non_string_text_raises_required_without_calling_database(self):
+        with self.assertRaises(JournalServiceError):
+            self.service.search_owner_journal("owner-a", 12345)
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_text_over_max_length_raises_required_without_calling_database(self):
+        with self.assertRaises(JournalServiceError):
+            self.service.search_owner_journal("owner-a", "x" * 201)
+
+        self.database.first_result.assert_not_called()
+
+    def test_search_text_at_max_length_is_accepted(self):
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", "x" * 200)
+
+        parameters = dict(self.database.first_result.call_args.args[1])
+        self.assertEqual(parameters["@SearchText"], "x" * 200)
+
+    def test_search_text_trimmed_to_max_length_boundary_is_accepted(self):
+        """201 raw characters that trim down to exactly 200 are accepted;
+        length is validated after trimming, matching the service's
+        documented 1-200-chars-after-strip contract."""
+        self.database.first_result.return_value = []
+
+        self.service.search_owner_journal("owner-a", " " + "x" * 200 + " ")
+
+        parameters = dict(self.database.first_result.call_args.args[1])
+        self.assertEqual(parameters["@SearchText"], "x" * 200)
+
+
 class JournalServiceSaveTests(unittest.TestCase):
     def setUp(self):
         self.database = Mock()

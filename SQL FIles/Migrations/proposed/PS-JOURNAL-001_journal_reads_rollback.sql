@@ -1,14 +1,16 @@
 /* ============================================================
-   PS-JOURNAL-001 (Slice J1) ROLLBACK - guarded removal of the
-   derived Journal read and one-step Save Moment
+   PS-JOURNAL-001 (Slice J1 + J1.1) ROLLBACK - guarded removal of the
+   derived Journal read, one-step Save Moment, and owner-authorized
+   search
 
    Refuses to discard any member Moment-save replay record or any
    archived-lifecycle Moment. Removes only the objects PS-JOURNAL-001
    added: usp_ListJournalMomentsForOwner, usp_SaveMomentForOwner,
-   dbo.moment_save_requests, and the two additive lifecycle columns on
-   dbo.moments. It never touches dbo.moments, dbo.moment_versions,
-   dbo.moment_sources, or dbo.captures rows themselves - those remain
-   owned by PS-MOMENT-001/PS-CAPTURE-001.
+   usp_SearchJournalMomentsForOwner, dbo.moment_save_requests, and the
+   two additive lifecycle columns on dbo.moments. It never touches
+   dbo.moments, dbo.moment_versions, dbo.moment_sources, or
+   dbo.captures rows themselves - those remain owned by
+   PS-MOMENT-001/PS-CAPTURE-001.
    ============================================================ */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -39,7 +41,8 @@ BEGIN TRY
     INSERT @ProtectedProcedures (procedure_name)
     VALUES
         (N'usp_ListJournalMomentsForOwner'),
-        (N'usp_SaveMomentForOwner');
+        (N'usp_SaveMomentForOwner'),
+        (N'usp_SearchJournalMomentsForOwner');
 
     IF @JournalAppliedAtUtc IS NOT NULL
        AND EXISTS
@@ -96,11 +99,13 @@ BEGIN TRY
             dependency.referenced_id = OBJECT_ID(N'dbo.moment_save_requests')
             OR dependency.referenced_id = OBJECT_ID(N'dbo.usp_ListJournalMomentsForOwner')
             OR dependency.referenced_id = OBJECT_ID(N'dbo.usp_SaveMomentForOwner')
+            OR dependency.referenced_id = OBJECT_ID(N'dbo.usp_SearchJournalMomentsForOwner')
         )
           AND dependency.referencing_id NOT IN
           (
               OBJECT_ID(N'dbo.usp_ListJournalMomentsForOwner'),
-              OBJECT_ID(N'dbo.usp_SaveMomentForOwner')
+              OBJECT_ID(N'dbo.usp_SaveMomentForOwner'),
+              OBJECT_ID(N'dbo.usp_SearchJournalMomentsForOwner')
           )
           AND dependency.referencing_id <> OBJECT_ID(N'dbo.moment_save_requests')
     )
@@ -110,6 +115,8 @@ BEGIN TRY
         DROP PROCEDURE dbo.usp_ListJournalMomentsForOwner;
     IF OBJECT_ID(N'dbo.usp_SaveMomentForOwner', N'P') IS NOT NULL
         DROP PROCEDURE dbo.usp_SaveMomentForOwner;
+    IF OBJECT_ID(N'dbo.usp_SearchJournalMomentsForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_SearchJournalMomentsForOwner;
 
     IF OBJECT_ID(N'dbo.moment_save_requests', N'U') IS NOT NULL
         DROP TABLE dbo.moment_save_requests;

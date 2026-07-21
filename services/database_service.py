@@ -74,6 +74,7 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_SaveMomentForOwner",
         "usp_SaveMomentProposal",
         "usp_SaveJournalResponse",
+        "usp_SearchJournalMomentsForOwner",
         "usp_SubmitPollVote",
         "usp_UnlinkSlateItems",
         "usp_UnsaveContentFromBoard",

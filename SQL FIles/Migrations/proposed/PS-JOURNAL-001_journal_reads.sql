@@ -1,6 +1,6 @@
 /* ============================================================
-   PS-JOURNAL-001 (Slice J1) - derived private Journal read and
-   one-step Save Moment
+   PS-JOURNAL-001 (Slice J1 + J1.1) - derived private Journal read,
+   one-step Save Moment, and deterministic owner-authorized search
 
    Adds no journal_entry table and copies no Moment body. The Journal
    is a derived read over the existing private confirmed Moment/source
@@ -9,7 +9,10 @@
    Moment first version in one transaction - no separate Add to
    Journal step, no publish, no placement, no audience broadening.
    New Moments default to private/Only Me, matching the existing
-   CK_moments_visibility constraint.
+   CK_moments_visibility constraint. Slice J1.1 adds
+   usp_SearchJournalMomentsForOwner: a bound-parameter, case-insensitive
+   LIKE-containment search over the same owner-authorized derived read,
+   with no dynamic SQL and no second content/index table.
 
    REVIEW-FIRST MIGRATION. Proposed only; not applied by this task.
    The feature stays behind PEERSLATE_JOURNAL_ENABLED (default false)
@@ -441,6 +444,153 @@ BEGIN TRY
         END;
     ');
 
+    /* ------------------------------------------------------------
+       Slice J1.1 (PS-JOURNAL-001): deterministic, owner-authorized
+       server-side search (PS-JRN-JRN-006) over the owner's own
+       current-version Moment title + narrative. No journal_entry or
+       second content table; same derived-read contract, list-shape
+       columns, and membership rules as usp_ListJournalMomentsForOwner.
+       ------------------------------------------------------------ */
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_SearchJournalMomentsForOwner
+            @UserKey nvarchar(300),
+            @SearchText nvarchar(200),
+            @IncludeArchived bit = 0,
+            @Limit int = 50,
+            @Cursor nvarchar(400) = NULL
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL RETURN;
+
+            /* Deterministic literal containment only (PS-JRN-JRN-006): no
+               search text at all means no authorized predicate to search
+               with, so this returns an empty set rather than guessing a
+               match-everything or match-nothing intent. The service layer
+               already rejects an empty search before calling this
+               procedure; this is defense in depth, not the primary gate. */
+            SET @SearchText = NULLIF(LTRIM(RTRIM(@SearchText)), N'''');
+            IF @SearchText IS NULL RETURN;
+
+            IF @IncludeArchived IS NULL SET @IncludeArchived = 0;
+            IF @Limit IS NULL SET @Limit = 50;
+            IF @Limit < 1 SET @Limit = 1;
+            IF @Limit > 100 SET @Limit = 100;
+            SET @Cursor = NULLIF(LTRIM(RTRIM(@Cursor)), N'''');
+
+            /* Owner resolved FIRST: authorization happens before any
+               search predicate ever touches a row (PS-JRN-AUD-002). An
+               unresolved owner returns no rows, exactly like
+               usp_ListJournalMomentsForOwner - a forged @UserKey can
+               never distinguish "no matches" from "not your Journal". */
+            DECLARE @ProfileId bigint;
+            SELECT @ProfileId = profile.profile_id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL RETURN;
+
+            DECLARE @CursorDisplayAtUtc datetime2(7) = NULL;
+            DECLARE @CursorMomentId bigint = NULL;
+            IF @Cursor IS NOT NULL
+            BEGIN
+                DECLARE @DelimiterPos int = CHARINDEX(N''|'', @Cursor);
+                IF @DelimiterPos > 1
+                BEGIN
+                    DECLARE @CursorDisplayPart nvarchar(40) = LEFT(@Cursor, @DelimiterPos - 1);
+                    DECLARE @CursorIdPart nvarchar(40) =
+                        SUBSTRING(@Cursor, @DelimiterPos + 1, 40);
+                    SET @CursorDisplayAtUtc =
+                        TRY_CONVERT(datetime2(7), @CursorDisplayPart, 126);
+                    SET @CursorMomentId = TRY_CONVERT(bigint, @CursorIdPart);
+                END;
+                /* An unparsable cursor is treated as an owner-visible input
+                   error, not a silent full re-search: return nothing rather
+                   than guess a position. */
+                IF @CursorDisplayAtUtc IS NULL OR @CursorMomentId IS NULL RETURN;
+            END;
+
+            /* Deterministic case-insensitive literal containment
+               (PS-JRN-JRN-006). @SearchText is a bound parameter; the
+               escaped pattern below is built with REPLACE()/concatenation
+               only and is never assembled into or run as dynamic SQL. The
+               backslash is escaped FIRST so a literal backslash in the
+               search text cannot be mistaken for part of a later escape
+               sequence, then the three LIKE metacharacters are escaped so
+               a searcher''s own %, _, or [ is always matched literally. */
+            DECLARE @EscapedSearchText nvarchar(400) = @SearchText;
+            SET @EscapedSearchText = REPLACE(@EscapedSearchText, N''\'', N''\\'');
+            SET @EscapedSearchText = REPLACE(@EscapedSearchText, N''%'', N''\%'');
+            SET @EscapedSearchText = REPLACE(@EscapedSearchText, N''_'', N''\_'');
+            SET @EscapedSearchText = REPLACE(@EscapedSearchText, N''['', N''\['');
+            DECLARE @LikePattern nvarchar(404) = N''%'' + @EscapedSearchText + N''%'';
+
+            SELECT TOP (@Limit)
+                moment.moment_key,
+                version_record.moment_kind,
+                version_record.title,
+                version_record.occurred_on,
+                version_record.occurred_precision,
+                moment.visibility,
+                capture.capture_type AS source_type,
+                CASE
+                    WHEN moment.archived_at_utc IS NOT NULL THEN N''archived''
+                    ELSE N''active''
+                END AS lifecycle_state,
+                moment.current_version_number AS version_number,
+                CONCAT
+                (
+                    CONVERT(nvarchar(33), display.display_at_utc, 126),
+                    N''|'', moment.moment_id
+                ) AS cursor_token
+            FROM dbo.moments AS moment
+            JOIN dbo.moment_versions AS version_record
+              ON version_record.moment_id = moment.moment_id
+             AND version_record.version_number = moment.current_version_number
+            JOIN dbo.moment_sources AS source_link
+              ON source_link.moment_id = moment.moment_id
+             AND source_link.owner_profile_id = moment.owner_profile_id
+            LEFT JOIN dbo.captures AS capture
+              ON capture.capture_id = source_link.capture_id
+             AND capture.owner_profile_id = moment.owner_profile_id
+            CROSS APPLY
+            (
+                SELECT CASE
+                    WHEN version_record.occurred_precision = N''unknown''
+                         OR version_record.occurred_on IS NULL
+                        THEN moment.confirmed_at_utc
+                    ELSE CAST(version_record.occurred_on AS datetime2(7))
+                END AS display_at_utc
+            ) AS display
+            WHERE moment.owner_profile_id = @ProfileId
+              AND moment.visibility = N''private''
+              AND moment.status = N''confirmed''
+              AND (@IncludeArchived = 1 OR moment.archived_at_utc IS NULL)
+              AND
+              (
+                  version_record.title COLLATE Latin1_General_CI_AS LIKE @LikePattern ESCAPE N''\''
+                  OR version_record.narrative COLLATE Latin1_General_CI_AS LIKE @LikePattern ESCAPE N''\''
+              )
+              AND
+              (
+                  @CursorDisplayAtUtc IS NULL
+                  OR display.display_at_utc < @CursorDisplayAtUtc
+                  OR
+                  (
+                      display.display_at_utc = @CursorDisplayAtUtc
+                      AND moment.moment_id < @CursorMomentId
+                  )
+              )
+            ORDER BY display.display_at_utc DESC, moment.moment_id DESC;
+        END;
+    ');
+
     DECLARE @ProcedureHashPropertyName sysname =
         N'PS_JOURNAL_001_DEFINITION_HASH';
     DECLARE @ProtectedProcedures TABLE
@@ -450,7 +600,8 @@ BEGIN TRY
     INSERT @ProtectedProcedures (procedure_name)
     VALUES
         (N'usp_ListJournalMomentsForOwner'),
-        (N'usp_SaveMomentForOwner');
+        (N'usp_SaveMomentForOwner'),
+        (N'usp_SearchJournalMomentsForOwner');
 
     DECLARE @ProtectedProcedureName sysname;
     DECLARE @ProtectedProcedureHash nvarchar(64);
@@ -513,7 +664,7 @@ BEGIN TRY
         VALUES
         (
             N'PS-JOURNAL-001',
-            N'Slice J1: derived private Journal read and one-step idempotent Save Moment',
+            N'Slice J1/J1.1: derived private Journal read, one-step idempotent Save Moment, and deterministic owner-authorized search',
             N'PeerSlate Bible and Roadmap v2.7'
         );
 

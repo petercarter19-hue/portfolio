@@ -15,6 +15,8 @@ from services.database_service import database_service
 
 DEFAULT_LIST_LIMIT = 50
 MAX_LIST_LIMIT = 100
+MIN_SEARCH_TEXT_LENGTH = 1
+MAX_SEARCH_TEXT_LENGTH = 200
 _SAVE_OUTCOMES = {"success", "existing"}
 
 
@@ -50,6 +52,57 @@ class JournalService:
             ],
         )
 
+        return self._shape_page(rows, bounded_limit)
+
+    def search_owner_journal(
+        self,
+        user_key,
+        search_text,
+        *,
+        include_archived=False,
+        limit=DEFAULT_LIST_LIMIT,
+        cursor=None,
+    ):
+        """Deterministic, owner-authorized search (PS-JRN-JRN-006).
+
+        Same derived-read contract, list-shape items, and keyset-pagination
+        behavior as ``list_owner_journal``; the owner's own confirmed
+        Moments are searched by case-insensitive containment over title and
+        narrative. An empty or whitespace-only search is rejected here -
+        before any database call - because an empty search has no
+        deterministic containment predicate to authorize.
+        """
+        if not user_key:
+            raise JournalServiceError("changed")
+
+        clean_search_text = search_text.strip() if isinstance(search_text, str) else ""
+        if (
+            not clean_search_text
+            or len(clean_search_text) < MIN_SEARCH_TEXT_LENGTH
+            or len(clean_search_text) > MAX_SEARCH_TEXT_LENGTH
+        ):
+            raise JournalServiceError("required")
+
+        bounded_limit = limit if isinstance(limit, int) and not isinstance(limit, bool) else DEFAULT_LIST_LIMIT
+        bounded_limit = max(1, min(bounded_limit, MAX_LIST_LIMIT))
+        clean_cursor = cursor.strip() if isinstance(cursor, str) and cursor.strip() else None
+
+        rows = self.database.first_result(
+            "usp_SearchJournalMomentsForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@SearchText", clean_search_text),
+                ("@IncludeArchived", 1 if include_archived else 0),
+                ("@Limit", bounded_limit),
+                ("@Cursor", clean_cursor),
+            ],
+        )
+
+        return self._shape_page(rows, bounded_limit)
+
+    @staticmethod
+    def _shape_page(rows, bounded_limit):
+        """Shared list-shape mapping for both the list and search reads."""
         items = []
         next_cursor = None
         for row in rows or []:
@@ -74,7 +127,8 @@ class JournalService:
             next_cursor = cursor_token
 
         # Only offer a next page when this page was fully populated; a
-        # short page always means the owner's Journal is exhausted.
+        # short page always means the owner's Journal (or search result
+        # set) is exhausted.
         if len(items) < bounded_limit:
             next_cursor = None
 
