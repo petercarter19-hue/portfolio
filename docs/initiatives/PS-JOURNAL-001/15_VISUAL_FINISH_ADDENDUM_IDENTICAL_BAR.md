@@ -108,3 +108,64 @@ using this checklist. Any visible finish gap on any element = **NO-GO**, with
 a delta list returned to the architect. There is no "acceptable translation"
 category. The loop (spec → implement → review) repeats until Opus certifies
 **identical or better**, and only then is the build shown to Pete.
+
+## 5. Owner Review Round 1 — binding punch list (Pete, 2026-07-21)
+
+Pete reviewed the first rebuilt light page against the mockup pair. Every item
+below is binding, **applies to desktop AND mobile** (the 390px sheet inherits
+the same proportions, type scale, chrome, and page size), and must be verified
+individually by the reviewer before any GO.
+
+**Typography override (supersedes doc 10's font-replacement row):** the
+mockup's rendered typography IS the spec — faces, sizes, weights, and
+proportions. The Bible's font rules yield to the accepted mockup. "Journal"
+title, date numerals, card text, and rail text are all currently too small;
+match the mockup's scale.
+
+**Rail (left contents):**
+1. Add the "CONTENTS" small-caps label at the top; push rail entries down
+   accordingly.
+2. Chapter numerals (01–06) render ABOVE each chapter name (stacked as in the
+   mockup), not inline.
+3. Loosen the vertical rhythm: **Reflections must land beside the May 19
+   row**, and the "Every moment today becomes tomorrow's legacy." flourish
+   line must land beside the **May 13 row** — these are alignment anchors.
+
+**Header zone:**
+4. "Journal" title much larger (mockup scale).
+5. Manage + Capture a Moment sit directly above the This-season card.
+6. The subtitle is EXACTLY the mockup's single line ("Your complete record of
+   moments, ideas, and milestones — captured in your own words."). Remove the
+   added "Nothing here is shared…" sentence (the privacy truth lives in the
+   lock cue and composer truth-line).
+
+**Proportions (measure, don't eyeball):**
+7. Measure the mockup's aspect ratios and implement them: the This-season
+   hero is too wide and not tall enough; entry cards likewise. Card width/
+   type scale must make titles naturally wrap to two lines as in the mockup.
+8. Card thumbnails proportionally larger, as in the mockup.
+
+**Timeline:**
+9. Date numerals larger (mockup scale).
+10. The vertical spine line darker; the node dots centered ON the line, not
+    floating beside it.
+11. The waveform + play button are rejected as-built: rebuild to the mockup's
+    dense elegant bars and rich gold circular play control.
+12. First page shows ONLY the mockup's four entries (May 20/19/18/13); later
+    Moments (e.g. May 09/06) appear via "Load more moments" or scroll-in.
+13. Card text is a summary: long titles truncate elegantly; clicking the card
+    opens the Moment detail with the full capture. (Full body text on detail
+    requires the queued J1.2 read addition; until then detail shows its
+    honest current fields.)
+
+**Book chrome & color:**
+14. The ribbon/leaf bookmark hangs over the page's top-right edge exactly as
+    in the mockup — not inside the page.
+15. Edges: left side gets the beige stacked page-edge treatment; the right
+    edge fades as in the mockup; the outer surround is the deep near-black
+    navy on BOTH themes (light mode included). The current pale blue edges
+    are rejected.
+
+**Mobile:** all of the above translate to 390px — mockup-scale type, the
+book character, darker spine, four-entry first page, summary truncation, and
+the corrected waveform component.
