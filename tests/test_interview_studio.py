@@ -1,6 +1,7 @@
 import ast
 import json
 import os
+import re
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -154,7 +155,11 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn('function friendlySpeechError', script)
         self.assertIn('function showMicError', script)
         self.assertIn("data-is-mic-error", script)
-        self.assertIn("code === 'aborted'", script)
+        # 'aborted' and 'no-speech' are emitted while a continuous session is
+        # simply paused, so they stay unsurfaced and the silence deadline
+        # decides when to stop. Every other code must reach the visitor.
+        self.assertIn("var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];", script)
+        self.assertIn('if (TRANSIENT_SPEECH_ERRORS.indexOf(code) !== -1) return;', script)
         self.assertIn("code === 'not-allowed'", script)
         self.assertIn("code === 'no-speech'", script)
         self.assertIn("code === 'audio-capture'", script)
@@ -1104,9 +1109,31 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
         self.assertIn('.is__bullets li.is__bullets-empty::before { content: none; }', css)
 
     def test_studio_asset_version_was_bumped_for_the_changed_bytes(self):
+        """The Studio's CSS and JS must share one signature, ahead of shipped.
+
+        This originally pinned the literal `studio-5a5c-3`. That broke the
+        moment a second branch bumped to `-4`, which is the wrong failure: the
+        rule being protected is "the signature moved and both assets agree",
+        not "the signature is exactly this string".
+
+        Pinning a literal here is also actively dangerous. Two branches once
+        bumped to `studio-5a5c-3` independently; because both sides made the
+        identical textual change, Git merged it silently, and the second
+        release would have shipped different bytes under an already-cached
+        URL. `app.py` leaves versioned static assets cacheable and marks only
+        `text/html` as `no-cache`, so `?v=` is the only cache-busting
+        mechanism the Studio has.
+        """
         html = self.source('templates/interview_studio.html')
-        self.assertEqual(html.count('?v=studio-5a5c-3'), 2)
-        self.assertNotIn('?v=studio-5a5c-2', html)
+        signatures = re.findall(r'\?v=(studio-5a5c-\d+)', html)
+        self.assertEqual(2, len(signatures), 'Expected one CSS and one JS signature.')
+        self.assertEqual(
+            1,
+            len(set(signatures)),
+            f'CSS and JS must carry the same signature; found {sorted(set(signatures))}.',
+        )
+        # Must be ahead of the last signature released before this line of work.
+        self.assertGreater(int(signatures[0].rsplit('-', 1)[1]), 2)
 
 
 class InterviewGroundingModeGenerationTests(unittest.TestCase):
@@ -1302,3 +1329,248 @@ class InterviewFailureReasonTests(unittest.TestCase):
             unclassified, [],
             'add these to INTERVIEW_FAILURE_REASONS in app.py: %s' % unclassified,
         )
+
+
+class InterviewStudioDictationTests(unittest.TestCase):
+    """PS-INTERVIEW-MIC-001: continuous speak-your-answer dictation.
+
+    Pete's contract: click to start, keep listening, stop on a second click,
+    and auto-stop after ten seconds of silence. Speaking is an input method for
+    the same answer field the typed path uses, never a separate answer type.
+    """
+
+    maxDiff = None
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def html(self, path='/interview-studio'):
+        response = self.client.get(path, base_url='http://localhost')
+        self.assertEqual(response.status_code, 200)
+        return response.get_data(as_text=True)
+
+    @property
+    def script(self):
+        return Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+
+    @property
+    def css(self):
+        return Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+
+    # -- placement -----------------------------------------------------
+
+    def test_answer_dictation_control_sits_with_the_answer_not_in_a_side_card(self):
+        """The control must be reachable where the visitor is answering.
+
+        It previously lived in the side column, which reflows below the
+        composer on narrow viewports, so a phone visitor never saw it.
+        """
+        html = self.html()
+        actions = html.split('<div class="is__actions">', 1)[1].split('</div>', 1)[0]
+        self.assertIn('data-is-mic="answer"', actions)
+        self.assertIn('data-is-review', actions)
+        side_column = html.split('<aside class="is__side-column"', 1)[1]
+        self.assertNotIn('data-is-mic="answer"', side_column)
+
+    def test_exactly_one_dictation_control_exists_per_field(self):
+        """Two controls bound to one field would desynchronise the toggle."""
+        html = self.html()
+        for kind in ('answer', 'ai', 'video'):
+            with self.subTest(kind=kind):
+                self.assertEqual(html.count('data-is-mic="%s"' % kind), 1)
+
+    def test_no_second_dictation_pipeline_is_introduced(self):
+        """PS-VOICE-001 stays the only voice-Capture architecture.
+
+        One shared browser helper serves every Studio text field; a parallel
+        recogniser would be the forbidden second path.
+        """
+        script = self.script
+        self.assertEqual(script.count('function startDictation'), 1)
+        self.assertEqual(script.count('new Recognition()'), 1)
+        # No audio ever leaves the page for a PeerSlate server: the only
+        # endpoints this route calls are the text coaching ones.
+        self.assertEqual(
+            sorted(set(re.findall(r"'(/api/[a-z0-9/_-]+)'", script))),
+            ['/api/interview/improve', '/api/interview/model-answer', '/api/interview/review'],
+        )
+        self.assertNotIn('uploadUrl', script)
+        self.assertNotIn('owner-capture-voice', script)
+
+    # -- Pete's behaviour contract -------------------------------------
+
+    def test_recognition_runs_continuously_with_interim_results(self):
+        script = self.script
+        self.assertIn('recognition.continuous = true;', script)
+        self.assertIn('recognition.interimResults = true;', script)
+        self.assertNotIn('recognition.continuous = false;', script)
+        self.assertNotIn('recognition.interimResults = false;', script)
+
+    def test_ten_second_silence_deadline_stops_dictation(self):
+        script = self.script
+        self.assertIn('var DICTATION_SILENCE_MS = 10000;', script)
+        self.assertIn("stopDictation('silence');", script)
+        self.assertIn('state.silenceDeadline = Date.now() + DICTATION_SILENCE_MS;', script)
+
+    def test_any_speech_resets_the_silence_deadline(self):
+        """Silence means silence, not elapsed time since the visitor began."""
+        result_handler = self.script.split('recognition.onresult = function', 1)[1]
+        self.assertIn('armDictationSilence(state);', result_handler.split('};', 1)[0])
+
+    def test_second_click_stops_dictation(self):
+        script = self.script
+        self.assertIn('function toggleDictation', script)
+        self.assertIn("if (activeDictation) { stopDictation('manual'); return; }", script)
+        self.assertIn("button.addEventListener('click', function () { toggleDictation(", script)
+
+    def test_a_spontaneous_browser_end_restarts_instead_of_ending_the_session(self):
+        """Chrome ends continuous recognition on its own; the visitor's
+        intent, not the browser's timeout, decides when listening stops."""
+        end_handler = self.script.split('recognition.onend = function', 1)[1]
+        self.assertIn('state.restarts += 1;', end_handler)
+        self.assertIn('recognition.start();', end_handler)
+        self.assertIn('var DICTATION_MAX_RESTARTS = 120;', self.script)
+
+    def test_transcript_lands_in_the_same_editable_field_as_typing(self):
+        script = self.script
+        self.assertIn('function appendTranscript', script)
+        self.assertIn("target.dispatchEvent(new Event('input', { bubbles: true }));", script)
+        # Only finalised speech is committed, so live interim text can never
+        # overwrite an edit the visitor is making by hand.
+        self.assertIn('if (result.isFinal) finalText', script)
+        self.assertIn('state.words += appendTranscript(state.target, finalText);', script)
+
+    def test_unfinalised_speech_is_kept_not_discarded_on_stop(self):
+        """The visitor saw those words in the preview; stopping must not
+        silently throw them away."""
+        script = self.script
+        self.assertIn('if (state.interim) {', script)
+        self.assertIn('state.words += appendTranscript(state.target, state.interim);', script)
+
+    def test_nothing_captured_message_distinguishes_heard_from_never_heard(self):
+        script = self.script
+        self.assertIn('state.heardSomething', script)
+        self.assertIn('Dictation stopped before any speech could be transcribed.', script)
+
+    def test_leaving_the_field_stops_the_microphone(self):
+        script = self.script
+        self.assertIn("if (mode !== session.mode) stopDictation('interrupted');", script)
+        self.assertIn("stopDictation('interrupted');\n        var responseText", script)
+        self.assertIn("if (event.key !== 'Escape' || !activeDictation) return;", script)
+
+    # -- truthful states -----------------------------------------------
+
+    def test_unsupported_browser_is_declared_up_front_not_on_failure(self):
+        script = self.script
+        self.assertIn('function speechIsSupported', script)
+        self.assertIn('if (!speechIsSupported()) {', script)
+        self.assertIn("button.setAttribute('aria-disabled', 'true');", script)
+        self.assertIn('Speech input is not supported in this browser. Typing works normally.', script)
+
+    def test_every_recognition_failure_has_an_exact_visible_message(self):
+        script = self.script
+        for code, fragment in (
+            ('not-allowed', 'Microphone permission was denied.'),
+            ('audio-capture', 'No microphone was found'),
+            ('network', 'Dictation lost its network connection.'),
+            ('no-speech', 'No speech was detected.'),
+        ):
+            with self.subTest(code=code):
+                self.assertIn(fragment, script)
+        self.assertIn("showMicError(state.kind, message);", script)
+
+    def test_a_dismissed_permission_prompt_is_reported_honestly_not_invented(self):
+        """The Web Speech API cannot distinguish a dismissed prompt from
+        silence, so the copy names it as a possible cause instead of
+        fabricating a state we cannot detect."""
+        script = self.script
+        self.assertIn(
+            'Dictation stopped without capturing any speech. If your browser asked for '
+            'microphone permission and the prompt was closed, nothing was heard. '
+            'You can keep typing.',
+            script,
+        )
+
+    def test_the_ten_second_rule_is_discoverable_before_it_fires(self):
+        html = self.html()
+        self.assertIn('keeps listening until you stop it or you go quiet for 10 seconds', html)
+        script = self.script
+        self.assertIn('Listening. Stops after 10 seconds of silence, or press Escape.', script)
+        self.assertIn("'Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.'", script)
+        self.assertIn('Dictation stopped after 10 seconds of silence.', script)
+
+    def test_the_public_route_claims_no_server_capture_or_account_history(self):
+        html = self.html()
+        self.assertIn('PeerSlate does not receive or keep the audio.', html)
+        for forbidden in (
+            'saved to your account',
+            'securely recorded',
+            'synced across devices',
+            'your private history',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, html)
+
+    # -- accessibility --------------------------------------------------
+
+    def test_toggle_state_is_exposed_to_assistive_technology(self):
+        html = self.html()
+        self.assertEqual(html.count('aria-pressed="false"'), 3)
+        script = self.script
+        self.assertIn("button.setAttribute('aria-pressed', 'true');", script)
+        self.assertIn("state.button.setAttribute('aria-pressed', 'false');", script)
+
+    def test_state_changes_are_announced_but_interim_text_is_not_a_live_region(self):
+        """Continuously changing interim text in a live region would flood a
+        screen reader; discrete state changes go through the existing one."""
+        script = self.script
+        self.assertIn("announce('Listening. Speak your '", script)
+        self.assertIn('function setDictationInterim', script)
+        interim_markup = self.html().split('data-is-dictation-interim="answer"', 1)[1].split('>', 1)[0]
+        self.assertNotIn('aria-live', interim_markup)
+        self.assertNotIn('role="status"', interim_markup)
+
+    def test_stopping_reports_whether_the_answer_was_updated(self):
+        script = self.script
+        self.assertIn("'1 word was added to your ' + noun", script)
+        self.assertIn("state.words + ' words were added to your ' + noun", script)
+
+    def test_dictation_controls_are_real_buttons_with_accessible_names(self):
+        html = self.html()
+        for label in (
+            'aria-label="Dictate your answer"',
+            'aria-label="Dictate an interview question"',
+            'aria-label="Dictate your answer transcript"',
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+        self.assertIn('<span data-is-mic-label>Start dictation</span>', html)
+        self.assertIn("text(labelNode, 'Stop dictation');", self.script)
+
+    def test_typing_remains_first_class_when_speech_is_unavailable(self):
+        html = self.html()
+        self.assertIn('Dictation is optional and typing works exactly the same.', html)
+        self.assertNotIn('required disabled', html)
+
+    # -- dual-theme presentation ----------------------------------------
+
+    def test_listening_state_uses_theme_tokens_so_both_themes_render(self):
+        css = self.css
+        block = css.split('.is__mic.is-listening,', 1)[1].split('}', 1)[0]
+        self.assertIn('var(--is-gold)', block)
+        self.assertNotIn('#fff', block)
+        for token in ('var(--is-text-muted)', 'var(--is-surface-2)', 'var(--is-line)'):
+            with self.subTest(token=token):
+                self.assertIn(token, css.split('.is__dictation-interim {', 1)[1].split('}', 1)[0]
+                              + css.split('.is__dictation-note {', 1)[1].split('}', 1)[0])
+
+    def test_listening_is_conveyed_by_text_and_colour_not_animation_alone(self):
+        css = self.css
+        self.assertIn('@media (prefers-reduced-motion: reduce)', css)
+        self.assertIn('.is__dictation-live', css)
+        self.assertIn('function setDictationStatus', self.script)
+
+    def test_asset_signature_is_bumped_so_the_change_can_reach_production(self):
+        html = self.html()
+        self.assertIn('css/interview-studio.css?v=studio-5a5c-4', html)
+        self.assertIn('js/interview-studio.js?v=studio-5a5c-4', html)

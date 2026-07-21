@@ -8,7 +8,7 @@
 
 {% block extra_head %}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=studio-5a5c-3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/interview-studio.css') }}?v=studio-5a5c-4">
 {% endblock %}
 
 {% block content %}
@@ -274,11 +274,20 @@
                                 </p>
 
                                 <div class="is__actions">
+                                    <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
+                                        <span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
+                                        <span data-is-mic-label>Start dictation</span>
+                                    </button>
                                     <button class="is__button is__button--primary is__composer-submit" type="submit" data-is-review disabled>
                                         Submit answer
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                                     </button>
                                 </div>
+
+                                <p class="is__dictation-note" id="is-dictation-note">Dictation is optional and typing works exactly the same. Your browser does the transcribing and keeps listening until you stop it or you go quiet for 10 seconds. PeerSlate does not receive or keep the audio.</p>
+                                <p class="is__dictation-live" data-is-dictation-status="answer" hidden></p>
+                                <p class="is__dictation-interim" data-is-dictation-interim="answer" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
+                                <p class="is__error" data-is-mic-error="answer" hidden></p>
 
                                 <p class="is__tip">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
@@ -443,12 +452,7 @@
 
                             <section class="is__card is__card-pad" aria-label="Answering aid">
                                 <p class="is__eyebrow">Answering aid</p>
-                                <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-label="Dictate your answer">
-                                    <span class="is__mic" style="width:2.2rem;height:2.2rem" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
-                                    Start dictation
-                                </button>
-                                <p class="is__error" data-is-mic-error="answer" hidden></p>
-                                <p style="margin-top:0.85rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.55">Dictation is optional. You can speak and we&rsquo;ll transcribe into the box.</p>
+                                <p style="margin-top:0.35rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.55">Start dictation sits next to Submit answer, under the answer box. Speaking and typing produce the same editable answer.</p>
                                 <div class="is__divider"></div>
                                 <p class="is__section-label" style="font-size:0.68rem">Keyboard tips</p>
                                 <p id="is-answer-shortcut" style="margin-top:0.4rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.6">Tab to navigate<br>Ctrl/Command + Enter to submit</p>
@@ -501,10 +505,12 @@
                             <label for="is-ai-question">Ask a custom interview question</label>
                             <div class="is__ai-input">
                                 <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
-                                <button class="is__mic" type="button" aria-label="Dictate an interview question" data-is-mic="ai">
+                                <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate an interview question" data-is-mic="ai">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
                                 </button>
                             </div>
+                            <p class="is__dictation-live" data-is-dictation-status="ai" hidden></p>
+                            <p class="is__dictation-interim" data-is-dictation-interim="ai" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                             <p class="is__error" data-is-mic-error="ai" hidden></p>
                             <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
                                 Get Answer
@@ -667,12 +673,14 @@
                                 <div class="is__transcript-composer">
                                     <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript></textarea>
                                     <div class="is__transcript-actions">
-                                        <button class="is__mic" type="button" aria-label="Dictate your answer transcript" data-is-mic="video">
+                                        <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate your answer transcript" data-is-mic="video">
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
                                         </button>
                                         <button class="is__button is__button--primary" type="submit" data-is-video-review-content disabled>Submit transcript</button>
                                     </div>
                                 </div>
+                                <p class="is__dictation-live" data-is-dictation-status="video" hidden></p>
+                                <p class="is__dictation-interim" data-is-dictation-interim="video" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                                 <p class="is__error" data-is-mic-error="video" hidden></p>
                             </form>
                         </div>
@@ -891,5 +899,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-5a5c-3" defer></script>
+<script src="{{ url_for('static', filename='js/interview-studio.js') }}?v=studio-5a5c-4" defer></script>
 {% endblock %}

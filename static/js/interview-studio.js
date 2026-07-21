@@ -352,6 +352,8 @@
             releaseMedia(true);
             resetVideoUi();
         }
+        /* Leaving the field the visitor was dictating into stops the microphone. */
+        if (mode !== session.mode) stopDictation('interrupted');
         if (session.mode === 'me' && mode !== 'me') clearReviewState();
         if (session.mode === 'ai' && mode !== 'ai') cancelPendingAi(true);
         session.mode = mode;
@@ -898,6 +900,8 @@
 
     function submitReview() {
         if (reviewController) return;
+        /* Never leave the microphone listening once the answer has been sent. */
+        stopDictation('interrupted');
         var responseText = answer.value.trim();
         if (!responseText) {
             announce('Type or dictate an answer before submitting it for review.');
@@ -1132,8 +1136,33 @@
         announce('Video Practice opened for a new out-loud attempt.');
     });
 
-    /* Speech input */
-    var activeRecognition = null;
+    /* ------------------------------------------------------------------
+       Speech input.
+
+       One browser-local dictation path, shared by every Studio text field.
+       Transcription is performed by the visitor's browser; no audio is sent
+       to or retained by PeerSlate, and nothing here writes a canonical record.
+       This deliberately remains the single dictation path on this route -
+       PS-VOICE-001 private Voice Capture is a separate authenticated system
+       and must not be reimplemented here.
+
+       Behaviour contract: click to start, keep listening, stop on a second
+       click, and auto-stop after DICTATION_SILENCE_MS of silence.
+       ------------------------------------------------------------------ */
+    var DICTATION_SILENCE_MS = 10000;
+    var DICTATION_COUNTDOWN_MS = 4000;
+    var DICTATION_RESTART_DELAY_MS = 150;
+    var DICTATION_MAX_RESTARTS = 120;
+    var DICTATION_STOP_WATCHDOG_MS = 1500;
+    var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];
+    var activeDictation = null;
+
+    function speechRecognitionCtor() {
+        return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    }
+    function speechIsSupported() {
+        return Boolean(speechRecognitionCtor());
+    }
     function friendlySpeechError(code) {
         if (code === 'not-allowed' || code === 'service-not-allowed') return 'Microphone permission was denied. Allow microphone access in your browser’s site settings, then try again.';
         if (code === 'no-speech') return 'No speech was detected. Try again and speak clearly into your microphone.';
@@ -1147,55 +1176,217 @@
         text(errorTarget, message);
         setHidden(errorTarget, false);
     }
+    function setDictationStatus(kind, message) {
+        var statusTarget = one('[data-is-dictation-status="' + kind + '"]');
+        if (!statusTarget) return;
+        text(statusTarget, message || '');
+        setHidden(statusTarget, !message);
+    }
+    function setDictationInterim(kind, value) {
+        var interimTarget = one('[data-is-dictation-interim="' + kind + '"]');
+        if (!interimTarget) return;
+        text(one('[data-is-dictation-interim-text]', interimTarget), value || '');
+        setHidden(interimTarget, !value);
+    }
+    function dictationLabel(kind) {
+        if (kind === 'ai') return 'Dictate an interview question';
+        if (kind === 'video') return 'Dictate your answer transcript';
+        return 'Dictate your answer';
+    }
+    function dictationNoun(kind) {
+        if (kind === 'ai') return 'question';
+        if (kind === 'video') return 'transcript';
+        return 'answer';
+    }
+    function dictationTarget(kind) {
+        if (kind === 'ai') return one('[data-is-ai-question]');
+        if (kind === 'video') return one('[data-is-video-transcript]');
+        return answer;
+    }
+    function appendTranscript(target, transcript) {
+        if (!target || !transcript) return 0;
+        var existing = target.value.trim();
+        target.value = (existing ? existing + ' ' : '') + transcript;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        return transcript.split(/\s+/).filter(Boolean).length;
+    }
+    function clearDictationTimers(state) {
+        if (state.silenceTimer) { window.clearTimeout(state.silenceTimer); state.silenceTimer = null; }
+        if (state.tickTimer) { window.clearInterval(state.tickTimer); state.tickTimer = null; }
+        if (state.restartTimer) { window.clearTimeout(state.restartTimer); state.restartTimer = null; }
+    }
+    function renderDictationCountdown(state) {
+        var remaining = Math.max(0, state.silenceDeadline - Date.now());
+        if (remaining > DICTATION_COUNTDOWN_MS) {
+            setDictationStatus(state.kind, 'Listening. Stops after 10 seconds of silence, or press Escape.');
+            return;
+        }
+        setDictationStatus(state.kind, 'Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.');
+    }
+    function armDictationSilence(state) {
+        if (state.silenceTimer) { window.clearTimeout(state.silenceTimer); state.silenceTimer = null; }
+        state.silenceDeadline = Date.now() + DICTATION_SILENCE_MS;
+        state.silenceTimer = window.setTimeout(function () { stopDictation('silence'); }, DICTATION_SILENCE_MS);
+        renderDictationCountdown(state);
+        if (state.tickTimer) return;
+        state.tickTimer = window.setInterval(function () {
+            if (activeDictation !== state || state.stopping) return;
+            renderDictationCountdown(state);
+        }, 250);
+    }
+    function finishDictation(state) {
+        if (state.finished) return;
+        state.finished = true;
+        clearDictationTimers(state);
+        if (state.watchdog) { window.clearTimeout(state.watchdog); state.watchdog = null; }
+        if (activeDictation === state) activeDictation = null;
+        /* Speech the visitor could see in the preview but the browser never
+           finalised still belongs to them. Keep it rather than discard it. */
+        if (state.interim) {
+            state.words += appendTranscript(state.target, state.interim);
+            state.interim = '';
+        }
+        setDictationInterim(state.kind, '');
+        setDictationStatus(state.kind, '');
+        state.button.classList.remove('is-listening');
+        state.button.setAttribute('aria-pressed', 'false');
+        state.button.setAttribute('aria-label', dictationLabel(state.kind));
+        var labelNode = one('[data-is-mic-label]', state.button);
+        if (labelNode) text(labelNode, 'Start dictation');
+
+        if (state.reason === 'error') return;
+        var noun = dictationNoun(state.kind);
+        if (!state.words) {
+            /* The Web Speech API cannot tell a dismissed permission prompt
+               apart from silence, so name it as one possible cause instead of
+               inventing a state we cannot actually observe. */
+            var nothing = state.heardSomething
+                ? 'Dictation stopped before any speech could be transcribed. You can try again, or keep typing.'
+                : 'Dictation stopped without capturing any speech. If your browser asked for microphone permission and the prompt was closed, nothing was heard. You can keep typing.';
+            announce(nothing);
+            showMicError(state.kind, nothing);
+            return;
+        }
+        var added = state.words === 1 ? '1 word was added to your ' + noun + '.' : state.words + ' words were added to your ' + noun + '.';
+        if (state.reason === 'silence') announce('Dictation stopped after 10 seconds of silence. ' + added + ' You can edit it.');
+        else if (state.reason === 'interrupted') announce('Dictation stopped. ' + added);
+        else announce('Dictation stopped. ' + added + ' You can edit it.');
+    }
+    function stopDictation(reason) {
+        var state = activeDictation;
+        if (!state || state.stopping || state.finished) return;
+        state.stopping = true;
+        state.reason = reason || 'manual';
+        clearDictationTimers(state);
+        state.watchdog = window.setTimeout(function () { finishDictation(state); }, DICTATION_STOP_WATCHDOG_MS);
+        try { state.recognition.stop(); } catch (error) { finishDictation(state); }
+    }
     function startDictation(kind, button) {
-        var errorTarget = one('[data-is-mic-error="' + kind + '"]');
-        var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var Recognition = speechRecognitionCtor();
         if (!Recognition) {
             var unsupported = 'Speech input is not supported in this browser. You can keep typing.';
             announce(unsupported);
             showMicError(kind, unsupported);
             return;
         }
-        if (activeRecognition) {
-            activeRecognition.stop();
-            return;
-        }
-        setHidden(errorTarget, true);
-        var target = kind === 'ai' ? one('[data-is-ai-question]') : kind === 'video' ? one('[data-is-video-transcript]') : answer;
+        var target = dictationTarget(kind);
+        if (!target) return;
+        setHidden(one('[data-is-mic-error="' + kind + '"]'), true);
         var recognition = new Recognition();
-        activeRecognition = recognition;
+        var state = {
+            kind: kind,
+            button: button,
+            target: target,
+            recognition: recognition,
+            words: 0,
+            restarts: 0,
+            interim: '',
+            heardSomething: false,
+            stopping: false,
+            finished: false,
+            reason: 'manual',
+            silenceDeadline: 0,
+            silenceTimer: null,
+            tickTimer: null,
+            restartTimer: null,
+            watchdog: null
+        };
+        activeDictation = state;
         recognition.lang = document.documentElement.lang || 'en-US';
-        recognition.interimResults = false;
-        recognition.continuous = false;
-        button.classList.add('is-listening');
-        button.setAttribute('aria-label', 'Stop dictation');
-        announce('Listening. Speak your answer now.');
+        recognition.continuous = true;
+        recognition.interimResults = true;
         recognition.onresult = function (event) {
-            var transcript = Array.prototype.map.call(event.results, function (result) { return result[0].transcript; }).join(' ').trim();
-            if (target === answer || kind === 'video') {
-                target.value = (target.value.trim() ? target.value.trim() + ' ' : '') + transcript;
-                target.dispatchEvent(new Event('input', { bubbles: true }));
+            if (state.finished) return;
+            armDictationSilence(state);
+            var interim = '';
+            var finalText = '';
+            for (var index = event.resultIndex; index < event.results.length; index += 1) {
+                var result = event.results[index];
+                var chunk = result[0] && result[0].transcript ? result[0].transcript : '';
+                if (result.isFinal) finalText += (finalText ? ' ' : '') + chunk.trim();
+                else interim += chunk;
+            }
+            if (finalText || interim.trim()) state.heardSomething = true;
+            if (finalText) {
+                state.words += appendTranscript(state.target, finalText);
+                state.interim = '';
+                setDictationInterim(state.kind, '');
             } else {
-                target.value = transcript;
+                state.interim = interim.trim();
+                setDictationInterim(state.kind, state.interim);
             }
         };
         recognition.onerror = function (event) {
             var code = event && event.error;
-            if (code === 'aborted') return;
+            /* Continuous sessions emit these while the visitor is simply pausing.
+               The 10-second silence deadline decides when to stop, not the browser. */
+            if (TRANSIENT_SPEECH_ERRORS.indexOf(code) !== -1) return;
             var message = friendlySpeechError(code);
+            state.stopping = true;
+            state.reason = 'error';
             announce(message);
-            showMicError(kind, message);
+            showMicError(state.kind, message);
+            finishDictation(state);
         };
         recognition.onend = function () {
-            activeRecognition = null;
-            button.classList.remove('is-listening');
-            button.setAttribute('aria-label', kind === 'ai' ? 'Dictate an interview question' : kind === 'video' ? 'Dictate your answer transcript' : 'Dictate your answer');
+            if (state.finished) return;
+            if (state.stopping) { finishDictation(state); return; }
+            if (Date.now() >= state.silenceDeadline) { state.reason = 'silence'; finishDictation(state); return; }
+            if (state.restarts >= DICTATION_MAX_RESTARTS) { state.reason = 'manual'; finishDictation(state); return; }
+            state.restarts += 1;
+            state.restartTimer = window.setTimeout(function () {
+                if (state.finished || state.stopping) return;
+                try { recognition.start(); } catch (error) { finishDictation(state); }
+            }, DICTATION_RESTART_DELAY_MS);
         };
-        recognition.start();
+        button.classList.add('is-listening');
+        button.setAttribute('aria-pressed', 'true');
+        button.setAttribute('aria-label', 'Stop dictation');
+        var labelNode = one('[data-is-mic-label]', button);
+        if (labelNode) text(labelNode, 'Stop dictation');
+        announce('Listening. Speak your ' + dictationNoun(kind) + '. Dictation keeps running until you stop it or you are silent for 10 seconds.');
+        armDictationSilence(state);
+        try { recognition.start(); } catch (error) { finishDictation(state); }
+    }
+    function toggleDictation(kind, button) {
+        if (activeDictation) { stopDictation('manual'); return; }
+        startDictation(kind, button);
     }
 
     all('[data-is-mic]').forEach(function (button) {
-        button.addEventListener('click', function () { startDictation(button.getAttribute('data-is-mic'), button); });
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', function () { toggleDictation(button.getAttribute('data-is-mic'), button); });
+    });
+    if (!speechIsSupported()) {
+        all('[data-is-mic]').forEach(function (button) {
+            button.setAttribute('aria-disabled', 'true');
+            button.classList.add('is-unavailable');
+            setDictationStatus(button.getAttribute('data-is-mic'), 'Speech input is not supported in this browser. Typing works normally.');
+        });
+    }
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape' || !activeDictation) return;
+        stopDictation('manual');
     });
 
     /* Interview AI */
