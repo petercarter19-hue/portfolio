@@ -67,12 +67,11 @@
        the plain list - this file adds no new endpoint, only calls the one
        peerslate_api.py already exposes). ================= */
 
-    const kindFilterButtons = Array.from(document.querySelectorAll("[data-kind-filter]"));
+    const kindFilterSelect = document.querySelector("[data-kind-filter-select]");
     const archivedFilterButton = document.querySelector("[data-archived-filter]");
 
     const applyManageFilters = () => {
-        const activeKindButton = kindFilterButtons.find((btn) => btn.getAttribute("aria-pressed") === "true");
-        const kind = activeKindButton ? activeKindButton.dataset.kindFilter : "all";
+        const kind = kindFilterSelect ? kindFilterSelect.value : "all";
         const archivedOnly = Boolean(archivedFilterButton && archivedFilterButton.getAttribute("aria-pressed") === "true");
         let visibleCount = 0;
         document.querySelectorAll("[data-manage-row]").forEach((row) => {
@@ -85,18 +84,16 @@
         return visibleCount;
     };
 
-    kindFilterButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            kindFilterButtons.forEach((other) => other.setAttribute("aria-pressed", "false"));
-            button.setAttribute("aria-pressed", "true");
+    if (kindFilterSelect) {
+        kindFilterSelect.addEventListener("change", () => {
             const count = applyManageFilters();
             announce(
-                button.dataset.kindFilter === "all"
+                kindFilterSelect.value === "all"
                     ? `Showing all Moments (${count}).`
-                    : `Filtered to ${button.dataset.kindFilter} (${count}).`
+                    : `Filtered to ${kindFilterSelect.value} (${count}).`
             );
         });
-    });
+    }
 
     if (archivedFilterButton) {
         archivedFilterButton.addEventListener("click", () => {

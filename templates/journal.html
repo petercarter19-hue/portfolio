@@ -34,51 +34,68 @@
 
             <div class="ps-journal__book">
                 <div class="ps-journal__book-inner">
-                    <p class="ps-journal__eyebrow">Private owner workspace</p>
+                    {% set is_empty_intro = (not manage_view) and (not moments) %}
+                    {% if not is_empty_intro %}
                     <div class="ps-journal__title-row">
                         <div class="ps-journal__title-group">
                             <h1 class="ps-journal__title" id="journal-title">{{ 'Manage' if manage_view else 'Journal' }}</h1>
                             <span class="ps-journal__privacy">{{ jbook.icon_lock() }} Private to you</span>
                         </div>
+                        {% if manage_view %}
                         <div class="ps-journal__actions">
-                            {% if manage_view %}
-                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">Back to Timeline</a>
-                            {% else %}
-                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal', view='archived') }}">Manage</a>
-                            {% endif %}
+                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">&larr; Back to Timeline</a>
                             <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
                                 {{ jbook.icon_plus() }} Capture a Moment
                             </button>
                         </div>
+                        {% endif %}
                     </div>
                     {% if manage_view %}
                     <p class="ps-journal__intro">View and organize all of your Moments.</p>
                     {% else %}
-                    <p class="ps-journal__intro">Your complete record of moments, ideas, and milestones - captured in your own words. Nothing here is shared until you choose to share it.</p>
+                    {# Doc 15 item 6: the mockup's exact single subtitle line - no
+                       second "nothing here is shared" sentence added on top of it;
+                       that privacy truth already lives in the lock cue above and
+                       the composer's own truth-line. #}
+                    <p class="ps-journal__intro">Your complete record of moments, ideas, and milestones &mdash; captured in your own words.</p>
+                    {% endif %}
                     {% endif %}
 
                     <div id="journal-live-region" class="sr-only" role="status" aria-live="polite"></div>
 
                     {% if manage_view %}
-                    {# ---------------- Manage view (accepted screen C, doc 13) ---------------- #}
-                    <div class="ps-journal__manage-search-row">
-                        <label class="sr-only" for="journal-manage-search">Search your Journal</label>
-                        <span class="ps-journal__manage-search-icon" aria-hidden="true">{{ jbook.icon_search() }}</span>
-                        <input
-                            type="search"
-                            id="journal-manage-search"
-                            class="ps-journal__manage-search"
-                            placeholder="Search your journal…"
-                            maxlength="200"
-                            data-manage-search
-                        >
-                    </div>
-                    <div class="ps-journal__kind-filters" role="group" aria-label="Filter loaded Moments by kind" data-kind-filters>
-                        <button type="button" class="ps-journal__kind-filter" data-kind-filter="all" aria-pressed="true">All</button>
-                        {% for value, label in moment_kinds %}
-                        <button type="button" class="ps-journal__kind-filter" data-kind-filter="{{ value }}" aria-pressed="false">{{ label }}</button>
-                        {% endfor %}
-                        <button type="button" class="ps-journal__kind-filter" data-archived-filter aria-pressed="false">Archived</button>
+                    {# ---------------- Manage view (accepted screen C, doc 13/15) ----------------
+                       Doc 15 item 54: the mockup's compact control row - a smaller search bar, an
+                       "All kinds" dropdown (real, wired to the existing client-side kind filter), an
+                       honestly-inert "All time" dropdown (no time-range filter exists in J1), the
+                       Archived toggle, and the far-right filter/list icon button the prior pill row
+                       was missing (present in the mockup; truthfully disabled with an honest label -
+                       no saved/custom view feature exists yet). #}
+                    <div class="ps-journal__manage-controls" data-kind-filters>
+                        <div class="ps-journal__manage-search-row">
+                            <label class="sr-only" for="journal-manage-search">Search your Journal</label>
+                            <span class="ps-journal__manage-search-icon" aria-hidden="true">{{ jbook.icon_search() }}</span>
+                            <input
+                                type="search"
+                                id="journal-manage-search"
+                                class="ps-journal__manage-search"
+                                placeholder="Search your journal…"
+                                maxlength="200"
+                                data-manage-search
+                            >
+                        </div>
+                        <label class="sr-only" for="journal-manage-kind">Filter by kind</label>
+                        <select id="journal-manage-kind" class="ps-journal__manage-select" data-kind-filter-select>
+                            <option value="all" selected>All kinds</option>
+                            {% for value, label in moment_kinds %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="ps-journal__manage-select ps-journal__manage-select--inert" disabled aria-disabled="true" aria-label="All time — filtering by date range is coming later">
+                            <span>All time</span>{{ jbook.icon_chevron_down() }}
+                        </button>
+                        <button type="button" class="ps-journal__manage-pill" data-archived-filter aria-pressed="false">{{ jbook.icon_archive() }} Archived</button>
+                        <button type="button" class="ps-journal__manage-icon-btn" disabled aria-disabled="true" aria-label="More filters — coming later">{{ jbook.icon_list() }}</button>
                     </div>
 
                     <div data-manage-list>
@@ -122,13 +139,25 @@
                     </div>
 
                     <div class="ps-journal__manage-footer">
-                        <span><span class="ps-journal__manage-footer-count" data-manage-count>{{ moments|length }} {{ 'Moment' if moments|length == 1 else 'Moments' }}</span></span>
+                        {# Doc 15 item 51: the footer count is the member's true total (not merely
+                           this page's visible row count) - matches totals.moments, the same honest
+                           bounded-scan figure the This-Season hero already shows. #}
+                        <span><span class="ps-journal__manage-footer-count" data-manage-count>{{ totals.moments }} {{ 'Moment' if totals.moments == 1 else 'Moments' }}</span></span>
                         <span>You own your Moments. Only you can see them.</span>
                     </div>
 
                     {% else %}
                     {# ---------------- Timeline (default) view ---------------- #}
                     {% if moments %}
+                    {# Doc 15 item 5: Manage + Capture a Moment sit directly above
+                       the This-season card (not beside the title, which is now
+                       full mockup scale and stands alone). #}
+                    <div class="ps-journal__actions-row">
+                        <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal', view='archived') }}">Manage</a>
+                        <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
+                            {{ jbook.icon_plus() }} Capture a Moment
+                        </button>
+                    </div>
                     <section class="ps-journal__hero" aria-label="This season">
                         <div class="ps-journal__hero-scene" aria-hidden="true">
                             <span class="ps-journal__hero-hill ps-journal__hero-hill--back"></span>
@@ -137,7 +166,7 @@
                         </div>
                         <div class="ps-journal__hero-copy">
                             <p class="ps-journal__hero-eyebrow">This season</p>
-                            <p class="ps-journal__hero-headline">Your story,<br>still unfolding.</p>
+                            <p class="ps-journal__hero-headline">Building clarity.<br>Creating impact.</p>
                             <p class="ps-journal__hero-microline">Focus. Learn. Build. Share.</p>
                             <p class="ps-journal__hero-signature">{{ (member.display_name or 'You').split(' ')[0] }}</p>
                         </div>
@@ -243,15 +272,25 @@
                     {% endif %}
 
                     {% else %}
-                    {# ---------------- Empty first-visit state (S2, accepted screen A) ---------------- #}
+                    {# ---------------- Empty first-visit state (S2, accepted screen A) ----------------
+                       Doc 15 item 31: no eyebrow/title/subtitle header block here - the page opens
+                       straight into the centered composition. Item 39: Manage stays reachable via a
+                       quiet ghost control in the page's top-right corner (owner-delegated judgment -
+                       the accepted mockup does not show a header row to hang it from). #}
+                    <a class="ps-journal__manage-ghost" href="{{ url_for('owner.journal', view='archived') }}">{{ jbook.icon_manage() }}<span>Manage</span></a>
                     <div class="ps-journal__empty ps-journal__empty--intro">
                         <div class="ps-journal__empty-illustration">{{ jbook.empty_illustration() }}</div>
                         <p class="ps-journal__empty-title">Your story starts here.</p>
                         <p class="ps-journal__empty-copy">Capture your first Moment - a thought, a lesson, a win, or something you never want to forget.</p>
-                        <button type="button" class="ps-btn ps-btn--gold" data-open-composer>{{ jbook.icon_plus() }} Capture a Moment</button>
+                        <button type="button" class="ps-btn ps-btn--gold" data-open-composer>{{ jbook.icon_pencil() }} Capture a Moment</button>
                         <p class="ps-journal__empty-privacy">{{ jbook.icon_lock() }} Private to you</p>
+                        {# Doc 15 item 37 SUPERSEDES doc 13's unattributed ruling: signed with the
+                           member's own profile name, dynamic per member, never hardcoded (the
+                           accepted PNG's "- Pete" is that mockup's own author preview, not a fixed
+                           string every member sees). #}
                         <blockquote class="ps-journal__empty-quote">
                             <p>The pages are yours.<br>The story is yours.<br>The impact is yours.</p>
+                            <cite>&mdash; {{ (member.display_name or 'You').split(' ')[0] }}</cite>
                         </blockquote>
                     </div>
                     {% endif %}
