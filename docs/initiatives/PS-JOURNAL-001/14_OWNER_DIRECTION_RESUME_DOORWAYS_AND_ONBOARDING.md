@@ -16,11 +16,18 @@ work on my résumé today / do interview stuff" must be very accessible.
 
 ## The game plan — three doorways into existing machinery
 
-### 1. Intent cards on the signed-in Home
-"What do you want to do today?" — 3–4 warm cards: Work on my résumé · Practice
-interviews · Capture a moment · Read my Journal. Fits the Bible's finite-Home
-mandate; coordinates with the activated PS-HOME-FRONTEND-001 lane. One click =
-in the mode; no nav hunting.
+### 1. Direct in-place editing — THE core requirement (owner refinement, 2026-07-21)
+Pete's clarification: the "what do you want to work on today?" intent-card
+Home is an **optional nice-to-have idea, not a requirement**. The core
+requirement is that **the page itself is directly editable where the member is
+standing**: go straight to the résumé page and work on the résumé right there;
+go straight to a bullet or a skill and add another one right there — typed
+directly, **without having to talk to anybody or anything**. Speaking stays
+available as an equal path for those who want it; direct typed/manipulated
+editing must be first-class so the experience is comfortable for all parties.
+Underneath, each direct add remains one Save Moment + approved placement (the
+same canonical machinery — the member just never has to see it as a
+conversation).
 
 ### 2. Résumé Studio (candidate package `PS-RESUME-STUDIO-001`)
 The résumé opened in improve mode:
@@ -54,8 +61,11 @@ gap prompts) — they are not merged. The slight separateness is intentional.
 ## Sequencing
 
 1. Journal J1 (in flight) → J1.1 search (in flight) → pilot.
-2. Then these become flagship Phase 5–6 packages: PS-ONBOARD-001 and
-   PS-RESUME-STUDIO-001, each with its own manager/writer, visual authority,
-   and owner acceptance per the standards. Intent cards ride with the Owner
-   Home frontend lane's sequencing.
+2. Then — **further down the line, when it naturally comes up** (owner
+   timing, 2026-07-21: pushed back; address when reached) — these become
+   flagship packages: PS-ONBOARD-001 and PS-RESUME-STUDIO-001, each with its
+   own manager/writer, visual authority, and owner acceptance per the
+   standards. Direct in-place editing is the heart of PS-RESUME-STUDIO-001;
+   intent cards are an optional idea that may ride with the Owner Home lane
+   if ever wanted.
 3. Nothing here modifies current routes, fixtures, or behavior today.
