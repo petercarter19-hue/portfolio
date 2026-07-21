@@ -76,10 +76,9 @@ The flag stays off in every failure case.
    (sections 1–15, now including search isolation §10–15). Static review is
    not a substitute; this is where escaping literalness, two-owner isolation,
    pagination order, and forged-owner behavior get executable proof.
-2. **Collation decision to record as accepted:** search comparisons are forced
-   to `Latin1_General_CI_AS` — case-insensitive but **accent-sensitive**
-   ("café" will not match "cafe") and Latin-centric. Confirm or revise at the
-   gate; CI_AI is the friendlier alternative for a personal journal.
+2. **Collation decision RESOLVED (Pete, 2026-07-21): accent-INSENSITIVE.**
+   Search comparisons now force `Latin1_General_CI_AI` — "cafe" finds "café".
+   Recorded here so the gate applies the current script text.
 3. **Performance note to record:** search is a leading-wildcard LIKE over
    nvarchar(max) narrative — non-SARGable, owner-bounded scan. Acceptable for
    the pilot; revisit (full-text or trigram index) before broad enablement.

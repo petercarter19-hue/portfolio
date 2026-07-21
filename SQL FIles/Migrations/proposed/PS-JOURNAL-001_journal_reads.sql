@@ -574,8 +574,8 @@ BEGIN TRY
               AND (@IncludeArchived = 1 OR moment.archived_at_utc IS NULL)
               AND
               (
-                  version_record.title COLLATE Latin1_General_CI_AS LIKE @LikePattern ESCAPE N''\''
-                  OR version_record.narrative COLLATE Latin1_General_CI_AS LIKE @LikePattern ESCAPE N''\''
+                  version_record.title COLLATE Latin1_General_CI_AI LIKE @LikePattern ESCAPE N''\''
+                  OR version_record.narrative COLLATE Latin1_General_CI_AI LIKE @LikePattern ESCAPE N''\''
               )
               AND
               (
