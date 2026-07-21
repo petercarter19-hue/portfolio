@@ -91,8 +91,8 @@ class GovernanceDocsTests(unittest.TestCase):
         for rel in (
                 'docs/governance/CURRENT_BASELINE.yaml',
                 'docs/governance/DOCUMENT_CONTROL.md',
-                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx',
-                'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx',
+                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.8.docx',
+                'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx',
                 'docs/PEERSLATE_SITE_RULES.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
 
@@ -101,11 +101,30 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn('PEERSLATE_SITE_RULES.md', content)
         self.assertIn('CURRENT_BASELINE.yaml', content)
         self.assertIn('DOCUMENT_CONTROL.md', content)
-        self.assertIn('Bible v2.6 / Roadmap v2.5', content)
+        self.assertIn('Bible v2.8 / Roadmap v2.7', content)
         self.assertIn('self-manages its assigned branch', content)
         self.assertIn('Pass` self-certification', content)
         self.assertIn('Claude Co-Work', content)
         self.assertIn('designated session manager', content)
+
+    def test_site_rules_encode_one_journal_and_open_navigation(self):
+        content = _read(os.path.join(ROOT, 'docs', 'PEERSLATE_SITE_RULES.md'))
+        for expected in (
+                'Save Moment',
+                'deterministic derived membership',
+                'not a required destination',
+                'final signed-in route map remains an explicit later decision',
+                'Ask Slate AI',
+                'Ashley AI is retired terminology',
+                'My Story',
+                'not necessarily daily'):
+            self.assertIn(expected, content)
+        for superseded_affirmative in (
+                'Every Capture initially creates a private draft',
+                'The user then explicitly chooses whether to add it to the Journal',
+                'Capture is a primary destination'):
+            self.assertNotIn(superseded_affirmative, content)
+        self.assertIn('not another user-facing destination or an Add to Journal gate', content)
 
     def test_interview_demo_is_downstream_of_released_studio(self):
         package = os.path.join(

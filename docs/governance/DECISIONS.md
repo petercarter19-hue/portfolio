@@ -325,3 +325,137 @@ This is an append-only operational decision record. The current Bible and Roadma
   owner-only Project foundation and Ledger using exact-version Moment Placement;
   public projections, collaboration, task management, homepage work, and route
   revival remain outside that slice and require later gates.
+
+## 2026-07-20 - Restart Journal as the memory profile and reconnect Member Intelligence and Activation
+
+- Peter explicitly lifted the Journal hold after supplying Foundation Edition
+  v1.5.1 and identifying Journal, Memory Intelligence, and Activation as a
+  product relationship that might not have been carried through operationally.
+- The exact source is preserved at
+  `docs/initiatives/PS-JOURNAL-001/source/PeerSlate_Company_and_Product_Bible_v1.5.1.docx`
+  with SHA-256
+  `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`.
+- Bible v2.6 already contains much of the conceptual direction. It and Roadmap
+  v2.5 remain current authority; `PS-JOURNAL-001` records the precise
+  reconciliation and supersedes the earlier operational hold only.
+- Journal is the member's private-first memory profile over confirmed canonical
+  Moments. It is not a second narrative store. Capture preserves source,
+  confirmed Moment preserves member-approved meaning, and Journal presents the
+  governed chronological experience over that truth.
+- Memory Intelligence is private, source-linked, uncertain, correctable,
+  dismissible, exportable, and deletable interpretation. It may never silently
+  become a public fact or canonical profile claim.
+- Activation is explicit. Use This Moment may propose a reference, placement,
+  private draft, reminder, Goal/Project step, or Studio scenario, but may not
+  publish, broaden an audience, or copy canonical truth without member action.
+- Deep Navy Gold and the approved Journal/My Slate board control the visual
+  direction; v1.5.1 Iris styling does not return.
+- This decision activates definition and architecture only. No target Journal
+  route, schema consumer, UI, feature flag, AI output, audience view, or
+  production behavior is implemented by the restart checkpoint.
+- The next product gate is a fresh architecture branch that resolves route,
+  data, lifecycle, server authorization, visual mapping, migration, rollback,
+  and two-member validation before a private owner Journal vertical slice.
+
+## 2026-07-20 - Adopt the connected-system and return-value direction
+
+- Owner decision: PeerSlate does not need more destinations. It needs a stronger
+  visible trunk. **Every page should feel like a different use of the same
+  life.**
+- Adopt Bible v2.7 and Roadmap v2.6, superseding Bible v2.6 and Roadmap v2.5.
+  The entire v2.6 constitution is preserved: member-first and private-first
+  direction, capture-once/connect-many, one connected Slate, visual-integrity
+  covenant, member-directed Story covenant, and the Projects covenant.
+- Every major room shall state what it helps the member do, whose space and
+  which truth state the viewer is in, where its material came from, how it
+  relates to the larger Slate, and one best safe next move.
+- Connection is created through canonical references and member-directed
+  actions. No room copies another room's authoritative facts, and no generic
+  "related content" or promotional rail substitutes for a governed relationship.
+- Public and owner modes use the same interaction grammar with different
+  server-authorized payloads. Private context is never retrieved and filtered in
+  the browser.
+- A focused task room is not interrupted. The default connective budget is one
+  primary bridge and no more than two secondary paths.
+- Return value shall be created through useful memory, preparation, reflection,
+  and gentle continuation. Guilt, loss framing, punitive streak recovery, public
+  consistency pressure, and popularity manipulation are rejected for the current
+  program. Returning after absence is continuation, not failure.
+- Voice and text are first-class paths into the same ownership, provenance,
+  review, correction, privacy, lifecycle, and activation architecture.
+  Voice-derived emotional cues may be humble optional observations only, never
+  diagnosis.
+- The proof graph is an acceptance outcome of `PS-PLACEMENT-001` and later
+  connected-view packages, not a new product, destination, or truth store.
+- Preserve Slate Spine, Resume Backstory Drawer, Studio Return Ticket, Then and
+  Now, Focus Themes, and Progress Keepsakes as canonical experience patterns
+  inside existing rooms. Preservation is not implementation authorization: none
+  has a manager, writer, branch, schema, accepted visual authority, or release.
+- Register `PS-PUBLIC-CONNECTIVE-001`, `PS-CONNECTIVE-COMPONENT-001`, and
+  `PS-RETURN-VALUE-001` as candidate, unassigned packages. The public pilot
+  requires an accepted production-intent mockup and an assigned manager and
+  writer before any branch. The return-value engine is blocked behind the Owner
+  Home frontend and real confirmed history.
+- The eleven Open decisions recorded in Bible v2.7 Section 19 remain **open**.
+  No implementation assumption may silently close them.
+- This decision changes no feature flag, route, schema, deployment, or
+  production setting, and enables no gated capability. Owner Home remains
+  default-off, Photo Capture remains flag-off, Projects remain planned, and the
+  PS-JOURNAL-001 definition/architecture gate is active while the target Journal
+  UI remains not live.
+
+## 2026-07-20 - Adopt universal Capture, one derived Journal, trusted return services, and bounded AI/messaging architecture
+
+- Adopt Bible v2.8 and Roadmap v2.7, superseding Bible v2.7 and Roadmap v2.6
+  wherever they conflict. Preserve the earlier versions as decision history.
+- Capture is an action that can open in any authorized context. It is not a
+  required page, tab, or destination. The final route/navigation map remains
+  open and must be approved separately.
+- The member-facing commit is **Save Moment**. Technical source, upload,
+  transcription, revision, processing, and proposal states may exist inline or
+  underneath, but the action creates one private canonical Moment in
+  member-authored or explicitly accepted/reviewed language. AI enrichment may
+  not delay, replace, or silently rewrite that commit.
+- Every eligible saved Moment belongs to its owner's one Journal by
+  deterministic derived membership. Do not create a Journal Placement, Add to
+  Journal gate, copied `journal_entry.body`, or second canonical narrative.
+- The owner Journal is the complete private chronology. Public, Connection, and
+  selected-person Journals are server-authorized, owner-curated projections
+  over the same exact Moments and may feel like a timeline/profile. Authorization
+  occurs before retrieval.
+- Journal and My Story are not merged. Journal is complete, chronological,
+  searchable, and lifecycle-oriented; My Story is finite, intentionally
+  selected, authored, and visually composed. Both reference exact governed
+  Moment versions. Saving a Moment adds no Story item, and removing a Story item
+  does not remove the Moment from Journal.
+- Downstream Feed, Story, Work, Projects, Board, Resume, Studio, and future
+  messaging use exact references and purpose-specific projection metadata after
+  Save Moment. No consumer independently creates a competing fact pipeline.
+- Commit `PS-RETURN-VALUE-001` as staged future architecture for replay and
+  resurfacing, Momentum, Prompt/Ritual, What PeerSlate Noticed, and Slate Mirror.
+  Outputs are private, source-linked, correctable, dismissible, rate-limited,
+  non-diagnostic, and non-shaming. Momentum is not necessarily daily. Quiet
+  acknowledgements or badges may be used for truthful, purposeful,
+  non-competitive criteria; points, levels, public rank, loss/reset framing, and
+  trophy spam remain rejected.
+- The signed-in intelligence umbrella is **Ask Slate AI**. **Ask My Slate** is a
+  contextual CTA. Specialist experiences are workflows, not separate bots.
+  **Ashley AI** is retired terminology. **Ask Pete AI** remains Pete's public
+  instance of reusable **Ask [Name] AI** and cannot retrieve private Slate data.
+- Messaging is a committed later direction, not a first-release capability. It
+  requires identity, Connection/consent, authorization, safety and moderation,
+  blocking/reporting, retention/deletion, notification, abuse response, and
+  legal gates. AI may propose wording but never sends a message.
+- Original authorized audio playback may remain possible. Synthetic or cloned
+  own-voice playback is not committed. Life Constellation and other unselected
+  research concepts remain in the Revisit Register.
+- Adopt the Early Legal and Site Readiness Standard now. Counsel and security
+  gates must precede public Journal, broad community/messaging, private
+  multimodal AI, or broad launch claims.
+- Adopt the AI Model and Role Routing standard: one durable package manager,
+  one self-managed writer, and an independent reviewer only when risk warrants
+  it. Do not spend tokens re-authoring an already accepted architecture merely
+  to pass it between Claude and Codex.
+- This authority package changes no route, schema, feature flag, deployment
+  setting, audience, AI service, message path, or live product behavior. The
+  next product gate is one bounded private-Journal-core implementation package.

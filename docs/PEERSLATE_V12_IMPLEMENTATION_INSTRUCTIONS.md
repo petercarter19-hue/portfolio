@@ -1,5 +1,14 @@
 # PeerSlate Claude Implementation Instructions
 
+> **SUPERSEDED HISTORICAL INSTRUCTIONS — DO NOT IMPLEMENT FROM THIS FILE.** This
+> document preserves the July 16 v1.2 program state and contains obsolete
+> navigation, Capture, and Add-to-Journal assumptions. Current work must follow
+> `START_HERE.md`, `docs/governance/CURRENT_BASELINE.yaml`, Bible v2.8, Roadmap
+> v2.7, `docs/AI_WORKFLOW.md`, and the assigned initiative. For Journal work,
+> `docs/initiatives/PS-JOURNAL-001/README.md` controls: Capture is an action,
+> Save Moment is the one member commit, and owner-Journal membership is derived
+> without a second Add to Journal gate or copied Journal body.
+
 **Instruction version:** 1.0  
 **Product baseline:** PeerSlate Company & Product Bible, Foundation Edition v1.2  
 **Decision date:** July 16, 2026  

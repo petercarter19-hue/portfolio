@@ -1,0 +1,144 @@
+PEERSLATE JOURNAL IMAGE REVIEW CHECKLIST
+
+Review each image before asking ChatGPT for the next one.
+
+1. PRODUCT TRUTH
+
+[ ] Capture is visibly an in-context action, not a route or destination.
+[ ] Type and Speak have equal first-class prominence.
+[ ] Save Moment is the only successful commit.
+[ ] Private to you is explicit and not conveyed by color alone.
+[ ] There is no Add to Journal step.
+[ ] There is no automatic Story, Feed, resume, Project, message, share, or
+    publication behavior.
+[ ] The saved state lets the member finish without a forced Journal trip.
+[ ] Journal and My Story remain recognizably different experiences.
+[ ] Planned capability is not presented as currently live.
+
+2. VISUAL PARITY
+
+[ ] The result is recognizably Deep Navy Gold.
+[ ] A deep navy architectural frame and warm ivory working surface feel
+    deliberate rather than themed decoration.
+[ ] Marigold is restrained and meaningful.
+[ ] The result reaches the attached references' premium editorial quality.
+[ ] The opening viewport has one dominant object.
+[ ] It does not look like a generic dashboard, social feed, CRM, task manager,
+    card grid, sci-fi HUD, or crypto interface.
+[ ] Typography feels editorial for headings and functional for controls.
+[ ] Spacing is generous without wasting the screen.
+[ ] Text is readable and not crowded into tiny chips.
+
+3. INTERACTION AND ACCESSIBILITY
+
+[ ] The primary action is immediately clear.
+[ ] Local Journal controls do not look like permanent global navigation.
+[ ] The mobile frame is a real mobile document/sheet composition.
+[ ] Touch targets appear comfortably sized.
+[ ] Privacy and state have words/icons, not color alone.
+[ ] Focus can be visually understood or is reserved for a dedicated follow-up
+    frame.
+[ ] Chronology has a clear semantic reading order.
+[ ] Long text could wrap without breaking the composition.
+
+4. ACCEPT OR REVISE
+
+Accept the image as the working direction only when every applicable item
+passes. Record any intentional deviation before moving on. A beautiful image
+that contradicts product truth fails.
+
+TARGETED REVISION PROMPTS
+
+Use one prompt at a time. Preserve every accepted element not named in the
+revision.
+
+IF CAPTURE LOOKS LIKE A PAGE OR TAB
+
+Keep the accepted palette, typography, Journal composition, spacing, and
+fixture content unchanged. Remove the Capture destination/tab/page treatment.
+Show Capture a Moment only as an action that opens a contained sheet over the
+still-visible origin context. Do not add or change any other navigation.
+
+IF THE RESULT LOOKS LIKE A GENERIC DASHBOARD
+
+Keep all product labels and behavior unchanged. Replace the equal card grid and
+analytics-dashboard silhouette with one dominant editorial chronological
+ledger. Use more vertical rhythm, fewer boxes, stronger date/chapter pacing,
+and quieter metadata while preserving functional search/privacy/lifecycle
+cues.
+
+IF SPEAK IS SECONDARY OR HIDDEN
+
+Keep the accepted screen unchanged except for the Type/Speak choice. Make Type
+and Speak equally prominent, equally reachable, and visually first-class.
+Type may be selected in this frame, but Speak must not look disabled, hidden,
+or fallback-only.
+
+IF THE IMAGE SHOWS ADD TO JOURNAL OR A DESTINATION PICKER
+
+Remove the destination decision and Add to Journal language. The composer must
+end with one action labeled Save Moment. The result is private and appears in
+the owner's one Journal automatically by derived membership. Do not change the
+accepted visual shell.
+
+IF THE SAVED STATE FORCES JOURNAL NAVIGATION
+
+Keep the accepted saved-state composition but make Done the dominant action.
+Show View in Journal and Use This Moment as optional quieter actions. Preserve
+the origin behind the confirmation and do not imply any automatic downstream
+change.
+
+IF MY STORY BECOMES A JOURNAL FEED
+
+Restore My Story as a finite authored cinematic composition using selected
+references. Do not make it a timeline or recent-activity list. Keep Journal as
+the complete chronological working record. Preserve the same facts without
+duplicating their canonical body.
+
+IF JOURNAL BECOMES A STORY CANVAS
+
+Keep the editorial quality, typography, media care, and chapter rhythm, but
+restore the Journal's functional chronology, searchability, lifecycle, and
+stable reading order. Remove freeform drag-canvas behavior from Journal.
+
+IF NAVIGATION DRIFTS
+
+Remove newly invented permanent navigation labels and selected tabs. Preserve
+only an understated shell and local Journal view controls. Capture a Moment
+must read as an action, not a route. Do not redesign the rest of the screen.
+
+IF PRIVACY OR PUBLICATION IS AMBIGUOUS
+
+Add a clear Private to you label with a non-color cue. Remove any share,
+publish, audience-expansion, public-profile, engagement, or automatic-posting
+signals from this first-round state. Keep all other accepted elements fixed.
+
+IF MOBILE IS A SHRUNKEN DESKTOP
+
+Recompose the accepted desktop state as a readable 390 by 844 mobile document
+flow. Use a full-height or bottom sheet, large touch targets, wrapped content,
+and a single-column hierarchy. Do not reduce type to fit or preserve desktop
+side-by-side geometry.
+
+IF THE VISUAL STYLE DRIFTS BETWEEN IMAGES
+
+Use the accepted JOURNAL-01 as the controlling visual reference. Restore its
+navy frame, warm ivory stage, restrained marigold, typography, component
+radius, spacing rhythm, lighting, and material depth. Change only the screen
+state requested; do not redesign the product.
+
+IF TEXT IS GARBLED
+
+Preserve the accepted composition and reduce interface copy to the exact short
+labels supplied. Remove extra invented text. Render the remaining labels
+sharply. Do not change colors, layout, components, or hierarchy.
+
+FINAL CONTINUATION PROMPT AFTER JOURNAL-01 ACCEPTANCE
+
+JOURNAL-01 is the accepted working direction for this conversation. Treat it
+as the primary consistency reference. Generate JOURNAL-02 only. Preserve its
+shell, palette, typography, spacing, component language, fixture member, and
+professional finish exactly. Change only the interaction state described in
+the original first-set prompt.
+
+Repeat the same pattern for JOURNAL-03 and JOURNAL-04.

@@ -992,6 +992,12 @@ body[data-theme="dark"] .is__status-row.is-current .is__status-dot { color: #0b1
 .is__bullets li { position: relative; padding-left: 1.1rem; color: var(--is-text); font-size: 0.78rem; line-height: 1.5; }
 .is__bullets li::before { content: ""; position: absolute; top: 0.5rem; left: 0; width: 0.4rem; height: 0.4rem; background: var(--is-gold-text); border-radius: 50%; }
 body[data-theme="dark"] .is__bullets li::before { background: var(--is-gold-bright); }
+/* Truthful absence: a review may legitimately carry zero strengths. The
+   statement is muted and marker-less so it reads as an honest absence rather
+   than as one more finding. Token values carry it into 5C dark unchanged. */
+.is__bullets-empty { list-style: none; color: var(--is-text-muted); font-style: italic; }
+.is__bullets li.is__bullets-empty { padding-left: 0; }
+.is__bullets li.is__bullets-empty::before { content: none; }
 .is__review-card--improve .is__bullets li::before { background: var(--is-caution-text); }
 body[data-theme="dark"] .is__review-card--improve .is__bullets li::before { background: var(--is-caution-text); }
 

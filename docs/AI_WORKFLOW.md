@@ -2,7 +2,7 @@
 
 This is the canonical operating agreement for Peter, Codex, Claude, and any other coding agent working on PeerSlate. It applies on every computer and in every worktree.
 
-Read this file in full before making repository changes or running Git write operations. `AGENTS.md` supplies shared product and quality rules to Codex. `CLAUDE.md` supplies Claude-specific entry instructions. This file controls Git collaboration, branch ownership, handoffs, pull requests, deployment, and cleanup.
+Read this file in full before making repository changes or running Git write operations. `AGENTS.md` supplies shared product and quality rules to Codex. `CLAUDE.md` supplies Claude-specific entry instructions. This file controls Git collaboration, branch ownership, handoffs, pull requests, deployment, and cleanup. `docs/AI_MODEL_AND_ROLE_ROUTING.md` controls model selection and manager/writer/reviewer routing so that accepted design and audit work is not needlessly repeated.
 
 If another repository document conflicts with this file about Git workflow, follow this file and report the conflict. Explicit instructions from Peter for a specific task can create an exception, but the exception must be stated and recorded in the handoff.
 

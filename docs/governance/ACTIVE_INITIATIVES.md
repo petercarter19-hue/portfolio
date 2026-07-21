@@ -2,7 +2,10 @@
 
 _Updated 2026-07-20 after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
-release, and exact-authority Owner Home frontend activation._
+release, exact-authority Owner Home frontend activation, and the
+owner-authorized one-Journal architecture. Bible v2.8 and Roadmap v2.7 are
+activated as current universal-Capture, Journal, trusted-return, AI, and future
+messaging authority._
 
 ## Operating model
 
@@ -18,12 +21,18 @@ coordinate different packages, but they may not edit the same branch or reserve
 the same shared governance files. Claude Co-Work management is distinct from
 Claude Code implementation.
 
+Use `docs/AI_MODEL_AND_ROLE_ROUTING.md` to choose the lowest-cost capable model
+for each role. An accepted architecture is not sent to another model to be
+re-authored. The assigned writer self-reviews; add a fresh independent reviewer
+only for high-risk or expressly required packages.
+
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
 | Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Interview homepage parity, Capture Media enablement, Owner Home sequencing | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
-| Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling Photo now; rebuilding Voice; blending Owner Home work |
+| Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later universal-composer/Save Moment integration or explicit temporary exception, plus signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling the current source-only Photo path; rebuilding Voice; blending Owner Home work |
 | Interview homepage convergence | Claude Code, architecture and implementation after activation | PS-HOME-INTERVIEW-PARITY-001 | mapping the live 5A/5C Studio into the existing fixed homepage walkthrough | modifying the real Studio; starting product edits before architecture review; Owner Home or Photo |
-| Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend | broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
+| Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
+| Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
 
 ## Current active gate
 
@@ -125,8 +134,14 @@ new package and branch.
   Build and Deploy. The flag remains off and no new member-facing capability is
   live.
 - Current action: do not enable Photo. A separately assigned package must prove
-  the real signed-in Azure lifecycle, two-owner denial, production visuals, and
+  integration with the shared universal composer/Save Moment/derived-Journal
+  contract or an explicit owner-approved temporary exception, plus the real
+  signed-in Azure lifecycle, two-owner denial, production visuals, and
   `PS-HOME-CAPTURE-PHOTO-PARITY-001` before an enablement decision.
+- The controlling transition is
+  `PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md`.
+  Existing source-only Photo evidence is necessary history but is not enough
+  to enable the final member journey.
 - The released PS-VOICE-001 foundation remains separate and must not be
   reimplemented by Capture Media.
 
@@ -163,6 +178,11 @@ new package and branch.
   retry/recovery, flag-off fallback, responsive/accessibility, and truthful
   `coming_later` availability. The deferred states remain design authority for
   a separately gated future backend-contract package.
+- Any inherited `/app/capture` action is a temporary default-off compatibility
+  bridge only. It may not lock Capture as target navigation, imply the shared
+  composer/Save Moment/Journal behavior is live, or pass enablement without the
+  transition and stop conditions in
+  `PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md`.
 - The frontend must remain default-off through implementation and deployment,
   preserve `templates/owner_workspace.html` exactly as the flag-off fallback,
   and obtain Pete plus designated-manager visual-product acceptance before its
@@ -207,22 +227,19 @@ writer or implementation branch, and must not interrupt Voice or Interview.
   accepted product mockup, deployment, or live claim exists. This package must
   not interrupt Capture Media or any separately assigned convergence gate.
 
-### PS-ASK-PETE-AI-001 - planned Phase 11 discovery
+### PS-ASK-PETE-AI-001 - public Ask Pete / Ask [Name] AI, planned refinement
 
 - Source package: `docs/initiatives/PS-ASK-PETE-AI-001/README.md`.
-- Working product name: **Ask Pete AI**. This is not "PAI." The naming and
-  permission relationship to reusable Ask [Name] AI and private Owner AI is a
-  future discovery decision; no current live label changes.
+- Working public product name: **Ask Pete AI**. This is Pete's instance of the
+  reusable **Ask [Name] AI** pattern. This is not "PAI" and it is not the
+  signed-in private assistant.
 - Current production remains the public, typed, approved-source Ask Pete AI
   assistant. Voice, private owner-history retrieval, document upload,
   screenshot/OCR processing, saved targets, and Qualification Alignment are not
   implemented, deployed, or live.
-- Planned inputs to explore include Type, Speak, PDF/DOCX/TXT, and one or more
-  PNG/JPEG screenshots such as job postings. The member must review extracted
-  text and source spans before consequential analysis.
-- Roadmap placement is Phase 11, Next Chapter and Qualification Alignment. The
-  first action is the owner discovery agenda, followed by complete experience,
-  visual-authority, architecture, privacy, AI-safety, and traceability gates.
+- Future work in this package is limited to the public experience and approved
+  public grounding. Type/Speak/PDF/DOCX/TXT/screenshot/OCR and private member
+  history belong to `PS-ASK-SLATE-AI-001`.
 - No designated discovery manager, implementation writer, product branch, or
   start date is assigned. This package must not interrupt Capture Media or any
   separately assigned convergence gate.
@@ -230,9 +247,81 @@ writer or implementation branch, and must not interrupt Voice or Interview.
   cross-product homepage projection parity contract before future product
   implementation can close.
 
-## Held
+### PS-JOURNAL-001 - controlling architecture complete / private-core writer unassigned
 
-- **PS-JOURNAL-001:** Journal UI remains on hold by explicit owner decision.
+- Source package: `docs/initiatives/PS-JOURNAL-001/README.md`.
+- Peter explicitly lifted the Journal hold on July 20, 2026. The supplied
+  Foundation Edition v1.5.1 is preserved with SHA-256
+  `01848a19271942780f740f5220bf48816f664fe134236e28da4a61d49bf3626b`
+  and reconciled through Bible v2.8 and Roadmap v2.7.
+- Capture is an action available in any authorized context, not a page members
+  must visit. The member-facing commit is Save Moment. One saved private
+  canonical Moment becomes part of the owner's Journal by deterministic derived
+  membership; there is no Add to Journal gate and no copied Journal body.
+- The owner Journal is the complete private chronology. Public, Connection, and
+  selected-person views are later server-authorized projections. My Story is a
+  finite, intentionally composed projection over exact Moment references, not a
+  duplicate Journal.
+- This authority release changes governance only. It adds no route, schema, UI,
+  service, feature flag, audience view, AI output, or production behavior.
+- Next action: assign one manager and exactly one writer on a fresh branch to
+  implement and prove the bounded private core in
+  `05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md`.
+
+## Holds
+
+No current package holds. Product-code entry gates still apply.
+
+### PS-GOV-CONNECTED-SYSTEM-001 - owner approved / authority activated
+
+- Candidate source package:
+  `docs/initiatives/PS-GOV-CONNECTED-SYSTEM-001/README.md`.
+- Candidate lineage merged through Azure PR 111 at
+  `938d2b8b3b4450b1f1e4d0796aa6b5b438e0e5ed`; pipeline 162 passed.
+- Peter supplied and activated Bible v2.7 and Roadmap v2.6 on July 20. That
+  activation is preserved as historical evidence; Bible v2.8 and Roadmap v2.7
+  subsequently superseded their Capture-destination, Journal-hold, and related
+  assumptions in the current pointer chain.
+- The package is complete and changes no runtime behavior. Its Architecture
+  and Data Standard and Experience System files remain PROPOSED/package-local;
+  they are supporting detail, not separate controlled standards.
+- `12_SUPERSESSION_AND_CONTINUATION.md` records which assumptions were
+  superseded by the one-Journal decision and routes surviving ideas to their
+  controlling packages.
+
+### PS-GOV-JOURNAL-SYSTEM-001 - owner approved / authority activated
+
+- Source package:
+  `docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/README.md`.
+- The package adopts Bible v2.8 and Roadmap v2.7; replaces Capture-destination,
+  draft-promotion, copied-Journal-entry, categorical-no-badge, and private Ask
+  Pete assumptions; and preserves the original research in a traceability
+  matrix and Revisit Register.
+- Exact release: source `578081f5191dd74daa154941604a2b199c5fed58`, Azure
+  PR 118, squash merge `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`, and
+  automatic pipeline 171 (`20260721.1`) with Build and Deploy succeeded.
+  Redundant manual pipeline 172 also passed after delayed automatic-run
+  visibility.
+- It is governance-only. It has no product-code writer after merge and claims no
+  new route, schema, deployment behavior, private/public view, AI service,
+  message path, or legal completion.
+- `04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md` prevents the active Home and
+  flag-off Photo lanes, and the planned Projects package, from reintroducing
+  superseded target behavior without editing their writers' reserved files.
+
+### Planned committed packages - no runtime writer
+
+- `PS-RETURN-VALUE-001`: replay/resurfacing, Momentum, Prompt/Ritual, What
+  PeerSlate Noticed, and Slate Mirror, staged after the private Journal core.
+- `PS-ASK-SLATE-AI-001`: signed-in umbrella; **Ask My Slate** is a contextual
+  CTA; specialized experiences are workflows, not separate named bots. Ashley
+  AI is retired terminology.
+- `PS-MESSAGING-001`: future member messaging only after identity, consent,
+  Connection, authorization, safety/moderation, retention/deletion,
+  notification, abuse-response, and legal gates.
+- Each package is committed architecture but inactive. Each needs its own
+  manager, single writer, branch, visual authority, implementation scope,
+  evidence, owner acceptance, and release gate.
 
 ## Shared rules
 
@@ -257,4 +346,8 @@ writer or implementation branch, and must not interrupt Voice or Interview.
 - Manager-to-manager transfer requires a durable package report naming the
   current gate, exact branch/SHA, evidence, shared-file reservation, unresolved
   issues, and single next action. Chat history alone is not a handoff.
-- Do not duplicate Capture or Moment text into destinations, introduce a second resume dataset, rewrite authentication, start Journal UI, or claim private/public behavior the backend does not enforce.
+- Do not duplicate Capture or Moment text into destinations, create a separate
+  Journal-entry truth body, introduce a second resume dataset, rewrite
+  authentication, implement Journal product code outside the PS-JOURNAL-001
+  private-core gate, encode Capture as a required destination, or claim
+  private/public behavior the backend does not enforce.
