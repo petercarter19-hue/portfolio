@@ -284,6 +284,47 @@ MOBILE, and DARK all bind.
     ("double check and make sure I didn't miss anything"), on desktop,
     mobile, and dark.
 
+
+## 6d. Owner Review Round 5 — the Moment detail (Pete, 2026-07-21, binding)
+
+Compared against accepted screen B (voice Moment detail). Desktop, MOBILE,
+and DARK all bind.
+
+41. **One back label**: the page currently mixes "Back to journal" and "Back
+    to timeline" — kill the inconsistency; the mockup's "← Back to timeline"
+    is the label, everywhere.
+42. **The date block gets its lines**: "20 MAY 2024" renders with the spine
+    treatment per the mockup — the vertical line + node dot on the left, the
+    dividing line on the right of the date column. Currently missing.
+43. **Title column tighter to the left** per the mockup (wraps like the
+    mockup); it must not stretch across the whole page.
+44. **The supporting context text is MISSING and must render** under the
+    title ("Felt prepared, present, and confident. …" in the fixture). Real
+    members' text populates when the queued J1.2 narrative read lands; the
+    layout slot and fixture demonstration exist NOW; never fabricate text for
+    real members.
+45. **Audio row drops below the context text** per the mockup; play button at
+    the correct rich gold; waveform per the rebuilt component; the photo to
+    the right at the mockup's size (content will vary; the SIZING must
+    match).
+46. **Version history block**: "Version history" in BOLD; "1 version ·
+    Created May 20, 2024 at 9:41 AM" stacked BELOW it; the block WIDER per
+    the mockup (currently too skinny); "View history" stays for now with a
+    COMING LATER chip.
+47. **Edit / Archive / Export / Delete** boxed exactly like the mockup's
+    button row, each with COMING LATER beneath (slightly bigger boxes than
+    the mockup are acceptable to fit the chip).
+48. **Privacy footer**: "Private to you" in bold with the correct lock icon,
+    "· Only you can see this Moment." per the mockup.
+49. **Typography + color pass on the whole page**: bold weights and sizes per
+    the mockup ("the text on this page is missing bold; the sizing is off");
+    overall color corrected; the real book pages/edges INCLUDING the navy
+    surround ("I don't even see blue on the edge").
+50. **The contents rail renders on the detail page** with the same geometry
+    as every other view (item 32 continuity — the mockup shows it; the owner
+    confirmed the sidebar is expected). Reviewer full-sweeps screen B for
+    anything unlisted, on desktop, mobile, and dark.
+
 ## 7. Process escalation (owner mandate, 2026-07-21)
 
 - The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
