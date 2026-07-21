@@ -24,22 +24,31 @@ privacy-safe audit record - access mode and run id only - the first time each
 proof window actually admits a cohort request. See
 [`06_PROOF_ADMISSION_AUDIT_RECORD.md`](06_PROOF_ADMISSION_AUDIT_RECORD.md).
 
-**Gap 2 - Defender choice B excluded the malicious path.** The owner replaced
-choice B with **choice A**, the coordinated inert production test, on
-2026-07-20. The malicious row is now an in-scope production row with a full
-operational plan in
-[`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
+**Gap 2 - Defender choice B excluded the malicious path.** On 2026-07-20 a
+same-day reversal to **choice A** was recorded on this branch while `main`
+retained choice B.
 
-The window itself is now schedulable using
-[`05_PROOF_WINDOW_RUN_CHECKLIST.md`](05_PROOF_WINDOW_RUN_CHECKLIST.md).
+**Resolved 2026-07-21: choice B controls; choice A is prepared and deferred to
+the Photo enablement window.** The malicious row therefore remains
+`Conditional`. The full operational plan is retained and ready in
+[`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md),
+whose header carries the resolution and its reasoning. The controlling entry
+gate lives in `docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`.
+
+The window is **not** schedulable today.
+[`05_PROOF_WINDOW_RUN_CHECKLIST.md`](05_PROOF_WINDOW_RUN_CHECKLIST.md) becomes
+executable only after that entry gate passes, which requires the security
+coordination this package's own readiness report confirms has not been
+obtained.
 
 ## Approved implementation continuation - 2026-07-20
 
 - Architecture release: Azure PR 107; squash
   `531013dd8c1a05e2443becd881a226755f27ca14`
-- Owner decision: architecture approved; Defender choice **B** recorded, then
-  explicitly replaced the same day by choice **A** - a coordinated inert
-  production test using a security-approved EICAR-based fixture
+- Owner decision: architecture approved; Defender choice **B** recorded, with a
+  same-day reversal to choice **A** recorded on this branch only. Resolved
+  2026-07-21: **choice B controls; choice A is prepared and deferred** to the
+  Photo enablement window. No production Defender test is authorized
 - Implementation branch:
   `work/2026-07-20-capture-photo-lifecycle-implementation-001`
 - Exact implementation base: Azure DevOps `origin/main` at
@@ -157,9 +166,10 @@ owner IDs, email addresses, headers outside the trusted authentication
 boundary, query values, source keys, Capture keys, Blob names, and UI state
 never grant cohort access.
 
-The owner selected Defender path **A**: a coordinated inert production test
-using one security-approved EICAR-based fixture, run only inside the attended
-window with advance security notification. A malformed or dimension-invalid
+Defender path **A** - a coordinated inert production test using one
+security-approved EICAR-based fixture, run only inside the attended window with
+advance security notification - is **prepared and deferred**, not currently
+selected. Choice B controls as of 2026-07-21. A malformed or dimension-invalid
 image proves only application image validation and never proves Defender
 malware rejection, so the two rejection rows stay separate with separate
 evidence.

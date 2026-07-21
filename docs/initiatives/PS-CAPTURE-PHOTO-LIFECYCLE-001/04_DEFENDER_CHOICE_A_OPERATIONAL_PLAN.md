@@ -1,6 +1,39 @@
 # PS-CAPTURE-PHOTO-LIFECYCLE-001 - Defender Choice A Operational Plan
 
-## Recorded decision
+## Recorded decision - superseded 2026-07-21
+
+> **CURRENT STATUS: choice A is PREPARED AND DEFERRED. Choice B controls.**
+>
+> On 2026-07-20 two contradictory decisions were recorded on the same day:
+> `main` recorded choice B, and this branch recorded that the owner replaced it
+> with choice A. On 2026-07-21 Pete delegated the resolution to the designated
+> session manager, who resolved it as follows:
+>
+> **Choice B remains the controlling decision. Choice A is not cancelled - it is
+> deferred to the Photo enablement window, where this plan will be executed.**
+>
+> Reasons, recorded in `docs/governance/OPEN_BRANCH_REGISTER.md`:
+>
+> 1. This plan requires a six-party written acknowledgement including a security
+>    responder on duty, an on-call rotation holder, and a SIEM/MDR provider, and
+>    states the security contact "must be a real second person". Those parties do
+>    not currently exist for PeerSlate, and `PROOF_READINESS_COMPLETION_REPORT.md`
+>    confirms none of the acknowledgements has been obtained.
+> 2. A production Defender proof evidences production configuration at the moment
+>    it runs, not at enablement. Photo enablement is gated behind universal
+>    composer / Save Moment / derived-Journal integration and is a substantial
+>    future package, so a proof run now would very likely need repeating.
+> 3. Choice B costs nothing today, retains the sanctioned isolated-account proof,
+>    and leaves exactly one row honestly marked `Conditional`.
+>
+> **No production Defender test is authorized by this document or by its merge.**
+> Executing it requires the entry gate recorded in
+> `docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`, which is blocking.
+>
+> This plan is merged rather than left on a branch precisely so that it is ready
+> when the enablement window is scheduled, instead of drifting behind `main`.
+
+The original branch text follows, retained as the operational plan itself.
 
 **2026-07-20: the owner selected Defender choice A** - a coordinated inert
 production test - replacing the same-day choice B. This document is the

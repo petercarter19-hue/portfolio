@@ -8,11 +8,18 @@ Keep the general member release flag false. Admit exactly two synthetic owners
 by the internal key that the server resolves after authentication. Use a third
 synthetic identity to prove non-cohort neutrality.
 
-The owner approved the bounded server-only implementation on 2026-07-20. On the
-same date the owner replaced the earlier Defender choice B with **choice A**,
-the coordinated inert production test. This document still does not authorize a
-production proof window or any production configuration change; it records the
-decision and the plan choice A requires.
+The owner approved the bounded server-only implementation on 2026-07-20. A
+same-day reversal from Defender choice B to **choice A** was recorded on this
+branch while `main` retained choice B.
+
+**Resolved 2026-07-21: choice B controls. Choice A is prepared and deferred to
+the Photo enablement window**, gated by the blocking entry gate in
+`docs/initiatives/PS-CAPTURE-MEDIA-001/README.md`. The production
+Defender-malicious row therefore remains `Conditional`.
+
+This document does not authorize a production proof window or any production
+configuration change; it records the mechanism and the plan choice A will
+require when that gate passes.
 
 ## Access-policy contract
 
