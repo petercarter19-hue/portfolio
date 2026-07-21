@@ -51,6 +51,7 @@ from services.owner_home_service import (
     OwnerHomeContractError,
     owner_home_service,
 )
+from services.journal_service import JournalServiceError, journal_service
 
 
 owner = Blueprint("owner", __name__)
@@ -1290,4 +1291,328 @@ def export_capture(capture_key):
     )
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+# ------------------------------------------------------------------
+# PS-JOURNAL-001 Slice J1 frontend: the owner Journal page and Moment
+# detail. Flag-gated (`PEERSLATE_JOURNAL_ENABLED`, default false) and
+# owner-only; identical neutral 404 for flag-off, unauthenticated, and
+# non-owner requests, matching the require_identity_or_not_found pattern
+# already used by the Slice J1 backend's /api/journal/moments routes in
+# peerslate_api.py. This section consumes services/journal_service.py and
+# services/voice_capture_service.py exactly as already released - it adds
+# no stored procedure, no migration, and no change to either service's
+# existing methods. See docs/initiatives/PS-JOURNAL-001/
+# J1_FRONTEND_IMPLEMENTATION_BRIEF.md.
+# ------------------------------------------------------------------
+
+JOURNAL_CHAPTERS = (
+    {
+        "key": "timeline",
+        "label": "Timeline",
+        "subtitle": "Your journey in chronological order",
+    },
+    {
+        "key": "voice",
+        "label": "Voice",
+        "subtitle": "Spoken thoughts and reflections",
+    },
+    {
+        "key": "photos",
+        "label": "Photos",
+        "subtitle": "Captured moments that matter",
+    },
+    {
+        "key": "videos",
+        "label": "Videos",
+        "subtitle": "Your story in motion",
+    },
+    {
+        "key": "milestones",
+        "label": "Milestones",
+        "subtitle": "Big wins and breakthroughs",
+    },
+    {
+        "key": "reflections",
+        "label": "Reflections",
+        "subtitle": "Lessons, insights, and growth",
+    },
+)
+
+# The derived Journal read has no per-kind aggregate or single-key fetch
+# procedure (usp_ListJournalMomentsForOwner only returns cursor pages of the
+# owner's own scoped Moments). Slice J1 does not add one - see the hard
+# boundary in the frontend brief - so honest lifetime totals and single-
+# Moment detail are both computed with a bounded scan over the released,
+# unmodified journal_service.list_owner_journal read. This is a disclosed
+# J1 performance compromise pending a J1.1 single-fetch/aggregate addition.
+JOURNAL_SCAN_PAGE_SIZE = 100
+JOURNAL_SCAN_MAX_PAGES = 25
+JOURNAL_TIMELINE_PAGE_SIZE = 20
+
+
+def _journal_enabled():
+    return current_app.config.get("PEERSLATE_JOURNAL_ENABLED", False) is True
+
+
+def _journal_not_found():
+    return "Not found.", 404
+
+
+def _journal_identity_or_not_found():
+    """Neutral 404 for a caller whose identity cannot be resolved - never a
+    distinct 401/redirect, so "not signed in" cannot be told apart from
+    "not found" or "flag off" (mirrors peerslate_api.require_identity_or_not_found,
+    which the Slice J1 API already relies on)."""
+    try:
+        return get_current_identity(), None
+    except AuthenticationRequired:
+        return None, _journal_not_found()
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Journal identity lookup failed.")
+        return None, _render_owner_unavailable()
+
+
+def _journal_chapter_key_for_item(item):
+    """The J1 translation from a real Moment's fields to one of the six
+    accepted JOURNAL-01 rail chapters. Disclosed, not backend-specified:
+    Voice/Photos/Videos read the Capture's source_type; Milestones and
+    Reflections have no dedicated Moment kind in the released schema
+    (MOMENT_KINDS has no "milestone" or "reflection" value), so they are
+    presented from the closest existing kinds, "achievement" and "lesson" -
+    a J1 UI mapping over real member-chosen data, never invented content."""
+    source_type = item.get("source_type")
+    moment_kind = item.get("moment_kind")
+    if source_type == "voice":
+        return "voice"
+    if source_type == "photo":
+        return "photos"
+    if source_type == "video":
+        return "videos"
+    if moment_kind == "achievement":
+        return "milestones"
+    if moment_kind == "lesson":
+        return "reflections"
+    return None
+
+
+def _journal_totals(user_key):
+    """Bounded full scan of the owner's active Journal for the This-Season
+    hero's quiet totals and each rail chapter's quiet count. Every number is
+    a real count of already-saved Moments - never a streak, score, or
+    fabricated figure (site rule 24)."""
+    chapter_counts = {chapter["key"]: 0 for chapter in JOURNAL_CHAPTERS}
+    total = 0
+    voice_total = 0
+    milestone_total = 0
+    cursor = None
+    for _ in range(JOURNAL_SCAN_MAX_PAGES):
+        page = journal_service.list_owner_journal(
+            user_key,
+            include_archived=False,
+            limit=JOURNAL_SCAN_PAGE_SIZE,
+            cursor=cursor,
+        )
+        items = page.get("items") or []
+        total += len(items)
+        for item in items:
+            if item.get("source_type") == "voice":
+                voice_total += 1
+            if item.get("moment_kind") == "achievement":
+                milestone_total += 1
+            chapter_key = _journal_chapter_key_for_item(item)
+            if chapter_key:
+                chapter_counts[chapter_key] += 1
+        cursor = page.get("next_cursor")
+        if not cursor:
+            break
+    chapter_counts["timeline"] = total
+    return {
+        "moments": total,
+        "voice_notes": voice_total,
+        "milestones": milestone_total,
+        "chapter_counts": chapter_counts,
+    }
+
+
+def _journal_prepare_moment(item):
+    """Normalize one Journal read row for template rendering. `occurred_on`
+    may arrive as a `date`, a `datetime`, or an ISO string depending on the
+    database driver; this computes the display fields once, server-side, so
+    the template never has to guess the underlying Python type."""
+    prepared = dict(item)
+    occurred_on = item.get("occurred_on")
+    if isinstance(occurred_on, str):
+        try:
+            occurred_on = date.fromisoformat(occurred_on[:10])
+        except ValueError:
+            occurred_on = None
+    if isinstance(occurred_on, datetime):
+        occurred_on = occurred_on.date()
+    if isinstance(occurred_on, date):
+        prepared["occurred_day"] = occurred_on.strftime("%d")
+        prepared["occurred_month_label"] = occurred_on.strftime("%b").upper()
+        prepared["occurred_iso"] = occurred_on.isoformat()
+    else:
+        prepared["occurred_day"] = None
+        prepared["occurred_month_label"] = None
+        prepared["occurred_iso"] = None
+    return prepared
+
+
+def _find_journal_moment(user_key, moment_key):
+    """Bounded scan for one Moment's detail fields. Every page is already
+    server-scoped to `user_key` by usp_ListJournalMomentsForOwner, so a
+    guessed key belonging to another owner can never be retrieved - the scan
+    can only ever return None (404) or the caller's own Moment."""
+    cursor = None
+    for _ in range(JOURNAL_SCAN_MAX_PAGES):
+        page = journal_service.list_owner_journal(
+            user_key,
+            include_archived=True,
+            limit=JOURNAL_SCAN_PAGE_SIZE,
+            cursor=cursor,
+        )
+        for item in page.get("items") or []:
+            if item.get("moment_key") == moment_key:
+                return _journal_prepare_moment(item)
+        cursor = page.get("next_cursor")
+        if not cursor:
+            break
+    return None
+
+
+@owner.get("/app/journal")
+def journal():
+    """The owner's one private Journal: This-Season hero, context rail,
+    and chronological timeline. Local views/filters only - the rail never
+    leaves this page (Context Rail Standard law 1)."""
+    if not _journal_enabled():
+        return _journal_not_found()
+
+    identity, response = _journal_identity_or_not_found()
+    if response is not None:
+        return response
+
+    manage_view = request.args.get("view") == "archived"
+    try:
+        page = journal_service.list_owner_journal(
+            identity.user_key,
+            include_archived=manage_view,
+            limit=JOURNAL_TIMELINE_PAGE_SIZE,
+            cursor=None,
+        )
+        totals = _journal_totals(identity.user_key)
+    except (JournalServiceError, DatabaseServiceError):
+        current_app.logger.error("PeerSlate Journal read is unavailable.")
+        return _render_owner_unavailable()
+
+    return render_template(
+        "journal.html",
+        page_title="Journal",
+        member=identity,
+        moments=[_journal_prepare_moment(item) for item in page["items"]],
+        next_cursor=page["next_cursor"],
+        totals=totals,
+        chapters=JOURNAL_CHAPTERS,
+        manage_view=manage_view,
+        moment_kinds=MOMENT_KINDS,
+        occurred_precisions=OCCURRED_PRECISIONS,
+        max_title_length=MAX_MOMENT_TITLE_LENGTH,
+        max_narrative_length=MAX_MOMENT_NARRATIVE_LENGTH,
+        max_why_length=MAX_MOMENT_WHY_LENGTH,
+        max_voice_bytes=MAX_VOICE_BYTES,
+        max_voice_duration_seconds=MAX_VOICE_DURATION_SECONDS,
+    )
+
+
+@owner.get("/app/journal/moments/<moment_key>")
+def journal_moment(moment_key):
+    """One Moment's detail: accepted version, source type, occurred/derived
+    dates, version number, lifecycle state, and privacy - owner-only, with
+    the same neutral 404 for a guessed or foreign key as for flag-off."""
+    if not _journal_enabled():
+        return _journal_not_found()
+
+    identity, response = _journal_identity_or_not_found()
+    if response is not None:
+        return response
+
+    normalized_moment_key = _normalize_capture_key(moment_key)
+    if not normalized_moment_key:
+        return _journal_not_found()
+
+    try:
+        moment = _find_journal_moment(identity.user_key, normalized_moment_key)
+    except (JournalServiceError, DatabaseServiceError):
+        current_app.logger.error("PeerSlate Journal Moment detail is unavailable.")
+        return _render_owner_unavailable()
+
+    if not moment:
+        return _journal_not_found()
+
+    return render_template(
+        "journal_moment.html",
+        page_title="Moment",
+        member=identity,
+        moment=moment,
+    )
+
+
+@owner.get("/app/journal/voice/<source_key>/draft")
+def journal_voice_draft(source_key):
+    """JSON voice-draft fetch for the in-context Journal composer.
+
+    The released Voice lifecycle (PS-VOICE-001) only ever hands the
+    transcript back through a full-page redirect to
+    `/app/capture?voice=<key>` (owner_capture.html). The Journal composer
+    must stay in place over the Journal and return to it (PS-JRN-CAP-003) -
+    it cannot navigate to that page. This route is net-new and additive: it
+    reuses `voice_capture_service.get_draft` exactly as `capture()` already
+    does above, unmodified, and simply hands the same draft back as JSON
+    instead of server-rendering it."""
+    if not _journal_enabled():
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    except DatabaseServiceError:
+        current_app.logger.error(
+            "PeerSlate Journal voice draft identity lookup failed."
+        )
+        return jsonify({"success": False, "message": "Unavailable."}), 503
+
+    normalized_source_key = _normalize_capture_key(source_key)
+    if not normalized_source_key:
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    try:
+        draft = voice_capture_service.get_draft(identity.user_key, normalized_source_key)
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Journal voice draft read is unavailable.")
+        return jsonify({"success": False, "message": "Unavailable."}), 503
+
+    if not draft:
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    duration_ms = draft.get("verified_duration_milliseconds") or draft.get(
+        "client_duration_milliseconds"
+    )
+    response = jsonify(
+        {
+            "success": True,
+            "source_key": str(draft.get("source_key") or normalized_source_key),
+            "state": draft.get("state"),
+            "transcript": draft.get("provider_transcript") or "",
+            "duration_seconds": (duration_ms / 1000) if duration_ms else None,
+            "audio_url": url_for(
+                "owner.voice_capture_audio", source_key=normalized_source_key
+            ),
+            "safe_error_code": draft.get("safe_error_code"),
+        }
+    )
+    response.headers["Cache-Control"] = "private, no-store"
     return response

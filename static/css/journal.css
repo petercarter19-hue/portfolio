@@ -1,0 +1,1099 @@
+/* PS-JOURNAL-001 Slice J1 - the owner Journal page, the in-context
+   composer, and the saved state.
+
+   Visual authority: docs/initiatives/PS-JOURNAL-001/visual-authority/accepted/
+   journal-v1-01-owner-journal-light-and-dark.png (JOURNAL-01) and
+   journal-v1-02-03-05-composer-and-saved.png (composer + saved state), read
+   together with docs 10 and 11 (the binding translation contracts).
+
+   Every color below is a central Deep Navy Gold token
+   (static/css/style.css :root and body[data-theme="dark"]) - this file
+   defines no palette of its own, so the existing light/dark theme toggle
+   (static/js/theme-toggle.js) drives both the "day" and "lamplight" book
+   automatically. Newsreader is the editorial/serif voice; Inter is UI. */
+
+/* Unscoped: the composer (templates/partials/journal_composer.html) and
+   the saved state render as a sibling of .ps-journal, not inside it, so
+   this cannot be scoped under .ps-journal without silently making those
+   labels visible instead of screen-reader-only. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.ps-journal {
+    --ps-journal-page-radius: 18px;
+    --ps-journal-gap: clamp(1.25rem, 2.5vw, 2.25rem);
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2.5rem) 1.25rem clamp(3rem, 6vw, 5rem);
+}
+
+.ps-journal__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ps-journal-gap);
+    align-items: start;
+}
+
+/* A grid item's default min-width is "auto", meaning it will not shrink
+   below its content's intrinsic minimum size. The mobile rail chip row
+   (.ps-rail-chips, an unwrapped flex row of six chips with its own
+   overflow-x:auto) has a wide intrinsic minimum, and without this override
+   that width was winning: it forced .ps-journal__rail-region - and with it
+   the whole grid and the page - to lay out ~700px wide inside a 390px
+   viewport instead of letting .ps-rail-chips scroll internally. */
+.ps-journal__rail-region {
+    min-width: 0;
+}
+
+@media (min-width: 900px) {
+    .ps-journal__layout {
+        grid-template-columns: 240px minmax(0, 1fr);
+    }
+}
+
+.ps-journal__rail-region {
+    position: sticky;
+    top: 1.5rem;
+}
+
+/* ---------- the bound book ---------- */
+
+.ps-journal__book {
+    position: relative;
+    background: var(--ps-surface);
+    border: 1px solid var(--ps-border);
+    border-radius: var(--ps-journal-page-radius);
+    box-shadow: 0 1px 2px rgb(20 26 40 / 6%), 0 18px 40px rgb(20 26 40 / 10%);
+    padding: clamp(1.5rem, 3vw, 3rem);
+    overflow: hidden;
+}
+
+body[data-theme="dark"] .ps-journal__book {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 22px 50px rgb(0 0 0 / 55%);
+}
+
+/* A quiet page-edge flourish along the book's outer edge - the "bound
+   memoir" cue from the accepted image, built from tokens/gradients only
+   (no imagery dependency, so it never breaks or looks unfinished). */
+.ps-journal__book::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 10px;
+    background: linear-gradient(180deg, var(--ps-bronze) 0%, var(--ps-primary) 55%, var(--ps-bronze) 100%);
+    opacity: 0.55;
+}
+
+.ps-journal__book-inner {
+    position: relative;
+}
+
+/* ---------- header ---------- */
+
+.ps-journal__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ps-bronze-strong);
+    margin: 0 0 0.5rem;
+}
+
+.ps-journal__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.ps-journal__title-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.ps-journal__title {
+    font-family: var(--ps-font-display);
+    font-size: clamp(2rem, 4vw, 2.85rem);
+    font-weight: 600;
+    color: var(--ps-ink);
+    margin: 0;
+}
+
+.ps-journal__privacy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ps-muted);
+}
+
+.ps-journal__privacy svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+}
+
+.ps-journal__intro {
+    font-family: var(--ps-font-ui);
+    color: var(--ps-muted);
+    max-width: 46rem;
+    margin: 0 0 1.5rem;
+}
+
+.ps-journal__message {
+    font-family: var(--ps-font-ui);
+    font-size: 0.92rem;
+    padding: 0.65rem 1rem;
+    border-radius: 0.6rem;
+    margin: 0 0 1.25rem;
+}
+
+.ps-journal__message--error {
+    background: rgb(178 58 47 / 10%);
+    color: #8a2b21;
+}
+
+body[data-theme="dark"] .ps-journal__message--error {
+    color: #ff9d8e;
+    background: rgb(255 157 142 / 12%);
+}
+
+.ps-journal__message--success {
+    background: var(--ps-accent-soft);
+    color: var(--ps-bronze-strong);
+}
+
+/* ---------- primary action ---------- */
+
+.ps-btn {
+    font-family: var(--ps-font-ui);
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.1;
+    transition: background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.ps-btn:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-btn--gold {
+    background: var(--ps-bronze);
+    color: #fff;
+}
+
+body[data-theme="dark"] .ps-btn--gold {
+    color: #0a1730;
+}
+
+.ps-btn--gold:hover {
+    filter: brightness(1.05);
+}
+
+.ps-btn--ghost {
+    background: transparent;
+    border-color: var(--ps-border);
+    color: var(--ps-ink);
+}
+
+.ps-btn--ghost:hover {
+    background: var(--ps-primary-soft);
+}
+
+.ps-btn--quiet {
+    background: transparent;
+    border: none;
+    color: var(--ps-muted);
+    font-weight: 600;
+    padding: 0.6rem 0.8rem;
+}
+
+.ps-btn--quiet:hover {
+    color: var(--ps-ink);
+}
+
+.ps-btn[disabled],
+.ps-btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    box-shadow: none;
+}
+
+/* ---------- this-season hero ---------- */
+
+/* Fixed navy, deliberately NOT the theme-swapping --ps-primary tokens.
+   --ps-primary means "the theme's accent" and becomes signal-gold in dark
+   mode (static/css/style.css body[data-theme="dark"]) - using it here would
+   turn this band gold-on-gold and make the stat values unreadable. The
+   accepted JOURNAL-01 hero is a dark editorial photo band in BOTH light and
+   dark, like the global header; these two hex values are the same fixed
+   Deep Navy Gold "strong ink navy" values already named in AGENTS.md and
+   site rule 73 (#132447 / #203767), not a new palette. */
+.ps-journal__hero {
+    display: grid;
+    gap: 1rem;
+    border-radius: 1rem;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+    margin: 0 0 clamp(1.5rem, 3vw, 2.5rem);
+    background: linear-gradient(135deg, #132447 0%, #203767 100%);
+    color: #f4f6fb;
+    position: relative;
+    overflow: hidden;
+}
+
+.ps-journal__hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgb(216 169 40 / 22%), transparent 55%);
+    pointer-events: none;
+}
+
+.ps-journal__hero-eyebrow {
+    font-family: var(--ps-font-ui);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(244 228 180 / 90%);
+    margin: 0;
+    position: relative;
+}
+
+.ps-journal__hero-name {
+    font-family: var(--ps-font-display);
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    margin: 0;
+    position: relative;
+}
+
+.ps-journal__hero-season {
+    font-family: var(--ps-font-ui);
+    color: rgb(244 246 251 / 85%);
+    margin: 0;
+    max-width: 42rem;
+    position: relative;
+}
+
+.ps-journal__hero-totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+}
+
+.ps-journal__hero-stat {
+    background: rgb(255 255 255 / 10%);
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: 0.75rem;
+    padding: 0.6rem 1rem;
+    min-width: 8rem;
+}
+
+.ps-journal__hero-stat-value {
+    display: block;
+    font-family: var(--ps-font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f0c95a;
+}
+
+.ps-journal__hero-stat-label {
+    display: block;
+    font-family: var(--ps-font-ui);
+    font-size: 0.78rem;
+    color: rgb(244 246 251 / 80%);
+}
+
+/* ---------- timeline ---------- */
+
+.ps-journal__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--ps-border);
+}
+
+.ps-journal__row {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--ps-border);
+    position: relative;
+}
+
+.ps-journal__row[hidden] {
+    display: none;
+}
+
+.ps-journal__date {
+    font-family: var(--ps-font-display);
+    color: var(--ps-primary);
+    text-align: right;
+    padding-top: 0.15rem;
+}
+
+body[data-theme="dark"] .ps-journal__date {
+    color: var(--ps-primary);
+}
+
+.ps-journal__date-day {
+    display: block;
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.ps-journal__date-month {
+    display: block;
+    font-family: var(--ps-font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    margin-top: 0.2rem;
+}
+
+.ps-journal__content {
+    min-width: 0;
+}
+
+.ps-journal__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.8rem;
+    color: var(--ps-muted);
+    margin: 0 0 0.4rem;
+}
+
+.ps-journal__meta-privacy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.ps-journal__meta-privacy svg {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.ps-journal__kind-star {
+    color: var(--ps-bronze);
+    width: 1rem;
+    height: 1rem;
+}
+
+.ps-journal__row-title {
+    font-family: var(--ps-font-ui);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ps-ink);
+    margin: 0 0 0.3rem;
+}
+
+.ps-journal__row-narrative {
+    margin: 0;
+    color: var(--ps-ink);
+    line-height: 1.55;
+}
+
+/* Text moments: serif reflection treatment, no decorative imagery. The
+   derived Journal read returns only a title (the composer derives it from
+   the member's own first line - see the completion report), not a separate
+   narrative body, so the title itself carries this treatment rather than a
+   second, duplicated line of the same text. */
+.ps-journal__row--text .ps-journal__row-title a {
+    font-family: var(--ps-font-display);
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--ps-ink);
+}
+
+/* Voice moments: playable waveform row (only ever renders for a source
+   whose source_type is genuinely "voice" - see the disclosed voice-source
+   linkage gap in the completion report; no waveform is ever drawn over
+   fabricated audio). */
+.ps-journal__voice-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+}
+
+.ps-journal__voice-play {
+    flex: none;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--ps-bronze);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+body[data-theme="dark"] .ps-journal__voice-play {
+    color: #0a1730;
+}
+
+.ps-journal__voice-play:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-journal__voice-wave {
+    flex: 1;
+    height: 1.6rem;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--ps-bronze) 0 2px,
+        transparent 2px 6px
+    );
+    opacity: 0.65;
+    border-radius: 3px;
+}
+
+.ps-journal__voice-duration {
+    font-family: var(--ps-font-ui);
+    font-size: 0.82rem;
+    color: var(--ps-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.ps-journal__row-media {
+    margin-top: 0.6rem;
+    border-radius: 0.6rem;
+    max-width: 22rem;
+    max-height: 12rem;
+    width: 100%;
+    object-fit: cover;
+}
+
+.ps-journal__annotation {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: "Newsreader", cursive;
+    font-style: italic;
+    color: var(--ps-bronze-strong);
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/* ---------- empty states ---------- */
+
+.ps-journal__empty {
+    text-align: center;
+    padding: clamp(2rem, 6vw, 4rem) 1rem;
+    color: var(--ps-muted);
+    font-family: var(--ps-font-ui);
+}
+
+.ps-journal__empty-mark {
+    font-family: var(--ps-font-display);
+    font-size: 2.5rem;
+    color: var(--ps-bronze);
+    margin: 0 0 0.75rem;
+}
+
+.ps-journal__empty-title {
+    font-family: var(--ps-font-display);
+    font-size: 1.3rem;
+    color: var(--ps-ink);
+    margin: 0 0 0.5rem;
+}
+
+.ps-journal__empty-copy {
+    max-width: 28rem;
+    margin: 0 auto 1.25rem;
+    line-height: 1.55;
+}
+
+.ps-journal__footer-line {
+    text-align: center;
+    font-family: "Newsreader", cursive;
+    font-style: italic;
+    color: var(--ps-muted);
+    margin-top: 2rem;
+}
+
+.ps-journal__load-more {
+    display: block;
+    margin: 1.75rem auto 0;
+}
+
+/* ---------- manage view ---------- */
+
+.ps-journal__manage-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin: 0 0 1rem;
+    font-family: var(--ps-font-ui);
+}
+
+.ps-journal__manage-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    color: var(--ps-ink);
+}
+
+.ps-journal__filter-note {
+    font-size: 0.8rem;
+    color: var(--ps-muted);
+}
+
+.ps-journal__kind-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+}
+
+.ps-journal__kind-filter {
+    font-family: var(--ps-font-ui);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--ps-border);
+    background: var(--ps-surface);
+    color: var(--ps-ink);
+    cursor: pointer;
+}
+
+.ps-journal__kind-filter[aria-pressed="true"] {
+    background: var(--ps-primary-soft);
+    border-color: var(--ps-primary);
+    color: var(--ps-primary);
+}
+
+.ps-journal__manage-row {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--ps-border);
+    font-family: var(--ps-font-ui);
+}
+
+.ps-journal__manage-row[hidden] {
+    display: none;
+}
+
+.ps-journal__manage-title {
+    font-weight: 600;
+    color: var(--ps-ink);
+}
+
+.ps-journal__manage-archived-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    border: 1px solid var(--ps-border);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+}
+
+/* =====================================================================
+   In-context composer (accepted 02 desktop facing-page / 03 mobile sheet)
+   ===================================================================== */
+
+.ps-composer-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgb(10 15 26 / 55%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 60;
+}
+
+.ps-composer-scrim[hidden] {
+    display: none;
+}
+
+.ps-composer {
+    background: var(--ps-surface);
+    color: var(--ps-ink);
+    width: min(640px, 100%);
+    max-height: min(88vh, 760px);
+    overflow-y: auto;
+    border-radius: 1.1rem;
+    box-shadow: 0 30px 80px rgb(10 15 26 / 45%);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    font-family: var(--ps-font-ui);
+}
+
+.ps-composer__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ps-composer__title {
+    font-family: var(--ps-font-display);
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.ps-composer__close {
+    background: transparent;
+    border: none;
+    color: var(--ps-muted);
+    cursor: pointer;
+    padding: 0.35rem;
+    border-radius: 999px;
+    line-height: 0;
+}
+
+.ps-composer__close:hover {
+    color: var(--ps-ink);
+    background: var(--ps-primary-soft);
+}
+
+.ps-composer__close:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-composer__tabs {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--ps-border);
+    margin-bottom: 1.1rem;
+}
+
+.ps-composer__tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.35rem 0.1rem 0.75rem;
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--ps-muted);
+    cursor: pointer;
+}
+
+.ps-composer__tab[aria-selected="true"] {
+    color: var(--ps-ink);
+    border-bottom-color: var(--ps-bronze);
+}
+
+.ps-composer__tab:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-composer__truth-line {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--ps-muted);
+    margin: 0 0 0.75rem;
+}
+
+.ps-composer__truth-line svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex: none;
+}
+
+.ps-composer__field {
+    width: 100%;
+    min-height: 9rem;
+    resize: vertical;
+    border: 1px solid var(--ps-border);
+    border-radius: 0.7rem;
+    padding: 0.85rem 1rem;
+    font-family: var(--ps-font-ui);
+    font-size: 1rem;
+    color: var(--ps-ink);
+    background: var(--ps-canvas);
+}
+
+.ps-composer__field:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 1px;
+}
+
+.ps-composer__panel[hidden] {
+    display: none;
+}
+
+.ps-composer__attachments {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.9rem 0;
+    padding: 0.6rem 0.85rem;
+    border: 1px dashed var(--ps-border);
+    border-radius: 0.6rem;
+    color: var(--ps-muted);
+    font-size: 0.88rem;
+}
+
+.ps-composer__attachments svg {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+.ps-composer__attachments-badge {
+    margin-left: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    border: 1px solid var(--ps-border);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+}
+
+.ps-composer__details {
+    margin: 0.5rem 0 1rem;
+}
+
+.ps-composer__details > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ps-muted);
+    list-style: none;
+}
+
+.ps-composer__details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.ps-composer__details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.ps-composer__details-grid label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ps-muted);
+    margin-bottom: 0.3rem;
+}
+
+.ps-composer__details-grid select,
+.ps-composer__details-grid input {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--ps-border);
+    background: var(--ps-canvas);
+    color: var(--ps-ink);
+    font-family: var(--ps-font-ui);
+}
+
+.ps-composer__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.ps-composer__status {
+    font-size: 0.85rem;
+    color: var(--ps-muted);
+    margin-right: auto;
+}
+
+.ps-composer__status[data-tone="error"] {
+    color: #b23a2f;
+}
+
+body[data-theme="dark"] .ps-composer__status[data-tone="error"] {
+    color: #ff9d8e;
+}
+
+/* voice recording */
+
+.ps-composer__voice {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border: 1px solid var(--ps-border);
+    border-radius: 0.8rem;
+    background: var(--ps-canvas);
+}
+
+.ps-composer__voice-state {
+    font-family: var(--ps-font-display);
+    font-size: 1.15rem;
+    margin: 0 0 0.35rem;
+}
+
+.ps-composer__voice-help {
+    color: var(--ps-muted);
+    font-size: 0.88rem;
+    margin: 0 0 1rem;
+}
+
+.ps-composer__voice-timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+    color: var(--ps-muted);
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.ps-composer__voice-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.ps-composer__voice-mic {
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--ps-bronze);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+body[data-theme="dark"] .ps-composer__voice-mic {
+    color: #0a1730;
+}
+
+.ps-composer__voice-mic[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =====================================================================
+   Saved state (accepted 05)
+   ===================================================================== */
+
+.ps-saved {
+    text-align: center;
+}
+
+.ps-saved__icon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 0.75rem;
+    color: var(--ps-success-teal);
+}
+
+.ps-saved__title {
+    font-family: var(--ps-font-display);
+    font-size: 1.35rem;
+    margin: 0 0 0.25rem;
+}
+
+.ps-saved__lock-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--ps-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.ps-saved__section-label {
+    text-align: left;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    margin: 0 0 0.65rem;
+}
+
+.ps-saved__chips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0 0 1.5rem;
+}
+
+@media (min-width: 480px) {
+    .ps-saved__chips {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.ps-saved__chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.9rem 0.5rem;
+    border-radius: 0.7rem;
+    border: 1px solid var(--ps-border);
+    background: var(--ps-canvas);
+    color: var(--ps-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+.ps-saved__chip svg {
+    width: 1.3rem;
+    height: 1.3rem;
+}
+
+.ps-saved__chip-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    border: 1px solid var(--ps-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+
+.ps-saved__audience {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--ps-border);
+    border-radius: 0.7rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--ps-canvas);
+}
+
+.ps-saved__audience svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--ps-muted);
+    flex: none;
+}
+
+.ps-saved__audience-value {
+    font-weight: 700;
+    color: var(--ps-ink);
+}
+
+.ps-saved__audience-preview {
+    text-align: left;
+    font-size: 0.82rem;
+    color: var(--ps-muted);
+    margin: 0 0 1.5rem;
+}
+
+.ps-saved__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* =====================================================================
+   Responsive: mobile bottom sheet composer, 200% zoom reflow
+   ===================================================================== */
+
+@media (max-width: 640px) {
+    .ps-composer-scrim {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .ps-composer {
+        width: 100%;
+        max-height: 92vh;
+        border-radius: 1.25rem 1.25rem 0 0;
+    }
+
+    .ps-journal__row {
+        grid-template-columns: 3.4rem minmax(0, 1fr);
+        gap: 0.85rem;
+    }
+
+    .ps-journal__date-day {
+        font-size: 1.4rem;
+    }
+
+    .ps-journal__manage-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.35rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ps-btn,
+    .ps-journal__voice-play,
+    .ps-composer__voice-mic {
+        transition: none;
+    }
+}
+
+/* At very narrow widths and high browser zoom the two-column date/content
+   row would clip; collapse to a single stacked column instead of relying
+   on horizontal scroll. */
+@media (max-width: 360px) {
+    .ps-journal__row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ps-journal__date {
+        text-align: left;
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+    }
+}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ moment.title or 'Moment' }} | Journal | PeerSlate{% endblock %}
+{% block meta_description %}One private Moment from your Journal.{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-1">
+{% endblock %}
+
+{% block body_class %}ps-journal-page{% endblock %}
+
+{% block content %}
+{% macro icon_lock() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>{% endmacro %}
+
+<div class="ps-journal">
+    <div class="ps-journal__book" style="max-width:760px;margin:0 auto;">
+        <div class="ps-journal__book-inner">
+            <p class="ps-journal__eyebrow"><a href="{{ url_for('owner.journal') }}">&larr; Back to Journal</a></p>
+            <div class="ps-journal__title-row">
+                <div class="ps-journal__title-group">
+                    <h1 class="ps-journal__title" id="journal-moment-title">{{ moment.title or 'Untitled Moment' }}</h1>
+                    <span class="ps-journal__privacy">{{ icon_lock() }} Private &mdash; Only you</span>
+                </div>
+            </div>
+
+            <dl class="ps-journal__meta" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0.75rem 1.5rem;margin:1.5rem 0;">
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Kind</dt>
+                    <dd style="margin:0;">{{ moment.moment_kind|capitalize if moment.moment_kind else 'Not set' }}</dd>
+                </div>
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Occurred</dt>
+                    <dd style="margin:0;">
+                        {% if moment.occurred_iso %}{{ moment.occurred_iso }} ({{ moment.occurred_precision }}){% else %}Date not set{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Source</dt>
+                    <dd style="margin:0;">{{ moment.source_type|capitalize if moment.source_type else 'Text' }}</dd>
+                </div>
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Version</dt>
+                    <dd style="margin:0;">{{ moment.version_number or 1 }}</dd>
+                </div>
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Status</dt>
+                    <dd style="margin:0;">{{ 'Archived' if moment.lifecycle_state == 'archived' else 'Active' }}</dd>
+                </div>
+                <div>
+                    <dt style="font-weight:700;color:var(--ps-ink);">Visibility</dt>
+                    <dd style="margin:0;">{{ moment.visibility|capitalize if moment.visibility else 'Private' }}</dd>
+                </div>
+            </dl>
+
+            <p class="ps-journal__row-narrative">
+                This detail view shows every field the derived Journal read
+                (<code>usp_ListJournalMomentsForOwner</code>) provides today: accepted
+                version, source type, occurred date, version number, lifecycle state, and
+                privacy. That read does not return the full narrative body - only the
+                title, which the composer derives from the first line of what you wrote -
+                so the complete text is not shown here yet. A J1.1 backend addition to
+                return the narrative (or a single-Moment fetch) would let this page show it
+                in full.
+            </p>
+
+            <p style="margin-top:1.5rem;">
+                <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">Back to Journal</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
