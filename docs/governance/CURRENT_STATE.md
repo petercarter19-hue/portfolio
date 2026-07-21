@@ -562,3 +562,11 @@ For material user-facing packages, the release evidence must also include the
 named visual authority, desktop/mobile and applicable focus/zoom/reduced-motion/
 failure comparisons, recorded deviations, and explicit Pete/designated-manager
 visual acceptance.
+
+
+## PS-COMMUNITY-TABS-001 (added 2026-07-21)
+
+Active, implementation not yet merged. Community will land on Feed with a
+seamless Studio-style switch to The Break and a Saved tab; People & Interests
+retires with URLs redirecting. Nothing user-visible has changed for this
+package yet; the sample-community honesty labels remain in force throughout.

@@ -108,3 +108,268 @@ using this checklist. Any visible finish gap on any element = **NO-GO**, with
 a delta list returned to the architect. There is no "acceptable translation"
 category. The loop (spec → implement → review) repeats until Opus certifies
 **identical or better**, and only then is the build shown to Pete.
+
+## 5. Owner Review Round 1 — binding punch list (Pete, 2026-07-21)
+
+Pete reviewed the first rebuilt light page against the mockup pair. Every item
+below is binding, **applies to desktop AND mobile** (the 390px sheet inherits
+the same proportions, type scale, chrome, and page size), and must be verified
+individually by the reviewer before any GO.
+
+**Typography override (supersedes doc 10's font-replacement row):** the
+mockup's rendered typography IS the spec — faces, sizes, weights, and
+proportions. The Bible's font rules yield to the accepted mockup. "Journal"
+title, date numerals, card text, and rail text are all currently too small;
+match the mockup's scale.
+
+**Rail (left contents):**
+1. Add the "CONTENTS" small-caps label at the top; push rail entries down
+   accordingly.
+2. Chapter numerals (01–06) render ABOVE each chapter name (stacked as in the
+   mockup), not inline.
+3. Loosen the vertical rhythm: **Reflections must land beside the May 19
+   row**, and the "Every moment today becomes tomorrow's legacy." flourish
+   line must land beside the **May 13 row** — these are alignment anchors.
+
+**Header zone:**
+4. "Journal" title much larger (mockup scale).
+5. Manage + Capture a Moment sit directly above the This-season card.
+6. The subtitle is EXACTLY the mockup's single line ("Your complete record of
+   moments, ideas, and milestones — captured in your own words."). Remove the
+   added "Nothing here is shared…" sentence (the privacy truth lives in the
+   lock cue and composer truth-line).
+
+**Proportions (measure, don't eyeball):**
+7. Measure the mockup's aspect ratios and implement them: the This-season
+   hero is too wide and not tall enough; entry cards likewise. Card width/
+   type scale must make titles naturally wrap to two lines as in the mockup.
+8. Card thumbnails proportionally larger, as in the mockup.
+
+**Timeline:**
+9. Date numerals larger (mockup scale).
+10. The vertical spine line darker; the node dots centered ON the line, not
+    floating beside it.
+11. The waveform + play button are rejected as-built: rebuild to the mockup's
+    dense elegant bars and rich gold circular play control.
+12. First page shows ONLY the mockup's four entries (May 20/19/18/13); later
+    Moments (e.g. May 09/06) appear via "Load more moments" or scroll-in.
+13. Card text is a summary: long titles truncate elegantly; clicking the card
+    opens the Moment detail with the full capture. (Full body text on detail
+    requires the queued J1.2 read addition; until then detail shows its
+    honest current fields.)
+
+**Book chrome & color:**
+14. The ribbon/leaf bookmark hangs over the page's top-right edge exactly as
+    in the mockup — not inside the page.
+15. Edges: left side gets the beige stacked page-edge treatment; the right
+    edge fades as in the mockup; the outer surround is the deep near-black
+    navy on BOTH themes (light mode included). The current pale blue edges
+    are rejected.
+
+**Mobile:** all of the above translate to 390px — mockup-scale type, the
+book character, darker spine, four-entry first page, summary truncation, and
+the corrected waveform component.
+
+## 6. Owner Review Round 2 — the composer (Pete, 2026-07-21, binding)
+
+Pete reviewed the composer (Type + Speak) against accepted screens 02/03.
+Every item binds desktop AND mobile; **the Speak tab receives every Type-tab
+item identically** (its stage is even taller than Type in the mockup).
+
+**Proportions:**
+17. The composer is far more vertical than built: roughly **twice as tall,
+    slightly narrower** — it reads as the book's facing page, and the writing
+    area fills almost the whole page. Measure the mockup's composer
+    width:height and writing-area proportion and implement those numbers.
+
+**Privacy block:**
+18. "Private to you" renders **bold**, with the **gold lock icon**; the line
+    "Only you can see this until you choose to share." sits **below it on its
+    own line** — never inline.
+
+**Attachment row:**
+19. Keep the build's row design (owner preference: "I actually like what you
+    did better") — camera + film icons + "Add a photo or video".
+20. Implement the **attached state** from the mockup: thumbnail with remove ×
+    and the caption "Attached to this Moment · Private". Runtime staging is
+    unchanged (photo remains gated), but the state exists, renders when an
+    attachment exists, and appears in fixture evidence.
+
+**Footer:**
+21. **Cancel on the left; Save Moment bigger, wider, and darker gold** per
+    the mockup.
+
+**Chrome:**
+22. The composer card has a **× close control top-right** (missing in the
+    build — owner: "a big deal").
+23. **Real book pages**: the page layering must be clearly defined —
+    visible page structure, colors fading in/out at the edges, and the subtle
+    **edge texture** the mockup shows on both the main page and the composer
+    card. "There are actually no pages" in the build — fix it. Desktop shows
+    the full two-page book; mobile keeps the same page character (texture,
+    edge fades, defined sheet) adapted to the single-column 390px sheet.
+
+**Owner reinforcement (2026-07-21): every item in §5 and §6 binds on MOBILE
+exactly as on desktop — no item may be verified desktop-only. The reviewer's
+per-item pass/fail must cite both form factors.**
+
+
+## 6b. Owner Review Round 3 — the saved state (Pete, 2026-07-21, binding)
+
+Compared against accepted screen 05 (the "Moment saved" panel, bottom-right of
+the composer sheet). Every item binds on desktop, MOBILE, and the DARK theme
+equally.
+
+24. **The check medallion is rejected as built**: implement the mockup's
+    refined gold check inside the navy circle with its sparkle burst, and make
+    the medallion + sparkles + headline **evenly positioned/centered** — the
+    current composition is uneven.
+25. **Use This Moment chips**: icons larger per the mockup; chip proportions
+    (length:width) measured from the mockup and matched; overall finish
+    lifted. (Owner allows the chips to remain slightly larger than the mockup
+    — the proportions and polish are what must match.)
+26. **"Who can see it" is missing its prompt**: render the mockup's
+    dropdown-style selector — lock icon + "Only you" + chevron affordance in
+    the gold-outlined select — under the "Who can see it" heading, with the
+    preview reassurance line. It remains truthfully locked/disabled in J1,
+    but it must LOOK like the mockup's prompt, not a flat row.
+27. **Done button rejected as built**: the mockup's "✓ Done" — check icon
+    present, correct gold color and size.
+28. **The lock under the headline**: bigger and better colored (gold) per the
+    mockup.
+29. **The saved card gets the same real book-page treatment** as item 23 —
+    defined page, edge texture, fading edges. ("As always there's issues with
+    the page part.")
+30. **Dark theme parity**: every saved-state item verified on the dark
+    version and on mobile, per the §6 mobile reinforcement.
+
+
+## 6c. Owner Review Round 4 — the empty Journal (Pete, 2026-07-21, binding)
+
+Compared against accepted screen A ("Your story starts here"). Desktop,
+MOBILE, and DARK all bind.
+
+31. **Remove the page header block on the empty state**: no "PRIVATE OWNER
+    WORKSPACE" eyebrow, no "Journal / Private to you" heading, no subtitle —
+    the empty page opens straight into the centered composition like the
+    mockup. ("We already know it's a journal.")
+32. **Rail continuity + anchor**: the contents rail is the SAME size and
+    geometry on every Journal view (timeline, manage, empty, detail). On the
+    empty page, the rail's rhythm loosens so **Reflections ends slightly
+    below the quote card**.
+33. **The illustration is rejected as built**: replicate the mockup's
+    open-book + leaf + sparkles composition and quality, placed **front and
+    center ABOVE the headline** at the mockup's scale.
+34. **"Your story starts here." in bold serif** at the mockup's font style
+    and size.
+35. **The subtitle** at the mockup's style and size (two-line wrap kept —
+    owner: the one good thing).
+36. **Capture a Moment button to mockup spec**: color, edge treatment, and
+    size are all off — match the mockup (pencil icon included), and the
+    **"Private to you" cue sits BELOW the button**, centered.
+37. **The quote card much bigger** per the mockup — and **signed with the
+    member's own profile name** ("— Pete" on Pete's account; the fixture
+    member's name in fixtures). This SUPERSEDES doc 13's unattributed ruling:
+    the attribution is dynamic per member, never hardcoded, so the multi-user
+    rule is preserved. Owner: "I like that."
+38. **Page tone**: the empty page reads white — it must be the warm parchment
+    of the mockup, with the same real book-page treatment (texture, fades,
+    edges) as items 15/23/29. "The pages are off, very very off — this is a
+    theme."
+39. **Manage on the empty page** (owner-delegated judgment): a quiet ghost
+    control in the top-right corner of the page area — present but out of the
+    composition; may differ from other pages' header row.
+40. **Reviewer full-sweep duty**: beyond items 31-39, sweep the entire empty
+    screen against accepted screen A for any element the owner did not list
+    ("double check and make sure I didn't miss anything"), on desktop,
+    mobile, and dark.
+
+
+## 6d. Owner Review Round 5 — the Moment detail (Pete, 2026-07-21, binding)
+
+Compared against accepted screen B (voice Moment detail). Desktop, MOBILE,
+and DARK all bind.
+
+41. **One back label**: the page currently mixes "Back to journal" and "Back
+    to timeline" — kill the inconsistency; the mockup's "← Back to timeline"
+    is the label, everywhere.
+42. **The date block gets its lines**: "20 MAY 2024" renders with the spine
+    treatment per the mockup — the vertical line + node dot on the left, the
+    dividing line on the right of the date column. Currently missing.
+43. **Title column tighter to the left** per the mockup (wraps like the
+    mockup); it must not stretch across the whole page.
+44. **The supporting context text is MISSING and must render** under the
+    title ("Felt prepared, present, and confident. …" in the fixture). Real
+    members' text populates when the queued J1.2 narrative read lands; the
+    layout slot and fixture demonstration exist NOW; never fabricate text for
+    real members.
+45. **Audio row drops below the context text** per the mockup; play button at
+    the correct rich gold; waveform per the rebuilt component; the photo to
+    the right at the mockup's size (content will vary; the SIZING must
+    match).
+46. **Version history block**: "Version history" in BOLD; "1 version ·
+    Created May 20, 2024 at 9:41 AM" stacked BELOW it; the block WIDER per
+    the mockup (currently too skinny); "View history" stays for now with a
+    COMING LATER chip.
+47. **Edit / Archive / Export / Delete** boxed exactly like the mockup's
+    button row, each with COMING LATER beneath (slightly bigger boxes than
+    the mockup are acceptable to fit the chip).
+48. **Privacy footer**: "Private to you" in bold with the correct lock icon,
+    "· Only you can see this Moment." per the mockup.
+49. **Typography + color pass on the whole page**: bold weights and sizes per
+    the mockup ("the text on this page is missing bold; the sizing is off");
+    overall color corrected; the real book pages/edges INCLUDING the navy
+    surround ("I don't even see blue on the edge").
+50. **The contents rail renders on the detail page** with the same geometry
+    as every other view (item 32 continuity — the mockup shows it; the owner
+    confirmed the sidebar is expected). Reviewer full-sweeps screen B for
+    anything unlisted, on desktop, mobile, and dark.
+
+
+## 6e. Owner Review Round 6 — the Manage view + global fixture rule (Pete, 2026-07-21, binding)
+
+Compared against accepted screen C. Desktop, MOBILE, and DARK all bind.
+
+51. **GLOBAL FIXTURE RULE — "we follow the mockups for now"**: every screen's
+    fixture content mirrors the accepted mockup's EXACT entries — same dates,
+    kinds, text lines, and counts (Manage shows May 20/19/18/17/16/15 with
+    Voice/Text/Voice/Photo/Video/Text and the "68 Moments" footer; no
+    invented rows like May 13/09/06 or Apr 30). Fixture Photo/Video rows are
+    visual fixtures (runtime unchanged). This rule applies to every Journal
+    screen and supersedes any fixture invention.
+52. **Manage rail continuity**: same geometry/size/spacing as every view,
+    numbers above names, and the rail stretches/spaces down to align with the
+    last row (the May 15 line).
+53. **Widen the Manage stage** per the mockup's wide layout — the owner likes
+    the wide screen; when stretched it must look like the mockup.
+54. **Replace the kind-chip row** (All/Achievement/Decision/… — owner:
+    "overwhelming… disgusting") with the mockup's compact control row: the
+    smaller "Search your journal…" bar, small "All kinds" and "All time"
+    dropdowns, the "Archived" button, and the **far-right filter/list icon
+    button that is currently missing** (present in the mockup; truthfully
+    disabled with an honest label if inert in J1).
+55. **Date column styled per the mockup** — numeral + month + time, correct
+    colors (it currently reads like a filter control).
+56. **Kind column fixed**: icons present + proper weight per the mockup;
+    where the build's taxonomy labels (Achievement/Lesson/Update…) render,
+    size them smaller so they fit cleanly.
+57. **Give the Moment room to breathe**: Status smaller and more discreet;
+    Status + Duration shifted right, close to the overflow dots; Duration
+    tightened; the MOMENT column gets the freed space.
+58. **The overflow dots** (per-row ⋯) stay per the mockup, truthfully
+    disabled with an accessible label ("More options — coming later").
+59. **Typography**: the classier mockup fonts and sizes across Manage (the
+    standing typography override applies here in full).
+60. **Colors/pages**: the standing surround/parchment/book-page items apply
+    to Manage; reviewer full-sweeps screen C for anything unlisted, desktop,
+    mobile, and dark.
+
+## 7. Process escalation (owner mandate, 2026-07-21)
+
+- The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
+  pixel/proportion measurements, on desktop and mobile, before any GO. A
+  reviewer that passes a visible mismatch has failed its role.
+- **Circuit breaker:** if the loop returns NO-GO twice consecutively — or the
+  same item fails twice — the loop STOPS and the package returns to the
+  architect (Fable) with the full delta history for a spec/architecture
+  revision. It never grinds silently and never reaches Pete unpassed.

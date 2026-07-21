@@ -285,13 +285,18 @@ active_packages:
     lane: capture_media_photo_enablement_and_homepage_parity
     package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
     status: "released_flag_off_enablement_gates_open"
+  - id: PS-COMMUNITY-TABS-001
+    owner: "Pete owner; Fable architect/manager; Sonnet implementation writer; Opus reviewer"
+    lane: community_tab_model_and_people_interests_removal
+    package_path: "docs/initiatives/PS-COMMUNITY-TABS-001/README.md"
+    status: "active_owner_started_early_visual_authority_owner_feed_example"
   - id: PS-GOV-TRUTH-RECONCILIATION-001
     owner: "Claude Code sole session manager designated by Pete on 2026-07-21"
     lane: governance_record_reconciliation
     package_path: "docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md"
     status: "in_progress_governance_only_awaiting_owner_acceptance"
   - id: PS-HOME-FRONTEND-001
-    owner: "ChatGPT Work/Codex designated manager; separate Codex frontend task sole writer"
+    owner: "Owner reassignment 2026-07-21: Fable architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh) reviewer — the originally assigned separate Codex frontend task never opened a branch"
     lane: owner_home_exact_authority_frontend
     package_path: "docs/initiatives/PS-HOME-FRONTEND-001/README.md"
     status: "activated_writer_branch_pending"
@@ -303,6 +308,12 @@ active_packages:
     status: "architecture_current_private_core_entry_gate_unassigned"
 
 planned_packages:
+  - id: PS-SHELL-001
+    owner: "Pete product direction; Fable architect; writer unassigned"
+    lane: site_shell_width_headers_ground_type
+    roadmap_phase: "After Journal J1 release wave"
+    package_path: "docs/initiatives/PS-SHELL-001/README.md"
+    status: "planned_setup_awaiting_visual_authority"
   - id: PS-RESUME-STUDIO-001
     owner: "Pete product direction; future designated manager and implementation writer unassigned"
     lane: future_resume_in_place_editing_and_gap_prompts

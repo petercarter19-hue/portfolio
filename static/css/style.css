@@ -14546,3 +14546,19 @@ body[data-theme="dark"].peerslate-home-page {
 @media (max-width: 640px) {
     .ps-sample-note { font-size: .76rem; max-width: 100%; }
 }
+
+/* Global sign-out button beside My Slate (owner request 2026-07-21). */
+.nav-sign-out { display: inline-flex; margin: 0; }
+.nav-sign-out__btn {
+    background: transparent;
+    border: 1px solid rgba(20, 26, 40, .25);
+    color: inherit;
+    font: inherit;
+    font-size: .85rem;
+    padding: .38rem .8rem;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.nav-sign-out__btn:hover { border-color: rgba(20, 26, 40, .5); }
+.nav-sign-out__btn:focus-visible { outline: 2px solid #b87900; outline-offset: 2px; }
+body[data-theme="dark"] .nav-sign-out__btn { border-color: rgba(234, 240, 251, .3); }

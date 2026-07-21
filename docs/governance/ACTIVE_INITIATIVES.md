@@ -439,3 +439,28 @@ work must check this register so the same work is not assigned twice.
   authentication, implement Journal product code outside the PS-JOURNAL-001
   private-core gate, encode Capture as a required destination, or claim
   private/public behavior the backend does not enforce.
+
+
+## PS-COMMUNITY-TABS-001 — Community tab model (active, owner-started early)
+
+Owner decision 2026-07-21: started ahead of the Journal J1 release wave ("do
+we really need to wait?" — no file overlap with the Journal lane). Feed is
+Community's landing with the seamless Studio-style transition to The Break;
+People & Interests is removed with its Saved value folded into a Saved tab;
+existing `/the-slate/*` URLs keep working via redirects. Visual authority:
+the owner-supplied Feed example
+(`docs/initiatives/PS-COMMUNITY-TABS-001/visual-authority/community-feed-owner-example.png`,
+pixel rule applies), the live Interview Studio tab implementation as the
+interaction reference, and the existing accepted Break design. Roles: Fable
+architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh)
+reviewer with the identical bar; Pete visual acceptance before merge.
+
+
+## PS-HOME-FRONTEND-001 — owner reassignment (2026-07-21)
+
+The separately assigned Codex frontend task never opened
+`work/2026-07-20-home-frontend-001`; Pete reassigned implementation on
+2026-07-21 to the Fable/Sonnet/Opus lane on branch
+`work/2026-07-21-home-frontend-001-impl`. All previously accepted authority,
+briefs, contracts, decisions, and the flag-off boundary remain binding and
+unchanged.
