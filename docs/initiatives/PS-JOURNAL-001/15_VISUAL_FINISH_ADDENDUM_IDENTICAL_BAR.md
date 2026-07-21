@@ -169,3 +169,50 @@ match the mockup's scale.
 **Mobile:** all of the above translate to 390px — mockup-scale type, the
 book character, darker spine, four-entry first page, summary truncation, and
 the corrected waveform component.
+
+## 6. Owner Review Round 2 — the composer (Pete, 2026-07-21, binding)
+
+Pete reviewed the composer (Type + Speak) against accepted screens 02/03.
+Every item binds desktop AND mobile; **the Speak tab receives every Type-tab
+item identically** (its stage is even taller than Type in the mockup).
+
+**Proportions:**
+17. The composer is far more vertical than built: roughly **twice as tall,
+    slightly narrower** — it reads as the book's facing page, and the writing
+    area fills almost the whole page. Measure the mockup's composer
+    width:height and writing-area proportion and implement those numbers.
+
+**Privacy block:**
+18. "Private to you" renders **bold**, with the **gold lock icon**; the line
+    "Only you can see this until you choose to share." sits **below it on its
+    own line** — never inline.
+
+**Attachment row:**
+19. Keep the build's row design (owner preference: "I actually like what you
+    did better") — camera + film icons + "Add a photo or video".
+20. Implement the **attached state** from the mockup: thumbnail with remove ×
+    and the caption "Attached to this Moment · Private". Runtime staging is
+    unchanged (photo remains gated), but the state exists, renders when an
+    attachment exists, and appears in fixture evidence.
+
+**Footer:**
+21. **Cancel on the left; Save Moment bigger, wider, and darker gold** per
+    the mockup.
+
+**Chrome:**
+22. The composer card has a **× close control top-right** (missing in the
+    build — owner: "a big deal").
+23. **Real book pages** (desktop): the page layering must be clearly
+    defined — visible page structure, colors fading in/out at the edges, and
+    the subtle **edge texture** the mockup shows on both the main page and
+    the composer card. "There are actually no pages" in the build — fix it.
+
+## 7. Process escalation (owner mandate, 2026-07-21)
+
+- The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
+  pixel/proportion measurements, on desktop and mobile, before any GO. A
+  reviewer that passes a visible mismatch has failed its role.
+- **Circuit breaker:** if the loop returns NO-GO twice consecutively — or the
+  same item fails twice — the loop STOPS and the package returns to the
+  architect (Fable) with the full delta history for a spec/architecture
+  revision. It never grinds silently and never reaches Pete unpassed.
