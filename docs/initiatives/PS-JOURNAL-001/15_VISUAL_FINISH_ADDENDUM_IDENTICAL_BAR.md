@@ -325,6 +325,45 @@ and DARK all bind.
     confirmed the sidebar is expected). Reviewer full-sweeps screen B for
     anything unlisted, on desktop, mobile, and dark.
 
+
+## 6e. Owner Review Round 6 — the Manage view + global fixture rule (Pete, 2026-07-21, binding)
+
+Compared against accepted screen C. Desktop, MOBILE, and DARK all bind.
+
+51. **GLOBAL FIXTURE RULE — "we follow the mockups for now"**: every screen's
+    fixture content mirrors the accepted mockup's EXACT entries — same dates,
+    kinds, text lines, and counts (Manage shows May 20/19/18/17/16/15 with
+    Voice/Text/Voice/Photo/Video/Text and the "68 Moments" footer; no
+    invented rows like May 13/09/06 or Apr 30). Fixture Photo/Video rows are
+    visual fixtures (runtime unchanged). This rule applies to every Journal
+    screen and supersedes any fixture invention.
+52. **Manage rail continuity**: same geometry/size/spacing as every view,
+    numbers above names, and the rail stretches/spaces down to align with the
+    last row (the May 15 line).
+53. **Widen the Manage stage** per the mockup's wide layout — the owner likes
+    the wide screen; when stretched it must look like the mockup.
+54. **Replace the kind-chip row** (All/Achievement/Decision/… — owner:
+    "overwhelming… disgusting") with the mockup's compact control row: the
+    smaller "Search your journal…" bar, small "All kinds" and "All time"
+    dropdowns, the "Archived" button, and the **far-right filter/list icon
+    button that is currently missing** (present in the mockup; truthfully
+    disabled with an honest label if inert in J1).
+55. **Date column styled per the mockup** — numeral + month + time, correct
+    colors (it currently reads like a filter control).
+56. **Kind column fixed**: icons present + proper weight per the mockup;
+    where the build's taxonomy labels (Achievement/Lesson/Update…) render,
+    size them smaller so they fit cleanly.
+57. **Give the Moment room to breathe**: Status smaller and more discreet;
+    Status + Duration shifted right, close to the overflow dots; Duration
+    tightened; the MOMENT column gets the freed space.
+58. **The overflow dots** (per-row ⋯) stay per the mockup, truthfully
+    disabled with an accessible label ("More options — coming later").
+59. **Typography**: the classier mockup fonts and sizes across Manage (the
+    standing typography override applies here in full).
+60. **Colors/pages**: the standing surround/parchment/book-page items apply
+    to Manage; reviewer full-sweeps screen C for anything unlisted, desktop,
+    mobile, and dark.
+
 ## 7. Process escalation (owner mandate, 2026-07-21)
 
 - The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
