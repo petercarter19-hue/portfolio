@@ -2,20 +2,23 @@
    composer, and the saved state.
 
    Visual authority: docs/initiatives/PS-JOURNAL-001/visual-authority/accepted/
-   journal-v1-01-owner-journal-light-and-dark.png (JOURNAL-01) and
-   journal-v1-02-03-05-composer-and-saved.png (composer + saved state), read
-   together with docs 10 and 11 (the binding translation contracts).
+   (all four accepted PNGs) read together with docs 10, 11, 13, and 15. Doc 15
+   (the Visual Finish Addendum, "the IDENTICAL bar") SUPERSEDES doc 10's
+   "replace rendered colors with existing site tokens" instruction for the
+   Journal specifically: this file renders the book in the mockups' own
+   pinned parchment/gold palette via the --jbook-* custom properties below,
+   scoped to body.ps-journal-page, NOT the global Deep Navy Gold --ps-*
+   tokens (those still drive the global header/sub-nav chrome above the
+   book, which stays exactly as-is - see the "global shell" note below).
 
-   Every color below is a central Deep Navy Gold token
-   (static/css/style.css :root and body[data-theme="dark"]) - this file
-   defines no palette of its own, so the existing light/dark theme toggle
-   (static/js/theme-toggle.js) drives both the "day" and "lamplight" book
-   automatically. Newsreader is the editorial/serif voice; Inter is UI. */
+   Newsreader (italic axis) is the editorial/serif display voice; Caveat is
+   the script signature/annotation face (same convention as Slate Board);
+   Inter remains the UI voice for controls/labels. context-rail.css is NOT
+   modified by this file - its rules stay the shared, room-agnostic default
+   for future Context Rail Standard consumers; every Journal-specific rail
+   look (parchment pill, gold tick, numerals) is layered on top here with
+   scoped selectors instead. */
 
-/* Unscoped: the composer (templates/partials/journal_composer.html) and
-   the saved state render as a sibling of .ps-journal, not inside it, so
-   this cannot be scoped under .ps-journal without silently making those
-   labels visible instead of screen-reader-only. */
 .sr-only {
     position: absolute;
     width: 1px;
@@ -28,114 +31,377 @@
     border: 0;
 }
 
-.ps-journal {
-    --ps-journal-page-radius: 18px;
-    --ps-journal-gap: clamp(1.25rem, 2.5vw, 2.25rem);
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: clamp(1.25rem, 3vw, 2.5rem) 1.25rem clamp(3rem, 6vw, 5rem);
+/* =====================================================================
+   1. The pinned Journal palette (doc 15 SS1) + the near-black "desk"
+   =====================================================================
+   The global frosted-glass header/sub-nav (templates/base.html) is
+   existing site chrome outside this page's scope and is left untouched;
+   only the room BELOW it - the book and the desk it sits on - uses this
+   palette. Both light and dark site themes get the SAME desk (a book
+   under lamplight at night reads the same whether the surrounding OS/
+   browser chrome is light or dark) - only the page/ink tokens swap, per
+   doc 15's "the same book by lamplight" instruction. */
+
+body.ps-journal-page {
+    --jbook-desk-1: #000a1e;
+    --jbook-desk-2: #0a141e;
+    --jbook-page-1: #faf0e6;
+    --jbook-page-2: #f0f0e6;
+    --jbook-page-3: #f0e6dc;
+    --jbook-page-solid: #f1efe3;
+    --jbook-card-bg: #f9f7ee;
+    --jbook-card-border: rgb(35 25 10 / 10%);
+    --jbook-hairline: rgb(35 30 15 / 14%);
+    --jbook-page-edge-1: #e6d2b4;
+    --jbook-page-edge-2: #d9c29c;
+    --jbook-gold: #e6be78;
+    --jbook-gold-mid: #b48c50;
+    --jbook-gold-deep: #aa8246;
+    /* gold-text and ink-faint are WCAG-verified (>=4.5:1, computed script in
+       the completion report) against every parchment stop these tokens
+       actually render on (page gradient stops, card fill, active-pill
+       tint) - not just the lightest one - since real rows land on all of
+       them. */
+    --jbook-gold-text: #725328;
+    --jbook-ink: #141e1e;
+    --jbook-ink-soft: #4c5248;
+    --jbook-ink-faint: #586052;
+    --jbook-date-color: #1c2a4a;
+    --jbook-spine: rgb(10 8 4 / 32%);
+    --jbook-shadow:
+        0 1px 1px rgb(15 10 5 / 12%),
+        0 3px 8px rgb(15 10 5 / 12%),
+        0 40px 70px -24px rgb(0 5 15 / 55%);
+    --jbook-focus: 0 0 0 3px var(--jbook-page-solid), 0 0 0 6px var(--jbook-gold-deep);
+
+    background: linear-gradient(180deg, var(--jbook-desk-1) 0%, var(--jbook-desk-2) 100%) !important;
+    background-attachment: fixed !important;
 }
+
+body.ps-journal-page[data-theme="dark"] {
+    --jbook-page-1: #16233a;
+    --jbook-page-2: #101b2e;
+    --jbook-page-3: #0b1524;
+    --jbook-page-solid: #101b2c;
+    --jbook-card-bg: rgb(255 255 255 / 4%);
+    --jbook-card-border: rgb(230 190 120 / 16%);
+    --jbook-hairline: rgb(230 190 120 / 16%);
+    --jbook-ink: #f0f0e6;
+    --jbook-ink-soft: #b9c2d6;
+    --jbook-ink-faint: #8b95ac;
+    --jbook-date-color: var(--jbook-gold);
+    --jbook-spine: rgb(0 0 0 / 55%);
+    --jbook-shadow:
+        0 1px 1px rgb(0 0 0 / 40%),
+        0 3px 10px rgb(0 0 0 / 40%),
+        0 50px 90px -24px rgb(0 0 0 / 80%);
+}
+
+/* Global-shell note: templates/base.html's frosted header/sub-nav keep
+   their own existing background (color-mix over --bg-elevated with
+   backdrop-filter blur) regardless of this page's desk - a frosted glass
+   panel is EXPECTED to show whatever is behind it tinted through the
+   blur, so a warm-lit glass strip over the near-black desk is correct
+   material behavior, not a bug; verified in the screenshot loop. */
+
+.ps-journal {
+    --ps-journal-gap: clamp(1.25rem, 2.5vw, 2.25rem);
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 3.5vw, 3rem) 1.25rem clamp(3.5rem, 7vw, 6rem);
+}
+
+/* =====================================================================
+   2. Book chrome: the bound cover, gold stitched border, stacked page
+   edges, ribbon bookmark + leaf emblem, corner accents (doc 15 SS2)
+   ===================================================================== */
+
+.ps-journal__bookcase {
+    position: relative;
+    border-radius: 26px;
+    background:
+        radial-gradient(120% 140% at 14% -10%, rgb(255 255 255 / 55%), transparent 55%),
+        linear-gradient(155deg, var(--jbook-page-1) 0%, var(--jbook-page-2) 48%, var(--jbook-page-3) 100%);
+    box-shadow: var(--jbook-shadow);
+    outline: 1px solid var(--jbook-spine);
+    outline-offset: -1px;
+}
+
+body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
+    background:
+        radial-gradient(90% 120% at 20% -10%, rgb(230 190 120 / 8%), transparent 55%),
+        linear-gradient(155deg, var(--jbook-page-1) 0%, var(--jbook-page-2) 48%, var(--jbook-page-3) 100%);
+}
+
+/* Stacked page-edge strip along the book's outer (right) side - fine
+   vertical hairlines suggesting many gilt-edged pages seen from the side. */
+.ps-journal__bookcase::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 3px;
+    width: 15px;
+    border-radius: 0 20px 20px 0;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--jbook-page-edge-1) 0 1.5px,
+        var(--jbook-page-edge-2) 1.5px 3px
+    );
+    box-shadow: inset 3px 0 6px rgb(30 18 4 / 25%), 1px 0 0 rgb(255 255 255 / 30%);
+    pointer-events: none;
+}
+
+/* Gold stitched border, inset from the page edge. */
+.ps-journal__bookcase::before {
+    content: "";
+    position: absolute;
+    inset: 14px 32px 14px 14px;
+    border: 1.5px solid var(--jbook-gold-mid);
+    border-radius: 16px;
+    opacity: 0.42;
+    pointer-events: none;
+}
+
+/* Corner clasp accents: small gold quarter-ring glints at the book's four
+   corners, echoing the accepted image's bound-cover corners. Independent
+   elements (not offset box-shadows on an inset pseudo-element) so their
+   position is exact regardless of the stitched border's own inset. */
+.ps-journal__bookcase-clasp {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    pointer-events: none;
+    border: 2px solid var(--jbook-gold);
+    opacity: 0.75;
+}
+
+.ps-journal__bookcase-clasp--tl {
+    top: 9px;
+    left: 9px;
+    border-width: 2px 0 0 2px;
+    border-radius: 10px 0 0 0;
+}
+
+.ps-journal__bookcase-clasp--bl {
+    bottom: 9px;
+    left: 9px;
+    border-width: 0 0 2px 2px;
+    border-radius: 0 0 0 10px;
+}
+
+.ps-journal__ribbon {
+    position: absolute;
+    top: 0;
+    right: clamp(26px, 5vw, 46px);
+    width: 36px;
+    height: clamp(108px, 12vw, 138px);
+    z-index: 3;
+    background: linear-gradient(90deg, var(--jbook-gold-deep) 0%, var(--jbook-gold) 45%, var(--jbook-gold-mid) 100%);
+    box-shadow: 0 14px 22px -10px rgb(0 0 0 / 50%), inset -2px 0 3px rgb(0 0 0 / 15%), inset 2px 0 3px rgb(255 255 255 / 25%);
+    clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 18px;
+    pointer-events: none;
+}
+
+.ps-journal__ribbon-leaf {
+    width: 20px;
+    height: 34px;
+    color: rgb(58 38 8 / 68%);
+}
+
+.ps-journal__bookcase--narrow {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* =====================================================================
+   3. Layout: rail + book share ONE parchment surface (no visual seam) —
+   the rail is not a separate card. A thin hairline divides them, like a
+   fold in the open page.
+   ===================================================================== */
 
 .ps-journal__layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--ps-journal-gap);
-    align-items: start;
+    position: relative;
 }
 
-/* A grid item's default min-width is "auto", meaning it will not shrink
-   below its content's intrinsic minimum size. The mobile rail chip row
-   (.ps-rail-chips, an unwrapped flex row of six chips with its own
-   overflow-x:auto) has a wide intrinsic minimum, and without this override
-   that width was winning: it forced .ps-journal__rail-region - and with it
-   the whole grid and the page - to lay out ~700px wide inside a 390px
-   viewport instead of letting .ps-rail-chips scroll internally. */
 .ps-journal__rail-region {
     min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.25rem, 3vw, 2rem);
 }
 
 @media (min-width: 900px) {
     .ps-journal__layout {
-        grid-template-columns: 240px minmax(0, 1fr);
+        grid-template-columns: 258px minmax(0, 1fr);
+    }
+
+    .ps-journal__rail-region {
+        position: sticky;
+        top: 1.5rem;
+        align-self: start;
+        border-right: 1px solid var(--jbook-hairline);
+        min-height: calc(100vh - 3rem);
     }
 }
 
-.ps-journal__rail-region {
-    position: sticky;
-    top: 1.5rem;
-}
-
-/* ---------- the bound book ---------- */
-
 .ps-journal__book {
-    position: relative;
-    background: var(--ps-surface);
-    border: 1px solid var(--ps-border);
-    border-radius: var(--ps-journal-page-radius);
-    /* S3 (Opus review): a restrained "stacked pages" depth cue behind the
-       book, in addition to the ordinary elevation shadow - two faint offset
-       layers built only from --ps-canvas/--ps-border tokens, never a new
-       color. overflow:hidden on this element clips its own descendants and
-       pseudo-elements, but not its own box-shadow, so this reads correctly
-       even though ::before below is edge-clipped. */
-    box-shadow:
-        0 1px 2px rgb(20 26 40 / 6%),
-        0 18px 40px rgb(20 26 40 / 10%),
-        3px 4px 0 -1px var(--ps-canvas),
-        4px 5px 0 -1px var(--ps-border),
-        7px 9px 0 -2px var(--ps-canvas),
-        8px 10px 0 -2px var(--ps-border);
-    padding: clamp(1.5rem, 3vw, 3rem);
-    overflow: hidden;
-}
-
-body[data-theme="dark"] .ps-journal__book {
-    box-shadow:
-        0 1px 2px rgb(0 0 0 / 40%),
-        0 22px 50px rgb(0 0 0 / 55%),
-        3px 4px 0 -1px var(--ps-canvas),
-        4px 5px 0 -1px var(--ps-border),
-        7px 9px 0 -2px var(--ps-canvas),
-        8px 10px 0 -2px var(--ps-border);
-}
-
-/* A quiet page-edge flourish along the book's outer edge - the "bound
-   memoir" cue from the accepted image, built from tokens/gradients only
-   (no imagery dependency, so it never breaks or looks unfinished). S3
-   (Opus review): striped (repeating-gradient) rather than one smooth
-   gradient, so it reads as several bound page edges rather than a single
-   ribbon line - still restrained, still tokens-only. */
-.ps-journal__book::before {
-    content: "";
-    position: absolute;
-    inset: 8px 0 8px auto;
-    width: 9px;
-    border-radius: 0 5px 5px 0;
-    background: repeating-linear-gradient(
-        180deg,
-        var(--ps-bronze) 0 3px,
-        var(--ps-surface) 3px 5px
-    );
-    opacity: 0.6;
+    min-width: 0;
+    /* Extra right gutter reserves room for the ribbon (positioned absolute
+       against .ps-journal__bookcase, so it does not participate in this
+       flow) so the title row's action buttons and every card's right edge
+       stay clear of it - matches the accepted image's consistent right
+       margin the whole page respects. */
+    padding: clamp(1.5rem, 3vw, 2.5rem) clamp(4.5rem, 9vw, 6.5rem) clamp(2rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3.25rem);
 }
 
 .ps-journal__book-inner {
     position: relative;
 }
 
-/* ---------- header ---------- */
+/* =====================================================================
+   4. Contents rail (doc 15 SS2): numerals, whispers, active pill + gold
+   tick, bottom flourish + legacy line. Scoped overrides of the shared
+   Context Rail Standard component - context-rail.css itself is untouched.
+   ===================================================================== */
+
+.ps-journal__rail-region .ps-rail__label {
+    color: var(--jbook-gold-text);
+    font-weight: 800;
+}
+
+.ps-journal__rail-region .ps-rail__entry {
+    color: var(--jbook-ink);
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+}
+
+.ps-journal__rail-region .ps-rail__entry:hover {
+    background: rgb(180 140 80 / 10%);
+}
+
+.ps-journal__rail-region .ps-rail__entry:focus-visible {
+    outline: 2px solid var(--jbook-gold-deep);
+    outline-offset: 2px;
+}
+
+.ps-journal__rail-region .ps-rail__number {
+    color: var(--jbook-gold-text);
+    opacity: 0.85;
+}
+
+.ps-journal__rail-region .ps-rail__icon {
+    color: var(--jbook-ink-faint);
+}
+
+.ps-journal__rail-region .ps-rail__name {
+    color: var(--jbook-ink);
+}
+
+.ps-journal__rail-region .ps-rail__subtitle {
+    color: var(--jbook-ink-faint);
+}
+
+.ps-journal__rail-region .ps-rail__count {
+    color: var(--jbook-ink-faint);
+}
+
+.ps-journal__rail-region .ps-rail__entry[aria-current="true"] {
+    position: relative;
+    background: linear-gradient(90deg, rgb(180 140 80 / 16%), rgb(180 140 80 / 7%));
+}
+
+.ps-journal__rail-region .ps-rail__entry[aria-current="true"]::before {
+    content: "";
+    position: absolute;
+    left: -2px;
+    top: 10%;
+    bottom: 10%;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--jbook-gold);
+}
+
+.ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__number,
+.ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__icon,
+.ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__name {
+    color: var(--jbook-gold-text);
+}
+
+body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__number,
+body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__icon,
+body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry[aria-current="true"] .ps-rail__name {
+    color: var(--jbook-gold);
+}
+
+.ps-journal__rail-region .ps-rail-chips__chip {
+    background: var(--jbook-card-bg);
+    border-color: var(--jbook-card-border);
+    color: var(--jbook-ink);
+}
+
+.ps-journal__rail-region .ps-rail-chips__chip[aria-current="true"] {
+    border-color: var(--jbook-gold);
+    background: rgb(180 140 80 / 14%);
+    color: var(--jbook-gold-text);
+}
+
+.ps-journal__rail-flourish {
+    /* Desktop only: on the single-column mobile layout this sits inside
+       .ps-journal__rail-region, which stacks directly under the mobile
+       chip row and ABOVE the Journal title/content - a real misplacement
+       found live in the browser pane, not merely a smaller-screen
+       simplification. No mobile mockup exists for this ornament, so
+       hiding it below the two-column breakpoint (where the rail becomes
+       its own left column again) is the honest fix rather than showing it
+       in the wrong reading position. */
+    display: none;
+}
+
+@media (min-width: 900px) {
+    .ps-journal__rail-flourish {
+        display: block;
+        margin-top: 2.5rem;
+        padding-top: 0.5rem;
+        color: var(--jbook-gold-mid);
+    }
+}
+
+.ps-journal__rail-flourish-swirl {
+    width: 88px;
+    height: auto;
+    opacity: 0.8;
+}
+
+.ps-journal__rail-flourish-line {
+    margin: 0.6rem 0 0;
+    font-family: "Newsreader", Georgia, serif;
+    font-style: italic;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: var(--jbook-gold-text);
+    max-width: 13rem;
+}
+
+/* =====================================================================
+   5. Header row, eyebrow, title, actions
+   ===================================================================== */
 
 .ps-journal__eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     font-family: var(--ps-font-ui);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--ps-bronze-strong);
-    margin: 0 0 0.5rem;
+    color: var(--jbook-gold-text);
+    margin: 0 0 0.6rem;
 }
 
 .ps-journal__title-row {
@@ -144,7 +410,7 @@ body[data-theme="dark"] .ps-journal__book {
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
 }
 
 .ps-journal__title-group {
@@ -156,11 +422,12 @@ body[data-theme="dark"] .ps-journal__book {
 }
 
 .ps-journal__title {
-    font-family: var(--ps-font-display);
-    font-size: clamp(2rem, 4vw, 2.85rem);
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(2.4rem, 4.4vw, 3.4rem);
     font-weight: 600;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
     margin: 0;
+    letter-spacing: -0.01em;
 }
 
 .ps-journal__privacy {
@@ -170,7 +437,7 @@ body[data-theme="dark"] .ps-journal__book {
     font-family: var(--ps-font-ui);
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--ps-muted);
+    color: var(--jbook-gold-text);
 }
 
 .ps-journal__privacy svg {
@@ -181,12 +448,13 @@ body[data-theme="dark"] .ps-journal__book {
 
 .ps-journal__intro {
     font-family: var(--ps-font-ui);
-    color: var(--ps-muted);
+    color: var(--jbook-ink-soft);
     max-width: 46rem;
-    margin: 0 0 1.5rem;
+    margin: 0 0 1.75rem;
+    line-height: 1.55;
 }
 
-/* ---------- primary action ---------- */
+/* ---------- buttons (parchment/gold voice) ---------- */
 
 .ps-btn {
     font-family: var(--ps-font-ui);
@@ -200,47 +468,60 @@ body[data-theme="dark"] .ps-journal__book {
     align-items: center;
     gap: 0.5rem;
     line-height: 1.1;
-    transition: background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+    transition: background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease, transform 150ms ease;
 }
 
 .ps-btn:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 2px;
 }
 
-.ps-btn--gold {
-    background: var(--ps-bronze);
-    color: #fff;
+/* Pre-existing gap found in the visual-loop pass: .ps-btn sets its own
+   `display`, which - at equal (0,1,0) specificity - wins the cascade over
+   the browser's default `[hidden] { display: none }` UA rule (author
+   styles beat UA styles on a specificity tie). Every other hidden-toggled
+   element in this file already carries an explicit [hidden] override (see
+   .ps-journal__row[hidden] etc.) except buttons that also carry .ps-btn -
+   static/js/journal.js's voiceStop/voiceCancel toggle exactly this
+   attribute, so without this rule they rendered visible in the Speak
+   panel's initial "Ready when you are" state instead of only the mic
+   button, a real deviation from the accepted 02 image caught in the
+   screenshot loop, not merely a theoretical a11y nit. */
+.ps-btn[hidden] {
+    display: none;
 }
 
-body[data-theme="dark"] .ps-btn--gold {
-    color: #0a1730;
+.ps-btn--gold {
+    background: linear-gradient(180deg, #f0cf8e 0%, #dda238 55%, #cf8f2c 100%);
+    color: #241804;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 40%) inset, 0 8px 16px -6px rgb(150 100 20 / 55%);
 }
 
 .ps-btn--gold:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.04);
+    transform: translateY(-1px);
 }
 
 .ps-btn--ghost {
     background: transparent;
-    border-color: var(--ps-border);
-    color: var(--ps-ink);
+    border-color: var(--jbook-card-border);
+    color: var(--jbook-ink);
 }
 
 .ps-btn--ghost:hover {
-    background: var(--ps-primary-soft);
+    background: rgb(180 140 80 / 10%);
 }
 
 .ps-btn--quiet {
     background: transparent;
     border: none;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-weight: 600;
     padding: 0.6rem 0.8rem;
 }
 
 .ps-btn--quiet:hover {
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
 }
 
 .ps-btn[disabled],
@@ -248,105 +529,183 @@ body[data-theme="dark"] .ps-btn--gold {
     cursor: not-allowed;
     opacity: 0.55;
     box-shadow: none;
+    transform: none;
 }
 
-/* ---------- this-season hero ---------- */
+/* =====================================================================
+   6. This-season hero (doc 15 SS2): scenery region, eyebrow, 2-line serif
+   italic headline, microline, gold script signature, 3 stat tiles.
+   ===================================================================== */
 
-/* Fixed navy, deliberately NOT the theme-swapping --ps-primary tokens.
-   --ps-primary means "the theme's accent" and becomes signal-gold in dark
-   mode (static/css/style.css body[data-theme="dark"]) - using it here would
-   turn this band gold-on-gold and make the stat values unreadable. The
-   accepted JOURNAL-01 hero is a dark editorial photo band in BOTH light and
-   dark, like the global header; these two hex values are the same fixed
-   Deep Navy Gold "strong ink navy" values already named in AGENTS.md and
-   site rule 73 (#132447 / #203767), not a new palette. */
 .ps-journal__hero {
-    display: grid;
-    gap: 1rem;
-    border-radius: 1rem;
-    padding: clamp(1.25rem, 3vw, 2.25rem);
-    margin: 0 0 clamp(1.5rem, 3vw, 2.5rem);
-    background: linear-gradient(135deg, #132447 0%, #203767 100%);
-    color: #f4f6fb;
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem 1.75rem;
+    border-radius: 16px;
+    padding: clamp(1.5rem, 3.4vw, 2.5rem);
+    margin: 0 0 clamp(1.75rem, 3.5vw, 2.75rem);
     overflow: hidden;
+    color: #f5f1e6;
+    min-height: clamp(230px, 30vw, 300px);
+    box-shadow: 0 24px 48px -22px rgb(5 5 5 / 55%);
 }
 
-.ps-journal__hero::after {
-    content: "";
+.ps-journal__hero-scene {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 85% 20%, rgb(216 169 40 / 22%), transparent 55%);
-    pointer-events: none;
+    background:
+        /* Vertical scrim: on the narrow mobile layout the copy and stats
+           stack top-to-bottom over the FULL scene width (see the
+           max-width:899px rule below), so text can land anywhere
+           vertically, including the bright sun/mountain band - this keeps
+           every position readable, not only the desktop right-hand zone. */
+        linear-gradient(180deg, rgb(4 6 12 / 55%) 0%, rgb(4 6 12 / 15%) 30%, rgb(4 6 12 / 30%) 62%, rgb(4 6 12 / 80%) 100%),
+        linear-gradient(100deg, rgb(8 10 16 / 20%) 0%, rgb(8 10 18 / 55%) 46%, rgb(5 7 14 / 92%) 78%),
+        linear-gradient(180deg, #24334f 0%, #4c5c78 26%, #a9825a 52%, #d9a35f 66%, #f0c37c 100%);
+}
+
+.ps-journal__hero-hill {
+    position: absolute;
+    left: -5%;
+    width: 110%;
+    bottom: -6%;
+    height: 62%;
+    background: #16202f;
+    clip-path: polygon(0% 62%, 8% 40%, 16% 55%, 26% 22%, 34% 48%, 44% 12%, 54% 46%, 63% 28%, 72% 52%, 82% 18%, 90% 44%, 100% 30%, 100% 100%, 0% 100%);
+    opacity: 0.9;
+}
+
+.ps-journal__hero-hill--front {
+    height: 40%;
+    background: #0d1520;
+    clip-path: polygon(0% 70%, 10% 46%, 22% 66%, 32% 34%, 42% 60%, 52% 30%, 62% 58%, 74% 36%, 84% 62%, 94% 40%, 100% 55%, 100% 100%, 0% 100%);
+}
+
+.ps-journal__hero-sun {
+    position: absolute;
+    left: 14%;
+    bottom: 26%;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff3d6 0%, #f7d18f 40%, rgb(247 209 143 / 0%) 72%);
+}
+
+.ps-journal__hero-copy {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 260px;
+    min-width: 0;
 }
 
 .ps-journal__hero-eyebrow {
     font-family: var(--ps-font-ui);
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgb(244 228 180 / 90%);
-    margin: 0;
-    position: relative;
+    color: rgb(245 230 190 / 92%);
+    margin: 0 0 0.5rem;
 }
 
-.ps-journal__hero-name {
-    font-family: var(--ps-font-display);
-    font-size: clamp(1.5rem, 3vw, 2.1rem);
+.ps-journal__hero-headline {
+    font-family: "Newsreader", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.5rem, 3vw, 2.15rem);
+    line-height: 1.16;
+    margin: 0 0 0.6rem;
+    color: #fbf7ec;
+    text-shadow: 0 2px 12px rgb(0 0 0 / 30%);
+}
+
+.ps-journal__hero-microline {
+    font-family: var(--ps-font-ui);
+    font-size: 0.92rem;
+    color: rgb(245 241 230 / 85%);
+    margin: 0 0 0.75rem;
+}
+
+.ps-journal__hero-signature {
+    font-family: "Caveat", "Segoe Script", cursive;
+    font-size: 1.9rem;
+    line-height: 1;
+    color: var(--jbook-gold);
     margin: 0;
-    position: relative;
 }
 
 .ps-journal__hero-totals {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin: 0.5rem 0 0;
-    padding: 0;
-    list-style: none;
     position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0;
+    margin: 0;
+    padding: 0.35rem 0 0;
+    list-style: none;
+    flex: 0 0 auto;
 }
 
 .ps-journal__hero-stat {
-    background: rgb(255 255 255 / 10%);
-    border: 1px solid rgb(255 255 255 / 16%);
-    border-radius: 0.75rem;
-    padding: 0.6rem 1rem;
-    min-width: 8rem;
+    padding: 0 1.15rem;
+    border-left: 1px solid rgb(245 241 230 / 22%);
+    min-width: 5.5rem;
+}
+
+.ps-journal__hero-stat:first-child {
+    border-left: none;
+    padding-left: 0;
 }
 
 .ps-journal__hero-stat-value {
     display: block;
-    font-family: var(--ps-font-display);
-    font-size: 1.5rem;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.7rem;
     font-weight: 600;
-    color: #f0c95a;
+    color: var(--jbook-gold);
+    line-height: 1.1;
 }
 
 .ps-journal__hero-stat-label {
     display: block;
     font-family: var(--ps-font-ui);
-    font-size: 0.78rem;
-    color: rgb(244 246 251 / 80%);
+    font-size: 0.76rem;
+    color: rgb(245 241 230 / 82%);
+    line-height: 1.3;
+    margin-top: 0.15rem;
 }
 
-/* ---------- timeline ---------- */
+/* =====================================================================
+   7. Timeline: date numerals, gold spine + node dots, cards, waveform,
+   thumbnails, script annotation.
+   ===================================================================== */
 
 .ps-journal__timeline {
+    --spine-x: 4.6rem;
     list-style: none;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--ps-border);
+    position: relative;
+}
+
+.ps-journal__timeline::before {
+    content: "";
+    position: absolute;
+    left: var(--spine-x);
+    top: 0.6rem;
+    bottom: 1.5rem;
+    width: 1.5px;
+    background: linear-gradient(180deg, transparent, var(--jbook-gold-mid) 3%, var(--jbook-gold-mid) 97%, transparent);
+    opacity: 0.5;
 }
 
 .ps-journal__row {
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr);
-    gap: 1.25rem;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--ps-border);
     position: relative;
+    display: grid;
+    grid-template-columns: var(--spine-x) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 0 0 1.35rem;
 }
 
 .ps-journal__row[hidden] {
@@ -354,19 +713,28 @@ body[data-theme="dark"] .ps-btn--gold {
 }
 
 .ps-journal__date {
-    font-family: var(--ps-font-display);
-    color: var(--ps-primary);
+    position: relative;
+    font-family: "Newsreader", Georgia, serif;
+    color: var(--jbook-date-color);
     text-align: right;
     padding-top: 0.15rem;
 }
 
-body[data-theme="dark"] .ps-journal__date {
-    color: var(--ps-primary);
+.ps-journal__date-node {
+    position: absolute;
+    top: 0.7rem;
+    right: -0.94rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--jbook-page-solid);
+    border: 2px solid var(--jbook-gold);
+    box-shadow: 0 0 0 3px var(--jbook-page-1);
 }
 
 .ps-journal__date-day {
     display: block;
-    font-size: 1.9rem;
+    font-size: 2.1rem;
     font-weight: 600;
     line-height: 1;
 }
@@ -374,27 +742,46 @@ body[data-theme="dark"] .ps-journal__date {
 .ps-journal__date-month {
     display: block;
     font-family: var(--ps-font-ui);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--ps-muted);
-    margin-top: 0.2rem;
+    color: var(--jbook-ink-faint);
+    margin-top: 0.25rem;
+}
+
+.ps-journal__card {
+    display: flex;
+    align-items: stretch;
+    gap: 1.1rem;
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgb(20 15 5 / 5%), 0 14px 26px -18px rgb(20 15 5 / 35%);
+    padding: 1.05rem 1.2rem;
 }
 
 .ps-journal__content {
     min-width: 0;
+    flex: 1 1 auto;
+    align-self: center;
 }
 
 .ps-journal__meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
     font-family: var(--ps-font-ui);
     font-size: 0.8rem;
-    color: var(--ps-muted);
-    margin: 0 0 0.4rem;
+    color: var(--jbook-ink-faint);
+    margin: 0 0 0.45rem;
+}
+
+.ps-journal__meta svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex: none;
 }
 
 .ps-journal__meta-privacy {
@@ -403,139 +790,189 @@ body[data-theme="dark"] .ps-journal__date {
     gap: 0.3rem;
 }
 
-.ps-journal__meta-privacy svg {
-    width: 0.85rem;
-    height: 0.85rem;
-}
-
 .ps-journal__kind-star {
-    color: var(--ps-bronze);
+    color: var(--jbook-gold-mid);
     width: 1rem;
     height: 1rem;
 }
 
 .ps-journal__row-title {
     font-family: var(--ps-font-ui);
-    font-weight: 700;
-    font-size: 1rem;
-    color: var(--ps-ink);
-    margin: 0 0 0.3rem;
+    font-weight: 600;
+    font-size: 1.04rem;
+    line-height: 1.4;
+    color: var(--jbook-ink);
+    margin: 0 0 0.2rem;
 }
 
-/* Text moments: serif reflection treatment, no decorative imagery. The
-   derived Journal read returns only a title (the composer derives it from
-   the member's own first line - see the completion report), not a separate
-   narrative body, so the title itself carries this treatment rather than a
-   second, duplicated line of the same text. */
-.ps-journal__row--text .ps-journal__row-title a {
-    font-family: var(--ps-font-display);
-    font-size: 1.1rem;
-    font-weight: 500;
-    font-style: italic;
-    color: var(--ps-ink);
+.ps-journal__row-title a {
+    color: inherit;
+    text-decoration: none;
 }
 
-/* Voice moments: playable waveform row (only ever renders for a source
-   whose source_type is genuinely "voice" - see the disclosed voice-source
-   linkage gap in the completion report; no waveform is ever drawn over
-   fabricated audio). */
+.ps-journal__row-title a:hover,
+.ps-journal__row-title a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .ps-journal__voice-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin-top: 0.5rem;
+    gap: 0.65rem;
+    margin-top: 0.55rem;
 }
 
 .ps-journal__voice-play {
     flex: none;
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 2.2rem;
+    height: 2.2rem;
     border-radius: 999px;
     border: none;
-    background: var(--ps-bronze);
-    color: #fff;
+    background: linear-gradient(180deg, #ecc788, #cf9a3c);
+    color: #241804;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    box-shadow: 0 4px 10px -3px rgb(150 100 20 / 55%);
 }
 
-body[data-theme="dark"] .ps-journal__voice-play {
-    color: #0a1730;
+.ps-journal__voice-play svg {
+    width: 1.05rem;
+    height: 1.05rem;
 }
 
-/* S5 (Opus review): Save Moment always creates a text-type Capture in J1
-   regardless of Speak or Type (the disclosed voice-source linkage gap), so
-   this control can never legitimately render enabled with real J1 data. It
-   always carries [disabled] - see the two render sites above and in
-   static/js/journal.js's buildRowElement - and this greys it out so a
-   never-clickable control never looks bright/inviting. The un-disabled
-   bronze rule above stays in place, ready for the day a future slice
-   removes [disabled] and genuinely enables playback. */
 .ps-journal__voice-play[disabled] {
-    background: var(--ps-border);
-    color: var(--ps-muted);
+    background: var(--jbook-page-edge-2);
+    color: var(--jbook-ink-faint);
     cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.75;
 }
 
 .ps-journal__voice-play:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 2px;
 }
 
 .ps-journal__voice-wave {
     flex: 1;
-    height: 1.6rem;
-    background: repeating-linear-gradient(
+    min-width: 3rem;
+    height: 1.5rem;
+    background-image: repeating-linear-gradient(
         90deg,
-        var(--ps-bronze) 0 2px,
-        transparent 2px 6px
+        var(--jbook-gold-mid) 0 2px,
+        transparent 2px 3px,
+        var(--jbook-gold-mid) 3px 5px,
+        transparent 5px 7px,
+        var(--jbook-gold-mid) 7px 9px,
+        transparent 9px 10px
     );
-    opacity: 0.65;
-    border-radius: 3px;
+    background-size: 100% 40%, 100% 70%, 100% 100%, 100% 55%, 100% 85%, 100% 30%;
+    background-repeat: no-repeat;
+    background-position: center;
+    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
+    mask-image: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
+    opacity: 0.8;
+    position: relative;
 }
 
-/* S5: the wave dims to match the greyed disabled play control beside it. */
-.ps-journal__voice-play[disabled] + .ps-journal__voice-wave {
-    background: repeating-linear-gradient(
-        90deg,
-        var(--ps-muted) 0 2px,
-        transparent 2px 6px
-    );
-    opacity: 0.4;
+/* A single organic amplitude pattern shared by every waveform (decorative
+   only - the control is always [disabled] in J1, see the note in
+   templates/journal.html). Built as a repeating background rather than
+   many DOM bars so it costs nothing per row. */
+.ps-journal__voice-wave::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, var(--jbook-gold-mid) 100%, transparent 0);
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24' preserveAspectRatio='none'><g fill='%23000'><rect x='0' y='9' width='2' height='6'/><rect x='5' y='4' width='2' height='16'/><rect x='10' y='7' width='2' height='10'/><rect x='15' y='1' width='2' height='22'/><rect x='20' y='8' width='2' height='8'/><rect x='27' y='6' width='2' height='12'/><rect x='32' y='2' width='2' height='20'/><rect x='37' y='9' width='2' height='6'/><rect x='42' y='5' width='2' height='14'/><rect x='49' y='9' width='2' height='6'/><rect x='54' y='10' width='2' height='4'/><rect x='59' y='9' width='2' height='6'/><rect x='66' y='3' width='2' height='18'/><rect x='71' y='7' width='2' height='10'/><rect x='76' y='1' width='2' height='22'/><rect x='81' y='8' width='2' height='8'/><rect x='88' y='9' width='2' height='6'/><rect x='93' y='10' width='2' height='4'/><rect x='98' y='9' width='2' height='6'/><rect x='105' y='4' width='2' height='16'/><rect x='110' y='7' width='2' height='10'/><rect x='115' y='2' width='2' height='20'/><rect x='120' y='8' width='2' height='8'/><rect x='127' y='9' width='2' height='6'/><rect x='134' y='6' width='2' height='12'/><rect x='139' y='1' width='2' height='22'/><rect x='144' y='7' width='2' height='10'/><rect x='151' y='9' width='2' height='6'/><rect x='156' y='10' width='2' height='4'/><rect x='163' y='4' width='2' height='16'/><rect x='168' y='7' width='2' height='10'/><rect x='173' y='2' width='2' height='20'/><rect x='178' y='8' width='2' height='8'/><rect x='185' y='9' width='2' height='6'/><rect x='190' y='5' width='2' height='14'/><rect x='197' y='9' width='2' height='6'/><rect x='204' y='7' width='2' height='10'/><rect x='209' y='2' width='2' height='20'/><rect x='214' y='8' width='2' height='8'/><rect x='221' y='9' width='2' height='6'/><rect x='228' y='10' width='2' height='4'/><rect x='233' y='9' width='2' height='6'/></g></svg>");
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24' preserveAspectRatio='none'><g fill='%23000'><rect x='0' y='9' width='2' height='6'/><rect x='5' y='4' width='2' height='16'/><rect x='10' y='7' width='2' height='10'/><rect x='15' y='1' width='2' height='22'/><rect x='20' y='8' width='2' height='8'/><rect x='27' y='6' width='2' height='12'/><rect x='32' y='2' width='2' height='20'/><rect x='37' y='9' width='2' height='6'/><rect x='42' y='5' width='2' height='14'/><rect x='49' y='9' width='2' height='6'/><rect x='54' y='10' width='2' height='4'/><rect x='59' y='9' width='2' height='6'/><rect x='66' y='3' width='2' height='18'/><rect x='71' y='7' width='2' height='10'/><rect x='76' y='1' width='2' height='22'/><rect x='81' y='8' width='2' height='8'/><rect x='88' y='9' width='2' height='6'/><rect x='93' y='10' width='2' height='4'/><rect x='98' y='9' width='2' height='6'/><rect x='105' y='4' width='2' height='16'/><rect x='110' y='7' width='2' height='10'/><rect x='115' y='2' width='2' height='20'/><rect x='120' y='8' width='2' height='8'/><rect x='127' y='9' width='2' height='6'/><rect x='134' y='6' width='2' height='12'/><rect x='139' y='1' width='2' height='22'/><rect x='144' y='7' width='2' height='10'/><rect x='151' y='9' width='2' height='6'/><rect x='156' y='10' width='2' height='4'/><rect x='163' y='4' width='2' height='16'/><rect x='168' y='7' width='2' height='10'/><rect x='173' y='2' width='2' height='20'/><rect x='178' y='8' width='2' height='8'/><rect x='185' y='9' width='2' height='6'/><rect x='190' y='5' width='2' height='14'/><rect x='197' y='9' width='2' height='6'/><rect x='204' y='7' width='2' height='10'/><rect x='209' y='2' width='2' height='20'/><rect x='214' y='8' width='2' height='8'/><rect x='221' y='9' width='2' height='6'/><rect x='228' y='10' width='2' height='4'/><rect x='233' y='9' width='2' height='6'/></g></svg>");
+}
+
+.ps-journal__voice-play[disabled] + .ps-journal__voice-wave::before {
+    background-image: linear-gradient(90deg, var(--jbook-ink-faint) 100%, transparent 0);
+    opacity: 0.55;
 }
 
 .ps-journal__voice-duration {
     font-family: var(--ps-font-ui);
     font-size: 0.82rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-variant-numeric: tabular-nums;
+    flex: none;
 }
 
 .ps-journal__annotation {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    font-family: "Newsreader", cursive;
-    font-style: italic;
-    color: var(--ps-bronze-strong);
-    margin-top: 0.5rem;
-    font-size: 0.95rem;
+    font-family: "Caveat", "Segoe Script", cursive;
+    font-weight: 600;
+    color: var(--jbook-gold-text);
+    margin-top: 0.6rem;
+    font-size: 1.3rem;
+    transform: rotate(-2deg);
 }
 
-/* ---------- empty states ---------- */
+body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
+    color: var(--jbook-gold);
+}
+
+/* ---------- thumbnails ---------- */
+
+.ps-journal__thumb {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: clamp(96px, 16vw, 148px);
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 16px -6px rgb(20 15 5 / 35%), 0 0 0 1px rgb(255 255 255 / 30%) inset;
+}
+
+.ps-journal__thumb svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.ps-journal__thumb-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fbf7ec;
+}
+
+.ps-journal__thumb-play svg {
+    width: 2.1rem;
+    height: 2.1rem;
+    filter: drop-shadow(0 2px 6px rgb(0 0 0 / 45%));
+}
+
+/* =====================================================================
+   8. Empty states
+   ===================================================================== */
 
 .ps-journal__empty {
     text-align: center;
     padding: clamp(2rem, 6vw, 4rem) 1rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-family: var(--ps-font-ui);
 }
 
 .ps-journal__empty-title {
-    font-family: var(--ps-font-display);
+    font-family: "Newsreader", Georgia, serif;
     font-size: 1.3rem;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
     margin: 0 0 0.5rem;
 }
 
@@ -545,24 +982,25 @@ body[data-theme="dark"] .ps-journal__voice-play {
     line-height: 1.55;
 }
 
-/* ---------- first-visit empty state (S2, accepted screen A) ---------- */
-
 .ps-journal__empty--intro {
-    padding: clamp(2.5rem, 7vw, 4.5rem) 1rem clamp(2rem, 5vw, 3rem);
+    padding: clamp(1.5rem, 5vw, 3rem) 1rem clamp(2rem, 5vw, 3rem);
 }
 
 .ps-journal__empty-illustration {
-    color: var(--ps-bronze);
-    margin: 0 0 1rem;
+    color: var(--jbook-gold);
+    margin: 0 0 0.5rem;
 }
 
 .ps-journal__empty-illustration-svg {
-    width: clamp(90px, 16vw, 130px);
+    width: clamp(150px, 26vw, 220px);
     height: auto;
 }
 
 .ps-journal__empty--intro .ps-journal__empty-title {
-    font-size: clamp(1.5rem, 3vw, 1.9rem);
+    font-family: "Newsreader", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.7rem, 3.4vw, 2.3rem);
 }
 
 .ps-journal__empty-privacy {
@@ -570,7 +1008,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
     align-items: center;
     gap: 0.35rem;
     font-size: 0.85rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin: 0.9rem 0 2rem;
 }
 
@@ -581,29 +1019,41 @@ body[data-theme="dark"] .ps-journal__voice-play {
 }
 
 .ps-journal__empty-quote {
-    max-width: 24rem;
+    max-width: 26rem;
     margin: 0 auto;
-    padding: 1.1rem 1.4rem;
-    border-left: 3px solid var(--ps-bronze);
-    background: var(--ps-canvas);
-    border-radius: 0 0.6rem 0.6rem 0;
+    padding: 1.2rem 1.5rem 1.2rem 1.9rem;
+    border-radius: 10px;
     text-align: left;
+    position: relative;
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
+}
+
+.ps-journal__empty-quote::before {
+    content: "\201C";
+    position: absolute;
+    left: 0.5rem;
+    top: 0.1rem;
+    font-family: "Caveat", "Segoe Script", cursive;
+    font-size: 2.6rem;
+    color: var(--jbook-gold);
+    line-height: 1;
 }
 
 .ps-journal__empty-quote p {
     margin: 0;
-    font-family: var(--ps-font-display);
+    font-family: "Newsreader", Georgia, serif;
     font-style: italic;
     font-size: 1.05rem;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
     line-height: 1.5;
 }
 
 .ps-journal__footer-line {
     text-align: center;
-    font-family: "Newsreader", cursive;
+    font-family: "Newsreader", Georgia, serif;
     font-style: italic;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin-top: 2rem;
 }
 
@@ -612,7 +1062,9 @@ body[data-theme="dark"] .ps-journal__voice-play {
     margin: 1.75rem auto 0;
 }
 
-/* ---------- manage view ---------- */
+/* =====================================================================
+   9. Manage view
+   ===================================================================== */
 
 .ps-journal__kind-filters {
     display: flex;
@@ -627,30 +1079,32 @@ body[data-theme="dark"] .ps-journal__voice-play {
     font-weight: 600;
     padding: 0.35rem 0.75rem;
     border-radius: 999px;
-    border: 1px solid var(--ps-border);
-    background: var(--ps-surface);
-    color: var(--ps-ink);
+    border: 1px solid var(--jbook-card-border);
+    background: var(--jbook-card-bg);
+    color: var(--jbook-ink);
     cursor: pointer;
 }
 
 .ps-journal__kind-filter[aria-pressed="true"] {
-    background: var(--ps-primary-soft);
-    border-color: var(--ps-primary);
-    color: var(--ps-primary);
+    background: rgb(180 140 80 / 16%);
+    border-color: var(--jbook-gold-mid);
+    color: var(--jbook-gold-text);
+}
+
+body.ps-journal-page[data-theme="dark"] .ps-journal__kind-filter[aria-pressed="true"] {
+    color: var(--jbook-gold);
 }
 
 .ps-journal__manage-archived-badge {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--ps-muted);
-    border: 1px solid var(--ps-border);
+    color: var(--jbook-ink-faint);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 999px;
     padding: 0.15rem 0.55rem;
 }
-
-/* ---------- manage: search + archived filter ---------- */
 
 .ps-journal__manage-search-row {
     display: flex;
@@ -663,7 +1117,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
 .ps-journal__manage-search-icon {
     display: inline-flex;
     flex: none;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
 }
 
 .ps-journal__manage-search-icon svg {
@@ -675,17 +1129,17 @@ body[data-theme="dark"] .ps-journal__voice-play {
 .ps-journal__manage-search {
     flex: 1 1 16rem;
     min-width: 0;
-    padding: 0.55rem 0.9rem;
+    padding: 0.6rem 1rem;
     border-radius: 999px;
-    border: 1px solid var(--ps-border);
-    background: var(--ps-canvas);
-    color: var(--ps-ink);
+    border: 1px solid var(--jbook-card-border);
+    background: var(--jbook-card-bg);
+    color: var(--jbook-ink);
     font-family: var(--ps-font-ui);
     font-size: 0.9rem;
 }
 
 .ps-journal__manage-search:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 1px;
 }
 
@@ -693,30 +1147,28 @@ body[data-theme="dark"] .ps-journal__voice-play {
     margin-left: auto;
 }
 
-/* ---------- manage: dense table-like rows ---------- */
-
 .ps-journal__manage-head,
 .ps-journal__manage-row {
     display: grid;
-    grid-template-columns: 6rem 8rem minmax(0, 1fr) 7rem 2.2rem;
+    grid-template-columns: 4.6rem 6.5rem minmax(0, 1fr) 4.5rem 6.5rem 2.2rem;
     gap: 1rem;
     align-items: center;
 }
 
 .ps-journal__manage-head {
-    padding: 0 0 0.5rem;
-    border-bottom: 1px solid var(--ps-border);
+    padding: 0 0 0.6rem;
+    border-bottom: 1px solid var(--jbook-hairline);
     font-family: var(--ps-font-ui);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
 }
 
 .ps-journal__manage-row {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--ps-border);
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--jbook-hairline);
     font-family: var(--ps-font-ui);
 }
 
@@ -724,11 +1176,41 @@ body[data-theme="dark"] .ps-journal__voice-play {
     display: none;
 }
 
+.ps-journal__manage-date {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: "Newsreader", Georgia, serif;
+    color: var(--jbook-date-color);
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.ps-journal__manage-date-month {
+    display: block;
+    font-family: var(--ps-font-ui);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--jbook-ink-faint);
+    margin-top: 0.1rem;
+}
+
+.ps-journal__manage-time {
+    font-family: var(--ps-font-ui);
+    font-size: 0.76rem;
+    font-weight: 400;
+    color: var(--jbook-ink-faint);
+    white-space: nowrap;
+}
+
 .ps-journal__manage-kind {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-size: 0.88rem;
 }
 
@@ -739,9 +1221,68 @@ body[data-theme="dark"] .ps-journal__voice-play {
 }
 
 .ps-journal__manage-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     font-weight: 600;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
     min-width: 0;
+}
+
+.ps-journal__manage-title .ps-journal__thumb {
+    width: 46px;
+    height: 36px;
+    border-radius: 6px;
+    flex: none;
+}
+
+.ps-journal__manage-title .ps-journal__thumb-play svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.ps-journal__manage-title-text {
+    min-width: 0;
+}
+
+.ps-journal__manage-title-text a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.ps-journal__manage-title-text a:hover,
+.ps-journal__manage-title-text a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.ps-journal__manage-wave {
+    display: block;
+    height: 1.15rem;
+    width: min(220px, 100%);
+    margin-top: 0.35rem;
+    position: relative;
+    opacity: 0.85;
+}
+
+.ps-journal__manage-wave::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, var(--jbook-gold-mid) 100%, transparent 0);
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24' preserveAspectRatio='none'><g fill='%23000'><rect x='0' y='9' width='2' height='6'/><rect x='5' y='4' width='2' height='16'/><rect x='10' y='7' width='2' height='10'/><rect x='15' y='1' width='2' height='22'/><rect x='20' y='8' width='2' height='8'/><rect x='27' y='6' width='2' height='12'/><rect x='32' y='2' width='2' height='20'/><rect x='37' y='9' width='2' height='6'/><rect x='49' y='9' width='2' height='6'/><rect x='54' y='10' width='2' height='4'/><rect x='66' y='3' width='2' height='18'/><rect x='71' y='7' width='2' height='10'/><rect x='76' y='1' width='2' height='22'/><rect x='88' y='9' width='2' height='6'/><rect x='98' y='9' width='2' height='6'/><rect x='105' y='4' width='2' height='16'/><rect x='115' y='2' width='2' height='20'/><rect x='127' y='9' width='2' height='6'/><rect x='139' y='1' width='2' height='22'/><rect x='151' y='9' width='2' height='6'/><rect x='163' y='4' width='2' height='16'/><rect x='173' y='2' width='2' height='20'/><rect x='185' y='9' width='2' height='6'/><rect x='197' y='9' width='2' height='6'/><rect x='209' y='2' width='2' height='20'/><rect x='221' y='9' width='2' height='6'/><rect x='233' y='9' width='2' height='6'/></g></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24' preserveAspectRatio='none'><g fill='%23000'><rect x='0' y='9' width='2' height='6'/><rect x='5' y='4' width='2' height='16'/><rect x='10' y='7' width='2' height='10'/><rect x='15' y='1' width='2' height='22'/><rect x='20' y='8' width='2' height='8'/><rect x='27' y='6' width='2' height='12'/><rect x='32' y='2' width='2' height='20'/><rect x='37' y='9' width='2' height='6'/><rect x='49' y='9' width='2' height='6'/><rect x='54' y='10' width='2' height='4'/><rect x='66' y='3' width='2' height='18'/><rect x='71' y='7' width='2' height='10'/><rect x='76' y='1' width='2' height='22'/><rect x='88' y='9' width='2' height='6'/><rect x='98' y='9' width='2' height='6'/><rect x='105' y='4' width='2' height='16'/><rect x='115' y='2' width='2' height='20'/><rect x='127' y='9' width='2' height='6'/><rect x='139' y='1' width='2' height='22'/><rect x='151' y='9' width='2' height='6'/><rect x='163' y='4' width='2' height='16'/><rect x='173' y='2' width='2' height='20'/><rect x='185' y='9' width='2' height='6'/><rect x='197' y='9' width='2' height='6'/><rect x='209' y='2' width='2' height='20'/><rect x='221' y='9' width='2' height='6'/><rect x='233' y='9' width='2' height='6'/></g></svg>");
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+}
+
+.ps-journal__manage-duration {
+    font-family: var(--ps-font-ui);
+    font-size: 0.82rem;
+    color: var(--jbook-ink-faint);
+    font-variant-numeric: tabular-nums;
 }
 
 .ps-journal__manage-status {
@@ -749,7 +1290,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
     align-items: center;
     gap: 0.3rem;
     font-size: 0.82rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
 }
 
 .ps-journal__manage-status svg {
@@ -763,9 +1304,9 @@ body[data-theme="dark"] .ps-journal__voice-play {
     width: 2rem;
     height: 2rem;
     border-radius: 999px;
-    border: 1px solid var(--ps-border);
+    border: 1px solid var(--jbook-card-border);
     background: transparent;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -779,7 +1320,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
 
 .ps-journal__manage-empty {
     padding: 1.5rem 0;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-family: var(--ps-font-ui);
     font-size: 0.9rem;
 }
@@ -791,30 +1332,39 @@ body[data-theme="dark"] .ps-journal__voice-play {
     gap: 0.5rem 1rem;
     margin-top: 1.25rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--ps-border);
+    border-top: 1px solid var(--jbook-hairline);
     font-family: var(--ps-font-ui);
     font-size: 0.85rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
 }
 
 .ps-journal__manage-footer-count {
     font-weight: 700;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
 }
 
 /* =====================================================================
-   In-context composer (accepted 02 desktop facing-page / 03 mobile sheet)
+   10. In-context composer (accepted 02 desktop facing-page / 03 mobile
+   sheet) - same parchment "page" material as the book itself.
    ===================================================================== */
 
 .ps-composer-scrim {
     position: fixed;
     inset: 0;
-    background: rgb(10 15 26 / 55%);
+    background: rgb(4 6 12 / 62%);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    z-index: 60;
+    /* Pre-existing gap found in the visual-loop pass (not introduced by
+       this rebuild - the prior z-index:60 was already lower): the global
+       site header is z-index:1200 and the mobile bottom tab bar
+       (.mobile-tabbar) is z-index:1150 (static/css/style.css) - both sat
+       ABOVE this modal at the old value, so on a real phone the fixed
+       bottom tab bar visually covered the Save Moment/Cancel row while
+       the composer was open. An open modal dialog is the correct topmost
+       layer over all page chrome, including sticky/fixed site furniture. */
+    z-index: 1201;
 }
 
 .ps-composer-scrim[hidden] {
@@ -822,15 +1372,27 @@ body[data-theme="dark"] .ps-journal__voice-play {
 }
 
 .ps-composer {
-    background: var(--ps-surface);
-    color: var(--ps-ink);
+    position: relative;
+    background:
+        radial-gradient(120% 140% at 16% -10%, rgb(255 255 255 / 55%), transparent 55%),
+        linear-gradient(155deg, var(--jbook-page-1, #faf0e6) 0%, var(--jbook-page-2, #f0f0e6) 48%, var(--jbook-page-3, #f0e6dc) 100%);
+    color: var(--jbook-ink, #141e1e);
     width: min(640px, 100%);
     max-height: min(88vh, 760px);
     overflow-y: auto;
-    border-radius: 1.1rem;
-    box-shadow: 0 30px 80px rgb(10 15 26 / 45%);
-    padding: clamp(1.25rem, 3vw, 2rem);
+    border-radius: 20px;
+    box-shadow: 0 1px 1px rgb(15 10 5 / 12%), 0 40px 80px rgb(4 6 12 / 55%);
+    outline: 1px solid var(--jbook-spine, rgb(10 8 4 / 32%));
+    outline-offset: -1px;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    padding-right: clamp(3rem, 6vw, 4.5rem);
     font-family: var(--ps-font-ui);
+}
+
+.ps-composer .ps-journal__ribbon {
+    right: 14px;
+    width: 26px;
+    height: 74px;
 }
 
 .ps-composer__header {
@@ -842,15 +1404,16 @@ body[data-theme="dark"] .ps-journal__voice-play {
 }
 
 .ps-composer__title {
-    font-family: var(--ps-font-display);
-    font-size: 1.4rem;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.5rem;
     margin: 0;
+    color: var(--jbook-ink);
 }
 
 .ps-composer__close {
     background: transparent;
     border: none;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     cursor: pointer;
     padding: 0.35rem;
     border-radius: 999px;
@@ -858,19 +1421,19 @@ body[data-theme="dark"] .ps-journal__voice-play {
 }
 
 .ps-composer__close:hover {
-    color: var(--ps-ink);
-    background: var(--ps-primary-soft);
+    color: var(--jbook-ink);
+    background: rgb(180 140 80 / 12%);
 }
 
 .ps-composer__close:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 2px;
 }
 
 .ps-composer__tabs {
     display: flex;
     gap: 1.5rem;
-    border-bottom: 1px solid var(--ps-border);
+    border-bottom: 1px solid var(--jbook-hairline);
     margin-bottom: 1.1rem;
 }
 
@@ -881,17 +1444,17 @@ body[data-theme="dark"] .ps-journal__voice-play {
     padding: 0.35rem 0.1rem 0.75rem;
     font-weight: 700;
     font-size: 0.98rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     cursor: pointer;
 }
 
 .ps-composer__tab[aria-selected="true"] {
-    color: var(--ps-ink);
-    border-bottom-color: var(--ps-bronze);
+    color: var(--jbook-ink);
+    border-bottom-color: var(--jbook-gold);
 }
 
 .ps-composer__tab:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 2px;
 }
 
@@ -900,7 +1463,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
     align-items: center;
     gap: 0.4rem;
     font-size: 0.85rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin: 0 0 0.75rem;
 }
 
@@ -914,17 +1477,17 @@ body[data-theme="dark"] .ps-journal__voice-play {
     width: 100%;
     min-height: 9rem;
     resize: vertical;
-    border: 1px solid var(--ps-border);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 0.7rem;
     padding: 0.85rem 1rem;
     font-family: var(--ps-font-ui);
     font-size: 1rem;
-    color: var(--ps-ink);
-    background: var(--ps-canvas);
+    color: var(--jbook-ink);
+    background: var(--jbook-card-bg);
 }
 
 .ps-composer__field:focus-visible {
-    outline: 2px solid var(--ps-primary);
+    outline: 2px solid var(--jbook-gold-deep);
     outline-offset: 1px;
 }
 
@@ -935,16 +1498,32 @@ body[data-theme="dark"] .ps-journal__voice-play {
 .ps-composer__attachments {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.65rem;
     margin: 0.9rem 0;
     padding: 0.6rem 0.85rem;
-    border: 1px dashed var(--ps-border);
+    border: 1px dashed var(--jbook-card-border);
     border-radius: 0.6rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-size: 0.88rem;
 }
 
-.ps-composer__attachments svg {
+.ps-composer__attachments-icons {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.ps-composer__attachments-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 8px;
+    border: 1.3px solid var(--jbook-gold-mid);
+    color: var(--jbook-gold-text);
+}
+
+.ps-composer__attachments-icon svg {
     width: 1.05rem;
     height: 1.05rem;
 }
@@ -955,8 +1534,8 @@ body[data-theme="dark"] .ps-journal__voice-play {
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ps-muted);
-    border: 1px solid var(--ps-border);
+    color: var(--jbook-ink-faint);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 999px;
     padding: 0.15rem 0.6rem;
 }
@@ -969,7 +1548,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
     cursor: pointer;
     font-weight: 600;
     font-size: 0.88rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     list-style: none;
 }
 
@@ -988,7 +1567,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
     display: block;
     font-size: 0.82rem;
     font-weight: 600;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin-bottom: 0.3rem;
 }
 
@@ -997,9 +1576,9 @@ body[data-theme="dark"] .ps-journal__voice-play {
     width: 100%;
     padding: 0.5rem 0.6rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--ps-border);
-    background: var(--ps-canvas);
-    color: var(--ps-ink);
+    border: 1px solid var(--jbook-card-border);
+    background: var(--jbook-card-bg);
+    color: var(--jbook-ink);
     font-family: var(--ps-font-ui);
 }
 
@@ -1013,7 +1592,7 @@ body[data-theme="dark"] .ps-journal__voice-play {
 
 .ps-composer__status {
     font-size: 0.85rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin-right: auto;
 }
 
@@ -1021,28 +1600,27 @@ body[data-theme="dark"] .ps-journal__voice-play {
     color: #b23a2f;
 }
 
-body[data-theme="dark"] .ps-composer__status[data-tone="error"] {
+body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] {
     color: #ff9d8e;
 }
-
-/* voice recording */
 
 .ps-composer__voice {
     text-align: center;
     padding: 1.5rem 1rem;
-    border: 1px solid var(--ps-border);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 0.8rem;
-    background: var(--ps-canvas);
+    background: var(--jbook-card-bg);
 }
 
 .ps-composer__voice-state {
-    font-family: var(--ps-font-display);
+    font-family: "Newsreader", Georgia, serif;
     font-size: 1.15rem;
     margin: 0 0 0.35rem;
+    color: var(--jbook-ink);
 }
 
 .ps-composer__voice-help {
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     font-size: 0.88rem;
     margin: 0 0 1rem;
 }
@@ -1050,7 +1628,7 @@ body[data-theme="dark"] .ps-composer__status[data-tone="error"] {
 .ps-composer__voice-timer {
     font-variant-numeric: tabular-nums;
     font-size: 0.9rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin-bottom: 0.75rem;
     display: block;
 }
@@ -1066,71 +1644,90 @@ body[data-theme="dark"] .ps-composer__status[data-tone="error"] {
     height: 3.4rem;
     border-radius: 999px;
     border: none;
-    background: var(--ps-bronze);
-    color: #fff;
+    background: linear-gradient(180deg, #ecc788, #cf9a3c);
+    color: #241804;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-}
-
-body[data-theme="dark"] .ps-composer__voice-mic {
-    color: #0a1730;
+    box-shadow: 0 6px 14px -4px rgb(150 100 20 / 55%);
 }
 
 .ps-composer__voice-mic[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* =====================================================================
-   Saved state (accepted 05)
+   11. Saved state (accepted 05): medallion + sparkles, 4 chips, audience
+   row, gold Done.
    ===================================================================== */
 
 .ps-saved {
     text-align: center;
 }
 
-.ps-saved__icon {
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto 0.75rem;
-    color: var(--ps-success-teal);
+.ps-saved__medallion {
+    position: relative;
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 0.9rem;
 }
 
+.ps-saved__icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #2a3550, #0b1220);
+    color: var(--jbook-gold);
+    padding: 0.9rem;
+    box-sizing: border-box;
+    box-shadow: 0 10px 22px -8px rgb(0 0 0 / 45%);
+}
+
+.ps-saved__spark {
+    position: absolute;
+    color: var(--jbook-gold);
+    width: 14px;
+    height: 14px;
+}
+
+.ps-saved__spark--1 { top: -8px; left: -10px; width: 11px; height: 11px; opacity: 0.85; }
+.ps-saved__spark--2 { top: -4px; right: -16px; width: 16px; height: 16px; }
+.ps-saved__spark--3 { bottom: -2px; right: -20px; width: 9px; height: 9px; opacity: 0.75; }
+.ps-saved__spark--4 { bottom: 6px; left: -18px; width: 8px; height: 8px; opacity: 0.65; }
+
 .ps-saved__title {
-    font-family: var(--ps-font-display);
-    font-size: 1.35rem;
-    margin: 0 0 0.25rem;
+    font-family: "Newsreader", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    line-height: 1.3;
+    margin: 0 0 0.5rem;
+    color: var(--jbook-ink);
 }
 
 .ps-saved__lock-line {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    color: var(--ps-muted);
+    color: var(--jbook-gold-text);
     font-size: 0.85rem;
     margin-bottom: 1.5rem;
 }
 
-/* B1 fix (Opus review): this rule was missing entirely, so the lock svg
-   rendered at its raw viewBox size instead of the small inline glyph the
-   truth-line pattern uses everywhere else - mirrors
-   .ps-composer__truth-line svg exactly. */
 .ps-saved__lock-line svg {
-    width: 0.95rem;
-    height: 0.95rem;
+    width: 1rem;
+    height: 1rem;
     flex: none;
 }
 
 .ps-saved__section-label {
-    text-align: left;
-    font-size: 0.78rem;
+    text-align: center;
+    font-size: 0.95rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ps-muted);
-    margin: 0 0 0.65rem;
+    color: var(--jbook-ink);
+    margin: 0 0 0.75rem;
 }
 
 .ps-saved__chips {
@@ -1150,29 +1747,30 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     padding: 0.9rem 0.5rem;
-    border-radius: 0.7rem;
-    border: 1px solid var(--ps-border);
-    background: var(--ps-canvas);
-    color: var(--ps-muted);
+    border-radius: 0.8rem;
+    border: 1px solid var(--jbook-card-border);
+    background: var(--jbook-card-bg);
+    color: var(--jbook-ink-soft);
     font-size: 0.82rem;
     font-weight: 600;
     cursor: not-allowed;
 }
 
 .ps-saved__chip svg {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    color: var(--jbook-gold-mid);
 }
 
 .ps-saved__chip-badge {
-    font-size: 0.65rem;
+    font-size: 0.63rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--ps-muted);
-    border: 1px solid var(--ps-border);
+    color: var(--jbook-ink-faint);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 999px;
     padding: 0.1rem 0.5rem;
 }
@@ -1182,29 +1780,30 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    border: 1px solid var(--ps-border);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 0.7rem;
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
-    background: var(--ps-canvas);
+    background: var(--jbook-card-bg);
 }
 
 .ps-saved__audience svg {
     width: 1.1rem;
     height: 1.1rem;
-    color: var(--ps-muted);
+    color: var(--jbook-gold-text);
     flex: none;
 }
 
 .ps-saved__audience-value {
     font-weight: 700;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
+    flex: 1;
 }
 
 .ps-saved__audience-preview {
     text-align: left;
     font-size: 0.82rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin: 0 0 1.5rem;
 }
 
@@ -1215,13 +1814,17 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     gap: 0.5rem;
 }
 
+.ps-saved__actions .ps-btn--gold {
+    width: 100%;
+    justify-content: center;
+}
+
 /* =====================================================================
-   Moment detail (accepted screen B, doc 13)
+   12. Moment detail (accepted screen B)
    ===================================================================== */
 
 .ps-journal__book--narrow {
-    max-width: 760px;
-    margin: 0 auto;
+    padding: clamp(1.5rem, 3vw, 2.5rem) clamp(4rem, 8vw, 5.5rem) clamp(2rem, 4vw, 2.75rem) clamp(1.5rem, 4vw, 3rem);
 }
 
 .ps-moment__back {
@@ -1231,9 +1834,9 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--ps-bronze-strong);
+    color: var(--jbook-gold-text);
     text-decoration: none;
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.5rem;
 }
 
 .ps-moment__back:hover,
@@ -1243,20 +1846,25 @@ body[data-theme="dark"] .ps-composer__voice-mic {
 
 .ps-moment__header {
     display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr);
+    grid-template-columns: 5.2rem minmax(0, 1fr);
     gap: 1.5rem;
-    margin: 0 0 1rem;
+    margin: 0 0 1.25rem;
 }
 
 .ps-moment__date {
-    font-family: var(--ps-font-display);
-    color: var(--ps-primary);
+    position: relative;
+    font-family: "Newsreader", Georgia, serif;
+    color: var(--jbook-date-color);
     padding-top: 0.15rem;
+}
+
+.ps-moment__date .ps-journal__date-node {
+    right: -0.85rem;
 }
 
 .ps-moment__date-day {
     display: block;
-    font-size: 2.4rem;
+    font-size: 2.5rem;
     font-weight: 600;
     line-height: 1;
 }
@@ -1265,11 +1873,11 @@ body[data-theme="dark"] .ps-composer__voice-mic {
 .ps-moment__date-year {
     display: block;
     font-family: var(--ps-font-ui);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
 }
 
 .ps-moment__date-year {
@@ -1287,40 +1895,94 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     gap: 0.5rem;
     font-family: var(--ps-font-ui);
     font-size: 0.82rem;
-    color: var(--ps-muted);
-    margin: 0 0 0.5rem;
+    color: var(--jbook-ink-faint);
+    margin: 0 0 0.6rem;
 }
 
 .ps-moment__title {
-    font-family: var(--ps-font-display);
-    font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(1.7rem, 3.2vw, 2.35rem);
     font-weight: 600;
-    color: var(--ps-ink);
+    color: var(--jbook-ink);
     margin: 0 0 0.6rem;
-    line-height: 1.25;
+    line-height: 1.3;
 }
 
 .ps-moment__note-fallback {
-    font-family: var(--ps-font-display);
+    font-family: "Newsreader", Georgia, serif;
     font-style: italic;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin: 0;
 }
 
+.ps-moment__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin: 0 0 1.5rem;
+}
+
+.ps-moment__main {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.ps-moment__voice-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1.1rem;
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
+    border-radius: 0.8rem;
+}
+
+.ps-moment__photo {
+    flex: 1 1 14rem;
+    max-width: 20rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px -12px rgb(20 15 5 / 40%);
+}
+
+.ps-moment__photo svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 4 / 3;
+}
+
 .ps-moment__version {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     font-family: var(--ps-font-ui);
-    font-size: 0.8rem;
-    color: var(--ps-muted);
-    margin: 1.5rem 0 0;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--ps-border);
+    font-size: 0.85rem;
+    color: var(--jbook-ink-faint);
+    margin: 0 0 1.5rem;
+    padding: 0.8rem 1.1rem;
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
+    border-radius: 0.7rem;
+}
+
+.ps-moment__version-link {
+    color: var(--jbook-gold-text);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: not-allowed;
 }
 
 .ps-moment__lifecycle {
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
-    margin: 1rem 0 1.5rem;
+    margin: 0 0 1.5rem;
 }
 
 .ps-moment__lifecycle-btn {
@@ -1330,9 +1992,9 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     font-family: var(--ps-font-ui);
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--ps-muted);
-    background: var(--ps-canvas);
-    border: 1px solid var(--ps-border);
+    color: var(--jbook-ink-faint);
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 999px;
     padding: 0.5rem 0.9rem 0.5rem 0.75rem;
     cursor: not-allowed;
@@ -1349,8 +2011,8 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--ps-muted);
-    border: 1px solid var(--ps-border);
+    color: var(--jbook-ink-faint);
+    border: 1px solid var(--jbook-card-border);
     border-radius: 999px;
     padding: 0.1rem 0.5rem;
     margin-left: 0.15rem;
@@ -1362,7 +2024,7 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     gap: 0.4rem;
     font-family: var(--ps-font-ui);
     font-size: 0.85rem;
-    color: var(--ps-muted);
+    color: var(--jbook-ink-faint);
     margin: 0 0 1.5rem;
 }
 
@@ -1387,11 +2049,72 @@ body[data-theme="dark"] .ps-composer__voice-mic {
         align-items: baseline;
         gap: 0.4rem;
     }
+
+    .ps-moment__date .ps-journal__date-node {
+        display: none;
+    }
 }
 
 /* =====================================================================
-   Responsive: mobile bottom sheet composer, 200% zoom reflow
+   13. Responsive: mobile bottom sheet composer, book chrome shrink, 200%
+   zoom reflow, reduced motion.
    ===================================================================== */
+
+@media (max-width: 899px) {
+    .ps-journal__bookcase::after {
+        width: 9px;
+    }
+
+    .ps-journal__bookcase::before {
+        inset: 10px 22px 10px 10px;
+    }
+
+    .ps-journal__ribbon {
+        width: 24px;
+        height: 68px;
+        right: 16px;
+    }
+
+    .ps-journal__ribbon-leaf {
+        width: 13px;
+        height: 22px;
+    }
+
+    .ps-journal__rail-region {
+        border-right: none;
+        border-bottom: 1px solid var(--jbook-hairline);
+        padding-bottom: 1.25rem;
+    }
+
+    /* .ps-journal__rail-flourish itself is display:none below 900px (see
+       its base rule) - no mobile-specific override needed here. */
+
+    .ps-journal__hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Stats stack in a row of their own small tiles rather than wrapping
+       the horizontal hairline-divider layout - a wrapped item kept an
+       orphaned left border with nothing to its left, a real artifact
+       caught in the mobile screenshot, not merely a smaller variant. */
+    .ps-journal__hero-totals {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.6rem;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .ps-journal__hero-stat {
+        border-left: none;
+        padding: 0.6rem 0.5rem 0.5rem;
+        background: rgb(255 255 255 / 8%);
+        border-radius: 8px;
+        min-width: 0;
+        text-align: center;
+    }
+}
 
 @media (max-width: 640px) {
     .ps-composer-scrim {
@@ -1402,21 +2125,48 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     .ps-composer {
         width: 100%;
         max-height: 92vh;
-        border-radius: 1.25rem 1.25rem 0 0;
+        border-radius: 1.4rem 1.4rem 0 0;
+        padding-right: clamp(1.5rem, 3vw, 2.25rem);
+    }
+
+    .ps-composer .ps-journal__ribbon {
+        display: none;
     }
 
     .ps-journal__row {
-        grid-template-columns: 3.4rem minmax(0, 1fr);
-        gap: 0.85rem;
+        grid-template-columns: 3.2rem minmax(0, 1fr);
+        gap: 0.9rem;
+    }
+
+    .ps-journal__timeline {
+        --spine-x: 3.2rem;
     }
 
     .ps-journal__date-day {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
     }
 
+    .ps-journal__card {
+        flex-direction: column;
+    }
+
+    .ps-journal__thumb {
+        width: 100%;
+        order: -1;
+    }
+
+    .ps-journal__manage-head,
     .ps-journal__manage-row {
         grid-template-columns: minmax(0, 1fr);
-        gap: 0.35rem;
+        gap: 0.4rem;
+    }
+
+    .ps-journal__manage-head {
+        display: none;
+    }
+
+    .ps-journal__manage-duration {
+        display: none;
     }
 }
 
@@ -1425,6 +2175,10 @@ body[data-theme="dark"] .ps-composer__voice-mic {
     .ps-journal__voice-play,
     .ps-composer__voice-mic {
         transition: none;
+    }
+
+    .ps-btn--gold:hover {
+        transform: none;
     }
 }
 
@@ -1436,10 +2190,18 @@ body[data-theme="dark"] .ps-composer__voice-mic {
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .ps-journal__timeline::before {
+        display: none;
+    }
+
     .ps-journal__date {
         text-align: left;
         display: flex;
         align-items: baseline;
         gap: 0.4rem;
+    }
+
+    .ps-journal__date .ps-journal__date-node {
+        display: none;
     }
 }

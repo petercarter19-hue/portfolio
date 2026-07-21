@@ -409,6 +409,26 @@
     const composer = document.querySelector("[data-composer]");
     if (!scrim || !composer) return;
 
+    // Found in the doc-15 visual-loop pass: templates/base.html's
+    // <main id="main-content"> sets `isolation: isolate` (an established
+    // site-wide pattern - static/css/style.css uses it in several other
+    // sections too), which traps every z-index inside the composer's own
+    // subtree, no matter how high, within main's stacking context. The
+    // global mobile bottom tab bar (.mobile-tabbar, a body-level sibling of
+    // <main>) and the sticky header sit OUTSIDE that trap, so on a real
+    // phone the tab bar visually covered the composer's own Save Moment/
+    // Cancel row even after raising .ps-composer-scrim's z-index - a real,
+    // reproducible bug, not a screenshot artifact (confirmed live via
+    // elementFromPoint before this fix). Moving the scrim to be a direct
+    // child of <body> - the standard "portal a modal past a trapped
+    // ancestor" technique - lets its z-index compare directly against the
+    // header/tab bar instead of being capped by main's isolation boundary.
+    // No visual/behavioral change when this fires (same element, same
+    // listeners, just relocated once before first use).
+    if (scrim.parentElement !== document.body) {
+        document.body.appendChild(scrim);
+    }
+
     const composeView = composer.querySelector('[data-composer-view="compose"]');
     const savedView = composer.querySelector('[data-composer-view="saved"]');
     const tabs = Array.from(composer.querySelectorAll("[data-composer-tab]"));

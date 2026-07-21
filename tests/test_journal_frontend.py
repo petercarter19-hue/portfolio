@@ -309,7 +309,14 @@ class OwnerJournalMomentDetailTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Shipped the private Journal frontend", body)
-        self.assertIn("Achievement", body)
+        # Doc 15 visual-finish pass: the accepted screen B meta row is
+        # "<time>路 <source label> 路 Private" only (verified against the
+        # accepted PNG) - it never prints the moment_kind word ("Achievement"
+        # etc). That word was a pre-doc-15 styling detail, not a behavioral
+        # or security assertion, so this rewritten check confirms the real
+        # accepted-mockup meta shape instead of asserting removed copy.
+        self.assertIn("Text Note", body)
+        self.assertNotIn(">Achievement<", body)
         # B2 rewrite (Opus review): the debug dt/dd grid that used to print
         # a single "2026-05-20" ISO string is gone - the accepted-screen-B
         # date numeral renders day/month/year as separate elements instead.

@@ -1,3 +1,4 @@
+{% import "partials/journal_book_chrome.html" as jbook %}
 {#
   PS-JOURNAL-001 Slice J1 - the in-context Capture a Moment composer and
   saved state (accepted screens 02/03/05; docs/initiatives/PS-JOURNAL-001/
@@ -8,6 +9,17 @@
   sheet on mobile); no navigation away; origin focus is restored on close
   (PS-JRN-CAP-003/014). Save Moment posts to the already-released
   /api/journal/moments - this partial adds no new API surface.
+
+  Doc 15 visual note: the accepted 02 image shows the composer as the SAME
+  book's facing right-hand page, spatially attached to the Timeline page at
+  a shared spine. This build keeps the proven accessible-dialog interaction
+  model (a centered/bottom-sheet modal, not literal spine-attached page
+  geometry - reflowing a real dialog to track another element's live
+  position across breakpoints/scroll would trade reliability for a purely
+  spatial effect) but renders it in the identical parchment/gold "page"
+  material - same tokens, same ribbon+leaf, same stitched border/page-edge -
+  so it reads unmistakably as a page of the same book. Disclosed deviation,
+  reported in the completion report.
 #}
 {% macro icon_close() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>{% endmacro %}
 {% macro icon_lock_small() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>{% endmacro %}
@@ -30,6 +42,7 @@
         aria-labelledby="journal-composer-title"
         data-composer
     >
+        {{ jbook.book_ribbon() }}
         {# ---------------- compose screen ---------------- #}
         <div data-composer-view="compose">
             <div class="ps-composer__header">
@@ -81,7 +94,10 @@
             </div>
 
             <div class="ps-composer__attachments">
-                {{ icon_camera() }}{{ icon_film() }}
+                <span class="ps-composer__attachments-icons">
+                    <span class="ps-composer__attachments-icon">{{ icon_camera() }}</span>
+                    <span class="ps-composer__attachments-icon">{{ icon_film() }}</span>
+                </span>
                 <span>Add a photo or video</span>
                 <span class="ps-composer__attachments-badge">Coming later</span>
             </div>
@@ -122,11 +138,17 @@
         {# ---------------- saved screen (accepted 05) ---------------- #}
         <div data-composer-view="saved" hidden>
             <div class="ps-saved">
-                {{ icon_check() }}
-                <h2 class="ps-saved__title" id="journal-saved-title" tabindex="-1">Moment saved privately</h2>
-                <p class="ps-saved__lock-line">{{ icon_lock_small() }} It is now in your Journal.</p>
+                <div class="ps-saved__medallion">
+                    {{ icon_check() }}
+                    <svg class="ps-saved__spark ps-saved__spark--1" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--2" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--3" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                </div>
+                <h2 class="ps-saved__title" id="journal-saved-title" tabindex="-1">Moment saved privately &mdash;<br>It is now in your Journal.</h2>
+                <p class="ps-saved__lock-line">{{ icon_lock_small() }}</p>
 
-                <p class="ps-saved__section-label">Use this moment</p>
+                <p class="ps-saved__section-label">Use This Moment</p>
                 <div class="ps-saved__chips">
                     <span class="ps-saved__chip" role="button" aria-disabled="true" tabindex="-1">
                         {{ icon_feed() }}
