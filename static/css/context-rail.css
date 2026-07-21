@@ -69,6 +69,24 @@
     color: var(--ps-muted);
 }
 
+/* N1 (Opus review): quiet "01"-"06" chapter numerals, desktop rail only -
+   the accepted JOURNAL-01 rail reads as a book's numbered contents page. */
+.ps-rail__number {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    margin-top: 0.15rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--ps-muted);
+}
+
+.ps-rail__entry[aria-current="true"] .ps-rail__number {
+    color: var(--ps-bronze-strong);
+}
+
 .ps-rail__entry[aria-current="true"] {
     background: var(--ps-primary-soft);
 }

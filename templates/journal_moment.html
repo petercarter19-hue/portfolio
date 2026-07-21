@@ -4,66 +4,83 @@
 {% block meta_description %}One private Moment from your Journal.{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-2">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
 
 {% block content %}
 {% macro icon_lock() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>{% endmacro %}
+{% macro icon_edit() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>{% endmacro %}
+{% macro icon_archive() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg>{% endmacro %}
+{% macro icon_export() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>{% endmacro %}
+{% macro icon_delete() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>{% endmacro %}
+
+{#
+  PS-JOURNAL-001 Slice J1 - Moment detail (accepted screen B, doc 13). This
+  view shows only real fields the derived Journal read
+  (usp_ListJournalMomentsForOwner) provides today - version number, source
+  type, occurred date, lifecycle state, and privacy. That read does not
+  return the full narrative body or a created timestamp, so this page never
+  invents either: the note-fallback and Version history lines below stay
+  honest about what is and is not available yet, in member-facing language
+  only (no stored-procedure names, no internal backend jargon).
+#}
+{% set source_label = {'voice': 'Voice Note', 'photo': 'Photo', 'video': 'Video'}.get(moment.source_type, 'Text Note') %}
 
 <div class="ps-journal">
-    <div class="ps-journal__book" style="max-width:760px;margin:0 auto;">
+    <div class="ps-journal__book ps-journal__book--narrow">
         <div class="ps-journal__book-inner">
-            <p class="ps-journal__eyebrow"><a href="{{ url_for('owner.journal') }}">&larr; Back to Journal</a></p>
-            <div class="ps-journal__title-row">
-                <div class="ps-journal__title-group">
-                    <h1 class="ps-journal__title" id="journal-moment-title">{{ moment.title or 'Untitled Moment' }}</h1>
-                    <span class="ps-journal__privacy">{{ icon_lock() }} Private &mdash; Only you</span>
+            <a class="ps-moment__back" href="{{ url_for('owner.journal') }}">&larr; Back to Journal</a>
+
+            <div class="ps-moment__header">
+                <div class="ps-moment__date">
+                    {% if moment.occurred_day %}
+                    <span class="ps-moment__date-day">{{ moment.occurred_day }}</span>
+                    <span class="ps-moment__date-month">{{ moment.occurred_month_label }}</span>
+                    <span class="ps-moment__date-year">{{ moment.occurred_iso[:4] }}</span>
+                    {% else %}
+                    <span class="ps-moment__date-day">&mdash;</span>
+                    <span class="ps-moment__date-month">Date not set</span>
+                    {% endif %}
+                </div>
+                <div class="ps-moment__header-content">
+                    <p class="ps-moment__meta">
+                        <span>{{ moment.moment_kind|capitalize if moment.moment_kind else 'Moment' }}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        <span>{{ source_label }}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        <span class="ps-journal__meta-privacy">{{ icon_lock() }} Private</span>
+                        {% if moment.lifecycle_state == 'archived' %}
+                        <span aria-hidden="true">&middot;</span>
+                        <span class="ps-journal__manage-archived-badge">Archived</span>
+                        {% endif %}
+                    </p>
+                    <h1 class="ps-moment__title" id="journal-moment-title">{{ moment.title or 'Untitled Moment' }}</h1>
+                    <p class="ps-moment__note-fallback">The full note opens here soon.</p>
                 </div>
             </div>
 
-            <dl class="ps-journal__meta" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0.75rem 1.5rem;margin:1.5rem 0;">
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Kind</dt>
-                    <dd style="margin:0;">{{ moment.moment_kind|capitalize if moment.moment_kind else 'Not set' }}</dd>
-                </div>
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Occurred</dt>
-                    <dd style="margin:0;">
-                        {% if moment.occurred_iso %}{{ moment.occurred_iso }} ({{ moment.occurred_precision }}){% else %}Date not set{% endif %}
-                    </dd>
-                </div>
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Source</dt>
-                    <dd style="margin:0;">{{ moment.source_type|capitalize if moment.source_type else 'Text' }}</dd>
-                </div>
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Version</dt>
-                    <dd style="margin:0;">{{ moment.version_number or 1 }}</dd>
-                </div>
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Status</dt>
-                    <dd style="margin:0;">{{ 'Archived' if moment.lifecycle_state == 'archived' else 'Active' }}</dd>
-                </div>
-                <div>
-                    <dt style="font-weight:700;color:var(--ps-ink);">Visibility</dt>
-                    <dd style="margin:0;">{{ moment.visibility|capitalize if moment.visibility else 'Private' }}</dd>
-                </div>
-            </dl>
+            <p class="ps-moment__version">Version history &middot; Version {{ moment.version_number or 1 }}</p>
 
-            <p class="ps-journal__row-narrative">
-                This detail view shows every field the derived Journal read
-                (<code>usp_ListJournalMomentsForOwner</code>) provides today: accepted
-                version, source type, occurred date, version number, lifecycle state, and
-                privacy. That read does not return the full narrative body - only the
-                title, which the composer derives from the first line of what you wrote -
-                so the complete text is not shown here yet. A J1.1 backend addition to
-                return the narrative (or a single-Moment fetch) would let this page show it
-                in full.
-            </p>
+            <div class="ps-moment__lifecycle" role="group" aria-label="Moment actions, coming later">
+                <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                    {{ icon_edit() }}<span>Edit</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                </button>
+                <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                    {{ icon_archive() }}<span>Archive</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                </button>
+                <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                    {{ icon_export() }}<span>Export</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                </button>
+                <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                    {{ icon_delete() }}<span>Delete</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                </button>
+            </div>
 
-            <p style="margin-top:1.5rem;">
+            <p class="ps-moment__footer-truth">{{ icon_lock() }} Private to you &middot; Only you can see this Moment.</p>
+
+            <p class="ps-moment__back-cta">
                 <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">Back to Journal</a>
             </p>
         </div>

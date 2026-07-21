@@ -4,8 +4,8 @@
 {% block meta_description %}Your private Journal - a complete record of moments, ideas, and milestones, captured in your own words. Private to you until you choose to share.{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-2">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-2">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
@@ -16,6 +16,28 @@
 {% macro icon_play() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>{% endmacro %}
 {% macro icon_plus() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>{% endmacro %}
 {% macro icon_check_circle() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>{% endmacro %}
+{% macro icon_doc() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>{% endmacro %}
+{% macro icon_dots() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>{% endmacro %}
+{% macro icon_search() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>{% endmacro %}
+
+{#
+  Empty first-visit illustration (S2, accepted screen A / doc 13): a
+  restrained, hand-drawn-feeling open book with a couple of sparkle strokes,
+  Deep Navy Gold tokens only, no imagery dependency.
+#}
+{% macro empty_illustration() %}
+<svg viewBox="0 0 140 96" aria-hidden="true" class="ps-journal__empty-illustration-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 20v56"/>
+    <path d="M70 20c-10-8-26-10-40-6v54c14-4 30-2 40 6"/>
+    <path d="M70 20c10-8 26-10 40-6v54c-14-4-30-2-40 6"/>
+    <path d="M36 34c8-2 18-1 24 3" stroke-width="1.4" opacity="0.6"/>
+    <path d="M36 46c8-2 18-1 24 3" stroke-width="1.4" opacity="0.6"/>
+    <path d="M80 37c6-4 16-5 24-3" stroke-width="1.4" opacity="0.6"/>
+    <path d="M80 49c6-4 16-5 24-3" stroke-width="1.4" opacity="0.6"/>
+    <path d="M108 12l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="currentColor" stroke="none" opacity="0.85"/>
+    <path d="M24 16l1.4 3.4L29 21l-3.6 1.6L24 26l-1.4-3.4L19 21l3.6-1.6z" fill="currentColor" stroke="none" opacity="0.6"/>
+</svg>
+{% endmacro %}
 
 <div class="ps-journal">
     <div class="ps-journal__layout">
@@ -30,7 +52,7 @@
                 <p class="ps-journal__eyebrow">Private owner workspace</p>
                 <div class="ps-journal__title-row">
                     <div class="ps-journal__title-group">
-                        <h1 class="ps-journal__title" id="journal-title">Journal</h1>
+                        <h1 class="ps-journal__title" id="journal-title">{{ 'Manage' if manage_view else 'Journal' }}</h1>
                         <span class="ps-journal__privacy">{{ icon_lock() }} Private to you</span>
                     </div>
                     <div class="ps-journal__actions">
@@ -44,64 +66,96 @@
                         </button>
                     </div>
                 </div>
+                {% if manage_view %}
+                <p class="ps-journal__intro">View and organize all of your Moments.</p>
+                {% else %}
                 <p class="ps-journal__intro">Your complete record of moments, ideas, and milestones - captured in your own words. Nothing here is shared until you choose to share it.</p>
+                {% endif %}
 
                 <div id="journal-live-region" class="sr-only" role="status" aria-live="polite"></div>
 
                 {% if manage_view %}
-                {# ---------------- Manage view ---------------- #}
-                <div class="ps-journal__manage-bar">
-                    <span class="ps-journal__filter-note">Showing active and archived Moments. Filters below apply to Moments already loaded on this page.</span>
+                {# ---------------- Manage view (accepted screen C, doc 13) ---------------- #}
+                <div class="ps-journal__manage-search-row">
+                    <label class="sr-only" for="journal-manage-search">Search your Journal</label>
+                    <span class="ps-journal__manage-search-icon" aria-hidden="true">{{ icon_search() }}</span>
+                    <input
+                        type="search"
+                        id="journal-manage-search"
+                        class="ps-journal__manage-search"
+                        placeholder="Search your journal…"
+                        maxlength="200"
+                        data-manage-search
+                    >
                 </div>
                 <div class="ps-journal__kind-filters" role="group" aria-label="Filter loaded Moments by kind" data-kind-filters>
                     <button type="button" class="ps-journal__kind-filter" data-kind-filter="all" aria-pressed="true">All</button>
                     {% for value, label in moment_kinds %}
                     <button type="button" class="ps-journal__kind-filter" data-kind-filter="{{ value }}" aria-pressed="false">{{ label }}</button>
                     {% endfor %}
+                    <button type="button" class="ps-journal__kind-filter" data-archived-filter aria-pressed="false">Archived</button>
                 </div>
-                {% if moments %}
+
                 <div data-manage-list>
+                    {% if moments %}
+                    <div class="ps-journal__manage-head" aria-hidden="true">
+                        <span>Date</span>
+                        <span>Kind</span>
+                        <span>Moment</span>
+                        <span>Status</span>
+                        <span></span>
+                    </div>
                     {% for moment in moments %}
-                    <div class="ps-journal__manage-row" data-manage-row data-moment-kind="{{ moment.moment_kind }}">
+                    <div class="ps-journal__manage-row" data-manage-row data-moment-kind="{{ moment.moment_kind }}" data-lifecycle-state="{{ moment.lifecycle_state }}">
                         <span>{{ moment.occurred_iso or 'Date not set' }}</span>
+                        <span class="ps-journal__manage-kind">{% if moment.moment_kind == 'achievement' %}{{ icon_star() }}{% else %}{{ icon_doc() }}{% endif %}{{ moment.moment_kind|capitalize if moment.moment_kind else 'Moment' }}</span>
                         <span class="ps-journal__manage-title">
                             <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
                         </span>
-                        <span>
+                        <span class="ps-journal__manage-status">
+                            {{ icon_lock() }} Private
                             {% if moment.lifecycle_state == 'archived' %}<span class="ps-journal__manage-archived-badge">Archived</span>{% endif %}
                         </span>
+                        <button type="button" class="ps-journal__manage-menu" disabled aria-disabled="true" aria-label="More options for this Moment - coming later">{{ icon_dots() }}</button>
                     </div>
                     {% endfor %}
+                    {% else %}
+                    <p class="ps-journal__manage-empty" data-manage-empty>No Moments yet. Capture your first one from the Journal.</p>
+                    {% endif %}
                 </div>
-                {% else %}
-                <p class="ps-journal__filter-note">No Moments yet. Filter loaded Moments once you have saved your first one.</p>
-                {% endif %}
+
+                <div class="ps-journal__manage-footer">
+                    <span><span class="ps-journal__manage-footer-count" data-manage-count>{{ moments|length }} {{ 'Moment' if moments|length == 1 else 'Moments' }}</span></span>
+                    <span>You own your Moments. Only you can see them.</span>
+                </div>
 
                 {% else %}
                 {# ---------------- Timeline (default) view ---------------- #}
+                {% if moments %}
                 <section class="ps-journal__hero" aria-label="This season">
                     <p class="ps-journal__hero-eyebrow">This season</p>
                     <h2 class="ps-journal__hero-name">{{ member.display_name or 'Your Journal' }}</h2>
                     <ul class="ps-journal__hero-totals">
                         <li class="ps-journal__hero-stat">
                             <span class="ps-journal__hero-stat-value">{{ totals.moments }}</span>
-                            <span class="ps-journal__hero-stat-label">Moments captured</span>
+                            <span class="ps-journal__hero-stat-label">{{ 'Moment' if totals.moments == 1 else 'Moments' }} captured</span>
                         </li>
                         <li class="ps-journal__hero-stat">
                             <span class="ps-journal__hero-stat-value">{{ totals.voice_notes }}</span>
-                            <span class="ps-journal__hero-stat-label">Voice notes recorded</span>
+                            <span class="ps-journal__hero-stat-label">{{ 'Voice note' if totals.voice_notes == 1 else 'Voice notes' }} recorded</span>
                         </li>
                         <li class="ps-journal__hero-stat">
                             <span class="ps-journal__hero-stat-value">{{ totals.milestones }}</span>
-                            <span class="ps-journal__hero-stat-label">Milestones achieved</span>
+                            <span class="ps-journal__hero-stat-label">{{ 'Milestone' if totals.milestones == 1 else 'Milestones' }} achieved</span>
                         </li>
                     </ul>
                 </section>
 
-                {% if moments %}
                 <ol class="ps-journal__timeline" id="journal-timeline" data-timeline aria-label="Journal timeline, most recent first">
+                    {% set ns = namespace(annotated=false) %}
                     {% for moment in moments %}
                     {% set kind_chapter = 'voice' if moment.source_type == 'voice' else ('photos' if moment.source_type == 'photo' else ('videos' if moment.source_type == 'video' else ('milestones' if moment.moment_kind == 'achievement' else ('reflections' if moment.moment_kind == 'lesson' else None)))) %}
+                    {% set source_label = {'voice': 'Voice Note', 'photo': 'Photo', 'video': 'Video'}.get(moment.source_type, 'Text Note') %}
                     <li
                         class="ps-journal__row ps-journal__row--{{ moment.source_type or 'text' }}"
                         data-journal-row
@@ -124,6 +178,8 @@
                                 {% if moment.moment_kind == 'achievement' %}{{ icon_star() }}{% endif %}
                                 <span>{{ moment.moment_kind|capitalize if moment.moment_kind else 'Moment' }}</span>
                                 <span aria-hidden="true">&middot;</span>
+                                <span>{{ source_label }}</span>
+                                <span aria-hidden="true">&middot;</span>
                                 <span class="ps-journal__meta-privacy">{{ icon_lock() }} Private</span>
                             </p>
                             {# usp_ListJournalMomentsForOwner returns only the title (which the
@@ -135,14 +191,19 @@
                             <h3 class="ps-journal__row-title">
                                 <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
                             </h3>
+                            {% if moment.moment_kind == 'achievement' and not ns.annotated %}
+                            {% set ns.annotated = true %}
+                            <p class="ps-journal__annotation">Proud of this one <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" width="14" height="14"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg></p>
+                            {% endif %}
                             {% if moment.source_type == 'voice' %}
                             {# Real per-Moment audio playback needs the source_capture_key that
                                usp_ListJournalMomentsForOwner does not return, and J1's one-step
                                Save Moment always creates a text-type Capture regardless of Speak
                                or Type (see the completion report's disclosed voice-source
                                linkage gap) - so this row type cannot occur for real J1 data yet.
-                               The control still renders honestly disabled rather than silently
-                               omitted, so the markup is ready once a future slice wires it. #}
+                               The control still renders honestly disabled (and greyed - see
+                               journal.css's S5 note) rather than silently omitted, so the
+                               markup is ready once a future slice wires it. #}
                             <div class="ps-journal__voice-row">
                                 <button type="button" class="ps-journal__voice-play" disabled aria-disabled="true" aria-label="Playback for this voice Moment is coming later">{{ icon_play() }}</button>
                                 <span class="ps-journal__voice-wave" aria-hidden="true"></span>
@@ -175,11 +236,16 @@
                 <p class="ps-journal__footer-line">Every moment today becomes tomorrow's legacy.</p>
 
                 {% else %}
-                <div class="ps-journal__empty">
-                    <p class="ps-journal__empty-mark" aria-hidden="true">&#10022;</p>
-                    <p class="ps-journal__empty-title">The trail starts here</p>
-                    <p class="ps-journal__empty-copy">Your Journal is empty for now. Capture your first Moment - a win, a lesson, a question, an ordinary Tuesday - and it will always be here, private to you.</p>
+                {# ---------------- Empty first-visit state (S2, accepted screen A) ---------------- #}
+                <div class="ps-journal__empty ps-journal__empty--intro">
+                    <div class="ps-journal__empty-illustration">{{ empty_illustration() }}</div>
+                    <p class="ps-journal__empty-title">Your story starts here.</p>
+                    <p class="ps-journal__empty-copy">Capture your first Moment - a thought, a lesson, a win, or something you never want to forget.</p>
                     <button type="button" class="ps-btn ps-btn--gold" data-open-composer>{{ icon_plus() }} Capture a Moment</button>
+                    <p class="ps-journal__empty-privacy">{{ icon_lock() }} Private to you</p>
+                    <blockquote class="ps-journal__empty-quote">
+                        <p>The pages are yours.<br>The story is yours.<br>The impact is yours.</p>
+                    </blockquote>
                 </div>
                 {% endif %}
                 {% endif %}
@@ -208,5 +274,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-1"></script>
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-2"></script>
 {% endblock %}

@@ -60,21 +60,175 @@
         });
     });
 
-    /* ================= Manage view: client-side kind filter of loaded
-       rows (explicitly sanctioned by the brief for Manage). ================= */
+    /* ================= Manage view: client-side kind + archived filters
+       of currently loaded/rendered rows (explicitly sanctioned by the
+       brief for Manage), plus the Slice J1.1 server search wired to the
+       now-merged GET /api/journal/moments?q= (same flag/identity gates as
+       the plain list - this file adds no new endpoint, only calls the one
+       peerslate_api.py already exposes). ================= */
 
     const kindFilterButtons = Array.from(document.querySelectorAll("[data-kind-filter]"));
+    const archivedFilterButton = document.querySelector("[data-archived-filter]");
+
+    const applyManageFilters = () => {
+        const activeKindButton = kindFilterButtons.find((btn) => btn.getAttribute("aria-pressed") === "true");
+        const kind = activeKindButton ? activeKindButton.dataset.kindFilter : "all";
+        const archivedOnly = Boolean(archivedFilterButton && archivedFilterButton.getAttribute("aria-pressed") === "true");
+        let visibleCount = 0;
+        document.querySelectorAll("[data-manage-row]").forEach((row) => {
+            const matchesKind = kind === "all" || row.dataset.momentKind === kind;
+            const matchesArchived = !archivedOnly || row.dataset.lifecycleState === "archived";
+            const visible = matchesKind && matchesArchived;
+            row.hidden = !visible;
+            if (visible) visibleCount += 1;
+        });
+        return visibleCount;
+    };
+
     kindFilterButtons.forEach((button) => {
         button.addEventListener("click", () => {
             kindFilterButtons.forEach((other) => other.setAttribute("aria-pressed", "false"));
             button.setAttribute("aria-pressed", "true");
-            const kind = button.dataset.kindFilter;
-            document.querySelectorAll("[data-manage-row]").forEach((row) => {
-                row.hidden = kind !== "all" && row.dataset.momentKind !== kind;
-            });
-            announce(kind === "all" ? "Showing all Moments." : `Filtered to ${kind}.`);
+            const count = applyManageFilters();
+            announce(
+                button.dataset.kindFilter === "all"
+                    ? `Showing all Moments (${count}).`
+                    : `Filtered to ${button.dataset.kindFilter} (${count}).`
+            );
         });
     });
+
+    if (archivedFilterButton) {
+        archivedFilterButton.addEventListener("click", () => {
+            const nowPressed = archivedFilterButton.getAttribute("aria-pressed") !== "true";
+            archivedFilterButton.setAttribute("aria-pressed", String(nowPressed));
+            const count = applyManageFilters();
+            announce(nowPressed ? `Showing archived Moments only (${count}).` : `Showing all Moments (${count}).`);
+        });
+    }
+
+    /* ---- Manage: dense row builder shared by the search re-render below.
+       Mirrors the server-rendered row markup in templates/journal.html's
+       Manage branch exactly, so search results and the initial page look
+       and filter identically. ---- */
+
+    const manageSearchInput = document.querySelector("[data-manage-search]");
+    const manageList = document.querySelector("[data-manage-list]");
+    const manageCountEl = document.querySelector("[data-manage-count]");
+
+    const formatOccurredIso = (occurredOn) => {
+        if (!occurredOn) return null;
+        const parsed = new Date(occurredOn);
+        if (Number.isNaN(parsed.getTime())) return null;
+        const year = parsed.getUTCFullYear();
+        const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(parsed.getUTCDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    const buildManageRowElement = (item) => {
+        const row = document.createElement("div");
+        row.className = "ps-journal__manage-row";
+        row.setAttribute("data-manage-row", "");
+        row.dataset.momentKind = item.moment_kind || "";
+        row.dataset.lifecycleState = item.lifecycle_state || "active";
+        const title = item.title || "Untitled Moment";
+        const kindLabel = item.moment_kind
+            ? item.moment_kind.charAt(0).toUpperCase() + item.moment_kind.slice(1)
+            : "Moment";
+        const kindIcon =
+            item.moment_kind === "achievement"
+                ? '<svg class="ps-journal__kind-star" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>';
+        const archivedBadge =
+            item.lifecycle_state === "archived"
+                ? '<span class="ps-journal__manage-archived-badge">Archived</span>'
+                : "";
+        const occurredIso = formatOccurredIso(item.occurred_on);
+        row.innerHTML = `
+            <span>${occurredIso || "Date not set"}</span>
+            <span class="ps-journal__manage-kind">${kindIcon}${escapeHtml(kindLabel)}</span>
+            <span class="ps-journal__manage-title"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a></span>
+            <span class="ps-journal__manage-status"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Private ${archivedBadge}</span>
+            <button type="button" class="ps-journal__manage-menu" disabled aria-disabled="true" aria-label="More options for this Moment - coming later"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>`;
+        return row;
+    };
+
+    let lastSearchQuery = "";
+
+    const renderManageRows = (items) => {
+        if (!manageList) return;
+        manageList.innerHTML = "";
+        if (!items.length) {
+            const empty = document.createElement("p");
+            empty.className = "ps-journal__manage-empty";
+            empty.setAttribute("data-manage-empty", "");
+            empty.textContent = lastSearchQuery
+                ? `No matches for "${lastSearchQuery}".`
+                : "No Moments yet. Capture your first one from the Journal.";
+            manageList.appendChild(empty);
+        } else {
+            const head = document.createElement("div");
+            head.className = "ps-journal__manage-head";
+            head.setAttribute("aria-hidden", "true");
+            head.innerHTML = "<span>Date</span><span>Kind</span><span>Moment</span><span>Status</span><span></span>";
+            manageList.appendChild(head);
+            items.forEach((item) => manageList.appendChild(buildManageRowElement(item)));
+        }
+        if (manageCountEl) {
+            manageCountEl.textContent = `${items.length} ${items.length === 1 ? "Moment" : "Moments"}`;
+        }
+        applyManageFilters();
+    };
+
+    /* ---- Manage: search, debounced, wired to ?q= on the shared
+       GET /api/journal/moments endpoint. An empty query returns to the
+       plain (unsearched) archived-inclusive list - never a stale search
+       result left on screen. A request token guards against an earlier,
+       slower response overwriting a newer one. ---- */
+
+    let manageSearchDebounceId = null;
+    let manageSearchToken = 0;
+
+    const loadManageRows = async (query) => {
+        if (!manageList) return;
+        const token = (manageSearchToken += 1);
+        lastSearchQuery = query;
+        announce(query ? `Searching for "${query}"…` : "Loading your Moments…");
+        try {
+            const url = new URL(CONFIG.apiUrl, window.location.origin);
+            url.searchParams.set("include_archived", "1");
+            url.searchParams.set("limit", "50");
+            if (query) url.searchParams.set("q", query);
+            const response = await fetch(url.toString(), { credentials: "same-origin" });
+            const result = await response.json().catch(() => ({}));
+            if (token !== manageSearchToken) return;
+            if (response.ok && result.success) {
+                const items = result.items || [];
+                renderManageRows(items);
+                announce(
+                    query
+                        ? `Found ${items.length} result${items.length === 1 ? "" : "s"} for "${query}".`
+                        : `Showing ${items.length} Moments.`
+                );
+            } else {
+                announce("Could not search right now. Try again.");
+            }
+        } catch (error) {
+            if (token !== manageSearchToken) return;
+            announce("Could not search right now. Check your connection and try again.");
+        }
+    };
+
+    if (manageSearchInput) {
+        manageSearchInput.addEventListener("input", () => {
+            const value = manageSearchInput.value.trim();
+            window.clearTimeout(manageSearchDebounceId);
+            manageSearchDebounceId = window.setTimeout(() => {
+                loadManageRows(value);
+            }, 300);
+        });
+    }
 
     /* ================= Timeline row rendering (used both for the
        initial "Load more" append and for the post-save refresh). ================= */
@@ -90,6 +244,13 @@
 
     const momentDetailUrl = (momentKey) =>
         CONFIG.momentUrlTemplate.replace("__MOMENT_KEY__", encodeURIComponent(momentKey));
+
+    // S4: tracks whether the sparse "Proud of this one" flourish has
+    // already been shown on the page, across both server-rendered and
+    // client-appended rows - initialized from whatever the server already
+    // rendered so "Load more" never adds a second one, and explicitly reset
+    // in refreshTimelineFirstPage when a save fully rebuilds the list.
+    let firstAchievementAnnotated = Boolean(document.querySelector(".ps-journal__annotation"));
 
     const formatOccurred = (occurredOn) => {
         if (!occurredOn) return { day: null, month: null };
@@ -132,9 +293,24 @@
         const kindLabel = item.moment_kind
             ? item.moment_kind.charAt(0).toUpperCase() + item.moment_kind.slice(1)
             : "Moment";
+        // S4 (Opus review): the source-type label ("Text Note"/"Voice Note")
+        // next to kind, from the real source_type field - mirrors the
+        // server-rendered row and the Moment detail page exactly.
+        const sourceLabel = { voice: "Voice Note", photo: "Photo", video: "Video" }[sourceType] || "Text Note";
         const star =
             item.moment_kind === "achievement"
                 ? '<svg class="ps-journal__kind-star" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>'
+                : "";
+        // S4: a sparse, designed flourish on the first achievement row only
+        // per page-build (see firstAchievementAnnotated, reset in
+        // refreshTimelineFirstPage on a full rebuild, left alone across
+        // "Load more" appends so it never repeats further down the list).
+        const annotationMarkup =
+            item.moment_kind === "achievement" && !firstAchievementAnnotated
+                ? (() => {
+                      firstAchievementAnnotated = true;
+                      return '<p class="ps-journal__annotation">Proud of this one <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" width="14" height="14"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg></p>';
+                  })()
                 : "";
         // The title (row heading below) is the only content the read API
         // returns - no separate narrative field - so a voice row adds the
@@ -160,9 +336,12 @@
                     ${star}
                     <span>${escapeHtml(kindLabel)}</span>
                     <span aria-hidden="true">&middot;</span>
+                    <span>${escapeHtml(sourceLabel)}</span>
+                    <span aria-hidden="true">&middot;</span>
                     <span class="ps-journal__meta-privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Private</span>
                 </p>
                 <h3 class="ps-journal__row-title"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a></h3>
+                ${annotationMarkup}
                 ${mediaMarkup}
             </div>`;
         return li;
@@ -456,6 +635,7 @@
             const result = await response.json().catch(() => ({}));
             if (response.ok && result.success) {
                 timelineList.innerHTML = "";
+                firstAchievementAnnotated = false;
                 appendItems(result.items || []);
                 if (loadMoreButton) {
                     if (result.next_cursor) loadMoreButton.dataset.cursor = result.next_cursor;

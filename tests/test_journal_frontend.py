@@ -11,6 +11,7 @@ unauthenticated cases so no real Azure SQL connection is required.
 
 import datetime
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from app import app
@@ -211,10 +212,16 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
 
         for label in ("Share to Feed", "Add to My Story", "Use in Work", "Add to Résumé"):
             self.assertIn(label, body)
-        self.assertEqual(body.count('aria-disabled="true"'), body.count('aria-disabled="true"'))
-        # Every Use This Moment chip and the attachment row must be
-        # non-interactive, never a fake-enabled control (site rule 83).
-        self.assertGreaterEqual(body.count('aria-disabled="true"'), 5)
+        # Opus review N5 fix: this used to assert
+        # body.count(...) == body.count(...) - always true regardless of the
+        # actual count, so it could never catch a fake-enabled control. The
+        # real, precise count for this fixture is exactly the 4 Use This
+        # Moment chips plus one disabled voice-play control per voice-
+        # sourced row (sample_items() has exactly one) - never a fake-
+        # enabled control (site rule 83).
+        voice_row_count = sum(1 for item in sample_items() if item["source_type"] == "voice")
+        expected_disabled_count = 4 + voice_row_count
+        self.assertEqual(body.count('aria-disabled="true"'), expected_disabled_count)
         self.assertIn("Add a photo or video", body)
 
     @patch("owner_routes.journal_service")
@@ -240,8 +247,17 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("The trail starts here", body)
+        # S2 (Opus review): accepted screen A's exact copy, unattributed
+        # (the image's "- Pete" signature is a fixture accident per doc 13
+        # and is dropped in every member's Journal).
+        self.assertIn("Your story starts here.", body)
+        self.assertIn("The pages are yours.", body)
+        self.assertNotIn("&mdash; Pete", body)
         self.assertNotIn("Maya Thompson", body)
+        # S2: the zero-count This-Season hero is fully suppressed on a
+        # genuinely empty first visit, not just visually deemphasized.
+        self.assertNotIn("This season", body)
+        self.assertNotIn("Moments captured", body)
 
     @patch("owner_routes.journal_service")
     def test_manage_view_uses_include_archived(self, journal_service):
@@ -294,8 +310,17 @@ class OwnerJournalMomentDetailTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Shipped the private Journal frontend", body)
         self.assertIn("Achievement", body)
-        self.assertIn("2026-05-20", body)
+        # B2 rewrite (Opus review): the debug dt/dd grid that used to print
+        # a single "2026-05-20" ISO string is gone - the accepted-screen-B
+        # date numeral renders day/month/year as separate elements instead.
+        self.assertIn(">20<", body)
+        self.assertIn(">MAY<", body)
+        self.assertIn(">2026<", body)
         self.assertIn("Only you", body)
+        # B2: no internal jargon or stored-procedure names leak into
+        # member-facing copy.
+        self.assertNotIn("usp_", body)
+        self.assertNotIn("J1.1", body)
 
     @patch("owner_routes.journal_service")
     def test_guessed_key_is_404(self, journal_service):
@@ -355,6 +380,12 @@ class OwnerJournalVoiceDraftTests(unittest.TestCase):
         )
         self.assertEqual(payload["duration_seconds"], 48.0)
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        # Opus review N5 fix: assert ownership threading - the route must
+        # call get_draft with THIS caller's own user_key (never a client-
+        # supplied value), so a draft can never be read across owners.
+        voice_capture_service.get_draft.assert_called_once_with(
+            DEV_USER_KEY, MOMENT_KEY_VOICE
+        )
 
     @patch("owner_routes.voice_capture_service")
     def test_missing_draft_is_404(self, voice_capture_service):
@@ -368,6 +399,148 @@ class OwnerJournalVoiceDraftTests(unittest.TestCase):
         response = self.client.get("/app/journal/voice/not-a-uuid/draft")
 
         self.assertEqual(response.status_code, 404)
+
+    @patch("owner_routes.voice_capture_service")
+    @patch("owner_routes.get_current_identity")
+    def test_flag_on_unauthenticated_is_404_not_redirect(
+        self, identity, voice_capture_service
+    ):
+        """Opus review N5: the three flag-off/unauthenticated matrix cells
+        already covered the Journal page and Moment detail routes but not
+        this third owner-only route - flag on + no resolvable identity must
+        still be the same neutral 404, never a distinct 401/redirect that
+        would leak "not signed in" versus "not found"."""
+        identity.side_effect = AuthenticationRequired("PRIVATE IDENTITY DETAIL")
+
+        response = self.client.get(f"/app/journal/voice/{MOMENT_KEY_VOICE}/draft")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn(b"PRIVATE", response.data)
+        voice_capture_service.get_draft.assert_not_called()
+
+
+class JournalMomentsApiDateFormatTests(unittest.TestCase):
+    """Opus review N5: static/js/journal.js's client-side date parsing
+    (formatOccurred, formatOccurredIso) depends on a documented assumption -
+    that Flask's jsonify serializes a Python date as an RFC 822/1123 string
+    with a "GMT" suffix, not a bare ISO "YYYY-MM-DD" string. There is no
+    JS test runner in this repository (no package.json/jest/node harness),
+    so this is the automated, server-side half of that contract: it proves
+    exactly what shape date /api/journal/moments actually sends the browser.
+    The client-side parsing logic itself (Date/getUTCDate/toLocaleString)
+    is covered by manual/documented evidence - the desktop timeline
+    screenshots in artifacts/ps-journal-001-j1-frontend/ show real dates
+    ("20 MAY") rendered correctly from this exact response shape."""
+
+    def setUp(self):
+        self.original_config = {
+            "PEERSLATE_JOURNAL_ENABLED": app.config.get("PEERSLATE_JOURNAL_ENABLED"),
+            "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
+            "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
+        }
+        app.config.update(
+            PEERSLATE_JOURNAL_ENABLED=True,
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY=DEV_USER_KEY,
+        )
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(self.original_config)
+
+    @patch("peerslate_api.journal_service")
+    def test_occurred_on_serializes_as_rfc822_not_bare_iso(self, journal_service):
+        journal_service.list_owner_journal.return_value = {
+            "items": [
+                {
+                    "moment_key": MOMENT_KEY_TEXT,
+                    "moment_kind": "update",
+                    "title": "Date-format contract fixture",
+                    "occurred_on": datetime.date(2026, 7, 20),
+                    "occurred_precision": "exact",
+                    "visibility": "private",
+                    "source_type": "text",
+                    "lifecycle_state": "active",
+                    "version_number": 1,
+                }
+            ],
+            "next_cursor": None,
+        }
+
+        response = self.client.get("/api/journal/moments")
+        raw_body = response.get_data(as_text=True)
+        payload = response.get_json()
+
+        self.assertEqual(response.status_code, 200)
+        occurred_on = payload["items"][0]["occurred_on"]
+        # Exactly what journal.js's formatOccurred/formatOccurredIso comment
+        # documents: "Mon, 20 Jul 2026 00:00:00 GMT", not "2026-07-20".
+        self.assertRegex(
+            occurred_on, r"^[A-Za-z]{3}, 20 Jul 2026 \d{2}:\d{2}:\d{2} GMT$"
+        )
+        self.assertNotEqual(occurred_on, "2026-07-20")
+        self.assertNotIn("2026-07-20", raw_body)
+
+
+class OwnerJournalManageSearchWiringTests(unittest.TestCase):
+    """Opus review N5: the Manage search input (B3) wired to the now-merged
+    GET /api/journal/moments?q=. Deeper interactive JS behavior (debounce,
+    live fetch, honest result states) has no JS test runner available in
+    this repository and is disclosed as manual/screenshot evidence in the
+    completion report; these tests cover what is mechanically checkable
+    here - the server renders the real input, and the shipped JS file
+    genuinely references the ?q= parameter it claims to use."""
+
+    def setUp(self):
+        self.original_config = {
+            "PEERSLATE_JOURNAL_ENABLED": app.config.get("PEERSLATE_JOURNAL_ENABLED"),
+            "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
+            "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
+        }
+        app.config.update(
+            PEERSLATE_JOURNAL_ENABLED=True,
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY=DEV_USER_KEY,
+        )
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(self.original_config)
+
+    @patch("owner_routes.journal_service")
+    def test_manage_view_renders_real_search_input(self, journal_service):
+        journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory(
+            sample_items()
+        )
+
+        response = self.client.get("/app/journal?view=archived")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('id="journal-manage-search"', body)
+        self.assertIn('type="search"', body)
+        self.assertIn("data-manage-search", body)
+        self.assertIn("Manage", body)
+        self.assertIn("View and organize all of your Moments.", body)
+
+    @patch("owner_routes.journal_service")
+    def test_timeline_view_does_not_render_manage_search(self, journal_service):
+        journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory(
+            sample_items()
+        )
+
+        response = self.client.get("/app/journal")
+        body = response.get_data(as_text=True)
+
+        self.assertNotIn("data-manage-search", body)
+
+    def test_journal_js_references_the_q_search_parameter(self):
+        js_path = Path(__file__).resolve().parent.parent / "static" / "js" / "journal.js"
+        js_source = js_path.read_text(encoding="utf-8")
+
+        self.assertIn('url.searchParams.set("q", query)', js_source)
+        self.assertIn("data-manage-search", js_source)
+        self.assertIn("CONFIG.apiUrl", js_source)
 
 
 if __name__ == "__main__":

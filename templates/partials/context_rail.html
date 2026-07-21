@@ -52,6 +52,7 @@
                     aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}"
                     aria-controls="{{ rail_id }}-panel-{{ chapter.key }}"
                 >
+                    <span class="ps-rail__number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
                     {{ rail_icon(chapter.key) }}
                     <span class="ps-rail__text">
                         <span class="ps-rail__name-row">
