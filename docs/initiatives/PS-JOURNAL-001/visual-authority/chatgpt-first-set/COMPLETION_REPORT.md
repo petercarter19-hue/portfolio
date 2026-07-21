@@ -3,13 +3,16 @@
 ## A. Status
 
 - Package: PS-JOURNAL-001 phone-ready ChatGPT visual-authority briefing
-- Status: Complete for briefing and remote handoff; image generation and visual
-  acceptance not started
-- Branch and content checkpoint:
-  `work/2026-07-21-journal-visual-handoff` at
+- Status: Complete and released for briefing and remote handoff; image
+  generation and visual acceptance not started
+- Branch and source tip: `work/2026-07-21-journal-visual-handoff` at
+  `61bb00f6416d32f7494d700b5d166b78c36a5906`; content checkpoint
   `89bc210d266e589de8b56f384575405f6f711a1d`
-- PR / pipeline / environment: Not yet opened at this checkpoint; documentation
-  only
+- PR / pipeline / environment: Azure PR 121 squash-merged at
+  `6496d3f8747fb5e2bbfeaf06fc43ac3f52480ac6`; automatic pipeline 174,
+  build `20260721.4`, passed Build and Deploy. A redundant queued manual run
+  175 was canceled after delayed run-list visibility exposed the already
+  running automatic build; it is not a failed release.
 - Production state: Unchanged; no application, route, schema, feature flag,
   deployment, or member-facing behavior changed
 - Visual authority and status: Not Started. The briefing identifies the
@@ -51,6 +54,8 @@
   privacy ambiguity, navigation invention, and text errors.
 - Added source traceability from handoff rules to governing requirement IDs and
   current document hashes.
+- Added direct Azure `main` links for opening every text file and downloading
+  each required reference image from a phone.
 - Updated the PS-JOURNAL-001 README to identify this folder as design
   preparation rather than accepted authority.
 - No runtime code, SQL, infrastructure, dependencies, routes, templates, CSS,
@@ -85,8 +90,10 @@ Roadmap, or initiative package.
 
 ## F. Verification and validation
 
-- Authoritative base: Azure `origin/main` at
+- Authoritative task base: Azure `origin/main` at
   `0717e03c9f1d4e6b67f355fd1556651086ddc351`.
+- Released authoritative main: Azure PR 121 squash merge
+  `6496d3f8747fb5e2bbfeaf06fc43ac3f52480ac6`.
 - Current governing artifacts matched `CURRENT_BASELINE.yaml`:
   - Bible v2.8 SHA-256
     `47F9771C29A3FAEA18858865F402DF0E342840DAD80ECF4650B8ABCC537DE963`.
@@ -103,7 +110,15 @@ Roadmap, or initiative package.
   truth, historical-reference restrictions, route/navigation openness,
   privacy/publication boundaries, Journal/My Story non-redundancy, first-round
   versus complete-state honesty, and phone copy/paste usability.
-- Production verification: Not Applicable; this is documentation only.
+- Automatic Azure pipeline 174 (`20260721.4`) passed both Build and Deploy for
+  the exact merge SHA.
+- Production verification after pipeline completion:
+  - `https://peerslate.com/` returned 200.
+  - `/app` returned the expected signed-out 302 to sign-in.
+  - `/app/capture` returned the expected signed-out 302 to sign-in.
+  - `/journal` remained 404, confirming that this documentation release did
+    not falsely make Journal live.
+  - The direct App Service host returned 200.
 - Responsive/accessibility screenshot evidence: Not Applicable yet; the handoff
   specifies the required evidence for the later generated and implemented set.
 
@@ -124,8 +139,9 @@ Roadmap, or initiative package.
 
 ## H. Clear next step
 
-Open `00_PHONE_HANDOFF_READ_ME.md` on the phone, download the three manifest
-images, paste `01_COPY_PASTE_PEERSLATE_CONTEXT.txt` and
+Open `07_REMOTE_PHONE_LINKS.md` on the phone, then follow
+`00_PHONE_HANDOFF_READ_ME.md`: download the three manifest images, paste
+`01_COPY_PASTE_PEERSLATE_CONTEXT.txt` and
 `02_COPY_PASTE_FIRST_SET_PROMPT.txt` into one ChatGPT Images conversation, and
 generate JOURNAL-01 only. Reviewing one foundational screen first prevents
 visual drift before the other three inherit its system.
