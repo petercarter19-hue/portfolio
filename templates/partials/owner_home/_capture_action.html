@@ -28,11 +28,19 @@
                31864e4) titles the one dominant Home action "Capture a Moment";
                `label` is the server-owned owner_home_service copy
                ("Capture something" today) and this package may not edit
-               services/**. Show the fixed authority headline and keep the
-               server label as this element's accessible name so server copy
-               stays reachable to assistive tech and future server-label
-               changes remain observable, without silently discarding it. #}
-            <span class="oh__capture-label" aria-label="{{ label }}">Capture a Moment</span>
+               services/**. Show the fixed authority headline.
+               Fix round 2, delta 3: an aria-label here previously overrode
+               this span's accessible name with the raw server label, so
+               name-from-content assistive tech would announce "Capture
+               something..." instead of the visible "Capture a Moment" —
+               a WCAG 2.5.3 Label-in-Name mismatch. The link's accessible
+               name now comes from its own visible text ("Capture a Moment"),
+               matching the authority headline exactly. `data-oh-server-label`
+               keeps the server's current copy observable in the DOM (for
+               future-drift debugging) without affecting the accessible name,
+               since data-* attributes are never exposed by name-from-content
+               or aria-label computation. #}
+            <span class="oh__capture-label" data-oh-server-label="{{ label }}">Capture a Moment</span>
             <span class="oh__capture-desc">Save a memory, thought, or milestone &mdash; Speak or Type.</span>
         </span>
         <span class="oh__capture-arrow" aria-hidden="true">

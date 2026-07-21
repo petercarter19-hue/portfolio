@@ -248,6 +248,31 @@ class OwnerHomeAccessibilityTestCase(unittest.TestCase):
             )
             self.assertTrue(has_label, f"link to {href} has no accessible name")
 
+    def test_capture_card_accessible_name_matches_visible_authority_label(self):
+        # Fix round 2, delta 3: an aria-label on the inner .oh__capture-label
+        # span previously overrode the link's accessible name with the raw
+        # server label ("Capture something"), which does not contain the
+        # visible "Capture a Moment" text — a WCAG 2.5.3 Label-in-Name
+        # mismatch. The span must carry no aria-label (so the link's
+        # accessible name is computed from its own visible text), while the
+        # server's current label stays observable via a non-AT-exposed
+        # data-* attribute rather than disappearing outright.
+        _, html, parser = self.render(populated_result_sets())
+
+        labels = parser.with_class("oh__capture-label")
+        self.assertEqual(len(labels), 1)
+        label = labels[0]
+        self.assertNotIn("aria-label", label["attrs"])
+        self.assertEqual(label["text"].strip(), "Capture a Moment")
+        self.assertIn("data-oh-server-label", label["attrs"])
+
+        capture_links = [
+            a for a in parser.by_tag("a") if "oh__capture-card" in a["classes"]
+        ]
+        self.assertEqual(len(capture_links), 1)
+        self.assertIsNone(capture_links[0]["attrs"].get("aria-label"))
+        self.assertIn("Capture a Moment", capture_links[0]["text"])
+
     # ---- decorative SVGs are hidden from assistive tech ------------------
 
     def test_decorative_svgs_are_aria_hidden(self):
