@@ -213,6 +213,36 @@ item identically** (its stage is even taller than Type in the mockup).
 exactly as on desktop — no item may be verified desktop-only. The reviewer's
 per-item pass/fail must cite both form factors.**
 
+
+## 6b. Owner Review Round 3 — the saved state (Pete, 2026-07-21, binding)
+
+Compared against accepted screen 05 (the "Moment saved" panel, bottom-right of
+the composer sheet). Every item binds on desktop, MOBILE, and the DARK theme
+equally.
+
+24. **The check medallion is rejected as built**: implement the mockup's
+    refined gold check inside the navy circle with its sparkle burst, and make
+    the medallion + sparkles + headline **evenly positioned/centered** — the
+    current composition is uneven.
+25. **Use This Moment chips**: icons larger per the mockup; chip proportions
+    (length:width) measured from the mockup and matched; overall finish
+    lifted. (Owner allows the chips to remain slightly larger than the mockup
+    — the proportions and polish are what must match.)
+26. **"Who can see it" is missing its prompt**: render the mockup's
+    dropdown-style selector — lock icon + "Only you" + chevron affordance in
+    the gold-outlined select — under the "Who can see it" heading, with the
+    preview reassurance line. It remains truthfully locked/disabled in J1,
+    but it must LOOK like the mockup's prompt, not a flat row.
+27. **Done button rejected as built**: the mockup's "✓ Done" — check icon
+    present, correct gold color and size.
+28. **The lock under the headline**: bigger and better colored (gold) per the
+    mockup.
+29. **The saved card gets the same real book-page treatment** as item 23 —
+    defined page, edge texture, fading edges. ("As always there's issues with
+    the page part.")
+30. **Dark theme parity**: every saved-state item verified on the dark
+    version and on mobile, per the §6 mobile reinforcement.
+
 ## 7. Process escalation (owner mandate, 2026-07-21)
 
 - The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
