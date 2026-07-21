@@ -1254,5 +1254,5 @@ class InterviewStudioDictationTests(unittest.TestCase):
 
     def test_asset_signature_is_bumped_so_the_change_can_reach_production(self):
         html = self.html()
-        self.assertIn('css/interview-studio.css?v=studio-5a5c-3', html)
-        self.assertIn('js/interview-studio.js?v=studio-5a5c-3', html)
+        self.assertIn('css/interview-studio.css?v=studio-5a5c-4', html)
+        self.assertIn('js/interview-studio.js?v=studio-5a5c-4', html)
