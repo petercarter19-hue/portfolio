@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -22,6 +23,20 @@ PROPOSAL_A = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 READY_A = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 MOMENT_A = "dddddddd-dddd-dddd-dddd-dddddddddddd"
 FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+
+# PS-HOME-FRONTEND-001 fix round 1, delta 3: real byte-for-byte baseline for
+# the flag-off /app render, captured from `origin/main` at
+# d2592f08056e09629a302966b47fa8ff92517d8e (this package's exact activation
+# base) using the same GET /app request the test below issues. Substring
+# checks alone let base.html's standalone_owner_shell conditionals ship
+# residual whitespace/comment bytes on every route without failing; this
+# hash makes any such drift a hard failure. Recapture deliberately (never to
+# silence a real regression) only when `templates/owner_workspace.html` or
+# the non-standalone branch of `templates/base.html` legitimately changes.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18051
+FLAG_OFF_APP_RENDER_SHA256 = (
+    "f8b82204e2d0e5035b403b613c91b67916ab5892334c36b97a769dd3b57016f9"
+)
 
 
 def owner_row(profile_key=OWNER_A_PROFILE, display_name="Owner A", token="01" * 8):
@@ -353,6 +368,15 @@ class OwnerHomeRouteTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
+        # Real byte-for-byte identity (not just substrings): the
+        # standalone_owner_shell conditionals in base.html must contribute
+        # zero bytes to the flag-off render, matching the captured
+        # origin/main baseline exactly.
+        self.assertEqual(len(response.data), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(response.data).hexdigest(),
+            FLAG_OFF_APP_RENDER_SHA256,
+        )
         self.assertIn(b"My PeerSlate", response.data)
         self.assertNotIn(b"owner-home.v1", response.data)
         self.assertNotIn(b"owner-home-shell", response.data)

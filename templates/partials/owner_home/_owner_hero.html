@@ -13,12 +13,16 @@
         </svg>
     </div>
     <div class="oh__hero-text">
-        <p class="oh__eyebrow">Owner Home &middot; private workspace</p>
+        {# Fix round 1, delta 5: authority (candidate exports 01/02) places
+           the "Owner Home · private workspace" context line BELOW the
+           welcome heading, not above it. #}
         {% if home_failed %}
         <h1 class="oh__title">Owner Home</h1>
+        <p class="oh__eyebrow">Owner Home &middot; private workspace</p>
         <p class="oh__hero-context">Private workspace for the signed-in member.</p>
         {% else %}
         <h1 class="oh__title">Welcome back{{ ', ' ~ _display_name ~ '.' if _display_name else '.' }}</h1>
+        <p class="oh__eyebrow">Owner Home &middot; private workspace</p>
         <p class="oh__hero-context">Capture what matters and return to a finite set of meaningful work.</p>
         {% endif %}
         <p class="oh__hero-truth">Nothing on this page publishes, shares, connects, or saves anything automatically.</p>

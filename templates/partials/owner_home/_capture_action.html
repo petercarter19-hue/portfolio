@@ -24,7 +24,15 @@
             </svg>
         </span>
         <span class="oh__capture-body">
-            <span class="oh__capture-label">{{ label }}</span>
+            {# Fix round 1, delta 4: the authority (baseline mockup + candidate
+               31864e4) titles the one dominant Home action "Capture a Moment";
+               `label` is the server-owned owner_home_service copy
+               ("Capture something" today) and this package may not edit
+               services/**. Show the fixed authority headline and keep the
+               server label as this element's accessible name so server copy
+               stays reachable to assistive tech and future server-label
+               changes remain observable, without silently discarding it. #}
+            <span class="oh__capture-label" aria-label="{{ label }}">Capture a Moment</span>
             <span class="oh__capture-desc">Save a memory, thought, or milestone &mdash; Speak or Type.</span>
         </span>
         <span class="oh__capture-arrow" aria-hidden="true">

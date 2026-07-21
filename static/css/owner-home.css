@@ -143,6 +143,15 @@ body.owner-home-shell .oh__stage button:focus-visible {
     color: rgb(255 253 248 / 62%);
 }
 
+/* Fix round 1, delta 2: .oh-pill--soon's white-62% text is legible on the
+   dark dormant cards/rail (Noticed, From-your-history, My Slate rail) but
+   invisible on a plain light .oh__card (Connections) — same off-white on
+   off-white failure as delta 1. Give it a text-safe marigold on every light
+   surface so "Coming later" stays readable there. */
+.oh__card:not(.oh__card--dormant) .oh-pill--soon {
+    color: var(--oh-gold-text);
+}
+
 .oh__nav {
     display: flex;
     align-items: baseline;
@@ -614,6 +623,26 @@ a.oh__nav-item--current .oh__nav-caption {
     margin: 0;
 }
 
+/* Bounded-remainder shell row (fix round 1, delta 7 / parity row 7). */
+.oh__review-remainder {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--oh-line-light);
+}
+
+.oh__review-remainder-text {
+    font-size: 0.78rem;
+    color: rgb(16 24 32 / 62%);
+}
+
+.oh__review-remainder-text strong {
+    color: var(--oh-ink);
+}
+
 .oh__empty-title {
     font-weight: 700;
     color: var(--oh-ink);
@@ -734,6 +763,14 @@ a.oh__nav-item--current .oh__nav-caption {
     background: linear-gradient(200deg, rgb(217 170 43 / 30%), rgb(217 170 43 / 6%));
     position: relative;
     overflow: hidden;
+    /* Self-review fix (fix round 1, discovered while verifying delta 7):
+       Chromium leaves the ::after "flagpole" line's rotated, percentage-
+       height box unclipped by overflow:hidden alone in some stacked mobile
+       layouts, painting a stray diagonal line the full height of the page
+       through every card below. clip-path is enforced more reliably than
+       overflow for a transformed/percentage-sized pseudo-element and keeps
+       the exact same decorative design, just actually contained. */
+    clip-path: inset(0);
 }
 
 .oh__flag::after {
@@ -777,12 +814,17 @@ a.oh__nav-item--current .oh__nav-caption {
     align-self: flex-start;
 }
 
-.oh__btn--next {
+/* Specificity note (fix round 1, delta 1): scoped under body.owner-home-shell
+   so these two beat `body.owner-home-shell a { color: inherit; }` above
+   (0,1,2) instead of losing to it at bare-class specificity (0,1,0) — that
+   loss was rendering the dominant "Your next useful step" CTA and the
+   failure-state Retry button with invisible/near-invisible label text. */
+body.owner-home-shell .oh__btn--next {
     background: var(--oh-ink);
     color: var(--oh-cloud-white);
 }
 
-.oh__btn--primary {
+body.owner-home-shell .oh__btn--primary {
     background: var(--oh-marigold);
     color: var(--oh-ink);
     border-color: var(--oh-marigold);
@@ -899,8 +941,23 @@ a.oh__nav-item--current .oh__nav-caption {
         gap: 10px;
     }
 
+    /* Fix round 1, delta 6: below the breakpoint where the fixed bottom tab
+       bar takes over navigation (Home/Journal/Capture/Slate/More), the top
+       shell nav's text destinations (Home/Journal/My Slate/Connections/More)
+       duplicate those same five destinations — the authority's mobile
+       composition (authority-candidate-31864e4 export 03) keeps only the
+       minimal wordmark + Owner View pill up top. Settings/Sign out are not
+       bottom-nav destinations, so .oh__header-actions stays reachable. */
     .oh__nav {
-        gap: 14px;
+        display: none;
+    }
+
+    /* At this width the remainder text runs to 2-3 lines; keep the "Coming
+       later" pill from sitting mid-sentence beside an early wrapped line. */
+    .oh__review-remainder {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
     }
 
     .oh__stage-wrap {

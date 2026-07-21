@@ -26,6 +26,17 @@
         </li>
         {% endfor %}
     </ol>
+    {# Fix round 1, delta 7 (parity row 7): bounded-remainder shell row. This
+       is a capability-boundary statement, not a count: owner_home_service
+       caps review_items at three and Home has no "view all" review-queue
+       route today, which is true regardless of how many eligible items
+       actually exist beyond what is shown, so this never claims a specific
+       hidden count. Shown only alongside real rows &mdash; the empty state
+       already says the list stays bounded to three. #}
+    <div class="oh__review-remainder">
+        <span class="oh__review-remainder-text"><strong>Review queue</strong> &mdash; Home shows at most three; a broader review queue view is not yet available.</span>
+        <span class="oh-pill oh-pill--soon">Coming later</span>
+    </div>
     {% else %}
     <p class="oh__empty-title">Nothing requires review right now.</p>
     <p class="oh__empty">When an eligible owner-owned item exists, this list stays bounded to three.</p>
