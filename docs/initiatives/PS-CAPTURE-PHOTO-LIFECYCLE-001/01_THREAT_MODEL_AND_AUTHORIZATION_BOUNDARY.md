@@ -46,7 +46,7 @@ creates none.
 
 | Alias | Cohort status | Purpose |
 | --- | --- | --- |
-| Synthetic Owner A | Approved | Owns the complete clean/confirmed lifecycle, application-validation fixture, and any separately approved Defender-malicious fixture. |
+| Synthetic Owner A | Approved | Owns the complete clean/confirmed lifecycle, the application-validation fixture, and - under recorded Defender choice A - the security-approved inert EICAR-based fixture. |
 | Synthetic Owner B | Approved | Creates one owner-scoped control record and attempts every protected A endpoint to prove the real second-owner boundary. |
 | Synthetic Non-cohort C | Not approved | Proves the Photo method stays absent and every direct Photo route returns the flag-off-equivalent neutral denial. |
 
@@ -141,8 +141,14 @@ change Photo state:
 | Shared-lane collision | Later file reservations and current-main synchronization | Any active branch later acquires an exact proposed runtime file; current Owner Home frontend and Interview homepage reservations do not overlap this gate |
 
 Any security/privacy stop signal produces a **Fail**, disables the proof gate
-before further investigation, and prevents Photo enablement. An evidence gap,
-an owner choice of no production Defender-malicious test, or provider
-soft-deleted retention still inside its recovery window produces
+before further investigation, and prevents Photo enablement. An evidence gap, a
+Defender-malicious row skipped because its security coordination lapsed, or
+provider soft-deleted retention still inside its recovery window produces
 **Conditional** without a demonstrated safety violation and keeps both flags
 off.
+
+The expected Defender malicious verdict, alert, and quarantine of the approved
+inert EICAR-based fixture under recorded choice A is the planned outcome of
+that row and is **not** a stop signal. A genuine stop signal is an alert the
+notified security owner did not expect, an alert that names anything other than
+the single synthetic fixture, or any of the exposure conditions listed above.

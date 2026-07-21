@@ -3,9 +3,13 @@
 > Historical architecture checkpoint: this report records the five-document
 > architecture branch before approval. The owner subsequently approved the
 > bounded server-only implementation and selected Defender choice B on
-> 2026-07-20. Current continuation status is recorded in `README.md`,
-> `IMPLEMENTATION_COMPLETION_REPORT.md`, and `CLAUDE_HANDOFF.md`; this report is
-> not rewritten as an implementation result.
+> 2026-07-20, then replaced that decision with **choice A** the same day.
+> Current continuation status is recorded in `README.md`,
+> `IMPLEMENTATION_COMPLETION_REPORT.md`, `CLAUDE_HANDOFF.md`, and
+> `PROOF_READINESS_COMPLETION_REPORT.md`; the recorded Defender decision and
+> its operational plan are in `02_PROOF_MECHANISM_AND_ROLLOUT.md` and
+> `04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`. This report is not rewritten as
+> an implementation result.
 
 ## A. Status
 

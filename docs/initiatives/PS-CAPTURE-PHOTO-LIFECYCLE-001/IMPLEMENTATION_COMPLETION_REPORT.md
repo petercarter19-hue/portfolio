@@ -1,5 +1,14 @@
 # Photo Lifecycle Gate Implementation Completion Report
 
+> **Superseded in part, 2026-07-20.** This report records the gate
+> implementation lane while Defender choice B was the recorded decision. The
+> owner replaced it with **choice A** the same day, and a later proof-readiness
+> continuation added the proof-mode admission audit record that this lane
+> deliberately left out. The release, pipeline, and verification facts below
+> remain accurate; the Defender statements are superseded by
+> [`02_PROOF_MECHANISM_AND_ROLLOUT.md`](02_PROOF_MECHANISM_AND_ROLLOUT.md) and
+> [`04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md`](04_DEFENDER_CHOICE_A_OPERATIONAL_PLAN.md).
+
 ## Status
 
 - Package: `PS-CAPTURE-PHOTO-LIFECYCLE-001`
@@ -10,7 +19,8 @@
 - Architecture authority: Azure PR 107 squash
   `531013dd8c1a05e2443becd881a226755f27ca14`
 - Owner approval: recorded 2026-07-20
-- Defender decision: choice **B** - no production malicious-file test
+- Defender decision at the time of this lane: choice **B**; replaced the same
+  day by choice **A** - see the superseding note above
 - Exact implementation source:
   `f74afcea11f74b8be1b8034d98080c0c5cc38b32`
 - Azure release: PR 108 squash merge
@@ -136,8 +146,9 @@ owner-scoped production operation requiring separate approval.
 
 No production configuration, synthetic identity, record, screenshot, Blob,
 Azure resource, Defender setting, SQL object, or homepage state was inspected
-or changed. Option B means no production EICAR or malicious fixture will be
-used; the production Defender-malicious path remains Conditional.
+or changed. This lane used no EICAR or malicious fixture and created none;
+under the later recorded choice A the fixture is supplied by security during
+the attended window and is never committed to this repository.
 
 ## Release and proof boundary
 
@@ -158,6 +169,6 @@ active Interview homepage lane, plus a new explicit owner/manager decision.
 
 **Conditional.** The bounded gate implementation is released with both flags
 off. Lifecycle readiness cannot become Pass until the approved production
-matrix and teardown are complete; choice B permanently leaves the production
-Defender-malicious row Conditional unless a later owner decision replaces it
-with coordinated choice A.
+matrix and teardown are complete. The owner has since replaced choice B with
+coordinated choice A, so the production Defender-malicious row is in scope and
+can reach Pass rather than being permanently Conditional.
