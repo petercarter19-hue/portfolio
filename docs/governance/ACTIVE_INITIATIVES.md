@@ -454,3 +454,13 @@ pixel rule applies), the live Interview Studio tab implementation as the
 interaction reference, and the existing accepted Break design. Roles: Fable
 architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh)
 reviewer with the identical bar; Pete visual acceptance before merge.
+
+
+## PS-HOME-FRONTEND-001 — owner reassignment (2026-07-21)
+
+The separately assigned Codex frontend task never opened
+`work/2026-07-20-home-frontend-001`; Pete reassigned implementation on
+2026-07-21 to the Fable/Sonnet/Opus lane on branch
+`work/2026-07-21-home-frontend-001-impl`. All previously accepted authority,
+briefs, contracts, decisions, and the flag-off boundary remain binding and
+unchanged.

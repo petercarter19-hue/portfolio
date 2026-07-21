@@ -171,3 +171,18 @@ After this manager activation squash-merges and its Azure pipeline succeeds,
 the assigned Codex frontend writer creates
 `work/2026-07-20-home-frontend-001` from that exact `origin/main` and performs
 the mandatory entry/read-only confirmation before any product edit.
+
+
+## Owner reassignment — 2026-07-21
+
+Pete ("Build it and build it right. I trust you, so do it."): the originally
+assigned separate Codex frontend task never created a writer branch. The
+implementation lane is reassigned to the Fable (architect/manager) → Sonnet
+(xhigh implementer) → Opus (xhigh reviewer, identical bar with kickback)
+model. Everything previously accepted remains binding and unchanged: the
+visual authority (baseline mockup + authority candidate `31864e4`, "implement
+... exactly as those images show"), `SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md`,
+the `FINITE_HOME_CONTRACT.md` nine-object law, decisions U1–U4, deviations
+D1–D6, the file reservations, and the flag-off boundary
+(`PEERSLATE_OWNER_HOME_ENABLED` stays false until Pete's visual acceptance and
+enablement gates). Implementation branch: `work/2026-07-21-home-frontend-001-impl`.

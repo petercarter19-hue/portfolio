@@ -296,7 +296,7 @@ active_packages:
     package_path: "docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md"
     status: "in_progress_governance_only_awaiting_owner_acceptance"
   - id: PS-HOME-FRONTEND-001
-    owner: "ChatGPT Work/Codex designated manager; separate Codex frontend task sole writer"
+    owner: "Owner reassignment 2026-07-21: Fable architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh) reviewer — the originally assigned separate Codex frontend task never opened a branch"
     lane: owner_home_exact_authority_frontend
     package_path: "docs/initiatives/PS-HOME-FRONTEND-001/README.md"
     status: "activated_writer_branch_pending"
