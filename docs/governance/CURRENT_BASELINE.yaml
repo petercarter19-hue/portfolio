@@ -303,6 +303,18 @@ active_packages:
     status: "architecture_current_private_core_entry_gate_unassigned"
 
 planned_packages:
+  - id: PS-RESUME-STUDIO-001
+    owner: "Pete product direction; future designated manager and implementation writer unassigned"
+    lane: future_resume_in_place_editing_and_gap_prompts
+    roadmap_phase: "After Journal J1 ships; owner-pushed further down the line 2026-07-21"
+    package_path: "docs/initiatives/PS-JOURNAL-001/14_OWNER_DIRECTION_RESUME_DOORWAYS_AND_ONBOARDING.md"
+    status: "candidate_owner_direction_recorded_pushed_back"
+  - id: PS-ONBOARD-001
+    owner: "Pete product direction; future designated manager and implementation writer unassigned"
+    lane: future_guided_twenty_minute_member_onboarding
+    roadmap_phase: "After Journal J1 ships; owner-pushed further down the line 2026-07-21"
+    package_path: "docs/initiatives/PS-JOURNAL-001/14_OWNER_DIRECTION_RESUME_DOORWAYS_AND_ONBOARDING.md"
+    status: "candidate_owner_direction_recorded_pushed_back"
   - id: PS-PUBLIC-CONNECTIVE-001
     owner: "future designated manager and writer unassigned"
     lane: candidate_public_connectedness_pilot
