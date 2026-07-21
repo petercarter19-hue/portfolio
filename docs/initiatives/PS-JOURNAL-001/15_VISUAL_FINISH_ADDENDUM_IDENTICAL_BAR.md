@@ -202,10 +202,16 @@ item identically** (its stage is even taller than Type in the mockup).
 **Chrome:**
 22. The composer card has a **× close control top-right** (missing in the
     build — owner: "a big deal").
-23. **Real book pages** (desktop): the page layering must be clearly
-    defined — visible page structure, colors fading in/out at the edges, and
-    the subtle **edge texture** the mockup shows on both the main page and
-    the composer card. "There are actually no pages" in the build — fix it.
+23. **Real book pages**: the page layering must be clearly defined —
+    visible page structure, colors fading in/out at the edges, and the subtle
+    **edge texture** the mockup shows on both the main page and the composer
+    card. "There are actually no pages" in the build — fix it. Desktop shows
+    the full two-page book; mobile keeps the same page character (texture,
+    edge fades, defined sheet) adapted to the single-column 390px sheet.
+
+**Owner reinforcement (2026-07-21): every item in §5 and §6 binds on MOBILE
+exactly as on desktop — no item may be verified desktop-only. The reviewer's
+per-item pass/fail must cite both form factors.**
 
 ## 7. Process escalation (owner mandate, 2026-07-21)
 
