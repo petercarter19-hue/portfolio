@@ -136,15 +136,16 @@ Show:
 Do not add a fixed Capture tab, tiny desktop controls, dense metadata, or a
 miniature timeline.
 
-AFTER JOURNAL-03 IS APPROVED, IMAGE JOURNAL-04 - SAVED FROM MY STORY, DESKTOP
+AFTER JOURNAL-03 IS APPROVED, IMAGE JOURNAL-04 - MOMENT SAVED, DESKTOP
 
 Create a 16:10 widescreen frame showing the same composer flow completing over
-or beside a cinematic My Story origin. Use the accepted PeerSlate visual
-language and the Story reference's authored quality without claiming that the
-future Story Composer is live.
+or beside a calm origin room - the Journal or a quiet Home - in the accepted
+PeerSlate visual language. Do not design, redesign, or mock up a My Story page;
+a polished My Story already exists and is the authority. If a My Story origin is
+ever wanted, a real screenshot will be supplied as a static backdrop.
 
-Dominant object: a calm successful private-save confirmation while the My Story
-origin remains unchanged and recognizable.
+Dominant object: a calm successful private-save confirmation while the origin
+room remains unchanged and recognizable.
 
 Show this exact hierarchy:
 
@@ -153,10 +154,10 @@ Show this exact hierarchy:
 - Done as the dominant completion action.
 - View in Journal and Use This Moment as quieter optional actions.
 
-Show no automatic Story insertion, layout change, publication, audience
+Show no automatic destination insertion, layout change, publication, audience
 change, or Add to Journal step. The saved Moment is private and the member can
-finish without leaving My Story. Add the same outside annotation that this is
-a production-intent concept and Journal is not currently live.
+finish without leaving the page they were on. Add the same outside annotation
+that this is a production-intent concept and Journal is not currently live.
 
 CONSISTENCY AND QUALITY REQUIREMENT
 

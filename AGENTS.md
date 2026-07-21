@@ -200,6 +200,43 @@ If any source document is missing, stop and report the missing path. Do not reco
 - `PS-STORY-COMPOSER-001` is reserved future work, not an active package. Do not
   modify the current public My Story fixture under this direction-only package.
 
+## Universal Capture and the one Journal direction — PS-JOURNAL-001
+
+Read `docs/initiatives/PS-JOURNAL-001/` (README + docs 01–06) before any Capture,
+Moment, Journal, projection, audience, or route work. Owner-clarified emphasis
+(Pete, 2026-07-21):
+
+- **Capture is an in-context action, not a place.** Eligible signed-in rooms open
+  the same universal composer as a pop-out sheet/drawer/dialog over the current
+  page. It preserves the origin context and, when the member is done, returns
+  them to that exact page. There is no Capture page, tab, or permanent
+  destination.
+- **Save Moment always creates one private canonical Moment** in the member's own
+  authored or explicitly reviewed words. Journal membership is derived
+  automatically — there is no Add to Journal step, and the save never depends on
+  the member choosing a destination.
+- **Catch the moment: in the same breath after Save Moment, the composer offers
+  first-class `Use This Moment` options** — share to Feed, add to My Story, use in
+  Work or Résumé, and other authorized destinations — together with an audience
+  choice. Filing a Moment away silently risks it being forgotten, so these
+  options are part of the moment, not buried in the Journal later (they remain
+  available from the Journal anytime too).
+- **Every share/audience choice is explicit and previewed; nothing is automatic.**
+  New Moments default to Only Me. No share, publication, Feed post, or audience
+  change is ever bundled into Save Moment or applied silently; each requires an
+  exact-audience preview appropriate to its destination before it goes.
+- **Sharing is a reference, not a copy.** A placement/projection points at the
+  exact canonical Moment version; the Journal Moment stays the single source of
+  truth. Removing a projection never removes the Moment from the Journal.
+- **Type and Speak are equal**, and essential capture/Journal work must survive
+  when AI, speech, or media providers are unavailable.
+- **Destinations light up in stages.** Private capture + one Save Moment + the
+  derived private Journal ship first (Slice J1). The full `Use This Moment`
+  destination chooser and audience projections follow (Slice J2+). Design the
+  composer's saved state with the share and audience options from the first
+  visual round even though the buttons enable in waves; do not lock a permanent
+  navigation set without the route-map gate.
+
 ## Projects future direction
 
 - Read `docs/initiatives/PS-PROJECTS-001/README.md` before any Project product,

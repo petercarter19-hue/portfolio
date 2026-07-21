@@ -14,7 +14,8 @@ Owner Visual Integrity Standard.
 | JOURNAL-01 | `journal-v1-01-owner-journal-desktop.png` | Complete private chronological Journal | Capture a Moment, restrained | Editorial chronology, privacy orientation, local timeline/manage modes, usable record hierarchy | Dashboard, social feed, Story canvas, public Journal live, fixed global navigation |
 | JOURNAL-02 | `journal-v1-02-universal-composer-desktop.png` | Composer opened over Journal | Save Moment | Capture is in-context; Type/Speak parity; private default; one commit | Capture route, destination choice, Add to Journal, automatic AI rewrite or publication |
 | JOURNAL-03 | `journal-v1-03-universal-composer-mobile.png` | Mobile composer sheet | Save Moment | Purpose-built mobile flow, touch targets, origin context, parity with desktop state machine | Shrunken desktop, fixed Capture tab, clipped controls, hidden Speak |
-| JOURNAL-04 | `journal-v1-04-saved-from-story-desktop.png` | Private saved confirmation over My Story origin | Done | Moment saved to one Journal; origin remains unchanged; optional later use | Automatic Story inclusion, publication, layout change, forced Journal navigation |
+| JOURNAL-04 | `journal-v1-04-moment-saved-desktop.png` | Private saved confirmation over a neutral origin (Journal or Home) | Done | Moment saved to one Journal; origin remains unchanged; optional later use | Automatic destination inclusion, publication, layout change, forced Journal navigation, a re-designed My Story page |
+| JOURNAL-05 | `journal-v1-05-moment-saved-with-options-desktop.png` | Saved state offering in-the-moment Use This Moment share options + audience | Done | Save is private/automatic first; share destinations and audience are explicit, previewed, optional | Auto-share, pre-selected/toggled destinations, audience bundled into save, Add to Journal |
 
 Round 1 is **In Design** until Pete chooses a direction. It is not complete
 visual authority by itself.

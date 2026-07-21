@@ -65,6 +65,21 @@ dragging has keyboard/structured equivalents, layout metadata stays separate
 from canonical content, and AI suggestions never silently apply or publish.
 `PS-STORY-COMPOSER-001` is future work until the manager explicitly activates it.
 
+Before any Capture, Moment, Journal, projection, audience, or route work, read
+`docs/initiatives/PS-JOURNAL-001/` (README + docs 01–06) and the "Universal
+Capture and the one Journal direction" section of `AGENTS.md`. Owner-clarified
+emphasis (Pete, 2026-07-21): Capture is an in-context pop-out that preserves and
+returns to the origin page; Save Moment always creates one private canonical
+Moment with derived Journal membership and no Add to Journal step; and in the same
+moment the composer offers first-class `Use This Moment` share destinations (Feed,
+My Story, Work, Résumé, and other authorized targets) plus an audience choice —
+each an explicit, previewed, reference-not-copy action that is never bundled into
+Save Moment or applied automatically. New Moments default to Only Me. Private
+capture + Journal ship first (J1); the destination chooser and audience
+projections follow (J2+); design the saved state with those options from the
+first visual round. `PS-JOURNAL-001` is architecture-complete with the runtime
+writer unassigned; do not begin implementation without the package entry gate.
+
 Before Project product, schema, workspace, projection, migration, or route work,
 read `docs/initiatives/PS-PROJECTS-001/README.md`. Projects are private-first
 connected containers: link exact canonical records rather than copying facts,
