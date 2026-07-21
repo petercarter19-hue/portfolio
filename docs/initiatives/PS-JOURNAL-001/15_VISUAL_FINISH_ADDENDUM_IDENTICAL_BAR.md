@@ -243,6 +243,47 @@ equally.
 30. **Dark theme parity**: every saved-state item verified on the dark
     version and on mobile, per the §6 mobile reinforcement.
 
+
+## 6c. Owner Review Round 4 — the empty Journal (Pete, 2026-07-21, binding)
+
+Compared against accepted screen A ("Your story starts here"). Desktop,
+MOBILE, and DARK all bind.
+
+31. **Remove the page header block on the empty state**: no "PRIVATE OWNER
+    WORKSPACE" eyebrow, no "Journal / Private to you" heading, no subtitle —
+    the empty page opens straight into the centered composition like the
+    mockup. ("We already know it's a journal.")
+32. **Rail continuity + anchor**: the contents rail is the SAME size and
+    geometry on every Journal view (timeline, manage, empty, detail). On the
+    empty page, the rail's rhythm loosens so **Reflections ends slightly
+    below the quote card**.
+33. **The illustration is rejected as built**: replicate the mockup's
+    open-book + leaf + sparkles composition and quality, placed **front and
+    center ABOVE the headline** at the mockup's scale.
+34. **"Your story starts here." in bold serif** at the mockup's font style
+    and size.
+35. **The subtitle** at the mockup's style and size (two-line wrap kept —
+    owner: the one good thing).
+36. **Capture a Moment button to mockup spec**: color, edge treatment, and
+    size are all off — match the mockup (pencil icon included), and the
+    **"Private to you" cue sits BELOW the button**, centered.
+37. **The quote card much bigger** per the mockup — and **signed with the
+    member's own profile name** ("— Pete" on Pete's account; the fixture
+    member's name in fixtures). This SUPERSEDES doc 13's unattributed ruling:
+    the attribution is dynamic per member, never hardcoded, so the multi-user
+    rule is preserved. Owner: "I like that."
+38. **Page tone**: the empty page reads white — it must be the warm parchment
+    of the mockup, with the same real book-page treatment (texture, fades,
+    edges) as items 15/23/29. "The pages are off, very very off — this is a
+    theme."
+39. **Manage on the empty page** (owner-delegated judgment): a quiet ghost
+    control in the top-right corner of the page area — present but out of the
+    composition; may differ from other pages' header row.
+40. **Reviewer full-sweep duty**: beyond items 31-39, sweep the entire empty
+    screen against accepted screen A for any element the owner did not list
+    ("double check and make sure I didn't miss anything"), on desktop,
+    mobile, and dark.
+
 ## 7. Process escalation (owner mandate, 2026-07-21)
 
 - The reviewer must verify §5 and §6 **item by item** (pass/fail each) with
