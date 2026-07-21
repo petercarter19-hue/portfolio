@@ -424,7 +424,8 @@ def save_journal_response():
 
 # ------------------------------------------------------------------
 # Slice J1 (PS-JOURNAL-001): derived private Journal read + one-step
-# Save Moment. Distinct namespace from the legacy /journal/today,
+# Save Moment. Slice J1.1 adds an additive ?q= search parameter to the
+# same GET route. Distinct namespace from the legacy /journal/today,
 # /journal/history, /journal/responses daily-prompt routes above -
 # those are untouched. Backend only: flag-gated, no template/nav
 # depends on this yet. See docs/initiatives/PS-JOURNAL-001/.
@@ -450,12 +451,34 @@ def list_journal_moments():
     if cursor is not None:
         cursor = cursor.strip()[:400] or None
 
-    result = journal_service.list_owner_journal(
-        identity.user_key,
-        include_archived=include_archived,
-        limit=limit,
-        cursor=cursor,
-    )
+    # Slice J1.1: an optional ?q= additively routes this same endpoint to
+    # deterministic owner-authorized search (PS-JRN-JRN-006). Absent q
+    # keeps the list path byte-identical to the original J1 behavior.
+    search_text = request.args.get("q")
+    if search_text is not None:
+        if len(search_text) > 200:
+            raise ApiValidationError("q must be 200 characters or fewer.")
+        try:
+            result = journal_service.search_owner_journal(
+                identity.user_key,
+                search_text,
+                include_archived=include_archived,
+                limit=limit,
+                cursor=cursor,
+            )
+        except JournalServiceError as error:
+            return (
+                jsonify({"success": False, "message": "q is required.", "error": error.code}),
+                400,
+            )
+    else:
+        result = journal_service.list_owner_journal(
+            identity.user_key,
+            include_archived=include_archived,
+            limit=limit,
+            cursor=cursor,
+        )
+
     response = jsonify(
         {
             "success": True,

@@ -1,4 +1,4 @@
-/* PS-JOURNAL-001 (Slice J1) production-safe verification.
+/* PS-JOURNAL-001 (Slice J1 + J1.1) production-safe verification.
    Uses two synthetic owners inside one outer transaction to prove:
    owner isolation on both the read and the write; idempotent Save
    Moment (a repeated key returns the SAME Moment, a new key creates
@@ -6,8 +6,13 @@
    global); derived Journal membership (only confirmed private
    Moments appear, an unconfirmed proposal never does); archived
    exclusion/inclusion; keyset pagination; and no automatic
-   publication, placement, or downstream write. Every synthetic row
-   is rolled back. */
+   publication, placement, or downstream write. Slice J1.1 adds
+   usp_SearchJournalMomentsForOwner coverage: two-owner search
+   isolation on a shared search term, case-insensitive containment,
+   wildcard-injection literalness (%, _, [ never behave as LIKE
+   metacharacters), empty/no-match returning an empty set rather than
+   an error, search keyset pagination order, and authorization before
+   retrieval for a forged owner. Every synthetic row is rolled back. */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
@@ -495,11 +500,205 @@ BEGIN TRY
     )
         THROW 52785, 'The idempotency ledger contains a body/content column.', 1;
 
+    /* ------------------------------------------------------------
+       10. Search: two-owner isolation on a term common to both
+           owners' fixture titles/narratives (LEFT(@Suffix, 20)).
+           Default archived-excluded search for owner A returns only
+           A's own active Moment; it must never leak A's archived
+           Moment or B's Moment for the identical search text.
+       ------------------------------------------------------------ */
+    DECLARE @SearchTermCommon nvarchar(200) = LEFT(@Suffix, 20);
+
+    DECLARE @SearchReadA TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchReadA
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = @SearchTermCommon,
+        @IncludeArchived = 0, @Limit = 50, @Cursor = NULL;
+
+    IF (SELECT COUNT(*) FROM @SearchReadA) <> 1
+        THROW 52786, 'Owner A default search did not return exactly one active match.', 1;
+    IF NOT EXISTS (SELECT 1 FROM @SearchReadA WHERE moment_key = @MomentKeyA1)
+        THROW 52787, 'Owner A default search is missing the expected active Moment.', 1;
+    IF EXISTS (SELECT 1 FROM @SearchReadA WHERE moment_key = @MomentKeyA2)
+        THROW 52788, 'An archived Moment leaked into the default owner A search.', 1;
+    IF EXISTS (SELECT 1 FROM @SearchReadA WHERE moment_key = @MomentKeyB1)
+        THROW 52789, 'Cross-owner Moment leaked into the owner A search on a shared search term.', 1;
+
+    DELETE @SearchReadA;
+    INSERT @SearchReadA
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = @SearchTermCommon,
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+
+    IF (SELECT COUNT(*) FROM @SearchReadA) <> 2
+        THROW 52790, 'Owner A archived-included search did not return both of owner A''s Moments.', 1;
+
+    DECLARE @SearchReadB TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchReadB
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyB, @SearchText = @SearchTermCommon,
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+
+    IF (SELECT COUNT(*) FROM @SearchReadB) <> 1
+        OR NOT EXISTS (SELECT 1 FROM @SearchReadB WHERE moment_key = @MomentKeyB1)
+        THROW 52791, 'Owner B search on the shared term did not return exactly owner B''s own Moment.', 1;
+    IF EXISTS
+    (
+        SELECT 1 FROM @SearchReadB
+        WHERE moment_key IN (@MomentKeyA1, @MomentKeyA2)
+    )
+        THROW 52792, 'Cross-owner Moment leaked into the owner B search on a shared search term.', 1;
+
+    /* ------------------------------------------------------------
+       11. Case-insensitive containment (PS-JRN-JRN-006): an
+           all-lowercase search still finds a mixed-case title.
+       ------------------------------------------------------------ */
+    DECLARE @SearchReadCaseInsensitive TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchReadCaseInsensitive
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = N'owner a first moment',
+        @IncludeArchived = 0, @Limit = 50, @Cursor = NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM @SearchReadCaseInsensitive WHERE moment_key = @MomentKeyA1)
+        THROW 52793, 'A lowercase search did not match the mixed-case Moment title.', 1;
+
+    /* ------------------------------------------------------------
+       12. Wildcard-injection literalness: %, _, and [ in the search
+           text must behave as literal characters, never as LIKE
+           metacharacters. No fixture title/narrative literally
+           contains "A%", "A_", or "A[" (the fixture text is only
+           letters, digits, spaces, and hyphens), so an unescaped
+           implementation - where an unescaped % or _ silently expands
+           to match anything - would wrongly return owner A's own
+           Moments here; a correctly escaped implementation returns
+           none.
+       ------------------------------------------------------------ */
+    DECLARE @SearchReadWildcard TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+
+    INSERT @SearchReadWildcard
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = N'A%',
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+    IF EXISTS (SELECT 1 FROM @SearchReadWildcard)
+        THROW 52794, 'A percent-sign search term was not escaped as a literal character.', 1;
+
+    DELETE @SearchReadWildcard;
+    INSERT @SearchReadWildcard
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = N'A_',
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+    IF EXISTS (SELECT 1 FROM @SearchReadWildcard)
+        THROW 52795, 'An underscore search term was not escaped as a literal character.', 1;
+
+    DELETE @SearchReadWildcard;
+    INSERT @SearchReadWildcard
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = N'A[',
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+    IF EXISTS (SELECT 1 FROM @SearchReadWildcard)
+        THROW 52796, 'An open-bracket search term was not escaped as a literal character.', 1;
+
+    /* ------------------------------------------------------------
+       13. Empty/no-match correctness: a well-formed search with no
+           matching content returns an empty set, not an error.
+       ------------------------------------------------------------ */
+    DELETE @SearchReadWildcard;
+    INSERT @SearchReadWildcard
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA,
+        @SearchText = CONCAT(N'no-such-journal-text-', @Suffix),
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+    IF EXISTS (SELECT 1 FROM @SearchReadWildcard)
+        THROW 52797, 'A non-matching search unexpectedly returned rows.', 1;
+
+    /* ------------------------------------------------------------
+       14. Keyset pagination order proven on search results, using the
+           same shared search term and the same display-time-then-
+           moment-id ordering contract as usp_ListJournalMomentsForOwner.
+       ------------------------------------------------------------ */
+    DECLARE @SearchPageOne TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchPageOne
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = @SearchTermCommon,
+        @IncludeArchived = 1, @Limit = 1, @Cursor = NULL;
+
+    IF (SELECT COUNT(*) FROM @SearchPageOne) <> 1
+       OR (SELECT TOP (1) moment_key FROM @SearchPageOne) <> @MomentKeyA1
+        THROW 52798, 'The first page of the search read did not honor @Limit = 1 and the display-time order.', 1;
+
+    DECLARE @SearchPageOneCursor nvarchar(80) = (SELECT TOP (1) cursor_token FROM @SearchPageOne);
+
+    DECLARE @SearchPageTwo TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchPageTwo
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = @UserKeyA, @SearchText = @SearchTermCommon,
+        @IncludeArchived = 1, @Limit = 1, @Cursor = @SearchPageOneCursor;
+
+    IF (SELECT COUNT(*) FROM @SearchPageTwo) <> 1
+       OR (SELECT TOP (1) moment_key FROM @SearchPageTwo) <> @MomentKeyA2
+        THROW 52799, 'The second search page did not advance past the first page cursor to the remaining Moment.', 1;
+
+    /* ------------------------------------------------------------
+       15. Authorization before retrieval: a forged/unresolvable owner
+           never resolves any row regardless of search text
+           (PS-JRN-AUD-002).
+       ------------------------------------------------------------ */
+    DECLARE @SearchReadForged TABLE
+    (
+        moment_key uniqueidentifier, moment_kind nvarchar(30), title nvarchar(160),
+        occurred_on date, occurred_precision nvarchar(20), visibility nvarchar(30),
+        source_type nvarchar(30), lifecycle_state nvarchar(20), version_number int,
+        cursor_token nvarchar(80)
+    );
+    INSERT @SearchReadForged
+    EXEC dbo.usp_SearchJournalMomentsForOwner
+        @UserKey = N'forged-user-key-does-not-exist', @SearchText = @SearchTermCommon,
+        @IncludeArchived = 1, @Limit = 50, @Cursor = NULL;
+
+    IF EXISTS (SELECT 1 FROM @SearchReadForged)
+        THROW 52800, 'A forged UserKey returned rows from the search read.', 1;
+
     ROLLBACK TRANSACTION;
 
     SELECT
         CAST(1 AS bit) AS verified,
-        N'PS-JOURNAL-001 two-owner isolation, per-owner idempotent Save Moment, derived confirmed-only Journal membership, archive filter, keyset pagination, no automatic publication/placement, and synthetic rollback verified.' AS detail;
+        N'PS-JOURNAL-001 two-owner isolation, per-owner idempotent Save Moment, derived confirmed-only Journal membership, archive filter, keyset pagination, no automatic publication/placement, search two-owner isolation, case-insensitive containment, wildcard-injection literalness, empty/no-match correctness, search keyset pagination, and synthetic rollback verified.' AS detail;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
