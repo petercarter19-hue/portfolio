@@ -1,10 +1,11 @@
 # Supplied source documents
 
 These are the exact owner-supplied inputs reviewed for
-`PS-GOV-JOURNAL-SYSTEM-001`. This candidate preserves them in the task branch;
-after the authority PR reaches Azure `origin/main`, another computer or manager
-can retrieve the same evidence without access to the original attachment
-session. Exact remote-main proof belongs in file 05 and the closeout report.
+`PS-GOV-JOURNAL-SYSTEM-001`. Azure PR 118 preserved them on authoritative
+`origin/main` at squash merge
+`3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`. Another computer or manager can
+retrieve the same evidence without access to the original attachment session.
+Exact remote-main and blob proof is in file 05 and the closeout report.
 
 | Repository file | SHA-256 | Authority treatment |
 |---|---|---|

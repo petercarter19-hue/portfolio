@@ -3,14 +3,16 @@
 ## A. Status
 
 - Package: PS-GOV-JOURNAL-SYSTEM-001
-- Status: In Progress — authority content and local verification complete;
-  Azure merge, pipeline, and remote-main proof remain
-- Branch and commit: `work/2026-07-20-journal-system-authority`; exact source
-  commit pending the complete candidate commit
-- PR / pipeline / environment: Pending; Azure DevOps `portfolio-site`, private
-  authoritative `origin`
-- Production state: Candidate is not yet on `origin/main`; website behavior is
-  unchanged
+- Status: Complete — architecture and governance authority activated; runtime
+  remains unimplemented
+- Branch and commit: `work/2026-07-20-journal-system-authority`; source
+  `578081f5191dd74daa154941604a2b199c5fed58`; squash merge
+  `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`
+- PR / pipeline / environment: Azure PR 118; automatic pipeline 171
+  (`20260721.1`) passed Build and Deploy in private authoritative `origin`;
+  redundant manual pipeline 172 (`20260721.2`) also passed
+- Production state: Authority and every source/evidence file are on
+  `origin/main`; website behavior is unchanged
 - Visual authority and status: Not Applicable to product UI; controlled DOCX
   rendering and document accessibility were verified separately
 - Homepage product projection: Not Applicable; no homepage behavior or visible
@@ -18,16 +20,14 @@
 - Pete / designated session manager visual acceptance: Not Applicable to a
   product visual implementation; Peter authorized the product decisions
 - Designated session manager: ChatGPT Work/Codex for this authority activation
-- Manager handoff status and next receiver: Activation closeout pending; the
-  later PS-JOURNAL-001 private-core package has no assigned runtime manager or
-  writer
+- Manager handoff status and next receiver: Authority lane closed after this
+  evidence PR; the later PS-JOURNAL-001 private-core package has no assigned
+  runtime manager or writer
 - Lane owner and self-managed authority: Current Codex governance writer
-- Self-certification: Conditional — content and local verification pass; Azure
-  merge, automatic pipeline, production smoke checks, and remote-main proof
-  remain required
+- Self-certification: Pass
 - Complete-diff review: Passed; the obsolete active-PR risk was corrected and
   retired Foundation C backlog dependency was changed to Deep Navy Gold
-- Acceptance requested: Technical and release completion; not visual-product
+- Acceptance requested: Release closeout record only; not visual-product
   acceptance
 
 ## B. What changed technically
@@ -113,10 +113,20 @@ states intact while leaving exact navigation open.
   boundary, no Ask public/private crossover, and PR 115 abandonment. Its one
   nonblocking stale Foundation C dependency finding was corrected to Deep Navy
   Gold before release.
-- **Azure evidence:** Source commit, PR, squash merge, automatic Build/Deploy,
-  branch deletion, and remote-main containment are pending.
-- **Production verification:** Public and authorization-boundary smoke checks
-  are pending the documentation-triggered deployment.
+- **Azure evidence:** Source
+  `578081f5191dd74daa154941604a2b199c5fed58` squash-merged through PR 118 at
+  `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`; the source branch was deleted.
+  Automatic pipeline 171 (`20260721.1`) passed Build and Deploy for that exact
+  SHA. Delayed run-list visibility caused redundant manual pipeline 172
+  (`20260721.2`), which also passed; it is not a second release claim.
+- **Remote-main proof:** `git ls-tree origin/main` contains both final authority
+  DOCXs, all three original supplied DOCXs, the deterministic builder, three
+  evidence records, and the complete package. All five DOCX SHA-256 values
+  match the controlled records.
+- **Production verification:** Canonical `/` and the actual direct App Service
+  root returned 200. Signed-out `/app` and `/app/capture` retained 302 sign-in
+  redirects with exact `return_to` values. `/journal` remained 404, correctly
+  proving this governance release did not invent the future runtime.
 - **Real-member validation:** Not performed and not implied; supplied research
   remains an option library rather than user-study evidence.
 
@@ -144,12 +154,11 @@ states intact while leaving exact navigation open.
 
 ## H. Clear next step
 
-Finish local tests and complete-diff review, merge this atomic authority set
-through Azure, verify its automatic Build/Deploy and unchanged production
-boundaries, then merge one closeout-evidence PR. After that, assign one manager
-and exactly one writer to PS-JOURNAL-001's private core from the new
-`origin/main`. Bounded Return and owner-only Ask Slate planning may proceed in
-parallel after that private foundation without waiting for public Journal.
+Merge this closeout-evidence branch, verify its terminal pipeline and remote
+tip, then assign one manager and exactly one writer to PS-JOURNAL-001's private
+core from the new `origin/main`. Bounded Return and owner-only Ask Slate
+planning may proceed in parallel after that private foundation without waiting
+for public Journal.
 
 ## I. What Pete needs to do or decide
 

@@ -1,7 +1,7 @@
 # Authority Activation and Traceability
 
-**Status:** In Progress — candidate authority and local verification complete;
-Azure activation evidence pending
+**Status:** Complete — authority activated and verified on Azure `origin/main`;
+runtime remains unimplemented
 
 **Task branch:** `work/2026-07-20-journal-system-authority`
 
@@ -63,18 +63,22 @@ The full requirement-ID allocation is in `01_SYSTEM_TRACEABILITY_MATRIX.md`.
 
 ## Azure release ledger
 
-| Evidence | Current value before release |
+| Evidence | Verified value |
 |---|---|
-| Task-branch source commit | Pending; cannot exist until the complete candidate is committed |
-| Azure pull request | Pending; cannot exist before push |
-| Squash merge commit | Pending; cannot exist before PR completion |
-| Automatic pipeline / build number | Pending; cannot exist before the main merge |
-| Build stage | Pending |
-| Deploy stage | Pending |
-| Live-route/auth-boundary smoke check | Pending |
-| Deleted remote task branch | Pending |
-| Authoritative remote-main tip | Pending |
-| `git ls-tree origin/main` artifact proof | Pending |
+| Task-branch source commit | `578081f5191dd74daa154941604a2b199c5fed58` |
+| Azure pull request | PR 118 — `https://dev.azure.com/peerslate19/portfolio-site/_git/portfolio-site/pullrequest/118` |
+| Squash merge commit | `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b` |
+| Automatic pipeline / build number | Pipeline 171 / `20260721.1`, `individualCI`, exact merge SHA |
+| Build stage | `completed / succeeded` |
+| Deploy stage | `completed / succeeded` |
+| Redundant fallback pipeline | Pipeline 172 / `20260721.2`, manual, exact merge SHA, Build and Deploy succeeded; queued only after delayed automatic-run visibility |
+| Live public route | `https://peerslate.com/` returned 200 |
+| Signed-out owner boundaries | `/app` and `/app/capture` returned 302 to their exact sign-in `return_to` targets |
+| Unimplemented Journal truth | `/journal` returned 404 |
+| Direct App Service | `peerslate-pete-d9hhdeerd7frg2gc.centralus-01.azurewebsites.net/` returned 200 |
+| Deleted remote task branch | Confirmed absent after PR completion |
+| Authoritative remote-main tip after activation | `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b` |
+| `git ls-tree origin/main` artifact proof | Two authority DOCXs plus all 16 PS-GOV-JOURNAL-SYSTEM-001 package/source/evidence files present |
 
 Release hygiene completed before the candidate merge: obsolete duplicate
 activation PR 115 (`work/2026-07-20-bible-v27-activation`) was set to
@@ -83,9 +87,14 @@ activation PR 115 (`work/2026-07-20-bible-v27-activation`) was set to
 credible stale-authority overwrite risk. Its source branch was preserved as
 history and was not merged.
 
-The post-activation closeout change replaces these pending values with exact
-Azure evidence. Its own PR/pipeline is reported as terminal handoff evidence;
-it does not create an infinite chain of self-referential closeout PRs.
+Key remote Git blob proof is Bible `53dcba28ccbdffe86bb9d0b7ff940f88f91ce4cd`,
+Roadmap `5ac900314d787040a83f29561c6c8d88fc38a976`, supplied sources
+`f38c0659dbbdac2bf496aae35d95c8436b8596c7`,
+`fcdd8825c047f9dc16e0ea8a007773fc016fcdde`, and
+`fd136853fcfd09a408027bff35090b2f87f0c135`, and builder
+`1a88ca68ff8934bad97d64a54e7e7f9574d30369`. Post-merge SHA-256 values match
+the Binary Traceability table. The closeout PR/pipeline is terminal handoff
+evidence reported outside itself; this avoids an infinite self-reference.
 
 ## Runtime truth and deployment effect
 
@@ -102,10 +111,11 @@ than being replaced by a documentation-only merge.
 
 ## Cross-computer retrieval states
 
-1. **Local candidate:** available only in this worktree; not cross-computer
-   authority.
-2. **Pushed task branch:** remotely reviewable, but still not controlling.
-3. **Merged Azure `origin/main`:** authoritative and retrievable from another
+1. **Local candidate:** historical pre-release state only.
+2. **Pushed task branch:** historical review state; Azure deleted it after PR
+   118 completed.
+3. **Merged Azure `origin/main`:** current authority, verified by remote tip and
+   `git ls-tree`, and retrievable from another
    clean checkout with `git fetch origin --prune` and `git pull --ff-only`.
 4. **Public GitHub mirror:** intentionally not updated while
    `CURRENT_BASELINE.yaml` retains its explicit owner-approval hold. Private

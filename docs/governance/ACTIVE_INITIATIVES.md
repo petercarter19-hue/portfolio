@@ -297,6 +297,11 @@ No current package holds. Product-code entry gates still apply.
   draft-promotion, copied-Journal-entry, categorical-no-badge, and private Ask
   Pete assumptions; and preserves the original research in a traceability
   matrix and Revisit Register.
+- Exact release: source `578081f5191dd74daa154941604a2b199c5fed58`, Azure
+  PR 118, squash merge `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`, and
+  automatic pipeline 171 (`20260721.1`) with Build and Deploy succeeded.
+  Redundant manual pipeline 172 also passed after delayed automatic-run
+  visibility.
 - It is governance-only. It has no product-code writer after merge and claims no
   new route, schema, deployment behavior, private/public view, AI service,
   message path, or legal completion.

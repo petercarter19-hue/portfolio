@@ -1,12 +1,17 @@
 # PS-GOV-JOURNAL-SYSTEM-001 — Journal System Authority Reconciliation
 
-**Status:** Owner-authorized authority candidate; Azure activation pending
+**Status:** Complete — authority activated on Azure `origin/main`; runtime
+unimplemented
 
 **Owner decision date:** July 20, 2026
 
 **Designated session manager and sole writer:** ChatGPT Work/Codex
 
 **Task branch:** `work/2026-07-20-journal-system-authority`
+
+**Release:** Source `578081f5191dd74daa154941604a2b199c5fed58`; Azure PR
+118; squash merge `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`; automatic
+pipeline 171 (`20260721.1`) passed Build and Deploy
 
 **Authoritative base:** Azure DevOps `origin/main` at
 `efd34335284d6c823d47cd7bac3cd2f901533612`

@@ -87,6 +87,13 @@ authority:
   journal_restart_merge_commit: "2bf989e074e274520558a9f3674e5c3f426c3d63"
   journal_restart_pr: 116
   journal_restart_pipeline: 168
+  journal_system_authority_source_commit: "578081f5191dd74daa154941604a2b199c5fed58"
+  journal_system_authority_merge_commit: "3d7c9e10811dcbcc763d965d7770bd0d35e51d4b"
+  journal_system_authority_pr: 118
+  journal_system_authority_pipeline: 171
+  journal_system_authority_pipeline_build: "20260721.1"
+  journal_system_authority_redundant_pipeline: 172
+  journal_system_authority_redundant_pipeline_build: "20260721.2"
   production_url: "https://peerslate.com"
   application_behavior_commit: "39002f5130a1766d2090007c16582e0dbe07226c"
   application_behavior_pipeline: 149
@@ -104,7 +111,7 @@ manager:
   owner_decision_date: "2026-07-19"
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-GOV-JOURNAL-SYSTEM-001 is complete when this authority activation reaches main. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
+  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is active under the current ChatGPT Work/Codex manager with Claude Code as its sole architecture/implementation writer; clean pushed architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 awaits manager review before product edits. PS-HOME-FRONTEND-001 is activated under the same designated manager with the separately assigned Codex frontend task as sole writer. PS-GOV-JOURNAL-SYSTEM-001 completed authority activation through source 578081f5191dd74daa154941604a2b199c5fed58, PR 118, merge 3d7c9e10811dcbcc763d965d7770bd0d35e51d4b, and automatic pipeline 171. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
 
 governing_documents:
   bible:

@@ -143,8 +143,15 @@ Every manager and writer must still fetch `origin` before starting._
   v2.7, `PS-GOV-JOURNAL-SYSTEM-001`, the controlling `PS-JOURNAL-001`
   architecture, `PS-RETURN-VALUE-001`, `PS-ASK-SLATE-AI-001`,
   `PS-MESSAGING-001`, and the legal/model-routing standards are governance and
-  implementation authority. This release changes no current route, schema,
-  feature flag, deployment configuration, or member-facing behavior.
+  implementation authority. Source
+  `578081f5191dd74daa154941604a2b199c5fed58` squash-merged through Azure PR
+  118 at `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`; automatic pipeline 171
+  (`20260721.1`) passed Build and Deploy. Delayed run-list visibility caused a
+  redundant manual pipeline 172 (`20260721.2`), which also passed and is not a
+  second release claim. Production `/` and the actual direct App Service host
+  returned 200; `/app` and `/app/capture` retained their signed-out 302
+  boundaries; `/journal` remained 404. This release changes no current route,
+  schema, feature flag, application behavior, or member-facing capability.
 - Fetch `origin` for the exact current tip rather than treating any recorded SHA as a substitute for synchronization.
 - The approved shared theme is Deep Navy Gold.
 

@@ -9,6 +9,9 @@ commit or lane status._
   GitHub is a backup mirror and is not a release source.
 - `docs/governance/CURRENT_BASELINE.yaml` names Bible v2.8 and Roadmap v2.7 as
   current.
+- Their Journal-system activation is on authoritative `origin/main` through
+  source `578081f5191dd74daa154941604a2b199c5fed58`, Azure PR 118, squash
+  merge `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`, and automatic pipeline 171.
 - The current one-Journal decision is controlled by:
   - `docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/README.md`
   - `docs/initiatives/PS-GOV-JOURNAL-SYSTEM-001/04_ACTIVE_LANE_COMPATIBILITY_AND_TRANSITION.md`
