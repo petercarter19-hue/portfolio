@@ -25,5 +25,9 @@ J1 release wave. **Owner direction source:** Pete's 12-thought review
 - Fable constructs · Sonnet (xhigh) implements · Opus (xhigh) reviews
   (identical bar) · Pete visually accepts before merge.
 
-## Open question for kickoff
-Does **Feed** become Community's landing view? (Pete to confirm.)
+## Landing decision (owner, 2026-07-21)
+**Confirmed: Feed is Community's landing view**, with the seamless
+Studio-style transition to **The Break** on click — the same no-reload-feel
+tab pattern as Interview Studio's Interview Me / AI / Video / History. The
+package is kickoff-ready once the Journal J1 wave completes and its visual
+authority is accepted.
