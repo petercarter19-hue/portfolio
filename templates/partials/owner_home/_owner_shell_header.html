@@ -1,0 +1,41 @@
+{# Owner area top band (parity row 2). Disabled future destinations are
+   non-interactive text with a visible "Coming later" caption, not links —
+   zero routes, zero requests. Complete public chrome is suppressed by the
+   standalone_owner_shell conditional in base.html; this header replaces it
+   for this route only. #}
+<header class="oh__header">
+    <div class="oh__header-inner">
+        <a class="oh__brand" href="{{ url_for('home') }}">PeerSlate</a>
+        <span class="oh-pill oh-pill--current">Owner View</span>
+
+        <nav class="oh__nav" aria-label="Owner Home sections">
+            <a class="oh__nav-item oh__nav-item--current" href="{{ url_for('auth.owner_workspace') }}" aria-current="page">
+                Home
+                <span class="oh__nav-caption">Current context</span>
+            </a>
+            <span class="oh__nav-item oh__nav-item--soon">
+                Journal
+                <span class="oh__nav-caption">Coming later</span>
+            </span>
+            <span class="oh__nav-item oh__nav-item--soon">
+                My Slate
+                <span class="oh__nav-caption">Coming later</span>
+            </span>
+            <span class="oh__nav-item oh__nav-item--soon">
+                Connections
+                <span class="oh__nav-caption">Coming later</span>
+            </span>
+            <span class="oh__nav-item oh__nav-item--soon">
+                More
+                <span class="oh__nav-caption">Coming later</span>
+            </span>
+        </nav>
+
+        <div class="oh__header-actions" aria-label="Owner menu">
+            <a class="oh__menu-link" href="{{ url_for('owner.settings') }}">Settings</a>
+            <form class="oh__signout" method="post" action="{{ auth_sign_out_url }}">
+                <button type="submit">Sign out</button>
+            </form>
+        </div>
+    </div>
+</header>

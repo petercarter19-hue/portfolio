@@ -1,0 +1,36 @@
+{# Luminous ivory working stage (parity row 6). All server-decidable
+   states render without JavaScript. A complete Home-data failure replaces
+   the whole stage grid with one honest failure panel (HFA4: the released
+   owner-home.v1 contract collapses every dependency failure into one
+   complete-unavailable result; there is no partial-category failure to
+   represent independently). #}
+<div class="oh__stage-wrap">
+    <div class="oh__stage-inner">
+        {% if home_failed %}
+        <div class="oh__stage">
+            <div class="oh__failure" role="alert">
+                <p class="oh__failure-eyebrow">Home data failed</p>
+                <h2 class="oh__failure-title">Owner Home data could not load</h2>
+                <p class="oh__failure-copy">
+                    Capture stays available above because its destination does not
+                    depend on this data. Retry asks for the same private Home data
+                    again.
+                </p>
+                <div class="oh__failure-actions">
+                    <a class="oh__btn oh__btn--primary" href="{{ url_for('auth.owner_workspace') }}" data-oh-retry>Retry</a>
+                    <a class="oh__btn oh__btn--ghost" href="{{ url_for('home') }}">Safe return</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="oh__stage">
+            {% include "partials/owner_home/_review_list.html" %}
+            {% include "partials/owner_home/_recent_moment.html" %}
+            {% include "partials/owner_home/_resurfaced_moment.html" %}
+            {% include "partials/owner_home/_noticed.html" %}
+            {% include "partials/owner_home/_connections.html" %}
+            {% include "partials/owner_home/_next_step.html" %}
+        </div>
+        {% endif %}
+    </div>
+</div>

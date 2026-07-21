@@ -1,0 +1,13 @@
+{% import "partials/owner_home/_oh_macros.html" as ohm %}
+{# From your history / Resurfaced (parity row 9). owner-home.v1 always
+   returns resurfaced_moment: null with availability.state = coming_later
+   in this release, so this category is always the dormant preview — never
+   repeats the Recent item, never random filler. #}
+<section class="oh__card oh__card--dormant oh__card--resurfaced" aria-labelledby="oh-resurfaced-title">
+    <div class="oh__card-head">
+        <h2 id="oh-resurfaced-title">From your history</h2>
+        <span class="oh-pill oh-pill--soon">Coming later</span>
+    </div>
+    <span class="oh__moment-media oh__moment-media--resurfaced" aria-hidden="true"></span>
+    {{ ohm.oh_coming_later("Resurfaced Moment", "An eligible earlier Moment can return here once the deterministic resurfacing policy is available.") }}
+</section>

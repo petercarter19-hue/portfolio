@@ -1,0 +1,26 @@
+{# Owner hero (parity row 3): avatar, "Welcome back, [name]." Variable
+   identity only — never Pete-hardcoded. Uses the real owner-home.v1
+   display name when the Home read succeeded; falls back to the still-real
+   sign-in identity name on a complete failure, since that value comes from
+   the trusted identity resolved before the failed Home read, not from the
+   failed payload itself. #}
+{% set _display_name = (home.owner.display_name if home and home.owner else None) or (member.display_name if member else None) %}
+<div class="oh__hero">
+    <div class="oh__hero-avatar" aria-hidden="true">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 20c1.8-4 5-6 8-6s6.2 2 8 6"></path>
+        </svg>
+    </div>
+    <div class="oh__hero-text">
+        <p class="oh__eyebrow">Owner Home &middot; private workspace</p>
+        {% if home_failed %}
+        <h1 class="oh__title">Owner Home</h1>
+        <p class="oh__hero-context">Private workspace for the signed-in member.</p>
+        {% else %}
+        <h1 class="oh__title">Welcome back{{ ', ' ~ _display_name ~ '.' if _display_name else '.' }}</h1>
+        <p class="oh__hero-context">Capture what matters and return to a finite set of meaningful work.</p>
+        {% endif %}
+        <p class="oh__hero-truth">Nothing on this page publishes, shares, connects, or saves anything automatically.</p>
+    </div>
+</div>

@@ -1,0 +1,35 @@
+{# Capture — the one dominant Home action (parity row 4). Always a real
+   link to the actual protected destination the server returned; never
+   Voice, a fixture, or a client-only control. On a complete Home-data
+   failure the destination falls back to the static, independently known
+   "/app/capture" route (not derived from the failed payload), matching the
+   authority's complete-failure evidence: Capture stays available because
+   its destination does not depend on the failed read. #}
+{% set cap = home.capture_action if home else None %}
+<div class="oh__capture">
+    {% if cap and cap.availability and cap.availability.state != 'available' %}
+    <div class="oh__capture-card oh__capture-card--unavailable">
+        <span class="oh__capture-label">Capture is temporarily unavailable.</span>
+        <p class="oh__capture-desc">Try again, or come back to Owner Home in a moment.</p>
+        <a class="oh__btn oh__btn--ghost" href="{{ url_for('auth.owner_workspace') }}">Retry</a>
+    </div>
+    {% else %}
+    {% set destination = cap.destination if cap else '/app/capture' %}
+    {% set label = cap.label if cap else 'Capture something' %}
+    <a class="oh__capture-card" href="{{ destination }}">
+        <span class="oh__capture-icon" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h4l1.5-2h5L16 7h4v12H4z"></path>
+                <circle cx="12" cy="13" r="3.5"></circle>
+            </svg>
+        </span>
+        <span class="oh__capture-body">
+            <span class="oh__capture-label">{{ label }}</span>
+            <span class="oh__capture-desc">Save a memory, thought, or milestone &mdash; Speak or Type.</span>
+        </span>
+        <span class="oh__capture-arrow" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </span>
+    </a>
+    {% endif %}
+</div>

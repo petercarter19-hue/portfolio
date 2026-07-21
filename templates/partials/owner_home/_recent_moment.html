@@ -1,0 +1,25 @@
+{% import "partials/owner_home/_oh_macros.html" as ohm %}
+{# Recent Moment (parity row 8). Real confirmed Moment only; the media area
+   is abstract decorative CSS material (no member photo exists in the
+   released contract), never a fabricated image. #}
+<section class="oh__card oh__card--recent" aria-labelledby="oh-recent-title">
+    <div class="oh__card-head">
+        <h2 id="oh-recent-title">Recent Moment</h2>
+        <span class="oh__card-note">One confirmed</span>
+    </div>
+    {% set moment = home.recent_moment if home else None %}
+    {% if moment %}
+    <a class="oh__moment-card" href="{{ moment.destination }}">
+        <span class="oh__moment-media" aria-hidden="true"></span>
+        <span class="oh__status-pill oh__status-pill--confirmed">{{ ohm.oh_status_label(moment.status) }}</span>
+        <span class="oh__moment-title">{{ moment.title }}</span>
+        <span class="oh__moment-meta">
+            {% if moment.occurred_on %}<time datetime="{{ moment.occurred_on }}">{{ moment.occurred_on }}</time> &middot; {% endif %}Updated <time datetime="{{ moment.updated_at }}">{{ ohm.oh_absolute(moment.updated_at) }}</time>
+        </span>
+    </a>
+    {% else %}
+    <span class="oh__moment-media" aria-hidden="true"></span>
+    <p class="oh__empty-title">No confirmed Moment to show.</p>
+    <p class="oh__empty">After you create and confirm a Moment, one eligible recent item may appear here.</p>
+    {% endif %}
+</section>

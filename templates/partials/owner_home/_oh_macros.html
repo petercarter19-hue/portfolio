@@ -1,0 +1,37 @@
+{# Owner Home shared presentation macros (PS-HOME-FRONTEND-001).
+   Pure rendering helpers only: every value here glosses an already-known,
+   finite server enum (review_kind, status) or reformats an already-server-
+   validated ISO-8601 UTC string. Nothing here invents, infers, or fetches
+   data — the truth rule "render, not reinterpret" (SONNET_FRONTEND_
+   IMPLEMENTATION_BRIEF.md 3) applies to every macro below. #}
+
+{% macro oh_review_title(kind) -%}
+    {%- if kind == 'voice_draft_failed' -%}Voice draft needs attention
+    {%- elif kind == 'moment_proposal_pending' -%}Moment proposal ready for review
+    {%- elif kind == 'voice_draft_ready' -%}Voice draft ready for review
+    {%- else -%}Item needs review
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro oh_status_label(status) -%}
+    {%- if status == 'failed' -%}Failed
+    {%- elif status == 'proposal' -%}Pending
+    {%- elif status == 'needs_review' -%}Ready
+    {%- elif status == 'confirmed' -%}Confirmed
+    {%- else -%}{{ status }}
+    {%- endif -%}
+{%- endmacro %}
+
+{# Absolute, unambiguous UTC text for an ISO-8601 "...T..Z" server
+   timestamp. Every owner_home_service timestamp is guaranteed to already
+   be in this exact shape, so plain slicing is safe and never guesses. #}
+{% macro oh_absolute(iso) -%}
+    {%- if iso -%}{{ iso[0:10] }} at {{ iso[11:16] }} UTC{%- endif -%}
+{%- endmacro %}
+
+{% macro oh_coming_later(feature, purpose) -%}
+<p class="oh__dormant-copy"><strong>{{ feature }}</strong> &mdash; coming later. Not yet available.</p>
+{%- if purpose %}
+<p class="oh__dormant-note">{{ purpose }}</p>
+{%- endif %}
+{%- endmacro %}

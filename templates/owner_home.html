@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-home.css') }}?v=ps-home-frontend-001-1">
+{% endblock %}
+
+{# Server-rendered first: every state below (empty, populated, complete
+   failure) renders fully without JavaScript from the bounded owner-home.v1
+   view model built by services/owner_home_service.py. base.html already
+   provides the single <main id="main-content">, so nothing here repeats
+   the nested-<main> defect present in owner_workspace.html. #}
+{% block content %}
+<div id="oh-live-region" class="oh-visually-hidden" role="status" aria-live="polite"></div>
+<div class="oh">
+    {% include "partials/owner_home/_owner_shell_header.html" %}
+
+    <div class="oh__atmosphere">
+        <div class="oh__atmosphere-inner">
+            <div class="oh__top">
+                {% include "partials/owner_home/_owner_hero.html" %}
+                {% include "partials/owner_home/_capture_action.html" %}
+            </div>
+            {% include "partials/owner_home/_audience_rail.html" %}
+        </div>
+    </div>
+
+    {% include "partials/owner_home/_stage.html" %}
+
+    {% include "partials/owner_home/_home_status.html" %}
+</div>
+
+{% include "partials/owner_home/_mobile_bottom_nav.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+{# Progressive enhancement only (SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md
+   §2 build step 5). The page above is fully correct and fully functional
+   without this script. #}
+<script src="{{ url_for('static', filename='js/owner-home.js') }}?v=ps-home-frontend-001-1" defer></script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# Your next useful step (parity row 12) — warm gold surface. Real
+   deterministic action + truthful destination from next_step. On a
+   complete Home-data failure there is no next_step payload, so this falls
+   back to the one action independently known to be safe: Capture. #}
+{% set step = home.next_step if home else None %}
+<section class="oh__card oh__card--next" aria-labelledby="oh-next-title">
+    <div class="oh__card-head">
+        <h2 id="oh-next-title">Your next useful step</h2>
+    </div>
+    {% if step %}
+    <p class="oh__next-label">{{ step.label }}</p>
+    <p class="oh__next-reason">{{ step.reason }}</p>
+    <a class="oh__btn oh__btn--next" href="{{ step.destination }}">{{ step.label }}</a>
+    {% else %}
+    <p class="oh__next-label">Start a private Capture</p>
+    <p class="oh__next-reason">Capture is the only available next step in this state.</p>
+    <a class="oh__btn oh__btn--next" href="/app/capture">Start a Capture</a>
+    {% endif %}
+    <span class="oh__flag" aria-hidden="true"></span>
+</section>

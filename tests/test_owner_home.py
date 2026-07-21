@@ -345,8 +345,8 @@ class OwnerHomeRouteTests(unittest.TestCase):
                 self.assertEqual(response.get_json(), {"error": "unavailable"})
                 self.assertNotIn(b"PRIVATE", response.data)
 
-    def test_backend_slice_does_not_change_existing_app_render(self):
-        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = True
+    def test_flag_off_app_render_is_byte_identical_to_existing_workspace(self):
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = False
         app.config["PEERSLATE_DEV_USER_KEY"] = "existing-owner"
         app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = True
 
@@ -355,9 +355,146 @@ class OwnerHomeRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"My PeerSlate", response.data)
         self.assertNotIn(b"owner-home.v1", response.data)
+        self.assertNotIn(b"owner-home-shell", response.data)
 
     def test_owner_home_flag_defaults_off(self):
         self.assertIs(app.config.get("PEERSLATE_OWNER_HOME_ENABLED"), False)
+
+
+class OwnerHomeHtmlRenderTests(unittest.TestCase):
+    """PS-HOME-FRONTEND-001: the flag-on /app HTML render (auth_routes.py)."""
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_OWNER_HOME_ENABLED")
+        self.original_dev_user_key = app.config.get("PEERSLATE_DEV_USER_KEY")
+        self.original_dev_identity = app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY")
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = True
+        app.config["PEERSLATE_DEV_USER_KEY"] = "owner-a"
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = True
+
+    def tearDown(self):
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_DEV_USER_KEY"] = self.original_dev_user_key
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = self.original_dev_identity
+
+    def view_model(self, database=None):
+        if database is None:
+            database = Mock()
+            database.execute_procedure.return_value = complete_result_sets()
+        return OwnerHomeService(
+            database=database,
+            clock=lambda: datetime(2026, 7, 20, 11, 0, tzinfo=timezone.utc),
+        ).get_home(SimpleNamespace(user_key="owner-a"))
+
+    @patch("auth_routes.owner_home_service")
+    def test_populated_home_renders_bounded_real_data_no_fixtures(self, home_service):
+        home_service.get_home.return_value = self.view_model()
+
+        response = self.client.get("/app")
+        body = response.data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "no-cache, must-revalidate")
+        self.assertIn(b"owner-home-shell", body)
+        self.assertIn(b"Welcome back, Owner A.", body)
+        self.assertIn(b'href="/app/capture"', body)
+        self.assertIn(FAILED_A.encode(), body)
+        self.assertIn(MOMENT_A.encode(), body)
+        self.assertNotIn(b"My PeerSlate", body)
+        # D2: no review-artifact fixture/QA pills in the real product.
+        self.assertNotIn(b"TEST FIXTURE", body)
+        self.assertNotIn(b"PRIVATE FIXTURE", body)
+        self.assertNotIn(b"FUTURE DESIGN FIXTURE", body)
+        # Dormant categories stay truthful and content-free.
+        self.assertIn(b"Coming later", body)
+        self.assertNotIn(b"transcript", body.lower())
+
+    @patch("auth_routes.owner_home_service")
+    def test_empty_home_states_are_honest_not_generated(self, home_service):
+        database = Mock()
+        database.execute_procedure.return_value = [
+            [owner_row(display_name="Owner Empty")],
+            [],
+            [],
+        ]
+        home_service.get_home.return_value = self.view_model(database)
+
+        response = self.client.get("/app")
+        body = response.data
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Nothing requires review right now.", body)
+        self.assertIn(b"No confirmed Moment to show.", body)
+        self.assertIn(b"Start a new Capture", body)
+
+    @patch("auth_routes.owner_home_service")
+    def test_contract_failure_renders_honest_complete_failure_state(
+        self, home_service
+    ):
+        home_service.get_home.side_effect = OwnerHomeContractError("PRIVATE DETAIL")
+
+        response = self.client.get("/app")
+        body = response.data
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.headers["Cache-Control"], "no-cache, must-revalidate")
+        self.assertIn(b"Owner Home data could not load", body)
+        # Capture stays available on failure (independently known destination).
+        self.assertIn(b'href="/app/capture"', body)
+        self.assertIn(b"data-oh-retry", body)
+        self.assertNotIn(b"PRIVATE DETAIL", body)
+
+    @patch("auth_routes.owner_home_service")
+    def test_database_failure_renders_honest_complete_failure_state(
+        self, home_service
+    ):
+        home_service.get_home.side_effect = DatabaseServiceError("PRIVATE SQL DETAIL")
+
+        response = self.client.get("/app")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn(b"PRIVATE SQL DETAIL", response.data)
+
+    def test_flag_on_anonymous_html_redirects_to_sign_in(self):
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = False
+        app.config["PEERSLATE_DEV_USER_KEY"] = None
+
+        response = self.client.get("/app")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/auth/sign-in", response.headers["Location"])
+
+    @patch("auth_routes.owner_home_service")
+    def test_two_owner_html_serialized_canaries_do_not_bleed(self, home_service):
+        # profile_key is intentionally never rendered into the DOM (it is an
+        # opaque internal identifier, not display content), so the HTML
+        # canaries are the review/Moment item keys and display name that the
+        # page actually renders into hrefs and text.
+        home_service.get_home.return_value = self.view_model()
+        response_a = self.client.get("/app")
+        self.assertIn(b"Welcome back, Owner A.", response_a.data)
+        self.assertIn(FAILED_A.encode(), response_a.data)
+        self.assertIn(MOMENT_A.encode(), response_a.data)
+
+        app.config["PEERSLATE_DEV_USER_KEY"] = "owner-b"
+        database_b = Mock()
+        database_b.execute_procedure.return_value = [
+            [owner_row(OWNER_B_PROFILE, "Owner B", "10" * 8)],
+            [review_row(FAILED_B, "voice_draft_failed", "failed", 5, "11")],
+            [],
+        ]
+        home_service.get_home.return_value = OwnerHomeService(
+            database=database_b,
+            clock=lambda: datetime(2026, 7, 20, 11, 0, tzinfo=timezone.utc),
+        ).get_home(SimpleNamespace(user_key="owner-b"))
+        response_b = self.client.get("/app")
+
+        self.assertIn(b"Welcome back, Owner B.", response_b.data)
+        self.assertIn(FAILED_B.encode(), response_b.data)
+        self.assertNotIn(FAILED_A.encode(), response_b.data)
+        self.assertNotIn(MOMENT_A.encode(), response_b.data)
+        self.assertNotIn(b"Welcome back, Owner A.", response_b.data)
 
 
 if __name__ == "__main__":

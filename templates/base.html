@@ -27,7 +27,14 @@
          longer lined up with the page around it (worse in Safari, which
          Macs default to). Real tablets don't hit this bug because forcing
          the viewport width is native browser behavior, not a CSS scaling
-         trick — that's why this script only touches touch devices now. -->
+         trick — that's why this script only touches touch devices now.
+
+         Owner Home (standalone_owner_shell, PS-HOME-FRONTEND-001): the
+         flag-on Owner Home render ships its own native 390/320/844
+         responsive layout and must not be forced to the 1280px desktop
+         viewport, so this whole script is skipped only for that render;
+         every other route keeps the exact existing behavior. -->
+    {% if not standalone_owner_shell %}
     <script>
         (function () {
             var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
@@ -49,6 +56,7 @@
             }
         })();
     </script>
+    {% endif %}
 
     <meta
         name="description"
@@ -109,14 +117,25 @@
 </head>
 
 {% set _p = request.path %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
+{% if standalone_owner_shell %}
+{# Owner Home standalone shell (U1/U3, PS-HOME-FRONTEND-001): the flag-on
+   Owner Home render owns its own dark cinematic body and omits every public
+   chrome class (portfolio-shell/platform-shell, slate-light,
+   ps-editorial-surface) and the site light/dark theme attribute — this
+   route is not affected by the shared theme toggle. Every other route is
+   completely unaffected by this branch. #}
+<body class="owner-home-shell">
+{% else %}
 <body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
        so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+{% endif %}
 
     {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 
+    {% if not standalone_owner_shell %}
     {# Dark theme (Monochrome & Signal Gold, PS-THEME-001): a returning
        visitor's stored preference is applied here, as the very first thing
        in <body>, so it happens before anything below paints — otherwise a
@@ -132,9 +151,11 @@
             } catch (e) { /* localStorage unavailable (private mode, etc.) — default theme stands */ }
         })();
     </script>
+    {% endif %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
+    {% if not standalone_owner_shell %}
     {# Site-wide light-orbit backdrop (updated 2026-07-15, Pete): every page except
        the Experience film shares the fixed blue-white abstract scene.
        The resume route keeps its own identical layer, so it hides this one. #}
@@ -252,6 +273,7 @@
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>
+    {% endif %}
 
     {# The profile band + tab strip frame the portfolio pages — EXCEPT
        Slate Board and Interview Studio, which the mockups treat as
@@ -274,6 +296,7 @@
         {% endblock %}
     </main>
 
+    {% if not standalone_owner_shell %}
     <footer class="footer">
         {# Mockup privacy line — every page. #}
         <p class="footer-privacy">
@@ -394,6 +417,7 @@
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=resume-consolidated-1"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
     <script src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"></script>
+    {% endif %}
     {% block extra_scripts %}{% endblock %}
 
 </body>
