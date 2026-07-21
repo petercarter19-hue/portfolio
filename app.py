@@ -99,6 +99,11 @@ app.config.update(
     PEERSLATE_OWNER_HOME_ENABLED=(
         os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
     ),
+    # Backend-only Slice J1: derived private Journal read + one-step Save
+    # Moment. Keep off until the visual gate and the proposed migration pass.
+    PEERSLATE_JOURNAL_ENABLED=(
+        os.environ.get('PEERSLATE_JOURNAL_ENABLED', 'false').lower() == 'true'
+    ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
     ),

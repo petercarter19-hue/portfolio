@@ -7,6 +7,8 @@ from flask import Blueprint, current_app, jsonify, request
 
 from identity import AuthenticationRequired, get_current_identity
 from services.database_service import DatabaseServiceError, database_service
+from services.journal_service import JournalServiceError, journal_service
+from services.moment_service import validate_moment_proposal
 
 
 peerslate_api = Blueprint("peerslate_api", __name__, url_prefix="/api")
@@ -56,6 +58,53 @@ def require_living_resume_database(view):
         return view(*args, **kwargs)
 
     return wrapped
+
+
+def require_journal_enabled(view):
+    """Backend-only Slice J1 gate. Off by default; leaks nothing when off."""
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not current_app.config.get("PEERSLATE_JOURNAL_ENABLED", False):
+            return jsonify({"success": False, "message": "Not found."}), 404
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def require_identity_or_not_found(view):
+    """Neutral variant of require_identity for the private Journal.
+
+    Unauthenticated (or otherwise unresolved) requests get the same 404 as a
+    disabled feature or another owner's absent data, so a caller can never
+    tell "not signed in" apart from "not found" or "flag off".
+    """
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        try:
+            get_current_identity()
+        except AuthenticationRequired:
+            return jsonify({"success": False, "message": "Not found."}), 404
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+class _JsonMomentForm:
+    """Adapts a JSON request body to the form-like `.get` moment_service expects.
+
+    Mirrors werkzeug form semantics: every value is either the original
+    string or the caller-supplied default, so validate_moment_proposal's
+    `.strip()` calls never see a non-string value.
+    """
+
+    def __init__(self, body):
+        self._body = body if isinstance(body, dict) else {}
+
+    def get(self, key, default=""):
+        value = self._body.get(key, default)
+        return value if isinstance(value, str) else default
 
 
 @peerslate_api.before_request
@@ -371,6 +420,78 @@ def save_journal_response():
         ],
     )
     return _result_payload(rows, "entries")
+
+
+# ------------------------------------------------------------------
+# Slice J1 (PS-JOURNAL-001): derived private Journal read + one-step
+# Save Moment. Distinct namespace from the legacy /journal/today,
+# /journal/history, /journal/responses daily-prompt routes above -
+# those are untouched. Backend only: flag-gated, no template/nav
+# depends on this yet. See docs/initiatives/PS-JOURNAL-001/.
+# ------------------------------------------------------------------
+
+
+@peerslate_api.get("/journal/moments")
+@require_journal_enabled
+@require_identity_or_not_found
+def list_journal_moments():
+    identity = get_current_identity()
+    include_archived = request.args.get("include_archived", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    try:
+        limit = int(request.args.get("limit", "50"))
+    except ValueError as error:
+        raise ApiValidationError("limit must be a whole number.") from error
+
+    cursor = request.args.get("cursor")
+    if cursor is not None:
+        cursor = cursor.strip()[:400] or None
+
+    result = journal_service.list_owner_journal(
+        identity.user_key,
+        include_archived=include_archived,
+        limit=limit,
+        cursor=cursor,
+    )
+    response = jsonify(
+        {
+            "success": True,
+            "items": result["items"],
+            "next_cursor": result["next_cursor"],
+        }
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@peerslate_api.post("/journal/moments")
+@require_journal_enabled
+@require_identity_or_not_found
+def save_journal_moment():
+    identity = get_current_identity()
+    body = _json_body()
+
+    idempotency_key = _string(body, "idempotency_key", required=True, max_length=200)
+
+    proposal, error_key = validate_moment_proposal(_JsonMomentForm(body))
+    if error_key:
+        return jsonify({"success": False, "message": "Not saved.", "error": error_key}), 400
+
+    try:
+        result = journal_service.save_moment(identity.user_key, idempotency_key, proposal)
+    except JournalServiceError as error:
+        return (
+            jsonify({"success": False, "message": "Not saved.", "error": error.code}),
+            409,
+        )
+
+    response = jsonify({"success": True, **result})
+    response.headers["Cache-Control"] = "private, no-store"
+    return response, 201
 
 
 @peerslate_api.get("/slate-spaces/<string:space_name>")
