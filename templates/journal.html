@@ -13,14 +13,14 @@
    are not covered by base.html's site-wide Newsreader import, so this page
    loads them itself, the same established per-page pattern. #}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-3">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-4">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
 
 {% block content %}
-<div class="ps-journal">
+<div class="ps-journal"{% if is_evidence_fixture %} data-journal-evidence-fixture="true"{% endif %}>
     <div class="ps-journal__bookcase">
         {{ jbook.book_ribbon() }}
         {{ jbook.book_corners() }}
@@ -43,7 +43,7 @@
                         </div>
                         {% if manage_view %}
                         <div class="ps-journal__actions">
-                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">&larr; Back to Timeline</a>
+                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">&larr; Back to timeline</a>
                             <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
                                 {{ jbook.icon_plus() }} Capture a Moment
                             </button>
@@ -115,7 +115,14 @@
                                 <span class="ps-journal__manage-date-block">{{ moment.occurred_day or '—' }}<br><span class="ps-journal__manage-date-month">{{ moment.occurred_month_label or 'Date not set' }}</span></span>
                                 {% if moment.display_time %}<span class="ps-journal__manage-time">{{ moment.display_time }}</span>{% endif %}
                             </span>
-                            <span class="ps-journal__manage-kind">{% if moment.moment_kind == 'achievement' %}{{ jbook.icon_star() }}{% else %}{{ jbook.icon_doc() }}{% endif %}{{ moment.moment_kind|capitalize if moment.moment_kind else 'Moment' }}</span>
+                            <span class="ps-journal__manage-kind">
+                                {% if moment.source_type == 'voice' %}{{ jbook.icon_mic() }}
+                                {% elif moment.source_type == 'photo' %}{{ jbook.icon_camera() }}
+                                {% elif moment.source_type == 'video' %}{{ jbook.icon_film() }}
+                                {% elif moment.moment_kind == 'achievement' %}{{ jbook.icon_star() }}
+                                {% else %}{{ jbook.icon_doc() }}{% endif %}
+                                {{ moment.display_kind_label or (moment.moment_kind|capitalize if moment.moment_kind else 'Moment') }}
+                            </span>
                             <span class="ps-journal__manage-title">
                                 {{ jbook.moment_thumb(moment) }}
                                 <span class="ps-journal__manage-title-text">
@@ -153,7 +160,7 @@
                        the This-season card (not beside the title, which is now
                        full mockup scale and stands alone). #}
                     <div class="ps-journal__actions-row">
-                        <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal', view='archived') }}">Manage</a>
+                        <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal', view='manage') }}">Manage</a>
                         <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
                             {{ jbook.icon_plus() }} Capture a Moment
                         </button>
@@ -166,7 +173,7 @@
                         </div>
                         <div class="ps-journal__hero-copy">
                             <p class="ps-journal__hero-eyebrow">This season</p>
-                            <p class="ps-journal__hero-headline">Building clarity.<br>Creating impact.</p>
+                            <p class="ps-journal__hero-headline">{% for line in season_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
                             <p class="ps-journal__hero-microline">Focus. Learn. Build. Share.</p>
                             <p class="ps-journal__hero-signature">{{ (member.display_name or 'You').split(' ')[0] }}</p>
                         </div>
@@ -277,7 +284,7 @@
                        straight into the centered composition. Item 39: Manage stays reachable via a
                        quiet ghost control in the page's top-right corner (owner-delegated judgment -
                        the accepted mockup does not show a header row to hang it from). #}
-                    <a class="ps-journal__manage-ghost" href="{{ url_for('owner.journal', view='archived') }}">{{ jbook.icon_manage() }}<span>Manage</span></a>
+                    <a class="ps-journal__manage-ghost" href="{{ url_for('owner.journal', view='manage') }}">{{ jbook.icon_manage() }}<span>Manage</span></a>
                     <div class="ps-journal__empty ps-journal__empty--intro">
                         <div class="ps-journal__empty-illustration">{{ jbook.empty_illustration() }}</div>
                         <p class="ps-journal__empty-title">Your story starts here.</p>
@@ -290,7 +297,7 @@
                            string every member sees). #}
                         <blockquote class="ps-journal__empty-quote">
                             <p>The pages are yours.<br>The story is yours.<br>The impact is yours.</p>
-                            <cite>&mdash; {{ (member.display_name or 'You').split(' ')[0] }}</cite>
+                            <cite>&mdash; {{ fixture_member_name or (member.display_name or 'You').split(' ')[0] }}</cite>
                         </blockquote>
                     </div>
                     {% endif %}
@@ -321,5 +328,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-3"></script>
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-4"></script>
 {% endblock %}

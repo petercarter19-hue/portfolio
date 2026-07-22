@@ -14,8 +14,6 @@
     const CONFIG = window.__PS_JOURNAL__;
     if (!CONFIG) return;
 
-    const DRAFT_STORAGE_KEY = "ps-journal-draft-narrative";
-
     const liveRegion = document.getElementById("journal-live-region");
     const announce = (message) => {
         if (liveRegion) liveRegion.textContent = message;
@@ -467,6 +465,12 @@
     let recordingStartedAt = 0;
     let recordingTimerId = null;
     let recordingCancelled = false;
+    // A failed save may keep a draft available while this authenticated page
+    // session remains open.  It intentionally never reaches persistent browser
+    // storage, URL state, or a cross-account browser bucket: closing,
+    // reloading, or changing accounts discards it rather than exposing private
+    // member text to a later identity.
+    let recoverableDraft = "";
 
     const genIdempotencyKey = () => {
         if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -505,7 +509,21 @@
         });
         if (name === "type") narrativeField.focus();
     };
-    tabs.forEach((tab) => tab.addEventListener("click", () => switchTab(tab.dataset.composerTab)));
+    tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => switchTab(tab.dataset.composerTab));
+        tab.addEventListener("keydown", (event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+            event.preventDefault();
+            let nextIndex = index;
+            if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+            if (event.key === "Home") nextIndex = 0;
+            if (event.key === "End") nextIndex = tabs.length - 1;
+            const next = tabs[nextIndex];
+            switchTab(next.dataset.composerTab);
+            next.focus();
+        });
+    });
 
     const focusableIn = (container) =>
         Array.from(
@@ -554,15 +572,9 @@
     };
 
     const restoreDraftIfAny = () => {
-        let draft = "";
-        try {
-            draft = window.localStorage.getItem(DRAFT_STORAGE_KEY) || "";
-        } catch (error) {
-            draft = "";
-        }
-        if (draft) {
-            narrativeField.value = draft;
-            setStatus("Draft restored from your last attempt - nothing was lost.", false);
+        if (recoverableDraft) {
+            narrativeField.value = recoverableDraft;
+            setStatus("Draft restored for retry in this private session.", false);
         }
     };
 
@@ -611,11 +623,7 @@
     };
 
     const handleCancel = () => {
-        try {
-            window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-        } catch (error) {
-            /* private mode or unavailable storage - nothing to clean up */
-        }
+        recoverableDraft = "";
         closeComposer();
     };
 
@@ -713,11 +721,7 @@
         saveButton.disabled = true;
         cancelButton.disabled = true;
         setStatus("Saving…", false);
-        try {
-            window.localStorage.setItem(DRAFT_STORAGE_KEY, narrative);
-        } catch (error) {
-            /* best-effort only */
-        }
+        recoverableDraft = narrative;
 
         const body = {
             idempotency_key: idempotencyKey,
@@ -741,11 +745,7 @@
             });
             const result = await response.json().catch(() => ({}));
             if (response.ok && result.success) {
-                try {
-                    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-                } catch (error) {
-                    /* best-effort only */
-                }
+                recoverableDraft = "";
                 await onSaved();
             } else if (response.status === 409) {
                 setStatus(

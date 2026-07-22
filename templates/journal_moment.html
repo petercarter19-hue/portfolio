@@ -6,7 +6,8 @@
 
 {% block extra_head %}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-4">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
@@ -25,91 +26,97 @@
   return the full narrative body or a created timestamp, so this page never
   invents either: the note-fallback and Version history lines below stay
   honest about what is and is not available yet, in member-facing language
-  only (no stored-procedure names, no internal backend jargon). The optional
-  moment.thumbnail_kind/display_time/voice_duration_label fixture fields
-  (doc 15 fixture-richness rule) are read the same way the Timeline already
-  does; a real Moment simply omits them.
+  only (no stored-procedure names, no internal backend jargon).  Rich media,
+  context, time, and provenance fields are rendered only when the authorized
+  read supplies them.  The test-only evidence provider can demonstrate the
+  accepted fixture; real members never receive title-keyed enrichment.
 #}
 {% set source_label = {'voice': 'Voice Note', 'photo': 'Photo', 'video': 'Video'}.get(moment.source_type, 'Text Note') %}
 
 <div class="ps-journal">
-    <div class="ps-journal__bookcase ps-journal__bookcase--narrow">
+    <div class="ps-journal__bookcase ps-journal__bookcase--detail">
         {{ jbook.book_ribbon() }}
         {{ jbook.book_corners() }}
-        <div class="ps-journal__book ps-journal__book--narrow">
-            <div class="ps-journal__book-inner">
-                <a class="ps-moment__back" href="{{ url_for('owner.journal') }}">&larr; Back to Journal</a>
+        <div class="ps-journal__layout">
+            <div class="ps-journal__rail-region">
+                {% include "partials/context_rail.html" with context %}
+                {{ jbook.rail_flourish() }}
+            </div>
+            <div class="ps-journal__book ps-journal__book--detail">
+                <div class="ps-journal__book-inner">
+                    <a class="ps-moment__back" href="{{ url_for('owner.journal') }}">&larr; Back to timeline</a>
 
-                <div class="ps-moment__header">
-                    <div class="ps-moment__date">
-                        <span class="ps-journal__date-node" aria-hidden="true"></span>
-                        {% if moment.occurred_day %}
-                        <span class="ps-moment__date-day">{{ moment.occurred_day }}</span>
-                        <span class="ps-moment__date-month">{{ moment.occurred_month_label }}</span>
-                        <span class="ps-moment__date-year">{{ moment.occurred_iso[:4] }}</span>
-                        {% else %}
-                        <span class="ps-moment__date-day">&mdash;</span>
-                        <span class="ps-moment__date-month">Date not set</span>
-                        {% endif %}
-                    </div>
-                    <div class="ps-moment__header-content">
-                        <p class="ps-moment__meta">
-                            {% if moment.display_time %}<span>{{ moment.display_time }}</span><span aria-hidden="true">&middot;</span>{% endif %}
-                            <span>{{ source_label }}</span>
-                            <span aria-hidden="true">&middot;</span>
-                            <span class="ps-journal__meta-privacy">{{ jbook.icon_lock() }} Private</span>
-                            {% if moment.lifecycle_state == 'archived' %}
-                            <span aria-hidden="true">&middot;</span>
-                            <span class="ps-journal__manage-archived-badge">Archived</span>
+                    <div class="ps-moment__header">
+                        <div class="ps-moment__date">
+                            <span class="ps-journal__date-node" aria-hidden="true"></span>
+                            {% if moment.occurred_day %}
+                            <span class="ps-moment__date-day">{{ moment.occurred_day }}</span>
+                            <span class="ps-moment__date-month">{{ moment.occurred_month_label }}</span>
+                            <span class="ps-moment__date-year">{{ moment.occurred_iso[:4] }}</span>
+                            {% else %}
+                            <span class="ps-moment__date-day">&mdash;</span>
+                            <span class="ps-moment__date-month">Date not set</span>
                             {% endif %}
-                        </p>
-                        <h1 class="ps-moment__title" id="journal-moment-title">{{ moment.title or 'Untitled Moment' }}</h1>
-                        <p class="ps-moment__note-fallback">The full note opens here soon.</p>
-                    </div>
-                </div>
-
-                {% if moment.source_type == 'voice' or moment.thumbnail_kind %}
-                <div class="ps-moment__body">
-                    {% if moment.source_type == 'voice' %}
-                    <div class="ps-moment__main">
-                        <div class="ps-moment__voice-row">
-                            <button type="button" class="ps-journal__voice-play" disabled aria-disabled="true" aria-label="Playback for this voice Moment is coming later">{{ jbook.icon_play() }}</button>
-                            <span class="ps-journal__voice-wave" aria-hidden="true"></span>
-                            <span class="ps-journal__voice-duration">{{ moment.voice_duration_label or 'Coming later' }}</span>
+                        </div>
+                        <div class="ps-moment__header-content">
+                            <p class="ps-moment__meta">
+                                {% if moment.display_time %}<span>{{ moment.display_time }}</span><span aria-hidden="true">&middot;</span>{% endif %}
+                                <span>{{ source_label }}</span>
+                                <span aria-hidden="true">&middot;</span>
+                                <span class="ps-journal__meta-privacy">{{ jbook.icon_lock() }} Private</span>
+                                {% if moment.lifecycle_state == 'archived' %}
+                                <span aria-hidden="true">&middot;</span>
+                                <span class="ps-journal__manage-archived-badge">Archived</span>
+                                {% endif %}
+                            </p>
+                            <h1 class="ps-moment__title" id="journal-moment-title">{{ moment.title or 'Untitled Moment' }}</h1>
+                            {% if moment.context_text %}
+                            <p class="ps-moment__context">{{ moment.context_text }}</p>
+                            {% else %}
+                            <p class="ps-moment__note-fallback">The full note opens here soon.</p>
+                            {% endif %}
                         </div>
                     </div>
+
+                    {% if moment.source_type == 'voice' or moment.thumbnail_kind %}
+                    <div class="ps-moment__body">
+                        {% if moment.source_type == 'voice' %}
+                        <div class="ps-moment__main">
+                            <div class="ps-moment__voice-row">
+                                <button type="button" class="ps-journal__voice-play" disabled aria-disabled="true" aria-label="Playback for this voice Moment is coming later">{{ jbook.icon_play() }}</button>
+                                <span class="ps-journal__voice-wave" aria-hidden="true"></span>
+                                <span class="ps-journal__voice-duration">{{ moment.voice_duration_label or 'Coming later' }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if moment.thumbnail_kind %}
+                        <div class="ps-moment__photo">{{ jbook.thumb_by_kind(moment.thumbnail_kind) }}</div>
+                        {% endif %}
+                    </div>
                     {% endif %}
-                    {% if moment.thumbnail_kind %}
-                    <div class="ps-moment__photo">{{ jbook.thumb_by_kind(moment.thumbnail_kind) }}</div>
-                    {% endif %}
+
+                    <div class="ps-moment__version">
+                        <span class="ps-moment__version-copy"><strong>Version history</strong><span>{{ moment.version_number or 1 }} version{{ '' if moment.version_number == 1 else 's' }}{% if moment.version_created_label %} &middot; {{ moment.version_created_label }}{% endif %}</span></span>
+                        <span class="ps-moment__version-link" aria-disabled="true">View history <span class="ps-moment__lifecycle-badge">Coming later</span></span>
+                    </div>
+
+                    <div class="ps-moment__lifecycle" role="group" aria-label="Moment actions, coming later">
+                        <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                            {{ icon_edit() }}<span>Edit</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                        </button>
+                        <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                            {{ icon_archive() }}<span>Archive</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                        </button>
+                        <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                            {{ icon_export() }}<span>Export</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                        </button>
+                        <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
+                            {{ icon_delete() }}<span>Delete</span><span class="ps-moment__lifecycle-badge">Coming later</span>
+                        </button>
+                    </div>
+
+                    <p class="ps-moment__footer-truth">{{ jbook.icon_lock() }} <strong>Private to you</strong> <span aria-hidden="true">&middot;</span> Only you can see this Moment.</p>
                 </div>
-                {% endif %}
-
-                <div class="ps-moment__version">
-                    <span>Version history &middot; {{ moment.version_number or 1 }} version{{ '' if moment.version_number == 1 else 's' }}</span>
-                    <span class="ps-moment__version-link" aria-disabled="true">View history <span class="ps-moment__lifecycle-badge">Coming later</span></span>
-                </div>
-
-                <div class="ps-moment__lifecycle" role="group" aria-label="Moment actions, coming later">
-                    <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
-                        {{ icon_edit() }}<span>Edit</span><span class="ps-moment__lifecycle-badge">Coming later</span>
-                    </button>
-                    <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
-                        {{ icon_archive() }}<span>Archive</span><span class="ps-moment__lifecycle-badge">Coming later</span>
-                    </button>
-                    <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
-                        {{ icon_export() }}<span>Export</span><span class="ps-moment__lifecycle-badge">Coming later</span>
-                    </button>
-                    <button type="button" class="ps-moment__lifecycle-btn" disabled aria-disabled="true">
-                        {{ icon_delete() }}<span>Delete</span><span class="ps-moment__lifecycle-badge">Coming later</span>
-                    </button>
-                </div>
-
-                <p class="ps-moment__footer-truth">{{ jbook.icon_lock() }} Private to you &middot; Only you can see this Moment.</p>
-
-                <p class="ps-moment__back-cta">
-                    <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">Back to Journal</a>
-                </p>
             </div>
         </div>
     </div>

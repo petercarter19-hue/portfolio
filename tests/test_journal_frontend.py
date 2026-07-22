@@ -194,9 +194,7 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         self.assertIn('data-timeline', body)
         self.assertIn("Capture a Moment", body)
         self.assertIn("Private to you", body)
-        self.assertIn(
-            "Private to you - only you can see this until you choose to share.", body
-        )
+        self.assertIn("Only you can see this until you choose to share.", body)
         self.assertIn("Save Moment", body)
         self.assertIn("Only you", body)
         self.assertIn("Coming later", body)
@@ -215,12 +213,12 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         # Opus review N5 fix: this used to assert
         # body.count(...) == body.count(...) - always true regardless of the
         # actual count, so it could never catch a fake-enabled control. The
-        # real, precise count for this fixture is exactly the 4 Use This
-        # Moment chips plus one disabled voice-play control per voice-
-        # sourced row (sample_items() has exactly one) - never a fake-
-        # enabled control (site rule 83).
+        # The real, precise count for this fixture is the four Use This
+        # Moment chips, the visibly locked audience selector, and one disabled
+        # voice-play control per voice-sourced row. This catches a fake-enabled
+        # future destination or playback control.
         voice_row_count = sum(1 for item in sample_items() if item["source_type"] == "voice")
-        expected_disabled_count = 4 + voice_row_count
+        expected_disabled_count = 5 + voice_row_count
         self.assertEqual(body.count('aria-disabled="true"'), expected_disabled_count)
         self.assertIn("Add a photo or video", body)
 
@@ -247,12 +245,12 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        # S2 (Opus review): accepted screen A's exact copy, unattributed
-        # (the image's "- Pete" signature is a fixture accident per doc 13
-        # and is dropped in every member's Journal).
+        # Doc 15 item 37 supersedes doc 13: quote attribution is dynamic to
+        # the authenticated member, never fixed to the accepted fixture.
         self.assertIn("Your story starts here.", body)
         self.assertIn("The pages are yours.", body)
         self.assertNotIn("&mdash; Pete", body)
+        self.assertIn("&mdash; Local", body)
         self.assertNotIn("Maya Thompson", body)
         # S2: the zero-count This-Season hero is fully suppressed on a
         # genuinely empty first visit, not just visually deemphasized.
@@ -324,6 +322,11 @@ class OwnerJournalMomentDetailTests(unittest.TestCase):
         self.assertIn(">MAY<", body)
         self.assertIn(">2026<", body)
         self.assertIn("Only you", body)
+        self.assertIn("Back to timeline", body)
+        self.assertNotIn("Back to Journal", body)
+        self.assertIn("Journal sections", body)
+        for chapter_label in ("Timeline", "Voice", "Photos", "Videos", "Milestones", "Reflections"):
+            self.assertIn(chapter_label, body)
         # B2: no internal jargon or stored-procedure names leak into
         # member-facing copy.
         self.assertNotIn("usp_", body)
@@ -345,6 +348,146 @@ class OwnerJournalMomentDetailTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         journal_service.list_owner_journal.assert_not_called()
+
+
+class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
+    """Doc 15 fixture richness must be possible for visual evidence without
+    allowing production records to collide with fixture presentation data."""
+
+    def setUp(self):
+        self.original_config = {
+            "TESTING": app.config.get("TESTING"),
+            "PEERSLATE_JOURNAL_ENABLED": app.config.get("PEERSLATE_JOURNAL_ENABLED"),
+            "PEERSLATE_JOURNAL_EVIDENCE_FIXTURES": app.config.get(
+                "PEERSLATE_JOURNAL_EVIDENCE_FIXTURES"
+            ),
+            "PEERSLATE_JOURNAL_EVIDENCE_STATE": app.config.get(
+                "PEERSLATE_JOURNAL_EVIDENCE_STATE"
+            ),
+            "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
+            "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
+        }
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_JOURNAL_ENABLED=True,
+            PEERSLATE_JOURNAL_EVIDENCE_FIXTURES=True,
+            PEERSLATE_JOURNAL_EVIDENCE_STATE="timeline",
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY=DEV_USER_KEY,
+        )
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(self.original_config)
+
+    @patch("owner_routes.journal_service")
+    def test_test_only_timeline_fixture_is_exact_and_never_calls_member_read(self, journal_service):
+        response = self.client.get("/app/journal")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        journal_service.list_owner_journal.assert_not_called()
+        self.assertIn('data-journal-evidence-fixture="true"', body)
+        for day in ("20", "19", "18", "13"):
+            self.assertIn(f">{day}<", body)
+        self.assertNotIn(">17<", body)
+        self.assertNotIn(">16<", body)
+        self.assertNotIn(">15<", body)
+        self.assertIn("9:41 AM", body)
+        self.assertIn("Attached to this Moment", body)
+
+    @patch("owner_routes.journal_service")
+    def test_test_only_detail_fixture_is_rich_without_a_member_read(self, journal_service):
+        response = self.client.get(
+            "/app/journal/moments/e1111111-1111-1111-1111-111111111111"
+        )
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        journal_service.list_owner_journal.assert_not_called()
+        self.assertIn("Felt prepared, present, and confident.", body)
+        self.assertIn("1 version", body)
+        self.assertIn("Created May 20, 2024", body)
+        self.assertIn("Back to timeline", body)
+
+    @patch("owner_routes.journal_service")
+    def test_test_only_manage_fixture_is_exact_and_never_calls_member_read(self, journal_service):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "manage"
+
+        response = self.client.get("/app/journal")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        journal_service.list_owner_journal.assert_not_called()
+        self.assertIn("68 Moments", body)
+        for label in ("Voice", "Text", "Photo", "Video"):
+            self.assertIn(label, body)
+        for day in ("20", "19", "18", "17", "16", "15"):
+            self.assertIn(f">{day}<", body)
+        self.assertNotIn(">13<", body)
+
+    @patch("owner_routes.journal_service")
+    def test_fixture_mode_cannot_be_requested_by_url(self, journal_service):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_FIXTURES"] = False
+        journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory(
+            sample_items()
+        )
+
+        response = self.client.get("/app/journal?evidence=manage")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        # The query cannot opt an identity into the test provider.  With the
+        # explicit server switch off, the normal authorized read is required.
+        self.assertTrue(journal_service.list_owner_journal.called)
+        self.assertNotIn('data-journal-evidence-fixture="true"', body)
+        self.assertNotIn("68 Moments", body)
+
+    @patch("owner_routes.journal_service")
+    @patch("owner_routes.get_current_identity")
+    def test_same_title_never_enriches_two_real_members(self, identity, journal_service):
+        # The config key is deliberately left true. TESTING=false is the
+        # production gate: neither owner can ever enter fixture presentation.
+        app.config["TESTING"] = False
+        fixture_title = "I led the first client workshop without reading from my notes."
+        real_item = {
+            "moment_key": MOMENT_KEY_TEXT,
+            "moment_kind": "update",
+            "title": fixture_title,
+            "occurred_on": datetime.date(2026, 5, 20),
+            "occurred_precision": "exact",
+            "visibility": "private",
+            "source_type": "text",
+            "lifecycle_state": "active",
+            "version_number": 1,
+        }
+        identity.side_effect = (
+            PeerSlateIdentity("real-owner-one", "test", "issuer", "one", display_name="Avery"),
+            PeerSlateIdentity("real-owner-two", "test", "issuer", "two", display_name="Blair"),
+        )
+        journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory([real_item])
+
+        first = self.client.get("/app/journal").get_data(as_text=True)
+        second = self.client.get("/app/journal").get_data(as_text=True)
+
+        for body in (first, second):
+            self.assertIn(fixture_title, body)
+            self.assertNotIn("9:41 AM", body)
+            self.assertNotIn("Felt prepared, present, and confident.", body)
+            self.assertNotIn("thumbnail_kind", body)
+            self.assertNotIn('data-journal-evidence-fixture="true"', body)
+            self.assertNotIn("data-fixture-attached", body)
+        owner_keys = [call.args[0] for call in journal_service.list_owner_journal.call_args_list]
+        self.assertIn("real-owner-one", owner_keys)
+        self.assertIn("real-owner-two", owner_keys)
+
+    def test_client_draft_never_uses_persistent_browser_storage(self):
+        js_path = Path(__file__).resolve().parent.parent / "static" / "js" / "journal.js"
+        js_source = js_path.read_text(encoding="utf-8")
+
+        self.assertNotIn("localStorage", js_source)
+        self.assertNotIn("sessionStorage", js_source)
+        self.assertIn("let recoverableDraft", js_source)
 
 
 class OwnerJournalVoiceDraftTests(unittest.TestCase):
