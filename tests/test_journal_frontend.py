@@ -1081,6 +1081,31 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
             self.assertGreaterEqual(illustration["width"], 120)
             self.assertLessEqual(illustration["width"], 170)
 
+    def test_hero_headline_is_italic_and_remains_a_two_line_identity(self):
+        for width, height, dark in ((1440, 1040, False), (1440, 1040, True), (390, 844, False), (390, 844, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            headline = page.locator(".ps-journal__hero-headline")
+            box = headline.bounding_box()
+            self.assertIsNotNone(box)
+            self.assertEqual(headline.evaluate("node => getComputedStyle(node).fontStyle"), "italic")
+            line_height = float(headline.evaluate("node => parseFloat(getComputedStyle(node).lineHeight)"))
+            self.assertLessEqual(box["height"], line_height * 2.1)
+
+    def test_speak_stage_matches_or_exceeds_type_stage_on_desktop_and_mobile(self):
+        for width, height, dark in ((1440, 1040, False), (1440, 1040, True), (390, 844, False), (390, 844, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            page.locator("#journal-open-composer").click()
+            type_stage = page.locator("#journal-narrative").bounding_box()
+            page.locator("[data-composer-tab='speak']").click()
+            speak_stage = page.locator(".ps-composer__voice").bounding_box()
+            self.assertIsNotNone(type_stage)
+            self.assertIsNotNone(speak_stage)
+            self.assertGreaterEqual(speak_stage["height"], type_stage["height"])
+            if width >= 900:
+                self.assertGreaterEqual(speak_stage["height"], type_stage["height"] + 8)
+
     def test_desktop_rail_anchors_reflections_and_flourish_to_the_final_rows(self):
         page = self._page(width=1440, height=1040)
         page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")

@@ -107,7 +107,19 @@ def main() -> None:
                                 return { top: Math.round(rect.top), bottom: Math.round(rect.bottom) };
                             };
                             return {
-                                hero: box('.ps-journal__hero'),
+                                hero: (() => {
+                                    const node = document.querySelector('.ps-journal__hero');
+                                    const headline = document.querySelector('.ps-journal__hero-headline');
+                                    if (!node || !headline) return null;
+                                    const rect = node.getBoundingClientRect();
+                                    const headlineRect = headline.getBoundingClientRect();
+                                    return {
+                                        top: Math.round(rect.top), bottom: Math.round(rect.bottom),
+                                        headline_width: Math.round(headlineRect.width),
+                                        headline_height: Math.round(headlineRect.height),
+                                        headline_font_style: getComputedStyle(headline).fontStyle,
+                                    };
+                                })(),
                                 rail: {
                                     timeline: box('#journal-rail-timeline'),
                                     voice: box('#journal-rail-voice'),
@@ -122,6 +134,21 @@ def main() -> None:
                                     may19: box('#journal-moment-e2222222-2222-2222-2222-222222222222'),
                                     may18: box('#journal-moment-e3333333-3333-3333-3333-333333333333'),
                                     may13: box('#journal-moment-e4444444-4444-4444-4444-444444444444'),
+                                },
+                            };
+                        }"""
+                    )
+                if name == "timeline-mobile-light-390.png":
+                    geometry = page.evaluate(
+                        """() => {
+                            const headline = document.querySelector('.ps-journal__hero-headline');
+                            if (!headline) return { hero: null };
+                            const rect = headline.getBoundingClientRect();
+                            return {
+                                hero: {
+                                    headline_width: Math.round(rect.width),
+                                    headline_height: Math.round(rect.height),
+                                    headline_font_style: getComputedStyle(headline).fontStyle,
                                 },
                             };
                         }"""
@@ -167,6 +194,23 @@ def main() -> None:
                             };
                         }"""
                     )
+                if name in {
+                    "composer-type-desktop-light-1440.png",
+                    "composer-type-desktop-dark-1440.png",
+                    "composer-type-mobile-light-390.png",
+                    "composer-type-mobile-dark-390.png",
+                    "composer-speak-desktop-light-1440.png",
+                    "composer-speak-desktop-dark-1440.png",
+                    "composer-speak-mobile-light-390.png",
+                    "composer-speak-mobile-dark-390.png",
+                }:
+                    selector = "#journal-narrative" if "composer-type" in name else ".ps-composer__voice"
+                    stage = page.locator(selector).bounding_box()
+                    geometry["composer_stage"] = {
+                        "mode": "type" if "composer-type" in name else "speak",
+                        "width": round(stage["width"]),
+                        "height": round(stage["height"]),
+                    }
                 page.screenshot(path=str(OUT / name), animations="disabled")
                 captures.append(
                     {
@@ -187,6 +231,57 @@ def main() -> None:
             capture("timeline-mobile-light-390.png", width=390, height=844)
             capture("timeline-mobile-dark-390.png", width=390, height=844, dark=True)
             capture("timeline-mobile-light-320.png", width=320, height=740)
+            # Purposeful lower-page Timeline proof: a desktop viewport contains
+            # all four fixture entries plus Load more; the narrow mobile views
+            # use two readable bounded segments rather than a stitched page.
+            capture(
+                "timeline-desktop-light-1440-entries.png",
+                action=lambda page: page.evaluate("window.scrollTo(0, 700)"),
+            )
+            capture(
+                "timeline-desktop-dark-1440-entries.png",
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 700)"),
+            )
+            capture(
+                "timeline-mobile-light-390-entries-a.png",
+                width=390,
+                height=844,
+                action=lambda page: page.evaluate("window.scrollTo(0, 760)"),
+            )
+            capture(
+                "timeline-mobile-dark-390-entries-a.png",
+                width=390,
+                height=844,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 760)"),
+            )
+            capture(
+                "timeline-mobile-light-390-entries-b.png",
+                width=390,
+                height=844,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
+            )
+            capture(
+                "timeline-mobile-dark-390-entries-b.png",
+                width=390,
+                height=844,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
+            )
+            capture(
+                "timeline-mobile-light-320-entries-b.png",
+                width=320,
+                height=740,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
+            )
+            capture(
+                "timeline-mobile-dark-320-entries-b.png",
+                width=320,
+                height=740,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
+            )
             capture(
                 "composer-type-desktop-light-1440.png",
                 action=lambda page: page.locator("#journal-open-composer").click(),
@@ -288,6 +383,21 @@ def main() -> None:
             capture("manage-mobile-light-390.png", state="manage", width=390, height=844)
             capture("manage-mobile-dark-390.png", state="manage", width=390, height=844, dark=True)
             capture(
+                "manage-mobile-light-390-lower.png",
+                state="manage",
+                width=390,
+                height=844,
+                action=lambda page: page.evaluate("window.scrollTo(0, 520)"),
+            )
+            capture(
+                "manage-mobile-dark-390-lower.png",
+                state="manage",
+                width=390,
+                height=844,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 520)"),
+            )
+            capture(
                 "detail-desktop-light-1440.png",
                 state="detail",
                 path=f"/app/journal/moments/{DETAIL_KEY}",
@@ -312,6 +422,23 @@ def main() -> None:
                 height=844,
                 dark=True,
                 path=f"/app/journal/moments/{DETAIL_KEY}",
+            )
+            capture(
+                "detail-mobile-light-390-lower.png",
+                state="detail",
+                width=390,
+                height=844,
+                path=f"/app/journal/moments/{DETAIL_KEY}",
+                action=lambda page: page.evaluate("window.scrollTo(0, 500)"),
+            )
+            capture(
+                "detail-mobile-dark-390-lower.png",
+                state="detail",
+                width=390,
+                height=844,
+                dark=True,
+                path=f"/app/journal/moments/{DETAIL_KEY}",
+                action=lambda page: page.evaluate("window.scrollTo(0, 500)"),
             )
             capture(
                 "timeline-desktop-200pct-zoom-light-1440.png",

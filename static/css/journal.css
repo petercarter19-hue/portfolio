@@ -701,7 +701,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 
 .ps-journal__hero-headline {
     font-family: "Newsreader", Georgia, serif;
-    font-style: normal;
+    font-style: italic;
     font-weight: 650;
     font-size: clamp(1.8rem, 2.7vw, 2.25rem);
     line-height: 1.08;
@@ -2025,6 +2025,10 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
 
 .ps-composer__voice {
     text-align: center;
+    display: flex;
+    min-height: 21rem;
+    flex-direction: column;
+    justify-content: center;
     padding: 1.5rem 1rem;
     border: 1px solid var(--jbook-card-border);
     border-radius: 0.8rem;
@@ -2712,6 +2716,10 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
 
     .ps-composer__field {
         min-height: 9.25rem;
+    }
+
+    .ps-composer__voice {
+        min-height: 13.5rem;
     }
 
     .ps-composer__header {
