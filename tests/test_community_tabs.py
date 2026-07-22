@@ -7,9 +7,13 @@ tab, route claim, keyboard stop, or fixture destination.
 
 import os
 import re
+import shutil
+import subprocess
 import unittest
+from itertools import combinations
 
 from app import app
+from PIL import Image
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -165,6 +169,23 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         ):
             self.assertIn(contract, css)
 
+    def test_focus_lifecycle_behavior_harness_passes(self):
+        node = shutil.which("node")
+        app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+        if not node and os.path.isfile(app_node):
+            node = app_node
+        if not node:
+            self.skipTest("Node runtime unavailable for the dependency-free focus behavior harness")
+        result = subprocess.run(
+            [node, os.path.join(ROOT, "tests", "community_focus_lifecycle.test.js")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("4 behavioral checks passed", result.stdout)
+
 
 class CommunityTruthAndBreakTests(unittest.TestCase):
     def setUp(self):
@@ -178,6 +199,20 @@ class CommunityTruthAndBreakTests(unittest.TestCase):
                 self.assertIn("Sample data — nothing on this page is saved or shared.", html)
                 self.assertIn('class="ps-sample-note"', html)
                 self.assertIn("Sample community.", html)
+
+    def test_legacy_my_slate_links_never_claim_the_flagged_off_journal(self):
+        html = self.client.get("/feed-living-stream").get_data(as_text=True)
+        links = re.findall(r'<a\b[^>]*href="/the-slate/my-slate"[^>]*>.*?</a>', html, re.DOTALL)
+        self.assertGreaterEqual(len(links), 2)
+        for link in links:
+            self.assertIn("My Slate", link)
+            self.assertNotIn(">Journal<", link)
+        self.assertNotIn('href="/app/journal"', html)
+        with open(os.path.join(ROOT, "static", "js", "feed-living-stream.js"), encoding="utf-8") as handle:
+            js = handle.read()
+        self.assertIn('href="/the-slate/my-slate">Open My Slate', js)
+        self.assertNotIn('href="/the-slate/my-slate">Open my Journal', js)
+        self.assertNotIn('href="/app/journal"', js)
 
     def test_break_uses_supplied_photography_and_truthful_controls(self):
         html = self.client.get("/the-slate/break").get_data(as_text=True)
@@ -199,6 +234,46 @@ class CommunityTruthAndBreakTests(unittest.TestCase):
             js = handle.read()
         self.assertNotIn("/api/", js)
         self.assertIn("data-comm-create-post", js)
+
+    def test_feed_composer_is_explicitly_a_local_preview(self):
+        with open(os.path.join(ROOT, "static", "js", "feed-living-stream.js"), encoding="utf-8") as handle:
+            js = handle.read()
+        for approved in (
+            "Add preview to Feed",
+            "Appears in this local sample feed only. Nothing is saved, shared, or added to your Journal.",
+            "Local preview · not saved",
+            "Preview added to this sample feed for this browser session only. Nothing was saved or shared.",
+            "My Story preview · not connected",
+            "Slate Board preview · not connected",
+            "Resume preview · not connected",
+            "No confidentiality or safety check ran.",
+        ):
+            self.assertIn(approved, js)
+        for forbidden in (
+            "Publish update",
+            "Save privately",
+            "Saved privately to your Journal",
+            "Appears in Feed and your public Journal",
+            "Confidentiality check",
+            "No employer, customer, or restricted details were detected",
+            "From Pete’s Journal",
+            "Published to ",
+        ):
+            self.assertNotIn(forbidden, js)
+
+    def test_connection_chips_are_inert_preview_labels(self):
+        with open(os.path.join(ROOT, "static", "js", "feed-living-stream.js"), encoding="utf-8") as handle:
+            js = handle.read()
+        chip = re.search(r"function connectChipHTML\(key\) \{(.*?)\n  \}", js, re.DOTALL).group(1)
+        self.assertIn("data-connect-preview", chip)
+        self.assertIn('aria-disabled="true"', chip)
+        self.assertNotIn("<button", chip)
+        self.assertNotIn("aria-pressed", chip)
+        self.assertNotIn("data-connect=", js)
+
+    def test_local_preview_feature_flags_remain_off_by_default(self):
+        self.assertFalse(app.config["PEERSLATE_DATABASE_UI_ENABLED"])
+        self.assertFalse(app.config["PEERSLATE_JOURNAL_ENABLED"])
 
     def test_break_keeps_feed_shell_but_uses_the_authority_integrated_module_flow(self):
         """The shell retains Feed's 860px primary / 320px rail geometry, but
@@ -277,6 +352,27 @@ class CommunityAssetTests(unittest.TestCase):
                 self.assertTrue(os.path.isfile(desktop), desktop)
                 self.assertLessEqual(os.path.getsize(mobile), 120 * 1024, mobile)
                 self.assertLessEqual(os.path.getsize(desktop), 250 * 1024, desktop)
+
+    def test_product_sources_have_no_duplicate_or_near_duplicate_images(self):
+        """Product rasters must remain distinct; visual authorities are excluded."""
+        hashes = {}
+        for relative_path in self.RESPONSIVE_MEDIA:
+            with Image.open(os.path.join(ROOT, relative_path)) as source:
+                gray = source.convert("L").resize((9, 8))
+                pixels = list(gray.getdata())
+            value = 0
+            for row in range(8):
+                for column in range(8):
+                    left = pixels[row * 9 + column]
+                    right = pixels[row * 9 + column + 1]
+                    value = (value << 1) | int(left > right)
+            hashes[relative_path] = value
+
+        closest = min(
+            ((left ^ right).bit_count(), left_path, right_path)
+            for (left_path, left), (right_path, right) in combinations(hashes.items(), 2)
+        )
+        self.assertGreater(closest[0], 6, closest)
 
 
 class CommunityResponsiveMediaTests(unittest.TestCase):

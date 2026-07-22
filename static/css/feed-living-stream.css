@@ -364,7 +364,7 @@
   .comment-composer input::placeholder{color:#728198}
   .comment-composer:focus-within{border-color:#B9C2F5;box-shadow:0 0 0 3px rgba(79,91,213,.12)}
   /* Interactive layer additions */
-  .post.just-published { animation:ps-post-in .36s var(--ease); }
+  .post.just-previewed { animation:ps-post-in .36s var(--ease); }
   .overlay { animation:ps-overlay-in .22s var(--ease); }
   .audio-level.live i { animation:ps-wave .9s ease-in-out infinite alternate; transform-origin:center; }
   .audio-level.live i:nth-child(3n){animation-duration:.72s}
@@ -378,7 +378,7 @@
     & *, & *::before, & *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
     .audio-level.live i { animation:none; }
     .live-transcript .cursor { animation:none; }
-    .post.just-published { animation:none; }
+    .post.just-previewed { animation:none; }
   }
 
   /* responsive */

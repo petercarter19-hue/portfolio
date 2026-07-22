@@ -23,6 +23,7 @@
   var pageTitleEl = document.getElementById('pageTitle');
   var pageSubtitleEl = document.getElementById('pageSubtitle');
   var announcer = document.getElementById('announcer');
+  var focusLifecycle = window.PeerSlateCommunityFocus;
 
   function announce(message) {
     if (!announcer) { return; }
@@ -67,6 +68,12 @@
     if (!URLS[next]) { return false; }
 
     hydrateDeferredMedia(next);
+    var nextTab = tabFor(next);
+    var movedBeforeHide = focusLifecycle && focusLifecycle.moveBeforePanelHide(
+      panels, next, document.activeElement, nextTab);
+    if (opts.focus && !movedBeforeHide && nextTab) {
+      focusLifecycle ? focusLifecycle.focusElement(nextTab) : nextTab.focus();
+    }
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute('data-tab-panel') !== next;
     });
@@ -83,10 +90,6 @@
 
     if (opts.updateUrl && window.location.pathname !== URLS[next]) {
       window.history.pushState({ communityTab: next }, '', URLS[next]);
-    }
-    if (opts.focus) {
-      var nextTab = tabFor(next);
-      if (nextTab) { nextTab.focus(); }
     }
     if (opts.announce !== false) { announce(COPY[next].title + ' selected.'); }
     return true;
