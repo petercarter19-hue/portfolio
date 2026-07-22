@@ -450,7 +450,21 @@ class OwnerHomeHtmlRenderTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Nothing requires review right now.", body)
         self.assertIn(b"No confirmed Moment to show.", body)
+        self.assertIn(b"No confirmed Moment yet", body)
+        self.assertNotIn(b"One confirmed", body)
         self.assertIn(b"Start a new Capture", body)
+
+    @patch("auth_routes.owner_home_service")
+    def test_recent_moment_note_only_claims_confirmation_when_a_moment_exists(
+        self, home_service
+    ):
+        home_service.get_home.return_value = self.view_model()
+
+        response = self.client.get("/app")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"One confirmed", response.data)
+        self.assertNotIn(b"No confirmed Moment yet", response.data)
 
     @patch("auth_routes.owner_home_service")
     def test_contract_failure_renders_honest_complete_failure_state(

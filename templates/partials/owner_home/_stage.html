@@ -24,12 +24,16 @@
         </div>
         {% else %}
         <div class="oh__stage">
-            {% include "partials/owner_home/_review_list.html" %}
-            {% include "partials/owner_home/_recent_moment.html" %}
-            {% include "partials/owner_home/_resurfaced_moment.html" %}
-            {% include "partials/owner_home/_noticed.html" %}
-            {% include "partials/owner_home/_connections.html" %}
-            {% include "partials/owner_home/_next_step.html" %}
+            <div class="oh__stage-row oh__stage-row--top">
+                {% include "partials/owner_home/_review_list.html" %}
+                {% include "partials/owner_home/_recent_moment.html" %}
+                {% include "partials/owner_home/_resurfaced_moment.html" %}
+            </div>
+            <div class="oh__stage-row oh__stage-row--bottom">
+                {% include "partials/owner_home/_noticed.html" %}
+                {% include "partials/owner_home/_connections.html" %}
+                {% include "partials/owner_home/_next_step.html" %}
+            </div>
         </div>
         {% endif %}
     </div>

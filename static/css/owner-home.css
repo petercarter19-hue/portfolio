@@ -446,12 +446,6 @@ a.oh__nav-item--current .oh__nav-caption {
     border-color: var(--oh-marigold);
 }
 
-.oh__rail-foot {
-    margin: 12px 0 0;
-    font-size: 0.68rem;
-    color: rgb(255 253 248 / 42%);
-}
-
 /* =====================================================================
    Luminous ivory working stage
    ===================================================================== */
@@ -472,19 +466,26 @@ a.oh__nav-item--current .oh__nav-caption {
 
 .oh__stage {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 18px;
     align-items: stretch;
 }
 
 .oh__stage-row {
-    display: contents;
+    display: grid;
+    gap: 18px;
+    align-items: stretch;
 }
 
-/* Unequal editorial hierarchy: Review widest, Recent a prominent media
-   card, Resurfaced quieter (parity row 6). */
-.oh__card--review {
-    grid-column: span 1;
+/* The accepted 1320px authority stage uses different editorial tracks in
+   each row. Preserve those ratios fluidly: Review leads the top row, Recent
+   remains substantial, Resurfaced is quieter; the lower Connections card is
+   intentionally narrower between the two larger bookend cards. */
+.oh__stage-row--top {
+    grid-template-columns: minmax(0, 450fr) minmax(0, 400fr) minmax(0, 398fr);
+}
+
+.oh__stage-row--bottom {
+    grid-template-columns: minmax(0, 430fr) minmax(0, 380fr) minmax(0, 430fr);
 }
 
 .oh__card {
@@ -699,11 +700,6 @@ a.oh__nav-item--current .oh__nav-caption {
     color: rgb(16 24 32 / 55%);
 }
 
-.oh__moment-card--empty .oh__empty-title,
-.oh__moment-card--empty .oh__empty {
-    margin-top: 4px;
-}
-
 /* Dormant "Coming later" capability previews (Resurfaced, Noticed,
    Connections) — distinct decorative material per section (D3), no
    people/records/counts/member-like photography anywhere. */
@@ -910,11 +906,12 @@ body.owner-home-shell .oh__btn--primary {
    this route defines its own fluid set, per the frontend architecture).
    ===================================================================== */
 @media (max-width: 844px) {
-    .oh__stage {
+    .oh__stage-row {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .oh__card--review {
+    .oh__stage-row--top .oh__card--review,
+    .oh__stage-row--bottom .oh__card--next {
         grid-column: 1 / -1;
     }
 }
@@ -929,11 +926,12 @@ body.owner-home-shell .oh__btn--primary {
         width: 100%;
     }
 
-    .oh__stage {
+    .oh__stage-row {
         grid-template-columns: 1fr;
     }
 
-    .oh__card--review {
+    .oh__stage-row--top .oh__card--review,
+    .oh__stage-row--bottom .oh__card--next {
         grid-column: auto;
     }
 

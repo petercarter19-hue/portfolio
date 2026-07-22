@@ -388,6 +388,50 @@ class OwnerHomeAccessibilityTestCase(unittest.TestCase):
         for width in ("844px", "540px", "400px"):
             self.assertIn(f"max-width: {width}", css)
 
+    def test_editorial_stage_uses_distinct_authority_track_ratios(self):
+        with open("static/css/owner-home.css", encoding="utf-8") as handle:
+            css = handle.read()
+
+        def tracks_for(selector):
+            block = css.split(f"{selector} {{", 1)[1].split("}", 1)[0]
+            match = re.search(r"grid-template-columns:\s*([^;]+);", block)
+            self.assertIsNotNone(match, f"{selector} must define grid tracks")
+            return [int(value) for value in re.findall(r"(\d+)fr", match.group(1))]
+
+        top = tracks_for(".oh__stage-row--top")
+        bottom = tracks_for(".oh__stage-row--bottom")
+
+        # The accepted 1320px authority is 450 / 400 / 398 above and
+        # 430 / 380 / 430 below. Checking values and dominance prevents a
+        # future equal-column simplification from passing on class names alone.
+        self.assertEqual(top, [450, 400, 398])
+        self.assertEqual(bottom, [430, 380, 430])
+        self.assertGreater(top[0], top[1])
+        self.assertGreater(top[1], top[2])
+        self.assertEqual(bottom[0], bottom[2])
+        self.assertGreater(bottom[0], bottom[1])
+        self.assertNotEqual(top, bottom)
+
+    def test_retry_enhancement_preserves_native_modified_link_activations(self):
+        with open("static/js/owner-home.js", encoding="utf-8") as handle:
+            script = handle.read()
+
+        for guard in (
+            "event.defaultPrevented",
+            "event.button !== 0",
+            "event.metaKey",
+            "event.ctrlKey",
+            "event.shiftKey",
+            "event.altKey",
+            "link.hasAttribute('download')",
+            "target && target.toLowerCase() !== '_self'",
+        ):
+            self.assertIn(guard, script)
+
+        guard_index = script.index("event.defaultPrevented")
+        prevent_index = script.index("event.preventDefault()")
+        self.assertLess(guard_index, prevent_index)
+
     def test_forced_colors_block_resets_every_element_not_just_a_few(self):
         # Regression guard: setting `forced-color-adjust: none` on a
         # container class disables the browser's automatic forced-colors

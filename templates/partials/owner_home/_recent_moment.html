@@ -5,9 +5,13 @@
 <section class="oh__card oh__card--recent" aria-labelledby="oh-recent-title">
     <div class="oh__card-head">
         <h2 id="oh-recent-title">Recent Moment</h2>
+        {% set moment = home.recent_moment if home else None %}
+        {% if moment %}
         <span class="oh__card-note">One confirmed</span>
+        {% else %}
+        <span class="oh__card-note">No confirmed Moment yet</span>
+        {% endif %}
     </div>
-    {% set moment = home.recent_moment if home else None %}
     {% if moment %}
     <a class="oh__moment-card" href="{{ moment.destination }}">
         <span class="oh__moment-media" aria-hidden="true"></span>
