@@ -163,6 +163,15 @@ class OwnerJournalFlagAndAuthTests(unittest.TestCase):
     def test_journal_flag_defaults_off(self):
         self.assertIs(self.original_config["PEERSLATE_JOURNAL_ENABLED"], False)
 
+    def test_journal_shell_exception_does_not_change_a_public_shell(self):
+        response = self.client.get("/peerslate")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('class="profile-tabs', body)
+        self.assertIn('data-open-chat', body)
+        self.assertIn('id="chat-toggle"', body)
+
 
 class OwnerJournalPageRenderTests(unittest.TestCase):
     """Flag on + a resolvable owner identity: assert the rendered page shell,
