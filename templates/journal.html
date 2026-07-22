@@ -282,7 +282,7 @@
                     {% endfor %}
 
                     {% if next_cursor %}
-                    <button type="button" class="ps-btn ps-btn--ghost ps-journal__load-more" id="journal-load-more" data-load-more data-cursor="{{ next_cursor }}">Load more moments</button>
+                    <button type="button" class="ps-btn ps-btn--ghost ps-journal__load-more" id="journal-load-more" data-load-more data-cursor="{{ next_cursor }}"><span>Load more moments</span><span aria-hidden="true">⌄</span></button>
                     {% endif %}
 
                     {% else %}

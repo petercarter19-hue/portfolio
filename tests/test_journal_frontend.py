@@ -908,7 +908,10 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
 
         page.route("**/api/journal/moments**", api)
         page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
-        page.locator("#journal-load-more").click()
+        load_more = page.locator("#journal-load-more")
+        self.assertIn("⌄", load_more.inner_text())
+        self.assertEqual(load_more.locator("[aria-hidden='true']").inner_text(), "⌄")
+        load_more.click()
         loaded = page.locator("#journal-moment-e8888888-8888-8888-8888-888888888888")
         loaded.wait_for()
         self.assertEqual(loaded.locator(".ps-journal__date-node").count(), 1)

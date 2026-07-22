@@ -270,6 +270,19 @@ def main() -> None:
                 action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
             )
             capture(
+                "timeline-mobile-light-390-entries-c.png",
+                width=390,
+                height=844,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1740)"),
+            )
+            capture(
+                "timeline-mobile-dark-390-entries-c.png",
+                width=390,
+                height=844,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1740)"),
+            )
+            capture(
                 "timeline-mobile-light-320-entries-b.png",
                 width=320,
                 height=740,
@@ -281,6 +294,19 @@ def main() -> None:
                 height=740,
                 dark=True,
                 action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
+            )
+            capture(
+                "timeline-mobile-light-320-entries-c.png",
+                width=320,
+                height=740,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1740)"),
+            )
+            capture(
+                "timeline-mobile-dark-320-entries-c.png",
+                width=320,
+                height=740,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 1740)"),
             )
             capture(
                 "composer-type-desktop-light-1440.png",
@@ -396,6 +422,21 @@ def main() -> None:
                 height=844,
                 dark=True,
                 action=lambda page: page.evaluate("window.scrollTo(0, 520)"),
+            )
+            capture(
+                "manage-mobile-light-390-footer.png",
+                state="manage",
+                width=390,
+                height=844,
+                action=lambda page: page.evaluate("window.scrollTo(0, 900)"),
+            )
+            capture(
+                "manage-mobile-dark-390-footer.png",
+                state="manage",
+                width=390,
+                height=844,
+                dark=True,
+                action=lambda page: page.evaluate("window.scrollTo(0, 900)"),
             )
             capture(
                 "detail-desktop-light-1440.png",

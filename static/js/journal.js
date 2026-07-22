@@ -415,7 +415,7 @@
             const cursor = loadMoreButton.dataset.cursor;
             if (!cursor) return;
             loadMoreButton.disabled = true;
-            const originalText = loadMoreButton.textContent;
+            const originalMarkup = loadMoreButton.innerHTML;
             loadMoreButton.textContent = "Loading…";
             try {
                 const url = new URL(CONFIG.apiUrl, window.location.origin);
@@ -429,7 +429,7 @@
                     if (result.next_cursor) {
                         loadMoreButton.dataset.cursor = result.next_cursor;
                         loadMoreButton.disabled = false;
-                        loadMoreButton.textContent = originalText;
+                        loadMoreButton.innerHTML = originalMarkup;
                     } else {
                         loadMoreButton.remove();
                     }
