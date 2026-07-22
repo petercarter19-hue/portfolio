@@ -23,7 +23,6 @@ from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
-from services.people_interests_feed import people_interests_feed
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -1053,22 +1052,13 @@ def skills():
 
 
 def _render_community_tabs(initial_tab):
-    # PS-COMMUNITY-TABS-001 (2026-07-21, owner): Feed / The Break / Saved
-    # share ONE seamless Studio-style tab shell — the same "all panels
-    # render server-side, JavaScript swaps which one is visible" pattern as
-    # Interview Studio's Interview Me / AI / Video / History. `initial_tab`
-    # only decides which panel starts visible and which of the three real
-    # URLs (/the-slate, /the-slate/break, /the-slate/saved) this exact
-    # request answers; every panel's full markup is always present so a
-    # tab click never reloads the page. Saved folds the retired People &
-    # Interests board's "Saved notes" fixture value in, honestly labeled as
-    # sample data — the read-only service is untouched.
-    saved_notes = people_interests_feed.left_rail.get('saved_notes', [])
+    # PS-COMMUNITY-TABS-001 (2026-07-21, owner supersession): Feed and The
+    # Break are the only first-class Community views. Both panels render
+    # server-side and JavaScript swaps visibility without a normal-click
+    # reload; `initial_tab` selects the bookmarkable Feed or Break route.
     return render_template(
         'the_slate.html',
         initial_tab=initial_tab,
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-        saved_notes=saved_notes,
     )
 
 
@@ -1195,29 +1185,23 @@ def slate_feed_pulse():
 
 @app.route('/the-slate/break')
 def slate_feed_break():
-    # The Break — now presented inside the same seamless Feed / The Break /
-    # Saved tab shell (PS-COMMUNITY-TABS-001). Its own accepted bento
-    # content (hero, transformation, weekend challenge, poll, local
-    # discovery, mood switch) is unchanged; only the surrounding chrome
-    # moved from a standalone page into the shared tab panel. The old
-    # standalone template (slate_break.html) stays on disk for rollback.
+    # The Break is the second first-class view in the same seamless,
+    # two-view Community shell as Feed.
     return _render_community_tabs('break')
 
 
 @app.route('/the-slate/saved')
 def the_slate_saved():
-    # Saved — the third Community tab (PS-COMMUNITY-TABS-001, owner
-    # decision 2026-07-21): folds the retired People & Interests board's
-    # "Saved notes" fixture value into a calm, honestly labeled list inside
-    # the same seamless tab shell as Feed and The Break.
-    return _render_community_tabs('saved')
+    # Compatibility-only legacy address. Saved is not a Community view and
+    # must never render a third panel or destination.
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/people-interests')
 def the_slate_people_interests():
     # The board launched at this address (2026-07-13), became The Slate
     # landing the next day, and was retired as the landing on 2026-07-21 in
-    # favor of the Feed / The Break / Saved tab shell — forward so any
+    # favor of the Feed / The Break Community shell — forward so any
     # shared link keeps working.
     return redirect(url_for('the_slate'), code=302)
 
@@ -2722,7 +2706,7 @@ def sitemap_xml():
         '/petec/slate-board', '/interview-studio', '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
-        '/the-slate/pulse', '/the-slate/break', '/the-slate/saved',
+        '/the-slate/pulse', '/the-slate/break',
         '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
     ]
     base = request.url_root.rstrip('/')

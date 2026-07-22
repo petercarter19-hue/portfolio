@@ -20,7 +20,7 @@ SAME_ORIGIN = {"X-PeerSlate-Request": "same-origin"}
 class PeopleInterestsPageTests(unittest.TestCase):
     """The People & Interests board retired as the /the-slate landing on
     2026-07-21 (PS-COMMUNITY-TABS-001) in favor of the seamless Feed / The
-    Break / Saved tab shell. Its own template stays on disk for rollback,
+    Break tab shell. Its own template stays on disk for rollback,
     matching this repository's existing convention for a retired landing
     view (the_slate_feed.html). Tab-shell-specific coverage lives in
     tests/test_community_tabs.py."""
@@ -59,16 +59,16 @@ class PeopleInterestsPageTests(unittest.TestCase):
         # The untouched global header and profile sub-header render as-is.
         self.assertIn("platform-nav", html)
         self.assertIn("profile-tabs", html)
-        # The seamless Feed / The Break / Saved switcher (PS-COMMUNITY-TABS-001)
+        # The seamless Feed / The Break switcher (PS-COMMUNITY-TABS-001)
         # replaces the old People & Interests / Feed / The Break strip.
         self.assertNotIn("People &amp; Interests", html)
         self.assertIn("The Break", html)
-        self.assertIn('data-comm-tab="saved"', html)
+        self.assertNotIn('data-comm-tab="saved"', html)
         self.assertNotIn("News Feed", html)
 
     def test_existing_routes_unaffected(self):
         for path in (
-            "/the-slate/break", "/the-slate/saved", "/the-slate/daily",
+            "/the-slate/break", "/the-slate/daily",
             "/the-slate/my-slate", "/the-slate/pulse",
         ):
             response = self.client.get(path, base_url="http://localhost")

@@ -8,6 +8,23 @@
   var APP_ROOT = document.getElementById('feed-app');
   var ASSET_BASE = (APP_ROOT && APP_ROOT.getAttribute('data-asset-base')) || '/static/images/feed';
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MEDIA_DIMENSIONS = {
+    'dinner_served.jpg': [2000, 1500],
+    'feed-workflow-whiteboard-2026-07-21.png': [1672, 941],
+    'feed-surf-sunrise-2026-07-21.png': [1672, 941],
+    'feed-team-demo-2026-07-21.png': [1672, 941],
+    'feed-trail-run-2026-07-21.png': [1672, 941],
+    'feed-coffee-notes-2026-07-21.png': [1672, 941],
+    'feed-keyboard-build-2026-07-21.png': [1672, 941],
+    'feed-keyboard-components-2026-07-21.png': [1672, 941],
+    'feed-mountain-hike-2026-07-21.png': [1122, 1402],
+    'feed-prototype-table-2026-07-21.png': [1672, 941],
+    'feed-workflow-closeup-2026-07-21.png': [1672, 941],
+    'feed-workflow-corkboard-2026-07-21.png': [1672, 941],
+    'feed-surf-wave-2026-07-21.png': [1672, 941],
+    'feed-journal-notebook-2026-07-21.png': [1672, 941],
+    'feed-mountain-ridge-2026-07-21.png': [1672, 941]
+  };
 
   /* The site's sticky global header (nav + slim sub-header) owns the top of
      every page; measure its real height so the community sidebar and Catch
@@ -59,7 +76,7 @@
       id: 'p-pete-dinner', initials: 'PC', color: 'pc', name: 'Pete Carter',
       kind: 'Personal moment', dot: 'amber', time: 'Just now', audience: 'Connections',
       title: 'Dinner has been served!',
-      image: 'dinner_served.jpg', badge: 'Outside work',
+      image: 'dinner_served.jpg', badge: 'Outside work', priority: 'high',
       alt: 'A candlelit dinner table set for two — lasagna on gray plates, woven placemats, a striped runner, roses in a vase, and a handwritten Carter’s Kitchen menu.'
     },
     {
@@ -67,8 +84,8 @@
       kind: 'Work update', dot: '', time: '2h', audience: 'Connections',
       title: 'The design review finally clicked today.',
       copy: 'We stopped debating screens and mapped the actual handoff. That one change made the entire workflow easier to explain—and much easier to build.',
-      image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-      alt: 'Danielle pointing at a whiteboard covered in workflow sketches during a design review.',
+      image: 'feed-workflow-whiteboard-2026-07-21.png', badge: 'Project Phoenix',
+      alt: 'Two illustrative teammates mapping a product workflow on a glass board during a design review.',
       linkline: '▣ &nbsp; From Danielle’s Journal &nbsp;·&nbsp; <strong>Linked to Project Phoenix</strong>'
     },
     {
@@ -76,8 +93,8 @@
       kind: 'Personal moment', dot: 'amber', time: '4h', audience: 'Community',
       title: 'Got in the water before the workday.',
       copy: 'I’m not calling it balance yet, but this was a pretty good start.',
-      image: 'surf_morning.jpg', badge: 'Video · Outside work', video: true, duration: '0:38',
-      alt: 'A surfer riding a small wave at sunrise before work.'
+      image: 'feed-surf-sunrise-2026-07-21.png', badge: 'Video · Outside work', video: true, duration: '0:38',
+      alt: 'An illustrative surfer walking toward a sunrise beach with a board before work.'
     },
     {
       id: 'p-aisha-meeting', initials: 'AP', color: 'ap', name: 'Aisha Patel',
@@ -91,31 +108,31 @@
       kind: 'Personal moment', dot: 'amber', time: '6h', audience: 'Community',
       title: 'Sunday reset, above the clouds.',
       copy: 'No laptop, no notifications — just the trail. Monday me says thank you.',
-      image: 'mountain_walk.jpg', frame: 'polaroid', polaroidCaption: 'above the clouds · Sunday',
-      alt: 'A walker on a mountain ridge trail above a sea of clouds.'
+      image: 'feed-mountain-hike-2026-07-21.png', frame: 'polaroid', polaroidCaption: 'above the clouds · Sunday',
+      alt: 'An illustrative hiker walking a mountain trail toward a bright valley.'
     },
     {
       id: 'p-alex-demo', initials: 'AK', color: 'ak', name: 'Alex Kim',
       kind: 'Work update', dot: '', time: '7h', audience: 'Connections',
       title: 'Two-minute demo of the new onboarding flow.',
       copy: 'Recorded right after the standup — rough cut, real reactions.',
-      image: 'team_video.jpg', badge: 'Video', video: true, duration: '1:47', frame: 'film',
-      alt: 'A team gathered around a laptop recording a product demo.'
+      image: 'feed-team-demo-2026-07-21.png', badge: 'Video', video: true, duration: '1:47', frame: 'film',
+      alt: 'Three illustrative teammates reviewing a product model beside a laptop.'
     },
     {
       id: 'p-marcus-5k', initials: 'MR', color: 'mr', name: 'Marcus Rivera',
       kind: 'Milestone', dot: 'green', time: '9h', audience: 'Community',
       title: '5k before standup — a new personal record. 🎉',
       copy: 'Three months ago I couldn’t run a mile without stopping. Small steps, every day.',
-      image: 'trail_run.jpg', badge: 'Milestone',
-      alt: 'A runner on a forest trail in early morning light.'
+      image: 'feed-trail-run-2026-07-21.png', badge: 'Milestone',
+      alt: 'An illustrative runner pausing on a hillside trail at sunrise.'
     },
     {
       id: 'p-aisha-notes', initials: 'AP', color: 'ap', name: 'Aisha Patel',
       kind: 'Personal moment', dot: 'amber', time: 'Yesterday', audience: 'Community',
       title: 'Saturday morning: coffee, a pen, and zero meetings.',
-      image: 'coffee_notes.jpg', frame: 'polaroid', polaroidCaption: 'the good kind of planning',
-      alt: 'A coffee cup beside a notebook of handwritten weekend notes.'
+      image: 'feed-coffee-notes-2026-07-21.png', frame: 'polaroid', polaroidCaption: 'the good kind of planning',
+      alt: 'An illustrative coffee and open planning notebook on a wooden table.'
     }
   ];
 
@@ -125,8 +142,8 @@
       kind: 'Personal project', dot: 'green', time: '46m', audience: 'Community',
       title: 'The keyboard build is finally alive.',
       copy: 'It took three soldering attempts and one very patient Saturday, but every key works. I learned more about debugging from this than I expected.',
-      gallery: ['keyboard_build.jpg', 'coffee_notes.jpg', 'office_prototype.jpg'],
-      galleryAlts: ['A custom mechanical keyboard mid-assembly.', 'Coffee beside handwritten build notes.', 'A prototype laid out on an office desk.'],
+      gallery: ['feed-keyboard-build-2026-07-21.png', 'feed-journal-notebook-2026-07-21.png', 'feed-keyboard-components-2026-07-21.png'],
+      galleryAlts: ['An illustrative custom mechanical keyboard mid-assembly.', 'An illustrative open planning notebook beside tea and a pen.', 'A distinct illustrative close-up of tactile mechanical keyboard components and hands at a workbench.'],
       linkline: '▣ &nbsp; 3 photos &nbsp;·&nbsp; Personal project'
     },
     {
@@ -134,8 +151,8 @@
       kind: 'Project update', dot: '', time: '3h', audience: 'Connections',
       title: 'A few screens from today’s prototype review.',
       copy: 'The final layout is simpler than the version we started with. That is the point.',
-      gallery: ['office_prototype.jpg', 'whiteboard_close.jpg', 'work_whiteboard.jpg'],
-      galleryAlts: ['A prototype laid out on an office desk.', 'A close-up of whiteboard workflow notes.', 'Danielle pointing at a whiteboard workflow sketch.'],
+      gallery: ['feed-prototype-table-2026-07-21.png', 'feed-workflow-closeup-2026-07-21.png', 'feed-workflow-corkboard-2026-07-21.png'],
+      galleryAlts: ['An illustrative team reviewing a tangible prototype at a shared table.', 'An illustrative hand arranging a visual workflow on glass.', 'An illustrative team reviewing a corkboard workflow.'],
       linkline: '▣ &nbsp; Project Phoenix · 3 photos'
     }
   ];
@@ -146,16 +163,16 @@
       kind: 'Personal moment', dot: 'amber', time: '38 min', audience: 'Connections',
       title: 'Morning surf before the workday.',
       copy: 'Not everything worth remembering happens at a desk.',
-      image: 'surf_morning.jpg', badge: 'Video', video: true, duration: '0:38',
-      alt: 'A surfer riding a small wave at sunrise before work.'
+      image: 'feed-surf-wave-2026-07-21.png', badge: 'Video', video: true, duration: '0:38',
+      alt: 'An illustrative surfer riding a wave at sunrise before work.'
     },
     {
       id: 'p-danielle-walkthrough', initials: 'DM', color: 'dm', name: 'Danielle Morgan',
       kind: 'Work update', dot: '', time: '2h', audience: 'Connections',
       title: 'The handoff no longer needs a walkthrough.',
       copy: 'We reduced the number of choices, exposed the owner at each step, and made the next action obvious.',
-      image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-      alt: 'Danielle pointing at a whiteboard covered in workflow sketches.'
+      image: 'feed-workflow-corkboard-2026-07-21.png', badge: 'Project Phoenix',
+      alt: 'An illustrative team reviewing a corkboard workflow.'
     }
   ];
 
@@ -166,8 +183,8 @@
       kind: 'Project update', dot: '', time: '2h', audience: 'Connections',
       title: 'We finally have a prototype people can understand without a walkthrough.',
       copy: 'The breakthrough was removing choices, not adding features.',
-      gallery: ['office_prototype.jpg', 'whiteboard_close.jpg', 'work_whiteboard.jpg'],
-      galleryAlts: ['A prototype laid out on an office desk.', 'A close-up of whiteboard workflow notes.', 'Danielle pointing at a whiteboard workflow sketch.']
+      gallery: ['feed-prototype-table-2026-07-21.png', 'feed-workflow-closeup-2026-07-21.png', 'feed-workflow-corkboard-2026-07-21.png'],
+      galleryAlts: ['An illustrative team reviewing a tangible prototype at a shared table.', 'An illustrative hand arranging a visual workflow on glass.', 'An illustrative team reviewing a corkboard workflow.']
     }
   ];
 
@@ -176,8 +193,8 @@
     kind: 'Work update', dot: '', time: '1h', audience: 'Connections',
     title: 'We changed the handoff after today’s review.',
     copy: 'The team was not asking for more documentation. They needed one clear decision point and a visible owner. That is what we are testing next.',
-    image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-    alt: 'Danielle pointing at a whiteboard covered in workflow sketches.'
+    image: 'feed-workflow-corkboard-2026-07-21.png', badge: 'Project Phoenix',
+    alt: 'An illustrative team reviewing a corkboard workflow.'
   };
 
   var DETAIL_COMMENTS = [
@@ -235,6 +252,8 @@
       aiStep: false
     },
     reactions: {},                // postId -> true
+    // Per-post action state for this rendered Feed only. It never selects or
+    // exposes a separate Community destination.
     saves: {},                    // postId -> true
     publishedPosts: [],           // fixture posts added through the publish flow
     detailExtraComments: []
@@ -246,9 +265,8 @@
   var pageTitle = document.getElementById('pageTitle');
   var pageSubtitle = document.getElementById('pageSubtitle');
   var overlayRoot = document.getElementById('overlayRoot');
-  /* The old For You / Following tablist is gone — the .feed-tab elements are
-     now plain links that switch between community views (People & Interests,
-     Feed, The Break). No JS needed for them. */
+  /* Community view switching belongs to community-tabs.js. Feed only owns
+     this panel's established stream and composer interactions. */
 
   /* ---------- render helpers (ported from the handoff build script) ---------- */
 
@@ -290,18 +308,50 @@
       '<div class="respond-tray" data-respond-tray="' + esc(post.id) + '" hidden role="group" aria-label="Respond with an intention">' + tray + '</div>';
   }
 
+  function responsiveFile(file, width) {
+    return file.replace(/\.[^.]+$/, '-' + width + '.webp');
+  }
+
+  function responsiveImageHTML(file, alt, options) {
+    options = options || {};
+    var dimensions = MEDIA_DIMENSIONS[file];
+    var priority = options.priority === 'high';
+    var loading = priority ? 'eager' : 'lazy';
+    var attrs = ' alt="' + esc(alt || '') + '" loading="' + loading +
+      '" decoding="async" fetchpriority="' + (priority ? 'high' : 'low') + '"';
+
+    /* Every production fixture is registered above. The fallback protects an
+       in-progress composer fixture without silently breaking its rendering. */
+    if (!dimensions) {
+      return '<img src="' + ASSET_BASE + '/' + file + '"' + attrs + '>';
+    }
+
+    var widths = file === 'feed-mountain-hike-2026-07-21.png' ? [560, 1120] : [640, 1280];
+    var mobile = ASSET_BASE + '/' + responsiveFile(file, widths[0]);
+    var desktop = ASSET_BASE + '/' + responsiveFile(file, widths[1]);
+    return '<img src="' + mobile + '" srcset="' + mobile + ' ' + widths[0] +
+      'w, ' + desktop + ' ' + widths[1] + 'w" sizes="' + esc(options.sizes ||
+      '(min-width: 900px) 620px, calc(100vw - 32px)') + '" width="' + dimensions[0] +
+      '" height="' + dimensions[1] + '"' + attrs + '>';
+  }
+
   function mediaHTML(post) {
     if (post.gallery) {
       var imgs = post.gallery.slice(0, 3).map(function (file, i) {
         var alt = (post.galleryAlts && post.galleryAlts[i]) || '';
-        return '<img class="g' + (i + 1) + '" src="' + ASSET_BASE + '/' + file + '" alt="' + esc(alt) + '">';
+        return responsiveImageHTML(file, alt, {
+          sizes: '(min-width: 900px) 200px, 31vw'
+        }).replace('<img ', '<img class="g' + (i + 1) + '" ');
       }).join('');
       return '<div class="gallery">' + imgs + '</div>';
     }
     if (!post.image) { return ''; }
     var badge = post.badge ? '<div class="media-badge">' + esc(post.badge) + '</div>' : '';
     if (post.video) {
-      var video = '<div class="media video"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge +
+      var video = '<div class="media video">' + responsiveImageHTML(post.image, post.alt, {
+        priority: post.priority,
+        sizes: '(min-width: 900px) 620px, calc(100vw - 32px)'
+      }) + badge +
         '<div class="media-overlay"></div>' +
         '<button class="play" type="button" data-play="' + esc(post.id) + '" aria-label="Play video: ' + esc(post.title) + ' (' + esc(post.duration) + ')"></button>' +
         '<div class="video-caption"><h3>' + esc(post.title) + '</h3><p>' + esc(post.copy || 'A real moment shared in the member’s own voice.') + '</p></div>' +
@@ -318,11 +368,17 @@
     /* Polaroid frame (member-chosen option, never a default): white instant-
        photo mat with a handwritten caption in the thick bottom border. */
     if (post.frame === 'polaroid') {
-      return '<figure class="polaroid"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' +
+      return '<figure class="polaroid">' + responsiveImageHTML(post.image, post.alt, {
+        priority: post.priority,
+        sizes: '(min-width: 900px) 590px, calc(100vw - 56px)'
+      }) +
         (post.polaroidCaption ? '<figcaption class="polaroid-caption">' + esc(post.polaroidCaption) + '</figcaption>' : '') +
         '</figure>';
     }
-    return '<div class="media landscape"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge + '</div>';
+    return '<div class="media landscape">' + responsiveImageHTML(post.image, post.alt, {
+      priority: post.priority,
+      sizes: '(min-width: 900px) 620px, calc(100vw - 32px)'
+    }) + badge + '</div>';
   }
 
   function voicePlayerHTML(post) {
@@ -445,12 +501,12 @@
     pageSubtitle.textContent = SUBTITLES[key] || SUBTITLES['default'];
   }
 
-  /* PS-COMMUNITY-TABS-001 (2026-07-21): inside the shared Feed / The Break /
-     Saved tab shell, #feed-app IS the whole comm-shell (not just the Feed
-     panel) — #pageTitle/#pageSubtitle are the ONE page header all three
-     panels share. Feed's own render() still needs to populate #feedColumn /
-     #contextRail even while Break or Saved is the active tab (so switching
-     to Feed later is instant, with no flash of empty content), but it must
+  /* PS-COMMUNITY-TABS-001 (2026-07-21): inside the shared Feed / The Break
+     shell, #feed-app IS the whole comm-shell (not just the Feed panel) —
+     #pageTitle/#pageSubtitle are the one page header both panels share.
+     Feed's own render() still needs to populate #feedColumn / #contextRail
+     while The Break is active (so switching to Feed later is instant, with
+     no flash of empty content), but it must
      never overwrite that shared header while a different tab is the one the
      visitor is actually looking at — community-tabs.js owns the header text
      whenever Feed isn't active. On the standalone /feed-living-stream preview
@@ -716,15 +772,16 @@
         (a.doc ? ' &nbsp;·&nbsp; 1 document attached' : '') + ' &nbsp;·&nbsp; AI-suggested draft'
     };
     if (a.video) {
-      post.image = 'team_video.jpg';
+      post.image = 'feed-team-demo-2026-07-21.png';
       post.video = true;
       post.duration = '1:47';
       post.badge = 'Video';
+      post.priority = 'high';
       if (a.videoFrame === 'film') { post.frame = 'film'; }
       post.alt = 'Your attached video (simulated in this prototype).';
     } else if (a.photo) {
-      post.image = 'mountain_walk.jpg';
-      post.alt = 'Your attached photo (simulated in this prototype).';
+      post.image = 'feed-mountain-ridge-2026-07-21.png';
+      post.alt = 'Your attached photo of two hikers on a mountain ridge (simulated in this prototype).';
       if (a.photoFrame === 'polaroid') { post.frame = 'polaroid'; post.polaroidCaption = 'from today'; }
     }
     if (a.audio) { post.voice = true; post.voiceDuration = a.audioDuration; }
@@ -833,7 +890,7 @@
       state.saves[saveId] = !state.saves[saveId];
       el.setAttribute('aria-pressed', state.saves[saveId] ? 'true' : 'false');
       el.innerHTML = icon('bookmark', 'sm') + ' ' + (state.saves[saveId] ? 'Saved' : 'Save');
-      announce(state.saves[saveId] ? 'Saved privately. Only you can see your saved posts.' : 'Removed from your saved posts.');
+      announce(state.saves[saveId] ? 'Marked for this page only.' : 'Removed from this page.');
       return;
     }
     if (el.hasAttribute('data-comment')) {

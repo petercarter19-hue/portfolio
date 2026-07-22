@@ -143,7 +143,7 @@ class PeerSlateApiTests(unittest.TestCase):
         self.assertIn(b'data-board-api="true"', database_board.data)
         self.assertIn(b'Saved privately', database_board.data)
         self.assertIn(b'data-database-ui="true"', daily_slate.data)
-        self.assertIn(b'data-break-api="true"', break_feed.data)
+        self.assertNotIn(b'data-break-api=', break_feed.data)
 
     def test_living_resume_database_routes_are_feature_flagged_off(self):
         self.assertEqual(self.client.get("/api/living-resume/me").status_code, 404)

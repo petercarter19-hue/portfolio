@@ -139,7 +139,6 @@ class NavigationTests(unittest.TestCase):
             '/the-slate/daily',
             '/the-slate/pulse',
             '/the-slate/break',
-            '/the-slate/saved',
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, base_url='http://localhost')
@@ -179,7 +178,6 @@ class NavigationTests(unittest.TestCase):
             '/the-slate/daily',
             '/the-slate/pulse',
             '/the-slate/break',
-            '/the-slate/saved',
             '/career-search',
             '/my-network',
             '/explore-profiles',

@@ -1,49 +1,24 @@
-{# ============================================================
-   COMMUNITY TAB SHELL — Feed · The Break · Saved (PS-COMMUNITY-TABS-001)
-   /the-slate · /the-slate/break · /the-slate/saved
+{#
+  COMMUNITY TAB SHELL — Feed · The Break (PS-COMMUNITY-TABS-001)
+  /the-slate · /the-slate/break
 
-   Owner decision, 2026-07-21: the People & Interests corkboard that used
-   to land here is retired (it overlapped Feed almost completely). Community
-   now adopts the LIVE Interview Studio tab pattern as its structure — every
-   panel's full markup renders in this one response (exactly like Studio's
-   Interview Me / AI / Video / History panels), and static/js/community-tabs.js
-   swaps which one is visible with no page reload. `initial_tab` (passed from
-   app.py) only decides which panel starts visible and which of the three
-   real, bookmarkable URLs this exact request answers.
-
-   Visual authority: docs/initiatives/PS-COMMUNITY-TABS-001/visual-authority/
-   community-feed-owner-example.png (pixel rule). The Feed panel below reuses
-   the already pixel-matched PS-FEED-001 Living Stream system
-   (static/css/feed-living-stream.css + static/js/feed-living-stream.js,
-   scoped under #feed-app) minus its old community sidebar — the mockup's
-   "wide calm stage" has none. feed-living-stream.js needed one small,
-   surgical fix for this shared shell (see feedTabIsActive() in that file):
-   it originally assumed #pageTitle/#pageSubtitle were always "its" header,
-   which is only true on the standalone /feed-living-stream preview — inside
-   this shell they are the ONE header all three tabs share, so it must not
-   overwrite them while Break or Saved is the active tab. The CSS is
-   otherwise untouched. The Break panel reuses its existing accepted bento
-   content verbatim (unchanged, per the package boundary) in the same shell.
-   Saved is new: the retired board's "Saved notes" fixture value, honestly
-   labeled sample data.
-   ============================================================ #}
+  Owner-superseding decision, 2026-07-21: Community has exactly two
+  first-class views. Both panels render in this response and
+  static/js/community-tabs.js swaps them without a normal-click reload.
+  The legacy /the-slate/saved address redirects to Feed; it has no panel,
+  tab, client state, or product destination.
+#}
 {% extends "base.html" %}
 
-{% set _comm_titles = {
-    'feed': 'Feed',
-    'break': 'The Break',
-    'saved': 'Saved',
-} %}
+{% set _comm_titles = {'feed': 'Feed', 'break': 'The Break'} %}
 
 {% block title %}{{ _comm_titles[initial_tab] }} · Community | PeerSlate{% endblock %}
 
 {% block meta_description %}
 {%- if initial_tab == 'break' -%}
-The Break on PeerSlate: step away, recharge, and come back with more you — inside the same seamless Feed / The Break / Saved Community tabs.
-{%- elif initial_tab == 'saved' -%}
-Saved notes from Community, gathered calmly in one place — inside the same seamless Feed / The Break / Saved Community tabs.
+The Break on PeerSlate: a restorative sample-community view inside the same seamless Feed / The Break Community experience.
 {%- else -%}
-The Community Feed on PeerSlate — what people are building, learning, and living. Switch seamlessly to The Break or Saved.
+The Community Feed on PeerSlate — what people are building, learning, and living. Switch seamlessly to The Break.
 {%- endif -%}
 {% endblock %}
 
@@ -56,11 +31,11 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=global-header-1"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=community-break-2"
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/community-tabs.css') }}?v=community-tabs-1"
+    href="{{ url_for('static', filename='css/community-tabs.css') }}?v=community-break-2"
 >
 {% endblock %}
 
@@ -90,7 +65,6 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
     data-initial-tab="{{ initial_tab }}"
     data-feed-url="{{ url_for('the_slate') }}"
     data-break-url="{{ url_for('slate_feed_break') }}"
-    data-saved-url="{{ url_for('the_slate_saved') }}"
     data-asset-base="{{ url_for('static', filename='images/feed') }}"
 >
   <div class="main">
@@ -103,8 +77,6 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
           <p class="page-subtitle" id="pageSubtitle">
             {%- if initial_tab == 'break' -%}
             Step away. Recharge. Come back with more you.
-            {%- elif initial_tab == 'saved' -%}
-            Notes you&rsquo;ve kept for later, all in one place.
             {%- else -%}
             What people are building, learning, and living.
             {%- endif -%}
@@ -113,25 +85,13 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
           {% include "partials/sample_community_note.html" %}
         </div>
 
-        {# The seamless Feed / The Break / Saved switcher — the Studio tab
-           pattern adopted as Community's structure. Real, bookmarkable
-           links (progressive enhancement); static/js/community-tabs.js
-           intercepts clicks for the instant, no-reload swap. #}
         <nav class="feed-switch" role="tablist" aria-label="Community views" data-comm-switch>
           {{ comm_tab('feed', 'Feed', 'i-feed', url_for('the_slate'), 'mainInner') }}
           {{ comm_tab('break', 'The Break', 'i-cup', url_for('slate_feed_break'), 'panel-break') }}
-          {{ comm_tab('saved', 'Saved', 'i-bookmark', url_for('the_slate_saved'), 'panel-saved') }}
         </nav>
       </div>
 
-      {# ============ FEED PANEL ============
-         Body left EMPTY server-side on purpose: static/js/feed-living-stream.js
-         renders the composer, date label, and every post into #feedColumn /
-         #contextRail on load — exactly as it already does at the standalone
-         /feed-living-stream preview. (That script's own header-writing calls
-         are shared-header-aware — see feedTabIsActive() — so this still
-         holds true even when Break or Saved, not Feed, is this response's
-         initial_tab.) #}
+      {# Feed stays on its established fixture/interaction seam. #}
       <section
           class="main-inner"
           id="mainInner"
@@ -146,296 +106,212 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
         </div>
       </section>
 
-      {# ============ THE BREAK PANEL ============
-         Verbatim accepted bento content (hero, transformation, weekend
-         challenge, poll, local discovery, save-to-board bar, mood switch,
-         quote, pick-me-up, share-something-good, bottom band) — unchanged
-         per the package boundary. Only its old standalone page-head/switch
-         and community sidebar are gone; the shared header above replaces
-         them. #}
       <section
           class="main-inner break-inner bk-page bk-green break-embed"
           id="panel-break"
           role="tabpanel"
           aria-labelledby="tab-break"
-          aria-label="The Break"
           data-tab-panel="break"
-          data-break-api="{{ 'true' if database_ui_enabled else 'false' }}"
           {% if initial_tab != 'break' %}hidden{% endif %}
       >
-        <!-- ============ MAIN: CENTER + RIGHT RAIL ============ -->
         <div class="bk-layout">
+          <div class="bk-center">
+            <section class="bk-hero" aria-labelledby="break-hero-title">
+              <div class="bk-hero__copy">
+                <p class="bk-kicker">A restorative Community pause</p>
+                <h2 id="break-hero-title">Good break. Better you. <span aria-hidden="true">&#10024;</span></h2>
+                <p>Step away. Recharge. Come back with more you.</p>
+              </div>
+              {% if initial_tab == 'break' %}
+              <img
+                  class="bk-hero__image"
+                  src="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }}"
+                  srcset="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-chair-plant-1280.webp') }} 1280w"
+                  sizes="(max-width: 700px) 100vw, 860px"
+                  width="1693"
+                  height="929"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="high"
+                  alt=""
+              >
+              {% else %}
+              <img
+                  class="bk-hero__image"
+                  data-deferred-src="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }}"
+                  data-deferred-srcset="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-chair-plant-1280.webp') }} 1280w"
+                  data-deferred-sizes="(max-width: 700px) 100vw, 860px"
+                  width="1693"
+                  height="929"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt=""
+              >
+              {% endif %}
+            </section>
 
-            <!-- ---- CENTER ---- -->
-            <div class="bk-center">
-
-                <!-- Hero -->
-                <div class="bk-hero">
-                    <div class="bk-hero__copy">
-                        <h2>Good break. Better you. <span aria-hidden="true">&#10024;</span></h2>
-                        <p>Step away. Recharge. Come back with more you.</p>
-                    </div>
-                    <span class="bk-hero__art" aria-hidden="true">
-                        <svg viewBox="0 0 220 130">
-                            <ellipse cx="110" cy="120" rx="94" ry="8" fill="#2f8f5b" opacity="0.08"/>
-                            <g transform="translate(22 44)">
-                                <path d="M10 40 L7 60 L27 60 L24 40 Z" fill="#cdb99b"/>
-                                <path d="M17 40 C17 22 8 15 2 13 C6 30 10 36 17 40Z" fill="#3fae74"/>
-                                <path d="M17 40 C17 20 28 13 34 11 C30 28 24 36 17 40Z" fill="#2f9e64"/>
-                            </g>
-                            <g transform="translate(68 30)">
-                                <rect x="6" y="32" width="78" height="42" rx="12" fill="#5f9e77"/>
-                                <rect x="0" y="10" width="18" height="58" rx="9" fill="#6fae86"/>
-                                <rect x="72" y="10" width="18" height="58" rx="9" fill="#6fae86"/>
-                                <rect x="14" y="0" width="62" height="46" rx="14" fill="#7bbb92"/>
-                                <rect x="20" y="32" width="50" height="22" rx="8" fill="#ece0c8"/>
-                                <rect x="6" y="68" width="10" height="12" rx="3" fill="#4a5c3f"/>
-                                <rect x="74" y="68" width="10" height="12" rx="3" fill="#4a5c3f"/>
-                            </g>
-                            <g transform="translate(170 66)">
-                                <rect x="4" y="22" width="30" height="6" rx="3" fill="#cdb99b"/>
-                                <rect x="9" y="28" width="4" height="20" fill="#bba789"/>
-                                <rect x="25" y="28" width="4" height="20" fill="#bba789"/>
-                                <path d="M11 8 h13 v8 a6.5 6.5 0 0 1 -13 0 Z" fill="#ece0c8"/>
-                                <path d="M24 9 h3 a3.5 3.5 0 0 1 0 7 h-3" fill="none" stroke="#ece0c8" stroke-width="2.4"/>
-                                <path d="M14 4 q2.5 -3 0 -6 M19 4 q2.5 -3 0 -6" stroke="#a7bcac" stroke-width="1.4" fill="none"/>
-                            </g>
-                        </svg>
-                    </span>
+            <div class="bk-bento">
+              <article class="ps-card bk-card bk-transform">
+                <div class="bk-transform__main">
+                  <div class="bk-transform__copy">
+                    <header class="bk-card__top">
+                      <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5L4.8 8.3l5-.7z"/></svg> Transformation</span>
+                    </header>
+                    <h3>From drained to determined.</h3>
+                    <p class="bk-transform__lead">Small shifts.<br>Real change.</p>
+                  </div>
+                  <figure class="bk-beforeafter">
+                  {% if initial_tab == 'break' %}
+                  <img
+                      src="{{ url_for('static', filename='images/community/break-transformation-640.webp') }}"
+                      srcset="{{ url_for('static', filename='images/community/break-transformation-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-transformation-1280.webp') }} 1280w"
+                      sizes="(max-width: 700px) calc(100vw - 36px), 320px"
+                      width="1619"
+                      height="971"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                      alt="Illustrative before-and-after reset story: a tired person on the left and a refreshed person holding a mug on the right."
+                  >
+                  {% else %}
+                  <img
+                      data-deferred-src="{{ url_for('static', filename='images/community/break-transformation-640.webp') }}"
+                      data-deferred-srcset="{{ url_for('static', filename='images/community/break-transformation-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-transformation-1280.webp') }} 1280w"
+                      data-deferred-sizes="(max-width: 700px) calc(100vw - 36px), 320px"
+                      width="1619"
+                      height="971"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                      alt="Illustrative before-and-after reset story: a tired person on the left and a refreshed person holding a mug on the right."
+                  >
+                  {% endif %}
+                  <figcaption><span>Before</span><span>After</span></figcaption>
+                  </figure>
                 </div>
+                <blockquote class="bk-transform__quote">“I made tiny changes for a week. It changed everything.”</blockquote>
+                <footer class="bk-transform__foot">
+                  <span class="bk-avatar" aria-hidden="true">S</span>
+                  <span>Illustrative sample story</span>
+                </footer>
+              </article>
 
-                <!-- Bento grid -->
-                <div class="bk-bento">
-
-                    <!-- Transformation (tall, left) -->
-                    <article class="ps-card bk-card bk-transform">
-                        <header class="bk-card__top">
-                            <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5L4.8 8.3l5-.7z"/></svg> Transformation</span>
-                            <button class="bk-more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
-                        </header>
-                        <h3>From drained to determined.</h3>
-                        <p class="bk-transform__lead">Small shifts.<br>Real change.</p>
-                        <div class="bk-beforeafter">
-                            <span class="feed-img feed-img--duo-before" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 3.5-6 7-6s6 2 7 6"/></svg><i class="bk-tag bk-tag--before">Before</i></span>
-                            <span class="feed-img feed-img--duo-after" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M5 20c1-4 3.5-6 7-6s6 2 7 6"/><path d="M9 9.5s1 1.5 3 1.5 3-1.5 3-1.5"/></svg><i class="bk-tag bk-tag--after">After</i></span>
-                        </div>
-                        <blockquote class="bk-transform__quote">&ldquo;I made tiny changes for a week. It changed everything.&rdquo;</blockquote>
-                        <footer class="bk-transform__foot">
-                            <span class="bk-avatar" aria-hidden="true">M</span>
-                            <strong>Maya R.</strong>
-                            <a class="bk-link" href="#" aria-disabled="true" title="Full stories arrive with PeerSlate accounts">Read her story</a>
-                        </footer>
-                    </article>
-
-                    <!-- Weekend Challenge -->
-                    <article class="ps-card bk-card bk-challenge" data-db-challenge>
-                        <div class="bk-challenge__body">
-                            <header class="bk-card__top">
-                                <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h13l-2 4 2 4H5z"/><path d="M5 4v17"/></svg> Weekend Challenge</span>
-                            </header>
-                            <h3 data-db-challenge-title>30-Minute Reset <span aria-hidden="true">&#127807;</span></h3>
-                            <p data-db-challenge-body>Step outside, move your body, and clear your mind.</p>
-                            <div class="bk-joined">
-                                <span class="bk-facepile" aria-hidden="true"><i>A</i><i>J</i><i>M</i><i>R</i><i>+</i></span>
-                                <small>1,248 people joined</small>
-                            </div>
-                            <button type="button" class="bk-btn bk-btn--soft" data-break-toggle>
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4 10-10"/></svg>
-                                I'm in
-                            </button>
-                        </div>
-                        <span class="feed-img feed-img--nature bk-challenge__media" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M8 21c0-6 2-10 4-13M8 21c-3-3-4-7-4-10M12 8c1-3 3-5 6-6"/><circle cx="12" cy="4" r="1.6"/></svg>
-                            <i class="bk-tag bk-tag--new">New</i>
-                        </span>
-                    </article>
-
-                    <!-- Community Poll -->
-                    <article class="ps-card bk-card bk-poll" data-db-poll>
-                        <header class="bk-card__top">
-                            <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg> Community Poll</span>
-                            <button class="bk-more" type="button" aria-disabled="true" title="Preview — coming with PeerSlate accounts" aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
-                        </header>
-                        <h3 data-db-poll-question>What's your go-to reset?</h3>
-                        <ul class="bk-pollist" data-db-poll-options>
-                            <li><span class="bk-poll__fill" style="width: 42%;"></span><span class="bk-poll__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3 3 4 6 4 9a4 4 0 0 1-8 0c0-3 1-6 4-9z"/></svg></span><span class="bk-poll__label">Walk in nature</span><span class="bk-poll__pct">42%</span></li>
-                            <li><span class="bk-poll__fill" style="width: 26%;"></span><span class="bk-poll__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span><span class="bk-poll__label">Good playlist</span><span class="bk-poll__pct">26%</span></li>
-                            <li><span class="bk-poll__fill" style="width: 19%;"></span><span class="bk-poll__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 3v2M12 3v2"/></svg></span><span class="bk-poll__label">Coffee + quiet</span><span class="bk-poll__pct">19%</span></li>
-                            <li><span class="bk-poll__fill" style="width: 13%;"></span><span class="bk-poll__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 19l7-7a4 4 0 0 0-6-6l-7 7a4 4 0 0 0 6 6z"/><path d="M9 9l6 6"/></svg></span><span class="bk-poll__label">Creative time</span><span class="bk-poll__pct">13%</span></li>
-                        </ul>
-                        <p class="bk-poll__foot">1,893 votes &middot; Vote expires in 2d</p>
-                    </article>
-
-                    <!-- Local Discovery -->
-                    <article class="ps-card bk-card bk-local">
-                        <header class="bk-card__top">
-                            <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg> Local Discovery</span>
-                            <button class="bk-heart" type="button" aria-disabled="true" title="Saving lands with PeerSlate accounts" aria-label="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10z"/></svg></button>
-                        </header>
-                        <h3>Hidden gem near you</h3>
-                        <p class="bk-local__place">Riverside Bookshop &amp; Caf&eacute;<br><small>Austin, TX</small></p>
-                        <span class="feed-img feed-img--warm bk-local__media" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/><path d="M6.5 8h2M6.5 11h2M15.5 8h2M15.5 11h2"/></svg>
-                        </span>
-                        <a class="bk-link bk-local__link" href="#" aria-disabled="true" title="Details arrive with PeerSlate accounts">View details <span aria-hidden="true">&rarr;</span></a>
-                    </article>
-
-                    <!-- Save to Board bar -->
-                    <div class="ps-card bk-save">
-                        <span class="bk-save__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span>
-                        <div class="bk-save__copy">
-                            <strong>Save to Board</strong>
-                            <small>Love this? Save it for later. Add to one of your boards in one click.</small>
-                        </div>
-                        <div class="bk-save__chips">
-                            <button type="button" class="bk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Weekend Ideas</button>
-                            <button type="button" class="bk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4-2.5 5.2-.6.7-1 1.4-1.1 2.3h-4.8c-.1-.9-.5-1.6-1.1-2.3C7.5 13 6 11.5 6 9a6 6 0 0 1 6-6z"/></svg> Mindset</button>
-                            <button type="button" class="bk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2"/></svg> Places</button>
-                            <button type="button" class="bk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 3 4 6 4 9a4 4 0 0 1-8 0c0-3 1-6 4-9z"/></svg> Wellness</button>
-                            <button type="button" class="bk-chip bk-chip--new" aria-disabled="true" title="Preview — coming with PeerSlate accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> New Board</button>
-                        </div>
-                    </div>
-
+              <article class="ps-card bk-card bk-challenge">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h13l-2 4 2 4H5z"/><path d="M5 4v17"/></svg> Weekend Challenge</span>
+                </header>
+                <div class="bk-challenge__body">
+                  <h3>30-Minute Reset <span aria-hidden="true">&#127807;</span></h3>
+                  <p>Step outside, move your body, and clear your mind.</p>
+                  <p class="bk-static-note">Sample community prompt — no response is recorded.</p>
                 </div>
+              </article>
+
+              <article class="ps-card bk-card bk-poll">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg> Community Prompt</span>
+                </header>
+                <h3>What’s your go-to reset?</h3>
+                <ul class="bk-pollist" aria-label="Illustrative reset options">
+                  <li><span class="bk-poll__ic" aria-hidden="true">🌿</span><span class="bk-poll__label">Walk in nature</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">♫</span><span class="bk-poll__label">Good playlist</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">☕</span><span class="bk-poll__label">Coffee + quiet</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">✺</span><span class="bk-poll__label">Creative time</span></li>
+                </ul>
+                <p class="bk-poll__foot">Illustrative choices — no vote is recorded.</p>
+              </article>
+
+              <article class="ps-card bk-card bk-local">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg> Local Discovery</span>
+                </header>
+                <h3>Hidden gem near you</h3>
+                <p class="bk-local__place">Riverside Bookshop &amp; Café<br><small>Illustrative local discovery</small></p>
+                {% if initial_tab == 'break' %}
+                <img
+                    class="bk-local__media"
+                    src="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }}"
+                    srcset="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-bookstore-1280.webp') }} 1280w"
+                    sizes="(max-width: 700px) calc(100vw - 36px), 300px"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    alt="Illustrative warm bookstore and café interior with shelves, plants, tables, and a green chair."
+                >
+                {% else %}
+                <img
+                    class="bk-local__media"
+                    data-deferred-src="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }}"
+                    data-deferred-srcset="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-bookstore-1280.webp') }} 1280w"
+                    data-deferred-sizes="(max-width: 700px) calc(100vw - 36px), 300px"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    alt="Illustrative warm bookstore and café interior with shelves, plants, tables, and a green chair."
+                >
+                {% endif %}
+                <p class="bk-static-note">Sample card — details are not available yet.</p>
+              </article>
             </div>
 
-            <!-- ---- RIGHT RAIL ---- -->
-            <aside class="bk-rail" aria-label="Mood, quotes and inspiration">
+            <div class="bk-flow" aria-label="Mood, quote, Pick-Me-Up and sharing">
+            <section class="ps-card bk-mood" aria-labelledby="bk-mood-title">
+              <header class="bk-mood__head">
+                <span class="bk-mood__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg></span>
+                <h2 id="bk-mood-title">Mood Switch</h2>
+              </header>
+              <p class="bk-mood__sub">How do you want to feel right now?</p>
+              <div class="bk-moods" role="group" aria-label="Choose a mood for this local preview">
+                <button type="button" class="bk-moodopt is-active" data-mood aria-pressed="true"><span class="bk-moodopt__txt"><strong>Build</strong><small>Focus. Grow. Make progress.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Break</strong><small>Rest. Recharge. Reset.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Inspiration</strong><small>Get inspired. See possibilities.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Reflect</strong><small>Pause. Journal. Realign.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+              </div>
+              <p class="bk-static-note">Selection stays on this page only.</p>
+            </section>
 
-                <!-- Mood Switch -->
-                <section class="ps-card bk-mood" aria-labelledby="bk-mood-title">
-                    <header class="bk-mood__head">
-                        <span class="bk-mood__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg></span>
-                        <h2 id="bk-mood-title">Mood Switch</h2>
-                    </header>
-                    <p class="bk-mood__sub">How do you want to feel right now?</p>
-                    <div class="bk-moods" role="group" aria-label="Choose a mood">
-                        <button type="button" class="bk-moodopt is-active" data-mood>
-                            <span class="bk-moodopt__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2"/></svg></span>
-                            <span class="bk-moodopt__txt"><strong>Build</strong><small>Focus. Grow. Make progress.</small></span>
-                            <i class="bk-chevron" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="bk-moodopt" data-mood>
-                            <span class="bk-moodopt__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 9h2a2 2 0 0 1 0 4h-2"/><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M8 3v2M12 3v2"/></svg></span>
-                            <span class="bk-moodopt__txt"><strong>Break</strong><small>Rest. Recharge. Reset.</small></span>
-                            <i class="bk-chevron" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="bk-moodopt" data-mood>
-                            <span class="bk-moodopt__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 6 6c0 2.2-1.2 3.6-2.4 4.8-.7.7-1.1 1.4-1.3 2.2H9.7c-.2-.8-.6-1.5-1.3-2.2C7.2 12.6 6 11.2 6 9a6 6 0 0 1 6-6z"/></svg></span>
-                            <span class="bk-moodopt__txt"><strong>Inspiration</strong><small>Get inspired. See possibilities.</small></span>
-                            <i class="bk-chevron" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="bk-moodopt" data-mood>
-                            <span class="bk-moodopt__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
-                            <span class="bk-moodopt__txt"><strong>Reflect</strong><small>Pause. Journal. Realign.</small></span>
-                            <i class="bk-chevron" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </section>
+            <section class="ps-card bk-quote">
+              <span class="bk-quote__mark" aria-hidden="true">“</span>
+              <blockquote>Rest isn’t a reward. It’s part of the process.</blockquote>
+              <p class="bk-quote__by">— Sample community quote</p>
+              <span class="bk-quote__leaf" aria-hidden="true">❧</span>
+            </section>
 
-                <!-- Quote -->
-                <section class="ps-card bk-quote">
-                    <span class="bk-quote__mark" aria-hidden="true">&ldquo;</span>
-                    <blockquote>Rest isn't a reward. It's part of the process.</blockquote>
-                    <p class="bk-quote__by">&mdash; Unknown</p>
-                    <span class="bk-quote__leaf" aria-hidden="true">
-                        <svg viewBox="0 0 40 60"><path d="M20 58 C20 34 20 16 20 6" stroke="#2f8f5b" stroke-width="1.5" fill="none"/><path d="M20 40 C10 38 4 30 4 20 C16 22 20 30 20 40Z" fill="#7bbb92"/><path d="M20 30 C30 28 36 20 36 10 C24 12 20 20 20 30Z" fill="#5fae7d"/><path d="M20 20 C12 18 8 12 8 4 C18 6 20 12 20 20Z" fill="#8fcaa3" fill-opacity="0.9"/></svg>
-                    </span>
-                    <span class="bk-dots" aria-hidden="true"><i class="is-on"></i><i></i><i></i></span>
-                </section>
+            <section class="ps-card bk-pickme">
+              <header class="bk-pickme__head">
+                <span class="bk-pickme__ic" aria-hidden="true">☀</span>
+                <h2>Today’s Pick-Me-Up</h2>
+              </header>
+              <blockquote>“You don’t have to be great to start, but you have to start to be great.”</blockquote>
+              <p class="bk-pickme__by">— Sample quote</p>
+            </section>
 
-                <!-- Today's Pick-Me-Up -->
-                <section class="ps-card bk-pickme" data-db-pickme>
-                    <header class="bk-pickme__head">
-                        <span class="bk-pickme__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg></span>
-                        <h2>Today's Pick-Me-Up</h2>
-                        <button class="bk-heart" type="button" aria-disabled="true" title="Saving lands with PeerSlate accounts" aria-label="Save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10z"/></svg></button>
-                    </header>
-                    <blockquote data-db-pickme-body>You don't have to be great to start, but you have to start to be great.</blockquote>
-                    <p class="bk-pickme__by" data-db-pickme-author>&mdash; Zig Ziglar</p>
-                </section>
+            <section class="ps-card bk-share">
+              <div class="bk-share__copy">
+                <strong>Share something good</strong>
+                <small>Start with a post in the Feed.</small>
+                <button type="button" class="bk-btn bk-btn--outline" data-comm-create-post> Create a post <span aria-hidden="true">→</span></button>
+              </div>
+              <span class="bk-share__spark" aria-hidden="true">✦</span>
+            </section>
+            </div>
 
-                <p class="sr-only" data-break-status aria-live="polite"></p>
-
-                <!-- Share something good -->
-                <section class="ps-card bk-share">
-                    <div class="bk-share__copy">
-                        <strong>Share something good</strong>
-                        <small>Brighten someone's day.</small>
-                        <button type="button" class="bk-btn bk-btn--soft" aria-disabled="true" title="Posting lands with PeerSlate accounts">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                            Create a post
-                        </button>
-                    </div>
-                    <span class="bk-share__spark" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/></svg>
-                    </span>
-                </section>
-
-            </aside>
-        </div>
-
-        <!-- ============ BOTTOM BAND ============ -->
-        <section class="bk-band" aria-label="Break well">
-            <span class="bk-band__leaf" aria-hidden="true">
-                <svg viewBox="0 0 40 40"><path d="M6 34 C6 18 18 8 34 6 C34 22 22 32 6 34Z" fill="#7bbb92"/><path d="M34 6 C22 12 12 22 8 32" stroke="#2f8f5b" stroke-width="1.4" fill="none"/></svg>
-            </span>
-            <div class="bk-band__copy">
+            <section class="bk-band" aria-label="Return to the Feed">
+              <span class="bk-band__leaf" aria-hidden="true">❧</span>
+              <div class="bk-band__copy">
                 <strong>Break well. Come back better.</strong>
                 <small>Balance today. Build tomorrow.</small>
-            </div>
-            {# Back to the Feed now switches the seamless tab (2026-07-21) —
-               Break and the real Community Feed share this one shell, so
-               there is no longer a separate page to navigate to. #}
-            <a class="bk-btn bk-btn--outline" href="{{ url_for('the_slate') }}" data-comm-tab="feed">Back to the Feed <span aria-hidden="true">&rarr;</span></a>
-            <span class="bk-band__art" aria-hidden="true">
-                <svg viewBox="0 0 120 44">
-                    <path d="M6 30 h20 v6 a10 10 0 0 1 -20 0 Z" fill="#5f9e77"/>
-                    <path d="M26 31 h4 a4 4 0 0 1 0 8 h-4" fill="none" stroke="#5f9e77" stroke-width="2.4"/>
-                    <path d="M12 26 q3 -4 0 -8 M18 26 q3 -4 0 -8" stroke="#a7bcac" stroke-width="1.4" fill="none"/>
-                    <rect x="44" y="30" width="42" height="8" rx="2" fill="#ece0c8"/>
-                    <rect x="44" y="30" width="42" height="8" rx="2" fill="none" stroke="#cdb99b" stroke-width="1.2"/>
-                    <path d="M65 30 v8" stroke="#cdb99b" stroke-width="1.2"/>
-                    <path d="M96 20 C96 30 104 34 112 34 C112 26 106 20 96 20Z" fill="#7bbb92"/>
-                </svg>
-            </span>
-        </section>
-      </section>
-
-      {# ============ SAVED PANEL ============
-         New (PS-COMMUNITY-TABS-001): folds the retired People & Interests
-         board's "Saved notes" fixture value in. Fixture data only — no
-         write path exists yet, so no Save action is wired here; it is
-         calm, honest, and read-only until a real backend saves posts. #}
-      <section
-          class="main-inner no-rail"
-          id="panel-saved"
-          role="tabpanel"
-          aria-labelledby="tab-saved"
-          data-tab-panel="saved"
-          {% if initial_tab != 'saved' %}hidden{% endif %}
-      >
-        {% if saved_notes %}
-        <div class="comm-saved">
-          {% for note in saved_notes %}
-          <article class="comm-saved-card">
-            <div class="comm-saved-card__head">
-              <strong>{{ note.title }}</strong>
-              <span class="comm-saved-time">{{ note.time }}</span>
-            </div>
-            <span class="comm-saved-chip">{{ note.chip }}</span>
-            <p class="comm-saved-preview">{{ note.preview }}</p>
-          </article>
-          {% endfor %}
+              </div>
+              <a class="bk-btn bk-btn--outline" href="{{ url_for('the_slate') }}" data-comm-tab="feed">Back to the Feed <span aria-hidden="true">→</span></a>
+            </section>
+          </div>
         </div>
-        {% else %}
-        <div class="comm-empty">
-          <strong>Nothing saved yet.</strong>
-          <span>Use Save on a Feed post to keep it here.</span>
-        </div>
-        {% endif %}
       </section>
-
     </div>
   </div>
 
@@ -445,29 +321,6 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}?v=global-header-1" defer></script>
-<script src="{{ url_for('static', filename='js/break-database.js') }}?v=backend-roadmap-1"></script>
-<script>
-    // Mood Switch: visual selection only (its real behavior is TBD — Pete's
-    // "put the mood switch there" vision). Moving the highlight makes the
-    // idea feel alive in the preview. Kept identical to the previous
-    // standalone Break page.
-    (function () {
-        var opts = document.querySelectorAll('.bk-moodopt[data-mood]');
-        opts.forEach(function (opt) {
-            opt.addEventListener('click', function () {
-                opts.forEach(function (o) { o.classList.remove('is-active'); });
-                opt.classList.add('is-active');
-            });
-        });
-        var join = document.querySelector('[data-break-toggle]');
-        if (join) {
-            join.addEventListener('click', function () {
-                var on = join.classList.toggle('is-joined');
-                join.lastChild.textContent = on ? " You're in" : " I'm in";
-            });
-        }
-    })();
-</script>
-<script src="{{ url_for('static', filename='js/community-tabs.js') }}?v=community-tabs-1" defer></script>
+<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}?v=community-break-2" defer></script>
+<script src="{{ url_for('static', filename='js/community-tabs.js') }}?v=community-break-2" defer></script>
 {% endblock %}
