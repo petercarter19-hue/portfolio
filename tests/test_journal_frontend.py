@@ -10,13 +10,17 @@ unauthenticated cases so no real Azure SQL connection is required.
 """
 
 import datetime
+import os
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from app import app
 from identity import AuthenticationRequired, PeerSlateIdentity
+from playwright.sync_api import sync_playwright
 from services.journal_service import JournalServiceError
+from werkzeug.serving import make_server
 
 
 DEV_USER_KEY = "journal-frontend-owner-1"
@@ -24,6 +28,7 @@ MOMENT_KEY_ACHIEVEMENT = "11111111-1111-1111-1111-111111111111"
 MOMENT_KEY_VOICE = "22222222-2222-2222-2222-222222222222"
 MOMENT_KEY_TEXT = "33333333-3333-3333-3333-333333333333"
 GUESSED_MOMENT_KEY = "99999999-9999-9999-9999-999999999999"
+CHROME_EXECUTABLE = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
 def sample_items():
@@ -198,6 +203,11 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         self.assertIn("Save Moment", body)
         self.assertIn("Only you", body)
         self.assertIn("Coming later", body)
+        # The private Journal must not inherit a public-profile tab strip or
+        # Ask Pete assistant launcher from the broad site shell.
+        self.assertNotIn('data-open-chat', body)
+        self.assertNotIn('id="chat-toggle"', body)
+        self.assertNotIn('class="profile-tabs"', body)
 
     @patch("owner_routes.journal_service")
     def test_use_this_moment_chips_and_attachments_are_disabled(self, journal_service):
@@ -306,6 +316,10 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         response = self.client.get("/app/journal")
 
         self.assertEqual(response.status_code, 503)
+        body = response.get_data(as_text=True)
+        self.assertIn("Your Journal is temporarily unavailable.", body)
+        self.assertIn("Your private Moments are not shown here", body)
+        self.assertNotIn("Sign in is not configured", body)
 
 
 class OwnerJournalMomentDetailTests(unittest.TestCase):
@@ -424,7 +438,10 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertNotIn(">15<", body)
         self.assertIn("9:41 AM", body)
         self.assertIn("Attached to this Moment", body)
-        self.assertIn("images/cinematic/story-sunset-bg.jpg", body)
+        self.assertIn("images/journal/maya-fixture-hero-v1.png", body)
+        self.assertIn("images/journal/mountain-lake-fixture-v3.png", body)
+        self.assertIn("images/journal/workshop-stage-fixture-v3.png", body)
+        self.assertNotIn('aria-controls="journal-panel-timeline"', body)
 
     @patch("owner_routes.journal_service")
     def test_test_only_detail_fixture_is_rich_without_a_member_read(self, journal_service):
@@ -455,6 +472,9 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         for day in ("20", "19", "18", "17", "16", "15"):
             self.assertIn(f">{day}<", body)
         self.assertNotIn(">13<", body)
+        # Duration is metadata on the voice Moment, not a video-only field:
+        # May 20 is voice-backed but deliberately has no video thumbnail.
+        self.assertIn('class="ps-journal__manage-duration">00:48</span>', body)
 
     @patch("owner_routes.journal_service")
     def test_test_only_saved_fixture_is_visible_without_a_write_or_member_read(self, journal_service):
@@ -747,6 +767,235 @@ class OwnerJournalManageSearchWiringTests(unittest.TestCase):
         self.assertIn('url.searchParams.set("q", query)', js_source)
         self.assertIn("data-manage-search", js_source)
         self.assertIn("CONFIG.apiUrl", js_source)
+
+
+@unittest.skipUnless(os.path.exists(CHROME_EXECUTABLE), "Google Chrome is required for Journal browser coverage")
+class JournalBrowserBehaviorTests(unittest.TestCase):
+    """Run the shipped Journal JavaScript in Chrome against a local Flask app.
+
+    These checks deliberately intercept only the already-existing Journal API
+    boundary. The server-owned evidence fixture renders the page, while the
+    intercepts give the UI deterministic read/write outcomes without creating
+    a database record. This covers the DOM builders and recovery paths that
+    server-render tests cannot execute.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.original_config = {
+            "TESTING": app.config.get("TESTING"),
+            "PEERSLATE_JOURNAL_ENABLED": app.config.get("PEERSLATE_JOURNAL_ENABLED"),
+            "PEERSLATE_JOURNAL_EVIDENCE_FIXTURES": app.config.get("PEERSLATE_JOURNAL_EVIDENCE_FIXTURES"),
+            "PEERSLATE_JOURNAL_EVIDENCE_STATE": app.config.get("PEERSLATE_JOURNAL_EVIDENCE_STATE"),
+            "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
+            "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
+        }
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_JOURNAL_ENABLED=True,
+            PEERSLATE_JOURNAL_EVIDENCE_FIXTURES=True,
+            PEERSLATE_JOURNAL_EVIDENCE_STATE="timeline",
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY=DEV_USER_KEY,
+        )
+        cls.server = make_server("127.0.0.1", 0, app)
+        cls.server_thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.server_thread.start()
+        cls.base_url = f"http://127.0.0.1:{cls.server.server_port}"
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch(
+            executable_path=CHROME_EXECUTABLE,
+            headless=True,
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.close()
+        cls.playwright.stop()
+        cls.server.shutdown()
+        cls.server_thread.join(timeout=5)
+        app.config.update(cls.original_config)
+
+    def setUp(self):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "timeline"
+
+    def _page(self, width=1280, height=900):
+        context = self.browser.new_context(viewport={"width": width, "height": height})
+        self.addCleanup(context.close)
+        return context.new_page()
+
+    @staticmethod
+    def _api_payload(item, next_cursor=None):
+        return {"success": True, "items": [item], "next_cursor": next_cursor}
+
+    def test_load_more_creates_the_same_timeline_structure_as_server_rows(self):
+        page = self._page()
+
+        def api(route):
+            if "cursor=" not in route.request.url:
+                return route.continue_()
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                json=self._api_payload(
+                    {
+                        "moment_key": "e8888888-8888-8888-8888-888888888888",
+                        "moment_kind": "achievement",
+                        "title": "A loaded voice Moment keeps the full Journal card structure.",
+                        "occurred_on": "2024-05-12",
+                        "display_time": "10:22 AM",
+                        "source_type": "voice",
+                        "voice_duration_label": "00:19",
+                        "thumbnail_kind": "lake",
+                        "thumbnail_is_video": False,
+                        "lifecycle_state": "active",
+                    }
+                ),
+            )
+
+        page.route("**/api/journal/moments**", api)
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        page.locator("#journal-load-more").click()
+        loaded = page.locator("#journal-moment-e8888888-8888-8888-8888-888888888888")
+        loaded.wait_for()
+        self.assertEqual(loaded.locator(".ps-journal__date-node").count(), 1)
+        self.assertEqual(loaded.locator(".ps-journal__card").count(), 1)
+        self.assertIn("10:22 AM", loaded.locator(".ps-journal__meta").inner_text())
+        self.assertEqual(loaded.locator(".ps-journal__voice-row").count(), 1)
+        self.assertEqual(loaded.locator(".ps-journal__thumb img").count(), 1)
+
+    def test_manage_search_rebuilds_all_six_columns_and_rich_media(self):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "manage"
+        page = self._page()
+
+        def api(route):
+            if "q=workshop" not in route.request.url:
+                return route.continue_()
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                json=self._api_payload(
+                    {
+                        "moment_key": "e9999999-9999-9999-9999-999999999999",
+                        "moment_kind": "achievement",
+                        "display_kind_label": "Voice",
+                        "title": "Workshop recap from the loaded Manage search.",
+                        "occurred_on": "2024-05-12",
+                        "display_time": "10:22 AM",
+                        "source_type": "voice",
+                        "voice_duration_label": "00:19",
+                        "thumbnail_kind": "stage",
+                        "thumbnail_is_video": True,
+                        "lifecycle_state": "active",
+                    }
+                ),
+            )
+
+        page.route("**/api/journal/moments**", api)
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        page.locator("[data-manage-search]").fill("workshop")
+        page.wait_for_function("document.querySelectorAll('[data-manage-row]').length === 1")
+        self.assertEqual(page.locator(".ps-journal__manage-head > span").count(), 6)
+        row = page.locator("[data-manage-row]")
+        for selector in (
+            ".ps-journal__manage-date-block",
+            ".ps-journal__manage-kind svg",
+            ".ps-journal__manage-title .ps-journal__thumb img",
+            ".ps-journal__manage-duration",
+            ".ps-journal__manage-status",
+            ".ps-journal__manage-menu",
+        ):
+            self.assertEqual(row.locator(selector).count(), 1)
+        self.assertEqual(row.locator(".ps-journal__manage-duration").inner_text(), "00:19")
+
+    def test_context_rail_has_honest_timeline_manage_empty_and_detail_behavior(self):
+        page = self._page()
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        page.locator("#journal-rail-voice").click()
+        self.assertEqual(page.locator("[data-journal-row]:not([hidden])").count(), 2)
+        self.assertEqual(page.locator("#journal-rail-voice").get_attribute("aria-current"), "true")
+        self.assertEqual(page.locator("[data-rail-mobile] [data-chapter='voice']").get_attribute("aria-current"), "true")
+
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "manage"
+        manage_page = self._page()
+        manage_page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        manage_page.locator("#journal-rail-photos").click()
+        self.assertEqual(manage_page.locator("[data-manage-row]:not([hidden])").count(), 1)
+
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "empty"
+        empty_page = self._page()
+        empty_page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        empty_page.locator("#journal-rail-voice").click()
+        self.assertIn("No voice Moments", empty_page.locator("#journal-live-region").inner_text())
+
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "detail"
+        detail_page = self._page()
+        detail_page.goto(
+            f"{self.base_url}/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+            wait_until="networkidle",
+        )
+        self.assertEqual(detail_page.locator("[data-rail-entry]").count(), 0)
+        self.assertEqual(detail_page.locator(".ps-rail__entry--static").count(), 6)
+        self.assertEqual(detail_page.locator("[aria-controls^='journal-panel-']").count(), 0)
+
+    def test_desktop_rail_anchors_reflections_and_flourish_to_the_final_rows(self):
+        page = self._page(width=1440, height=1040)
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+
+        def top(selector):
+            box = page.locator(selector).bounding_box()
+            self.assertIsNotNone(box)
+            return box["y"]
+
+        # Binding doc-15 anchors: the final rail chapter starts beside May 19,
+        # and the flourish begins beside May 13 after the final hero geometry.
+        self.assertLessEqual(abs(top("#journal-rail-reflections") - top("#journal-moment-e2222222-2222-2222-2222-222222222222")), 2)
+        self.assertLessEqual(abs(top(".ps-journal__rail-flourish-line") - top("#journal-moment-e4444444-4444-4444-4444-444444444444")), 2)
+
+    def test_mobile_composer_keeps_save_and_voice_failures_visible_and_recoverable(self):
+        page = self._page(width=390, height=844)
+
+        def api(route):
+            if route.request.method == "POST":
+                return route.fulfill(status=200, content_type="application/json", json={"success": True})
+            return route.fulfill(status=503, content_type="application/json", json={"success": False})
+
+        page.route("**/api/journal/moments**", api)
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        trigger = page.locator("#journal-open-composer")
+        trigger.click()
+        page.locator("[data-composer-save]").click()
+        save_status = page.locator("[data-composer-status]")
+        self.assertTrue(save_status.is_visible())
+        self.assertIn("Add a Moment", save_status.inner_text())
+
+        page.locator("[data-composer-narrative]").fill("A real retry path stays visible on a phone.")
+        page.locator("[data-composer-save]").click()
+        page.locator("#journal-saved-title").wait_for()
+        recovery = page.locator("[data-saved-refresh-status]")
+        self.assertTrue(recovery.is_visible())
+        self.assertIn("could not refresh", recovery.inner_text())
+        box = recovery.bounding_box()
+        self.assertIsNotNone(box)
+        self.assertLess(box["y"], 844)
+
+        page.locator("[data-composer-back]").click()
+        page.wait_for_url("**/app/journal")
+
+        page.locator("#journal-open-composer").click()
+        page.locator("[data-composer-tab='speak']").click()
+        page.evaluate(
+            """() => Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+                configurable: true,
+                value: async () => { throw new DOMException('Denied', 'NotAllowedError'); }
+            })"""
+        )
+        voice_start = page.locator("[data-voice-action='start']")
+        self.assertFalse(voice_start.is_disabled())
+        voice_start.click()
+        page.locator("[data-voice-state-title]").wait_for()
+        self.assertIn("denied or unavailable", page.locator("[data-voice-state-title]").inner_text())
+        self.assertTrue(page.locator("[data-voice-state-help]").is_visible())
 
 
 if __name__ == "__main__":

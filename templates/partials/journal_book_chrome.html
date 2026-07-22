@@ -39,6 +39,13 @@
 </div>
 {% endmacro %}
 
+{% macro book_page_edges() %}
+{# A real element rather than a second bookcase pseudo-element: the cover
+   already uses both pseudo-elements for its stitched border and right-hand
+   page block. This is the left facing-page stack visible in the authority. #}
+<span class="ps-journal__page-edges ps-journal__page-edges--left" aria-hidden="true"></span>
+{% endmacro %}
+
 {% macro book_corners() %}
 <span class="ps-journal__bookcase-clasp ps-journal__bookcase-clasp--tl" aria-hidden="true"></span>
 <span class="ps-journal__bookcase-clasp ps-journal__bookcase-clasp--bl" aria-hidden="true"></span>
@@ -78,11 +85,9 @@
 </svg>
 {% endmacro %}
 
-{# ---- Fixture-only thumbnail scenes (doc 15 fixture-richness rule): tasteful
-   abstract/scenery compositions, never a real person's photo. Real Journal
-   reads never populate moment.thumbnail_kind (no Photo/Video Capture wired
-   into the Journal), so moment_thumb() below renders nothing for real data -
-   the honest disabled/"Coming later" voice treatment is unaffected. #}
+{# ---- Legacy vector studies below remain source-only. The rendered fixture
+   now uses accepted rich repository media through thumb_by_kind(), never an
+   inline SVG scene. Real Journal reads never populate thumbnail_kind. #}
 {% macro thumb_lake() %}
 <svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
@@ -193,11 +198,15 @@
 {% endmacro %}
 
 {% macro thumb_by_kind(kind) %}
-{%- if kind == 'lake' -%}{{ thumb_lake() }}
-{%- elif kind == 'notebook' -%}{{ thumb_notebook() }}
-{%- elif kind == 'stage' -%}{{ thumb_stage() }}
-{%- elif kind == 'coffee' -%}{{ thumb_coffee() }}
-{%- endif -%}
+{% set assets = {
+    'lake': 'images/journal/mountain-lake-fixture-v3.png',
+    'notebook': 'images/journal/notebook-sketch-fixture-v2.png',
+    'stage': 'images/journal/workshop-stage-fixture-v3.png',
+    'coffee': 'images/journal/coffee-notes-fixture-v2.png'
+} %}
+{% if kind in assets %}
+<img src="{{ url_for('static', filename=assets[kind]) }}" alt="" loading="eager" decoding="async">
+{% endif %}
 {% endmacro %}
 
 {% macro moment_thumb(moment) %}

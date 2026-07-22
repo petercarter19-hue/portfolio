@@ -17,6 +17,7 @@
     chapter_counts   - dict of chapter key -> integer quiet count
 #}
 {% set active_chapter = active_chapter or (chapters[0].key if chapters else '') %}
+{% set rail_interactive = rail_interactive|default(true) %}
 {% macro rail_icon(key) %}
 {%- if key == 'timeline' -%}
 <svg class="ps-rail__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/><circle cx="20" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>
@@ -43,15 +44,19 @@
         <ul class="ps-rail__list">
             {% for chapter in chapters %}
             <li>
+                {% if rail_interactive %}
                 <button
                     type="button"
                     class="ps-rail__entry"
                     id="{{ rail_id }}-rail-{{ chapter.key }}"
                     data-rail-entry
                     data-chapter="{{ chapter.key }}"
+                    data-chapter-label="{{ chapter.label }}"
                     aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}"
-                    aria-controls="{{ rail_id }}-panel-{{ chapter.key }}"
                 >
+                {% else %}
+                <span class="ps-rail__entry ps-rail__entry--static" data-chapter="{{ chapter.key }}" aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}">
+                {% endif %}
                     <span class="ps-rail__number" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
                     {{ rail_icon(chapter.key) }}
                     <span class="ps-rail__text">
@@ -63,7 +68,7 @@
                         </span>
                         <span class="ps-rail__subtitle">{{ chapter.subtitle }}</span>
                     </span>
-                </button>
+                {% if rail_interactive %}</button>{% else %}</span>{% endif %}
             </li>
             {% endfor %}
         </ul>
@@ -72,19 +77,23 @@
 
 <nav class="ps-rail-chips ps-rail--mobile" aria-label="{{ rail_nav_label }}" data-rail-mobile data-rail-id="{{ rail_id }}">
     {% for chapter in chapters %}
+    {% if rail_interactive %}
     <button
         type="button"
         class="ps-rail-chips__chip"
         data-rail-entry
         data-chapter="{{ chapter.key }}"
+        data-chapter-label="{{ chapter.label }}"
         aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}"
-        aria-controls="{{ rail_id }}-panel-{{ chapter.key }}"
     >
+    {% else %}
+    <span class="ps-rail-chips__chip ps-rail-chips__chip--static" aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}">
+    {% endif %}
         {{ rail_icon(chapter.key) }}
         <span>{{ chapter.label }}</span>
         {% if chapter_counts is defined and chapter_counts and chapter.key in chapter_counts %}
         <span class="ps-rail__count">{{ chapter_counts[chapter.key] }}</span>
         {% endif %}
-    </button>
+    {% if rail_interactive %}</button>{% else %}</span>{% endif %}
     {% endfor %}
 </nav>

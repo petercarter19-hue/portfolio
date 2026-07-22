@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "partials/journal_book_chrome.html" as jbook %}
+
+{% block title %}Journal temporarily unavailable | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-7">
+{% endblock %}
+
+{% block body_class %}ps-journal-page{% endblock %}
+
+{% block content %}
+<div class="ps-journal">
+    <section class="ps-journal__bookcase ps-journal__unavailable" aria-labelledby="journal-unavailable-title">
+        {{ jbook.book_ribbon() }}
+        {{ jbook.book_page_edges() }}
+        {{ jbook.book_corners() }}
+        <div class="ps-journal__unavailable-inner">
+            <p class="ps-journal__privacy">{{ jbook.icon_lock() }} Private Journal</p>
+            <h1 id="journal-unavailable-title">Your Journal is temporarily unavailable.</h1>
+            <p>Your private Moments are not shown here, and nothing was changed.</p>
+            <p>Please try again in a moment.</p>
+            <a class="ps-btn ps-btn--gold" href="{{ url_for('owner.journal') }}">Try again</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

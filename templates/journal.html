@@ -13,8 +13,8 @@
    are not covered by base.html's site-wide Newsreader import, so this page
    loads them itself, the same established per-page pattern. #}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-5">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-7">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
@@ -23,6 +23,7 @@
 <div class="ps-journal"{% if is_evidence_fixture %} data-journal-evidence-fixture="true"{% endif %}>
     <div class="ps-journal__bookcase">
         {{ jbook.book_ribbon() }}
+        {{ jbook.book_page_edges() }}
         {{ jbook.book_corners() }}
         <div class="ps-journal__layout">
             <div class="ps-journal__rail-region">
@@ -132,7 +133,7 @@
                                     {% endif %}
                                 </span>
                             </span>
-                            <span class="ps-journal__manage-duration">{% if moment.thumbnail_is_video and moment.voice_duration_label %}{{ moment.voice_duration_label }}{% endif %}</span>
+                            <span class="ps-journal__manage-duration">{% if moment.voice_duration_label %}{{ moment.voice_duration_label }}{% endif %}</span>
                             <span class="ps-journal__manage-status">
                                 {{ jbook.icon_lock() }} Private
                                 {% if moment.lifecycle_state == 'archived' %}<span class="ps-journal__manage-archived-badge">Archived</span>{% endif %}
@@ -236,10 +237,6 @@
                                     <h3 class="ps-journal__row-title">
                                         <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
                                     </h3>
-                                    {% if moment.moment_kind == 'achievement' and not ns.annotated %}
-                                    {% set ns.annotated = true %}
-                                    <p class="ps-journal__annotation">Proud of this one <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" width="14" height="14"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg></p>
-                                    {% endif %}
                                     {% if moment.source_type == 'voice' %}
                                     {# Real per-Moment audio playback needs the source_capture_key that
                                        usp_ListJournalMomentsForOwner does not return, and J1's one-step
@@ -258,6 +255,10 @@
                                 </div>
                                 {{ jbook.moment_thumb(moment) }}
                             </div>
+                            {% if moment.moment_kind == 'achievement' and not ns.annotated %}
+                            {% set ns.annotated = true %}
+                            <p class="ps-journal__annotation">Proud of this one <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" width="14" height="14"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg></p>
+                            {% endif %}
                         </li>
                         {% endfor %}
                     </ol>
@@ -324,11 +325,17 @@
         maxTitleLength: {{ max_title_length | tojson }},
         maxNarrativeLength: {{ max_narrative_length | tojson }},
         momentKinds: {{ moment_kinds | tojson }},
-        occurredPrecisions: {{ occurred_precisions | tojson }}
+        occurredPrecisions: {{ occurred_precisions | tojson }},
+        fixtureMediaUrls: {
+            lake: {{ url_for('static', filename='images/journal/mountain-lake-fixture-v3.png') | tojson }},
+            notebook: {{ url_for('static', filename='images/journal/notebook-sketch-fixture-v2.png') | tojson }},
+            stage: {{ url_for('static', filename='images/journal/workshop-stage-fixture-v3.png') | tojson }},
+            coffee: {{ url_for('static', filename='images/journal/coffee-notes-fixture-v2.png') | tojson }}
+        }
     };
 </script>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-5"></script>
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-7"></script>
 {% endblock %}

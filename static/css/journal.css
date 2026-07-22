@@ -135,16 +135,20 @@ body.ps-journal-page .site-sky {
     position: relative;
     border-radius: 26px;
     background:
-        radial-gradient(120% 140% at 14% -10%, rgb(255 255 255 / 55%), transparent 55%),
+        radial-gradient(120% 140% at 14% -10%, rgb(255 255 255 / 62%), transparent 55%),
+        radial-gradient(110% 95% at 92% 104%, rgb(148 100 49 / 13%), transparent 58%),
+        repeating-linear-gradient(8deg, rgb(92 63 30 / 1.5%) 0 1px, transparent 1px 7px),
         linear-gradient(155deg, var(--jbook-page-1) 0%, var(--jbook-page-2) 48%, var(--jbook-page-3) 100%);
-    box-shadow: var(--jbook-shadow);
-    outline: 1px solid var(--jbook-spine);
+    box-shadow: var(--jbook-shadow), inset 0 0 44px rgb(120 78 30 / 7%);
+    outline: 2px solid var(--jbook-spine);
     outline-offset: -1px;
 }
 
 body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
     background:
         radial-gradient(90% 120% at 20% -10%, rgb(230 190 120 / 8%), transparent 55%),
+        radial-gradient(105% 100% at 90% 100%, rgb(0 0 0 / 24%), transparent 62%),
+        repeating-linear-gradient(8deg, rgb(230 190 120 / 1.5%) 0 1px, transparent 1px 7px),
         linear-gradient(155deg, var(--jbook-page-1) 0%, var(--jbook-page-2) 48%, var(--jbook-page-3) 100%);
 }
 
@@ -156,7 +160,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
     top: 10px;
     bottom: 10px;
     right: 3px;
-    width: 15px;
+    width: 19px;
     border-radius: 0 20px 20px 0;
     background: repeating-linear-gradient(
         90deg,
@@ -164,6 +168,26 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
         var(--jbook-page-edge-2) 1.5px 3px
     );
     box-shadow: inset 3px 0 6px rgb(30 18 4 / 25%), 1px 0 0 rgb(255 255 255 / 30%);
+    pointer-events: none;
+}
+
+/* The authority shows a facing stack on the left as well as the page block
+   on the right. Keeping it as its own layer preserves the stitched-border
+   pseudo-element and gives the seam a tangible, non-symmetrical book edge. */
+.ps-journal__page-edges--left {
+    position: absolute;
+    z-index: 1;
+    top: 12px;
+    bottom: 12px;
+    left: 3px;
+    width: 16px;
+    border-radius: 20px 0 0 20px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--jbook-page-edge-2) 0 1.5px,
+        var(--jbook-page-edge-1) 1.5px 3px
+    );
+    box-shadow: inset -3px 0 6px rgb(30 18 4 / 22%), -1px 0 0 rgb(255 255 255 / 24%);
     pointer-events: none;
 }
 
@@ -208,9 +232,9 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
 .ps-journal__ribbon {
     position: absolute;
     top: 0;
-    right: clamp(26px, 5vw, 46px);
-    width: 36px;
-    height: clamp(108px, 12vw, 138px);
+    right: -4px;
+    width: 48px;
+    height: clamp(136px, 14vw, 172px);
     z-index: 3;
     background: linear-gradient(90deg, var(--jbook-gold-deep) 0%, var(--jbook-gold) 45%, var(--jbook-gold-mid) 100%);
     box-shadow: 0 14px 22px -10px rgb(0 0 0 / 50%), inset -2px 0 3px rgb(0 0 0 / 15%), inset 2px 0 3px rgb(255 255 255 / 25%);
@@ -218,13 +242,13 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__bookcase {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 18px;
+    padding-top: 23px;
     pointer-events: none;
 }
 
 .ps-journal__ribbon-leaf {
-    width: 20px;
-    height: 34px;
+    width: 23px;
+    height: 39px;
     color: rgb(58 38 8 / 68%);
 }
 
@@ -401,13 +425,15 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 @media (min-width: 900px) {
     .ps-journal__rail-flourish {
         display: block;
-        margin-top: 3.25rem;
+        margin-top: 15rem;
         padding-top: 0.5rem;
         color: var(--jbook-gold-mid);
     }
 
     .ps-journal__rail-region .ps-rail__list {
-        min-height: 28rem;
+        /* The accepted book uses the rail as a running margin: its final
+           entry anchors beside May 19 and the closing line beside May 13. */
+        min-height: 54.5rem;
         justify-content: space-between;
     }
 }
@@ -464,7 +490,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 
 .ps-journal__title {
     font-family: "Newsreader", Georgia, serif;
-    font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+    font-size: clamp(2.7rem, 4.8vw, 4.1rem);
     font-weight: 600;
     color: var(--jbook-ink);
     margin: 0;
@@ -593,6 +619,15 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
     box-shadow: 0 24px 48px -22px rgb(5 5 5 / 55%);
 }
 
+@media (min-width: 900px) {
+    /* Normalized against the accepted desktop authority: the 866px-wide
+       fixture hero needs a 348px content stage (about 2.49:1), not the
+       shallow 300px band that made the landscape and stats feel compressed. */
+    .ps-journal__hero {
+        min-height: 348px;
+    }
+}
+
 .ps-journal__hero-scene {
     position: absolute;
     inset: 0;
@@ -612,8 +647,8 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
    retain the composed fallback above until an authorized hero asset exists. */
 .ps-journal__hero-scene--fixture {
     background-image:
-        linear-gradient(90deg, rgb(3 8 18 / 78%) 0%, rgb(3 8 18 / 47%) 48%, rgb(3 8 18 / 18%) 100%),
-        linear-gradient(180deg, rgb(4 6 12 / 8%) 0%, rgb(4 6 12 / 64%) 100%),
+        linear-gradient(90deg, rgb(3 8 18 / 63%) 0%, rgb(3 8 18 / 35%) 48%, rgb(3 8 18 / 14%) 100%),
+        linear-gradient(180deg, rgb(4 6 12 / 5%) 0%, rgb(4 6 12 / 52%) 100%),
         var(--jbook-fixture-hero);
     background-position: center;
     background-repeat: no-repeat;
@@ -666,10 +701,10 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 
 .ps-journal__hero-headline {
     font-family: "Newsreader", Georgia, serif;
-    font-style: italic;
-    font-weight: 500;
-    font-size: clamp(1.5rem, 3vw, 2.15rem);
-    line-height: 1.16;
+    font-style: normal;
+    font-weight: 650;
+    font-size: clamp(1.8rem, 2.7vw, 2.25rem);
+    line-height: 1.08;
     margin: 0 0 0.6rem;
     color: #fbf7ec;
     text-shadow: 0 2px 12px rgb(0 0 0 / 30%);
@@ -694,22 +729,24 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
     position: relative;
     z-index: 1;
     display: flex;
-    gap: 0;
+    gap: 0.45rem;
     margin: 0;
-    padding: 0.35rem 0 0;
+    padding: 0.4rem;
     list-style: none;
     flex: 0 0 auto;
+    border: 1px solid rgb(245 241 230 / 22%);
+    border-radius: 12px;
+    background: rgb(4 10 16 / 35%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 10px 20px rgb(0 0 0 / 16%);
+    backdrop-filter: blur(6px);
 }
 
 .ps-journal__hero-stat {
-    padding: 0 1.15rem;
-    border-left: 1px solid rgb(245 241 230 / 22%);
-    min-width: 5.5rem;
-}
-
-.ps-journal__hero-stat:first-child {
-    border-left: none;
-    padding-left: 0;
+    min-width: 5.8rem;
+    padding: 0.55rem 0.7rem 0.6rem;
+    border: 1px solid rgb(245 241 230 / 16%);
+    border-radius: 8px;
+    background: linear-gradient(145deg, rgb(255 255 255 / 13%), rgb(0 0 0 / 15%));
 }
 
 .ps-journal__hero-stat-value {
@@ -741,6 +778,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
     margin: 0;
     padding: 0;
     position: relative;
+    max-width: 46.25rem;
 }
 
 .ps-journal__timeline::before {
@@ -812,7 +850,8 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
     border: 1px solid var(--jbook-card-border);
     border-radius: 14px;
     box-shadow: 0 1px 2px rgb(20 15 5 / 5%), 0 14px 26px -18px rgb(20 15 5 / 35%);
-    padding: 1.05rem 1.2rem;
+    min-height: 9.75rem;
+    padding: 1.2rem 1.25rem;
 }
 
 .ps-journal__content {
@@ -851,10 +890,11 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 }
 
 .ps-journal__row-title {
-    font-family: var(--ps-font-ui);
+    font-family: "Newsreader", Georgia, serif;
+    font-style: italic;
     font-weight: 600;
-    font-size: 1.04rem;
-    line-height: 1.4;
+    font-size: clamp(1.12rem, 1.6vw, 1.34rem);
+    line-height: 1.28;
     color: var(--jbook-ink);
     margin: 0 0 0.2rem;
 }
@@ -886,17 +926,17 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 
 .ps-journal__voice-play {
     flex: none;
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.55rem;
+    height: 2.55rem;
     border-radius: 999px;
-    border: none;
+    border: 1px solid rgb(255 238 190 / 78%);
     background: linear-gradient(180deg, #ecc788, #cf9a3c);
     color: #241804;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 10px -3px rgb(150 100 20 / 55%);
+    box-shadow: 0 4px 10px -3px rgb(150 100 20 / 55%), inset 0 1px 1px rgb(255 255 255 / 48%), inset 0 -2px 3px rgb(98 58 9 / 26%);
 }
 
 .ps-journal__voice-play svg {
@@ -905,11 +945,12 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 }
 
 .ps-journal__voice-play[disabled] {
-    background: var(--jbook-page-edge-2);
-    color: var(--jbook-ink-faint);
+    background: linear-gradient(180deg, #ecc788, #cf9a3c);
+    color: #241804;
     cursor: not-allowed;
-    box-shadow: none;
-    opacity: 0.75;
+    border: 1px solid rgb(255 238 190 / 70%);
+    box-shadow: 0 4px 10px -3px rgb(150 100 20 / 50%), inset 0 1px 1px rgb(255 255 255 / 42%), inset 0 -2px 3px rgb(98 58 9 / 24%);
+    opacity: 0.96;
 }
 
 .ps-journal__voice-play:focus-visible {
@@ -920,7 +961,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 .ps-journal__voice-wave {
     flex: 1;
     min-width: 3rem;
-    height: 1.5rem;
+    height: 1.75rem;
     background-image: repeating-linear-gradient(
         90deg,
         var(--jbook-gold-mid) 0 2px,
@@ -935,7 +976,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
     background-position: center;
     -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
     mask-image: repeating-linear-gradient(90deg, #000 0 2px, transparent 2px 5px);
-    opacity: 0.8;
+    opacity: 0.95;
     position: relative;
 }
 
@@ -957,8 +998,8 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 }
 
 .ps-journal__voice-play[disabled] + .ps-journal__voice-wave::before {
-    background-image: linear-gradient(90deg, var(--jbook-ink-faint) 100%, transparent 0);
-    opacity: 0.55;
+    background-image: linear-gradient(90deg, var(--jbook-gold-mid) 100%, transparent 0);
+    opacity: 0.8;
 }
 
 .ps-journal__voice-duration {
@@ -970,15 +1011,22 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
 }
 
 .ps-journal__annotation {
+    position: absolute;
+    z-index: 2;
+    top: -1.2rem;
+    right: 1.1rem;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     font-family: "Caveat", "Segoe Script", cursive;
     font-weight: 600;
     color: var(--jbook-gold-text);
-    margin-top: 0.6rem;
-    font-size: 1.3rem;
-    transform: rotate(-2deg);
+    max-width: 7.5rem;
+    margin: 0;
+    font-size: 1.6rem;
+    line-height: 0.85;
+    text-align: center;
+    transform: rotate(-8deg);
 }
 
 body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
@@ -991,17 +1039,19 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
     position: relative;
     flex: 0 0 auto;
     align-self: center;
-    width: clamp(96px, 16vw, 148px);
+    width: clamp(116px, 17vw, 172px);
     aspect-ratio: 4 / 3;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 6px 16px -6px rgb(20 15 5 / 35%), 0 0 0 1px rgb(255 255 255 / 30%) inset;
 }
 
+.ps-journal__thumb img,
 .ps-journal__thumb svg {
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: cover;
 }
 
 .ps-journal__thumb-play {
@@ -1852,6 +1902,13 @@ select.ps-journal__manage-select {
     height: 100%;
 }
 
+.ps-composer__attachment-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .ps-composer__attachment-remove {
     display: inline-grid;
     place-items: center;
@@ -1952,6 +2009,8 @@ select.ps-journal__manage-select {
     font-size: 0.85rem;
     color: var(--jbook-ink-faint);
     margin-right: auto;
+    min-width: 0;
+    line-height: 1.35;
 }
 
 .ps-composer__status[data-tone="error"] {
@@ -2345,11 +2404,59 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     box-shadow: 0 10px 24px -12px rgb(20 15 5 / 40%);
 }
 
+.ps-moment__photo img,
 .ps-moment__photo svg {
     display: block;
     width: 100%;
     height: 100%;
     aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.ps-journal__unavailable {
+    min-height: min(34rem, 62vh);
+    display: grid;
+    place-items: center;
+    padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 6vw, 5rem);
+}
+
+.ps-journal__unavailable-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 36rem;
+    text-align: center;
+    color: var(--jbook-ink-soft);
+}
+
+.ps-journal__unavailable h1 {
+    font-family: "Newsreader", Georgia, serif;
+    font-style: italic;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    line-height: 1.05;
+    color: var(--jbook-ink);
+    margin: 0.8rem 0 1rem;
+}
+
+.ps-journal__unavailable .ps-btn {
+    margin-top: 0.8rem;
+}
+
+.ps-saved__refresh-status {
+    max-width: 31rem;
+    min-height: 1.2rem;
+    margin: -0.45rem auto 0.9rem;
+    color: var(--jbook-ink-faint);
+    font-family: var(--ps-font-ui);
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.ps-saved__refresh-status[data-tone="warning"] {
+    color: #9c4d20;
+}
+
+body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="warning"] {
+    color: #f0bd79;
 }
 
 .ps-moment__version {
@@ -2491,6 +2598,12 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
         inset: 10px 22px 10px 10px;
     }
 
+    .ps-journal__page-edges--left {
+        top: 10px;
+        bottom: 10px;
+        width: 7px;
+    }
+
     .ps-journal__ribbon {
         width: 24px;
         height: 68px;
@@ -2516,6 +2629,14 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
         align-items: flex-start;
     }
 
+    .ps-journal__hero-headline {
+        /* The mobile page keeps the desktop's two deliberate headline lines
+           inside its narrower padded scene rather than creating a third
+           orphan line for “impact.” */
+        font-size: clamp(1.5rem, 6.4vw, 1.65rem);
+        line-height: 1.1;
+    }
+
     /* Stats stack in a row of their own small tiles rather than wrapping
        the horizontal hairline-divider layout - a wrapped item kept an
        orphaned left border with nothing to its left, a real artifact
@@ -2529,13 +2650,23 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     }
 
     .ps-journal__hero-stat {
-        border-left: none;
+        border-left: 1px solid rgb(245 241 230 / 16%);
         padding: 0.6rem 0.5rem 0.5rem;
-        background: rgb(255 255 255 / 8%);
+        background: linear-gradient(145deg, rgb(255 255 255 / 15%), rgb(0 0 0 / 16%));
         border-radius: 8px;
         min-width: 0;
         text-align: center;
     }
+
+    .ps-journal__annotation {
+        position: static;
+        display: flex;
+        justify-content: flex-end;
+        max-width: none;
+        margin: -0.25rem 1rem 0.4rem 0;
+        transform: rotate(-5deg);
+    }
+
 }
 
 @media (max-width: 640px) {
@@ -2546,10 +2677,10 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
 
     .ps-composer {
         width: 100%;
-        height: min(92dvh, 48rem);
-        max-height: 92dvh;
+        height: min(96dvh, 52rem);
+        max-height: 96dvh;
         border-radius: 1.4rem 1.4rem 0 0;
-        padding: clamp(1.1rem, 4vw, 1.5rem) clamp(1.5rem, 4vw, 2rem) 5.15rem;
+        padding: clamp(1.1rem, 4vw, 1.5rem) clamp(1.5rem, 4vw, 2rem) 7.4rem;
         overflow-y: auto;
     }
 
@@ -2564,6 +2695,10 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
        anchor without touching the shared stacking rule. */
     .ps-composer > [data-composer-view] {
         min-height: 100%;
+    }
+
+    .ps-composer > [data-composer-view="compose"] {
+        padding-bottom: 6.8rem;
     }
 
     .ps-composer::after {
@@ -2613,7 +2748,11 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
         bottom: 0.8rem;
         left: clamp(1.5rem, 4vw, 2rem);
         z-index: 4;
-        min-height: 3.4rem;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.45rem 0.65rem;
+        min-height: 5.5rem;
         margin: 0;
         padding: 0.55rem 0;
         background: linear-gradient(180deg, rgb(250 240 230 / 92%), var(--jbook-page-solid) 35%);
@@ -2629,8 +2768,16 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
         padding-inline: 0.9rem;
     }
 
+    .ps-composer__footer .ps-btn--gold {
+        grid-column: 2;
+        justify-self: stretch;
+    }
+
     .ps-composer__status {
-        display: none;
+        display: block;
+        grid-column: 1 / -1;
+        margin-right: 0;
+        min-height: 1.2rem;
     }
 
     .ps-composer .ps-journal__ribbon {

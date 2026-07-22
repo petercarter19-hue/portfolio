@@ -26,28 +26,40 @@
 
     const railEntries = Array.from(document.querySelectorAll("[data-rail-entry]"));
     const chapterEmptyMessages = Array.from(document.querySelectorAll("[data-chapter-empty]"));
+    let activeChapterKey =
+        railEntries.find((entry) => entry.getAttribute("aria-current") === "true")?.dataset.chapter || "timeline";
 
     const timelineRows = () => Array.from(document.querySelectorAll("[data-journal-row]"));
 
     const setActiveChapter = (chapterKey) => {
+        activeChapterKey = chapterKey;
         railEntries.forEach((entry) => {
             entry.setAttribute("aria-current", String(entry.dataset.chapter === chapterKey));
         });
         let visibleCount = 0;
-        timelineRows().forEach((row) => {
+        const rows = timelineRows();
+        rows.forEach((row) => {
             const matches = chapterKey === "timeline" || row.dataset.chapter === chapterKey;
             row.hidden = !matches;
             if (matches) visibleCount += 1;
         });
+        // Manage has the same local chapter behavior as Timeline. Its rows
+        // are already current-page data, so filtering remains in-room and
+        // does not imply a hidden route or a non-existent ARIA panel.
+        if (!rows.length && document.querySelector("[data-manage-list]")) {
+            visibleCount = typeof applyManageFilters === "function" ? applyManageFilters() : 0;
+        }
         chapterEmptyMessages.forEach((message) => {
             const isThisChapter = message.dataset.chapterEmpty === chapterKey;
             message.hidden = !(isThisChapter && visibleCount === 0 && chapterKey !== "timeline");
         });
         const chapterLabelEl = railEntries.find((entry) => entry.dataset.chapter === chapterKey);
-        const label = chapterLabelEl
-            ? chapterLabelEl.querySelector(".ps-rail__name")?.textContent || chapterKey
-            : chapterKey;
-        announce(`Showing ${label}.`);
+        const label = chapterLabelEl?.dataset.chapterLabel || chapterKey;
+        announce(
+            visibleCount || chapterKey === "timeline"
+                ? `Showing ${label}.`
+                : `No ${label.toLowerCase()} Moments are available on this page.`
+        );
     };
 
     railEntries.forEach((entry) => {
@@ -75,7 +87,8 @@
         document.querySelectorAll("[data-manage-row]").forEach((row) => {
             const matchesKind = kind === "all" || row.dataset.momentKind === kind;
             const matchesArchived = !archivedOnly || row.dataset.lifecycleState === "archived";
-            const visible = matchesKind && matchesArchived;
+            const matchesChapter = activeChapterKey === "timeline" || row.dataset.chapter === activeChapterKey;
+            const visible = matchesKind && matchesArchived && matchesChapter;
             row.hidden = !visible;
             if (visible) visibleCount += 1;
         });
@@ -121,29 +134,57 @@
         return `${year}-${month}-${day}`;
     };
 
+    const iconMarkupForItem = (item) => {
+        if (item.source_type === "voice") {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>';
+        }
+        if (item.source_type === "photo") {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h4l1.5-2h5L16 7h4v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+        }
+        if (item.source_type === "video") {
+            return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>';
+        }
+        if (item.moment_kind === "achievement") {
+            return '<svg class="ps-journal__kind-star" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>';
+        }
+        return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>';
+    };
+
+    const fixtureMediaMarkup = (item) => {
+        const asset = CONFIG.fixtureMediaUrls?.[item.thumbnail_kind];
+        if (!asset) return "";
+        return `<span class="ps-journal__thumb${item.thumbnail_is_video ? " ps-journal__thumb--video" : ""}"><img src="${escapeHtml(asset)}" alt="" loading="lazy" decoding="async">${
+            item.thumbnail_is_video
+                ? '<span class="ps-journal__thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.5v7l6-3.5z" fill="currentColor" stroke="none"/></svg></span>'
+                : ""
+        }</span>`;
+    };
+
     const buildManageRowElement = (item) => {
         const row = document.createElement("div");
         row.className = "ps-journal__manage-row";
         row.setAttribute("data-manage-row", "");
         row.dataset.momentKind = item.moment_kind || "";
         row.dataset.lifecycleState = item.lifecycle_state || "active";
+        row.dataset.chapter = chapterKeyForItem(item);
         const title = item.title || "Untitled Moment";
-        const kindLabel = item.moment_kind
+        const kindLabel = item.display_kind_label || (item.moment_kind
             ? item.moment_kind.charAt(0).toUpperCase() + item.moment_kind.slice(1)
-            : "Moment";
-        const kindIcon =
-            item.moment_kind === "achievement"
-                ? '<svg class="ps-journal__kind-star" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>'
-                : '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>';
+            : "Moment");
         const archivedBadge =
             item.lifecycle_state === "archived"
                 ? '<span class="ps-journal__manage-archived-badge">Archived</span>'
                 : "";
-        const occurredIso = formatOccurredIso(item.occurred_on);
+        const { day, month } = formatOccurred(item.occurred_on);
+        const timeMarkup = item.display_time ? `<span class="ps-journal__manage-time">${escapeHtml(item.display_time)}</span>` : "";
+        const mediaMarkup = fixtureMediaMarkup(item);
+        const voiceWave = item.source_type === "voice" ? '<span class="ps-journal__manage-wave" aria-hidden="true"></span>' : "";
+        const duration = item.voice_duration_label ? escapeHtml(item.voice_duration_label) : "";
         row.innerHTML = `
-            <span>${occurredIso || "Date not set"}</span>
-            <span class="ps-journal__manage-kind">${kindIcon}${escapeHtml(kindLabel)}</span>
-            <span class="ps-journal__manage-title"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a></span>
+            <span class="ps-journal__manage-date"><span class="ps-journal__manage-date-block">${day || "—"}<br><span class="ps-journal__manage-date-month">${month || "Date not set"}</span></span>${timeMarkup}</span>
+            <span class="ps-journal__manage-kind">${iconMarkupForItem(item)}${escapeHtml(kindLabel)}</span>
+            <span class="ps-journal__manage-title">${mediaMarkup}<span class="ps-journal__manage-title-text"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a>${voiceWave}</span></span>
+            <span class="ps-journal__manage-duration">${duration}</span>
             <span class="ps-journal__manage-status"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Private ${archivedBadge}</span>
             <button type="button" class="ps-journal__manage-menu" disabled aria-disabled="true" aria-label="More options for this Moment - coming later"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>`;
         return row;
@@ -166,7 +207,7 @@
             const head = document.createElement("div");
             head.className = "ps-journal__manage-head";
             head.setAttribute("aria-hidden", "true");
-            head.innerHTML = "<span>Date</span><span>Kind</span><span>Moment</span><span>Status</span><span></span>";
+            head.innerHTML = "<span>Date</span><span>Kind</span><span>Moment</span><span>Duration</span><span>Status</span><span></span>";
             manageList.appendChild(head);
             items.forEach((item) => manageList.appendChild(buildManageRowElement(item)));
         }
@@ -285,17 +326,7 @@
 
         const { day, month } = formatOccurred(item.occurred_on);
         const title = item.title || "Untitled Moment";
-        const kindLabel = item.moment_kind
-            ? item.moment_kind.charAt(0).toUpperCase() + item.moment_kind.slice(1)
-            : "Moment";
-        // S4 (Opus review): the source-type label ("Text Note"/"Voice Note")
-        // next to kind, from the real source_type field - mirrors the
-        // server-rendered row and the Moment detail page exactly.
         const sourceLabel = { voice: "Voice Note", photo: "Photo", video: "Video" }[sourceType] || "Text Note";
-        const star =
-            item.moment_kind === "achievement"
-                ? '<svg class="ps-journal__kind-star" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg>'
-                : "";
         // S4: a sparse, designed flourish on the first achievement row only
         // per page-build (see firstAchievementAnnotated, reset in
         // refreshTimelineFirstPage on a full rebuild, left alone across
@@ -315,29 +346,39 @@
             sourceType === "voice"
                 ? '<div class="ps-journal__voice-row"><button type="button" class="ps-journal__voice-play" disabled aria-disabled="true" aria-label="Playback for this voice Moment is coming later">' +
                   '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>' +
-                  '<span class="ps-journal__voice-wave" aria-hidden="true"></span><span class="ps-journal__voice-duration">Coming later</span></div>'
+                  `<span class="ps-journal__voice-wave" aria-hidden="true"></span><span class="ps-journal__voice-duration">${escapeHtml(item.voice_duration_label || "Coming later")}</span></div>`
                 : "";
+        const timeMarkup = item.display_time
+            ? `<span>${escapeHtml(item.display_time)}</span><span aria-hidden="true">&middot;</span>`
+            : "";
+        const voiceIcon = sourceType === "voice"
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>'
+            : "";
+        const thumbnailMarkup = fixtureMediaMarkup(item);
 
         li.innerHTML = `
             <div class="ps-journal__date">
+                <span class="ps-journal__date-node" aria-hidden="true"></span>
                 ${
                     day
                         ? `<span class="ps-journal__date-day">${day}</span><span class="ps-journal__date-month">${month}</span>`
                         : '<span class="ps-journal__date-day">&mdash;</span><span class="ps-journal__date-month">Date not set</span>'
                 }
             </div>
-            <div class="ps-journal__content">
-                <p class="ps-journal__meta">
-                    ${star}
-                    <span>${escapeHtml(kindLabel)}</span>
-                    <span aria-hidden="true">&middot;</span>
-                    <span>${escapeHtml(sourceLabel)}</span>
-                    <span aria-hidden="true">&middot;</span>
-                    <span class="ps-journal__meta-privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Private</span>
-                </p>
-                <h3 class="ps-journal__row-title"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a></h3>
-                ${annotationMarkup}
-                ${mediaMarkup}
+            <div class="ps-journal__card">
+                <div class="ps-journal__content">
+                    <p class="ps-journal__meta">
+                        ${timeMarkup}
+                        ${voiceIcon}
+                        <span>${escapeHtml(sourceLabel)}</span>
+                        <span aria-hidden="true">&middot;</span>
+                        <span class="ps-journal__meta-privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Private</span>
+                    </p>
+                    <h3 class="ps-journal__row-title"><a href="${momentDetailUrl(item.moment_key)}">${escapeHtml(title)}</a></h3>
+                    ${annotationMarkup}
+                    ${mediaMarkup}
+                </div>
+                ${thumbnailMarkup}
             </div>`;
         return li;
     };
@@ -435,6 +476,7 @@
     const closeButton = composer.querySelector("[data-composer-close]");
     const doneButton = composer.querySelector("[data-composer-done]");
     const backButton = composer.querySelector("[data-composer-back]");
+    const savedRefreshStatus = composer.querySelector("[data-saved-refresh-status]");
     const kindSelect = composer.querySelector("[data-composer-kind]");
     const precisionSelect = composer.querySelector("[data-composer-precision]");
     const occurredInput = composer.querySelector("[data-composer-occurred-on]");
@@ -663,7 +705,7 @@
     backButton.addEventListener("click", handleDone);
 
     const refreshTimelineFirstPage = async () => {
-        if (!timelineList) return;
+        if (!timelineList) return false;
         try {
             const url = new URL(CONFIG.apiUrl, window.location.origin);
             url.searchParams.set("limit", "20");
@@ -677,11 +719,13 @@
                     if (result.next_cursor) loadMoreButton.dataset.cursor = result.next_cursor;
                     else loadMoreButton.remove();
                 }
+                return true;
             }
         } catch (error) {
-            /* the Moment is already safely saved server-side; a stale visible
-               timeline is a display-refresh issue, not a save failure. */
+            // The Moment is already safely saved server-side; return a clear
+            // recovery signal rather than silently leaving stale private UI.
         }
+        return false;
     };
 
     const incrementHeroTotal = () => {
@@ -700,7 +744,17 @@
         incrementHeroTotal();
         if (timelineList) {
             needsFullReloadOnClose = false;
-            await refreshTimelineFirstPage();
+            const refreshed = await refreshTimelineFirstPage();
+            if (!refreshed) {
+                needsFullReloadOnClose = true;
+                if (savedRefreshStatus) {
+                    savedRefreshStatus.textContent = "Moment saved. The timeline could not refresh; use Back to page to reload it.";
+                    savedRefreshStatus.dataset.tone = "warning";
+                }
+            } else if (savedRefreshStatus) {
+                savedRefreshStatus.textContent = "";
+                delete savedRefreshStatus.dataset.tone;
+            }
         } else {
             // The Manage view and the empty-first-visit state have no
             // [data-timeline] element to update in place; Done/Back to page

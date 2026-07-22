@@ -108,6 +108,22 @@ def _render_owner_unavailable():
     )
 
 
+def _render_journal_unavailable():
+    """A route-scoped recovery surface for private Journal reads.
+
+    Journal availability must not borrow the global authentication setup
+    message: a signed-in member should never be told to configure sign-in
+    when a private read is temporarily unavailable.
+    """
+    return (
+        render_template(
+            "journal_unavailable.html",
+            page_title="Journal temporarily unavailable",
+        ),
+        503,
+    )
+
+
 def _is_same_origin_write():
     expected_origin = request.host_url.rstrip("/")
     origin = request.headers.get("Origin")
@@ -1540,7 +1556,7 @@ def _journal_identity_or_not_found():
         return None, _journal_not_found()
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Journal identity lookup failed.")
-        return None, _render_owner_unavailable()
+        return None, _render_journal_unavailable()
 
 
 def _journal_chapter_key_for_item(item):
@@ -1697,7 +1713,7 @@ def journal():
             totals = _journal_totals(identity.user_key)
         except (JournalServiceError, DatabaseServiceError):
             current_app.logger.error("PeerSlate Journal read is unavailable.")
-            return _render_owner_unavailable()
+            return _render_journal_unavailable()
 
     is_evidence_fixture = evidence_state is not None
     season_line = getattr(identity, "season_line", None) or "A season of your own."
@@ -1737,7 +1753,7 @@ def journal():
         # title, Moment, or browser state, and normal members keep the
         # intentional CSS-only fallback scene when no authorized photo exists.
         fixture_hero_image_url=(
-            url_for("static", filename="images/cinematic/story-sunset-bg.jpg")
+            url_for("static", filename="images/journal/maya-fixture-hero-v1.png")
             if is_evidence_fixture
             else None
         ),
@@ -1778,7 +1794,7 @@ def journal_moment(moment_key):
             moment = _find_journal_moment(identity.user_key, normalized_moment_key)
         except (JournalServiceError, DatabaseServiceError):
             current_app.logger.error("PeerSlate Journal Moment detail is unavailable.")
-            return _render_owner_unavailable()
+            return _render_journal_unavailable()
 
     if not moment:
         return _journal_not_found()

@@ -56,6 +56,15 @@
     background: var(--ps-primary-soft);
 }
 
+.ps-rail__entry--static,
+.ps-rail-chips__chip--static {
+    cursor: default;
+}
+
+.ps-rail__entry--static:hover {
+    background: transparent;
+}
+
 .ps-rail__entry:focus-visible {
     outline: 2px solid var(--ps-primary);
     outline-offset: 2px;

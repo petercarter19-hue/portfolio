@@ -41,6 +41,7 @@
         data-composer
     >
         {{ jbook.book_ribbon() }}
+        {{ jbook.book_page_edges() }}
         {# ---------------- compose screen ---------------- #}
         <div data-composer-view="compose"{% if is_evidence_saved_state %} hidden{% endif %}>
             <div class="ps-composer__header">
@@ -104,7 +105,7 @@
             </div>
             {% if is_evidence_fixture %}
             <div class="ps-composer__attachment-preview" data-fixture-attached>
-                <span class="ps-composer__attachment-thumb" aria-hidden="true">{{ jbook.thumb_notebook() }}</span>
+                <span class="ps-composer__attachment-thumb" aria-hidden="true">{{ jbook.thumb_by_kind('notebook') }}</span>
                 <span>Attached to this Moment <span aria-hidden="true">&middot;</span> Private</span>
                 <span class="ps-composer__attachment-remove" aria-label="Remove fixture attachment">&times;</span>
             </div>
@@ -155,6 +156,7 @@
                 </div>
                 <h2 class="ps-saved__title" id="journal-saved-title" tabindex="-1">Moment saved privately &mdash;<br>It is now in your Journal.</h2>
                 <p class="ps-saved__lock-line">{{ icon_lock_small() }}</p>
+                <p class="ps-saved__refresh-status" role="status" aria-live="polite" data-saved-refresh-status></p>
 
                 <p class="ps-saved__section-label">Use This Moment</p>
                 <div class="ps-saved__chips">
