@@ -7,8 +7,8 @@
 - Evidence: 35 true Chrome viewport captures, all with distinct SHA-256 hashes.
   The complete list, viewport/state metadata, and hashes are in
   `artifacts/ps-journal-001-j1-frontend/EVIDENCE_MANIFEST.json`.
-- No merge, PR, push, deployment, feature-flag change, database change, or
-  public-route expansion was performed.
+- No merge, PR, deployment, feature-flag change, database change, or public-route
+  expansion was performed. The assigned feature branch is pushed only for handoff.
 - This report replaces the earlier conditional report. It does not grant the
   separate Pete/session-manager visual sign-off.
 
