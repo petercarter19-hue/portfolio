@@ -278,7 +278,7 @@
   /* Modal and voice states. z-index sits ABOVE the site's sticky global
      header (z-index 1200) so dialogs read as true modal surfaces. */
   .overlay { position:fixed; inset:0; background:rgba(8,18,37,.42); backdrop-filter:blur(8px); z-index:1300; display:grid; place-items:center; padding:24px; }
-  .voice-modal { width:min(760px,calc(100vw - 48px)); background:#fff; border:1px solid rgba(255,255,255,.8); border-radius:28px; box-shadow:var(--shadow-2); overflow:hidden; }
+  .voice-modal { width:min(760px,calc(100vw - 48px)); max-height:calc(100dvh - 48px); display:flex; flex-direction:column; background:#fff; border:1px solid rgba(255,255,255,.8); border-radius:28px; box-shadow:var(--shadow-2); overflow:hidden; }
   .modal-head { display:flex; align-items:center; justify-content:space-between; padding:22px 25px 17px; border-bottom:1px solid var(--line-soft); }
   .modal-head h2{font-family:var(--serif);color:var(--ink);font-size:26px;margin:0;font-weight:600}
   .close{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#75839A;display:grid;place-items:center}
@@ -297,7 +297,7 @@
   .cancel-btn{height:46px;padding:0 18px;border:1px solid var(--line);border-radius:14px;background:#fff;color:#687891;font-weight:750}
   .stop-btn:hover{background:var(--indigo-strong)}
   .cancel-btn:hover{background:#F5F7FC}
-  .review-body { display:grid; grid-template-columns:minmax(0,1fr) 265px; }
+  .review-body { display:grid; grid-template-columns:minmax(0,1fr) 265px; flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
   .review-main { padding:24px 26px 27px; }
   .review-side { padding:24px 22px; background:#F8FAFE; border-left:1px solid var(--line); }
   .field-label{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:#8A99AE;font-weight:800;margin:0 0 8px;display:block}
@@ -339,7 +339,7 @@
   .privacy-option .radio{display:grid;margin-top:1px}
   .privacy-option > span:last-child{margin-top:0}
   .privacy-option:has(input:focus-visible){outline:2px solid var(--indigo);outline-offset:2px}
-  .review-footer{grid-column:1/3;display:flex;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid var(--line);background:#fff}
+  .review-footer{grid-column:1/3;position:sticky;bottom:0;z-index:1;display:flex;align-items:center;gap:10px;padding:16px 22px;border-top:1px solid var(--line);background:#fff}
   .review-footer .meta{font-size:11px;color:#7A899F}
   .review-footer .btn{margin-left:auto}
   /* Detail */

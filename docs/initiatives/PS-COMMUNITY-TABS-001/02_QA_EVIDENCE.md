@@ -42,6 +42,7 @@ from PNG/JPEG metadata or compression.
 | E11 | `/the-slate/break` | Attempt to emulate `prefers-reduced-motion: reduce`; interact with tabs | 1440×1000 / 1 / light | **Conditional / browser-capability blocked:** the In-app Browser cannot emulate the media preference. Static evidence confirms the scoped reduced-motion rule at `static/css/community-tabs.css:378–384` and focused regression at `tests/test_community_tabs.py:107–117`. Do not claim a live emulation pass. | _No pass claim; Pete/alternate-browser action required_ |
 | E12 | `/the-slate/break` direct | Fresh load | 320×800 / 1 / light and dark | **Provisional pass; exact-review recapture pending:** after the scoped 12px link-gap correction, `Interview Studio` ends at x=300.945, leaving 19.055px trailing clearance; `document.scrollWidth == 320`; console errors/warnings are zero. Repeat against the final review SHA. | Earlier failure captures: `/Users/petercarter/.codex/visualizations/2026/07/21/019f8708-2314-7882-a562-66e3ad8b27ab/community-break-current/break-320-light-top.png`, `break-320-dark-top.png`; exact-SHA hashes pending |
 | E13 | `/the-slate` Feed and `/the-slate/break` direct | Fresh load; then Feed → The Break | 1440×1000 and 390×844 / 1 / light and dark | **DOM pass:** fresh Feed has all 3 Break images deferred through `data-*` attributes and native Break `src`/`srcset` count 0; Feed first image is responsive eager/high/async and lower Feed images are responsive lazy/low/async. After Break click and on direct Break, hero is responsive eager/high/async and both lower images are responsive lazy/low/async. **Resource Timing subcheck conditional:** this browser does not expose the Resource Timing API, so no runtime request-list pass is claimed. | Manager DOM capture passed; Resource Timing API unavailable (Conditional). |
+| E14 | `/the-slate` Feed | Composer → attach Photo → AI review → Publish update | 1280×720 / 1 / light | **Mouse/viewport pass:** review dialog is y=24–696 (672px), its review body exposes internal overflow (`clientHeight=588`, `scrollHeight=752`), and Publish is fully visible at y=631–679. Real locator click publishes `p-published-1` with mountain-ridge WebP and closes the overlay. **Keyboard subcheck Conditional:** the IAB CUA's native Tab remains at the textarea; static focus-trap guard is covered by test, but no live keyboard pass is claimed. | Manager live retest pass for geometry/mouse; CUA Tab capability conditional. |
 
 ## Deterministic non-browser checks
 
@@ -51,8 +52,8 @@ These checks ran from the target worktree after the implementation and the
 | Check | Result |
 | --- | --- |
 | `git diff --check` | Pass |
-| `python -B -m unittest tests.test_community_tabs tests.test_navigation -q` | Pass: 30 tests after responsive-media, authority-flow, fixture-state, and Gallery-duplicate guards. |
-| `python -B -m unittest discover -s tests -t . -q` | Pass: 794 tests, 2 skipped after the keyboard-components correction. Expected fixture warnings/errors are emitted by unrelated negative-path tests. |
+| `python -B -m unittest tests.test_community_tabs tests.test_navigation -q` | Pass: 31 tests. |
+| `python -B -m unittest discover -s tests -t . -q` | Pass: 795 tests, 2 skipped. |
 | `node --check static/js/community-tabs.js && node --check static/js/feed-living-stream.js` | Environment gate open: shell returned `zsh: command not found: node`. Browser-native parse/behavior evidence is required instead; do not treat this as waived. |
 | Bundled runtime `node --check static/js/community-tabs.js && node --check static/js/feed-living-stream.js` | Pass after the responsive-media and hydration changes. |
 | Node-backed import parse | Both files parsed; execution stopped only at expected `ReferenceError: document is not defined` outside a DOM. |
@@ -89,6 +90,15 @@ reduced from the inherited 20px to 12px. The fresh manager check measured the
 label's right edge at x=300.945 (19.055px clearance), `scrollWidth == 320`, and
 zero console warnings/errors: **provisional pass**. A new light/dark pair must
 still be hashed against the final review SHA.
+
+**E14, 2026-07-21:** The first 1280×720 composer review exposed two real
+accessibility failures: the dialog was 833px tall with its top at -57.6px, and
+Publish sat below the viewport; CUA Tab then cycled at Close. The correction
+caps the dialog to the viewport, makes the review body internally scrollable,
+and replaces the `offsetParent` focus filter with a visible-tabbable filter.
+The manager's fresh live retest passes dialog geometry and mouse publication;
+the IAB CUA native-Tab implementation remains stuck at textarea, so keyboard
+traversal is explicitly **Conditional**, not a claimed live pass.
 
 ## Scope and truth checks
 

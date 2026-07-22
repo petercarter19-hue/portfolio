@@ -140,6 +140,31 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
             css,
         )
 
+    def test_review_modal_keeps_the_primary_action_reachable_and_traps_all_tabbables(self):
+        """A 720px-tall viewport cannot strand Publish below a clipped
+        modal or treat the close button as both ends of the focus trap."""
+        js_path = os.path.join(ROOT, "static", "js", "feed-living-stream.js")
+        css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
+        with open(js_path, encoding="utf-8") as handle:
+            js = handle.read()
+        with open(css_path, encoding="utf-8") as handle:
+            css = handle.read()
+        for contract in (
+            "function overlayFocusableItems",
+            "preferred.focus({ preventScroll: true })",
+            "var items = overlayFocusableItems(overlay);",
+            "el.getClientRects().length > 0",
+        ):
+            self.assertIn(contract, js)
+        self.assertNotIn("el.offsetParent !== null", js)
+        for contract in (
+            "max-height:calc(100dvh - 48px)",
+            "display:flex; flex-direction:column",
+            "flex:1 1 auto; min-height:0; overflow-y:auto",
+            "position:sticky;bottom:0",
+        ):
+            self.assertIn(contract, css)
+
 
 class CommunityTruthAndBreakTests(unittest.TestCase):
     def setUp(self):

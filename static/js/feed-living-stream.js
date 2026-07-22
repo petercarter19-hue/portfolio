@@ -576,6 +576,21 @@
   var overlayInvoker = null;
   var transcriptTimer = null;
 
+  function overlayFocusableItems(overlay) {
+    return Array.prototype.filter.call(
+      overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])'),
+      function (el) {
+        if (el.disabled || el.hidden || el.getAttribute('aria-hidden') === 'true' || el.tabIndex < 0) {
+          return false;
+        }
+        var style = window.getComputedStyle(el);
+        /* Do not use offsetParent here: it can be null for otherwise
+           tabbable controls within a constrained, scrolling dialog. */
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.getClientRects().length > 0;
+      }
+    );
+  }
+
   function openOverlay(html, labelledBy) {
     closeOverlay(false);
     overlayInvoker = document.activeElement;
@@ -586,17 +601,15 @@
     activeOverlay = overlay;
     var preferred = overlay.querySelector('[data-autofocus]');
     if (preferred) {
-      preferred.focus();
+      preferred.focus({ preventScroll: true });
     } else {
-      var focusables = overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])');
+      var focusables = overlayFocusableItems(overlay);
       if (focusables.length) { focusables[0].focus(); }
     }
     overlay.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') { event.preventDefault(); dismissOverlay('Nothing was saved. Your draft is kept on this page until you leave it.'); return; }
       if (event.key !== 'Tab') { return; }
-      var items = Array.prototype.filter.call(
-        overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])'),
-        function (el) { return !el.disabled && el.offsetParent !== null; });
+      var items = overlayFocusableItems(overlay);
       if (!items.length) { return; }
       var first = items[0], last = items[items.length - 1];
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
