@@ -574,8 +574,13 @@
   var activeOverlay = null;
   var transcriptTimer = null;
   var overlayReturnFocus = FOCUS_LIFECYCLE.createReturnFocus(document, function () {
-    return document.querySelector('[data-comm-tab="feed"][role="tab"]') ||
-      document.querySelector('[data-composer-return]');
+    // Direct ?state=voice|review|preview entries begin from BODY, so the Feed
+    // tab is their intentional landing place; composer is a resilient second
+    // choice when the tab is unavailable or cannot take focus.
+    return [
+      document.querySelector('[data-comm-tab="feed"][role="tab"]'),
+      document.querySelector('[data-composer-return]')
+    ];
   });
 
   function overlayFocusableItems(overlay) {

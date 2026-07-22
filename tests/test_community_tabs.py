@@ -19,6 +19,21 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def contrast_ratio(foreground, background):
+    """Return the WCAG relative-luminance contrast ratio for two hex colors."""
+    def luminance(color):
+        channels = [int(color[index:index + 2], 16) / 255 for index in (1, 3, 5)]
+        linear = [
+            channel / 12.92 if channel <= 0.04045
+            else ((channel + 0.055) / 1.055) ** 2.4
+            for channel in channels
+        ]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    light, dark = sorted((luminance(foreground), luminance(background)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
 class CommunityTabRouteTests(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
@@ -206,7 +221,90 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("4 behavioral checks passed", result.stdout)
+        self.assertIn("10 behavioral checks passed", result.stdout)
+
+    def test_bottom_break_return_reveals_focused_feed_destination_only(self):
+        with open(os.path.join(ROOT, "static", "js", "community-tabs.js"), encoding="utf-8") as handle:
+            js = handle.read()
+        self.assertIn("var revealDestination = trigger.getAttribute('role') !== 'tab';", js)
+        self.assertIn("focus: revealDestination", js)
+        self.assertIn("revealFocus: revealDestination", js)
+        self.assertIn("focusLifecycle.revealFocusedElement(window, nextTab);", js)
+        self.assertIn(
+            "setTab(next, { updateUrl: next !== currentTab(), focus: true });",
+            js,
+        )
+
+    def test_every_dark_break_kicker_and_small_poll_note_meets_contrast(self):
+        html = app.test_client().get("/the-slate/break").get_data(as_text=True)
+        with open(os.path.join(ROOT, "static", "css", "community-tabs.css"), encoding="utf-8") as handle:
+            css = handle.read()
+
+        fragments = re.findall(
+            r'<(?:p|span) class="bk-kicker">(.*?)</(?:p|span)>', html, re.DOTALL)
+        kickers = [
+            re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", fragment)).strip()
+            for fragment in fragments
+        ]
+        dark_surfaces = {
+            "A restorative Community pause": "#071419",
+            "Transformation": "#0e1c27",
+            "Weekend Challenge": "#122c23",
+            "Community Prompt": "#0e1c27",
+            "Local Discovery": "#0e1c27",
+        }
+        self.assertEqual(kickers, list(dark_surfaces))
+
+        kicker_rule = re.search(
+            r'body\[data-theme="dark"\] #feed-app \.bk-kicker \{ color: (#[0-9a-fA-F]{6}); \}',
+            css,
+        )
+        self.assertIsNotNone(kicker_rule)
+        for label, background in dark_surfaces.items():
+            with self.subTest(kicker=label):
+                self.assertGreaterEqual(contrast_ratio(kicker_rule.group(1), background), 4.5)
+
+        poll_rule = re.search(
+            r'body\[data-theme="dark"\] #feed-app \.bk-poll__foot '
+            r'\{ color: (#[0-9a-fA-F]{6}) !important; \}',
+            css,
+        )
+        self.assertIsNotNone(poll_rule)
+        self.assertGreaterEqual(contrast_ratio(poll_rule.group(1), "#0e1c27"), 4.5)
+
+        local_place_rule = re.search(
+            r'body\[data-theme="dark"\] #feed-app \.bk-local__place '
+            r'\{ color: (#[0-9a-fA-F]{6}) !important; \}',
+            css,
+        )
+        local_qualifier_rule = re.search(
+            r'body\[data-theme="dark"\] #feed-app \.bk-local__place small '
+            r'\{ color: (#[0-9a-fA-F]{6}); \}',
+            css,
+        )
+        self.assertIsNotNone(local_place_rule)
+        self.assertIsNotNone(local_qualifier_rule)
+        place_ratio = contrast_ratio(local_place_rule.group(1), "#0e1c27")
+        qualifier_ratio = contrast_ratio(local_qualifier_rule.group(1), "#0e1c27")
+        self.assertGreaterEqual(place_ratio, 4.5)
+        self.assertGreaterEqual(qualifier_ratio, 4.5)
+        self.assertGreater(place_ratio, qualifier_ratio)
+
+    def test_dark_break_muted_copy_and_focus_ring_keep_accessible_contrast(self):
+        with open(os.path.join(ROOT, "static", "css", "community-tabs.css"), encoding="utf-8") as handle:
+            community_css = handle.read()
+        with open(os.path.join(ROOT, "static", "css", "feed-living-stream.css"), encoding="utf-8") as handle:
+            feed_css = handle.read()
+
+        self.assertIn("color: #b7c4bf", community_css)
+        self.assertGreaterEqual(contrast_ratio("#b7c4bf", "#122c23"), 4.5)
+        self.assertIn(
+            "a:focus-visible, button:focus-visible, [tabindex]:focus-visible, "
+            "input:focus-visible, textarea:focus-visible",
+            feed_css,
+        )
+        self.assertIn("outline:2px solid var(--indigo)", feed_css)
+        self.assertGreaterEqual(contrast_ratio("#96bb76", "#122c23"), 3.0)
 
 
 class CommunityTruthAndBreakTests(unittest.TestCase):

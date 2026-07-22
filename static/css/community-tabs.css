@@ -273,7 +273,9 @@ body[data-theme="dark"] #feed-app .bk-hero::after { display: none; }
 body[data-theme="dark"] #feed-app .bk-hero__copy { z-index: 2; }
 body[data-theme="dark"] #feed-app .bk-hero__copy h2 { color: #f7f2e7; }
 body[data-theme="dark"] #feed-app .bk-hero__copy p { color: #d0ddd2; }
-body[data-theme="dark"] #feed-app .bk-hero .bk-kicker { color: #b3d793; }
+/* The light sage is the approved hero accent and remains readable at the
+   lower-card kicker size; SVG icons inherit the same currentColor. */
+body[data-theme="dark"] #feed-app .bk-kicker { color: #b3d793; }
 body[data-theme="dark"] #feed-app .bk-card h3,
 body[data-theme="dark"] #feed-app .bk-mood__head h2,
 body[data-theme="dark"] #feed-app .bk-pickme__head h2,
@@ -294,9 +296,12 @@ body[data-theme="dark"] #feed-app .bk-pollist li,
 body[data-theme="dark"] #feed-app .bk-moodopt { background: rgb(18 31 40 / 88%); border-color: rgb(184 207 185 / 15%); }
 body[data-theme="dark"] #feed-app .bk-poll__ic { background: rgb(134 170 105 / 16%); color: #c5e3a6; }
 body[data-theme="dark"] #feed-app .bk-poll__label { color: #e6ece4; }
+body[data-theme="dark"] #feed-app .bk-local__place { color: #e6ece4 !important; }
+body[data-theme="dark"] #feed-app .bk-local__place small { color: #b7c4bf; }
 body[data-theme="dark"] #feed-app .bk-moodopt.is-active { background: linear-gradient(90deg, #264832, #1c3026); border-color: #719557; }
 body[data-theme="dark"] #feed-app .bk-moodopt.is-active .bk-moodopt__txt strong,
 body[data-theme="dark"] #feed-app .bk-moodopt.is-active .bk-chevron { color: #d0e5b2; border-color: #d0e5b2; }
+body[data-theme="dark"] #feed-app .bk-poll__foot { color: #b7c4bf !important; }
 body[data-theme="dark"] #feed-app .bk-static-note { color: #b7c4bf !important; }
 body[data-theme="dark"] #feed-app .bk-quote { background: linear-gradient(105deg, #0e221e, #14251e); }
 body[data-theme="dark"] #feed-app .bk-quote__mark,

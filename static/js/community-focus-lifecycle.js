@@ -10,14 +10,33 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  function focusElement(element) {
+  function focusElement(element, documentRef) {
     if (!element || typeof element.focus !== 'function') { return false; }
+
+    var ownerDocument = documentRef || element.ownerDocument || null;
+    // BODY is the browser's implicit fallback when an overlay removes its
+    // focused control. It is never an intentional place to resume this flow.
+    if (ownerDocument &&
+        (element === ownerDocument.body || element === ownerDocument.documentElement)) {
+      return false;
+    }
+
     try {
       element.focus({ preventScroll: true });
     } catch (error) {
-      element.focus();
+      try {
+        element.focus();
+      } catch (fallbackError) {
+        return false;
+      }
     }
-    return true;
+
+    // Native focus is synchronous. When activeElement is available, a no-op
+    // focus call is not success; restoration must keep trying other controls.
+    if (ownerDocument && 'activeElement' in ownerDocument) {
+      return ownerDocument.activeElement === element;
+    }
+    return false;
   }
 
   function isVisibleConnected(documentRef, element) {
@@ -40,6 +59,33 @@
     return focusWillBeHidden ? focusElement(nextTab) : false;
   }
 
+  function intersectsViewport(windowRef, element) {
+    if (!windowRef || !element || typeof element.getBoundingClientRect !== 'function') {
+      return false;
+    }
+    var rect = element.getBoundingClientRect();
+    var documentRef = element.ownerDocument;
+    var documentElement = documentRef && documentRef.documentElement;
+    var viewportWidth = windowRef.innerWidth || (documentElement && documentElement.clientWidth) || 0;
+    var viewportHeight = windowRef.innerHeight || (documentElement && documentElement.clientHeight) || 0;
+    return rect.bottom > 0 && rect.right > 0 &&
+      rect.top < viewportHeight && rect.left < viewportWidth;
+  }
+
+  function revealFocusedElement(windowRef, element) {
+    var documentRef = element && element.ownerDocument;
+    if (!documentRef || documentRef.activeElement !== element) { return false; }
+    if (intersectsViewport(windowRef, element)) { return true; }
+    if (typeof element.scrollIntoView !== 'function') { return false; }
+
+    try {
+      element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+    } catch (error) {
+      element.scrollIntoView();
+    }
+    return intersectsViewport(windowRef, element);
+  }
+
   function createReturnFocus(documentRef, fallbackResolver) {
     var directTarget = null;
     var logicalSelector = null;
@@ -50,19 +96,32 @@
     }
 
     function restore() {
-      var target = isVisibleConnected(documentRef, directTarget) ? directTarget : null;
+      var target = null;
+
+      function restoreCandidates(candidates) {
+        var candidateList = Array.isArray(candidates) ? candidates : [candidates];
+        for (var index = 0; index < candidateList.length; index += 1) {
+          var candidate = candidateList[index];
+          if (isVisibleConnected(documentRef, candidate) &&
+              focusElement(candidate, documentRef)) {
+            return candidate;
+          }
+        }
+        return null;
+      }
+
+      target = restoreCandidates(directTarget);
       if (!target && logicalSelector && documentRef.querySelector) {
-        var logicalTarget = documentRef.querySelector(logicalSelector);
-        if (isVisibleConnected(documentRef, logicalTarget)) { target = logicalTarget; }
+        target = restoreCandidates(documentRef.querySelector(logicalSelector));
       }
       if (!target && typeof fallbackResolver === 'function') {
-        var fallback = fallbackResolver();
-        if (isVisibleConnected(documentRef, fallback)) { target = fallback; }
+        // Direct-entry overlays have no real invoker. The page-level resolver
+        // intentionally chooses its visible Feed tab, then its composer.
+        target = restoreCandidates(fallbackResolver());
       }
-      var focused = focusElement(target);
       directTarget = null;
       logicalSelector = null;
-      return focused ? target : null;
+      return target;
     }
 
     return { remember: remember, restore: restore };
@@ -71,7 +130,9 @@
   return {
     createReturnFocus: createReturnFocus,
     focusElement: focusElement,
+    intersectsViewport: intersectsViewport,
     isVisibleConnected: isVisibleConnected,
-    moveBeforePanelHide: moveBeforePanelHide
+    moveBeforePanelHide: moveBeforePanelHide,
+    revealFocusedElement: revealFocusedElement
   };
 });

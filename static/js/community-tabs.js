@@ -92,6 +92,18 @@
       window.history.pushState({ communityTab: next }, '', URLS[next]);
     }
     if (opts.announce !== false) { announce(COPY[next].title + ' selected.'); }
+    if (opts.revealFocus && nextTab) {
+      // The bottom-of-Break return is in the panel being hidden. Unlike tab
+      // activation, its destination must be both focused and brought back into
+      // the viewport so the visible focus indicator is not stranded above it.
+      window.requestAnimationFrame(function () {
+        if (focusLifecycle) {
+          focusLifecycle.revealFocusedElement(window, nextTab);
+        } else if (document.activeElement === nextTab && nextTab.scrollIntoView) {
+          nextTab.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+        }
+      });
+    }
     return true;
   }
 
@@ -103,7 +115,12 @@
       }
       event.preventDefault();
       var next = validTab(trigger.getAttribute('data-comm-tab'));
-      setTab(next, { updateUrl: next !== currentTab(), focus: false });
+      var revealDestination = trigger.getAttribute('role') !== 'tab';
+      setTab(next, {
+        updateUrl: next !== currentTab(),
+        focus: revealDestination,
+        revealFocus: revealDestination
+      });
     });
   });
 
