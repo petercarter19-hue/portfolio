@@ -303,6 +303,32 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, css)
 
+    def test_320_voice_player_flexes_waveform_without_hiding_controls(self):
+        css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
+        with open(css_path, encoding="utf-8") as handle:
+            css = handle.read()
+
+        self.assertIn(
+            ".wave { flex:1; min-width:0; height:28px; display:flex; "
+            "align-items:center; gap:3px; }",
+            css,
+        )
+        self.assertIn(".wave span { flex:0 1 3px; width:3px;", css)
+        self.assertIn(".voice-time { flex:0 0 auto;", css)
+        self.assertIn(".voice-play:hover", css)
+        self.assertIn("@media (max-width: 360px)", css)
+        self.assertIn(".voice-player{gap:8px;padding-inline:10px}", css)
+        self.assertIn(".wave{gap:2px}", css)
+
+        # At the measured 244px player client width, the <=360px padding/gaps
+        # leave positive flexible space after the fixed play and time controls.
+        player_client = 244
+        waveform_space = player_client - 20 - 34 - 20 - 16
+        self.assertEqual(waveform_space, 154)
+        self.assertGreater(waveform_space, 0)
+        self.assertNotIn(".voice-time{display:none", css)
+        self.assertNotIn(".voice-player{overflow:hidden", css)
+
     def test_focus_lifecycle_behavior_harness_passes(self):
         node = shutil.which("node")
         app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"

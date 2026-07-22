@@ -221,10 +221,10 @@
   .voice-player { display:flex; align-items:center; gap:11px; padding:13px 14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
   .voice-play { width:34px;height:34px;border-radius:50%;background:var(--indigo);color:white;display:grid;place-items:center;border:0;flex:0 0 auto; }
   .voice-play:hover { background:var(--indigo-strong); }
-  .wave { flex:1; height:28px; display:flex; align-items:center; gap:3px; }
-  .wave span { width:3px; border-radius:2px; background:#AAB3EE; }
+  .wave { flex:1; min-width:0; height:28px; display:flex; align-items:center; gap:3px; }
+  .wave span { flex:0 1 3px; width:3px; border-radius:2px; background:#AAB3EE; }
   .wave span:nth-child(3n){height:23px}.wave span:nth-child(3n+1){height:11px}.wave span:nth-child(3n+2){height:17px}
-  .voice-time { font-size:11px; color:#5d6b82; font-weight:700; }
+  .voice-time { flex:0 0 auto; font-size:11px; color:#5d6b82; font-weight:700; }
   .context-rail { position:sticky; top:calc(var(--site-header-h) + 28px); display:flex; flex-direction:column; gap:16px; }
 
   /* ---- Sticky-note reminder pad: pinned at the top of the right rail.
@@ -452,6 +452,10 @@
     .detail-header{padding:0 15px 15px}
     .back-link{margin:17px 15px 0;padding-top:0}
     .video-caption h3{font-size:22px}
+  }
+  @media (max-width: 360px) {
+    .voice-player{gap:8px;padding-inline:10px}
+    .wave{gap:2px}
   }
 }
 
