@@ -303,14 +303,14 @@ def main() -> None:
                 "timeline-mobile-light-320-entries-c.png",
                 width=320,
                 height=740,
-                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - 120)"),
+                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight - 120)"),
             )
             capture(
                 "timeline-mobile-dark-320-entries-c.png",
                 width=320,
                 height=740,
                 dark=True,
-                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - 120)"),
+                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight - 120)"),
             )
             capture(
                 "composer-type-desktop-light-1440.png",
