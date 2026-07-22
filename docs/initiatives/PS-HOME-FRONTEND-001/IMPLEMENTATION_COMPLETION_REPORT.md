@@ -7,12 +7,17 @@ in this same directory.
 
 **Fix history.** Sections A-I below are the original implementation report.
 Fix round 1 (commit `2650b3b`, same branch) closed 7 review deltas on top of
-it without rewriting this file. Fix round 2 (**Section J**, appended below)
-closes 4 further review deltas — 2 blockers in the evidence set itself and 2
-polish items — and corrects the specific table rows and claims in Section F
-that the round-1 evidence gap affected. Read Section J alongside Section F;
-Section J is the authoritative statement of which evidence files are current
-and independently captured.
+it without rewriting this file. Fix round 2 (**Section J**) was written
+alongside a partial code/evidence commit that this same round's own commit
+message labeled `WIP salvage ... INCOMPLETE and UNAUDITED` after an
+independent audit-2 pass returned NO-GO; that audit's specific numbered
+findings were never captured in any repository file and are not recoverable
+in this session — only the NO-GO fact itself, in the commit message, and the
+governance handoff snapshot's Lane 2 status, survive. **Section K (appended
+below) is a full independent re-audit performed against that unresolved
+state.** It treats no claim in Section J as established merely because it is
+written there, re-derives every finding from the current repository content,
+and is the authoritative statement of current status. Read Section K last.
 
 ## A. Status
 
@@ -153,7 +158,7 @@ Modified files (within the exact writer reservation):
   explicitly authorized frontend addition to that file, with an inline
   comment explaining why the assertion direction flipped.
 
-Not touched (confirmed by `git diff --stat` against the exact base): 
+Not touched (confirmed by `git diff --stat` against the exact base):
 `owner_routes.py`, `services/owner_home_service.py`, `services/**`, any SQL
 file, `identity.py`, `app.py`, `style.css`, `owner-app.css`, `mobile-nav.js`,
 `theme-toggle.js`, `templates/owner_workspace.html`, any Journal/Slate/
@@ -552,3 +557,327 @@ particularly `12a-recovery-before-retry-failure.png` →
 `12b-recovery-after-retry-success.png` (the real retry sequence) and any of
 the 12 recaptured files against the accepted authority. The reservation-
 exception note in J1 item 4 for `tests/test_owner_home_migration.py`.
+
+## K. Fix round 2 completion — independent re-audit (this session)
+
+Writer: Claude (Sonnet 5), self-managed, worktree
+`.claude/worktrees/wf_d79214de-d7d-5`, branch
+`work/2026-07-21-home-frontend-001-impl`, continuing from WIP-salvage HEAD
+`e4377ced0c88fbb35100c5cf2a8cbd0c55ae69a3` (base for the whole branch:
+`origin/main` at `d2592f08056e09629a302966b47fa8ff92517d8e`).
+
+### K0. What audit-2 actually found
+
+Not recoverable. The only durable trace is the WIP-salvage commit message
+(`e4377ce`) — "Audit-2's NO-GO deltas are not confirmed closed" — and the
+governance handoff snapshot's Lane 2 entry ("UNAUDITED; treat no item as
+closed"). No numbered findings document exists in the repository. Rather than
+guess at what audit-2 flagged, this round performed a complete independent
+re-audit of the branch's real, current state — code, tests, and freshly
+captured evidence — treating every Section A-J claim as unverified until
+personally re-derived.
+
+### K1. Code-level re-verification (no functional/template/CSS/JS changes made)
+
+Read in full and independently checked against the governing documents:
+`templates/owner_home.html` and all 13 `partials/owner_home/_*.html` files,
+`static/css/owner-home.css` (1217 lines), `static/js/owner-home.js`, the
+`auth_routes.py` diff, and the `templates/base.html` diff. Findings:
+
+- The Section J accessible-name fix (`_capture_action.html` — no `aria-label`
+  override on `.oh__capture-label`, `data-oh-server-label` observability
+  attribute instead) is present exactly as described and is covered by
+  `test_capture_card_accessible_name_matches_visible_authority_label`.
+- The forced-colors base-reset fix (`static/css/owner-home.css`
+  `@media (forced-colors: active) { body.owner-home-shell * { color:
+  CanvasText; ... } }`) is present and independently re-verified below
+  (K3) with live computed-style inspection, not just re-reading the CSS.
+- `git diff --stat` against the exact base confirms the changed-file set is
+  still limited to this package's exact reservation (14 template/partial
+  files, `owner-home.css`, `owner-home.js`, `auth_routes.py`,
+  `templates/base.html`, the atmosphere PNG, the three test files, and this
+  package's own docs/artifacts) — no forbidden file (`owner_routes.py`,
+  `services/**`, SQL, `identity.py`, `app.py`, Journal/Community/Slate/
+  homepage files) is touched.
+- `static/css/owner-home.css` contains zero references to shared `--ps-*` /
+  `--pv-*` tokens and every top-level selector is namespaced under `.oh`,
+  `.oh__*`, or `.oh-pill*` — independently re-confirms D6 (route-scoped,
+  no leakage) rather than trusting the prior report's claim.
+- One real defect fixed this round: `git diff --check` failed on trailing
+  whitespace in this report file's own Section B (line 156, a pre-existing
+  artifact from an earlier round). Corrected; `git diff --check` is now
+  clean across the whole branch diff.
+- One disclosed, non-blocking observation, not fixed: on the flag-on
+  render, `templates/base.html`'s `<head>` still emits link tags for
+  `style.css`, `sky-glass.css`, `editorial-glass.css`, and `chatbot.css`
+  (confirmed via a live network-request capture, K3). These rules are
+  harmless no-ops for this route today — `owner-home-shell` never carries
+  the classes (`ps-editorial-surface`, etc.) those stylesheets key off of,
+  and no visual or functional effect was observed — but they are extra
+  unused requests. Suppressing them would mean editing `templates/base.html`
+  beyond the exact manager-approved U1/U3 standalone-shell conditional this
+  package is authorized to touch (`SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md`
+  §1, `07_FABLE_FILE_RESERVATIONS_INTERSECTIONS.md` I4), so it is reported
+  here as a finding for a future package rather than fixed under this one's
+  authorization.
+- Grid hierarchy (parity row 6, "unequal editorial hierarchy: Review
+  widest, Recent a prominent media card, Resurfaced quieter"): the current
+  three-column stage grid (`repeat(3, 1fr)`, `.oh__card--review` at default
+  span) renders Needs-Review/Recent/Resurfaced at visually near-equal
+  column widths. Compared side-by-side against both authority sources: the
+  original binding baseline concept mockup
+  (`01_owner_home_interface_mockup.png`) shows a noticeably wider Recent
+  Moment column; the accepted, more specific "implement exactly as shown"
+  working-direction candidate (`authority-candidate-31864e4`, exports
+  01/02, which the owner decision names as controlling for this exact
+  cinematic-shell implementation) itself uses near-equal-width columns in
+  both its empty and maximum-populated states. The built page matches the
+  candidate's own populated export closely; hierarchy in both the candidate
+  and the build reads through content weight (Recent's large media block,
+  Review's denser three-row list) rather than raw column width. Assessed as
+  a **Pass matching the controlling candidate authority**, with the
+  difference from the earlier concept mockup disclosed rather than hidden.
+  This is a visual-finish judgment call, not a structural change, left for
+  the next receiver's measured pass to confirm or refine per the
+  coordinator's scope note.
+
+### K2. Tests
+
+All commands run from the worktree root with
+`/Users/petercarter/portfolio/venv/bin/python` (this worktree has no local
+`venv/`; the path is the shared interpreter already used by prior rounds —
+confirmed to be an ordinary, already-installed virtualenv, not a secret or
+credential).
+
+```
+ANTHROPIC_API_KEY=test .../venv/bin/python -m unittest discover -s tests -q
+```
+→ `Ran 793 tests in 1.255s` / `OK (skipped=2)`.
+
+```
+ANTHROPIC_API_KEY=test .../venv/bin/python -m unittest \
+  tests.test_owner_home tests.test_owner_home_accessibility \
+  tests.test_owner_home_migration -v
+```
+→ `Ran 49 tests` / `OK (skipped=1)` — the one skip is the pre-existing
+`test_apply_verify_rollback_reapply` isolated-SQL-gate test, which requires
+a database environment not present here (unrelated to this package; the
+gate itself is not run in this worktree by design).
+
+```
+ANTHROPIC_API_KEY=test .../venv/bin/python -m unittest \
+  tests.test_governance_pointers tests.test_site_rules -v
+```
+→ `Ran 33 tests` / `OK`.
+
+```
+.../venv/bin/python -m py_compile auth_routes.py tests/test_owner_home.py \
+  tests/test_owner_home_accessibility.py tests/test_owner_home_migration.py
+```
+→ clean.
+
+`git diff --check` (full branch diff against base `d2592f0...`) → clean
+after the whitespace fix above.
+
+No Node.js runtime is installed in this environment (`node`/`npm` not
+found), so `static/js/owner-home.js` could not be checked with `node
+--check`. It was instead (a) manually re-read in full for syntax
+correctness and (b) exercised live in a real Chrome browser across every
+captured state below, including the real fetch/DOM-swap retry path — a
+syntax error would have surfaced as a console error or a broken retry, and
+none did (K3).
+
+No `flake8`/`ruff`/`pylint`/`bandit` is installed in the shared venv; a
+manual secret/credential grep (`api[_-]?key|secret|password|token|BEGIN
+(RSA|PRIVATE|OPENSSH)|AKIA...`) across every changed non-binary file found
+no matches beyond benign CSS custom-property names (`--oh-*`) and test
+fixture field names (`version_token`).
+
+### K3. Evidence — independently regenerated, not inherited
+
+The round-1/round-2 evidence set (20 files) was byte-for-byte hash-clean
+(re-verified: 20 unique SHA-256 hashes, confirming the Section J claim was
+at least *locally* true) but was produced by a prior, now-untrusted session
+under a NO-GO audit, using a local harness this session could not inspect.
+Rather than inherit unverifiable evidence, this round tore the entire
+`artifacts/ps-home-frontend-001/screenshots/` directory down and recaptured
+every state from a fresh, continuous session against the real integrated
+app.
+
+**Method.** A scratchpad-only Flask harness (never committed, lives outside
+the repository) imports the real `app` object from this worktree unmodified,
+sets `PEERSLATE_OWNER_HOME_ENABLED=True` and the existing, already-tested
+`PEERSLATE_ALLOW_DEV_IDENTITY` development-identity path (`identity.py`,
+unchanged) for this process only, and swaps the module-level
+`auth_routes.owner_home_service` object for a thin wrapper around the real
+`OwnerHomeService` class backed by a `Mock()`-returned database result set —
+the exact same fixture-row pattern `tests/test_owner_home.py` already uses.
+No new data model, no production file touched, no persistent state, process
+stopped before this report was finalized. Playwright drove the locally
+installed system Google Chrome (`channel="chrome"`, real rendering, not a
+stub). Every screenshot below is the real `owner_home.html` +
+`owner-home.css` + `owner-home.js` + `base.html` render.
+
+**Files (21, `artifacts/ps-home-frontend-001/screenshots/`):**
+
+| File | Size (px) | State proved |
+|---|---|---|
+| `01-desktop-1440-populated.png` | 1440×1422 | Desktop populated; doubles as the nine-object-ceiling proof (see count below) and as the "dark presentation" requirement — this route has no separate light/dark toggle (`data-theme` is intentionally omitted for `standalone_owner_shell`; the dark cinematic shell is the only presentation), so no second file is claimed for that state |
+| `02-mobile-390-populated.png` | 390×3550 | Mobile 390 populated, full scroll |
+| `03-mobile-320-populated.png` | 320×4006 | Mobile 320 populated, full scroll |
+| `04-landscape-844x400-populated.png` | 844×2182 | Landscape/short-height breakpoint |
+| `05-200pct-zoom-reflow-720x450.png` | 720×2363 | 200% zoom **approximated by a halved viewport** (720×450 vs the 1440×900 baseline), disclosed rather than presented as a literal browser-zoom capture; no horizontal overflow confirmed by DOM measurement (`scrollWidth` vs `clientWidth`) |
+| `06-visible-focus-desktop.png` | 1440×900 | Real `Tab`-key sequence (verified stepwise: skip-link → brand → Home nav → Settings → Sign out → Capture card); screenshot taken at the Capture card, matching authority export 09 |
+| `07-reduced-motion-desktop.png` | 1440×1422 | `reduced_motion="reduce"` context. Disclosed: this page has no animation to begin with, so there is nothing for the media query to visibly change — the screenshot cannot by itself prove the rule works. Verified instead by reading computed `animation-duration`/`transition-duration` live under the emulation (both collapsed to ~0), which is what the CSS rule actually does |
+| `08-forced-colors-desktop.png` | 1440×1470 | `forced_colors="active"` context. Verified by live computed-style inspection, not just a screenshot: `<h1>` color `rgb(0,0,0)` on `rgb(255,255,255)` background, Capture label and the "next step" button text likewise `rgb(0,0,0)` — all legible, confirming the forced-colors fix independently of the Section G narrative |
+| `09-long-content-bidi-desktop.png` / `09b-...-mobile-390.png` | 1440×1468 / 390×3605 | A real confirmed-Moment title (121 chars, within the contract's 160-char bound) mixing English and Arabic (RTL) text, to genuinely exercise bidi wrapping — not truncated away by the length bound, unlike an earlier draft of this same capture during this session which the writer caught and redid before use. No horizontal overflow (DOM-measured) |
+| `10-empty-desktop.png` / `10b-...-mobile-390.png` | 1440×1283 / 390×2980 | Honest empty state, no generated content |
+| `11-complete-failure-desktop.png` / `11b-...-mobile-390.png` | 1440×900 / 390×1622 | Complete Home-data failure (`DatabaseServiceError`), HTTP 503, Capture stays available |
+| `12a-recovery-before-retry.png` → `12b-recovery-after-retry.png` | 1440×900 → 1440×1468 | One continuous browser session: first load fails (503), the real `[data-oh-retry]` control is clicked, the real `owner-home.js` fetch/DOM-swap runs, and the page lands on a genuine populated success state ("Welcome back, Casey Nakamura.", focus moved to the new `<h1>`, live region announced "Owner Home updated.") — all independently confirmed via DOM assertions during capture, not just visually |
+| `13-no-js-populated-desktop.png` | 1440×1468 | `java_script_enabled=False` context; full populated page works without JavaScript |
+| `13b-no-js-complete-failure-desktop.png` | 1440×900 | Same no-JS context, failure state; the Retry control's `href` attribute was independently read (`/app`, a plain GET link, not a JS-only handler) |
+| `13c-no-js-retry-link-worked-desktop.png` | 1440×1468 | Same no-JS session: the plain `<a href>` Retry link was actually clicked (a real full-page navigation, since no JS is available to intercept it), landing on the same successful populated state |
+| `14a-two-owner-canary-priya-shah.png` / `14b-...-noah-kim.png` | 1440×1422 each | Two distinct owner identities/content, each rendered independently; cross-checked via `page.inner_text('body')` that owner A's name never appears in owner B's rendered text and vice versa |
+
+**Hash audit.** `sha256sum artifacts/ps-home-frontend-001/screenshots/*.png`
+→ 18 unique hashes across 21 files. Two explainable, disclosed duplicate
+groups, not an evidence-integrity defect:
+
+1. `11-complete-failure-desktop.png`, `12a-recovery-before-retry.png`, and
+   `13b-no-js-complete-failure-desktop.png` are byte-identical. This is
+   expected and correct: the honest complete-failure state (`home_failed`)
+   deliberately never renders owner-specific content (the heading falls
+   back to the generic "Owner Home", per the Section B fix-round-1 delta 5
+   design) precisely because there is no reliable owner data to show after
+   a failed read — so three different failed requests, from three different
+   identities/entry paths, produce pixel-identical, contentless output by
+   design. Each file still documents a different real request (a standalone
+   failure render, the first half of a live retry sequence, and a no-JS
+   failure render) and none is a copy-paste substitute for another's claim.
+2. `13-no-js-populated-desktop.png` and
+   `13c-no-js-retry-link-worked-desktop.png` are byte-identical. Also
+   expected: both are the same owner's (Harper Solano) successful populated
+   render — one reached by a direct first load, the other reached by
+   actually clicking the plain no-JS Retry link after a forced first
+   failure. Their pixel identity is the actual proof that the no-JS retry
+   path lands on exactly the same honest server-rendered result as a normal
+   successful load, not a sign of reused evidence.
+
+**Nine-object ceiling — independently counted via live DOM query**, not
+inferred from the template source: `capture(1) + review_items(3) +
+recent_moment(1) + resurfaced_moment(1, dormant) + noticed_item(1, dormant)
++ connection_item(1, dormant) + next_step(1) = 9`, matching
+`owner_home_service._validate_serialized_payload`'s own `MAX_PRODUCT_OBJECTS
+= 9` ceiling exactly, confirmed on the populated capture used for file `01`.
+
+**Console/network check** (populated desktop load): zero console errors or
+warnings, zero `pageerror` events. 14 requests total — the page's own HTML,
+`owner-home.css`, `owner-home.js`, the atmosphere PNG, the favicon, three
+Google Fonts stylesheets + two font files (already loaded sitewide by
+`base.html`, unchanged by this package), and four unused-but-harmless
+global stylesheets noted in K1. No request to `/api/dashboard`, no
+analytics/tracking beacon, no request beyond the bounded `/app` route
+itself and static assets.
+
+**Keyboard tab order** (independently stepped, not assumed): skip-link →
+`PeerSlate` brand → `Home` (current) nav item → `Settings` → `Sign out` →
+Capture card → review item 1 → review item 2 → review item 3. Every
+disabled "Coming later" nav item, audience-rail mode, and dormant card is
+confirmed **not** in the tab sequence (skipped entirely, not merely
+visually dimmed) — matches the "genuinely disabled, zero tab stops"
+requirement.
+
+**Security headers** on the flag-on `/app` response, read live (not
+assumed from `app.py`): `Cache-Control: no-cache, must-revalidate`,
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`,
+`Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy:
+camera=(self), microphone=(self), geolocation=()` — identical to every
+other route sitewide (the shared `app.py` `after_request` hook this package
+correctly does not touch).
+
+### K4. Per-authority-item assessment (visual, by eye — no measured/pixel-sampled data, per the coordinator's scope note)
+
+Against `06_FABLE_VISUAL_PARITY_DEVIATION_REGISTER.md`'s 20-row map,
+comparing the K3 screenshots to `01_owner_home_interface_mockup.png` and
+`authority-candidate-31864e4/exports/`:
+
+| # | Area | Assessment |
+|---|---|---|
+| 1 | Cinematic navy shell + alpine atmosphere | **Pass** — exact accepted PNG asset (SHA-256 unchanged since round 0), navy/gold gradient veils match |
+| 2 | Owner top band (wordmark, Owner View pill, nav, Coming-later items, menu) | **Pass** — same silhouette/order; disabled items confirmed non-interactive (K3 tab order) |
+| 3 | Owner hero (avatar, welcome heading, context line) | **Pass** — variable identity, never hardcoded, confirmed across 6+ distinct fixture identities this round |
+| 4 | Dominant Capture action | **Pass** — one visually dominant gold-framed action; correct desktop (upper-right) and mobile (under hero) placement |
+| 5 | My Slate preview / audience rail | **Pass** — Owner View text-state + four genuinely disabled preview modes, zero routes |
+| 6 | Ivory stage, unequal hierarchy | **Conditional** — see K1 grid-hierarchy note; near-equal column widths match the binding candidate's own exports more closely than the earlier concept mockup, but this is a judgment call the next receiver's measured pass should confirm |
+| 7 | Needs Review (max 3 + bounded-remainder row) | **Pass** — verified 3-item cap, remainder row present only alongside real rows, honest empty text otherwise |
+| 8 | Recent Moment card | **Pass** — real confirmed Moment only, abstract media placeholder, honest empty state |
+| 9 | From your history (Resurfaced) | **Pass** — always the dormant Coming-later preview in this release, never repeats Recent |
+| 10 | What PeerSlate noticed | **Pass** — dormant, content-free, one purpose sentence, no fabricated insight |
+| 11 | Connections | **Pass** — dormant, content-free, no person/avatar/count |
+| 12 | Your next useful step | **Pass** — real deterministic action + destination, or the honest Capture fallback on failure |
+| 13 | Status/footer truth line | **Pass** — concise, truthful, no repeated fixture banners |
+| 14 | Mobile 390/320 + bottom nav | **Pass** — exactly one fixed bottom nav confirmed by live DOM count (not just screenshot) at both widths; a full-page-screenshot stitching artifact makes the fixed nav appear a second time mid-page in `02`/`03` — confirmed via non-full-page viewport captures (top and scrolled-to-bottom) that only one nav ever renders on screen |
+| 15 | Loading/empty/failure/recovery states | **Pass** — all HFA4-scoped states (empty, complete failure, retry/recovery) independently reproduced and DOM-verified; partial-failure/stale/restricted remain out of scope per the backend contract, as HFA4 requires |
+| 16 | Visible focus | **Pass** — 3px marigold outline + separation shadow, confirmed on a real stepped Tab sequence |
+| 17 | Forced colors / high contrast | **Pass** — independently confirmed via live computed-style inspection, not just a screenshot read |
+| 18 | Reduced motion | **Pass**, with the disclosed caveat in K3 that there is no visible animation for the rule to change; verified via computed style instead |
+| 19 | 200% zoom / reflow | **Pass** — no horizontal overflow at the halved-viewport approximation (disclosed method) |
+| 20 | Long content / bidi / missing media | **Pass** — genuine bidi (Arabic) content within the real 160-char bound wraps without clipping or overflow, at both desktop and mobile |
+
+### K5. Accessibility, security, privacy
+
+- Two-owner privacy canary: **Pass**, independently cross-checked via
+  rendered body text (K3), not only the existing unit-test assertion.
+- No fabricated DOM/network/storage state: confirmed via live network-log
+  capture (K3) — no request beyond the bounded route and static assets.
+- `PEERSLATE_OWNER_HOME_ENABLED` defaults `False`: confirmed by
+  `test_owner_home_flag_defaults_off` (still passing) and by the fact that
+  this round's harness had to explicitly set it `True` in-process to render
+  anything at `/app` — production behavior is unchanged.
+- No secrets committed: manual grep across every changed file (K2); no
+  `.env`, credential, token, or publish-profile file touched or read.
+- WCAG-relevant checks independently re-verified this round beyond the
+  existing 17 accessibility unit tests: single `<h1>`/single live region
+  (both true across every captured state), correct tab order with disabled
+  items excluded, visible focus appearance, forced-colors legibility via
+  computed style, no console errors.
+- NVDA/screen-reader session: still not available in this environment (same
+  disclosed limitation as Section F) — accessibility evidence remains the
+  22 static/DOM tests (17 original + 1 accessible-name regression test) plus
+  this round's live browser DOM/computed-style checks, not a substitute
+  claim of a screen-reader pass.
+
+### K6. Branch drift versus current `origin/main`
+
+Per the architect's instruction, this was checked and reported but **not**
+merged into the branch this round: `git fetch origin --prune` then `git
+rev-list --left-right --count origin/main...HEAD` shows this branch is
+**10 commits behind and 3 commits ahead** of current `origin/main` (merge-base
+`d2592f08056e09629a302966b47fa8ff92517d8e`, matching this package's recorded
+activation base exactly — no drift in the base itself, just normal
+`origin/main` progress from other merged packages since). The 10 commits on
+`origin/main` since the merge-base are all Community-tabs/Journal-backend/
+handoff-snapshot work (`f44dc81`, `4402998`, `788d598`, `9dfb47f`, `f936e17`,
+`0f340f0`, `d48feb7`, and their governance-pointer merges) — none touch any
+file this package reserves or forbids, based on their commit subjects; a
+full file-level diff against `origin/main` was not run since no merge was
+authorized this round. Flagged for the receiving manager rather than acted
+on.
+
+### K7. Self-certification for this round
+
+**Conditional.** Every test suite is green, the complete diff is confirmed
+limited to this package's exact reservation, `git diff --check` is clean,
+the evidence set was entirely regenerated from the real integrated app in
+one continuous, independently-verified session with a clean hash audit and
+disclosed (not hidden) duplicate explanations, and every required state in
+the assignment's evidence list has real, DOM-cross-checked proof. It is
+Conditional rather than Pass because: (1) this writer cannot certify what
+audit-2 specifically found, only that a from-scratch re-audit finds no
+uncorrected defect; (2) row 6's grid-hierarchy judgment call is disclosed as
+a call, not a measured fact, for the next receiver to confirm; (3) NVDA
+coverage remains a real, disclosed gap; (4) this branch is 10 commits behind
+`origin/main` and was not resynchronized, per instruction; and (5) no Pete
+or Codex-manager visual acceptance has been obtained or is claimed — that
+remains this package's explicit next gate, unchanged from every prior
+round.
