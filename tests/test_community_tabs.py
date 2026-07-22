@@ -145,7 +145,7 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         )
 
     def test_review_modal_keeps_the_primary_action_reachable_and_traps_all_tabbables(self):
-        """A 720px-tall viewport cannot strand Publish below a clipped
+        """A 720px-tall viewport cannot strand preview below a clipped
         modal or treat the close button as both ends of the focus trap."""
         js_path = os.path.join(ROOT, "static", "js", "feed-living-stream.js")
         css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
@@ -168,6 +168,28 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
             "position:sticky;bottom:0",
         ):
             self.assertIn(contract, css)
+
+    def test_community_overlay_clears_site_chrome_and_mobile_navigation(self):
+        """The modal cannot be trapped under the global header or bottom bar."""
+        feed_css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
+        site_css_path = os.path.join(ROOT, "static", "css", "style.css")
+        with open(feed_css_path, encoding="utf-8") as handle:
+            feed_css = handle.read()
+        with open(site_css_path, encoding="utf-8") as handle:
+            site_css = handle.read()
+
+        overlay = re.search(r"\.overlay \{[^}]*z-index:(\d+)", feed_css).group(1)
+        mobile_bar = re.search(r"\.mobile-bottom\{[^}]*z-index:(\d+)", feed_css).group(1)
+        site_ceiling = max(int(value) for value in re.findall(r"z-index:\s*(\d+)", site_css))
+        self.assertGreater(int(overlay), site_ceiling)
+        self.assertGreater(int(overlay), int(mobile_bar))
+        self.assertIn(
+            "body.feed-preview-page .main-content:has(#overlayRoot > .overlay),\n"
+            "body.community-tabs-page .main-content:has(#overlayRoot > .overlay) { isolation: auto; }",
+            feed_css,
+        )
+        self.assertNotIn("header (z-index 1200)", feed_css)
+        self.assertNotIn("overlay's own z-index (1300", feed_css)
 
     def test_focus_lifecycle_behavior_harness_passes(self):
         node = shutil.which("node")

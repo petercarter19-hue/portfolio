@@ -275,9 +275,9 @@
   .error-panel h2{color:var(--ink);font-size:18px;margin:2px 0 7px}
   .error-panel p{color:#6D7C92;font-size:13px;line-height:1.5;margin:0 0 15px}
 
-  /* Modal and voice states. z-index sits ABOVE the site's sticky global
-     header (z-index 1200) so dialogs read as true modal surfaces. */
-  .overlay { position:fixed; inset:0; background:rgba(8,18,37,.42); backdrop-filter:blur(8px); z-index:1300; display:grid; place-items:center; padding:24px; }
+  /* Modal and voice states. The overlay must clear every site-chrome layer,
+     including the current 9999 ceiling, plus Community's mobile bar. */
+  .overlay { position:fixed; inset:0; background:rgba(8,18,37,.42); backdrop-filter:blur(8px); z-index:10050; display:grid; place-items:center; padding:24px; }
   .voice-modal { width:min(760px,calc(100vw - 48px)); max-height:calc(100dvh - 48px); display:flex; flex-direction:column; background:#fff; border:1px solid rgba(255,255,255,.8); border-radius:28px; box-shadow:var(--shadow-2); overflow:hidden; }
   .modal-head { display:flex; align-items:center; justify-content:space-between; padding:22px 25px 17px; border-bottom:1px solid var(--line-soft); }
   .modal-head h2{font-family:var(--serif);color:var(--ink);font-size:26px;margin:0;font-weight:600}
@@ -464,13 +464,13 @@
    preview's fixed mobile bottom bar. The global header itself is never
    touched. */
 
-/* style.css isolates .main-content so page content can never paint over
-   the sticky global header — correct everywhere else, but it also traps
-   this page's modal dialogs (voice capture, publish review) beneath the
-   header. Modals must cover the whole viewport, chrome included, so on
-   this page the overlay's own z-index (1300, above the header's 1200)
-   does that job instead of the isolation wall. */
-body.feed-preview-page .main-content { isolation: auto; }
+/* style.css isolates .main-content so ordinary page content cannot paint over
+   site chrome. Community's fixed dialogs must escape that stacking context
+   and cover the entire viewport, so only the two Feed surfaces relax it while
+   a dialog exists. Closed Community pages keep the normal isolation/pixels.
+   The overlay remains explicitly above style.css's current 9999 ceiling. */
+body.feed-preview-page .main-content:has(#overlayRoot > .overlay),
+body.community-tabs-page .main-content:has(#overlayRoot > .overlay) { isolation: auto; }
 @media (max-width: 700px) {
   body.feed-preview-page #chat-toggle { bottom: 84px; }
   body.feed-preview-page .footer { padding-bottom: 90px; }
