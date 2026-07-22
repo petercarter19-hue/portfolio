@@ -177,7 +177,7 @@
                             <p class="ps-journal__hero-eyebrow">This season</p>
                             <p class="ps-journal__hero-headline">{% for line in season_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
                             <p class="ps-journal__hero-microline">Focus. Learn. Build. Share.</p>
-                            <p class="ps-journal__hero-signature">{{ (member.display_name or 'You').split(' ')[0] }}</p>
+                            <p class="ps-journal__hero-signature">{{ fixture_member_name or (member.display_name or 'You').split(' ')[0] }}</p>
                         </div>
                         <ul class="ps-journal__hero-totals">
                             <li class="ps-journal__hero-stat">
@@ -290,7 +290,7 @@
                     <div class="ps-journal__empty ps-journal__empty--intro">
                         <div class="ps-journal__empty-illustration">{{ jbook.empty_illustration() }}</div>
                         <p class="ps-journal__empty-title">Your story starts here.</p>
-                        <p class="ps-journal__empty-copy">Capture your first Moment - a thought, a lesson, a win, or something you never want to forget.</p>
+                        <p class="ps-journal__empty-copy">Capture your first Moment &mdash; a thought, a lesson, a win, or something you never want to forget.</p>
                         <button type="button" class="ps-btn ps-btn--gold" data-open-composer>{{ jbook.icon_pencil() }} Capture a Moment</button>
                         <p class="ps-journal__empty-privacy">{{ jbook.icon_lock() }} Private to you</p>
                         {# Doc 15 item 37 SUPERSEDES doc 13's unattributed ruling: signed with the

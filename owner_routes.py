@@ -1497,6 +1497,13 @@ def _journal_evidence_fixture_state():
 
 
 def _journal_evidence_fixture_page(state):
+    # Doc 15 item 12: the mockup's first page shows exactly four timeline
+    # entries but still renders "Load more moments" (128 Moments captured
+    # total). A non-null placeholder cursor is presentation-only here - it
+    # reproduces the accepted control's visibility for evidence; a real
+    # member's real `next_cursor` already drives this identically outside
+    # fixture mode. Manage and the empty first-visit state never paginate.
+    next_cursor = None
     if state == "empty":
         items = ()
         totals = {"moments": 0, "voice_notes": 0, "milestones": 0, "chapter_counts": {}}
@@ -1506,9 +1513,10 @@ def _journal_evidence_fixture_page(state):
     else:
         items = _JOURNAL_EVIDENCE_TIMELINE
         totals = {"moments": 128, "voice_notes": 27, "milestones": 14, "chapter_counts": {}}
+        next_cursor = "evidence-fixture-more"
     return {
         "items": [_journal_prepare_moment(item) for item in items],
-        "next_cursor": None,
+        "next_cursor": next_cursor,
         "totals": totals,
     }
 
