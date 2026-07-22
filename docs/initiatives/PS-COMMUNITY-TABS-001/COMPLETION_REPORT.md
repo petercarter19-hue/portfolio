@@ -89,6 +89,11 @@ not the approved Feed/Break composition. Fresh desktop/mobile light/dark,
 modal/result, focus, and 320px captures remain required and are enumerated in
 `02_QA_EVIDENCE.md`.
 
+The active implementation evidence set contains only unique integrated Feed
+and Break rasters. No Saved screenshot is retained or accepted: the legacy
+`/the-slate/saved` address is redirect-only and cannot represent an active
+Community page, state, or visual acceptance surface.
+
 ## G. Known gaps, risks, and exclusions
 
 - Exact-SHA browser captures and normalized hashes are not yet recorded.

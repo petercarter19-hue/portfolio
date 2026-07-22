@@ -5,6 +5,7 @@ URL survives as a compatibility redirect only; it cannot render a third panel,
 tab, route claim, keyboard stop, or fixture destination.
 """
 
+import hashlib
 import os
 import re
 import shutil
@@ -551,6 +552,22 @@ class CommunityAssetTests(unittest.TestCase):
             "docs/initiatives/PS-COMMUNITY-TABS-001/01_AUTHORITY_INTEGRATION_MAP.md",
         ):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
+
+    def test_active_visual_matrix_contains_only_unique_feed_and_break_states(self):
+        evidence_dir = os.path.join(ROOT, "artifacts", "ps-community-tabs-001")
+        names = sorted(name for name in os.listdir(evidence_dir) if name.endswith(".png"))
+        self.assertTrue(names)
+
+        hashes = {}
+        for name in names:
+            with self.subTest(file=name):
+                lowered = name.lower()
+                self.assertRegex(lowered, r"(?:feed|break)")
+                self.assertNotIn("saved", lowered)
+                with open(os.path.join(evidence_dir, name), "rb") as handle:
+                    digest = hashlib.sha256(handle.read()).hexdigest()
+                self.assertNotIn(digest, hashes, f"{name} duplicates {hashes.get(digest)}")
+                hashes[digest] = name
 
     def test_responsive_derivatives_exist_and_stay_within_transfer_budgets(self):
         """Mobile sources stay under 120 KiB and desktop sources under 250 KiB.

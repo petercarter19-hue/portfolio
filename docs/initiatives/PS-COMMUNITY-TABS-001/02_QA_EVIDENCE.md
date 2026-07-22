@@ -217,6 +217,10 @@ traversal is explicitly **Conditional**, not a claimed live pass.
 
 - The two first-class views are Feed and The Break. The Saved compatibility
   address redirects to Feed and is not indexed.
+- The active integrated visual matrix contains only uniquely hashed Feed and
+  Break states. It retains no Saved raster: `/the-slate/saved` is verified only
+  as a redirect-to-Feed compatibility contract, never as a page or evidence
+  surface.
 - A pre-existing per-post `Save` control remains a local Feed action only; it
   cannot reveal or navigate to a Saved Community view. Its regression check is
   in `tests/test_community_tabs.py`.
