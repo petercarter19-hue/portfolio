@@ -1,7 +1,8 @@
 # PS-COMMUNITY-TABS-001 — Community: Feed and The Break
 
-**Status:** IMPLEMENTED / OWNER-APPROVED — pending independent final review;
-not merged or live.
+**Status:** ROUND 1 CORRECTION IMPLEMENTED — browser evidence, Pete review,
+manager audit, and fresh dual independent review are pending; not merged or
+live.
 
 ## Controlling owner decision
 
@@ -27,8 +28,9 @@ keyboard stop, product destination, or saved-fixture claim.
 - `visual-authority/ASSET_MANIFEST.md` records every source raster and
   responsive WebP delivery derivative, source lineage, hashes, crop rules,
   transfer budgets, and duplicate audit.
-- `02_QA_EVIDENCE.md` records the exact-commit browser evidence matrix,
-  interaction protocol, normalized-pixel hashes, and deterministic checks.
+- `02_QA_EVIDENCE.md` records the corrected implementation SHA, deterministic
+  checks, the superseded-evidence exclusion, and the still-pending exact-SHA
+  browser capture matrix. It does not claim visual acceptance.
 
 ## Boundaries
 
@@ -41,7 +43,14 @@ keyboard stop, product destination, or saved-fixture claim.
   identity, persistence, counts, polls, boards, a Saved Community destination,
   or discovery routes. The existing per-post `Save` action remains local to
   the Feed and does not create a destination.
+- The composer is a browser-local preview. Its primary action is **Add preview
+  to Feed**; nothing is saved, shared, published, added to Journal, or connected
+  to My Story, Slate Board, or Resume. The legacy `/the-slate/my-slate` route is
+  labeled **My Slate** and the flag-off `/app/journal` route is not exposed.
 - Both existing feature flags remain false. This package does not change
   Journal, Owner Home, auth, shared governance pointers, or backend/API scope.
-- Pete visually reviews the exact implementation SHA before further manager or
-  independent review, and before any PR or merge.
+- Corrected implementation commit:
+  `e6babaa9c04859c41dadfa83952ffca815c032ce`.
+- Pete must visually review and accept the actual corrected modal/result and
+  representative Feed/Break pages at that exact implementation before the
+  manager audit and fresh dual independent review, and before any PR or merge.

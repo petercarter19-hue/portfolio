@@ -1,5 +1,83 @@
 # PS-COMMUNITY-TABS-001 — QA evidence record
 
+## Round 1 correction — current record
+
+**Status:** Corrected implementation is committed and deterministic checks
+pass. Fresh browser captures, Pete acceptance of the actual corrected pages,
+the designated-manager audit, and fresh dual independent reviews are pending.
+This is not a merge-readiness, release, deployment, or live-production claim.
+
+### Exact implementation and sync record
+
+| Field | Recorded value |
+| --- | --- |
+| Branch | `work/2026-07-21-community-tabs-impl` |
+| Azure `origin/main` manager-seen commit | `d573b23d78eba1b398bb52952e695fe595d12d7b` |
+| Pre-merge base | `d2592f08056e09629a302966b47fa8ff92517d8e` |
+| Local no-rebase merge commit | `78f3b4658129cc0f86825a77a40764e6e56bec88` |
+| Corrected implementation commit | `e6babaa9c04859c41dadfa83952ffca815c032ce` |
+| Corrected implementation parent | `78f3b4658129cc0f86825a77a40764e6e56bec88` |
+| Fixture mode | In-page sample only; no persistence, sharing, publication, Journal placement, connection, or feature-flag enablement. |
+| Writer browser result | **Blocked:** Browser runtime initialized, but the available-browser list was empty. No screenshot was generated or reused by the writer. |
+
+### Correction verification
+
+| Check | Result |
+| --- | --- |
+| Break focus lifecycle | **Pass, automated behavior:** activating `Back to the Feed` while focus is inside Break focuses the visible Feed tab before Break becomes hidden. |
+| Composer cancel | **Pass, automated behavior:** closing the first review returns focus to the connected composer invoker. |
+| Review transition / Back / cancel | **Pass, automated behavior:** review-stage rerenders preserve the original logical return target; Back returns to editable review and later cancel restores the composer. |
+| Local-preview completion | **Pass, automated behavior:** after the Feed rerender removes the old invoker, focus resolves to the new visible connected composer. |
+| Preview truth | **Pass, static/fixture contract:** exact summary, primary label, result provenance, and completion announcement are present. False publication, private-Journal save, public-Journal placement, and completed confidentiality-check strings are absent. |
+| Connection destinations | **Pass:** My Story, Slate Board, and Resume render as inert `preview · not connected` labels with no pressed/selected persistence state. |
+| Legacy My Slate navigation | **Pass:** Community desktop/mobile navigation and Feed error recovery label `/the-slate/my-slate` as **My Slate**; `/app/journal` is not exposed while Journal remains off. |
+| Focus behavior harness | **Pass: 4/4** (`tests/community_focus_lifecycle.test.js`). |
+| Focused Community + navigation suite | **Pass: 37/37.** |
+| Full repository suite | **Pass: 801 tests; 2 expected skips.** Expected negative-path warnings were unchanged. |
+| JavaScript syntax | **Pass:** `community-focus-lifecycle.js`, `community-tabs.js`, and `feed-living-stream.js`. |
+| Diff whitespace check | **Pass:** `git diff --check`. |
+| Static asset probe | **Pass: 68/68:** 2 CSS, 3 JS, and 63 Community/Feed image files returned 200 through the Flask test client. |
+| Product-image uniqueness | **Pass:** 18 production sources; closest 9×8 grayscale dHash distance is 19 (`break-chair-plant.png` versus `feed-workflow-closeup-2026-07-21.png`), above the duplicate threshold of 6. |
+| Feature flags | **Pass:** `PEERSLATE_DATABASE_UI_ENABLED` and `PEERSLATE_JOURNAL_ENABLED` remain false by default. |
+
+### Required fresh exact-SHA browser evidence
+
+Every row below is **pending** at corrected implementation commit
+`e6babaa9c04859c41dadfa83952ffca815c032ce`. A row may become Pass only after
+the actual page is captured with viewport, theme, state, path, dimensions,
+file SHA-256, and normalized RGBA SHA-256 recorded. One raster may not be reused
+as two distinct proofs.
+
+| ID | Required actual-page state | Status |
+| --- | --- | --- |
+| R1 | Break desktop 1440 light: opening/top and lower journey | Pending manager capture |
+| R2 | Break desktop 1440 dark: opening/top and lower journey; E03 replacement must visibly include the real dark hero/top | Pending manager capture |
+| R3 | Break mobile 390 light: opening and full lower journey | Pending manager capture |
+| R4 | Break mobile 390 dark: opening and full lower journey | Pending manager capture |
+| R5 | Feed Gallery desktop light/dark and mobile 390 light/dark | Pending manager capture |
+| R6 | Feed Video desktop light/dark and mobile 390 light/dark | Pending manager capture |
+| R7 | Corrected AI-assisted review modal with local-preview truth and reachable 720px action | Pending manager capture and focus transcript |
+| R8 | Result after `Add preview to Feed`, showing `Local preview · not saved` | Pending manager capture and focus transcript |
+| R9 | 320px header/reflow with truthful **My Slate** label where the Community mobile navigation is present | Pending manager capture |
+| R10 | Break `Back to the Feed`, composer cancel, review Back/cancel, and preview completion visible-focus behavior | Pending manager browser interaction log |
+
+Pete must see and accept the actual R7/R8 pages and representative corrected
+Feed/Break pages before the designated manager begins the final audit and before
+fresh dual independent reviews. None of those acceptances has been claimed.
+
+### Superseded evidence exclusion
+
+The Round 0 record below tested commit
+`6815382646c36bfbd89f7a2ae02d519e92963de5`. Its external screenshots are
+historical only and are excluded from Round 1 proof because they predate the
+focus, preview-truth, and My Slate-label corrections. In particular, old modal
+and result captures S12/S13 must not be reused, and old E03 cannot satisfy the
+required fresh dark hero/top capture. The old external directory
+`community-break-current/` is not the current capture root; the manager must
+use a new exact-SHA directory and ledger.
+
+## Round 0 record — superseded, retained for audit history only
+
 **Status:** Evidence reconciliation for the tested implementation commit. This
 record is not a release certification, merge-readiness decision, or live
 deployment claim.
