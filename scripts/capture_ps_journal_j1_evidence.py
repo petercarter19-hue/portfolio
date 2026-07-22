@@ -295,22 +295,22 @@ def main() -> None:
                 dark=True,
                 action=lambda page: page.evaluate("window.scrollTo(0, 1240)"),
             )
-            # A bottom-anchored narrow capture is the only bounded viewport
-            # that can prove the complete May 13 card and Load more chevron
-            # together at 320px.  A fixed 1740px scroll stopped mid-card on
-            # this viewport after the annotation reflow.
+            # A near-bottom narrow capture proves the complete May 13 card
+            # and Load more chevron together at 320px.  A fixed 1740px scroll
+            # stopped mid-card, while maximum scroll hides its top behind the
+            # persistent app navigation; retain 120px of lower-page context.
             capture(
                 "timeline-mobile-light-320-entries-c.png",
                 width=320,
                 height=740,
-                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)"),
+                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - 120)"),
             )
             capture(
                 "timeline-mobile-dark-320-entries-c.png",
                 width=320,
                 height=740,
                 dark=True,
-                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)"),
+                action=lambda page: page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight - 120)"),
             )
             capture(
                 "composer-type-desktop-light-1440.png",
