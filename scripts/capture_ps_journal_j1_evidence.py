@@ -149,6 +149,24 @@ def main() -> None:
                             };
                         }"""
                     )
+                if name == "empty-desktop-light-1440.png":
+                    geometry = page.evaluate(
+                        """() => {
+                            const illustration = document.querySelector('.ps-journal__empty-illustration-svg');
+                            const title = document.querySelector('.ps-journal__empty-title');
+                            if (!illustration || !title) return { empty: null };
+                            const rect = illustration.getBoundingClientRect();
+                            const bounds = illustration.getBBox();
+                            const viewBox = illustration.viewBox.baseVal;
+                            const scale = rect.width / viewBox.width;
+                            return {
+                                empty: {
+                                    illustration_width: Math.round(rect.width * 10) / 10,
+                                    visual_gap: Math.round((title.getBoundingClientRect().top - (rect.top + (bounds.y + bounds.height) * scale)) * 10) / 10,
+                                },
+                            };
+                        }"""
+                    )
                 page.screenshot(path=str(OUT / name), animations="disabled")
                 captures.append(
                     {
