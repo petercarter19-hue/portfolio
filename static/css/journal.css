@@ -2669,11 +2669,34 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
         position: static;
         display: flex;
         justify-content: flex-end;
+        width: max-content;
         max-width: none;
         margin: -0.25rem 1rem 0.4rem 0;
+        white-space: nowrap;
         transform: rotate(-5deg);
     }
 
+}
+
+/* On a phone the annotation follows the first achievement in the content
+   column.  Leaving it on automatic grid placement made the 390px layout put
+   it in the narrow date/spine column, so every word wrapped vertically and
+   its star was clipped.  The stacked 320px layout below intentionally keeps
+   its one-column flow. */
+@media (min-width: 361px) and (max-width: 899px) {
+    .ps-journal__annotation {
+        grid-column: 2;
+        justify-self: end;
+        margin: -0.2rem 0 0.7rem;
+        font-size: clamp(1.3rem, 5vw, 1.5rem);
+    }
+
+    .ps-journal__annotation svg {
+        flex: 0 0 0.9rem;
+        width: 0.9rem;
+        height: 0.9rem;
+        overflow: visible;
+    }
 }
 
 @media (max-width: 640px) {

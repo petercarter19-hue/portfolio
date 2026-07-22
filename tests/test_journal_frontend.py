@@ -1095,6 +1095,33 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
             line_height = float(headline.evaluate("node => parseFloat(getComputedStyle(node).lineHeight)"))
             self.assertLessEqual(box["height"], line_height * 2.1)
 
+    def test_mobile_achievement_annotation_stays_in_content_flow_with_visible_star(self):
+        for width, height, dark in ((390, 844, False), (390, 844, True), (320, 740, False), (320, 740, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            achievement = page.locator("#journal-moment-e1111111-1111-1111-1111-111111111111")
+            card = achievement.locator(".ps-journal__card")
+            annotation = page.locator(".ps-journal__annotation")
+            achievement.scroll_into_view_if_needed()
+            annotation.scroll_into_view_if_needed()
+            card_box = card.bounding_box()
+            annotation_box = annotation.bounding_box()
+            star_box = annotation.locator("svg").bounding_box()
+            self.assertIsNotNone(card_box)
+            self.assertIsNotNone(annotation_box)
+            self.assertIsNotNone(star_box)
+            self.assertEqual(annotation.inner_text().strip(), "Proud of this one")
+            self.assertEqual(annotation.evaluate("node => getComputedStyle(node).whiteSpace"), "nowrap")
+            # The flourish is attached to the card's content flow rather than
+            # occupying the narrow date/spine grid column, and its decorative
+            # star remains fully inside the mobile viewport.
+            self.assertGreaterEqual(annotation_box["x"], card_box["x"] - 1)
+            self.assertGreaterEqual(annotation_box["y"], card_box["y"] + card_box["height"] - 1)
+            self.assertLessEqual(annotation_box["x"] + annotation_box["width"], width + 1)
+            self.assertGreaterEqual(star_box["x"], annotation_box["x"] - 1)
+            self.assertLessEqual(star_box["x"] + star_box["width"], width + 1)
+            self.assertLessEqual(annotation_box["height"], 38)
+
     def test_speak_stage_matches_or_exceeds_type_stage_on_desktop_and_mobile(self):
         for width, height, dark in ((1440, 1040, False), (1440, 1040, True), (390, 844, False), (390, 844, True)):
             page = self._page(width=width, height=height, dark=dark)
