@@ -1108,7 +1108,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
     color: var(--jbook-gold);
     /* The authority keeps the book/leaf close to the headline: it reads as
        one centered thought, not two disconnected blocks. */
-    margin: 0 0 -0.65rem;
+    margin: 0;
 }
 
 .ps-journal__empty-illustration-svg {

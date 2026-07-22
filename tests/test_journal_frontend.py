@@ -1052,6 +1052,35 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
             self.assertEqual(title.evaluate("node => getComputedStyle(node).outlineStyle"), "none")
             self.assertEqual(title.evaluate("node => getComputedStyle(node).boxShadow"), "none")
 
+    def test_empty_intro_uses_compact_illustration_gap_across_light_dark_and_mobile(self):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "empty"
+        for width, height, dark in ((1440, 1040, False), (1440, 1040, True), (390, 844, False), (390, 844, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            headline = page.locator(".ps-journal__empty-title").bounding_box()
+            svg = page.locator(".ps-journal__empty-illustration svg")
+            illustration = svg.evaluate(
+                """node => {
+                    const rect = node.getBoundingClientRect();
+                    const bounds = node.getBBox();
+                    const viewBox = node.viewBox.baseVal;
+                    const scale = rect.width / viewBox.width;
+                    return {
+                        width: rect.width,
+                        visualBottom: rect.top + (bounds.y + bounds.height) * scale,
+                    };
+                }"""
+            )
+            self.assertIsNotNone(headline)
+            self.assertIsNotNone(svg)
+            gap = headline["y"] - illustration["visualBottom"]
+            # Binding correction: retain a gentle visual breath, not the
+            # former ~41px void between illustration and headline.
+            self.assertGreaterEqual(gap, 10)
+            self.assertLessEqual(gap, 22)
+            self.assertGreaterEqual(illustration["width"], 120)
+            self.assertLessEqual(illustration["width"], 170)
+
     def test_desktop_rail_anchors_reflections_and_flourish_to_the_final_rows(self):
         page = self._page(width=1440, height=1040)
         page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
