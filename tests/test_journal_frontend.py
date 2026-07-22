@@ -11,6 +11,7 @@ unauthenticated cases so no real Azure SQL connection is required.
 
 import datetime
 import os
+import re
 import threading
 import unittest
 from pathlib import Path
@@ -379,6 +380,16 @@ class OwnerJournalMomentDetailTests(unittest.TestCase):
         self.assertIn("Journal sections", body)
         for chapter_label in ("Timeline", "Voice", "Photos", "Videos", "Milestones", "Reflections"):
             self.assertIn(chapter_label, body)
+        # A detail is a reading state within the chronological Timeline. Its
+        # Voice source label must never commandeer the contents rail.
+        self.assertEqual(
+            len(re.findall(r'data-chapter="timeline" aria-current="true"', body)),
+            2,
+        )
+        self.assertEqual(
+            len(re.findall(r'data-chapter="voice" aria-current="false"', body)),
+            2,
+        )
         # B2: no internal jargon or stored-procedure names leak into
         # member-facing copy.
         self.assertNotIn("usp_", body)
@@ -486,6 +497,35 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertIn('class="ps-journal__manage-duration">00:48</span>', body)
 
     @patch("owner_routes.journal_service")
+    def test_manage_fixture_media_contract_is_limited_to_photo_and_video(self, journal_service):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "manage"
+
+        body = self.client.get("/app/journal").get_data(as_text=True)
+        rows = re.findall(
+            r'(<div class="ps-journal__manage-row"[^>]*>.*?</div>)',
+            body,
+            flags=re.DOTALL,
+        )
+
+        self.assertEqual(len(rows), 6)
+        voice_rows = [row for row in rows if 'data-source-type="voice"' in row]
+        text_rows = [row for row in rows if 'data-source-type="text"' in row]
+        photo_row = next(row for row in rows if 'data-source-type="photo"' in row)
+        video_row = next(row for row in rows if 'data-source-type="video"' in row)
+        self.assertEqual(len(voice_rows), 2)
+        self.assertEqual(len(text_rows), 2)
+        for row in voice_rows:
+            self.assertIn("ps-journal__manage-wave", row)
+            self.assertNotIn("ps-journal__thumb", row)
+        for row in text_rows:
+            self.assertNotIn("ps-journal__thumb", row)
+            self.assertNotIn("ps-journal__manage-wave", row)
+        self.assertIn("ps-journal__thumb", photo_row)
+        self.assertNotIn("ps-journal__thumb--video", photo_row)
+        self.assertIn("ps-journal__thumb ps-journal__thumb--video", video_row)
+        self.assertIn("ps-journal__thumb-play", video_row)
+
+    @patch("owner_routes.journal_service")
     def test_test_only_saved_fixture_is_visible_without_a_write_or_member_read(self, journal_service):
         app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "saved"
 
@@ -572,7 +612,9 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertIn("position: absolute;", journal_css)
         self.assertIn("width: 2.35rem;", journal_css)
         self.assertIn(".ps-composer__footer", journal_css)
-        self.assertIn("bottom: 0.8rem;", journal_css)
+        self.assertIn("margin: auto 0 0;", journal_css)
+        self.assertIn("background: transparent;", journal_css)
+        self.assertIn(".ps-composer__footer .ps-btn--gold svg", journal_css)
 
 
 class OwnerJournalVoiceDraftTests(unittest.TestCase):
@@ -828,8 +870,10 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
     def setUp(self):
         app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "timeline"
 
-    def _page(self, width=1280, height=900):
+    def _page(self, width=1280, height=900, dark=False):
         context = self.browser.new_context(viewport={"width": width, "height": height})
+        if dark:
+            context.add_init_script("localStorage.setItem('ps-theme', 'dark');")
         self.addCleanup(context.close)
         return context.new_page()
 
@@ -873,7 +917,7 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
         self.assertEqual(loaded.locator(".ps-journal__voice-row").count(), 1)
         self.assertEqual(loaded.locator(".ps-journal__thumb img").count(), 1)
 
-    def test_manage_search_rebuilds_all_six_columns_and_rich_media(self):
+    def test_manage_search_rebuilds_all_six_columns_without_voice_thumbnail_leakage(self):
         app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "manage"
         page = self._page()
 
@@ -909,12 +953,16 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
         for selector in (
             ".ps-journal__manage-date-block",
             ".ps-journal__manage-kind svg",
-            ".ps-journal__manage-title .ps-journal__thumb img",
             ".ps-journal__manage-duration",
             ".ps-journal__manage-status",
             ".ps-journal__manage-menu",
         ):
             self.assertEqual(row.locator(selector).count(), 1)
+        # The search result deliberately contains fixture thumbnail metadata
+        # on a Voice item. Manage must ignore it and retain its waveform-only
+        # representation, exactly like the server render.
+        self.assertEqual(row.locator(".ps-journal__manage-title .ps-journal__thumb").count(), 0)
+        self.assertEqual(row.locator(".ps-journal__manage-wave").count(), 1)
         self.assertEqual(row.locator(".ps-journal__manage-duration").inner_text(), "00:19")
 
     def test_context_rail_has_honest_timeline_manage_empty_and_detail_behavior(self):
@@ -946,6 +994,63 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
         self.assertEqual(detail_page.locator("[data-rail-entry]").count(), 0)
         self.assertEqual(detail_page.locator(".ps-rail__entry--static").count(), 6)
         self.assertEqual(detail_page.locator("[aria-controls^='journal-panel-']").count(), 0)
+        for rail_selector in ("[data-rail-desktop]", "[data-rail-mobile]"):
+            self.assertEqual(
+                detail_page.locator(f"{rail_selector} [data-chapter='timeline']").get_attribute("aria-current"),
+                "true",
+            )
+            self.assertEqual(
+                detail_page.locator(f"{rail_selector} [data-chapter='voice']").get_attribute("aria-current"),
+                "false",
+            )
+
+    def test_detail_composition_uses_compact_audio_photo_measurements_and_mobile_spine(self):
+        desktop = self._page(width=1440, height=1040)
+        desktop.goto(
+            f"{self.base_url}/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+            wait_until="networkidle",
+        )
+        title = desktop.locator(".ps-moment__title").bounding_box()
+        photo = desktop.locator(".ps-moment__photo").bounding_box()
+        voice = desktop.locator(".ps-moment__voice-row").bounding_box()
+        self.assertIsNotNone(title)
+        self.assertIsNotNone(photo)
+        self.assertIsNotNone(voice)
+        # Binding B target: compact ~210-225px, 16:9-ish photo beside the
+        # shared audio row and a materially tighter two-line title hierarchy.
+        self.assertGreaterEqual(photo["width"], 210)
+        self.assertLessEqual(photo["width"], 225)
+        self.assertGreaterEqual(photo["width"] / photo["height"], 1.72)
+        self.assertLessEqual(photo["width"] / photo["height"], 1.83)
+        self.assertLessEqual(title["height"], 80)
+        self.assertLessEqual(
+            abs((voice["y"] + voice["height"] / 2) - (photo["y"] + photo["height"] / 2)),
+            2,
+        )
+
+        for width, height, dark in ((390, 844, False), (390, 844, True), (320, 740, False)):
+            mobile = self._page(width=width, height=height, dark=dark)
+            mobile.goto(
+                f"{self.base_url}/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+                wait_until="networkidle",
+            )
+            self.assertTrue(mobile.locator(".ps-moment__date .ps-journal__date-node").is_visible())
+            self.assertNotEqual(
+                mobile.locator(".ps-moment__date").evaluate("node => getComputedStyle(node).borderRightWidth"),
+                "0px",
+            )
+
+    def test_saved_state_keeps_programmatic_focus_without_a_visible_title_card(self):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "saved"
+        for width, height, dark in ((1440, 1040, False), (390, 844, False), (390, 844, True), (320, 740, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            self.assertFalse(page.locator('[data-composer-view="compose"]').is_visible())
+            title = page.locator("#journal-saved-title")
+            self.assertTrue(title.is_visible())
+            self.assertEqual(page.evaluate("document.activeElement.id"), "journal-saved-title")
+            self.assertEqual(title.evaluate("node => getComputedStyle(node).outlineStyle"), "none")
+            self.assertEqual(title.evaluate("node => getComputedStyle(node).boxShadow"), "none")
 
     def test_desktop_rail_anchors_reflections_and_flourish_to_the_final_rows(self):
         page = self._page(width=1440, height=1040)
@@ -1005,6 +1110,44 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
         page.locator("[data-voice-state-title]").wait_for()
         self.assertIn("denied or unavailable", page.locator("[data-voice-state-title]").inner_text())
         self.assertTrue(page.locator("[data-voice-state-help]").is_visible())
+
+    def test_mobile_composer_footer_is_in_flow_with_mockup_scale_pencil_at_390_and_320(self):
+        for width, height, dark in ((390, 844, False), (390, 844, True), (320, 740, False), (320, 740, True)):
+            page = self._page(width=width, height=height, dark=dark)
+            page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+            page.locator("#journal-open-composer").click()
+            footer = page.locator(".ps-composer__footer").bounding_box()
+            details = page.locator(".ps-composer__details").bounding_box()
+            pencil = page.locator("[data-composer-save] svg").bounding_box()
+            self.assertIsNotNone(footer)
+            self.assertIsNotNone(details)
+            self.assertIsNotNone(pencil)
+            self.assertLessEqual(details["y"] + details["height"], footer["y"] + 1)
+            self.assertGreaterEqual(pencil["width"], 18)
+            self.assertLessEqual(pencil["width"], 22)
+            # Empty submit is a real recoverable error path; its status stays
+            # visible in the in-flow footer without covering optional details.
+            page.locator("[data-composer-save]").click()
+            self.assertTrue(page.locator("[data-composer-status]").is_visible())
+            self.assertLessEqual(
+                page.locator(".ps-composer__details").bounding_box()["y"]
+                + page.locator(".ps-composer__details").bounding_box()["height"],
+                page.locator(".ps-composer__footer").bounding_box()["y"] + 1,
+            )
+
+            page.locator("[data-composer-tab='speak']").click()
+            page.evaluate(
+                """() => Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+                    configurable: true,
+                    value: async () => { throw new DOMException('Denied', 'NotAllowedError'); }
+                })"""
+            )
+            page.locator("[data-voice-action='start']").click()
+            help = page.locator("[data-voice-state-help]").bounding_box()
+            footer = page.locator(".ps-composer__footer").bounding_box()
+            self.assertIsNotNone(help)
+            self.assertIsNotNone(footer)
+            self.assertLessEqual(help["y"] + help["height"], footer["y"] + 1)
 
 
 if __name__ == "__main__":

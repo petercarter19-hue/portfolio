@@ -164,6 +164,7 @@
         const row = document.createElement("div");
         row.className = "ps-journal__manage-row";
         row.setAttribute("data-manage-row", "");
+        row.dataset.sourceType = item.source_type || "text";
         row.dataset.momentKind = item.moment_kind || "";
         row.dataset.lifecycleState = item.lifecycle_state || "active";
         row.dataset.chapter = chapterKeyForItem(item);
@@ -177,7 +178,13 @@
                 : "";
         const { day, month } = formatOccurred(item.occurred_on);
         const timeMarkup = item.display_time ? `<span class="ps-journal__manage-time">${escapeHtml(item.display_time)}</span>` : "";
-        const mediaMarkup = fixtureMediaMarkup(item);
+        // The Manage contract is intentionally narrower than the Timeline:
+        // only actual photo/video rows carry a thumbnail. Voice remains an
+        // inline gold waveform plus duration, and text remains text, even
+        // when a richer Timeline fixture happens to include thumbnail data.
+        const mediaMarkup = ["photo", "video"].includes(item.source_type)
+            ? fixtureMediaMarkup(item)
+            : "";
         const voiceWave = item.source_type === "voice" ? '<span class="ps-journal__manage-wave" aria-hidden="true"></span>' : "";
         const duration = item.voice_duration_label ? escapeHtml(item.voice_duration_label) : "";
         row.innerHTML = `

@@ -13,8 +13,8 @@
    are not covered by base.html's site-wide Newsreader import, so this page
    loads them itself, the same established per-page pattern. #}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-7">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-8">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
@@ -111,7 +111,7 @@
                         </div>
                         {% for moment in moments %}
                         {% set kind_chapter = 'voice' if moment.source_type == 'voice' else ('photos' if moment.source_type == 'photo' else ('videos' if moment.source_type == 'video' else ('milestones' if moment.moment_kind == 'achievement' else ('reflections' if moment.moment_kind == 'lesson' else 'timeline')))) %}
-                        <div class="ps-journal__manage-row" data-manage-row data-moment-kind="{{ moment.moment_kind }}" data-lifecycle-state="{{ moment.lifecycle_state }}" data-chapter="{{ kind_chapter }}">
+                        <div class="ps-journal__manage-row" data-manage-row data-source-type="{{ moment.source_type or 'text' }}" data-moment-kind="{{ moment.moment_kind }}" data-lifecycle-state="{{ moment.lifecycle_state }}" data-chapter="{{ kind_chapter }}">
                             <span class="ps-journal__manage-date">
                                 <span class="ps-journal__manage-date-block">{{ moment.occurred_day or '—' }}<br><span class="ps-journal__manage-date-month">{{ moment.occurred_month_label or 'Date not set' }}</span></span>
                                 {% if moment.display_time %}<span class="ps-journal__manage-time">{{ moment.display_time }}</span>{% endif %}
@@ -125,7 +125,11 @@
                                 {{ moment.display_kind_label or (moment.moment_kind|capitalize if moment.moment_kind else 'Moment') }}
                             </span>
                             <span class="ps-journal__manage-title">
-                                {{ jbook.moment_thumb(moment) }}
+                                {# The accepted Manage fixture has media only for actual Photo
+                                   and Video rows. Voice remains a waveform-and-duration row;
+                                   text remains text. Do not let the richer Timeline fixture media
+                                   leak into this compact working view. #}
+                                {% if moment.source_type in ['photo', 'video'] %}{{ jbook.moment_thumb(moment) }}{% endif %}
                                 <span class="ps-journal__manage-title-text">
                                     <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
                                     {% if moment.source_type == 'voice' %}
@@ -337,5 +341,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-7"></script>
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-8"></script>
 {% endblock %}

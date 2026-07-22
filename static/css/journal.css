@@ -1101,16 +1101,18 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
 }
 
 .ps-journal__empty--intro {
-    padding: clamp(1.5rem, 5vw, 3rem) 1rem clamp(2rem, 5vw, 3rem);
+    padding: clamp(1rem, 3vw, 1.8rem) 1rem clamp(2rem, 5vw, 3rem);
 }
 
 .ps-journal__empty-illustration {
     color: var(--jbook-gold);
-    margin: 0 0 0.5rem;
+    /* The authority keeps the book/leaf close to the headline: it reads as
+       one centered thought, not two disconnected blocks. */
+    margin: 0 0 -0.65rem;
 }
 
 .ps-journal__empty-illustration-svg {
-    width: clamp(150px, 26vw, 220px);
+    width: clamp(128px, 15vw, 168px);
     height: auto;
 }
 
@@ -2125,13 +2127,13 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     border-radius: 0.35rem;
 }
 
-/* journal.js moves focus here (tabindex="-1") the moment the saved screen
-   appears, so it is the first thing announced/seen - it needs the pinned
-   Journal focus treatment, not the browser's mismatched default blue ring. */
-.ps-saved__title:focus-visible,
-.ps-saved__title:focus {
-    outline: 2px solid var(--jbook-gold-deep);
-    outline-offset: 3px;
+/* journal.js moves focus here (tabindex="-1") as an announcement target.
+   Keep that semantic focus without turning a non-interactive heading into a
+   rectangular focus card in the saved-state composition. */
+.ps-saved__title:focus,
+.ps-saved__title:focus-visible {
+    outline: none;
+    box-shadow: none !important;
 }
 
 .ps-saved__lock-line {
@@ -2292,7 +2294,7 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     /* Doc 15 item 43: the title/context column reads notably tighter to the
        left in the mockup than a nearly-full-width column - narrowed so the
        title wraps like the mockup instead of stretching across the page. */
-    grid-template-columns: 5.7rem minmax(0, 27rem);
+    grid-template-columns: 5.7rem minmax(0, 32rem);
     gap: 1.5rem;
     margin: 0 0 1.25rem;
 }
@@ -2350,11 +2352,11 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
 
 .ps-moment__title {
     font-family: "Newsreader", Georgia, serif;
-    font-size: clamp(1.7rem, 3.2vw, 2.35rem);
+    font-size: clamp(1.65rem, 2.25vw, 2rem);
     font-weight: 600;
     color: var(--jbook-ink);
-    margin: 0 0 0.6rem;
-    line-height: 1.3;
+    margin: 0 0 0.45rem;
+    line-height: 1.18;
 }
 
 .ps-moment__note-fallback {
@@ -2374,15 +2376,15 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
 }
 
 .ps-moment__body {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 1.5rem;
-    margin: 0 0 1.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 28rem) 13.5rem;
+    align-items: center;
+    gap: 1rem;
+    max-width: 43rem;
+    margin: 0.9rem 0 1.35rem 7.2rem;
 }
 
 .ps-moment__main {
-    flex: 1 1 16rem;
     min-width: 0;
 }
 
@@ -2390,15 +2392,15 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    padding: 0.9rem 1.1rem;
+    padding: 0.72rem 0.9rem;
     background: var(--jbook-card-bg);
     border: 1px solid var(--jbook-card-border);
     border-radius: 0.8rem;
 }
 
 .ps-moment__photo {
-    flex: 1 1 14rem;
-    max-width: 20rem;
+    width: 13.5rem;
+    max-width: 13.5rem;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 10px 24px -12px rgb(20 15 5 / 40%);
@@ -2409,7 +2411,7 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     display: block;
     width: 100%;
     height: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
 }
 
@@ -2580,7 +2582,8 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
     }
 
     .ps-moment__date .ps-journal__date-node {
-        display: none;
+        display: block;
+        top: 0.45rem;
     }
 }
 
@@ -2680,25 +2683,27 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
         height: min(96dvh, 52rem);
         max-height: 96dvh;
         border-radius: 1.4rem 1.4rem 0 0;
-        padding: clamp(1.1rem, 4vw, 1.5rem) clamp(1.5rem, 4vw, 2rem) 7.4rem;
+        padding: clamp(1.1rem, 4vw, 1.5rem) clamp(1.5rem, 4vw, 2rem) max(1.25rem, env(safe-area-inset-bottom));
         overflow-y: auto;
     }
 
-    /* `.ps-composer > * { position: relative }` (desktop page-texture
-       stacking rule, above) makes this compose/saved view div - not
-       `.ps-composer` itself - the actual containing block for the
-       `position: absolute` footer below. Un-stretched, this div is only as
-       tall as its own content (~515px here), well short of the sheet's real
-       ~768px height, so `bottom: 0.8rem` pinned it partway up the sheet,
-       overlapping the attachment row instead of sitting at the true bottom
-       edge. Stretching it to the parent's full height fixes the footer's
-       anchor without touching the shared stacking rule. */
+    /* The compose view fills the sheet and becomes a flex column. Its footer
+       stays in normal document flow at the true bottom when space permits,
+       then follows content when it does not. This eliminates the former
+       opaque, absolutely positioned footer card and prevents it from ever
+       covering attachments, optional details, or a live error status. */
     .ps-composer > [data-composer-view] {
         min-height: 100%;
     }
 
+    .ps-composer > [data-composer-view][hidden] {
+        display: none !important;
+    }
+
     .ps-composer > [data-composer-view="compose"] {
-        padding-bottom: 6.8rem;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
     }
 
     .ps-composer::after {
@@ -2743,24 +2748,17 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
     }
 
     .ps-composer__footer {
-        position: absolute;
-        right: clamp(1.5rem, 4vw, 2rem);
-        bottom: 0.8rem;
-        left: clamp(1.5rem, 4vw, 2rem);
-        z-index: 4;
+        position: static;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         gap: 0.45rem 0.65rem;
-        min-height: 5.5rem;
-        margin: 0;
-        padding: 0.55rem 0;
-        background: linear-gradient(180deg, rgb(250 240 230 / 92%), var(--jbook-page-solid) 35%);
-        box-shadow: 0 -10px 18px -14px rgb(20 15 5 / 55%);
-    }
-
-    body.ps-journal-page[data-theme="dark"] .ps-composer__footer {
-        background: linear-gradient(180deg, rgb(16 27 44 / 92%), var(--jbook-page-solid) 35%);
+        min-height: 4.6rem;
+        margin: auto 0 0;
+        padding: 0.8rem 0 0;
+        border-top: 1px solid var(--jbook-hairline);
+        background: transparent;
+        box-shadow: none;
     }
 
     .ps-composer__footer .ps-btn {
@@ -2773,6 +2771,12 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
         justify-self: stretch;
     }
 
+    .ps-composer__footer .ps-btn--gold svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        flex: none;
+    }
+
     .ps-composer__status {
         display: block;
         grid-column: 1 / -1;
@@ -2782,6 +2786,20 @@ body.ps-journal-page[data-theme="dark"] .ps-saved__refresh-status[data-tone="war
 
     .ps-composer .ps-journal__ribbon {
         display: none;
+    }
+
+    /* The detail's compact desktop audio/photo row becomes a deliberate
+       document flow on a phone; it never narrows the media into an unusable
+       side-by-side sliver. */
+    .ps-moment__body {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: none;
+        margin: 0.9rem 0 1.35rem;
+    }
+
+    .ps-moment__photo {
+        width: 100%;
+        max-width: 100%;
     }
 
     .ps-journal__row {

@@ -1808,7 +1808,10 @@ def journal_moment(moment_key):
         rail_id="journal",
         rail_label="Contents",
         rail_nav_label="Journal sections",
-        active_chapter=_journal_chapter_key_for_item(moment) or "timeline",
+        # A Moment detail is still a reading state inside the Journal's
+        # chronological Timeline. Its source type is descriptive metadata,
+        # not authority to switch the contents rail to Voice/Photo/Video.
+        active_chapter="timeline",
         is_evidence_fixture=evidence_state is not None,
     )
 

@@ -126,6 +126,29 @@ def main() -> None:
                             };
                         }"""
                     )
+                if name == "detail-desktop-light-1440.png":
+                    geometry = page.evaluate(
+                        """() => {
+                            const box = (selector) => {
+                                const node = document.querySelector(selector);
+                                if (!node) return null;
+                                const rect = node.getBoundingClientRect();
+                                return {
+                                    left: Math.round(rect.left), top: Math.round(rect.top),
+                                    width: Math.round(rect.width), height: Math.round(rect.height)
+                                };
+                            };
+                            return {
+                                detail: {
+                                    title: box('.ps-moment__title'),
+                                    context: box('.ps-moment__context'),
+                                    audio: box('.ps-moment__voice-row'),
+                                    photo: box('.ps-moment__photo'),
+                                    date: box('.ps-moment__date'),
+                                },
+                            };
+                        }"""
+                    )
                 page.screenshot(path=str(OUT / name), animations="disabled")
                 captures.append(
                     {
@@ -196,6 +219,38 @@ def main() -> None:
                 "composer-speak-mobile-dark-390.png",
                 width=390,
                 height=844,
+                dark=True,
+                action=lambda page: (
+                    page.locator("#journal-open-composer").click(),
+                    page.locator("[data-composer-tab='speak']").click(),
+                ),
+            )
+            capture(
+                "composer-type-mobile-light-320.png",
+                width=320,
+                height=740,
+                action=lambda page: page.locator("#journal-open-composer").click(),
+            )
+            capture(
+                "composer-type-mobile-dark-320.png",
+                width=320,
+                height=740,
+                dark=True,
+                action=lambda page: page.locator("#journal-open-composer").click(),
+            )
+            capture(
+                "composer-speak-mobile-light-320.png",
+                width=320,
+                height=740,
+                action=lambda page: (
+                    page.locator("#journal-open-composer").click(),
+                    page.locator("[data-composer-tab='speak']").click(),
+                ),
+            )
+            capture(
+                "composer-speak-mobile-dark-320.png",
+                width=320,
+                height=740,
                 dark=True,
                 action=lambda page: (
                     page.locator("#journal-open-composer").click(),
@@ -277,6 +332,26 @@ def main() -> None:
                 height=844,
                 action=save_failure,
             )
+            capture(
+                "composer-mobile-save-failure-dark-390.png",
+                width=390,
+                height=844,
+                dark=True,
+                action=save_failure,
+            )
+            capture(
+                "composer-mobile-save-failure-light-320.png",
+                width=320,
+                height=740,
+                action=save_failure,
+            )
+            capture(
+                "composer-mobile-save-failure-dark-320.png",
+                width=320,
+                height=740,
+                dark=True,
+                action=save_failure,
+            )
 
             def voice_failure(page):
                 page.locator("#journal-open-composer").click()
@@ -296,6 +371,26 @@ def main() -> None:
                 "composer-mobile-voice-failure-390.png",
                 width=390,
                 height=844,
+                action=voice_failure,
+            )
+            capture(
+                "composer-mobile-voice-failure-dark-390.png",
+                width=390,
+                height=844,
+                dark=True,
+                action=voice_failure,
+            )
+            capture(
+                "composer-mobile-voice-failure-light-320.png",
+                width=320,
+                height=740,
+                action=voice_failure,
+            )
+            capture(
+                "composer-mobile-voice-failure-dark-320.png",
+                width=320,
+                height=740,
+                dark=True,
                 action=voice_failure,
             )
 

@@ -87,7 +87,7 @@
         aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}"
     >
     {% else %}
-    <span class="ps-rail-chips__chip ps-rail-chips__chip--static" aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}">
+    <span class="ps-rail-chips__chip ps-rail-chips__chip--static" data-chapter="{{ chapter.key }}" aria-current="{{ 'true' if chapter.key == active_chapter else 'false' }}">
     {% endif %}
         {{ rail_icon(chapter.key) }}
         <span>{{ chapter.label }}</span>
