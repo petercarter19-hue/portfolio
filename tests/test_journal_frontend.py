@@ -870,8 +870,11 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
     def setUp(self):
         app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "timeline"
 
-    def _page(self, width=1280, height=900, dark=False):
-        context = self.browser.new_context(viewport={"width": width, "height": height})
+    def _page(self, width=1280, height=900, dark=False, reduced_motion=False):
+        context = self.browser.new_context(
+            viewport={"width": width, "height": height},
+            reduced_motion="reduce" if reduced_motion else "no-preference",
+        )
         if dark:
             context.add_init_script("localStorage.setItem('ps-theme', 'dark');")
         self.addCleanup(context.close)
@@ -1135,6 +1138,20 @@ class JournalBrowserBehaviorTests(unittest.TestCase):
             self.assertGreaterEqual(speak_stage["height"], type_stage["height"])
             if width >= 900:
                 self.assertGreaterEqual(speak_stage["height"], type_stage["height"] + 8)
+
+    def test_reduced_motion_preserves_the_canonical_mobile_type_view_without_transitions(self):
+        page = self._page(width=390, height=844, reduced_motion=True)
+        page.goto(f"{self.base_url}/app/journal", wait_until="networkidle")
+        self.assertTrue(page.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"))
+        page.locator("#journal-open-composer").click()
+        self.assertTrue(page.locator("#journal-narrative").is_visible())
+        page.locator("[data-composer-tab='speak']").click()
+        self.assertEqual(
+            page.locator(".ps-composer__voice-mic").evaluate(
+                "node => getComputedStyle(node).transitionProperty"
+            ),
+            "none",
+        )
 
     def test_desktop_rail_anchors_reflections_and_flourish_to_the_final_rows(self):
         page = self._page(width=1440, height=1040)

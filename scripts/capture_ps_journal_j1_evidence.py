@@ -489,13 +489,6 @@ def main() -> None:
                 "timeline-desktop-200pct-zoom-light-1440.png",
                 action=lambda page: page.evaluate("document.body.style.zoom = '2'"),
             )
-            capture(
-                "composer-type-mobile-reduced-motion-390.png",
-                width=390,
-                height=844,
-                reduced_motion=True,
-                action=lambda page: page.locator("#journal-open-composer").click(),
-            )
             capture("timeline-desktop-forced-colors-1440.png", forced_colors=True)
 
             def save_failure(page):
