@@ -1,6 +1,7 @@
 # PS-COMMUNITY-TABS-001 — Community: Feed and The Break
 
-**Status:** ACTIVE — owner correction lane, 2026-07-21.
+**Status:** IMPLEMENTED / OWNER-APPROVED — pending independent final review;
+not merged or live.
 
 ## Controlling owner decision
 
