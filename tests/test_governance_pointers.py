@@ -527,7 +527,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             "ChatGPT Work",
             "Claude Co-Work",
             "Capture Media manager planning",
-            "GitHub mirror is not current",
+            "GitHub mirror is synchronized through the 2026-07-21 handoff cutover",
             "Voice is functionally deployed",
             "self-certification",
             "Placement reference model is live",

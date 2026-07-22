@@ -24,7 +24,7 @@
 # capability, and it makes no new live claim.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
-updated_at: "2026-07-21"
+updated_at: "2026-07-22"
 
 authority:
   remote: origin
@@ -182,8 +182,10 @@ authority:
 mirror:
   remote: github
   role: backup_only
-  observed_main_commit: "d5dd7bdacc52b7324cb679c6c936eb1ff517ab28"
-  status: push_on_hold_public_remote_requires_explicit_owner_approval
+  observed_main_commit: "d573b23d78eba1b398bb52952e695fe595d12d7b"
+  observed_at: "2026-07-22"
+  status: owner_synchronized_backup_only_github_actions_remain_disabled
+  note: "The owner completed the previously held mirror push after the 2026-07-21 handoff cutover. A Claude Code remote session reading the GitHub mirror directly observed github/main at the PR 158 handoff merge with the archive tags present. The mirror stays a one-way backup: it is never a release, deployment, or development source, and GitHub Actions deployment remains disabled."
 
 manager:
   role: "package_designated_session_manager"
@@ -369,7 +371,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 continues independently under the active-lane transition record; PS-HOME-INTERVIEW-PARITY-001 is closed and needs no further writer. The four previously unrecorded branches are all resolved as of 2026-07-21: three released through PRs 123, 124, and 125 with pipelines 177, 178, and 179, and one archived under tag archive/2026-07-21/bible-v27-activation; docs/governance/OPEN_BRANCH_REGISTER.md is now a historical record rather than an open queue. A separate PS-JOURNAL-001 visual-handoff writer lane is active and released PRs 121 and 122; verify concurrent writers by fetching origin rather than assuming exclusivity. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 continues independently under the active-lane transition record; PS-HOME-INTERVIEW-PARITY-001 is closed and needs no further writer. The four previously unrecorded branches are all resolved as of 2026-07-21: three released through PRs 123, 124, and 125 with pipelines 177, 178, and 179, and one archived under tag archive/2026-07-21/bible-v27-activation; docs/governance/OPEN_BRANCH_REGISTER.md is now a historical record rather than an open queue. A separate PS-JOURNAL-001 visual-handoff writer lane is active and released PRs 121 and 122; verify concurrent writers by fetching origin rather than assuming exclusivity. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The owner completed the previously held public GitHub backup push after the 2026-07-21 handoff cutover; the mirror is one-way backup only and GitHub Actions deployment stays disabled."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

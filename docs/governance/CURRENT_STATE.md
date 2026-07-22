@@ -19,7 +19,8 @@ Every manager and writer must still fetch `origin` before starting._
 ## Verified production and repository baseline
 
 - `origin` is Azure DevOps and the only source of truth. `github` is a public
-  backup mirror whose pushes remain on hold pending explicit owner approval.
+  backup mirror; the owner completed the previously held mirror push after the
+  2026-07-21 handoff cutover, and it remains one-way backup only.
 - PS-RESUME-PUBLIC-REFINE-001 squash-merged through Azure PR 62 at `d88ca480a2cfcdc697d3bfffd219268c20368520`; pipeline 83 (`20260718.6`) succeeded for that exact commit.
 - PS-CAPTURE-002 squash-merged through Azure PR 63 at `65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd`; pipeline 85 (`20260718.8`) succeeded for that exact commit.
 - PS-MOMENT-001 squash-merged through Azure PR 66 at `43afd9353af1a0693aafab0c918f3dff92802376`; pipeline 91 (`20260718.14`) succeeded for that exact commit after both Build and Deploy passed.
@@ -483,8 +484,10 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   research options are preserved in the Revisit Register, not promised for the
   first release.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
-- The GitHub mirror is not current and must not be used as a release source;
-  it is public, so advancing it requires explicit owner approval.
+- The GitHub mirror is synchronized through the 2026-07-21 handoff cutover,
+  observed at `d573b23d78eba1b398bb52952e695fe595d12d7b` on 2026-07-22, and
+  must not be used as a release source; it is public, and advancing it remains
+  an explicit owner action.
 - The current public My Story separates fixture content from repository-authored
   layout metadata, but a signed-in member cannot yet move, resize, save, or
   publish a personal composition. `PS-STORY-COMPOSER-001` is planned, not live.

@@ -21,7 +21,9 @@
 > files in the repository root still have no recorded disposition. Task 4
 > (member-history salvage) was completed through PR 113. Task 5 (Interview
 > coaching reliability) was completed through PR 114. Task 6 (GitHub mirror)
-> remains an open owner decision. Task 7 (branch disposition) produced
+> was resolved by the owner's mirror push after the 2026-07-21 handoff cutover;
+> a Claude Code remote session observed `github/main` at the PR 158 handoff
+> merge on 2026-07-22, and the baseline mirror record is updated. Task 7 (branch disposition) produced
 > `docs/governance/BRANCH_DISPOSITION_RECORD.md` through PR 112 and awaits
 > Pete's row-by-row approval.
 
