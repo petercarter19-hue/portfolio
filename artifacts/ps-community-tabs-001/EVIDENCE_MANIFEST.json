@@ -15,7 +15,8 @@
     "initial_stream_container": "JPEG/JFIF bytes emitted by the browser screenshot API despite .png filenames",
     "committed_container": "PNG",
     "conversion": "Pillow decode original JFIF to RGB, then PNG encode",
-    "conversion_validation": "All 14 source/target pairs have identical dimensions and byte-identical decoded RGB pixels. No resize, crop, color adjustment, or content edit occurred."
+    "validated_source_target_pair_count": 15,
+    "conversion_validation": "All 15 source/target pairs have identical dimensions and byte-identical decoded RGB pixels. No resize, crop, color adjustment, or content edit occurred."
   },
   "exact_duplicate_audit": {
     "file_count": 15,

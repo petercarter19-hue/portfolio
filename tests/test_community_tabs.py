@@ -608,9 +608,20 @@ class CommunityAssetTests(unittest.TestCase):
             "8326f2c3aff483f44822ae100d3dc1aedf42d437",
         )
         captures = manifest["captures"]
-        self.assertEqual(len(captures), 15)
-        self.assertEqual(manifest["exact_duplicate_audit"]["file_count"], 15)
-        self.assertEqual(manifest["exact_duplicate_audit"]["unique_file_sha256_count"], 15)
+        capture_count = len(captures)
+        capture_method = manifest["capture_method"]
+        conversion_count = capture_method["validated_source_target_pair_count"]
+        conversion_count_text = re.search(
+            r"All (\d+) source/target pairs", capture_method["conversion_validation"],
+        )
+        self.assertIsNotNone(conversion_count_text)
+        self.assertEqual(int(conversion_count_text.group(1)), conversion_count)
+        self.assertEqual(conversion_count, capture_count)
+        self.assertEqual(manifest["exact_duplicate_audit"]["file_count"], capture_count)
+        self.assertEqual(
+            manifest["exact_duplicate_audit"]["unique_file_sha256_count"],
+            capture_count,
+        )
 
         listed_names = {capture["file"] for capture in captures}
         actual_names = {
