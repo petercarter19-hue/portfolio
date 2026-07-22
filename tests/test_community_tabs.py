@@ -206,6 +206,71 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         self.assertNotIn("header (z-index 1200)", feed_css)
         self.assertNotIn("overlay's own z-index (1300", feed_css)
 
+    def test_dark_community_modal_uses_dark_surfaces_with_accessible_contrast(self):
+        """Prevent the exact light-text-on-white integrated-theme regression."""
+        css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
+        with open(css_path, encoding="utf-8") as handle:
+            css = handle.read()
+
+        selector = 'body[data-theme="dark"].community-tabs-page #feed-app .voice-modal {'
+        start = css.index(selector)
+        end = css.index("\n}", start)
+        modal_block = css[start:end]
+        variables = dict(re.findall(r"--(comm-modal-[\w-]+):\s*(#[0-9a-fA-F]{6});", modal_block))
+
+        self.assertGreater(start, css.index(".voice-modal {"))
+        self.assertEqual(variables["comm-modal-surface"], "#0c1924")
+        self.assertNotIn("background: #fff", modal_block)
+        self.assertIn("background: linear-gradient", modal_block)
+        for selector_fragment in (
+            ".modal-head h2",
+            ".listening-help",
+            ".transcript-box",
+            ".proposal",
+            ".privacy-option strong",
+            ".privacy-option span",
+            '.chip[aria-disabled="true"]',
+            ".review-footer .meta",
+            ".voice-modal .btn.primary",
+            ".voice-modal button:disabled",
+            ".voice-modal :is(button, input, textarea, [tabindex]):focus-visible",
+        ):
+            self.assertIn(selector_fragment, css)
+
+        normal_text_pairs = {
+            "title on surface": (variables["comm-modal-title"], variables["comm-modal-surface"]),
+            "body on surface": (variables["comm-modal-text"], variables["comm-modal-surface"]),
+            "muted on surface": (variables["comm-modal-muted"], variables["comm-modal-surface"]),
+            "body on side": (variables["comm-modal-text"], variables["comm-modal-raised"]),
+            "muted on side": (variables["comm-modal-muted"], variables["comm-modal-raised"]),
+            "body on proposal": (variables["comm-modal-text"], variables["comm-modal-soft"]),
+            "muted on proposal": (variables["comm-modal-muted"], variables["comm-modal-soft"]),
+            "input text": (variables["comm-modal-text"], variables["comm-modal-control"]),
+            "input placeholder": (variables["comm-modal-muted"], variables["comm-modal-control"]),
+            "proposal label": ("#c7e6aa", variables["comm-modal-soft"]),
+            "base chip": ("#d2ded8", "#1c2b35"),
+            "AI chip": ("#b7e4d6", "#163237"),
+            "project chip": ("#d2deb6", "#203039"),
+            "disabled control": ("#9ba9a4", "#18242d"),
+        }
+        for label, colors in normal_text_pairs.items():
+            with self.subTest(text=label):
+                self.assertGreaterEqual(contrast_ratio(*colors), 4.5)
+
+        control_pairs = {
+            "control border": (variables["comm-modal-border"], variables["comm-modal-control"]),
+            "surface border": (variables["comm-modal-border"], variables["comm-modal-surface"]),
+            "focus ring": (variables["comm-modal-accent"], variables["comm-modal-control"]),
+            "primary action": (
+                variables["comm-modal-accent-ink"], variables["comm-modal-accent"]),
+        }
+        for label, colors in control_pairs.items():
+            with self.subTest(control=label):
+                self.assertGreaterEqual(contrast_ratio(*colors), 3.0)
+
+        # Light Community remains the established paper dialog.
+        self.assertGreaterEqual(contrast_ratio("#101b30", "#ffffff"), 4.5)
+
     def test_focus_lifecycle_behavior_harness_passes(self):
         node = shutil.which("node")
         app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"

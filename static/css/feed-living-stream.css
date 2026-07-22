@@ -627,3 +627,222 @@ body[data-theme="dark"] #feed-app .comment-composer:focus-within {
   border-color: #d8a928;
   box-shadow: 0 0 0 3px rgba(216, 169, 40, .15);
 }
+
+/* Community is a genuine dark composition, unlike the standalone Feed
+   preview's deliberate paper sheet. Its dialogs therefore need their own
+   dark surfaces rather than inheriting Community's light text onto #fff. */
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal {
+  --comm-modal-surface: #0c1924;
+  --comm-modal-raised: #12212c;
+  --comm-modal-soft: #13252f;
+  --comm-modal-control: #152630;
+  --comm-modal-title: #f3efe5;
+  --comm-modal-text: #dce5dc;
+  --comm-modal-muted: #b7c4bf;
+  --comm-modal-border: #607a6c;
+  --comm-modal-accent: #b3d793;
+  --comm-modal-accent-ink: #07131e;
+  color: var(--comm-modal-text);
+  background: linear-gradient(145deg, #10212d 0%, var(--comm-modal-surface) 58%, #08141f 100%);
+  border-color: var(--comm-modal-border);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 58%), 0 0 0 1px rgb(179 215 147 / 10%);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .overlay {
+  background: rgb(2 8 14 / 76%);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .modal-head {
+  background: rgb(14 29 40 / 96%);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .modal-head h2,
+body[data-theme="dark"].community-tabs-page #feed-app .listening-title,
+body[data-theme="dark"].community-tabs-page #feed-app .proposal h3,
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option strong {
+  color: var(--comm-modal-title);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .close,
+body[data-theme="dark"].community-tabs-page #feed-app .cancel-btn,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal .pill-btn {
+  color: var(--comm-modal-text);
+  background: var(--comm-modal-control);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .close:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .cancel-btn:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal .pill-btn:hover {
+  color: var(--comm-modal-title);
+  background: #20362f;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .listening-body,
+body[data-theme="dark"].community-tabs-page #feed-app .review-main {
+  background: transparent;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .listening-help,
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option span,
+body[data-theme="dark"].community-tabs-page #feed-app .review-footer .meta,
+body[data-theme="dark"].community-tabs-page #feed-app .field-label,
+body[data-theme="dark"].community-tabs-page #feed-app .frame-opt,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-time {
+  color: var(--comm-modal-muted);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .live-transcript,
+body[data-theme="dark"].community-tabs-page #feed-app .proposal p {
+  color: var(--comm-modal-text);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .listening-ring {
+  color: var(--comm-modal-accent-ink);
+  background: radial-gradient(circle, #96bb76 0 38%, #b3d793 39% 50%, #365341 51% 62%, #152630 63%);
+  box-shadow: 0 20px 55px rgb(83 122 78 / 34%);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .audio-level i {
+  background: linear-gradient(#b3d793, #607f55);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .live-transcript .cursor {
+  background: var(--comm-modal-accent);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .review-side {
+  background: var(--comm-modal-raised);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .review-footer {
+  background: #0a1721;
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .transcript-box {
+  color: var(--comm-modal-text);
+  caret-color: var(--comm-modal-accent);
+  background: var(--comm-modal-control);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .transcript-box::placeholder {
+  color: var(--comm-modal-muted);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .proposal {
+  background: var(--comm-modal-soft);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .proposal-head {
+  color: #c7e6aa;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .chip {
+  color: #d2ded8;
+  background: #1c2b35;
+  border: 1px solid var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .chip.ai {
+  color: #b7e4d6;
+  background: #163237;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .chip.project {
+  color: #d2deb6;
+  background: #203039;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .chip[aria-disabled="true"] {
+  color: var(--comm-modal-muted);
+  background: #172630;
+  border-style: dashed;
+  opacity: 1;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .attach-chip,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-player,
+body[data-theme="dark"].community-tabs-page #feed-app .notice {
+  color: var(--comm-modal-text);
+  background: var(--comm-modal-control);
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .frame-opt {
+  border-color: var(--comm-modal-border);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .attach-x {
+  color: var(--comm-modal-muted);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .attach-x:hover {
+  color: #ffc3c8;
+  background: #43252d;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option:hover {
+  background: #1b302d;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option.selected,
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option.selected:hover {
+  background: #263c34;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .radio {
+  border-color: #92ae8f;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .selected .radio {
+  border-color: var(--comm-modal-accent);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .selected .radio::after {
+  background: var(--comm-modal-accent);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .notice .symbol {
+  color: var(--comm-modal-accent);
+  background: #22392f;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .notice strong {
+  color: var(--comm-modal-title) !important;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .stop-btn,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal .btn.primary {
+  color: var(--comm-modal-accent-ink);
+  background: var(--comm-modal-accent);
+  border-color: var(--comm-modal-accent);
+  box-shadow: 0 12px 28px rgb(97 133 84 / 30%);
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .stop-btn:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal .btn.primary:hover {
+  color: var(--comm-modal-accent-ink);
+  background: #c9e9ab;
+  border-color: #c9e9ab;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal button:disabled {
+  color: #9ba9a4;
+  background: #18242d;
+  border-color: #607a6c;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+body[data-theme="dark"].community-tabs-page #feed-app .voice-modal :is(button, input, textarea, [tabindex]):focus-visible,
+body[data-theme="dark"].community-tabs-page #feed-app .privacy-option:has(input:focus-visible) {
+  outline: 2px solid var(--comm-modal-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgb(12 25 36 / 88%);
+}
