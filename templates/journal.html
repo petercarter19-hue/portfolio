@@ -13,8 +13,8 @@
    are not covered by base.html's site-wide Newsreader import, so this page
    loads them itself, the same established per-page pattern. #}
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-4">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-4">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-5">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-5">
 {% endblock %}
 
 {% block body_class %}ps-journal-page{% endblock %}
@@ -32,7 +32,7 @@
                 {% endif %}
             </div>
 
-            <div class="ps-journal__book">
+            <div class="ps-journal__book{% if manage_view %} ps-journal__book--manage{% endif %}">
                 <div class="ps-journal__book-inner">
                     {% set is_empty_intro = (not manage_view) and (not moments) %}
                     {% if not is_empty_intro %}
@@ -166,10 +166,12 @@
                         </button>
                     </div>
                     <section class="ps-journal__hero" aria-label="This season">
-                        <div class="ps-journal__hero-scene" aria-hidden="true">
+                        <div class="ps-journal__hero-scene{% if fixture_hero_image_url %} ps-journal__hero-scene--fixture{% endif %}"{% if fixture_hero_image_url %} style="--jbook-fixture-hero: url('{{ fixture_hero_image_url }}')"{% endif %} aria-hidden="true">
+                            {% if not fixture_hero_image_url %}
                             <span class="ps-journal__hero-hill ps-journal__hero-hill--back"></span>
                             <span class="ps-journal__hero-hill ps-journal__hero-hill--front"></span>
                             <span class="ps-journal__hero-sun"></span>
+                            {% endif %}
                         </div>
                         <div class="ps-journal__hero-copy">
                             <p class="ps-journal__hero-eyebrow">This season</p>
@@ -328,5 +330,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-4"></script>
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-5"></script>
 {% endblock %}

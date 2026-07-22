@@ -592,6 +592,19 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__rail-region .ps-rail__entry
         linear-gradient(180deg, #24334f 0%, #4c5c78 26%, #a9825a 52%, #d9a35f 66%, #f0c37c 100%);
 }
 
+/* The photo scene belongs exclusively to the explicit TESTING fixture
+   provider. Real members never receive this URL from their data/title; they
+   retain the composed fallback above until an authorized hero asset exists. */
+.ps-journal__hero-scene--fixture {
+    background-image:
+        linear-gradient(90deg, rgb(3 8 18 / 78%) 0%, rgb(3 8 18 / 47%) 48%, rgb(3 8 18 / 18%) 100%),
+        linear-gradient(180deg, rgb(4 6 12 / 8%) 0%, rgb(4 6 12 / 64%) 100%),
+        var(--jbook-fixture-hero);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
 .ps-journal__hero-hill {
     position: absolute;
     left: -5%;
@@ -995,6 +1008,13 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__annotation {
     font-family: var(--ps-font-ui);
 }
 
+/* The chapter-specific empty messages use the native hidden attribute until
+   a rail filter selects their chapter. This explicit rule prevents page-wide
+   base CSS from ever exposing those hidden paragraphs as empty blocks. */
+.ps-journal__empty[hidden] {
+    display: none !important;
+}
+
 .ps-journal__empty-title {
     font-family: "Newsreader", Georgia, serif;
     font-size: 1.3rem;
@@ -1369,6 +1389,169 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__kind-filter[aria-pressed="t
     color: var(--jbook-ink);
 }
 
+/* Doc 15 item 54: one deliberately compact control row. The older
+   kind-filter styles above remain for other legacy pages, but Journal Manage
+   owns this local, measured layout so native select chrome and oversized
+   fallback icons cannot spill into the table. */
+.ps-journal__book--manage {
+    padding-right: clamp(2rem, 4vw, 3.5rem);
+}
+
+.ps-journal__manage-controls {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1.45fr) minmax(6.9rem, 0.62fr) minmax(6.4rem, 0.56fr) auto 2.25rem;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 1.2rem;
+    min-width: 0;
+}
+
+.ps-journal__manage-controls .ps-journal__manage-search-row {
+    position: relative;
+    display: block;
+    margin: 0;
+    min-width: 0;
+}
+
+.ps-journal__manage-controls .ps-journal__manage-search-icon {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    z-index: 1;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.ps-journal__manage-controls .ps-journal__manage-search-icon svg {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+.ps-journal__manage-controls .ps-journal__manage-search {
+    display: block;
+    width: 100%;
+    min-height: 2.3rem;
+    padding: 0.48rem 0.7rem 0.48rem 2.05rem;
+    border-radius: 0.58rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.ps-journal__manage-select,
+.ps-journal__manage-pill,
+.ps-journal__manage-icon-btn {
+    min-height: 2.3rem;
+    border: 1px solid var(--jbook-card-border);
+    border-radius: 0.58rem;
+    background: var(--jbook-card-bg);
+    color: var(--jbook-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+select.ps-journal__manage-select {
+    appearance: none;
+    width: 100%;
+    padding: 0.48rem 1.8rem 0.48rem 0.7rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23586052' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.58rem center;
+    background-size: 0.82rem;
+}
+
+.ps-journal__manage-select--inert {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 0.48rem 0.62rem;
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
+.ps-journal__manage-select--inert svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    flex: none;
+}
+
+.ps-journal__manage-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.34rem;
+    padding: 0.48rem 0.62rem;
+    cursor: pointer;
+}
+
+.ps-journal__manage-pill svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex: none;
+}
+
+.ps-journal__manage-pill[aria-pressed="true"] {
+    border-color: var(--jbook-gold-mid);
+    background: rgb(180 140 80 / 14%);
+    color: var(--jbook-gold-text);
+}
+
+.ps-journal__manage-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    padding: 0;
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
+.ps-journal__manage-icon-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.ps-journal__book--manage .ps-journal__manage-head,
+.ps-journal__book--manage .ps-journal__manage-row {
+    grid-template-columns: 4.15rem 5.1rem minmax(11rem, 1fr) 3.1rem 4.65rem 1.75rem;
+    gap: clamp(0.45rem, 1vw, 0.8rem);
+}
+
+.ps-journal__book--manage .ps-journal__manage-title-text a {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.ps-journal__manage-ghost {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--jbook-ink-faint);
+    font-family: var(--ps-font-ui);
+    font-size: 0.78rem;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.ps-journal__manage-ghost:hover,
+.ps-journal__manage-ghost:focus-visible {
+    color: var(--jbook-gold-text);
+    text-decoration: underline;
+}
+
+.ps-journal__manage-ghost svg {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
 /* =====================================================================
    10. In-context composer (accepted 02 desktop facing-page / 03 mobile
    sheet) - same parchment "page" material as the book itself.
@@ -1471,6 +1654,7 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__kind-filter[aria-pressed="t
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
+    padding-right: 2.9rem;
     margin-bottom: 1rem;
 }
 
@@ -1482,13 +1666,27 @@ body.ps-journal-page[data-theme="dark"] .ps-journal__kind-filter[aria-pressed="t
 }
 
 .ps-composer__close {
-    background: transparent;
-    border: none;
-    color: var(--jbook-ink-faint);
+    position: absolute;
+    top: clamp(1.25rem, 2.5vw, 1.7rem);
+    right: clamp(1.25rem, 2.5vw, 1.7rem);
+    z-index: 4;
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    background: var(--jbook-card-bg);
+    border: 1px solid var(--jbook-card-border);
+    color: var(--jbook-ink);
     cursor: pointer;
-    padding: 0.35rem;
     border-radius: 999px;
     line-height: 0;
+    box-shadow: 0 3px 10px -6px rgb(20 15 5 / 50%);
+}
+
+.ps-composer__close svg {
+    width: 1.12rem;
+    height: 1.12rem;
 }
 
 .ps-composer__close:hover {
@@ -2293,9 +2491,11 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
 
     .ps-composer {
         width: 100%;
-        max-height: 92vh;
+        height: min(92dvh, 48rem);
+        max-height: 92dvh;
         border-radius: 1.4rem 1.4rem 0 0;
-        padding-right: clamp(1.5rem, 3vw, 2.25rem);
+        padding: clamp(1.1rem, 4vw, 1.5rem) clamp(1.5rem, 4vw, 2rem) 5.15rem;
+        overflow-y: auto;
     }
 
     .ps-composer::after {
@@ -2303,7 +2503,66 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
     }
 
     .ps-composer__field {
-        min-height: 14rem;
+        min-height: 9.25rem;
+    }
+
+    .ps-composer__header {
+        padding-right: 3rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .ps-composer__close {
+        top: 1rem;
+        right: 1rem;
+        width: 2.35rem;
+        height: 2.35rem;
+        background: var(--jbook-page-solid);
+        border-color: var(--jbook-gold-mid);
+    }
+
+    .ps-composer__attachments {
+        margin: 0.65rem 0;
+    }
+
+    .ps-composer__attachment-preview {
+        min-height: 4.4rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .ps-composer__attachment-thumb {
+        flex-basis: 4rem;
+        width: 4rem;
+        height: 3rem;
+    }
+
+    .ps-composer__details {
+        margin: 0.35rem 0 0;
+    }
+
+    .ps-composer__footer {
+        position: absolute;
+        right: clamp(1.5rem, 4vw, 2rem);
+        bottom: 0.8rem;
+        left: clamp(1.5rem, 4vw, 2rem);
+        z-index: 4;
+        min-height: 3.4rem;
+        margin: 0;
+        padding: 0.55rem 0;
+        background: linear-gradient(180deg, rgb(250 240 230 / 92%), var(--jbook-page-solid) 35%);
+        box-shadow: 0 -10px 18px -14px rgb(20 15 5 / 55%);
+    }
+
+    body.ps-journal-page[data-theme="dark"] .ps-composer__footer {
+        background: linear-gradient(180deg, rgb(16 27 44 / 92%), var(--jbook-page-solid) 35%);
+    }
+
+    .ps-composer__footer .ps-btn {
+        min-height: 2.55rem;
+        padding-inline: 0.9rem;
+    }
+
+    .ps-composer__status {
+        display: none;
     }
 
     .ps-composer .ps-journal__ribbon {
@@ -2332,18 +2591,71 @@ body.ps-journal-page[data-theme="dark"] .ps-composer__status[data-tone="error"] 
         order: -1;
     }
 
-    .ps-journal__manage-head,
-    .ps-journal__manage-row {
-        grid-template-columns: minmax(0, 1fr);
+    .ps-journal__manage-controls {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
         gap: 0.4rem;
     }
 
-    .ps-journal__manage-head {
+    .ps-journal__manage-controls .ps-journal__manage-search-row {
+        grid-column: 1 / -1;
+    }
+
+    .ps-journal__manage-select,
+    .ps-journal__manage-pill,
+    .ps-journal__manage-icon-btn {
+        min-width: 0;
+        min-height: 2.15rem;
+        font-size: 0.72rem;
+    }
+
+    .ps-journal__manage-select--inert,
+    .ps-journal__manage-pill {
+        padding-inline: 0.45rem;
+    }
+
+    .ps-journal__manage-icon-btn {
+        width: 2.15rem;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-head {
         display: none;
     }
 
-    .ps-journal__manage-duration {
+    .ps-journal__book--manage .ps-journal__manage-row {
+        grid-template-columns: 3.6rem minmax(0, 1fr) auto;
+        gap: 0.3rem 0.55rem;
+        align-items: start;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-date {
+        grid-row: 1 / span 2;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-kind {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-title {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-duration {
         display: none;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-status {
+        grid-column: 3;
+        grid-row: 1;
+        font-size: 0.7rem;
+    }
+
+    .ps-journal__book--manage .ps-journal__manage-menu {
+        grid-column: 3;
+        grid-row: 2;
+        width: 1.8rem;
+        height: 1.8rem;
     }
 
     .ps-moment__lifecycle {

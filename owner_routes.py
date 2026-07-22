@@ -1724,6 +1724,15 @@ def journal():
         active_chapter="timeline",
         is_evidence_fixture=is_evidence_fixture,
         is_evidence_saved_state=evidence_state == "saved",
+        # This is an in-repository visual asset belonging only to the
+        # server-owned TESTING fixture. It is never inferred from a member,
+        # title, Moment, or browser state, and normal members keep the
+        # intentional CSS-only fallback scene when no authorized photo exists.
+        fixture_hero_image_url=(
+            url_for("static", filename="images/cinematic/story-sunset-bg.jpg")
+            if is_evidence_fixture
+            else None
+        ),
         season_lines=season_lines,
         fixture_member_name="Maya" if is_evidence_fixture else None,
     )

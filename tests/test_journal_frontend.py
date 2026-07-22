@@ -256,6 +256,12 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         # genuinely empty first visit, not just visually deemphasized.
         self.assertNotIn("This season", body)
         self.assertNotIn("Moments captured", body)
+        journal_css = (Path(__file__).resolve().parent.parent / "static" / "css" / "journal.css").read_text(encoding="utf-8")
+        # Generic chapter-empty messages stay hidden until a rail filter
+        # selects them; this guards against base CSS exposing empty bars.
+        self.assertIn(".ps-journal__empty[hidden]", journal_css)
+        self.assertIn("display: none !important;", journal_css)
+        self.assertIn(".ps-journal__manage-ghost", journal_css)
 
     @patch("owner_routes.journal_service")
     def test_manage_view_uses_include_archived(self, journal_service):
@@ -269,6 +275,29 @@ class OwnerJournalPageRenderTests(unittest.TestCase):
         journal_service.list_owner_journal.assert_any_call(
             DEV_USER_KEY, include_archived=True, limit=20, cursor=None
         )
+
+    @patch("owner_routes.journal_service")
+    def test_manage_view_uses_the_compact_control_structure(self, journal_service):
+        journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory(
+            sample_items()
+        )
+
+        response = self.client.get("/app/journal?view=manage")
+        body = response.get_data(as_text=True)
+        journal_css = (Path(__file__).resolve().parent.parent / "static" / "css" / "journal.css").read_text(encoding="utf-8")
+
+        self.assertEqual(response.status_code, 200)
+        for class_name in (
+            "ps-journal__book--manage",
+            "ps-journal__manage-controls",
+            "ps-journal__manage-select",
+            "ps-journal__manage-pill",
+            "ps-journal__manage-icon-btn",
+        ):
+            self.assertIn(class_name, body)
+            self.assertIn(f".{class_name}", journal_css)
+        self.assertIn("appearance: none;", journal_css)
+        self.assertIn("grid-template-columns: minmax(12rem, 1.45fr)", journal_css)
 
     @patch("owner_routes.journal_service")
     def test_journal_read_failure_returns_unavailable_not_a_crash(self, journal_service):
@@ -395,6 +424,7 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertNotIn(">15<", body)
         self.assertIn("9:41 AM", body)
         self.assertIn("Attached to this Moment", body)
+        self.assertIn("images/cinematic/story-sunset-bg.jpg", body)
 
     @patch("owner_routes.journal_service")
     def test_test_only_detail_fixture_is_rich_without_a_member_read(self, journal_service):
@@ -492,6 +522,7 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
             self.assertNotIn("thumbnail_kind", body)
             self.assertNotIn('data-journal-evidence-fixture="true"', body)
             self.assertNotIn("data-fixture-attached", body)
+            self.assertNotIn("images/cinematic/story-sunset-bg.jpg", body)
         owner_keys = [call.args[0] for call in journal_service.list_owner_journal.call_args_list]
         self.assertIn("real-owner-one", owner_keys)
         self.assertIn("real-owner-two", owner_keys)
@@ -503,6 +534,16 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertNotIn("localStorage", js_source)
         self.assertNotIn("sessionStorage", js_source)
         self.assertIn("let recoverableDraft", js_source)
+
+    def test_composer_close_and_mobile_footer_have_explicit_visual_guards(self):
+        css_path = Path(__file__).resolve().parent.parent / "static" / "css" / "journal.css"
+        journal_css = css_path.read_text(encoding="utf-8")
+
+        self.assertIn(".ps-composer__close", journal_css)
+        self.assertIn("position: absolute;", journal_css)
+        self.assertIn("width: 2.35rem;", journal_css)
+        self.assertIn(".ps-composer__footer", journal_css)
+        self.assertIn("bottom: 0.8rem;", journal_css)
 
 
 class OwnerJournalVoiceDraftTests(unittest.TestCase):
