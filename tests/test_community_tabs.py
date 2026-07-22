@@ -271,6 +271,37 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         # Light Community remains the established paper dialog.
         self.assertGreaterEqual(contrast_ratio("#101b30", "#ffffff"), 4.5)
 
+    def test_polaroid_transform_overflow_is_clipped_at_its_feed_component_only(self):
+        css_path = os.path.join(ROOT, "static", "css", "feed-living-stream.css")
+        js_path = os.path.join(ROOT, "static", "js", "feed-living-stream.js")
+        with open(css_path, encoding="utf-8") as handle:
+            css = handle.read()
+        with open(js_path, encoding="utf-8") as handle:
+            js = handle.read()
+
+        polaroid_branch = re.search(
+            r"if \(post\.frame === 'polaroid'\) \{(.*?)\n    \}", js, re.DOTALL
+        ).group(1)
+        self.assertIn('<div class="polaroid-viewport"><figure class="polaroid">', polaroid_branch)
+        self.assertIn("</figure></div>", polaroid_branch)
+        self.assertIn(
+            ".polaroid-viewport { width:100%; min-width:0; "
+            "overflow-x:clip; overflow-y:visible; }",
+            css,
+        )
+        self.assertIn("transform:rotate(-1.4deg)", css)
+
+        # The containment belongs to the generated Feed media component. It
+        # must not suppress legitimate horizontal UI globally or alter Break.
+        for forbidden in (
+            "html { overflow-x:hidden",
+            "body { overflow-x:hidden",
+            ".feed-column { overflow-x:hidden",
+            ".break-inner { overflow-x:hidden",
+            ".bk-page { overflow-x:hidden",
+        ):
+            self.assertNotIn(forbidden, css)
+
     def test_focus_lifecycle_behavior_harness_passes(self):
         node = shutil.which("node")
         app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"

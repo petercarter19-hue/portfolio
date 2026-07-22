@@ -368,12 +368,12 @@
     /* Polaroid frame (member-chosen option, never a default): white instant-
        photo mat with a handwritten caption in the thick bottom border. */
     if (post.frame === 'polaroid') {
-      return '<figure class="polaroid">' + responsiveImageHTML(post.image, post.alt, {
+      return '<div class="polaroid-viewport"><figure class="polaroid">' + responsiveImageHTML(post.image, post.alt, {
         priority: post.priority,
         sizes: '(min-width: 900px) 590px, calc(100vw - 56px)'
       }) +
         (post.polaroidCaption ? '<figcaption class="polaroid-caption">' + esc(post.polaroidCaption) + '</figcaption>' : '') +
-        '</figure>';
+        '</figure></div>';
     }
     return '<div class="media landscape">' + responsiveImageHTML(post.image, post.alt, {
       priority: post.priority,

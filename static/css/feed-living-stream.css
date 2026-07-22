@@ -187,7 +187,10 @@
 
   /* ---- Polaroid frame: a member-chosen way to share a picture. White
      instant-photo mat, thick bottom border, handwritten caption, a small
-     tilt so it reads hand-placed rather than templated. ---- */
+     tilt so it reads hand-placed rather than templated. Its local viewport
+     clips only transformed horizontal paint, preventing the tilted edge and
+     shadow from widening the mobile document while leaving vertical depth. ---- */
+  .polaroid-viewport { width:100%; min-width:0; overflow-x:clip; overflow-y:visible; }
   .polaroid { margin:6px auto 4px; padding:16px 16px 0; max-width:540px; background:#FDFDFB; border:1px solid #E7E4DA; border-radius:5px; box-shadow:0 3px 8px rgba(32,48,90,.10), 0 18px 40px rgba(32,48,90,.16); transform:rotate(-1.4deg); }
   .polaroid img { width:100%; aspect-ratio:4/3.4; object-fit:cover; border-radius:2px; }
   .polaroid-caption { padding:13px 6px 17px; font-family:"Caveat","Segoe Script",cursive; font-size:22px; line-height:1.15; color:#4A4335; text-align:center; }
