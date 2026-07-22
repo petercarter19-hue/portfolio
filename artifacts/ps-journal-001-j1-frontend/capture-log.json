@@ -11,7 +11,10 @@
       "path": "/app/journal",
       "hero": {
         "top": 369,
-        "bottom": 717
+        "bottom": 717,
+        "headline_width": 307,
+        "headline_height": 78,
+        "headline_font_style": "italic"
       },
       "rail": {
         "timeline": {
@@ -78,7 +81,12 @@
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "hero": {
+        "headline_width": 186,
+        "headline_height": 55,
+        "headline_font_style": "italic"
+      }
     },
     {
       "file": "timeline-mobile-dark-390.png",
@@ -99,13 +107,126 @@
       "path": "/app/journal"
     },
     {
-      "file": "composer-type-desktop-light-1440.png",
+      "file": "timeline-desktop-light-1440-entries.png",
       "viewport": "1440x1040",
       "state": "timeline",
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
       "path": "/app/journal"
+    },
+    {
+      "file": "timeline-desktop-dark-1440-entries.png",
+      "viewport": "1440x1040",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-a.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-a.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-b.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-b.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-c.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-c.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-light-320-entries-b.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-dark-320-entries-b.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-light-320-entries-c.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "timeline-mobile-dark-320-entries-c.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-type-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "type",
+        "width": 502,
+        "height": 320
+      }
     },
     {
       "file": "composer-type-desktop-dark-1440.png",
@@ -114,7 +235,12 @@
       "dark": true,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "type",
+        "width": 502,
+        "height": 320
+      }
     },
     {
       "file": "composer-speak-desktop-light-1440.png",
@@ -123,7 +249,12 @@
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 502,
+        "height": 336
+      }
     },
     {
       "file": "composer-speak-desktop-dark-1440.png",
@@ -132,7 +263,12 @@
       "dark": true,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 502,
+        "height": 336
+      }
     },
     {
       "file": "composer-type-mobile-light-390.png",
@@ -141,7 +277,12 @@
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "type",
+        "width": 342,
+        "height": 148
+      }
     },
     {
       "file": "composer-type-mobile-dark-390.png",
@@ -150,7 +291,12 @@
       "dark": true,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "type",
+        "width": 342,
+        "height": 148
+      }
     },
     {
       "file": "composer-speak-mobile-light-390.png",
@@ -159,11 +305,57 @@
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 342,
+        "height": 258
+      }
     },
     {
       "file": "composer-speak-mobile-dark-390.png",
       "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 342,
+        "height": 258
+      }
+    },
+    {
+      "file": "composer-type-mobile-light-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-type-mobile-dark-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-speak-mobile-light-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-speak-mobile-dark-320.png",
+      "viewport": "320x740",
       "state": "timeline",
       "dark": true,
       "reduced_motion": false,
@@ -213,7 +405,11 @@
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal"
+      "path": "/app/journal",
+      "empty": {
+        "illustration_width": 168,
+        "visual_gap": 16.8
+      }
     },
     {
       "file": "empty-desktop-dark-1440.png",
@@ -279,13 +475,81 @@
       "path": "/app/journal"
     },
     {
+      "file": "manage-mobile-light-390-lower.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "manage-mobile-dark-390-lower.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "manage-mobile-light-390-footer.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "manage-mobile-dark-390-footer.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
       "file": "detail-desktop-light-1440.png",
       "viewport": "1440x1040",
       "state": "detail",
       "dark": false,
       "reduced_motion": false,
       "forced_colors": false,
-      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111"
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "detail": {
+        "title": {
+          "left": 501,
+          "top": 234,
+          "width": 512,
+          "height": 76
+        },
+        "context": {
+          "left": 501,
+          "top": 316,
+          "width": 512,
+          "height": 46
+        },
+        "audio": {
+          "left": 501,
+          "top": 410,
+          "width": 448,
+          "height": 66
+        },
+        "photo": {
+          "left": 965,
+          "top": 382,
+          "width": 216,
+          "height": 122
+        },
+        "date": {
+          "left": 386,
+          "top": 202,
+          "width": 91,
+          "height": 161
+        }
+      }
     },
     {
       "file": "detail-desktop-dark-1440.png",
@@ -315,20 +579,29 @@
       "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111"
     },
     {
+      "file": "detail-mobile-light-390-lower.png",
+      "viewport": "390x844",
+      "state": "detail",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111"
+    },
+    {
+      "file": "detail-mobile-dark-390-lower.png",
+      "viewport": "390x844",
+      "state": "detail",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111"
+    },
+    {
       "file": "timeline-desktop-200pct-zoom-light-1440.png",
       "viewport": "1440x1040",
       "state": "timeline",
       "dark": false,
       "reduced_motion": false,
-      "forced_colors": false,
-      "path": "/app/journal"
-    },
-    {
-      "file": "composer-type-mobile-reduced-motion-390.png",
-      "viewport": "390x844",
-      "state": "timeline",
-      "dark": false,
-      "reduced_motion": true,
       "forced_colors": false,
       "path": "/app/journal"
     },
@@ -351,10 +624,64 @@
       "path": "/app/journal"
     },
     {
+      "file": "composer-mobile-save-failure-dark-390.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-mobile-save-failure-light-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-mobile-save-failure-dark-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
       "file": "composer-mobile-voice-failure-390.png",
       "viewport": "390x844",
       "state": "timeline",
       "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-mobile-voice-failure-dark-390.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-mobile-voice-failure-light-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    },
+    {
+      "file": "composer-mobile-voice-failure-dark-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "dark": true,
       "reduced_motion": false,
       "forced_colors": false,
       "path": "/app/journal"
