@@ -427,6 +427,20 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         self.assertNotIn(">13<", body)
 
     @patch("owner_routes.journal_service")
+    def test_test_only_saved_fixture_is_visible_without_a_write_or_member_read(self, journal_service):
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "saved"
+
+        response = self.client.get("/app/journal")
+        body = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        journal_service.list_owner_journal.assert_not_called()
+        self.assertIn('data-evidence-saved="true"', body)
+        self.assertIn('data-composer-view="compose" hidden', body)
+        self.assertIn('data-composer-view="saved">', body)
+        self.assertIn("Moment saved privately", body)
+
+    @patch("owner_routes.journal_service")
     def test_fixture_mode_cannot_be_requested_by_url(self, journal_service):
         app.config["PEERSLATE_JOURNAL_EVIDENCE_FIXTURES"] = False
         journal_service.list_owner_journal.side_effect = fake_list_owner_journal_factory(
@@ -449,6 +463,7 @@ class JournalEvidenceFixtureIsolationTests(unittest.TestCase):
         # The config key is deliberately left true. TESTING=false is the
         # production gate: neither owner can ever enter fixture presentation.
         app.config["TESTING"] = False
+        app.config["PEERSLATE_JOURNAL_EVIDENCE_STATE"] = "saved"
         fixture_title = "I led the first client workshop without reading from my notes."
         real_item = {
             "moment_key": MOMENT_KEY_TEXT,

@@ -558,6 +558,17 @@
         trapFocus(event);
     };
 
+    // The explicit test-only saved visual provider starts on the same saved
+    // markup a confirmed API response reveals. It never writes a Moment or
+    // alters normal runtime behavior; it exists only for reproducible visual
+    // evidence when the local service is intentionally database-free.
+    if (scrim.dataset.evidenceSaved === "true") {
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", onKeydown, true);
+        const evidenceSavedTitle = savedView.querySelector("#journal-saved-title");
+        if (evidenceSavedTitle) evidenceSavedTitle.focus();
+    }
+
     const teardownRecording = () => {
         window.clearInterval(recordingTimerId);
         recordingTimerId = null;

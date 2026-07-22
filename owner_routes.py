@@ -1493,7 +1493,7 @@ def _journal_evidence_fixture_state():
     ):
         return None
     state = current_app.config.get(JOURNAL_EVIDENCE_STATE_CONFIG, "timeline")
-    return state if state in {"timeline", "manage", "empty", "detail"} else "timeline"
+    return state if state in {"timeline", "manage", "empty", "detail", "saved"} else "timeline"
 
 
 def _journal_evidence_fixture_page(state):
@@ -1723,6 +1723,7 @@ def journal():
         rail_nav_label="Journal sections",
         active_chapter="timeline",
         is_evidence_fixture=is_evidence_fixture,
+        is_evidence_saved_state=evidence_state == "saved",
         season_lines=season_lines,
         fixture_member_name="Maya" if is_evidence_fixture else None,
     )
