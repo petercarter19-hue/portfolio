@@ -71,3 +71,19 @@ repeated media path across its concurrently rendered fixtures. The six incoming
 replacements and the later keyboard-components correction are versioned files
 with distinct source lineage, not renamed duplicates, and retired weak legacy
 filenames no longer occur in the active Feed fixture renderer.
+
+## Exact-SHA integrated-page evidence
+
+This document controls production-content assets; it does not treat screenshots
+as product assets. The separate committed Community evidence package at
+`artifacts/ps-community-tabs-001/` contains 15 real integrated-page rasters
+captured from `work/2026-07-21-community-tabs-impl` at
+`8326f2c3aff483f44822ae100d3dc1aedf42d437`.
+
+`EVIDENCE_MANIFEST.json` is their authority. It records each canonical
+route/state/viewport/theme/action, source-browser JFIF stream hash, true-PNG
+file hash, normalized RGBA hash, exact/perceptual duplicate audit, and the
+pixel-preserving JFIF-to-PNG container conversion. The older 11-file Community
+evidence set was stale three-view material and was deleted rather than renamed
+or used as comparison evidence. The current screenshot package contains only
+Feed and The Break; no Saved-page raster is valid or retained.

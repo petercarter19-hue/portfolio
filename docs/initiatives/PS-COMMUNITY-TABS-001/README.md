@@ -1,8 +1,7 @@
 # PS-COMMUNITY-TABS-001 — Community: Feed and The Break
 
-**Status:** ROUND 1 CORRECTION IMPLEMENTED — browser evidence, Pete review,
-manager audit, and fresh dual independent review are pending; not merged or
-live.
+**Status:** exact-SHA browser evidence recovered — Pete review, manager audit,
+and fresh independent review remain pending; not merged or live.
 
 ## Controlling owner decision
 
@@ -23,14 +22,16 @@ keyboard stop, product destination, or saved-fixture claim.
   light concept is superseded and not review authority.
 - `static/images/Mockups/Break Feed.png` is atmosphere/content reference only;
   its old shell, navigation, routes, logo, and unsupported behavior are excluded.
-- `artifacts/ps-community-tabs-001/desktop-1440-light-feed.png` controls
-  current-site Feed shell/grid/rail/footer integration.
+- `artifacts/ps-community-tabs-001/EVIDENCE_MANIFEST.json` controls the
+  current exact-SHA integrated-page capture set: 15 actual Feed/Break rasters,
+  each bound to route/state/viewport/theme/action and file/RGBA hashes. The
+  former stale three-tab evidence set is fully superseded and removed.
 - `visual-authority/ASSET_MANIFEST.md` records every source raster and
   responsive WebP delivery derivative, source lineage, hashes, crop rules,
   transfer budgets, and duplicate audit.
-- `02_QA_EVIDENCE.md` records the corrected implementation SHA, deterministic
-  checks, the superseded-evidence exclusion, and the still-pending exact-SHA
-  browser capture matrix. It does not claim visual acceptance.
+- `02_QA_EVIDENCE.md` records the capture-source SHA, JFIF-to-PNG
+  pixel-preserving lineage, distinct action-state capture, and duplicate audit.
+  It does not claim visual acceptance.
 
 ## Boundaries
 
@@ -49,8 +50,8 @@ keyboard stop, product destination, or saved-fixture claim.
   labeled **My Slate** and the flag-off `/app/journal` route is not exposed.
 - Both existing feature flags remain false. This package does not change
   Journal, Owner Home, auth, shared governance pointers, or backend/API scope.
-- Corrected implementation commit:
-  `e6babaa9c04859c41dadfa83952ffca815c032ce`.
-- Pete must visually review and accept the actual corrected modal/result and
-  representative Feed/Break pages at that exact implementation before the
-  manager audit and fresh dual independent review, and before any PR or merge.
+- Captured implementation commit:
+  `8326f2c3aff483f44822ae100d3dc1aedf42d437`.
+- Pete must visually review and accept the actual Feed/Break pages at that
+  exact implementation before manager audit and fresh independent review, and
+  before any PR or merge.

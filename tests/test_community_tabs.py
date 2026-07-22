@@ -6,15 +6,17 @@ tab, route claim, keyboard stop, or fixture destination.
 """
 
 import hashlib
+import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import unittest
 from itertools import combinations
 
 from app import app
-from PIL import Image
+from PIL import Image, ImageChops, ImageOps
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -594,6 +596,91 @@ class CommunityAssetTests(unittest.TestCase):
                     digest = hashlib.sha256(handle.read()).hexdigest()
                 self.assertNotIn(digest, hashes, f"{name} duplicates {hashes.get(digest)}")
                 hashes[digest] = name
+
+    def test_exact_sha_evidence_manifest_is_complete_and_hash_bound(self):
+        evidence_dir = os.path.join(ROOT, "artifacts", "ps-community-tabs-001")
+        manifest_path = os.path.join(evidence_dir, "EVIDENCE_MANIFEST.json")
+        with open(manifest_path, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+
+        self.assertEqual(
+            manifest["capture_source"]["product_commit"],
+            "8326f2c3aff483f44822ae100d3dc1aedf42d437",
+        )
+        captures = manifest["captures"]
+        self.assertEqual(len(captures), 15)
+        self.assertEqual(manifest["exact_duplicate_audit"]["file_count"], 15)
+        self.assertEqual(manifest["exact_duplicate_audit"]["unique_file_sha256_count"], 15)
+
+        listed_names = {capture["file"] for capture in captures}
+        actual_names = {
+            name for name in os.listdir(evidence_dir)
+            if name.endswith(".png")
+        }
+        self.assertSetEqual(actual_names, listed_names)
+
+        states = {
+            (capture["route"], capture["viewport"], capture["theme"], capture["region"])
+            for capture in captures
+        }
+        for state in (
+            ("/the-slate", "1440x1000", "light", "top"),
+            ("/the-slate", "1440x1000", "dark", "top"),
+            ("/the-slate", "390x844", "light", "top"),
+            ("/the-slate", "390x844", "dark", "top"),
+            ("/the-slate/break", "1440x1000", "light", "top"),
+            ("/the-slate/break", "1440x1000", "light", "lower"),
+            ("/the-slate/break", "1440x1000", "dark", "top"),
+            ("/the-slate/break", "1440x1000", "dark", "lower"),
+            ("/the-slate/break", "390x844", "light", "top"),
+            ("/the-slate/break", "390x844", "light", "lower"),
+            ("/the-slate/break", "390x844", "dark", "top"),
+            ("/the-slate/break", "390x844", "dark", "lower"),
+            ("/the-slate/break", "320x800", "light", "top"),
+            ("/the-slate/break", "320x800", "dark", "top"),
+        ):
+            self.assertIn(state, states)
+
+        action_state = next(
+            capture for capture in captures
+            if capture["file"].startswith("break__route-the-slate__state-feed-keyboard-switch-focus")
+        )
+        self.assertIn("ArrowRight", action_state["action_sequence"])
+        self.assertEqual(action_state["start_route"], "/the-slate")
+        self.assertEqual(action_state["end_route"], "/the-slate/break")
+        self.assertEqual(action_state["route"], "/the-slate/break")
+
+        seen_file_hashes = set()
+        for capture in captures:
+            for key in (
+                "route", "start_state", "action_sequence", "viewport", "theme",
+                "dimensions", "file_sha256", "decoded_rgba_sha256",
+                "canonical_source", "derivative_lineage",
+            ):
+                self.assertIn(key, capture)
+            path = os.path.join(evidence_dir, capture["file"])
+            with open(path, "rb") as handle:
+                data = handle.read()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            file_hash = hashlib.sha256(data).hexdigest()
+            self.assertEqual(file_hash, capture["file_sha256"])
+            self.assertNotIn(file_hash, seen_file_hashes)
+            seen_file_hashes.add(file_hash)
+            with Image.open(path) as source:
+                image = ImageOps.exif_transpose(source).convert("RGBA")
+            self.assertEqual(f"{image.width}x{image.height}", capture["dimensions"])
+            normalized = struct.pack(">II", image.width, image.height) + image.tobytes()
+            self.assertEqual(
+                hashlib.sha256(normalized).hexdigest(),
+                capture["decoded_rgba_sha256"],
+            )
+
+        exception = manifest["perceptual_duplicate_audit"]["declared_semantic_state_exception"]
+        first, second = exception["files"]
+        with Image.open(os.path.join(evidence_dir, first)) as left, Image.open(os.path.join(evidence_dir, second)) as right:
+            difference = ImageChops.difference(left.convert("RGB"), right.convert("RGB"))
+        self.assertIsNotNone(difference.getbbox())
+        self.assertTrue(exception["exact_file_hashes_differ"])
 
     def test_responsive_derivatives_exist_and_stay_within_transfer_budgets(self):
         """Mobile sources stay under 120 KiB and desktop sources under 250 KiB.

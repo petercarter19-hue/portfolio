@@ -17,7 +17,7 @@ reserved shared governance pointers.
 | `visual-authority/owner-approved-dark-break.png` | Primary, owner-approved dark full-page authority | Break hierarchy, material depth, dark palette, imagery, compact/mobile order. |
 | `visual-authority/owner-approved-light-break-2026-07-21.png` | Required light counterpart | The same component structure as the current dark authority in warm-ivory and pale-sage materials; not a separate layout. The older unversioned light concept is superseded and disregarded. |
 | `static/images/Mockups/Break Feed.png` | Atmosphere and content reference only | Retain restorative editorial tone and content grouping; do not inherit its obsolete product shell, logo, nav, routes, or unsupported controls. |
-| `artifacts/ps-community-tabs-001/desktop-1440-light-feed.png` | Current-site integration reference | Preserve the actual signed-in header, profile row, centered Feed grid/gutter, Feed rail, footer, and seam into Break. |
+| `artifacts/ps-community-tabs-001/EVIDENCE_MANIFEST.json` plus its 15 current rasters | Exact-SHA integration evidence | Preserve the actual signed-in header, profile row, centered Feed grid/gutter, Feed rail, footer, seam into Break, dark/light materials, mobile reflow, and keyboard-focus action state. The former screenshot filename is stale and removed. |
 | `static/images/community/break-*.png` | Production imagery | Use the supplied chair/plant, transformation, and bookstore photography in their named roles; no image is a UI screenshot or member record. |
 
 ## Element decisions
