@@ -15,6 +15,7 @@ from flask import (
 
 from identity import AuthenticationRequired, get_current_identity, get_optional_identity
 from services.database_service import DatabaseServiceError
+from services.owner_home_service import OwnerHomeContractError, owner_home_service
 
 
 auth = Blueprint("auth", __name__)
@@ -110,6 +111,10 @@ def session_status():
     )
 
 
+def _owner_home_enabled():
+    return current_app.config.get("PEERSLATE_OWNER_HOME_ENABLED", False) is True
+
+
 @auth.get("/app")
 def owner_workspace():
     try:
@@ -121,11 +126,39 @@ def owner_workspace():
         current_app.logger.error("PeerSlate owner workspace identity lookup failed.")
         return _render_auth_unavailable()
 
+    # PS-HOME-FRONTEND-001: with the flag off, /app is byte-identical to the
+    # released owner workspace fallback below (PEERSLATE_OWNER_HOME_ENABLED
+    # defaults false, so this branch is never taken in current production).
+    if not _owner_home_enabled():
+        return render_template(
+            "owner_workspace.html",
+            page_title="My PeerSlate",
+            member=identity,
+        )
+
+    # Flag on: render the finite Owner Home from the real owner-home.v1 view
+    # model. A contract/database failure still renders the private shell with
+    # an honest complete-failure state and a real safe Capture destination —
+    # it never falls back to the legacy workspace or fabricates data.
+    try:
+        home = owner_home_service.get_home(identity).to_dict()
+        home_failed = False
+    except (DatabaseServiceError, OwnerHomeContractError):
+        current_app.logger.error("PeerSlate Owner Home data is unavailable.")
+        home = None
+        home_failed = True
+
+    # This private owner-specific render must never be stored by a browser or
+    # intermediary.  app.py preserves an explicit response policy while it
+    # continues to provide the legacy no-cache policy for ordinary HTML.
     return render_template(
-        "owner_workspace.html",
-        page_title="My PeerSlate",
+        "owner_home.html",
+        page_title="Owner Home",
         member=identity,
-    )
+        home=home,
+        home_failed=home_failed,
+        standalone_owner_shell=True,
+    ), (503 if home_failed else 200), {"Cache-Control": "private, no-store"}
 
 
 @auth.app_context_processor
@@ -145,4 +178,10 @@ def shared_authentication_state():
         "auth_sign_in_url": url_for("auth.sign_in", return_to="/app"),
         "auth_sign_out_url": url_for("auth.sign_out"),
         "owner_workspace_url": url_for("auth.owner_workspace"),
+        # Default off for every route. Only the flag-on Owner Home render
+        # (PS-HOME-FRONTEND-001) passes standalone_owner_shell=True to
+        # render_template, which overrides this context-processor default
+        # (Flask applies explicit render_template kwargs last). base.html
+        # uses it to bypass the public chrome for that render only.
+        "standalone_owner_shell": False,
     }

@@ -1,7 +1,7 @@
 {# Shared mobile bottom bar for the community shell (Feed + The Break).
    Set `community_active` to 'feed' or 'break' before including. #}
 <nav class="mobile-bottom" aria-label="Community sections">
-    <a class="mobile-nav" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>Journal</span></a>
+    <a class="mobile-nav" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>My Slate</span></a>
     <a class="mobile-nav" href="/slate-board"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-board"/></svg><span>Board</span></a>
     {% if community_active == 'feed' %}
     <button class="mobile-nav" type="button" data-open-voice><span class="capture-fab"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><use href="#i-mic"/></svg></span><span>Capture</span></button>

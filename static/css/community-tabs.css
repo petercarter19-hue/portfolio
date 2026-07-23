@@ -1,0 +1,418 @@
+/* PS-COMMUNITY-TABS-001 — two-view Community integration.
+   The real Feed owns the shell/grid; this file seats The Break in that exact
+   geometry and provides the authority's warm-light and genuine-dark materials. */
+
+.comm-shell {
+  --comm-navy: #172b4d;
+  --comm-sage: #527247;
+  --comm-sage-deep: #294b37;
+  --comm-sage-soft: #e7eee1;
+  --comm-gold: #a56a18;
+  --comm-ivory: #fbf9f4;
+  --comm-paper: #fffdf8;
+  --comm-ink: #17202a;
+  --comm-muted: #5d6872;
+  --comm-line: #e5e1d6;
+  --comm-shadow: 0 14px 35px rgb(47 57 41 / 8%);
+  --indigo: var(--comm-navy);
+  --indigo-strong: #0e1d37;
+  --indigo-soft: #e8edf2;
+  --azure: var(--comm-sage);
+  --cyan: var(--comm-sage);
+  --amber: var(--comm-gold);
+  --ink: var(--comm-ink);
+  --text: #2d3741;
+  --muted: var(--comm-muted);
+  --line: var(--comm-line);
+  --line-soft: #eeeae1;
+  --cloud: var(--comm-ivory);
+  --white: var(--comm-paper);
+  --success: var(--comm-sage);
+  --shadow-1: var(--comm-shadow);
+  --shadow-2: 0 26px 70px rgb(28 43 30 / 15%);
+  background: var(--comm-ivory);
+}
+
+#feed-app [data-tab-panel][hidden] { display: none; }
+
+#feed-app .main { padding-bottom: 76px; }
+#feed-app .page-head { align-items: end; }
+#feed-app .page-title { color: var(--comm-ink); }
+#feed-app .page-subtitle { color: var(--comm-muted); }
+#feed-app .preview-note { color: #71746d; }
+#feed-app .feed-switch { border-color: var(--comm-line); background: rgb(255 253 248 / 86%); box-shadow: 0 8px 24px rgb(47 57 41 / 6%); }
+#feed-app .feed-switch__tab { color: #43505c; min-height: 46px; }
+#feed-app .feed-switch__tab:hover { color: var(--comm-sage-deep); background: var(--comm-sage-soft); }
+#feed-app .feed-switch__tab.active { background: linear-gradient(135deg, #31563d, #607d50); box-shadow: 0 8px 20px rgb(46 84 58 / 22%); }
+#feed-app .feed-switch__tab.active:hover { background: linear-gradient(135deg, #294b37, #527247); }
+
+/* Feed preserves its existing main/rail skeleton; only its surface ties into
+   the warm Community system. */
+#feed-app .composer,
+#feed-app .rail-panel,
+#feed-app .notice,
+#feed-app .voice-player,
+#feed-app .comment-composer { background: rgb(255 253 248 / 92%); }
+#feed-app .rail-title h3,
+#feed-app .post-title,
+#feed-app .author-name { color: var(--comm-ink); }
+
+/* Break keeps Feed's measured 1260px outer shell / 860px primary / 320px
+   rail geometry. The owner authority governs the *internal* primary-column
+   sequence: it is one integrated flow, never a persistent module side rail. */
+#feed-app .break-inner { width: min(100%, 1260px); margin-top: 0; }
+#feed-app .break-embed { margin-top: 0; }
+#feed-app .bk-layout {
+  grid-template-columns: minmax(0, var(--feed-w)) var(--rail-w);
+  gap: 36px;
+  margin-top: 0;
+}
+#feed-app .bk-center { gap: 18px; }
+#feed-app .bk-hero {
+  min-height: 252px;
+  padding: 32px 38px;
+  border-color: #dce4d5;
+  border-radius: 18px;
+  background: linear-gradient(105deg, #edf3e9 0%, #e3ecde 62%, #d5e2ce 100%);
+  box-shadow: var(--comm-shadow);
+}
+#feed-app .bk-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(251 249 244 / 90%) 0%, rgb(251 249 244 / 64%) 37%, transparent 65%);
+}
+#feed-app .bk-hero__copy { position: relative; z-index: 1; max-width: 56%; }
+#feed-app .bk-hero .bk-kicker { margin: 0 0 9px; color: var(--comm-sage); letter-spacing: .03em; }
+#feed-app .bk-hero__copy h2 { color: #1c2b21; font-family: "Newsreader", Georgia, serif; font-size: clamp(1.75rem, 2.2vw, 2.3rem); letter-spacing: -.045em; }
+#feed-app .bk-hero__copy h2 span { color: var(--comm-gold); }
+#feed-app .bk-hero__copy p { color: #405345; font-size: 1rem; line-height: 1.55; }
+#feed-app .bk-hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 76% center;
+}
+
+#feed-app .bk-bento {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+#feed-app .ps-card {
+  border: 1px solid var(--comm-line);
+  border-radius: 16px;
+  background: rgb(255 253 248 / 92%);
+  box-shadow: 0 10px 26px rgb(47 57 41 / 5%);
+}
+#feed-app .bk-card { padding: 21px; }
+#feed-app .bk-card h3,
+#feed-app .bk-mood__head h2,
+#feed-app .bk-pickme__head h2 { color: var(--comm-ink); }
+#feed-app .bk-card h3 { font-family: "Newsreader", Georgia, serif; font-size: 1.45rem; font-weight: 600; letter-spacing: -.025em; }
+#feed-app .bk-card p,
+#feed-app .bk-mood__sub,
+#feed-app .bk-pickme__by,
+#feed-app .bk-quote__by { color: var(--comm-muted); }
+#feed-app .bk-kicker { color: var(--comm-sage); }
+#feed-app .bk-transform {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  display: flex;
+  flex-direction: column;
+}
+#feed-app .bk-transform__main {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(320px, 1.18fr);
+  gap: 22px;
+  align-items: start;
+}
+#feed-app .bk-transform__lead { color: #3c4c42 !important; }
+#feed-app .bk-beforeafter {
+  position: relative;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  aspect-ratio: 1.68 / 1;
+  border: 1px solid #ddd9d0;
+}
+#feed-app .bk-beforeafter img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+#feed-app .bk-beforeafter figcaption { position: absolute; inset: auto 10px 10px; display: flex; justify-content: space-between; color: #fff; font-size: .68rem; font-weight: 800; }
+#feed-app .bk-beforeafter figcaption span { padding: 4px 8px; border-radius: 999px; background: rgb(13 21 18 / 70%); backdrop-filter: blur(8px); }
+#feed-app .bk-beforeafter figcaption span:last-child { background: rgb(52 91 55 / 90%); }
+#feed-app .bk-transform__quote { color: #344238; font-family: "Newsreader", Georgia, serif; font-size: 1.04rem; }
+#feed-app .bk-transform__foot { margin-top: auto; color: var(--comm-muted); font-size: .82rem; }
+#feed-app .bk-avatar { background: var(--comm-sage-soft); color: var(--comm-sage-deep); }
+#feed-app .bk-challenge {
+  grid-column: 1;
+  grid-row: auto;
+  min-height: 218px;
+  grid-template-columns: 1fr;
+  background: linear-gradient(135deg, #fbfcf8, #edf4e9);
+}
+#feed-app .bk-challenge__body { display: flex; flex-direction: column; height: 100%; }
+#feed-app .bk-challenge h3 { margin-top: 10px; }
+#feed-app .bk-static-note { margin: auto 0 0 !important; padding-top: 14px; color: #687466 !important; font-size: .77rem !important; line-height: 1.45; }
+#feed-app .bk-poll {
+  grid-column: 2;
+  grid-row: auto;
+  min-height: 218px;
+}
+#feed-app .bk-pollist { margin: 15px 0 10px; }
+#feed-app .bk-pollist li { min-height: 39px; border: 1px solid #e8e3d9; background: #fffdf9; }
+#feed-app .bk-poll__ic { color: var(--comm-sage-deep); background: var(--comm-sage-soft); }
+#feed-app .bk-poll__label { color: #354137; }
+#feed-app .bk-poll__foot { margin-top: auto !important; }
+#feed-app .bk-local {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  display: grid;
+  grid-template-columns: minmax(0, .83fr) minmax(300px, 1.17fr);
+  column-gap: 22px;
+  align-items: start;
+}
+#feed-app .bk-local .bk-card__top,
+#feed-app .bk-local h3,
+#feed-app .bk-local__place,
+#feed-app .bk-local .bk-static-note { grid-column: 1; }
+#feed-app .bk-local__media {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+}
+#feed-app .bk-local__place { color: #344238 !important; }
+#feed-app .bk-local__media { width: 100%; height: 166px; margin: 0; object-fit: cover; object-position: 58% 48%; border: 1px solid #ded8cc; }
+
+#feed-app .bk-flow { display: grid; gap: 16px; }
+#feed-app .bk-mood,
+#feed-app .bk-quote,
+#feed-app .bk-pickme,
+#feed-app .bk-share { padding: 19px; }
+#feed-app .bk-mood__ic { color: var(--comm-sage-deep); background: var(--comm-sage-soft); }
+#feed-app .bk-moodopt { min-height: 58px; border-color: #e5e0d6; background: #fffdf9; }
+#feed-app .bk-moodopt:hover { border-color: var(--comm-sage); }
+#feed-app .bk-moodopt__txt strong { color: var(--comm-ink); }
+#feed-app .bk-moodopt__txt small { color: var(--comm-muted); }
+#feed-app .bk-moodopt.is-active { border-color: var(--comm-sage); background: linear-gradient(90deg, #e0ebd9, #f5f8f0); }
+#feed-app .bk-moodopt.is-active .bk-moodopt__txt strong,
+#feed-app .bk-moodopt.is-active .bk-chevron { color: var(--comm-sage-deep); border-color: var(--comm-sage-deep); }
+#feed-app .bk-moods { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#feed-app .bk-quote { padding-right: 72px; background: linear-gradient(105deg, #fffdf8, #f1f5eb); }
+#feed-app .bk-quote__mark { color: var(--comm-sage); }
+#feed-app .bk-quote blockquote { color: #27352b; font-family: "Newsreader", Georgia, serif; font-size: 1.23rem; }
+#feed-app .bk-quote__leaf { color: var(--comm-sage); font-size: 2.5rem; line-height: 1; }
+#feed-app .bk-pickme__ic { background: #fff1cf; color: var(--comm-gold); }
+#feed-app .bk-pickme blockquote { color: #334037; }
+#feed-app .bk-share { background: linear-gradient(135deg, #eff5eb, #fafcf7); }
+#feed-app .bk-share__copy strong { color: var(--comm-ink); }
+#feed-app .bk-share__copy small { color: var(--comm-muted); }
+#feed-app .bk-share__spark { color: var(--comm-sage); font-size: 2rem; }
+#feed-app .bk-btn { min-height: 44px; border-radius: 11px; }
+#feed-app .bk-btn--outline { border-color: var(--comm-sage); background: rgb(255 253 248 / 70%); color: var(--comm-sage-deep); }
+#feed-app .bk-btn--outline:hover { background: var(--comm-sage-soft); }
+#feed-app .bk-band { margin-top: 22px; border-color: #d4e0cf; background: linear-gradient(105deg, #e7f0e1, #d7e6ce); box-shadow: var(--comm-shadow); }
+#feed-app .bk-band__leaf { color: var(--comm-sage); font-size: 2.3rem; text-align: center; }
+#feed-app .bk-band__copy strong { color: #273b2d; font-family: "Newsreader", Georgia, serif; }
+#feed-app .bk-band__copy small { color: #4a614e; }
+
+/* Dark is a complete composition, not a white page beneath dark chrome. */
+body[data-theme="dark"].community-tabs-page .main-content,
+body[data-theme="dark"].community-tabs-page .comm-shell { background: #06111c; }
+body[data-theme="dark"].community-tabs-page .site-sky {
+  background: radial-gradient(70rem 34rem at 92% -7rem, rgb(103 135 77 / 16%), transparent 57%), linear-gradient(180deg, #081421 0%, #05101a 72%, #06111c 100%);
+}
+body[data-theme="dark"] #feed-app {
+  --comm-ivory: #06111c;
+  --comm-paper: #0c1924;
+  --comm-ink: #f3efe5;
+  --comm-muted: #b4c0c2;
+  --comm-line: rgb(180 203 186 / 18%);
+  --comm-shadow: 0 18px 44px rgb(0 0 0 / 31%);
+  --indigo: #96bb76;
+  --indigo-strong: #bbd597;
+  --indigo-soft: rgb(145 183 112 / 15%);
+  --azure: #a5ca86;
+  --cyan: #a5ca86;
+  --amber: #e1b75b;
+  --ink: #f3efe5;
+  --text: #e3e9e3;
+  --muted: #aab7b4;
+  --line: rgb(180 203 186 / 18%);
+  --line-soft: rgb(180 203 186 / 11%);
+  --cloud: #06111c;
+  --white: #0c1924;
+  --success: #a5ca86;
+  background: #06111c;
+}
+body[data-theme="dark"] #feed-app .page-title,
+body[data-theme="dark"] #feed-app .rail-title h3,
+body[data-theme="dark"] #feed-app .post-title,
+body[data-theme="dark"] #feed-app .author-name { color: #f3efe5; }
+body[data-theme="dark"] #feed-app .page-subtitle,
+body[data-theme="dark"] #feed-app .preview-note { color: #b4c0c2; }
+body[data-theme="dark"] #feed-app .feed-switch { background: rgb(12 25 36 / 92%); border-color: rgb(184 207 185 / 21%); box-shadow: 0 12px 34px rgb(0 0 0 / 26%); }
+body[data-theme="dark"] #feed-app .feed-switch__tab { color: #dbe3db; }
+body[data-theme="dark"] #feed-app .feed-switch__tab:hover { color: #f2f5ea; background: rgb(134 170 105 / 14%); }
+body[data-theme="dark"] #feed-app .feed-switch__tab.active { background: linear-gradient(135deg, #2f5138, #577245); color: #fff; box-shadow: 0 9px 24px rgb(0 0 0 / 28%); }
+body[data-theme="dark"] #feed-app .composer,
+body[data-theme="dark"] #feed-app .rail-panel,
+body[data-theme="dark"] #feed-app .notice,
+body[data-theme="dark"] #feed-app .voice-player,
+body[data-theme="dark"] #feed-app .comment-composer,
+body[data-theme="dark"] #feed-app .pill-btn { background: #0c1924; border-color: rgb(184 207 185 / 18%); color: #dce5dc; }
+body[data-theme="dark"] #feed-app .post-copy,
+body[data-theme="dark"] #feed-app .author-meta,
+body[data-theme="dark"] #feed-app .post-linkline,
+body[data-theme="dark"] #feed-app .rail-sub { color: #b4c0c2; }
+/* Feed actions sit directly on the #06111c Community canvas. Keep every
+   normal-text state above 4.5:1 instead of inheriting the light preview's
+   low-contrast indigo/grey palette. The Listen CTA uses an opaque surface so
+   its effective background is deterministic in both the rail and tests. */
+body[data-theme="dark"].community-tabs-page #feed-app .actions { color: #c3ced0; }
+body[data-theme="dark"].community-tabs-page #feed-app .action:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .action:focus-visible { color: #f3efe5; }
+body[data-theme="dark"].community-tabs-page #feed-app .action.primary-action { color: #b3d793; }
+body[data-theme="dark"].community-tabs-page #feed-app .action.primary-action:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .action.primary-action:focus-visible,
+body[data-theme="dark"].community-tabs-page #feed-app .action[aria-pressed="true"] { color: #d0e5b2; }
+body[data-theme="dark"].community-tabs-page #feed-app .action:disabled {
+  color: #aeb9bb;
+  opacity: 1;
+}
+body[data-theme="dark"].community-tabs-page #feed-app .respond-option {
+  border-color: rgb(184 207 185 / 24%);
+  background: #0c1924;
+  color: #c3ced0;
+}
+body[data-theme="dark"].community-tabs-page #feed-app .respond-option:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .respond-option:focus-visible { background: #132633; color: #f3efe5; }
+body[data-theme="dark"].community-tabs-page #feed-app .respond-option[aria-pressed="true"] { background: #b3d793; border-color: #b3d793; color: #0b0c0e; }
+body[data-theme="dark"].community-tabs-page #feed-app .respond-option:disabled { background: #0c1924; color: #aeb9bb; opacity: 1; }
+body[data-theme="dark"].community-tabs-page #feed-app .rail-cta { background: #d8a928; color: #0b0c0e; }
+body[data-theme="dark"].community-tabs-page #feed-app .rail-cta:hover,
+body[data-theme="dark"].community-tabs-page #feed-app .rail-cta:focus-visible { background: #e3b83a; color: #0b0c0e; }
+body[data-theme="dark"].community-tabs-page #feed-app .rail-cta:disabled { background: #6b5a2d; color: #f3efe5; opacity: 1; }
+body[data-theme="dark"] #feed-app .ps-card { background: linear-gradient(145deg, rgb(14 28 39 / 98%), rgb(8 19 29 / 98%)); border-color: rgb(184 207 185 / 17%); box-shadow: 0 14px 36px rgb(0 0 0 / 27%); }
+body[data-theme="dark"] #feed-app .bk-hero { border-color: rgb(175 204 146 / 25%); background: #10251e; }
+body[data-theme="dark"] #feed-app .bk-hero::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgb(7 20 25 / 94%) 0%, rgb(7 20 25 / 75%) 39%, rgb(7 20 25 / 12%) 72%, rgb(7 20 25 / 6%)); }
+body[data-theme="dark"] #feed-app .bk-hero::after { display: none; }
+body[data-theme="dark"] #feed-app .bk-hero__copy { z-index: 2; }
+body[data-theme="dark"] #feed-app .bk-hero__copy h2 { color: #f7f2e7; }
+body[data-theme="dark"] #feed-app .bk-hero__copy p { color: #d0ddd2; }
+/* The light sage is the approved hero accent and remains readable at the
+   lower-card kicker size; SVG icons inherit the same currentColor. */
+body[data-theme="dark"] #feed-app .bk-kicker { color: #b3d793; }
+body[data-theme="dark"] #feed-app .bk-card h3,
+body[data-theme="dark"] #feed-app .bk-mood__head h2,
+body[data-theme="dark"] #feed-app .bk-pickme__head h2,
+body[data-theme="dark"] #feed-app .bk-moodopt__txt strong,
+body[data-theme="dark"] #feed-app .bk-share__copy strong { color: #f3efe5; }
+body[data-theme="dark"] #feed-app .bk-card p,
+body[data-theme="dark"] #feed-app .bk-mood__sub,
+body[data-theme="dark"] #feed-app .bk-moodopt__txt small,
+body[data-theme="dark"] #feed-app .bk-pickme__by,
+body[data-theme="dark"] #feed-app .bk-quote__by { color: #b7c4bf; }
+body[data-theme="dark"] #feed-app .bk-transform__lead,
+body[data-theme="dark"] #feed-app .bk-transform__quote,
+body[data-theme="dark"] #feed-app .bk-pickme blockquote,
+body[data-theme="dark"] #feed-app .bk-quote blockquote { color: #edf0e9 !important; }
+body[data-theme="dark"] #feed-app .bk-challenge,
+body[data-theme="dark"] #feed-app .bk-share { background: linear-gradient(135deg, #122c23, #0c1c21); }
+body[data-theme="dark"] #feed-app .bk-pollist li,
+body[data-theme="dark"] #feed-app .bk-moodopt { background: rgb(18 31 40 / 88%); border-color: rgb(184 207 185 / 15%); }
+body[data-theme="dark"] #feed-app .bk-poll__ic { background: rgb(134 170 105 / 16%); color: #c5e3a6; }
+body[data-theme="dark"] #feed-app .bk-poll__label { color: #e6ece4; }
+body[data-theme="dark"] #feed-app .bk-local__place { color: #e6ece4 !important; }
+body[data-theme="dark"] #feed-app .bk-local__place small { color: #b7c4bf; }
+body[data-theme="dark"] #feed-app .bk-moodopt.is-active { background: linear-gradient(90deg, #264832, #1c3026); border-color: #719557; }
+body[data-theme="dark"] #feed-app .bk-moodopt.is-active .bk-moodopt__txt strong,
+body[data-theme="dark"] #feed-app .bk-moodopt.is-active .bk-chevron { color: #d0e5b2; border-color: #d0e5b2; }
+body[data-theme="dark"] #feed-app .bk-poll__foot { color: #b7c4bf !important; }
+body[data-theme="dark"] #feed-app .bk-static-note { color: #b7c4bf !important; }
+body[data-theme="dark"] #feed-app .bk-quote { background: linear-gradient(105deg, #0e221e, #14251e); }
+body[data-theme="dark"] #feed-app .bk-quote__mark,
+body[data-theme="dark"] #feed-app .bk-quote__leaf { color: #b7d68e; }
+body[data-theme="dark"] #feed-app .bk-pickme__ic { background: rgb(225 183 91 / 14%); color: #e8c66e; }
+body[data-theme="dark"] #feed-app .bk-btn--outline { border-color: #86ad68; background: rgb(8 20 25 / 66%); color: #d5e8b8; }
+body[data-theme="dark"] #feed-app .bk-btn--outline:hover { background: rgb(134 170 105 / 20%); }
+body[data-theme="dark"] #feed-app .bk-band { border-color: rgb(175 204 146 / 26%); background: linear-gradient(105deg, #1c3727, #253f2d); }
+body[data-theme="dark"] #feed-app .bk-band__copy strong { color: #f2f3e9; }
+body[data-theme="dark"] #feed-app .bk-band__copy small { color: #c0cfbd; }
+
+/* Feed needs its real catch-up rail at the 1078px regression width. The
+   inherited preview collapses it below 1100px; Community instead lets its
+   main column shrink beside a 270px rail, with no overlap or clipping. */
+@media (min-width: 900px) and (max-width: 1120px) {
+  #feed-app .main-inner { width: 100%; }
+  #feed-app .content-grid {
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 24px;
+  }
+  #feed-app .context-rail { display: block; }
+}
+
+@media (max-width: 1120px) {
+  #feed-app .bk-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 700px) {
+  #feed-app .main { padding-bottom: 56px; }
+  #feed-app .page-head { padding: 18px 17px 14px; }
+  #feed-app .page-title { font-size: 2.5rem; }
+  #feed-app .feed-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-top: 16px; }
+  #feed-app .feed-switch__tab { justify-content: center; min-width: 0; padding: 0 11px; }
+  #feed-app .break-inner { width: 100%; }
+  #feed-app .bk-layout { gap: 16px; }
+  #feed-app .bk-center { gap: 14px; }
+  #feed-app .bk-hero { min-height: 260px; padding: 25px 20px; border-radius: 15px; }
+  #feed-app .bk-hero__copy { max-width: 66%; }
+  #feed-app .bk-hero__copy h2 { font-size: 2rem; }
+  #feed-app .bk-hero__copy p { font-size: .91rem; }
+  #feed-app .bk-bento { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  #feed-app .bk-transform,
+  #feed-app .bk-challenge,
+  #feed-app .bk-poll,
+  #feed-app .bk-local { grid-column: 1; grid-row: auto; }
+  #feed-app .bk-transform__main,
+  #feed-app .bk-local { grid-template-columns: 1fr; }
+  #feed-app .bk-beforeafter { margin-top: 14px; aspect-ratio: 1.45 / 1; }
+  #feed-app .bk-card { padding: 18px; }
+  #feed-app .bk-challenge { min-height: auto; }
+  #feed-app .bk-poll { min-height: auto; }
+  #feed-app .bk-local .bk-card__top,
+  #feed-app .bk-local h3,
+  #feed-app .bk-local__place,
+  #feed-app .bk-local .bk-static-note,
+  #feed-app .bk-local__media { grid-column: 1; grid-row: auto; }
+  #feed-app .bk-local__media { height: 190px; margin-top: 3px; object-position: 55% 48%; }
+  #feed-app .bk-moods { grid-template-columns: 1fr; }
+  #feed-app .bk-mood,
+  #feed-app .bk-quote,
+  #feed-app .bk-pickme,
+  #feed-app .bk-share { padding: 18px; }
+  #feed-app .bk-band { margin: 18px 0 0; padding: 19px; align-items: flex-start; flex-wrap: wrap; }
+  #feed-app .bk-band__leaf { display: none; }
+  #feed-app .bk-band .bk-btn { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 360px) {
+  /* At 320px the inherited 20px platform-link gap technically fits but
+     leaves only ~3px after “Interview Studio,” visibly clipping its final
+     glyph. Keep the real shared header labels inside a readable gutter. */
+  body.slate-light.the-slate-page .platform-nav__links { gap: 12px; }
+  #feed-app .page-head { padding-inline: 14px; }
+  #feed-app .feed-switch { gap: 4px; padding: 4px; }
+  #feed-app .feed-switch__tab { font-size: .78rem; gap: 5px; }
+  #feed-app .bk-hero__copy { max-width: 74%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comm-shell *, .comm-shell *::before, .comm-shell *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

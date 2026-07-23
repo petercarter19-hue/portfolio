@@ -1,0 +1,31 @@
+{# Page-scoped mobile bottom nav (U3, parity row 14). Exactly one bottom
+   nav renders on this route; the global mobile-tabbar and mobile-nav.js
+   are fully suppressed by the standalone_owner_shell conditional in
+   base.html. Home and Capture are real; Journal, Slate, and More are
+   visibly disabled Coming later items with no route or handler. #}
+{% set capture_destination = (home.capture_action.destination if home and home.capture_action else None) or '/app/capture' %}
+<nav class="oh-bottomnav" aria-label="Owner Home mobile navigation">
+    <a class="oh-bottomnav__item oh-bottomnav__item--current" href="{{ url_for('auth.owner_workspace') }}" aria-current="page">
+        <span aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"></path><path d="M6 10v9h12v-9"></path></svg></span>
+        <span>Home</span>
+    </a>
+    <span class="oh-bottomnav__item">
+        <span aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l3 3v13H6z"></path><path d="M9 9h6M9 13h6"></path></svg></span>
+        <span>Journal</span>
+        <span class="oh-bottomnav__soon">Coming later</span>
+    </span>
+    <a class="oh-bottomnav__item oh-bottomnav__item--capture" href="{{ capture_destination }}">
+        <span aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h4l1.5-2h5L16 7h4v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg></span>
+        <span>Capture</span>
+    </a>
+    <span class="oh-bottomnav__item">
+        <span aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M4 10h16"></path></svg></span>
+        <span>Slate</span>
+        <span class="oh-bottomnav__soon">Coming later</span>
+    </span>
+    <span class="oh-bottomnav__item">
+        <span aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg></span>
+        <span>More</span>
+        <span class="oh-bottomnav__soon">Coming later</span>
+    </span>
+</nav>

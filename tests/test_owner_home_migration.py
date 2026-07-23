@@ -142,8 +142,17 @@ class OwnerHomeMigrationTests(unittest.TestCase):
         self.assertEqual(database_source.count('"usp_GetOwnerHomeForOwner"'), 1)
         self.assertIn("PEERSLATE_OWNER_HOME_ENABLED", app_source)
         self.assertIn('@owner.get("/api/v1/owner/home")', route_source)
-        self.assertNotIn("PEERSLATE_OWNER_HOME_ENABLED", auth_source)
-        self.assertNotIn("owner_home.html", auth_source)
+        # PS-HOME-BACKEND-001 itself did not touch auth_routes.py or select
+        # owner_home.html (asserted below unchanged: owner_routes.py stays
+        # the sole owner of the JSON procedure/config wiring). The now-
+        # released PS-HOME-FRONTEND-001 is the explicitly authorized package
+        # that adds the minimal flag-on owner_home.html template selection
+        # to auth_routes.py (SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md §1);
+        # this assertion was updated from assertNotIn to assertIn to match
+        # that accepted, in-scope frontend change rather than the earlier
+        # "frontend has not started yet" state.
+        self.assertIn("PEERSLATE_OWNER_HOME_ENABLED", auth_source)
+        self.assertIn("owner_home.html", auth_source)
 
 
 @unittest.skipUnless(

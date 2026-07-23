@@ -13,7 +13,7 @@
 {% endif %}
 <nav class="nav" aria-label="Community sections">
     <div class="nav-section-label" aria-hidden="true">Slate</div>
-    <a class="nav-item" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>Journal</span></a>
+    <a class="nav-item" href="/the-slate/my-slate"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-journal"/></svg><span>My Slate</span></a>
     <a class="nav-item{% if community_active == 'feed' %} active{% endif %}" href="{{ url_for('feed_living_stream') }}"{% if community_active == 'feed' %} aria-current="page"{% endif %}><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-feed"/></svg><span>Feed</span></a>
     <a class="nav-item{% if community_active == 'break' %} active{% endif %}" href="/the-slate/break"{% if community_active == 'break' %} aria-current="page"{% endif %}><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-cup"/></svg><span>The Break</span></a>
     <a class="nav-item" href="/slate-board"><svg class="icon" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use href="#i-board"/></svg><span>Board</span></a>

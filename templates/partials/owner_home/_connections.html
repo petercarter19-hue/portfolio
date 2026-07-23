@@ -1,0 +1,12 @@
+{% import "partials/owner_home/_oh_macros.html" as ohm %}
+{# Connections (parity row 11) — quiet relationship surface. Always dormant
+   in this release. No person, avatar, count, request, message, or
+   activity is ever rendered here. #}
+<section class="oh__card" aria-labelledby="oh-connections-title">
+    <div class="oh__card-head">
+        <h2 id="oh-connections-title">Connections</h2>
+        <span class="oh-pill oh-pill--soon">Coming later</span>
+    </div>
+    <span class="oh__ring" aria-hidden="true"></span>
+    {{ ohm.oh_coming_later("Connections", "A permitted relationship update can appear only after owner-controlled Connections are available.") }}
+</section>

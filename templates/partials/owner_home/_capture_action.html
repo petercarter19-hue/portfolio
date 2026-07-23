@@ -1,0 +1,51 @@
+{# Capture — the one dominant Home action (parity row 4). Always a real
+   link to the actual protected destination the server returned; never
+   Voice, a fixture, or a client-only control. On a complete Home-data
+   failure the destination falls back to the static, independently known
+   "/app/capture" route (not derived from the failed payload), matching the
+   authority's complete-failure evidence: Capture stays available because
+   its destination does not depend on the failed read. #}
+{% set cap = home.capture_action if home else None %}
+<div class="oh__capture">
+    {% if cap and cap.availability and cap.availability.state != 'available' %}
+    <div class="oh__capture-card oh__capture-card--unavailable">
+        <span class="oh__capture-label">Capture is temporarily unavailable.</span>
+        <p class="oh__capture-desc">Try again, or come back to Owner Home in a moment.</p>
+        <a class="oh__btn oh__btn--ghost" href="{{ url_for('auth.owner_workspace') }}">Retry</a>
+    </div>
+    {% else %}
+    {% set destination = cap.destination if cap else '/app/capture' %}
+    {% set label = cap.label if cap else 'Capture something' %}
+    <a class="oh__capture-card" href="{{ destination }}">
+        <span class="oh__capture-icon" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h4l1.5-2h5L16 7h4v12H4z"></path>
+                <circle cx="12" cy="13" r="3.5"></circle>
+            </svg>
+        </span>
+        <span class="oh__capture-body">
+            {# Fix round 1, delta 4: the authority (baseline mockup + candidate
+               31864e4) titles the one dominant Home action "Capture a Moment";
+               `label` is the server-owned owner_home_service copy
+               ("Capture something" today) and this package may not edit
+               services/**. Show the fixed authority headline.
+               Fix round 2, delta 3: an aria-label here previously overrode
+               this span's accessible name with the raw server label, so
+               name-from-content assistive tech would announce "Capture
+               something..." instead of the visible "Capture a Moment" —
+               a WCAG 2.5.3 Label-in-Name mismatch. The link's accessible
+               name now comes from its own visible text ("Capture a Moment"),
+               matching the authority headline exactly. `data-oh-server-label`
+               keeps the server's current copy observable in the DOM (for
+               future-drift debugging) without affecting the accessible name,
+               since data-* attributes are never exposed by name-from-content
+               or aria-label computation. #}
+            <span class="oh__capture-label" data-oh-server-label="{{ label }}">Capture a Moment</span>
+            <span class="oh__capture-desc">Save a memory, thought, or milestone &mdash; Speak or Type.</span>
+        </span>
+        <span class="oh__capture-arrow" aria-hidden="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </span>
+    </a>
+    {% endif %}
+</div>

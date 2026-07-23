@@ -1,13 +1,31 @@
 /* PS-FEED-001 — Living Stream Feed prototype (Fable).
    Connected clickable states for the approved Feed Vision Handoff v1.
    Everything here is fixture/demo data shaped like specs/feed_content_contract.json.
-   Nothing is persisted; publishing only updates the in-page fixture stream. */
+   Nothing is persisted; adding a preview only updates the in-page fixture stream. */
 (function () {
   'use strict';
 
   var APP_ROOT = document.getElementById('feed-app');
+  var FOCUS_LIFECYCLE = window.PeerSlateCommunityFocus;
   var ASSET_BASE = (APP_ROOT && APP_ROOT.getAttribute('data-asset-base')) || '/static/images/feed';
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MEDIA_DIMENSIONS = {
+    'dinner_served.jpg': [2000, 1500],
+    'feed-workflow-whiteboard-2026-07-21.png': [1672, 941],
+    'feed-surf-sunrise-2026-07-21.png': [1672, 941],
+    'feed-team-demo-2026-07-21.png': [1672, 941],
+    'feed-trail-run-2026-07-21.png': [1672, 941],
+    'feed-coffee-notes-2026-07-21.png': [1672, 941],
+    'feed-keyboard-build-2026-07-21.png': [1672, 941],
+    'feed-keyboard-components-2026-07-21.png': [1672, 941],
+    'feed-mountain-hike-2026-07-21.png': [1122, 1402],
+    'feed-prototype-table-2026-07-21.png': [1672, 941],
+    'feed-workflow-closeup-2026-07-21.png': [1672, 941],
+    'feed-workflow-corkboard-2026-07-21.png': [1672, 941],
+    'feed-surf-wave-2026-07-21.png': [1672, 941],
+    'feed-journal-notebook-2026-07-21.png': [1672, 941],
+    'feed-mountain-ridge-2026-07-21.png': [1672, 941]
+  };
 
   /* The site's sticky global header (nav + slim sub-header) owns the top of
      every page; measure its real height so the community sidebar and Catch
@@ -59,7 +77,7 @@
       id: 'p-pete-dinner', initials: 'PC', color: 'pc', name: 'Pete Carter',
       kind: 'Personal moment', dot: 'amber', time: 'Just now', audience: 'Connections',
       title: 'Dinner has been served!',
-      image: 'dinner_served.jpg', badge: 'Outside work',
+      image: 'dinner_served.jpg', badge: 'Outside work', priority: 'high',
       alt: 'A candlelit dinner table set for two — lasagna on gray plates, woven placemats, a striped runner, roses in a vase, and a handwritten Carter’s Kitchen menu.'
     },
     {
@@ -67,8 +85,8 @@
       kind: 'Work update', dot: '', time: '2h', audience: 'Connections',
       title: 'The design review finally clicked today.',
       copy: 'We stopped debating screens and mapped the actual handoff. That one change made the entire workflow easier to explain—and much easier to build.',
-      image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-      alt: 'Danielle pointing at a whiteboard covered in workflow sketches during a design review.',
+      image: 'feed-workflow-whiteboard-2026-07-21.png', badge: 'Project Phoenix',
+      alt: 'Two illustrative teammates mapping a product workflow on a glass board during a design review.',
       linkline: '▣ &nbsp; From Danielle’s Journal &nbsp;·&nbsp; <strong>Linked to Project Phoenix</strong>'
     },
     {
@@ -76,8 +94,8 @@
       kind: 'Personal moment', dot: 'amber', time: '4h', audience: 'Community',
       title: 'Got in the water before the workday.',
       copy: 'I’m not calling it balance yet, but this was a pretty good start.',
-      image: 'surf_morning.jpg', badge: 'Video · Outside work', video: true, duration: '0:38',
-      alt: 'A surfer riding a small wave at sunrise before work.'
+      image: 'feed-surf-sunrise-2026-07-21.png', badge: 'Video · Outside work', video: true, duration: '0:38',
+      alt: 'An illustrative surfer walking toward a sunrise beach with a board before work.'
     },
     {
       id: 'p-aisha-meeting', initials: 'AP', color: 'ap', name: 'Aisha Patel',
@@ -91,31 +109,31 @@
       kind: 'Personal moment', dot: 'amber', time: '6h', audience: 'Community',
       title: 'Sunday reset, above the clouds.',
       copy: 'No laptop, no notifications — just the trail. Monday me says thank you.',
-      image: 'mountain_walk.jpg', frame: 'polaroid', polaroidCaption: 'above the clouds · Sunday',
-      alt: 'A walker on a mountain ridge trail above a sea of clouds.'
+      image: 'feed-mountain-hike-2026-07-21.png', frame: 'polaroid', polaroidCaption: 'above the clouds · Sunday',
+      alt: 'An illustrative hiker walking a mountain trail toward a bright valley.'
     },
     {
       id: 'p-alex-demo', initials: 'AK', color: 'ak', name: 'Alex Kim',
       kind: 'Work update', dot: '', time: '7h', audience: 'Connections',
       title: 'Two-minute demo of the new onboarding flow.',
       copy: 'Recorded right after the standup — rough cut, real reactions.',
-      image: 'team_video.jpg', badge: 'Video', video: true, duration: '1:47', frame: 'film',
-      alt: 'A team gathered around a laptop recording a product demo.'
+      image: 'feed-team-demo-2026-07-21.png', badge: 'Video', video: true, duration: '1:47', frame: 'film',
+      alt: 'Three illustrative teammates reviewing a product model beside a laptop.'
     },
     {
       id: 'p-marcus-5k', initials: 'MR', color: 'mr', name: 'Marcus Rivera',
       kind: 'Milestone', dot: 'green', time: '9h', audience: 'Community',
       title: '5k before standup — a new personal record. 🎉',
       copy: 'Three months ago I couldn’t run a mile without stopping. Small steps, every day.',
-      image: 'trail_run.jpg', badge: 'Milestone',
-      alt: 'A runner on a forest trail in early morning light.'
+      image: 'feed-trail-run-2026-07-21.png', badge: 'Milestone',
+      alt: 'An illustrative runner pausing on a hillside trail at sunrise.'
     },
     {
       id: 'p-aisha-notes', initials: 'AP', color: 'ap', name: 'Aisha Patel',
       kind: 'Personal moment', dot: 'amber', time: 'Yesterday', audience: 'Community',
       title: 'Saturday morning: coffee, a pen, and zero meetings.',
-      image: 'coffee_notes.jpg', frame: 'polaroid', polaroidCaption: 'the good kind of planning',
-      alt: 'A coffee cup beside a notebook of handwritten weekend notes.'
+      image: 'feed-coffee-notes-2026-07-21.png', frame: 'polaroid', polaroidCaption: 'the good kind of planning',
+      alt: 'An illustrative coffee and open planning notebook on a wooden table.'
     }
   ];
 
@@ -125,8 +143,8 @@
       kind: 'Personal project', dot: 'green', time: '46m', audience: 'Community',
       title: 'The keyboard build is finally alive.',
       copy: 'It took three soldering attempts and one very patient Saturday, but every key works. I learned more about debugging from this than I expected.',
-      gallery: ['keyboard_build.jpg', 'coffee_notes.jpg', 'office_prototype.jpg'],
-      galleryAlts: ['A custom mechanical keyboard mid-assembly.', 'Coffee beside handwritten build notes.', 'A prototype laid out on an office desk.'],
+      gallery: ['feed-keyboard-build-2026-07-21.png', 'feed-journal-notebook-2026-07-21.png', 'feed-keyboard-components-2026-07-21.png'],
+      galleryAlts: ['An illustrative custom mechanical keyboard mid-assembly.', 'An illustrative open planning notebook beside tea and a pen.', 'A distinct illustrative close-up of tactile mechanical keyboard components and hands at a workbench.'],
       linkline: '▣ &nbsp; 3 photos &nbsp;·&nbsp; Personal project'
     },
     {
@@ -134,8 +152,8 @@
       kind: 'Project update', dot: '', time: '3h', audience: 'Connections',
       title: 'A few screens from today’s prototype review.',
       copy: 'The final layout is simpler than the version we started with. That is the point.',
-      gallery: ['office_prototype.jpg', 'whiteboard_close.jpg', 'work_whiteboard.jpg'],
-      galleryAlts: ['A prototype laid out on an office desk.', 'A close-up of whiteboard workflow notes.', 'Danielle pointing at a whiteboard workflow sketch.'],
+      gallery: ['feed-prototype-table-2026-07-21.png', 'feed-workflow-closeup-2026-07-21.png', 'feed-workflow-corkboard-2026-07-21.png'],
+      galleryAlts: ['An illustrative team reviewing a tangible prototype at a shared table.', 'An illustrative hand arranging a visual workflow on glass.', 'An illustrative team reviewing a corkboard workflow.'],
       linkline: '▣ &nbsp; Project Phoenix · 3 photos'
     }
   ];
@@ -146,16 +164,16 @@
       kind: 'Personal moment', dot: 'amber', time: '38 min', audience: 'Connections',
       title: 'Morning surf before the workday.',
       copy: 'Not everything worth remembering happens at a desk.',
-      image: 'surf_morning.jpg', badge: 'Video', video: true, duration: '0:38',
-      alt: 'A surfer riding a small wave at sunrise before work.'
+      image: 'feed-surf-wave-2026-07-21.png', badge: 'Video', video: true, duration: '0:38',
+      alt: 'An illustrative surfer riding a wave at sunrise before work.'
     },
     {
       id: 'p-danielle-walkthrough', initials: 'DM', color: 'dm', name: 'Danielle Morgan',
       kind: 'Work update', dot: '', time: '2h', audience: 'Connections',
       title: 'The handoff no longer needs a walkthrough.',
       copy: 'We reduced the number of choices, exposed the owner at each step, and made the next action obvious.',
-      image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-      alt: 'Danielle pointing at a whiteboard covered in workflow sketches.'
+      image: 'feed-workflow-corkboard-2026-07-21.png', badge: 'Project Phoenix',
+      alt: 'An illustrative team reviewing a corkboard workflow.'
     }
   ];
 
@@ -166,8 +184,8 @@
       kind: 'Project update', dot: '', time: '2h', audience: 'Connections',
       title: 'We finally have a prototype people can understand without a walkthrough.',
       copy: 'The breakthrough was removing choices, not adding features.',
-      gallery: ['office_prototype.jpg', 'whiteboard_close.jpg', 'work_whiteboard.jpg'],
-      galleryAlts: ['A prototype laid out on an office desk.', 'A close-up of whiteboard workflow notes.', 'Danielle pointing at a whiteboard workflow sketch.']
+      gallery: ['feed-prototype-table-2026-07-21.png', 'feed-workflow-closeup-2026-07-21.png', 'feed-workflow-corkboard-2026-07-21.png'],
+      galleryAlts: ['An illustrative team reviewing a tangible prototype at a shared table.', 'An illustrative hand arranging a visual workflow on glass.', 'An illustrative team reviewing a corkboard workflow.']
     }
   ];
 
@@ -176,8 +194,8 @@
     kind: 'Work update', dot: '', time: '1h', audience: 'Connections',
     title: 'We changed the handoff after today’s review.',
     copy: 'The team was not asking for more documentation. They needed one clear decision point and a visible owner. That is what we are testing next.',
-    image: 'work_whiteboard.jpg', badge: 'Project Phoenix',
-    alt: 'Danielle pointing at a whiteboard covered in workflow sketches.'
+    image: 'feed-workflow-corkboard-2026-07-21.png', badge: 'Project Phoenix',
+    alt: 'An illustrative team reviewing a corkboard workflow.'
   };
 
   var DETAIL_COMMENTS = [
@@ -204,7 +222,7 @@
 
   var PROPOSAL = {
     reviewTitle: 'The handoff finally became clear.',
-    publishTitle: 'We removed choices and the workflow finally clicked.',
+    previewTitle: 'We removed choices and the workflow finally clicked.',
     copy: 'We stopped debating screens and mapped the actual handoff. That one decision made the workflow easier to explain—and easier to build.'
   };
 
@@ -228,15 +246,16 @@
     draft: {
       transcript: TRANSCRIPT_FULL,
       audience: 'community',
-      /* Connect-to targets are the member's own places (Pete, 2026-07-17). */
-      connections: { story: false, board: false, resume: false },
       /* Attachments: photo/video/doc/audio, with member-chosen frames. */
       attach: { photo: false, photoFrame: 'standard', video: false, videoFrame: 'standard', doc: false, audio: false, audioDuration: '0:41' },
       aiStep: false
     },
     reactions: {},                // postId -> true
+    // Per-post action state for this rendered Feed only. It never selects or
+    // exposes a separate Community destination.
     saves: {},                    // postId -> true
-    publishedPosts: [],           // fixture posts added through the publish flow
+    previewPosts: [],             // fixture posts added to this in-page preview
+    highlightPreview: false,
     detailExtraComments: []
   };
 
@@ -246,15 +265,14 @@
   var pageTitle = document.getElementById('pageTitle');
   var pageSubtitle = document.getElementById('pageSubtitle');
   var overlayRoot = document.getElementById('overlayRoot');
-  /* The old For You / Following tablist is gone — the .feed-tab elements are
-     now plain links that switch between community views (People & Interests,
-     Feed, The Break). No JS needed for them. */
+  /* Community view switching belongs to community-tabs.js. Feed only owns
+     this panel's established stream and composer interactions. */
 
   /* ---------- render helpers (ported from the handoff build script) ---------- */
 
   function composerHTML(text) {
     return '<div class="composer">' + avatar('PC', 'pc', 'sm') +
-      '<button class="composer-input" type="button" data-open-composer>' + esc(text || 'Talk about what happened…') + '</button>' +
+      '<button class="composer-input" type="button" data-open-composer data-composer-return>' + esc(text || 'Talk about what happened…') + '</button>' +
       '<div class="composer-actions">' +
       '<button class="pill-btn" type="button" data-open-composer data-with-media>' + icon('image', 'sm') + ' Photo / video</button>' +
       '<button class="mic-btn" type="button" data-open-voice aria-label="Talk about what happened — start voice capture">' + icon('mic', '', '1.9') + '</button>' +
@@ -290,18 +308,50 @@
       '<div class="respond-tray" data-respond-tray="' + esc(post.id) + '" hidden role="group" aria-label="Respond with an intention">' + tray + '</div>';
   }
 
+  function responsiveFile(file, width) {
+    return file.replace(/\.[^.]+$/, '-' + width + '.webp');
+  }
+
+  function responsiveImageHTML(file, alt, options) {
+    options = options || {};
+    var dimensions = MEDIA_DIMENSIONS[file];
+    var priority = options.priority === 'high';
+    var loading = priority ? 'eager' : 'lazy';
+    var attrs = ' alt="' + esc(alt || '') + '" loading="' + loading +
+      '" decoding="async" fetchpriority="' + (priority ? 'high' : 'low') + '"';
+
+    /* Every production fixture is registered above. The fallback protects an
+       in-progress composer fixture without silently breaking its rendering. */
+    if (!dimensions) {
+      return '<img src="' + ASSET_BASE + '/' + file + '"' + attrs + '>';
+    }
+
+    var widths = file === 'feed-mountain-hike-2026-07-21.png' ? [560, 1120] : [640, 1280];
+    var mobile = ASSET_BASE + '/' + responsiveFile(file, widths[0]);
+    var desktop = ASSET_BASE + '/' + responsiveFile(file, widths[1]);
+    return '<img src="' + mobile + '" srcset="' + mobile + ' ' + widths[0] +
+      'w, ' + desktop + ' ' + widths[1] + 'w" sizes="' + esc(options.sizes ||
+      '(min-width: 900px) 620px, calc(100vw - 32px)') + '" width="' + dimensions[0] +
+      '" height="' + dimensions[1] + '"' + attrs + '>';
+  }
+
   function mediaHTML(post) {
     if (post.gallery) {
       var imgs = post.gallery.slice(0, 3).map(function (file, i) {
         var alt = (post.galleryAlts && post.galleryAlts[i]) || '';
-        return '<img class="g' + (i + 1) + '" src="' + ASSET_BASE + '/' + file + '" alt="' + esc(alt) + '">';
+        return responsiveImageHTML(file, alt, {
+          sizes: '(min-width: 900px) 200px, 31vw'
+        }).replace('<img ', '<img class="g' + (i + 1) + '" ');
       }).join('');
       return '<div class="gallery">' + imgs + '</div>';
     }
     if (!post.image) { return ''; }
     var badge = post.badge ? '<div class="media-badge">' + esc(post.badge) + '</div>' : '';
     if (post.video) {
-      var video = '<div class="media video"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge +
+      var video = '<div class="media video">' + responsiveImageHTML(post.image, post.alt, {
+        priority: post.priority,
+        sizes: '(min-width: 900px) 620px, calc(100vw - 32px)'
+      }) + badge +
         '<div class="media-overlay"></div>' +
         '<button class="play" type="button" data-play="' + esc(post.id) + '" aria-label="Play video: ' + esc(post.title) + ' (' + esc(post.duration) + ')"></button>' +
         '<div class="video-caption"><h3>' + esc(post.title) + '</h3><p>' + esc(post.copy || 'A real moment shared in the member’s own voice.') + '</p></div>' +
@@ -318,11 +368,17 @@
     /* Polaroid frame (member-chosen option, never a default): white instant-
        photo mat with a handwritten caption in the thick bottom border. */
     if (post.frame === 'polaroid') {
-      return '<figure class="polaroid"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' +
+      return '<div class="polaroid-viewport"><figure class="polaroid">' + responsiveImageHTML(post.image, post.alt, {
+        priority: post.priority,
+        sizes: '(min-width: 900px) 590px, calc(100vw - 56px)'
+      }) +
         (post.polaroidCaption ? '<figcaption class="polaroid-caption">' + esc(post.polaroidCaption) + '</figcaption>' : '') +
-        '</figure>';
+        '</figure></div>';
     }
-    return '<div class="media landscape"><img src="' + ASSET_BASE + '/' + post.image + '" alt="' + esc(post.alt || '') + '">' + badge + '</div>';
+    return '<div class="media landscape">' + responsiveImageHTML(post.image, post.alt, {
+      priority: post.priority,
+      sizes: '(min-width: 900px) 620px, calc(100vw - 32px)'
+    }) + badge + '</div>';
   }
 
   function voicePlayerHTML(post) {
@@ -344,16 +400,15 @@
     if (post.voice) { body += voicePlayerHTML(post); }
     if (post.linkline) { body += '<div class="post-linkline">' + post.linkline + '</div>'; }
     if (options.actions !== false) { body += actionRowHTML(post); }
-    return '<article class="post' + (options.justPublished ? ' just-published' : '') + '" data-post="' + esc(post.id) + '">' +
+    return '<article class="post' + (options.justPreviewed ? ' just-previewed' : '') + '" data-post="' + esc(post.id) + '">' +
       '<div class="post-head">' + avatar(post.initials, post.color) +
       '<div class="post-author"><div class="author-name">' + esc(post.name) + '</div><div class="author-meta">' + meta + '</div></div>' +
       '<button class="more" type="button" data-inert aria-label="More options for this post (not part of this prototype)">···</button></div>' +
       '<div class="post-body">' + body + '</div></article>';
   }
 
-  /* Sticky-note reminder pad (Pete, 2026-07-17): a yellow pad pinned at the
-     top of the right rail. Reminders live here for the session only, and
-     each one can be sent to the Slate Board too. */
+  /* Sticky-note reminder pad: a yellow pad pinned at the top of the right
+     rail. All reminder and Board treatments stay inside this page only. */
   var REMINDERS = [
     { text: 'Reply to Danielle about the handoff checklist', board: false },
     { text: 'Book the PMP exam window', board: true }
@@ -364,7 +419,7 @@
       return '<li class="sticky-note-row">' +
         '<span class="sticky-note-text">' + esc(item.text) + '</span>' +
         '<button class="sticky-board-btn" type="button" data-reminder-board="' + index + '" aria-pressed="' + (!!item.board) + '">' +
-        (item.board ? '✓ On board' : '+ Board') + '</button></li>';
+        (item.board ? '✓ Board preview' : '+ Board preview') + '</button></li>';
     }).join('');
     return '<div class="sticky-pad" aria-label="Reminders">' +
       '<div class="sticky-pad-head"><h3>Reminders</h3><span class="sticky-pin" aria-hidden="true"></span></div>' +
@@ -373,7 +428,7 @@
       '<label class="sr-only" for="reminderInput">Add a reminder</label>' +
       '<input id="reminderInput" placeholder="Add a reminder…" autocomplete="off">' +
       '<button class="sticky-add-btn" type="submit" aria-label="Add reminder">+</button></form>' +
-      '<p class="sticky-hint">Reminders can also be added to your Slate Board.</p></div>';
+      '<p class="sticky-hint">Slate Board preview only — not connected or saved.</p></div>';
   }
 
   function catchUpRailHTML() {
@@ -404,9 +459,9 @@
     return composerHTML() +
       '<div class="error-panel"><div class="error-icon" aria-hidden="true">!</div><div>' +
       '<h2>We couldn’t refresh the Feed.</h2>' +
-      '<p>Your drafts and captures are safe. Check the connection and try again. PeerSlate should never replace a real error with an empty success state.</p>' +
+      '<p>This sample has no saved drafts or captures. Check the connection and try again. PeerSlate should never replace a real error with an empty success state.</p>' +
       '<button class="btn primary" type="button" data-retry>Try again</button> ' +
-      '<a class="btn" href="/the-slate/my-slate">Open my Journal</a>' +
+      '<a class="btn" href="/the-slate/my-slate">Open My Slate</a>' +
       '</div></div>' + postHTML(cached);
   }
 
@@ -437,12 +492,29 @@
       case 'gallery': return POSTS_GALLERY;
       case 'video': return POSTS_VIDEO;
       case 'rail': return POSTS_RAIL;
-      default: return state.publishedPosts.concat(POSTS_DEFAULT);
+      default: return state.previewPosts.concat(POSTS_DEFAULT);
     }
   }
 
   function setSubtitle(key) {
     pageSubtitle.textContent = SUBTITLES[key] || SUBTITLES['default'];
+  }
+
+  /* PS-COMMUNITY-TABS-001 (2026-07-21): inside the shared Feed / The Break
+     shell, #feed-app IS the whole comm-shell (not just the Feed panel) —
+     #pageTitle/#pageSubtitle are the one page header both panels share.
+     Feed's own render() still needs to populate #feedColumn / #contextRail
+     while The Break is active (so switching to Feed later is instant, with
+     no flash of empty content), but it must
+     never overwrite that shared header while a different tab is the one the
+     visitor is actually looking at — community-tabs.js owns the header text
+     whenever Feed isn't active. On the standalone /feed-living-stream preview
+     (#feed-app carries no data-community-tabs attribute) Feed is always "the"
+     page, so this always resolves true and behavior there is unchanged. */
+  function feedTabIsActive() {
+    if (!APP_ROOT || !APP_ROOT.hasAttribute('data-community-tabs')) { return true; }
+    var active = APP_ROOT.getAttribute('data-active-tab') || APP_ROOT.getAttribute('data-initial-tab') || 'feed';
+    return active === 'feed';
   }
 
   function setRail(visible) {
@@ -458,9 +530,12 @@
   }
 
   function render() {
+    var headerIsFeeds = feedTabIsActive();
     if (state.view === 'loading') {
-      pageTitle.textContent = 'Feed';
-      setSubtitle(state.subtitleKey || 'default');
+      if (headerIsFeeds) {
+        pageTitle.textContent = 'Feed';
+        setSubtitle(state.subtitleKey || 'default');
+      }
       setRail(false);
       feedColumn.setAttribute('aria-busy', 'true');
       feedColumn.innerHTML = skeletonHTML();
@@ -468,39 +543,71 @@
     }
     feedColumn.removeAttribute('aria-busy');
     if (state.view === 'detail') {
-      pageTitle.textContent = 'Conversation';
-      setSubtitle('detail');
+      if (headerIsFeeds) {
+        pageTitle.textContent = 'Conversation';
+        setSubtitle('detail');
+      }
       setRail(false);
       feedColumn.innerHTML = detailHTML(state.detailPost || DETAIL_POST);
       return;
     }
-    pageTitle.textContent = 'Feed';
+    if (headerIsFeeds) { pageTitle.textContent = 'Feed'; }
     if (state.view === 'error') {
-      setSubtitle('error');
+      if (headerIsFeeds) { setSubtitle('error'); }
       setRail(false);
       feedColumn.innerHTML = errorHTML();
       return;
     }
-    setSubtitle(state.composition);
+    if (headerIsFeeds) { setSubtitle(state.composition); }
     /* The reminders + Catch Up rail is a standing part of the desktop feed
        (Pete, 2026-07-17), not a special composition. */
     setRail(true);
     var posts = compositionPosts().map(function (post) {
-      return postHTML(post, { justPublished: post === state.publishedPosts[0] && state.highlightPublished });
+      return postHTML(post, { justPreviewed: post === state.previewPosts[0] && state.highlightPreview });
     }).join('');
     feedColumn.innerHTML = composerHTML() + '<div class="date-label">Today</div>' + posts;
-    state.highlightPublished = false;
+    state.highlightPreview = false;
   }
 
   /* ---------- overlays ---------- */
 
   var activeOverlay = null;
-  var overlayInvoker = null;
   var transcriptTimer = null;
+  var overlayReturnFocus = FOCUS_LIFECYCLE.createReturnFocus(document, function () {
+    // Direct ?state=voice|review|preview entries begin from BODY, so the Feed
+    // tab is their intentional landing place; composer is a resilient second
+    // choice when the tab is unavailable or cannot take focus.
+    return [
+      document.querySelector('[data-comm-tab="feed"][role="tab"]'),
+      document.querySelector('[data-composer-return]')
+    ];
+  });
+
+  function overlayFocusableItems(overlay) {
+    return Array.prototype.filter.call(
+      overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])'),
+      function (el) {
+        if (el.disabled || el.hidden || el.getAttribute('aria-hidden') === 'true' || el.tabIndex < 0) {
+          return false;
+        }
+        var style = window.getComputedStyle(el);
+        /* Do not use offsetParent here: it can be null for otherwise
+           tabbable controls within a constrained, scrolling dialog. */
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.getClientRects().length > 0;
+      }
+    );
+  }
 
   function openOverlay(html, labelledBy) {
+    var transitioning = !!activeOverlay;
+    if (!transitioning) {
+      var invoker = document.activeElement;
+      var logicalSelector = invoker && invoker.closest &&
+        invoker.closest('[data-open-composer], [data-open-voice]')
+        ? '[data-composer-return]' : null;
+      overlayReturnFocus.remember(invoker, logicalSelector);
+    }
     closeOverlay(false);
-    overlayInvoker = document.activeElement;
     var overlay = document.createElement('div');
     overlay.className = 'overlay';
     overlay.innerHTML = '<section class="voice-modal" role="dialog" aria-modal="true" aria-labelledby="' + labelledBy + '">' + html + '</section>';
@@ -508,17 +615,15 @@
     activeOverlay = overlay;
     var preferred = overlay.querySelector('[data-autofocus]');
     if (preferred) {
-      preferred.focus();
+      preferred.focus({ preventScroll: true });
     } else {
-      var focusables = overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])');
+      var focusables = overlayFocusableItems(overlay);
       if (focusables.length) { focusables[0].focus(); }
     }
     overlay.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') { event.preventDefault(); dismissOverlay('Nothing was saved. Your draft is kept on this page until you leave it.'); return; }
+      if (event.key === 'Escape') { event.preventDefault(); dismissOverlay('Preview closed. Nothing was saved or shared.'); return; }
       if (event.key !== 'Tab') { return; }
-      var items = Array.prototype.filter.call(
-        overlay.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])'),
-        function (el) { return !el.disabled && el.offsetParent !== null; });
+      var items = overlayFocusableItems(overlay);
       if (!items.length) { return; }
       var first = items[0], last = items[items.length - 1];
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -532,8 +637,8 @@
     if (activeOverlay) {
       activeOverlay.remove();
       activeOverlay = null;
-      if (restoreFocus !== false && overlayInvoker && document.contains(overlayInvoker)) { overlayInvoker.focus(); }
     }
+    if (restoreFocus !== false) { overlayReturnFocus.restore(); }
   }
 
   function dismissOverlay(message) {
@@ -548,7 +653,7 @@
       '<button class="close" type="button" data-dismiss aria-label="Close">' + icon('close', '', '2') + '</button></header>' +
       '<div class="listening-body"><div class="listening-ring" aria-hidden="true">' + icon('mic', 'lg', '1.9') + '</div>' +
       '<p class="listening-title">Listening…</p>' +
-      '<p class="listening-help">Speak naturally. You can edit everything before anything is saved.</p>' +
+      '<p class="listening-help">Speak naturally. You can edit everything before adding a local preview.</p>' +
       '<div class="live-transcript"><span data-live-text></span><span class="cursor" aria-hidden="true"></span></div>' +
       '<div class="audio-level' + (REDUCED ? '' : ' live') + '" aria-hidden="true">' + bars + '</div>' +
       '<div class="modal-actions"><button class="cancel-btn" type="button" data-cancel-voice>Cancel</button>' +
@@ -566,7 +671,7 @@
         if (shown >= words.length) { window.clearInterval(transcriptTimer); transcriptTimer = null; }
       }, 260);
     }
-    announce('Listening. Speak naturally — you can edit everything before anything is saved.');
+    announce('Listening. Speak naturally — you can edit everything before adding a local preview.');
   }
 
   function privacyOptionHTML(value, title, help) {
@@ -577,12 +682,15 @@
       '<span><strong>' + esc(title) + '</strong><span>' + esc(help) + '</span></span></label>';
   }
 
-  var CONNECT_LABELS = { story: 'My Story', board: 'Slate Board', resume: 'Resume' };
+  var CONNECT_PREVIEW_LABELS = {
+    story: 'My Story preview · not connected',
+    board: 'Slate Board preview · not connected',
+    resume: 'Resume preview · not connected'
+  };
 
-  function connectChipHTML(key, label) {
-    var on = !!state.draft.connections[key];
-    return '<button class="chip' + (on ? ' project' : '') + '" type="button" data-connect="' + key + '" aria-pressed="' + on + '">' +
-      (on ? '✓ ' : '+ ') + esc(label) + '</button>';
+  function connectChipHTML(key) {
+    return '<span class="chip" data-connect-preview="' + key + '" aria-disabled="true">' +
+      esc(CONNECT_PREVIEW_LABELS[key]) + '</span>';
   }
 
   /* Attachments row: photo / video / document / audio, all simulated. A
@@ -607,13 +715,13 @@
   }
 
   function reviewOverlayHTML(aiStep) {
-    var heading = aiStep ? 'AI-assisted publish review' : 'Review before saving';
-    var proposalTitle = aiStep ? PROPOSAL.publishTitle : PROPOSAL.reviewTitle;
+    var heading = aiStep ? 'AI-assisted preview review' : 'Review local preview';
+    var proposalTitle = aiStep ? PROPOSAL.previewTitle : PROPOSAL.reviewTitle;
     var aiNote = aiStep
       ? '<div class="notice" style="margin-top:16px"><div class="symbol">' + icon('shield', 'sm') + '</div>' +
-        '<div><strong style="color:#263955">Confidentiality check</strong><br>No employer, customer, or restricted details were detected. You still make the final decision.</div></div>'
+        '<div><strong style="color:#263955">Local wording preview</strong><br>This fixture suggests copy only. No confidentiality or safety check ran. Review the wording yourself.</div></div>'
       : '';
-    var primaryLabel = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
+    var primaryLabel = aiStep ? 'Add preview to Feed' : 'Continue to preview';
     var audioRow = state.draft.attach.audio
       ? '<div class="voice-player review-audio"><button class="voice-play" type="button" data-play-voice="draft" aria-label="Play your recording (' + esc(state.draft.attach.audioDuration) + ')">▶</button>' +
         '<div class="wave" aria-hidden="true">' + new Array(38 + 1).join('<span></span>') + '</div><strong class="voice-time">' + esc(state.draft.attach.audioDuration) + '</strong></div>'
@@ -629,17 +737,18 @@
       '<div class="chip-row"><span class="chip">Work update</span><span class="chip ai">AI-suggested draft</span></div></div>' +
       attachRowHTML() +
       aiNote + '</div>' +
-      '<aside class="review-side"><div class="field-label" id="audienceLabel">Who can see this?</div>' +
+      '<aside class="review-side"><div class="field-label" id="audienceLabel">Preview label</div>' +
       '<div role="radiogroup" aria-labelledby="audienceLabel">' +
-      privacyOptionHTML('private', 'Keep private', 'Only you. Best for raw capture and reflection.') +
-      privacyOptionHTML('connections', 'Connections', 'People you have accepted into your network.') +
-      privacyOptionHTML('community', 'Community', 'Appears in Feed and your public Journal.') +
-      privacyOptionHTML('selected', 'Selected people', 'Choose exactly who can see it.') +
+      privacyOptionHTML('private', 'Only me preview', 'Sample label only. No privacy setting is saved.') +
+      privacyOptionHTML('connections', 'Connections preview', 'Sample label only. No real connections are used.') +
+      privacyOptionHTML('community', 'Community preview', 'Sample label only. Nothing is shared.') +
+      privacyOptionHTML('selected', 'Selected people preview', 'Sample label only. No people are selected or notified.') +
       '</div>' +
-      '<div class="field-label" style="margin-top:18px">Also connect to</div>' +
-      '<div class="chip-row">' + connectChipHTML('story', 'My Story') + connectChipHTML('board', 'Slate Board') + connectChipHTML('resume', 'Resume') + '</div>' +
+      '<div class="field-label" style="margin-top:18px">Connection previews</div>' +
+      '<div class="chip-row">' + connectChipHTML('story') + connectChipHTML('board') + connectChipHTML('resume') + '</div>' +
       '</aside>' +
-      '<footer class="review-footer"><span class="meta">You can edit everything before it saves.</span>' +
+      '<footer class="review-footer"><span class="meta">Appears in this local sample feed only. Nothing is saved, shared, or added to your Journal.</span>' +
+      (aiStep ? '<button class="cancel-btn" type="button" data-review-back>Back</button>' : '') +
       '<button class="cancel-btn" type="button" data-keep-editing>Keep editing</button>' +
       '<button class="btn primary" type="button" data-review-primary data-ai-step="' + (aiStep ? '1' : '0') + '">' + primaryLabel + '</button>' +
       '</footer></div>';
@@ -654,8 +763,6 @@
         overlay.querySelectorAll('.privacy-option').forEach(function (option) {
           option.classList.toggle('selected', option.querySelector('input').checked);
         });
-        var primary = overlay.querySelector('[data-review-primary]');
-        primary.textContent = state.draft.audience === 'private' ? 'Save privately' : 'Publish update';
       }
       if (event.target.hasAttribute('data-frame')) {
         var kind = event.target.getAttribute('data-frame');
@@ -672,47 +779,41 @@
     if (announceText) { announce(announceText); }
   }
 
-  function publishDraft() {
-    closeOverlay(true);
-    if (state.draft.audience === 'private') {
-      announce('Saved privately to your Journal. Nothing was published to the Feed.');
-      return;
-    }
-    var audienceLabel = { connections: 'Connections', community: 'Community', selected: 'Selected people' }[state.draft.audience] || 'Community';
-    var linkedTo = Object.keys(state.draft.connections)
-      .filter(function (key) { return state.draft.connections[key]; })
-      .map(function (key) { return CONNECT_LABELS[key]; });
-    var linked = linkedTo.length ? ' &nbsp;·&nbsp; <strong>Linked to ' + esc(linkedTo.join(', ')) + '</strong>' : '';
+  function addPreviewToFeed() {
+    closeOverlay(false);
     var a = state.draft.attach;
     var post = {
-      id: 'p-published-' + (state.publishedPosts.length + 1),
+      id: 'p-preview-' + (state.previewPosts.length + 1),
       initials: 'PC', color: 'pc', name: 'Pete Carter',
-      kind: 'Work update', dot: '', time: 'Just now', audience: audienceLabel,
-      title: PROPOSAL.publishTitle,
+      kind: 'Work update', dot: '', time: 'Just now', audience: '',
+      metaOverride: 'Local preview · not saved',
+      title: PROPOSAL.previewTitle,
       copy: PROPOSAL.copy,
-      linkline: '▣ &nbsp; From Pete’s Journal' + linked +
+      linkline: '▣ &nbsp; Local preview · not saved' +
         (a.doc ? ' &nbsp;·&nbsp; 1 document attached' : '') + ' &nbsp;·&nbsp; AI-suggested draft'
     };
     if (a.video) {
-      post.image = 'team_video.jpg';
+      post.image = 'feed-team-demo-2026-07-21.png';
       post.video = true;
       post.duration = '1:47';
       post.badge = 'Video';
+      post.priority = 'high';
       if (a.videoFrame === 'film') { post.frame = 'film'; }
       post.alt = 'Your attached video (simulated in this prototype).';
     } else if (a.photo) {
-      post.image = 'mountain_walk.jpg';
-      post.alt = 'Your attached photo (simulated in this prototype).';
+      post.image = 'feed-mountain-ridge-2026-07-21.png';
+      post.alt = 'Your attached photo of two hikers on a mountain ridge (simulated in this prototype).';
       if (a.photoFrame === 'polaroid') { post.frame = 'polaroid'; post.polaroidCaption = 'from today'; }
     }
     if (a.audio) { post.voice = true; post.voiceDuration = a.audioDuration; }
-    state.publishedPosts.unshift(post);
-    state.highlightPublished = true;
+    state.previewPosts.unshift(post);
+    state.highlightPreview = true;
     state.composition = 'default';
     state.view = 'feed';
     render();
+    overlayReturnFocus.restore();
     scrollFeedToTop();
-    announce('Published to ' + audienceLabel + '. Your update is at the top of the Feed, and your original wording stays inspectable in your Journal.');
+    announce('Preview added to this sample feed for this browser session only. Nothing was saved or shared.');
   }
 
   /* ---------- events ---------- */
@@ -730,7 +831,7 @@
     if (el.hasAttribute('data-open-composer')) {
       state.draft.transcript = '';
       state.draft.attach.audio = false;
-      openReviewOverlay(false, 'Review before saving. Type what happened — voice and text share the same review.');
+      openReviewOverlay(false, 'Review local preview. Type what happened — voice and text share the same preview.');
       var edit = document.getElementById('transcriptEdit');
       if (edit) { edit.placeholder = 'Type what happened…'; edit.focus(); }
       return;
@@ -741,7 +842,7 @@
       /* The recording itself rides along with the draft as an audio
          attachment the member can keep or remove. */
       state.draft.attach.audio = true;
-      openReviewOverlay(false, 'Recording stopped. Your audio is attached — review everything before it saves.');
+      openReviewOverlay(false, 'Recording stopped. Your audio is attached to this local preview only.');
       return;
     }
     if (el.hasAttribute('data-attach') || el.hasAttribute('data-detach')) {
@@ -765,25 +866,20 @@
         REMINDERS[remIndex].board = !REMINDERS[remIndex].board;
         render();
         announce(REMINDERS[remIndex].board
-          ? 'Reminder added to your Slate Board (simulated in this prototype).'
-          : 'Reminder removed from your Slate Board.');
+          ? 'Slate Board preview marked for this page only. Nothing was connected or saved.'
+          : 'Slate Board preview removed from this page.');
       }
       return;
     }
     if (el.hasAttribute('data-dismiss')) { dismissOverlay('Closed. Nothing was saved.'); return; }
-    if (el.hasAttribute('data-keep-editing')) { dismissOverlay('Draft kept. Nothing was published.'); return; }
-    if (el.hasAttribute('data-review-primary')) {
-      if (el.getAttribute('data-ai-step') === '1') { publishDraft(); }
-      else { openReviewOverlay(true, 'AI-assisted publish review. Check the proposal, confidentiality note, and audience, then decide.'); }
+    if (el.hasAttribute('data-review-back')) {
+      openReviewOverlay(false, 'Back to the editable local preview.');
       return;
     }
-    if (el.hasAttribute('data-connect')) {
-      var key = el.getAttribute('data-connect');
-      state.draft.connections[key] = !state.draft.connections[key];
-      var pressed = state.draft.connections[key];
-      el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
-      el.classList.toggle('project', pressed);
-      el.innerHTML = (pressed ? '✓ ' : '+ ') + esc(CONNECT_LABELS[key]);
+    if (el.hasAttribute('data-keep-editing')) { dismissOverlay('Preview closed. Nothing was saved or shared.'); return; }
+    if (el.hasAttribute('data-review-primary')) {
+      if (el.getAttribute('data-ai-step') === '1') { addPreviewToFeed(); }
+      else { openReviewOverlay(true, 'AI-assisted preview review. No confidentiality check ran; review the local wording and preview label yourself.'); }
       return;
     }
     if (el.hasAttribute('data-respond-toggle')) {
@@ -802,8 +898,8 @@
       state.reactions[respondId] = state.reactions[respondId] === intent ? null : intent;
       render();
       announce(state.reactions[respondId]
-        ? 'Response sent: ' + intent.replace('_', ' ') + '. Responses stay quiet — no public leaderboards.'
-        : 'Response removed.');
+        ? 'Response preview: ' + intent.replace('_', ' ') + '. This page only; nothing was sent.'
+        : 'Response preview removed from this page.');
       return;
     }
     if (el.hasAttribute('data-save')) {
@@ -811,7 +907,7 @@
       state.saves[saveId] = !state.saves[saveId];
       el.setAttribute('aria-pressed', state.saves[saveId] ? 'true' : 'false');
       el.innerHTML = icon('bookmark', 'sm') + ' ' + (state.saves[saveId] ? 'Saved' : 'Save');
-      announce(state.saves[saveId] ? 'Saved privately. Only you can see your saved posts.' : 'Removed from your saved posts.');
+      announce(state.saves[saveId] ? 'Marked for this page only.' : 'Removed from this page.');
       return;
     }
     if (el.hasAttribute('data-comment')) {
@@ -839,7 +935,7 @@
       render();
       var nextInput = document.getElementById('replyInput');
       if (nextInput) { nextInput.focus(); }
-      announce('Reply added to the conversation.');
+      announce('Reply preview added to this page only. Nothing was sent.');
       return;
     }
     if (el.hasAttribute('data-comment-reply')) {
@@ -862,7 +958,9 @@
       if (thread[helpIndex]) {
         thread[helpIndex].offered = !thread[helpIndex].offered;
         el.setAttribute('aria-pressed', thread[helpIndex].offered ? 'true' : 'false');
-        announce(thread[helpIndex].offered ? 'Offer to help sent to ' + thread[helpIndex].name + '.' : 'Offer to help withdrawn.');
+        announce(thread[helpIndex].offered
+          ? 'Offer-to-help preview marked for this page only. Nothing was sent.'
+          : 'Offer-to-help preview removed from this page.');
       }
       return;
     }
@@ -931,7 +1029,7 @@
         return; // stays in the loading state for review
       case 'voice':
       case 'review':
-      case 'publish':
+      case 'preview':
         break;
       default: initial = 'default';
     }
@@ -957,7 +1055,7 @@
   function afterFirstRender(initial) {
     if (initial === 'voice') { openVoiceOverlay(); }
     if (initial === 'review') { state.draft.transcript = TRANSCRIPT_FULL; openReviewOverlay(false); }
-    if (initial === 'publish') { state.draft.transcript = TRANSCRIPT_FULL; openReviewOverlay(true); }
+    if (initial === 'preview') { state.draft.transcript = TRANSCRIPT_FULL; openReviewOverlay(true); }
   }
 
   state.view = 'feed';

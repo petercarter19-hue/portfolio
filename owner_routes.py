@@ -51,6 +51,7 @@ from services.owner_home_service import (
     OwnerHomeContractError,
     owner_home_service,
 )
+from services.journal_service import JournalServiceError, journal_service
 
 
 owner = Blueprint("owner", __name__)
@@ -102,6 +103,22 @@ def _render_owner_unavailable():
         render_template(
             "auth_unavailable.html",
             page_title="Sign in is not configured",
+        ),
+        503,
+    )
+
+
+def _render_journal_unavailable():
+    """A route-scoped recovery surface for private Journal reads.
+
+    Journal availability must not borrow the global authentication setup
+    message: a signed-in member should never be told to configure sign-in
+    when a private read is temporarily unavailable.
+    """
+    return (
+        render_template(
+            "journal_unavailable.html",
+            page_title="Journal temporarily unavailable",
         ),
         503,
     )
@@ -1290,4 +1307,568 @@ def export_capture(capture_key):
     )
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+# ------------------------------------------------------------------
+# PS-JOURNAL-001 Slice J1 frontend: the owner Journal page and Moment
+# detail. Flag-gated (`PEERSLATE_JOURNAL_ENABLED`, default false) and
+# owner-only; identical neutral 404 for flag-off, unauthenticated, and
+# non-owner requests, matching the require_identity_or_not_found pattern
+# already used by the Slice J1 backend's /api/journal/moments routes in
+# peerslate_api.py. This section consumes services/journal_service.py and
+# services/voice_capture_service.py exactly as already released - it adds
+# no stored procedure, no migration, and no change to either service's
+# existing methods. See docs/initiatives/PS-JOURNAL-001/
+# J1_FRONTEND_IMPLEMENTATION_BRIEF.md.
+# ------------------------------------------------------------------
+
+JOURNAL_CHAPTERS = (
+    {
+        "key": "timeline",
+        "label": "Timeline",
+        "subtitle": "Your journey in chronological order",
+    },
+    {
+        "key": "voice",
+        "label": "Voice",
+        "subtitle": "Spoken thoughts and reflections",
+    },
+    {
+        "key": "photos",
+        "label": "Photos",
+        "subtitle": "Captured moments that matter",
+    },
+    {
+        "key": "videos",
+        "label": "Videos",
+        "subtitle": "Your story in motion",
+    },
+    {
+        "key": "milestones",
+        "label": "Milestones",
+        "subtitle": "Big wins and breakthroughs",
+    },
+    {
+        "key": "reflections",
+        "label": "Reflections",
+        "subtitle": "Lessons, insights, and growth",
+    },
+)
+
+# The derived Journal read has no per-kind aggregate or single-key fetch
+# procedure (usp_ListJournalMomentsForOwner only returns cursor pages of the
+# owner's own scoped Moments). Slice J1 does not add one - see the hard
+# boundary in the frontend brief - so honest lifetime totals and single-
+# Moment detail are both computed with a bounded scan over the released,
+# unmodified journal_service.list_owner_journal read. This is a disclosed
+# J1 performance compromise pending a J1.1 single-fetch/aggregate addition.
+JOURNAL_SCAN_PAGE_SIZE = 100
+JOURNAL_SCAN_MAX_PAGES = 25
+JOURNAL_TIMELINE_PAGE_SIZE = 20
+
+# Evidence fixtures are deliberately isolated from the member path.  The
+# accepted mockups need rich sample data (time, waveform, visual media, and
+# detail context), but no production identity may receive invented private
+# narrative or media.  This provider is therefore available only to the Flask
+# test application when its explicit, server-owned config switch is true.  It
+# is never selected by a query parameter, identity, title, route value, or
+# browser storage.  In particular, production cannot enter this branch even
+# if an operator accidentally sets the config key outside the test app.
+JOURNAL_EVIDENCE_FIXTURES_CONFIG = "PEERSLATE_JOURNAL_EVIDENCE_FIXTURES"
+JOURNAL_EVIDENCE_STATE_CONFIG = "PEERSLATE_JOURNAL_EVIDENCE_STATE"
+
+_JOURNAL_EVIDENCE_TIMELINE = (
+    {
+        "moment_key": "e1111111-1111-1111-1111-111111111111",
+        "moment_kind": "achievement",
+        "display_kind_label": "Voice",
+        "title": "I led the first client workshop without reading from my notes.",
+        "occurred_on": date(2024, 5, 20),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "voice",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "9:41 AM",
+        "voice_duration_label": "00:48",
+        "thumbnail_kind": "lake",
+        "context_text": (
+            "Felt prepared, present, and confident. The team was engaged "
+            "and the client loved the clarity."
+        ),
+        "version_created_label": "Created May 20, 2024 at 9:41 AM",
+    },
+    {
+        "moment_key": "e2222222-2222-2222-2222-222222222222",
+        "moment_kind": "update",
+        "display_kind_label": "Text",
+        "title": "I realized I enjoy translating technical ideas for new teammates.",
+        "occurred_on": date(2024, 5, 19),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "text",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "4:27 PM",
+        "thumbnail_kind": "notebook",
+    },
+    {
+        "moment_key": "e3333333-3333-3333-3333-333333333333",
+        "moment_kind": "update",
+        "display_kind_label": "Voice",
+        "title": "After interview practice, I changed how I explain the product launch.",
+        "occurred_on": date(2024, 5, 18),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "voice",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "11:08 AM",
+        "voice_duration_label": "01:12",
+        "thumbnail_kind": "stage",
+        "thumbnail_is_video": True,
+    },
+    {
+        "moment_key": "e4444444-4444-4444-4444-444444444444",
+        "moment_kind": "update",
+        "display_kind_label": "Text",
+        "title": "I asked Jordan to review the launch plan before Friday.",
+        "occurred_on": date(2024, 5, 13),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "text",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "3:15 PM",
+        "thumbnail_kind": "coffee",
+    },
+)
+
+_JOURNAL_EVIDENCE_MANAGE = (
+    _JOURNAL_EVIDENCE_TIMELINE[0],
+    _JOURNAL_EVIDENCE_TIMELINE[1],
+    _JOURNAL_EVIDENCE_TIMELINE[2],
+    {
+        "moment_key": "e5555555-5555-5555-5555-555555555555",
+        "moment_kind": "update",
+        "display_kind_label": "Photo",
+        "title": "Whiteboard sketch from Q2 planning session.",
+        "occurred_on": date(2024, 5, 17),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "photo",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "3:15 PM",
+        "thumbnail_kind": "notebook",
+    },
+    {
+        "moment_key": "e6666666-6666-6666-6666-666666666666",
+        "moment_kind": "update",
+        "display_kind_label": "Video",
+        "title": "Team alignment meeting highlights.",
+        "occurred_on": date(2024, 5, 16),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "video",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "9:20 AM",
+        "voice_duration_label": "00:32",
+        "thumbnail_kind": "stage",
+        "thumbnail_is_video": True,
+    },
+    {
+        "moment_key": "e7777777-7777-7777-7777-777777777777",
+        "moment_kind": "update",
+        "display_kind_label": "Text",
+        "title": "Key takeaways from customer call — clarity over complexity.",
+        "occurred_on": date(2024, 5, 15),
+        "occurred_precision": "exact",
+        "visibility": "private",
+        "source_type": "text",
+        "lifecycle_state": "active",
+        "version_number": 1,
+        "display_time": "5:45 PM",
+    },
+)
+
+
+def _journal_evidence_fixture_state():
+    """Return the explicitly test-only visual state, or ``None``.
+
+    The second `TESTING` guard is intentional: a production config typo can
+    never introduce fixture Moments into a real member's Journal.  The state
+    is a server configuration value used by the local evidence harness, not a
+    request parameter or member-controlled value.
+    """
+    if not (
+        current_app.config.get("TESTING") is True
+        and current_app.config.get(JOURNAL_EVIDENCE_FIXTURES_CONFIG) is True
+    ):
+        return None
+    state = current_app.config.get(JOURNAL_EVIDENCE_STATE_CONFIG, "timeline")
+    return state if state in {"timeline", "manage", "empty", "detail", "saved"} else "timeline"
+
+
+def _journal_evidence_fixture_page(state):
+    # Doc 15 item 12: the mockup's first page shows exactly four timeline
+    # entries but still renders "Load more moments" (128 Moments captured
+    # total). A non-null placeholder cursor is presentation-only here - it
+    # reproduces the accepted control's visibility for evidence; a real
+    # member's real `next_cursor` already drives this identically outside
+    # fixture mode. Manage and the empty first-visit state never paginate.
+    next_cursor = None
+    if state == "empty":
+        items = ()
+        totals = {"moments": 0, "voice_notes": 0, "milestones": 0, "chapter_counts": {}}
+    elif state == "manage":
+        items = _JOURNAL_EVIDENCE_MANAGE
+        totals = {"moments": 68, "voice_notes": 27, "milestones": 14, "chapter_counts": {}}
+    else:
+        items = _JOURNAL_EVIDENCE_TIMELINE
+        totals = {"moments": 128, "voice_notes": 27, "milestones": 14, "chapter_counts": {}}
+        next_cursor = "evidence-fixture-more"
+    return {
+        "items": [_journal_prepare_moment(item) for item in items],
+        "next_cursor": next_cursor,
+        "totals": totals,
+    }
+
+
+def _journal_enabled():
+    return current_app.config.get("PEERSLATE_JOURNAL_ENABLED", False) is True
+
+
+def _journal_not_found():
+    return "Not found.", 404
+
+
+def _journal_identity_or_not_found():
+    """Neutral 404 for a caller whose identity cannot be resolved - never a
+    distinct 401/redirect, so "not signed in" cannot be told apart from
+    "not found" or "flag off" (mirrors peerslate_api.require_identity_or_not_found,
+    which the Slice J1 API already relies on)."""
+    try:
+        return get_current_identity(), None
+    except AuthenticationRequired:
+        return None, _journal_not_found()
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Journal identity lookup failed.")
+        return None, _render_journal_unavailable()
+
+
+def _journal_chapter_key_for_item(item):
+    """The J1 translation from a real Moment's fields to one of the six
+    accepted JOURNAL-01 rail chapters. Disclosed, not backend-specified:
+    Voice/Photos/Videos read the Capture's source_type; Milestones and
+    Reflections have no dedicated Moment kind in the released schema
+    (MOMENT_KINDS has no "milestone" or "reflection" value), so they are
+    presented from the closest existing kinds, "achievement" and "lesson" -
+    a J1 UI mapping over real member-chosen data, never invented content."""
+    source_type = item.get("source_type")
+    moment_kind = item.get("moment_kind")
+    if source_type == "voice":
+        return "voice"
+    if source_type == "photo":
+        return "photos"
+    if source_type == "video":
+        return "videos"
+    if moment_kind == "achievement":
+        return "milestones"
+    if moment_kind == "lesson":
+        return "reflections"
+    return None
+
+
+def _journal_totals(user_key):
+    """Bounded full scan of the owner's active Journal for the This-Season
+    hero's quiet totals and each rail chapter's quiet count. Every number is
+    a real count of already-saved Moments - never a streak, score, or
+    fabricated figure (site rule 24)."""
+    chapter_counts = {chapter["key"]: 0 for chapter in JOURNAL_CHAPTERS}
+    total = 0
+    voice_total = 0
+    milestone_total = 0
+    cursor = None
+    for _ in range(JOURNAL_SCAN_MAX_PAGES):
+        page = journal_service.list_owner_journal(
+            user_key,
+            include_archived=False,
+            limit=JOURNAL_SCAN_PAGE_SIZE,
+            cursor=cursor,
+        )
+        items = page.get("items") or []
+        total += len(items)
+        for item in items:
+            if item.get("source_type") == "voice":
+                voice_total += 1
+            if item.get("moment_kind") == "achievement":
+                milestone_total += 1
+            chapter_key = _journal_chapter_key_for_item(item)
+            if chapter_key:
+                chapter_counts[chapter_key] += 1
+        cursor = page.get("next_cursor")
+        if not cursor:
+            break
+    chapter_counts["timeline"] = total
+    return {
+        "moments": total,
+        "voice_notes": voice_total,
+        "milestones": milestone_total,
+        "chapter_counts": chapter_counts,
+    }
+
+
+def _journal_prepare_moment(item):
+    """Normalize one Journal read row for template rendering. `occurred_on`
+    may arrive as a `date`, a `datetime`, or an ISO string depending on the
+    database driver; this computes the display fields once, server-side, so
+    the template never has to guess the underlying Python type."""
+    prepared = dict(item)
+    occurred_on = item.get("occurred_on")
+    if isinstance(occurred_on, str):
+        try:
+            occurred_on = date.fromisoformat(occurred_on[:10])
+        except ValueError:
+            occurred_on = None
+    if isinstance(occurred_on, datetime):
+        occurred_on = occurred_on.date()
+    if isinstance(occurred_on, date):
+        prepared["occurred_day"] = occurred_on.strftime("%d")
+        prepared["occurred_month_label"] = occurred_on.strftime("%b").upper()
+        prepared["occurred_iso"] = occurred_on.isoformat()
+    else:
+        prepared["occurred_day"] = None
+        prepared["occurred_month_label"] = None
+        prepared["occurred_iso"] = None
+    # This is display-only normalization of fields already returned by the
+    # authorized read (or the isolated test fixture provider above).  Never
+    # attach presentation/private data by title, name, identity, or any other
+    # member content: two real owners may legitimately save the same words.
+    if not prepared.get("display_kind_label"):
+        prepared["display_kind_label"] = {
+            "voice": "Voice",
+            "photo": "Photo",
+            "video": "Video",
+        }.get(prepared.get("source_type"), prepared.get("moment_kind", "Moment").capitalize())
+    return prepared
+
+
+def _find_journal_moment(user_key, moment_key):
+    """Bounded scan for one Moment's detail fields. Every page is already
+    server-scoped to `user_key` by usp_ListJournalMomentsForOwner, so a
+    guessed key belonging to another owner can never be retrieved - the scan
+    can only ever return None (404) or the caller's own Moment."""
+    cursor = None
+    for _ in range(JOURNAL_SCAN_MAX_PAGES):
+        page = journal_service.list_owner_journal(
+            user_key,
+            include_archived=True,
+            limit=JOURNAL_SCAN_PAGE_SIZE,
+            cursor=cursor,
+        )
+        for item in page.get("items") or []:
+            if item.get("moment_key") == moment_key:
+                return _journal_prepare_moment(item)
+        cursor = page.get("next_cursor")
+        if not cursor:
+            break
+    return None
+
+
+@owner.get("/app/journal")
+def journal():
+    """The owner's one private Journal: This-Season hero, context rail,
+    and chronological timeline. Local views/filters only - the rail never
+    leaves this page (Context Rail Standard law 1)."""
+    if not _journal_enabled():
+        return _journal_not_found()
+
+    identity, response = _journal_identity_or_not_found()
+    if response is not None:
+        return response
+
+    evidence_state = _journal_evidence_fixture_state()
+    # `view=archived` remains a harmless compatibility alias for this private
+    # J1 page. It does not select fixture mode; only the test-only server
+    # configuration above can do that.
+    manage_view = (
+        evidence_state == "manage"
+        if evidence_state is not None
+        else request.args.get("view") in {"manage", "archived"}
+    )
+    if evidence_state is not None:
+        page = _journal_evidence_fixture_page(evidence_state)
+        totals = page["totals"]
+    else:
+        try:
+            page = journal_service.list_owner_journal(
+                identity.user_key,
+                include_archived=manage_view,
+                limit=JOURNAL_TIMELINE_PAGE_SIZE,
+                cursor=None,
+            )
+            totals = _journal_totals(identity.user_key)
+        except (JournalServiceError, DatabaseServiceError):
+            current_app.logger.error("PeerSlate Journal read is unavailable.")
+            return _render_journal_unavailable()
+
+    is_evidence_fixture = evidence_state is not None
+    season_line = getattr(identity, "season_line", None) or "A season of your own."
+    if is_evidence_fixture:
+        season_line = "Building clarity.\nCreating impact."
+    # Treat this as presentation text, not trusted markup.  The evidence
+    # provider happens to use two fixed lines, while a future authorized
+    # member-provided season line must still be escaped by Jinja.
+    season_lines = tuple(line for line in season_line.splitlines() if line) or (
+        "A season of your own.",
+    )
+
+    return render_template(
+        "journal.html",
+        page_title="Journal",
+        member=identity,
+        moments=page["items"] if is_evidence_fixture else [_journal_prepare_moment(item) for item in page["items"]],
+        next_cursor=page["next_cursor"],
+        totals=totals,
+        chapters=JOURNAL_CHAPTERS,
+        manage_view=manage_view,
+        moment_kinds=MOMENT_KINDS,
+        occurred_precisions=OCCURRED_PRECISIONS,
+        max_title_length=MAX_MOMENT_TITLE_LENGTH,
+        max_narrative_length=MAX_MOMENT_NARRATIVE_LENGTH,
+        max_why_length=MAX_MOMENT_WHY_LENGTH,
+        max_voice_bytes=MAX_VOICE_BYTES,
+        max_voice_duration_seconds=MAX_VOICE_DURATION_SECONDS,
+        rail_id="journal",
+        rail_label="Contents",
+        rail_nav_label="Journal sections",
+        active_chapter="timeline",
+        is_evidence_fixture=is_evidence_fixture,
+        is_evidence_saved_state=evidence_state == "saved",
+        # This is an in-repository visual asset belonging only to the
+        # server-owned TESTING fixture. It is never inferred from a member,
+        # title, Moment, or browser state, and normal members keep the
+        # intentional CSS-only fallback scene when no authorized photo exists.
+        fixture_hero_image_url=(
+            url_for("static", filename="images/journal/maya-fixture-hero-v1.png")
+            if is_evidence_fixture
+            else None
+        ),
+        season_lines=season_lines,
+        fixture_member_name="Maya" if is_evidence_fixture else None,
+    )
+
+
+@owner.get("/app/journal/moments/<moment_key>")
+def journal_moment(moment_key):
+    """One Moment's detail: accepted version, source type, occurred/derived
+    dates, version number, lifecycle state, and privacy - owner-only, with
+    the same neutral 404 for a guessed or foreign key as for flag-off."""
+    if not _journal_enabled():
+        return _journal_not_found()
+
+    identity, response = _journal_identity_or_not_found()
+    if response is not None:
+        return response
+
+    normalized_moment_key = _normalize_capture_key(moment_key)
+    if not normalized_moment_key:
+        return _journal_not_found()
+
+    evidence_state = _journal_evidence_fixture_state()
+    if evidence_state is not None:
+        fixture_items = _JOURNAL_EVIDENCE_TIMELINE
+        moment = next(
+            (
+                _journal_prepare_moment(item)
+                for item in fixture_items
+                if item["moment_key"] == normalized_moment_key
+            ),
+            None,
+        )
+    else:
+        try:
+            moment = _find_journal_moment(identity.user_key, normalized_moment_key)
+        except (JournalServiceError, DatabaseServiceError):
+            current_app.logger.error("PeerSlate Journal Moment detail is unavailable.")
+            return _render_journal_unavailable()
+
+    if not moment:
+        return _journal_not_found()
+
+    return render_template(
+        "journal_moment.html",
+        page_title="Moment",
+        member=identity,
+        moment=moment,
+        chapters=JOURNAL_CHAPTERS,
+        rail_id="journal",
+        rail_label="Contents",
+        rail_nav_label="Journal sections",
+        # A Moment detail is still a reading state inside the Journal's
+        # chronological Timeline. Its source type is descriptive metadata,
+        # not authority to switch the contents rail to Voice/Photo/Video.
+        active_chapter="timeline",
+        is_evidence_fixture=evidence_state is not None,
+    )
+
+
+@owner.get("/app/journal/voice/<source_key>/draft")
+def journal_voice_draft(source_key):
+    """JSON voice-draft fetch for the in-context Journal composer.
+
+    The released Voice lifecycle (PS-VOICE-001) only ever hands the
+    transcript back through a full-page redirect to
+    `/app/capture?voice=<key>` (owner_capture.html). The Journal composer
+    must stay in place over the Journal and return to it (PS-JRN-CAP-003) -
+    it cannot navigate to that page. This route is net-new and additive: it
+    reuses `voice_capture_service.get_draft` exactly as `capture()` already
+    does above, unmodified, and simply hands the same draft back as JSON
+    instead of server-rendering it."""
+    if not _journal_enabled():
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    except DatabaseServiceError:
+        current_app.logger.error(
+            "PeerSlate Journal voice draft identity lookup failed."
+        )
+        return jsonify({"success": False, "message": "Unavailable."}), 503
+
+    normalized_source_key = _normalize_capture_key(source_key)
+    if not normalized_source_key:
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    try:
+        draft = voice_capture_service.get_draft(identity.user_key, normalized_source_key)
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Journal voice draft read is unavailable.")
+        return jsonify({"success": False, "message": "Unavailable."}), 503
+
+    if not draft:
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    duration_ms = draft.get("verified_duration_milliseconds") or draft.get(
+        "client_duration_milliseconds"
+    )
+    response = jsonify(
+        {
+            "success": True,
+            "source_key": str(draft.get("source_key") or normalized_source_key),
+            "state": draft.get("state"),
+            "transcript": draft.get("provider_transcript") or "",
+            "duration_seconds": (duration_ms / 1000) if duration_ms else None,
+            "audio_url": url_for(
+                "owner.voice_capture_audio", source_key=normalized_source_key
+            ),
+            "safe_error_code": draft.get("safe_error_code"),
+        }
+    )
+    response.headers["Cache-Control"] = "private, no-store"
     return response

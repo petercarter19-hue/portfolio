@@ -1,0 +1,327 @@
+{#
+  COMMUNITY TAB SHELL — Feed · The Break (PS-COMMUNITY-TABS-001)
+  /the-slate · /the-slate/break
+
+  Owner-superseding decision, 2026-07-21: Community has exactly two
+  first-class views. Both panels render in this response and
+  static/js/community-tabs.js swaps them without a normal-click reload.
+  The legacy /the-slate/saved address redirects to Feed; it has no panel,
+  tab, client state, or product destination.
+#}
+{% extends "base.html" %}
+
+{% set _comm_titles = {'feed': 'Feed', 'break': 'The Break'} %}
+
+{% block title %}{{ _comm_titles[initial_tab] }} · Community | PeerSlate{% endblock %}
+
+{% block meta_description %}
+{%- if initial_tab == 'break' -%}
+The Break on PeerSlate: a restorative sample-community view inside the same seamless Feed / The Break Community experience.
+{%- else -%}
+The Community Feed on PeerSlate — what people are building, learning, and living. Switch seamlessly to The Break.
+{%- endif -%}
+{% endblock %}
+
+{% block body_class %}the-slate-page community-tabs-page{% endblock %}
+
+{% block extra_head %}
+<link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&family=Caveat:wght@500;600&display=swap"
+    rel="stylesheet"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=community-correction-4"
+>
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/community-tabs.css') }}?v=community-break-4"
+>
+{% endblock %}
+
+{% block content %}
+{% include "partials/community_icons.html" %}
+
+{% macro comm_tab(key, label, icon_id, href, panel_id) %}
+<a
+    class="feed-switch__tab{% if initial_tab == key %} active{% endif %}"
+    role="tab"
+    id="tab-{{ key }}"
+    aria-controls="{{ panel_id }}"
+    aria-selected="{{ 'true' if initial_tab == key else 'false' }}"
+    tabindex="{{ '0' if initial_tab == key else '-1' }}"
+    href="{{ href }}"
+    data-comm-tab="{{ key }}"
+>
+    <svg class="icon sm" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><use href="#{{ icon_id }}"/></svg>
+    {{ label }}
+</a>
+{% endmacro %}
+
+<div
+    id="feed-app"
+    class="comm-shell"
+    data-community-tabs
+    data-initial-tab="{{ initial_tab }}"
+    data-feed-url="{{ url_for('the_slate') }}"
+    data-break-url="{{ url_for('slate_feed_break') }}"
+    data-asset-base="{{ url_for('static', filename='images/feed') }}"
+>
+  <div class="main">
+    <div class="main-inner">
+      <div class="page-head">
+        <div>
+          <div class="page-title-row">
+            <h1 class="page-title" id="pageTitle">{{ _comm_titles[initial_tab] }}</h1>
+          </div>
+          <p class="page-subtitle" id="pageSubtitle">
+            {%- if initial_tab == 'break' -%}
+            Step away. Recharge. Come back with more you.
+            {%- else -%}
+            What people are building, learning, and living.
+            {%- endif -%}
+          </p>
+          <p class="preview-note">Sample data — nothing on this page is saved or shared.</p>
+          {% include "partials/sample_community_note.html" %}
+        </div>
+
+        <nav class="feed-switch" role="tablist" aria-label="Community views" data-comm-switch>
+          {{ comm_tab('feed', 'Feed', 'i-feed', url_for('the_slate'), 'mainInner') }}
+          {{ comm_tab('break', 'The Break', 'i-cup', url_for('slate_feed_break'), 'panel-break') }}
+        </nav>
+      </div>
+
+      {# Feed stays on its established fixture/interaction seam. #}
+      <section
+          class="main-inner"
+          id="mainInner"
+          role="tabpanel"
+          aria-labelledby="tab-feed"
+          data-tab-panel="feed"
+          {% if initial_tab != 'feed' %}hidden{% endif %}
+      >
+        <div class="content-grid" id="contentGrid">
+          <section class="feed-column" id="feedColumn" aria-live="off"></section>
+          <aside class="context-rail" id="contextRail" aria-label="Catch Up" hidden></aside>
+        </div>
+      </section>
+
+      <section
+          class="main-inner break-inner bk-page bk-green break-embed"
+          id="panel-break"
+          role="tabpanel"
+          aria-labelledby="tab-break"
+          data-tab-panel="break"
+          {% if initial_tab != 'break' %}hidden{% endif %}
+      >
+        <div class="bk-layout">
+          <div class="bk-center">
+            <section class="bk-hero" aria-labelledby="break-hero-title">
+              <div class="bk-hero__copy">
+                <p class="bk-kicker">A restorative Community pause</p>
+                <h2 id="break-hero-title">Good break. Better you. <span aria-hidden="true">&#10024;</span></h2>
+                <p>Step away. Recharge. Come back with more you.</p>
+              </div>
+              {% if initial_tab == 'break' %}
+              <img
+                  class="bk-hero__image"
+                  src="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }}"
+                  srcset="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-chair-plant-1280.webp') }} 1280w"
+                  sizes="(max-width: 700px) 100vw, 860px"
+                  width="1693"
+                  height="929"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="high"
+                  alt=""
+              >
+              {% else %}
+              <img
+                  class="bk-hero__image"
+                  data-deferred-src="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }}"
+                  data-deferred-srcset="{{ url_for('static', filename='images/community/break-chair-plant-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-chair-plant-1280.webp') }} 1280w"
+                  data-deferred-sizes="(max-width: 700px) 100vw, 860px"
+                  width="1693"
+                  height="929"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt=""
+              >
+              {% endif %}
+            </section>
+
+            <div class="bk-bento">
+              <article class="ps-card bk-card bk-transform">
+                <div class="bk-transform__main">
+                  <div class="bk-transform__copy">
+                    <header class="bk-card__top">
+                      <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5L4.8 8.3l5-.7z"/></svg> Transformation</span>
+                    </header>
+                    <h3>From drained to determined.</h3>
+                    <p class="bk-transform__lead">Small shifts.<br>Real change.</p>
+                  </div>
+                  <figure class="bk-beforeafter">
+                  {% if initial_tab == 'break' %}
+                  <img
+                      src="{{ url_for('static', filename='images/community/break-transformation-640.webp') }}"
+                      srcset="{{ url_for('static', filename='images/community/break-transformation-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-transformation-1280.webp') }} 1280w"
+                      sizes="(max-width: 700px) calc(100vw - 36px), 320px"
+                      width="1619"
+                      height="971"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                      alt="Illustrative before-and-after reset story: a tired person on the left and a refreshed person holding a mug on the right."
+                  >
+                  {% else %}
+                  <img
+                      data-deferred-src="{{ url_for('static', filename='images/community/break-transformation-640.webp') }}"
+                      data-deferred-srcset="{{ url_for('static', filename='images/community/break-transformation-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-transformation-1280.webp') }} 1280w"
+                      data-deferred-sizes="(max-width: 700px) calc(100vw - 36px), 320px"
+                      width="1619"
+                      height="971"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                      alt="Illustrative before-and-after reset story: a tired person on the left and a refreshed person holding a mug on the right."
+                  >
+                  {% endif %}
+                  <figcaption><span>Before</span><span>After</span></figcaption>
+                  </figure>
+                </div>
+                <blockquote class="bk-transform__quote">“I made tiny changes for a week. It changed everything.”</blockquote>
+                <footer class="bk-transform__foot">
+                  <span class="bk-avatar" aria-hidden="true">S</span>
+                  <span>Illustrative sample story</span>
+                </footer>
+              </article>
+
+              <article class="ps-card bk-card bk-challenge">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h13l-2 4 2 4H5z"/><path d="M5 4v17"/></svg> Weekend Challenge</span>
+                </header>
+                <div class="bk-challenge__body">
+                  <h3>30-Minute Reset <span aria-hidden="true">&#127807;</span></h3>
+                  <p>Step outside, move your body, and clear your mind.</p>
+                  <p class="bk-static-note">Sample community prompt — no response is recorded.</p>
+                </div>
+              </article>
+
+              <article class="ps-card bk-card bk-poll">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg> Community Prompt</span>
+                </header>
+                <h3>What’s your go-to reset?</h3>
+                <ul class="bk-pollist" aria-label="Illustrative reset options">
+                  <li><span class="bk-poll__ic" aria-hidden="true">🌿</span><span class="bk-poll__label">Walk in nature</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">♫</span><span class="bk-poll__label">Good playlist</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">☕</span><span class="bk-poll__label">Coffee + quiet</span></li>
+                  <li><span class="bk-poll__ic" aria-hidden="true">✺</span><span class="bk-poll__label">Creative time</span></li>
+                </ul>
+                <p class="bk-poll__foot">Illustrative choices — no vote is recorded.</p>
+              </article>
+
+              <article class="ps-card bk-card bk-local">
+                <header class="bk-card__top">
+                  <span class="bk-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 0 1 13 0c0 4.6-6.5 10-6.5 10z"/><circle cx="12" cy="11" r="2.3"/></svg> Local Discovery</span>
+                </header>
+                <h3>Hidden gem near you</h3>
+                <p class="bk-local__place">Riverside Bookshop &amp; Café<br><small>Illustrative local discovery</small></p>
+                {% if initial_tab == 'break' %}
+                <img
+                    class="bk-local__media"
+                    src="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }}"
+                    srcset="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-bookstore-1280.webp') }} 1280w"
+                    sizes="(max-width: 700px) calc(100vw - 36px), 300px"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    alt="Illustrative warm bookstore and café interior with shelves, plants, tables, and a green chair."
+                >
+                {% else %}
+                <img
+                    class="bk-local__media"
+                    data-deferred-src="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }}"
+                    data-deferred-srcset="{{ url_for('static', filename='images/community/break-bookstore-640.webp') }} 640w, {{ url_for('static', filename='images/community/break-bookstore-1280.webp') }} 1280w"
+                    data-deferred-sizes="(max-width: 700px) calc(100vw - 36px), 300px"
+                    width="1672"
+                    height="941"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    alt="Illustrative warm bookstore and café interior with shelves, plants, tables, and a green chair."
+                >
+                {% endif %}
+                <p class="bk-static-note">Sample card — details are not available yet.</p>
+              </article>
+            </div>
+
+            <div class="bk-flow" aria-label="Mood, quote, Pick-Me-Up and sharing">
+            <section class="ps-card bk-mood" aria-labelledby="bk-mood-title">
+              <header class="bk-mood__head">
+                <span class="bk-mood__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg></span>
+                <h2 id="bk-mood-title">Mood Switch</h2>
+              </header>
+              <p class="bk-mood__sub">How do you want to feel right now?</p>
+              <div class="bk-moods" role="group" aria-label="Choose a mood for this local preview">
+                <button type="button" class="bk-moodopt is-active" data-mood aria-pressed="true"><span class="bk-moodopt__txt"><strong>Build</strong><small>Focus. Grow. Make progress.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Break</strong><small>Rest. Recharge. Reset.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Inspiration</strong><small>Get inspired. See possibilities.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+                <button type="button" class="bk-moodopt" data-mood aria-pressed="false"><span class="bk-moodopt__txt"><strong>Reflect</strong><small>Pause. Journal. Realign.</small></span><i class="bk-chevron" aria-hidden="true"></i></button>
+              </div>
+              <p class="bk-static-note">Selection stays on this page only.</p>
+            </section>
+
+            <section class="ps-card bk-quote">
+              <span class="bk-quote__mark" aria-hidden="true">“</span>
+              <blockquote>Rest isn’t a reward. It’s part of the process.</blockquote>
+              <p class="bk-quote__by">— Sample community quote</p>
+              <span class="bk-quote__leaf" aria-hidden="true">❧</span>
+            </section>
+
+            <section class="ps-card bk-pickme">
+              <header class="bk-pickme__head">
+                <span class="bk-pickme__ic" aria-hidden="true">☀</span>
+                <h2>Today’s Pick-Me-Up</h2>
+              </header>
+              <blockquote>“You don’t have to be great to start, but you have to start to be great.”</blockquote>
+              <p class="bk-pickme__by">— Sample quote</p>
+            </section>
+
+            <section class="ps-card bk-share">
+              <div class="bk-share__copy">
+                <strong>Share something good</strong>
+                <small>Start with a post in the Feed.</small>
+                <button type="button" class="bk-btn bk-btn--outline" data-comm-create-post> Create a post <span aria-hidden="true">→</span></button>
+              </div>
+              <span class="bk-share__spark" aria-hidden="true">✦</span>
+            </section>
+            </div>
+
+            <section class="bk-band" aria-label="Return to the Feed">
+              <span class="bk-band__leaf" aria-hidden="true">❧</span>
+              <div class="bk-band__copy">
+                <strong>Break well. Come back better.</strong>
+                <small>Balance today. Build tomorrow.</small>
+              </div>
+              <a class="bk-btn bk-btn--outline" href="{{ url_for('the_slate') }}" data-comm-tab="feed">Back to the Feed <span aria-hidden="true">→</span></a>
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="overlayRoot"></div>
+  <div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/community-focus-lifecycle.js') }}?v=community-correction-2" defer></script>
+<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}?v=community-correction-3" defer></script>
+<script src="{{ url_for('static', filename='js/community-tabs.js') }}?v=community-correction-2" defer></script>
+{% endblock %}

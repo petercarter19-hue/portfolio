@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% import "partials/journal_book_chrome.html" as jbook %}
+
+{% block title %}Journal | PeerSlate{% endblock %}
+{% block meta_description %}Your private Journal - a complete record of moments, ideas, and milestones, captured in your own words. Private to you until you choose to share.{% endblock %}
+
+{% block extra_head %}
+{# Doc 15 (Visual Finish Addendum) supersedes doc 10's "site tokens only"
+   rule for the Journal: the book renders in its own pinned parchment/gold
+   palette. Newsreader's italic axis (for the serif display headline/quotes)
+   and Caveat (the script signature/annotation face, reusing the convention
+   already established for Slate Board - see templates/slate_board.html)
+   are not covered by base.html's site-wide Newsreader import, so this page
+   loads them itself, the same established per-page pattern. #}
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/context-rail.css') }}?v=j1-8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}?v=j1-9">
+{% endblock %}
+
+{% block body_class %}ps-journal-page{% endblock %}
+
+{% block content %}
+<div class="ps-journal"{% if is_evidence_fixture %} data-journal-evidence-fixture="true"{% endif %}>
+    <div class="ps-journal__bookcase">
+        {{ jbook.book_ribbon() }}
+        {{ jbook.book_page_edges() }}
+        {{ jbook.book_corners() }}
+        <div class="ps-journal__layout">
+            <div class="ps-journal__rail-region">
+                {% include "partials/context_rail.html" with context %}
+                {% if not manage_view %}
+                {{ jbook.rail_flourish() }}
+                {% endif %}
+            </div>
+
+            <div class="ps-journal__book{% if manage_view %} ps-journal__book--manage{% endif %}">
+                <div class="ps-journal__book-inner">
+                    {% set is_empty_intro = (not manage_view) and (not moments) %}
+                    {% if not is_empty_intro %}
+                    <div class="ps-journal__title-row">
+                        <div class="ps-journal__title-group">
+                            <h1 class="ps-journal__title" id="journal-title">{{ 'Manage' if manage_view else 'Journal' }}</h1>
+                            <span class="ps-journal__privacy">{{ jbook.icon_lock() }} Private to you</span>
+                        </div>
+                        {% if manage_view %}
+                        <div class="ps-journal__actions">
+                            <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal') }}">&larr; Back to timeline</a>
+                            <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
+                                {{ jbook.icon_plus() }} Capture a Moment
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if manage_view %}
+                    <p class="ps-journal__intro">View and organize all of your Moments.</p>
+                    {% else %}
+                    {# Doc 15 item 6: the mockup's exact single subtitle line - no
+                       second "nothing here is shared" sentence added on top of it;
+                       that privacy truth already lives in the lock cue above and
+                       the composer's own truth-line. #}
+                    <p class="ps-journal__intro">Your complete record of moments, ideas, and milestones &mdash; captured in your own words.</p>
+                    {% endif %}
+                    {% endif %}
+
+                    <div id="journal-live-region" class="sr-only" role="status" aria-live="polite"></div>
+
+                    {% if manage_view %}
+                    {# ---------------- Manage view (accepted screen C, doc 13/15) ----------------
+                       Doc 15 item 54: the mockup's compact control row - a smaller search bar, an
+                       "All kinds" dropdown (real, wired to the existing client-side kind filter), an
+                       honestly-inert "All time" dropdown (no time-range filter exists in J1), the
+                       Archived toggle, and the far-right filter/list icon button the prior pill row
+                       was missing (present in the mockup; truthfully disabled with an honest label -
+                       no saved/custom view feature exists yet). #}
+                    <div class="ps-journal__manage-controls" data-kind-filters>
+                        <div class="ps-journal__manage-search-row">
+                            <label class="sr-only" for="journal-manage-search">Search your Journal</label>
+                            <span class="ps-journal__manage-search-icon" aria-hidden="true">{{ jbook.icon_search() }}</span>
+                            <input
+                                type="search"
+                                id="journal-manage-search"
+                                class="ps-journal__manage-search"
+                                placeholder="Search your journal…"
+                                maxlength="200"
+                                data-manage-search
+                            >
+                        </div>
+                        <label class="sr-only" for="journal-manage-kind">Filter by kind</label>
+                        <select id="journal-manage-kind" class="ps-journal__manage-select" data-kind-filter-select>
+                            <option value="all" selected>All kinds</option>
+                            {% for value, label in moment_kinds %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="ps-journal__manage-select ps-journal__manage-select--inert" disabled aria-disabled="true" aria-label="All time — filtering by date range is coming later">
+                            <span>All time</span>{{ jbook.icon_chevron_down() }}
+                        </button>
+                        <button type="button" class="ps-journal__manage-pill" data-archived-filter aria-pressed="false">{{ jbook.icon_archive() }} Archived</button>
+                        <button type="button" class="ps-journal__manage-icon-btn" disabled aria-disabled="true" aria-label="More filters — coming later">{{ jbook.icon_list() }}</button>
+                    </div>
+
+                    <div data-manage-list>
+                        {% if moments %}
+                        <div class="ps-journal__manage-head" aria-hidden="true">
+                            <span>Date</span>
+                            <span>Kind</span>
+                            <span>Moment</span>
+                            <span>Duration</span>
+                            <span>Status</span>
+                            <span></span>
+                        </div>
+                        {% for moment in moments %}
+                        {% set kind_chapter = 'voice' if moment.source_type == 'voice' else ('photos' if moment.source_type == 'photo' else ('videos' if moment.source_type == 'video' else ('milestones' if moment.moment_kind == 'achievement' else ('reflections' if moment.moment_kind == 'lesson' else 'timeline')))) %}
+                        <div class="ps-journal__manage-row" data-manage-row data-source-type="{{ moment.source_type or 'text' }}" data-moment-kind="{{ moment.moment_kind }}" data-lifecycle-state="{{ moment.lifecycle_state }}" data-chapter="{{ kind_chapter }}">
+                            <span class="ps-journal__manage-date">
+                                <span class="ps-journal__manage-date-block">{{ moment.occurred_day or '—' }}<br><span class="ps-journal__manage-date-month">{{ moment.occurred_month_label or 'Date not set' }}</span></span>
+                                {% if moment.display_time %}<span class="ps-journal__manage-time">{{ moment.display_time }}</span>{% endif %}
+                            </span>
+                            <span class="ps-journal__manage-kind">
+                                {% if moment.source_type == 'voice' %}{{ jbook.icon_mic() }}
+                                {% elif moment.source_type == 'photo' %}{{ jbook.icon_camera() }}
+                                {% elif moment.source_type == 'video' %}{{ jbook.icon_film() }}
+                                {% elif moment.moment_kind == 'achievement' %}{{ jbook.icon_star() }}
+                                {% else %}{{ jbook.icon_doc() }}{% endif %}
+                                {{ moment.display_kind_label or (moment.moment_kind|capitalize if moment.moment_kind else 'Moment') }}
+                            </span>
+                            <span class="ps-journal__manage-title">
+                                {# The accepted Manage fixture has media only for actual Photo
+                                   and Video rows. Voice remains a waveform-and-duration row;
+                                   text remains text. Do not let the richer Timeline fixture media
+                                   leak into this compact working view. #}
+                                {% if moment.source_type in ['photo', 'video'] %}{{ jbook.moment_thumb(moment) }}{% endif %}
+                                <span class="ps-journal__manage-title-text">
+                                    <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
+                                    {% if moment.source_type == 'voice' %}
+                                    <span class="ps-journal__manage-wave" aria-hidden="true"></span>
+                                    {% endif %}
+                                </span>
+                            </span>
+                            <span class="ps-journal__manage-duration">{% if moment.voice_duration_label %}{{ moment.voice_duration_label }}{% endif %}</span>
+                            <span class="ps-journal__manage-status">
+                                {{ jbook.icon_lock() }} Private
+                                {% if moment.lifecycle_state == 'archived' %}<span class="ps-journal__manage-archived-badge">Archived</span>{% endif %}
+                            </span>
+                            <button type="button" class="ps-journal__manage-menu" disabled aria-disabled="true" aria-label="More options for this Moment - coming later">{{ jbook.icon_dots() }}</button>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="ps-journal__manage-empty" data-manage-empty>No Moments yet. Capture your first one from the Journal.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="ps-journal__manage-footer">
+                        {# Doc 15 item 51: the footer count is the member's true total (not merely
+                           this page's visible row count) - matches totals.moments, the same honest
+                           bounded-scan figure the This-Season hero already shows. #}
+                        <span><span class="ps-journal__manage-footer-count" data-manage-count>{{ totals.moments }} {{ 'Moment' if totals.moments == 1 else 'Moments' }}</span></span>
+                        <span>You own your Moments. Only you can see them.</span>
+                    </div>
+
+                    {% else %}
+                    {# ---------------- Timeline (default) view ---------------- #}
+                    {% if moments %}
+                    {# Doc 15 item 5: Manage + Capture a Moment sit directly above
+                       the This-season card (not beside the title, which is now
+                       full mockup scale and stands alone). #}
+                    <div class="ps-journal__actions-row">
+                        <a class="ps-btn ps-btn--ghost" href="{{ url_for('owner.journal', view='manage') }}">Manage</a>
+                        <button type="button" class="ps-btn ps-btn--gold" id="journal-open-composer" data-open-composer>
+                            {{ jbook.icon_plus() }} Capture a Moment
+                        </button>
+                    </div>
+                    <section class="ps-journal__hero" aria-label="This season">
+                        <div class="ps-journal__hero-scene{% if fixture_hero_image_url %} ps-journal__hero-scene--fixture{% endif %}"{% if fixture_hero_image_url %} style="--jbook-fixture-hero: url('{{ fixture_hero_image_url }}')"{% endif %} aria-hidden="true">
+                            {% if not fixture_hero_image_url %}
+                            <span class="ps-journal__hero-hill ps-journal__hero-hill--back"></span>
+                            <span class="ps-journal__hero-hill ps-journal__hero-hill--front"></span>
+                            <span class="ps-journal__hero-sun"></span>
+                            {% endif %}
+                        </div>
+                        <div class="ps-journal__hero-copy">
+                            <p class="ps-journal__hero-eyebrow">This season</p>
+                            <p class="ps-journal__hero-headline">{% for line in season_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+                            <p class="ps-journal__hero-microline">Focus. Learn. Build. Share.</p>
+                            <p class="ps-journal__hero-signature">{{ fixture_member_name or (member.display_name or 'You').split(' ')[0] }}</p>
+                        </div>
+                        <ul class="ps-journal__hero-totals">
+                            <li class="ps-journal__hero-stat">
+                                <span class="ps-journal__hero-stat-value">{{ totals.moments }}</span>
+                                <span class="ps-journal__hero-stat-label">{{ 'Moment' if totals.moments == 1 else 'Moments' }} captured</span>
+                            </li>
+                            <li class="ps-journal__hero-stat">
+                                <span class="ps-journal__hero-stat-value">{{ totals.voice_notes }}</span>
+                                <span class="ps-journal__hero-stat-label">{{ 'Voice note' if totals.voice_notes == 1 else 'Voice notes' }} recorded</span>
+                            </li>
+                            <li class="ps-journal__hero-stat">
+                                <span class="ps-journal__hero-stat-value">{{ totals.milestones }}</span>
+                                <span class="ps-journal__hero-stat-label">{{ 'Milestone' if totals.milestones == 1 else 'Milestones' }} achieved</span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <ol class="ps-journal__timeline" id="journal-timeline" data-timeline aria-label="Journal timeline, most recent first">
+                        {% set ns = namespace(annotated=false) %}
+                        {% for moment in moments %}
+                        {% set kind_chapter = 'voice' if moment.source_type == 'voice' else ('photos' if moment.source_type == 'photo' else ('videos' if moment.source_type == 'video' else ('milestones' if moment.moment_kind == 'achievement' else ('reflections' if moment.moment_kind == 'lesson' else None)))) %}
+                        {% set source_label = {'voice': 'Voice Note', 'photo': 'Photo', 'video': 'Video'}.get(moment.source_type, 'Text Note') %}
+                        <li
+                            class="ps-journal__row ps-journal__row--{{ moment.source_type or 'text' }}"
+                            data-journal-row
+                            data-source-type="{{ moment.source_type or '' }}"
+                            data-moment-kind="{{ moment.moment_kind or '' }}"
+                            data-chapter="{{ kind_chapter or '' }}"
+                            id="journal-moment-{{ moment.moment_key }}"
+                        >
+                            <div class="ps-journal__date">
+                                <span class="ps-journal__date-node" aria-hidden="true"></span>
+                                {% if moment.occurred_day %}
+                                <span class="ps-journal__date-day">{{ moment.occurred_day }}</span>
+                                <span class="ps-journal__date-month">{{ moment.occurred_month_label }}</span>
+                                {% else %}
+                                <span class="ps-journal__date-day">&mdash;</span>
+                                <span class="ps-journal__date-month">Date not set</span>
+                                {% endif %}
+                            </div>
+                            <div class="ps-journal__card">
+                                <div class="ps-journal__content">
+                                    <p class="ps-journal__meta">
+                                        {% if moment.display_time %}<span>{{ moment.display_time }}</span><span aria-hidden="true">&middot;</span>{% endif %}
+                                        {% if moment.source_type == 'voice' %}{{ jbook.icon_mic() }}{% endif %}
+                                        <span>{{ source_label }}</span>
+                                        <span aria-hidden="true">&middot;</span>
+                                        <span class="ps-journal__meta-privacy">{{ jbook.icon_lock() }} Private</span>
+                                    </p>
+                                    {# usp_ListJournalMomentsForOwner returns only the title (which the
+                                       composer derives from the member's first line), not the full
+                                       narrative body - so the title is the row's one line of content,
+                                       shown once here. It is not repeated as a separate "narrative"
+                                       line; see the completion report's disclosed narrative-in-list-read
+                                       limitation. #}
+                                    <h3 class="ps-journal__row-title">
+                                        <a href="{{ url_for('owner.journal_moment', moment_key=moment.moment_key) }}">{{ moment.title or 'Untitled Moment' }}</a>
+                                    </h3>
+                                    {% if moment.source_type == 'voice' %}
+                                    {# Real per-Moment audio playback needs the source_capture_key that
+                                       usp_ListJournalMomentsForOwner does not return, and J1's one-step
+                                       Save Moment always creates a text-type Capture regardless of Speak
+                                       or Type (see the completion report's disclosed voice-source
+                                       linkage gap) - so this row type cannot occur for real J1 data yet.
+                                       The control still renders honestly disabled (and greyed - see
+                                       journal.css's S5 note) rather than silently omitted, so the
+                                       markup is ready once a future slice wires it. #}
+                                    <div class="ps-journal__voice-row">
+                                        <button type="button" class="ps-journal__voice-play" disabled aria-disabled="true" aria-label="Playback for this voice Moment is coming later">{{ jbook.icon_play() }}</button>
+                                        <span class="ps-journal__voice-wave" aria-hidden="true"></span>
+                                        <span class="ps-journal__voice-duration">{{ moment.voice_duration_label or 'Coming later' }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {{ jbook.moment_thumb(moment) }}
+                            </div>
+                            {% if moment.moment_kind == 'achievement' and not ns.annotated %}
+                            {% set ns.annotated = true %}
+                            <p class="ps-journal__annotation">Proud of this one <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" width="14" height="14"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/></svg></p>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ol>
+
+                    {% for chapter in chapters if chapter.key != 'timeline' %}
+                    <p class="ps-journal__empty" data-chapter-empty="{{ chapter.key }}" hidden>
+                        <span class="ps-journal__empty-title">No {{ chapter.label|lower }} yet</span><br>
+                        <span class="ps-journal__empty-copy">
+                            {% if chapter.key == 'voice' %}Voice Moments will appear here once a saved Moment's original source is voice. In this release, Speak-to-text Moments save as your written words - real voice playback in the Journal is coming in a later update.
+                            {% elif chapter.key == 'photos' %}Photo Capture is not yet connected to the Journal in this release.
+                            {% elif chapter.key == 'videos' %}Video Capture is not available yet.
+                            {% elif chapter.key == 'milestones' %}Mark a Moment as an Achievement while capturing it, and it will appear here.
+                            {% elif chapter.key == 'reflections' %}Mark a Moment as a Lesson while capturing it, and it will appear here.
+                            {% endif %}
+                        </span>
+                    </p>
+                    {% endfor %}
+
+                    {% if next_cursor %}
+                    <button type="button" class="ps-btn ps-btn--ghost ps-journal__load-more" id="journal-load-more" data-load-more data-cursor="{{ next_cursor }}"><span>Load more moments</span><span aria-hidden="true">⌄</span></button>
+                    {% endif %}
+
+                    {% else %}
+                    {# ---------------- Empty first-visit state (S2, accepted screen A) ----------------
+                       Doc 15 item 31: no eyebrow/title/subtitle header block here - the page opens
+                       straight into the centered composition. Item 39: Manage stays reachable via a
+                       quiet ghost control in the page's top-right corner (owner-delegated judgment -
+                       the accepted mockup does not show a header row to hang it from). #}
+                    <a class="ps-journal__manage-ghost" href="{{ url_for('owner.journal', view='manage') }}">{{ jbook.icon_manage() }}<span>Manage</span></a>
+                    <div class="ps-journal__empty ps-journal__empty--intro">
+                        <div class="ps-journal__empty-illustration">{{ jbook.empty_illustration() }}</div>
+                        <p class="ps-journal__empty-title">Your story starts here.</p>
+                        <p class="ps-journal__empty-copy">Capture your first Moment &mdash; a thought, a lesson, a win, or something you never want to forget.</p>
+                        <button type="button" class="ps-btn ps-btn--gold" data-open-composer>{{ jbook.icon_pencil() }} Capture a Moment</button>
+                        <p class="ps-journal__empty-privacy">{{ jbook.icon_lock() }} Private to you</p>
+                        {# Doc 15 item 37 SUPERSEDES doc 13's unattributed ruling: signed with the
+                           member's own profile name, dynamic per member, never hardcoded (the
+                           accepted PNG's "- Pete" is that mockup's own author preview, not a fixed
+                           string every member sees). #}
+                        <blockquote class="ps-journal__empty-quote">
+                            <p>The pages are yours.<br>The story is yours.<br>The impact is yours.</p>
+                            <cite>&mdash; {{ fixture_member_name or (member.display_name or 'You').split(' ')[0] }}</cite>
+                        </blockquote>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/journal_composer.html" %}
+
+<script>
+    window.__PS_JOURNAL__ = {
+        listUrl: {{ url_for('owner.journal') | tojson }},
+        apiUrl: {{ url_for('peerslate_api.list_journal_moments') | tojson }},
+        voiceUploadUrl: {{ url_for('owner.upload_voice_capture') | tojson }},
+        voiceDraftUrlTemplate: {{ url_for('owner.journal_voice_draft', source_key='__SOURCE_KEY__') | tojson }},
+        momentUrlTemplate: {{ url_for('owner.journal_moment', moment_key='__MOMENT_KEY__') | tojson }},
+        maxVoiceBytes: {{ max_voice_bytes | tojson }},
+        maxVoiceDurationSeconds: {{ max_voice_duration_seconds | tojson }},
+        maxTitleLength: {{ max_title_length | tojson }},
+        maxNarrativeLength: {{ max_narrative_length | tojson }},
+        momentKinds: {{ moment_kinds | tojson }},
+        occurredPrecisions: {{ occurred_precisions | tojson }},
+        fixtureMediaUrls: {
+            lake: {{ url_for('static', filename='images/journal/mountain-lake-fixture-v3.png') | tojson }},
+            notebook: {{ url_for('static', filename='images/journal/notebook-sketch-fixture-v2.png') | tojson }},
+            stage: {{ url_for('static', filename='images/journal/workshop-stage-fixture-v3.png') | tojson }},
+            coffee: {{ url_for('static', filename='images/journal/coffee-notes-fixture-v2.png') | tojson }}
+        }
+    };
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/journal.js') }}?v=j1-9"></script>
+{% endblock %}

@@ -1,0 +1,347 @@
+{
+  "fixture": "sample Community; no persistence",
+  "captures": [
+    {
+      "file": "break__route-the-slate__state-feed-keyboard-switch-focus__vp-1440x1000__theme-light__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate",
+      "state": "keyboard-focus",
+      "viewport": "1440x1000",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": "break",
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": true,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-1440x1000__theme-dark__region-lower.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "1440x1000",
+      "theme": "dark",
+      "region": "lower",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": ".bk-quote",
+        "scroll_y": 1424,
+        "required_visible_content": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-1440x1000__theme-dark__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "1440x1000",
+      "theme": "dark",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-1440x1000__theme-light__region-lower.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "1440x1000",
+      "theme": "light",
+      "region": "lower",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": ".bk-quote",
+        "scroll_y": 1423,
+        "required_visible_content": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-1440x1000__theme-light__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "1440x1000",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-320x800__theme-dark__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "320x800",
+      "theme": "dark",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-320x800__theme-light__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "320x800",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-390x844__theme-dark__region-lower.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "390x844",
+      "theme": "dark",
+      "region": "lower",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": ".bk-quote",
+        "scroll_y": 2201,
+        "required_visible_content": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-390x844__theme-dark__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "390x844",
+      "theme": "dark",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-390x844__theme-light__region-lower.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "390x844",
+      "theme": "light",
+      "region": "lower",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": ".bk-quote",
+        "scroll_y": 2201,
+        "required_visible_content": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "file": "break__route-the-slate-break__state-direct__vp-390x844__theme-light__region-top.png",
+      "route": "/the-slate/break",
+      "start_route": "/the-slate/break",
+      "state": "break",
+      "viewport": "390x844",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate/break",
+        "active_tab": "break",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "feed__route-the-slate__state-loaded__vp-1440x1000__theme-dark__region-top.png",
+      "route": "/the-slate",
+      "start_route": "/the-slate",
+      "state": "feed",
+      "viewport": "1440x1000",
+      "theme": "dark",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate",
+        "active_tab": "feed",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "feed__route-the-slate__state-loaded__vp-1440x1000__theme-light__region-top.png",
+      "route": "/the-slate",
+      "start_route": "/the-slate",
+      "state": "feed",
+      "viewport": "1440x1000",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate",
+        "active_tab": "feed",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "feed__route-the-slate__state-loaded__vp-390x844__theme-dark__region-top.png",
+      "route": "/the-slate",
+      "start_route": "/the-slate",
+      "state": "feed",
+      "viewport": "390x844",
+      "theme": "dark",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate",
+        "active_tab": "feed",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    },
+    {
+      "file": "feed__route-the-slate__state-loaded__vp-390x844__theme-light__region-top.png",
+      "route": "/the-slate",
+      "start_route": "/the-slate",
+      "state": "feed",
+      "viewport": "390x844",
+      "theme": "light",
+      "region": "top",
+      "semantic_assertions": {
+        "location_pathname": "/the-slate",
+        "active_tab": "feed",
+        "focused_tab": null,
+        "expected_panel_visible": true,
+        "expected_tab_selected": true,
+        "feed_content_ready": true,
+        "feed_post_count": 8,
+        "focus_ring_visible": false,
+        "region_anchor": null,
+        "scroll_y": 0,
+        "required_visible_content": []
+      }
+    }
+  ]
+}

@@ -23,12 +23,6 @@ from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
-from services.people_interests_feed import (
-    GOAL_REACTION,
-    POST_BODY_MAX,
-    REACTION_TYPES,
-    people_interests_feed,
-)
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -155,7 +149,9 @@ def prevent_stale_html(response):
     visitor's browser cache. Versioned static assets (?v=...) are left
     cacheable — only text/html is marked no-cache."""
     if response.mimetype == 'text/html':
-        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        # Routes may set a stricter policy for private owner-specific HTML.
+        # Preserve it; ordinary pages retain the historic default exactly.
+        response.headers.setdefault('Cache-Control', 'no-cache, must-revalidate')
     response.headers.setdefault('X-Content-Type-Options', 'nosniff')
     response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
     response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -1045,10 +1041,8 @@ def skills():
 # internal tabs — Slate Feed / My Slate / Daily Slate / Slate
 # Paths (from Pete's four 2026-07-08 mockups). The old separate
 # top-level "Slate Feed" and "Slate Board" nav links now live
-# inside it. The feed's deeper layers (Progress / Pulse / Break)
-# kept their own pages and simply moved under /the-slate/*; the
-# People layer is the hub's landing view. Old /slate-feed URLs
-# redirect so no bookmark or shared link ever breaks.
+# inside it. The feed's deeper layers (Progress / Pulse) kept
+# their own pages and simply moved under /the-slate/*.
 #
 # The feed is built to aggregate events from EVERY member's
 # slate — each item in static/data/slate_feed.json names its
@@ -1059,14 +1053,25 @@ def skills():
 # -------------------------------------------------------
 
 
+def _render_community_tabs(initial_tab):
+    # PS-COMMUNITY-TABS-001 (2026-07-21, owner supersession): Feed and The
+    # Break are the only first-class Community views. Both panels render
+    # server-side and JavaScript swaps visibility without a normal-click
+    # reload; `initial_tab` selects the bookmarkable Feed or Break route.
+    return render_template(
+        'the_slate.html',
+        initial_tab=initial_tab,
+    )
+
+
 @app.route('/the-slate')
 def the_slate():
-    # THE SLATE LANDING = the People & Interests living board (2026-07-14,
-    # Pete): the approved corkboard feed replaced the old Slate Feed landing
-    # at this address. The previous landing template (the_slate_feed.html)
-    # stays on disk for easy rollback, and its hub links (Slate Board /
-    # My Slate / Daily Slate) now live in the board's feed strip.
-    return _render_people_interests_board()
+    # THE SLATE LANDING = Feed (owner decision, 2026-07-21): the People &
+    # Interests corkboard that lived here since 2026-07-14 is retired — it
+    # overlapped Feed almost completely. Its own template
+    # (the_slate_people_interests.html) stays on disk for rollback, matching
+    # the site's existing convention for a retired landing view.
+    return _render_community_tabs('feed')
 
 
 @app.route('/the-slate/my-slate')
@@ -1182,38 +1187,24 @@ def slate_feed_pulse():
 
 @app.route('/the-slate/break')
 def slate_feed_break():
-    # The Break view — the "step back and recharge" tab: an encouragement
-    # panel, recharge ideas, community shout-outs, and a daily spark. Keeps
-    # the platform human, not just a metrics grind. Static preview for now.
-    return render_template(
-        'slate_break.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
+    # The Break is the second first-class view in the same seamless,
+    # two-view Community shell as Feed.
+    return _render_community_tabs('break')
 
 
-# PS-FEAT-002: the People & Interests living board — the corkboard-style
-# continuous social feed built from Pete's two approved mockups. Approved on
-# 2026-07-14 to BE The Slate landing (the_slate() above). The board is
-# rendered by static/js/people-interests.js from /api/feed/people-interests
-# (cursor pagination); the supporting rails render server-side from the same
-# fixture file. Every non-Pete author is a representative sample member.
-def _render_people_interests_board():
-    return render_template(
-        'the_slate_people_interests.html',
-        initial_feed=people_interests_feed.get_page(limit=16),
-        feed_authors=people_interests_feed.authors,
-        left_rail=people_interests_feed.left_rail,
-        right_rail=people_interests_feed.right_rail,
-        reaction_types=list(REACTION_TYPES),
-        goal_reaction=GOAL_REACTION,
-        post_body_max=POST_BODY_MAX,
-    )
+@app.route('/the-slate/saved')
+def the_slate_saved():
+    # Compatibility-only legacy address. Saved is not a Community view and
+    # must never render a third panel or destination.
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/people-interests')
 def the_slate_people_interests():
-    # The board launched at this address (2026-07-13) and became The Slate
-    # landing the next day — forward so any shared link keeps working.
+    # The board launched at this address (2026-07-13), became The Slate
+    # landing the next day, and was retired as the landing on 2026-07-21 in
+    # favor of the Feed / The Break Community shell — forward so any
+    # shared link keeps working.
     return redirect(url_for('the_slate'), code=302)
 
 

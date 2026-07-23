@@ -45,8 +45,8 @@
       <tr><td>03</td><td><a href="{{ url_for('feed_living_stream') }}?state=video">Video post</a></td><td>Media-forward video treatment in the same stream.</td></tr>
       <tr><td>04</td><td><a href="{{ url_for('feed_living_stream') }}?state=rail">Optional Catch Up rail</a></td><td>Rail renders only when meaningful unseen updates exist; removing it recenters the stream.<span class="hint">Interactively: the rail signal is a backend decision, so the default state deliberately has no rail.</span></td></tr>
       <tr><td>05</td><td><a href="{{ url_for('feed_living_stream') }}?state=voice">Voice listening</a></td><td>Also: the composer mic, the Capture button, or mobile Capture. Cancel and “Stop and review” both work.</td></tr>
-      <tr><td>06</td><td><a href="{{ url_for('feed_living_stream') }}?state=review">Transcript review</a></td><td>Also: “Stop and review” from voice listening. Transcript is editable; audience and connections are selectable.</td></tr>
-      <tr><td>07</td><td><a href="{{ url_for('feed_living_stream') }}?state=publish">AI-assisted publish review</a></td><td>Also: “Publish update” from transcript review. Publishing adds the update to the top of the Feed; “Keep private” saves without publishing.</td></tr>
+      <tr><td>06</td><td><a href="{{ url_for('feed_living_stream') }}?state=review">Transcript review</a></td><td>Also: “Stop and review” from voice listening. Transcript and sample audience label are editable; connection destinations are visibly not connected.</td></tr>
+      <tr><td>07</td><td><a href="{{ url_for('feed_living_stream') }}?state=preview">AI-assisted local preview review</a></td><td>“Add preview to Feed” inserts a browser-local sample. Nothing is saved, shared, or added to Journal.</td></tr>
       <tr><td>08</td><td><a href="{{ url_for('feed_living_stream') }}?state=detail">Conversation detail</a></td><td>Also: Comment on any post. Replies, Respond, and Offer help work; the reply composer adds to the thread.</td></tr>
       <tr><td>09</td><td><a href="{{ url_for('feed_living_stream') }}?state=empty">Caught-up empty</a></td><td>Also: the Following tab. One useful next action, no filler.</td></tr>
       <tr><td>10</td><td><a href="{{ url_for('feed_living_stream') }}?state=loading">Loading</a></td><td>Honest skeletons, held for review. The live prototype shows the same skeleton briefly on load and retry.</td></tr>
@@ -62,7 +62,7 @@
       <tr><td>13</td><td><a href="{{ url_for('feed_living_stream') }}">Mobile stream</a></td><td>&le;700px wide: compact top bar, bottom navigation, Capture as the central action.</td></tr>
       <tr><td>14</td><td><a href="{{ url_for('feed_living_stream') }}?state=video">Mobile video</a></td><td>&le;700px wide with the video state.</td></tr>
       <tr><td>15</td><td><a href="{{ url_for('feed_living_stream') }}?state=voice">Mobile voice capture</a></td><td>&le;700px wide: the voice dialog becomes a bottom sheet.</td></tr>
-      <tr><td>16</td><td><a href="{{ url_for('feed_living_stream') }}?state=publish">Mobile publish review</a></td><td>&le;700px wide: scrollable review with a sticky publish action.</td></tr>
+      <tr><td>16</td><td><a href="{{ url_for('feed_living_stream') }}?state=preview">Mobile local-preview review</a></td><td>&le;700px wide: scrollable review with a sticky preview action.</td></tr>
     </tbody>
   </table>
 

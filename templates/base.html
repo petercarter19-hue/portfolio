@@ -27,8 +27,14 @@
          longer lined up with the page around it (worse in Safari, which
          Macs default to). Real tablets don't hit this bug because forcing
          the viewport width is native browser behavior, not a CSS scaling
-         trick — that's why this script only touches touch devices now. -->
-    <script>
+         trick — that's why this script only touches touch devices now.{% if standalone_owner_shell %}
+
+         Owner Home (standalone_owner_shell, PS-HOME-FRONTEND-001): the
+         flag-on Owner Home render ships its own native 390/320/844
+         responsive layout and must not be forced to the 1280px desktop
+         viewport, so this whole script is skipped only for that render;
+         every other route keeps the exact existing behavior.{% endif %} -->
+    {% if not standalone_owner_shell %}<script>
         (function () {
             var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
             var TABLET_MIN = 744;      /* iPad Mini portrait width */
@@ -48,7 +54,7 @@
                 }
             }
         })();
-    </script>
+    </script>{% endif %}
 
     <meta
         name="description"
@@ -108,16 +114,21 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-{% set _p = request.path %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
-<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+{% set _p = request.path %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
+{% if standalone_owner_shell %}{# Owner Home standalone shell (U1/U3, PS-HOME-FRONTEND-001): the flag-on
+   Owner Home render owns its own dark cinematic body and omits every public
+   chrome class (portfolio-shell/platform-shell, slate-light,
+   ps-editorial-surface) and the site light/dark theme attribute — this
+   route is not affected by the shared theme toggle. Every other route is
+   completely unaffected by this branch. #}<body class="owner-home-shell">{% else %}<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
-       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">
+       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">{% endif %}
 
     {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 
-    {# Dark theme (Monochrome & Signal Gold, PS-THEME-001): a returning
+    {% if not standalone_owner_shell %}{# Dark theme (Monochrome & Signal Gold, PS-THEME-001): a returning
        visitor's stored preference is applied here, as the very first thing
        in <body>, so it happens before anything below paints — otherwise a
        dark-theme visitor would see a flash of the light theme on every
@@ -131,11 +142,11 @@
                 }
             } catch (e) { /* localStorage unavailable (private mode, etc.) — default theme stands */ }
         })();
-    </script>
+    </script>{% endif %}
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    {# Site-wide light-orbit backdrop (updated 2026-07-15, Pete): every page except
+    {% if not standalone_owner_shell %}{# Site-wide light-orbit backdrop (updated 2026-07-15, Pete): every page except
        the Experience film shares the fixed blue-white abstract scene.
        The resume route keeps its own identical layer, so it hides this one. #}
     <div class="site-sky" aria-hidden="true"></div>
@@ -225,7 +236,7 @@
                     {# v1.2 rule 30 (PS-FEED-002): no member-specific public AI
                        assistant inside Community — the launcher is not
                        rendered in pine rooms. #}
-                    {% if page_room != 'pine' %}
+                    {% if page_room != 'pine' and not is_private_journal_path %}
                     <button class="nav-ask-ai" type="button" data-open-chat aria-label="Ask Pete AI">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         <span>Ask AI</span>
@@ -248,10 +259,10 @@
 
         {# Keep profile navigation inside the sticky global header so the two
            navigation levels read as one connected piece of chrome. #}
-        {% if request.path != '/' %}
+        {% if request.path != '/' and not is_private_journal_path %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
-    </header>
+    </header>{% endif %}
 
     {# The profile band + tab strip frame the portfolio pages — EXCEPT
        Slate Board and Interview Studio, which the mockups treat as
@@ -274,7 +285,7 @@
         {% endblock %}
     </main>
 
-    <footer class="footer">
+    {% if not standalone_owner_shell %}<footer class="footer">
         {# Mockup privacy line — every page. #}
         <p class="footer-privacy">
             <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
@@ -304,7 +315,7 @@
        Ask Pete AI button is on screen, then fades in once the visitor
        scrolls past it (chatbot.js watches that button and toggles the
        is-visible class), so long pages always keep the AI one click away. #}
-    {% if page_room != 'pine' %}
+    {% if page_room != 'pine' and not is_private_journal_path %}
     <button id="chat-toggle" aria-label="Open Pete's AI assistant">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2"
@@ -393,7 +404,7 @@
     <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-consolidated-1"></script>
     <script src="{{ url_for('static', filename='js/site-search.js') }}?v=resume-consolidated-1"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
-    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"></script>
+    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"></script>{% endif %}
     {% block extra_scripts %}{% endblock %}
 
 </body>

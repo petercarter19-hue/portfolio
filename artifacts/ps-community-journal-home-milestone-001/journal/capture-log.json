@@ -1,0 +1,863 @@
+{
+  "fixture": "server-owned TESTING-only",
+  "captures": [
+    {
+      "file": "timeline-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "timeline",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "hero": {
+        "top": 369,
+        "bottom": 717,
+        "headline_width": 307,
+        "headline_height": 78,
+        "headline_font_style": "italic"
+      },
+      "rail": {
+        "timeline": {
+          "top": 183,
+          "bottom": 282
+        },
+        "voice": {
+          "top": 340,
+          "bottom": 440
+        },
+        "photos": {
+          "top": 498,
+          "bottom": 598
+        },
+        "videos": {
+          "top": 656,
+          "bottom": 739
+        },
+        "milestones": {
+          "top": 797,
+          "bottom": 897
+        },
+        "reflections": {
+          "top": 955,
+          "bottom": 1055
+        },
+        "flourish": {
+          "top": 1339,
+          "bottom": 1378
+        }
+      },
+      "timeline": {
+        "may20": {
+          "top": 761,
+          "bottom": 955
+        },
+        "may19": {
+          "top": 955,
+          "bottom": 1146
+        },
+        "may18": {
+          "top": 1146,
+          "bottom": 1340
+        },
+        "may13": {
+          "top": 1340,
+          "bottom": 1531
+        }
+      }
+    },
+    {
+      "file": "timeline-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "timeline",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "hero": {
+        "headline_width": 186,
+        "headline_height": 55,
+        "headline_font_style": "italic"
+      }
+    },
+    {
+      "file": "timeline-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "timeline",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-320.png",
+      "viewport": "320x740",
+      "state": "timeline",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-desktop-light-1440-entries.png",
+      "viewport": "1440x1040",
+      "state": "timeline-entries",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-desktop-dark-1440-entries.png",
+      "viewport": "1440x1040",
+      "state": "timeline-entries",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-a.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-a",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-a.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-a",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-b.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-b",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-b.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-b",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-390-entries-c.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-c",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-dark-390-entries-c.png",
+      "viewport": "390x844",
+      "state": "timeline-entries-c",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-320-entries-b.png",
+      "viewport": "320x740",
+      "state": "timeline-entries-b",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-dark-320-entries-b.png",
+      "viewport": "320x740",
+      "state": "timeline-entries-b",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-light-320-entries-c.png",
+      "viewport": "320x740",
+      "state": "timeline-entries-c",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-mobile-dark-320-entries-c.png",
+      "viewport": "320x740",
+      "state": "timeline-entries-c",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-type-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "type",
+        "width": 502,
+        "height": 320
+      }
+    },
+    {
+      "file": "composer-type-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "type",
+        "width": 502,
+        "height": 320
+      }
+    },
+    {
+      "file": "composer-speak-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 502,
+        "height": 336
+      }
+    },
+    {
+      "file": "composer-speak-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 502,
+        "height": 336
+      }
+    },
+    {
+      "file": "composer-type-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "type",
+        "width": 342,
+        "height": 148
+      }
+    },
+    {
+      "file": "composer-type-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "type",
+        "width": 342,
+        "height": 148
+      }
+    },
+    {
+      "file": "composer-speak-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 342,
+        "height": 258
+      }
+    },
+    {
+      "file": "composer-speak-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "composer_stage": {
+        "mode": "speak",
+        "width": 342,
+        "height": 258
+      }
+    },
+    {
+      "file": "composer-type-mobile-light-320.png",
+      "viewport": "320x740",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-type-mobile-dark-320.png",
+      "viewport": "320x740",
+      "state": "composer-type",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-speak-mobile-light-320.png",
+      "viewport": "320x740",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-speak-mobile-dark-320.png",
+      "viewport": "320x740",
+      "state": "composer-speak",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "saved-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "saved",
+      "fixture_state": "saved",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "saved-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "saved",
+      "fixture_state": "saved",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "saved-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "saved",
+      "fixture_state": "saved",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "saved-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "saved",
+      "fixture_state": "saved",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "empty-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "empty",
+      "fixture_state": "empty",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport",
+      "empty": {
+        "illustration_width": 168,
+        "visual_gap": 16.8
+      }
+    },
+    {
+      "file": "empty-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "empty",
+      "fixture_state": "empty",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "empty-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "empty",
+      "fixture_state": "empty",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "empty-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "empty",
+      "fixture_state": "empty",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "manage",
+      "fixture_state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "manage",
+      "fixture_state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "fixture_state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "manage",
+      "fixture_state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-light-390-lower.png",
+      "viewport": "390x844",
+      "state": "manage-lower",
+      "fixture_state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-dark-390-lower.png",
+      "viewport": "390x844",
+      "state": "manage-lower",
+      "fixture_state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-light-390-footer.png",
+      "viewport": "390x844",
+      "state": "manage-footer",
+      "fixture_state": "manage",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "manage-mobile-dark-390-footer.png",
+      "viewport": "390x844",
+      "state": "manage-footer",
+      "fixture_state": "manage",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "detail-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "detail",
+      "fixture_state": "detail",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport",
+      "detail": {
+        "title": {
+          "left": 501,
+          "top": 234,
+          "width": 512,
+          "height": 76
+        },
+        "context": {
+          "left": 501,
+          "top": 316,
+          "width": 512,
+          "height": 46
+        },
+        "audio": {
+          "left": 501,
+          "top": 410,
+          "width": 448,
+          "height": 66
+        },
+        "photo": {
+          "left": 965,
+          "top": 382,
+          "width": 216,
+          "height": 122
+        },
+        "date": {
+          "left": 386,
+          "top": 202,
+          "width": 91,
+          "height": 161
+        }
+      }
+    },
+    {
+      "file": "detail-desktop-dark-1440.png",
+      "viewport": "1440x1040",
+      "state": "detail",
+      "fixture_state": "detail",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "detail-mobile-light-390.png",
+      "viewport": "390x844",
+      "state": "detail",
+      "fixture_state": "detail",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "detail-mobile-dark-390.png",
+      "viewport": "390x844",
+      "state": "detail",
+      "fixture_state": "detail",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "detail-mobile-light-390-lower.png",
+      "viewport": "390x844",
+      "state": "detail-lower",
+      "fixture_state": "detail",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "detail-mobile-dark-390-lower.png",
+      "viewport": "390x844",
+      "state": "detail-lower",
+      "fixture_state": "detail",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal/moments/e1111111-1111-1111-1111-111111111111",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "timeline-desktop-200pct-zoom-light-1440.png",
+      "viewport": "720x520",
+      "state": "timeline-200-percent-css-viewport-reflow",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "css-viewport-reflow-equivalent",
+      "browser_zoom_equivalent_percent": 200,
+      "physical_viewport_equivalent": "1440x1040",
+      "reflow": {
+        "css_viewport": "720x520",
+        "document_client_width": 720,
+        "document_scroll_width": 720,
+        "horizontal_overflow": false,
+        "essential_boxes": {
+          ".ps-journal__hero-headline": {
+            "left": 73,
+            "right": 264,
+            "top": 495,
+            "bottom": 553,
+            "width": 191,
+            "height": 58,
+            "visible": true,
+            "horizontally_clipped": false
+          },
+          "#journal-open-composer": {
+            "left": 163,
+            "right": 358,
+            "top": 401,
+            "bottom": 444,
+            "width": 195,
+            "height": 43,
+            "visible": true,
+            "horizontally_clipped": false
+          },
+          "[data-timeline]": {
+            "left": 49,
+            "right": 628,
+            "top": 895,
+            "bottom": 1673,
+            "width": 579,
+            "height": 778,
+            "visible": true,
+            "horizontally_clipped": false
+          }
+        },
+        "headline_action_overlap": false,
+        "focused_control": "journal-open-composer"
+      }
+    },
+    {
+      "file": "timeline-desktop-forced-colors-1440.png",
+      "viewport": "1440x1040",
+      "state": "timeline-forced-colors",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": true,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-save-failure-390.png",
+      "viewport": "390x844",
+      "state": "composer-save-failure",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-save-failure-dark-390.png",
+      "viewport": "390x844",
+      "state": "composer-save-failure",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-save-failure-light-320.png",
+      "viewport": "320x740",
+      "state": "composer-save-failure",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-save-failure-dark-320.png",
+      "viewport": "320x740",
+      "state": "composer-save-failure",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-voice-failure-390.png",
+      "viewport": "390x844",
+      "state": "composer-voice-permission-failure",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-voice-failure-dark-390.png",
+      "viewport": "390x844",
+      "state": "composer-voice-permission-failure",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-voice-failure-light-320.png",
+      "viewport": "320x740",
+      "state": "composer-voice-permission-failure",
+      "fixture_state": "timeline",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "composer-mobile-voice-failure-dark-320.png",
+      "viewport": "320x740",
+      "state": "composer-voice-permission-failure",
+      "fixture_state": "timeline",
+      "dark": true,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal",
+      "capture_method": "native-css-viewport"
+    },
+    {
+      "file": "journal-unavailable-desktop-light-1440.png",
+      "viewport": "1440x1040",
+      "state": "service-unavailable",
+      "dark": false,
+      "reduced_motion": false,
+      "forced_colors": false,
+      "path": "/app/journal"
+    }
+  ]
+}

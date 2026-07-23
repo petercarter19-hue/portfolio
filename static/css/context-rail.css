@@ -1,0 +1,209 @@
+/* Context Rail Standard component styles (docs/governance/OWNER_CONTEXT_RAIL_STANDARD.md).
+   One shared "spine" component: a slim rail beside a room's content stage
+   holding that room's local views/sections/chapters/filters. The skeleton
+   (position, geometry, typography, materials, behavior) below is identical
+   wherever the rail is adopted; only the contents differ per room. This
+   file ships with the Journal (PS-JOURNAL-001 Slice J1), the rail's
+   reference implementation, and consumes central Deep Navy Gold tokens
+   only - no per-file palette redefinitions. Law 1: a rail entry filters or
+   navigates within the current room only; it never links to another
+   route/page. */
+
+.ps-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.ps-rail__label {
+    font-family: var(--ps-font-ui);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+    margin: 0 0 0.6rem;
+    padding: 0 0.25rem;
+}
+
+.ps-rail__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ps-rail__entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.6rem 0.7rem;
+    border: none;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: var(--ps-ink);
+    cursor: pointer;
+    font-family: var(--ps-font-ui);
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.ps-rail__entry:hover {
+    background: var(--ps-primary-soft);
+}
+
+.ps-rail__entry--static,
+.ps-rail-chips__chip--static {
+    cursor: default;
+}
+
+.ps-rail__entry--static:hover {
+    background: transparent;
+}
+
+.ps-rail__entry:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-rail__icon {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.1rem;
+    color: var(--ps-muted);
+}
+
+/* N1 (Opus review): quiet "01"-"06" chapter numerals, desktop rail only -
+   the accepted JOURNAL-01 rail reads as a book's numbered contents page. */
+.ps-rail__number {
+    flex: 0 0 auto;
+    width: 1.1rem;
+    margin-top: 0.15rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--ps-muted);
+}
+
+.ps-rail__entry[aria-current="true"] .ps-rail__number {
+    color: var(--ps-bronze-strong);
+}
+
+.ps-rail__entry[aria-current="true"] {
+    background: var(--ps-primary-soft);
+}
+
+.ps-rail__entry[aria-current="true"] .ps-rail__icon,
+.ps-rail__entry[aria-current="true"] .ps-rail__name {
+    color: var(--ps-bronze-strong);
+}
+
+.ps-rail__entry[aria-current="true"] .ps-rail__name {
+    font-weight: 700;
+}
+
+.ps-rail__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.ps-rail__name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.ps-rail__name {
+    font-size: 0.94rem;
+    font-weight: 600;
+    color: var(--ps-ink);
+}
+
+.ps-rail__count {
+    font-size: 0.78rem;
+    color: var(--ps-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.ps-rail__subtitle {
+    font-size: 0.78rem;
+    color: var(--ps-muted);
+    line-height: 1.3;
+}
+
+/* Mobile twin: a slim horizontally scrollable chip row under the page
+   title. Same entries, same single active state - independent of the
+   existing global mobile tabbar (mobile-nav.js); never a third nav layer. */
+.ps-rail--desktop {
+    display: none;
+}
+
+.ps-rail-chips {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 0.2rem 0.1rem 0.6rem;
+    margin: 0 -0.2rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.ps-rail-chips__chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--ps-border);
+    background: var(--ps-surface);
+    color: var(--ps-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ps-rail-chips__chip[aria-current="true"] {
+    border-color: var(--ps-bronze);
+    background: var(--ps-accent-soft);
+    color: var(--ps-bronze-strong);
+}
+
+.ps-rail-chips__chip:focus-visible {
+    outline: 2px solid var(--ps-primary);
+    outline-offset: 2px;
+}
+
+.ps-rail-chips__icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+@media (min-width: 900px) {
+    .ps-rail--desktop {
+        display: flex;
+    }
+
+    .ps-rail--mobile {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ps-rail__entry,
+    .ps-rail-chips__chip {
+        transition: none;
+    }
+}

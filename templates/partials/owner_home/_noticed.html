@@ -1,0 +1,13 @@
+{% import "partials/owner_home/_oh_macros.html" as ohm %}
+{# What PeerSlate noticed (parity row 10) — dark insight surface. Always
+   dormant in this release (noticed_item is always null; availability is
+   always coming_later). No observation, evidence count, or recommendation
+   is ever rendered here. #}
+<section class="oh__card oh__card--dormant" aria-labelledby="oh-noticed-title">
+    <div class="oh__card-head">
+        <h2 id="oh-noticed-title">What PeerSlate noticed</h2>
+        <span class="oh-pill oh-pill--soon">Coming later</span>
+    </div>
+    <span class="oh__spark" aria-hidden="true"></span>
+    {{ ohm.oh_coming_later("What PeerSlate noticed", "A source-linked insight can appear here only once PeerSlate can show what supports it.") }}
+</section>

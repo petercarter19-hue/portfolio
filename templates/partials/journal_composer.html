@@ -1,0 +1,200 @@
+{% import "partials/journal_book_chrome.html" as jbook %}
+{#
+  PS-JOURNAL-001 Slice J1 - the in-context Capture a Moment composer and
+  saved state (accepted screens 02/03/05; docs/initiatives/PS-JOURNAL-001/
+  11_SCREENS_02_03_05_ACCEPTANCE.md is the binding translation contract).
+
+  Rendered once per Journal page load, hidden until static/js/journal.js
+  opens it. Pops out over the Journal (book facing-page on desktop, bottom
+  sheet on mobile); no navigation away; origin focus is restored on close
+  (PS-JRN-CAP-003/014). Save Moment posts to the already-released
+  /api/journal/moments - this partial adds no new API surface.
+
+  The desktop dialog is a real facing right-hand page of the same book; the
+  mobile composition retains that material as a purpose-built bottom sheet.
+  Both retain the dialog's focus model, close control, and truthful runtime
+  boundary.
+#}
+{% macro icon_close() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>{% endmacro %}
+{% macro icon_lock_small() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>{% endmacro %}
+{% macro icon_camera() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h4l1.5-2h5L16 7h4v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>{% endmacro %}
+{% macro icon_film() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>{% endmacro %}
+{% macro icon_mic() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>{% endmacro %}
+{% macro icon_check() %}<svg class="ps-saved__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>{% endmacro %}
+{% macro icon_feed() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>{% endmacro %}
+{% macro icon_book() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg>{% endmacro %}
+{% macro icon_briefcase() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>{% endmacro %}
+{% macro icon_resume() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 16.5h6"/></svg>{% endmacro %}
+{% macro icon_pencil() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>{% endmacro %}
+{% macro icon_done() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"/></svg>{% endmacro %}
+
+{# The saved visual fixture is server-configured and test-only (see
+   _journal_evidence_fixture_state). It provides a no-write evidence state;
+   no URL, title, member, or browser value can select it. #}
+<div class="ps-composer-scrim" id="journal-composer-scrim"{% if not is_evidence_saved_state %} hidden{% else %} data-evidence-saved="true"{% endif %} data-composer-scrim>
+    <div
+        class="ps-composer"
+        id="journal-composer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journal-composer-title"
+        data-composer
+    >
+        {{ jbook.book_ribbon() }}
+        {{ jbook.book_page_edges() }}
+        {# ---------------- compose screen ---------------- #}
+        <div data-composer-view="compose"{% if is_evidence_saved_state %} hidden{% endif %}>
+            <div class="ps-composer__header">
+                <h2 class="ps-composer__title" id="journal-composer-title">Capture a Moment</h2>
+                <button type="button" class="ps-composer__close" data-composer-close aria-label="Close and discard this Moment">{{ icon_close() }}</button>
+            </div>
+
+            <div class="ps-composer__tabs" role="tablist" aria-label="Capture method">
+                <button type="button" role="tab" id="journal-tab-type" class="ps-composer__tab" aria-selected="true" aria-controls="journal-panel-type" data-composer-tab="type">Type</button>
+                <button type="button" role="tab" id="journal-tab-speak" class="ps-composer__tab" aria-selected="false" aria-controls="journal-panel-speak" tabindex="-1" data-composer-tab="speak">Speak</button>
+            </div>
+
+            <p class="ps-composer__truth-line">
+                <span class="ps-composer__truth-primary">{{ icon_lock_small() }} <strong>Private to you</strong></span>
+                <span>Only you can see this until you choose to share.</span>
+            </p>
+
+            {# ---- Type panel ---- #}
+            <div id="journal-panel-type" class="ps-composer__panel" role="tabpanel" aria-labelledby="journal-tab-type" data-composer-panel="type">
+                <label class="sr-only" for="journal-narrative">What happened - or what do you want to remember?</label>
+                <textarea
+                    id="journal-narrative"
+                    class="ps-composer__field"
+                    placeholder="What happened - or what do you want to remember?"
+                    maxlength="8000"
+                    data-composer-narrative
+                ></textarea>
+            </div>
+
+            {# ---- Speak panel ---- #}
+            <div id="journal-panel-speak" class="ps-composer__panel" role="tabpanel" aria-labelledby="journal-tab-speak" hidden data-composer-panel="speak">
+                <div class="ps-composer__voice" data-voice-recorder>
+                    <p class="ps-composer__voice-state" data-voice-state-title>Ready when you are</p>
+                    <p class="ps-composer__voice-help" data-voice-state-help>Your browser asks for microphone permission when you start. You can review and edit the transcript before anything saves.</p>
+                    <span class="ps-composer__voice-timer" data-voice-timer hidden>0:00 / 3:00</span>
+                    <div class="ps-composer__voice-controls">
+                        <button type="button" class="ps-composer__voice-mic" data-voice-action="start" aria-label="Start recording">{{ icon_mic() }}</button>
+                        <button type="button" class="ps-btn ps-btn--ghost" data-voice-action="stop" hidden>Stop</button>
+                        <button type="button" class="ps-btn ps-btn--quiet" data-voice-action="cancel" hidden>Cancel</button>
+                    </div>
+                </div>
+                <div hidden data-voice-review>
+                    <label class="sr-only" for="journal-voice-transcript">Review and edit your transcript</label>
+                    <textarea
+                        id="journal-voice-transcript"
+                        class="ps-composer__field"
+                        maxlength="8000"
+                        data-voice-transcript
+                    ></textarea>
+                    <audio controls preload="none" data-voice-audio style="width:100%;margin-top:0.6rem;"></audio>
+                </div>
+            </div>
+
+            <div class="ps-composer__attachments">
+                <span class="ps-composer__attachments-icons">
+                    <span class="ps-composer__attachments-icon">{{ icon_camera() }}</span>
+                    <span class="ps-composer__attachments-icon">{{ icon_film() }}</span>
+                </span>
+                <span>Add a photo or video</span>
+                <span class="ps-composer__attachments-badge">Coming later</span>
+            </div>
+            {% if is_evidence_fixture %}
+            <div class="ps-composer__attachment-preview" data-fixture-attached>
+                <span class="ps-composer__attachment-thumb" aria-hidden="true">{{ jbook.thumb_by_kind('notebook') }}</span>
+                <span>Attached to this Moment <span aria-hidden="true">&middot;</span> Private</span>
+                <span class="ps-composer__attachment-remove" aria-label="Remove fixture attachment">&times;</span>
+            </div>
+            {% endif %}
+
+            <details class="ps-composer__details">
+                <summary>Add a kind or date (optional)</summary>
+                <div class="ps-composer__details-grid">
+                    <div>
+                        <label for="journal-kind">Kind</label>
+                        <select id="journal-kind" data-composer-kind>
+                            {% for value, label in moment_kinds %}
+                            <option value="{{ value }}" {% if value == 'update' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="journal-occurred-precision">When</label>
+                        <select id="journal-occurred-precision" data-composer-precision>
+                            {% for value, label in occurred_precisions %}
+                            <option value="{{ value }}" {% if value == 'exact' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="journal-occurred-on">Date</label>
+                        <input type="date" id="journal-occurred-on" data-composer-occurred-on>
+                    </div>
+                </div>
+            </details>
+
+            <div class="ps-composer__footer">
+                <span class="ps-composer__status" role="status" aria-live="polite" data-composer-status></span>
+                <button type="button" class="ps-btn ps-btn--ghost" data-composer-cancel>Cancel</button>
+                <button type="button" class="ps-btn ps-btn--gold" data-composer-save>{{ icon_pencil() }} Save Moment</button>
+            </div>
+        </div>
+
+        {# ---------------- saved screen (accepted 05) ---------------- #}
+        <div data-composer-view="saved"{% if not is_evidence_saved_state %} hidden{% endif %}>
+            <div class="ps-saved">
+                <div class="ps-saved__medallion">
+                    {{ icon_check() }}
+                    <svg class="ps-saved__spark ps-saved__spark--1" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--2" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--3" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                    <svg class="ps-saved__spark ps-saved__spark--4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+                </div>
+                <h2 class="ps-saved__title" id="journal-saved-title" tabindex="-1">Moment saved privately &mdash;<br>It is now in your Journal.</h2>
+                <p class="ps-saved__lock-line">{{ icon_lock_small() }}</p>
+                <p class="ps-saved__refresh-status" role="status" aria-live="polite" data-saved-refresh-status></p>
+
+                <p class="ps-saved__section-label">Use This Moment</p>
+                <div class="ps-saved__chips">
+                    <span class="ps-saved__chip" role="button" aria-disabled="true" tabindex="-1">
+                        {{ icon_feed() }}
+                        <span>Share to Feed</span>
+                        <span class="ps-saved__chip-badge">Coming later</span>
+                    </span>
+                    <span class="ps-saved__chip" role="button" aria-disabled="true" tabindex="-1">
+                        {{ icon_book() }}
+                        <span>Add to My Story</span>
+                        <span class="ps-saved__chip-badge">Coming later</span>
+                    </span>
+                    <span class="ps-saved__chip" role="button" aria-disabled="true" tabindex="-1">
+                        {{ icon_briefcase() }}
+                        <span>Use in Work</span>
+                        <span class="ps-saved__chip-badge">Coming later</span>
+                    </span>
+                    <span class="ps-saved__chip" role="button" aria-disabled="true" tabindex="-1">
+                        {{ icon_resume() }}
+                        <span>Add to Résumé</span>
+                        <span class="ps-saved__chip-badge">Coming later</span>
+                    </span>
+                </div>
+
+                <p class="ps-saved__section-label">Who can see it</p>
+                <button type="button" class="ps-saved__audience" disabled aria-disabled="true" aria-label="Only you. Audience changes are coming later.">
+                    {{ icon_lock_small() }}
+                    <span class="ps-saved__audience-value">Only you</span>
+                    {{ jbook.icon_chevron_down() }}
+                </button>
+                <p class="ps-saved__audience-preview">You will preview what is shared before anything posts.</p>
+
+                <div class="ps-saved__actions">
+                    <button type="button" class="ps-btn ps-btn--gold" data-composer-done>{{ icon_done() }} Done</button>
+                    <button type="button" class="ps-btn ps-btn--quiet" data-composer-back>Back to page</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

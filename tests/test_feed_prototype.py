@@ -44,7 +44,7 @@ class FeedPrototypeRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn('?state=voice', html)
-        self.assertIn('?state=publish', html)
+        self.assertIn('?state=preview', html)
         self.assertIn('?state=error', html)
 
 
