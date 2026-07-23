@@ -44,3 +44,24 @@ governance file in the contract. `INTEGRATION_ARCHITECTURE_CONTRACT.md`
 Sections 1-11 remain binding as written; read "Terra" as "the assigned
 writer" and "Sol High" / "Sol Ultra" as "the assigned reviewer(s)" for any
 requirement this finish must still satisfy.
+
+## Post-audit addendum (2026-07-23)
+
+Two further owner rulings, made 2026-07-22 after this note was written,
+completed the routing's evolution and are recorded here for the closed
+package's accuracy:
+
+1. **The Opus independent-review stage was waived for this milestone.** Pete's
+   ruling ("no need for opus review, we are past that gate") reflected the
+   package's prior review/correction cycles. The executed chain was therefore:
+   Sonnet 5 writer finish → Pete visual acceptance → Claude Code final
+   technical audit.
+2. **No external ultra-audit runs were required or performed.** The prior
+   session's Ultra chain had ended on usage limits with the work
+   substantially complete; Pete transferred complete audit authority to
+   Claude Code, whose Pass verdict (recorded in
+   `RELEASE_CLOSEOUT_2026-07-23.md`) is the audit of record.
+
+The five-stage Project Croatia pipeline named above remains the default for
+future Workshop implementation waves; the waivers in this addendum applied to
+this milestone only.

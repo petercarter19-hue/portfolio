@@ -2,19 +2,23 @@
 
 ## Status
 
-- Stage: Sonnet 5 writer finish complete (Chrome cross-platform fix, evidence
-  rebuild, and record refresh); pending Pete visual review; see
-  `ROLE_ROUTING_NOTE_2026-07-22.md` and `IMPLEMENTATION_COMPLETION_REPORT.md`
-- Release state: unmerged, undeployed, and disabled
+- Stage: **CLOSED — released and verified live 2026-07-23.** See
+  `RELEASE_CLOSEOUT_2026-07-23.md` for the complete release record, and
+  `IMPLEMENTATION_COMPLETION_REPORT.md` for the writer finish.
+- Release state: merged (Azure PR 161, squash `88d6f8fa…`; CI repair PR 162,
+  `b426aea…`), deployed by pipeline run 221 (`20260723.4`, succeeded), and
+  verified live. Community Feed / The Break are live;
+  `PEERSLATE_JOURNAL_ENABLED` and `PEERSLATE_OWNER_HOME_ENABLED` remain
+  `false` — Journal J1 and Owner Home are merged and dormant behind their
+  activation gates.
 - Azure base: `e1272220f539f41810698855341b9399b14ebd73`
-- Integration branch: `work/2026-07-22-community-journal-home-milestone-integration`
-- Designated session manager: Fable for the 2026-07-22 session (re-routed from
-  the earlier Codex-manager assignment; see `ROLE_ROUTING_NOTE_2026-07-22.md`)
-- Rendered-product commit (P): `ed533acd2b89bb7458b64a047b1b6199ddb423c0`
-- Next receiver: Pete visual review, then one independent Opus review, then
-  one Claude Code final technical audit (re-routed from the contract's
-  independent-Sol-High / three-Sol-Ultra chain; see
-  `ROLE_ROUTING_NOTE_2026-07-22.md`)
+- Rendered-product commit (P): `ed533acd2b89bb7458b64a047b1b6199ddb423c0`;
+  evidence commit (E): `e3107ce72627a0b5960b7de9f9a8cee86fe3aa50`
+- Review chain as executed: Sonnet 5 writer finish (Pass) → Pete visual
+  acceptance (2026-07-23: Owner Home, Community, and Journal approved) →
+  Claude Code final technical audit (Pass). The Opus review stage was waived
+  by Pete on 2026-07-22; see `ROLE_ROUTING_NOTE_2026-07-22.md` §Post-audit
+  addendum.
 
 ## Purpose
 
