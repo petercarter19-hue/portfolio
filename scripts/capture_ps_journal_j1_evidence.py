@@ -19,7 +19,6 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from playwright.sync_api import sync_playwright
 from werkzeug.serving import make_server
 
 from app import app
@@ -95,6 +94,12 @@ def main() -> None:
             "Chrome is required (set PEERSLATE_CHROME, or install at a known "
             "Mac/Windows path)"
         )
+    try:
+        from playwright.sync_api import sync_playwright
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "Playwright is required to capture Journal browser evidence."
+        ) from exc
 
     OUT.mkdir(parents=True, exist_ok=True)
     prior = {

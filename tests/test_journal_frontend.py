@@ -18,10 +18,14 @@ from unittest.mock import patch
 
 from app import app
 from identity import AuthenticationRequired, PeerSlateIdentity
-from playwright.sync_api import sync_playwright
 from scripts.capture_ps_journal_j1_evidence import _resolve_chrome, evidence_state_for_capture
 from services.journal_service import JournalServiceError
 from werkzeug.serving import make_server
+
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError:
+    sync_playwright = None
 
 
 DEV_USER_KEY = "journal-frontend-owner-1"
@@ -858,7 +862,10 @@ class JournalEvidenceCaptureContractTests(unittest.TestCase):
         self.assertNotIn("body.style.zoom", source)
 
 
-@unittest.skipUnless(CHROME_EXECUTABLE, "Google Chrome is required for Journal browser coverage")
+@unittest.skipUnless(
+    sync_playwright is not None and CHROME_EXECUTABLE,
+    "Playwright and Google Chrome are required for Journal browser coverage",
+)
 class JournalBrowserBehaviorTests(unittest.TestCase):
     """Run the shipped Journal JavaScript in Chrome against a local Flask app.
 
