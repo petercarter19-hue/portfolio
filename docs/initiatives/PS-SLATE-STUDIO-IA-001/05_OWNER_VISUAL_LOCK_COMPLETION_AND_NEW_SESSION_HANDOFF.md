@@ -2,6 +2,13 @@
 
 ## A. Status
 
+> **Current-direction supersession and limited-scope warning:** Preserve this
+> earlier locked material as history. It remains authority only for the released
+> Slice 1 protected Studio shell/frame where applicable. It is not current
+> authority for the Goal Board, same-page Workshop, Work-history, zoom,
+> fullscreen, or any Slice 2 direction. Documents 12, 13, and 14 define the
+> current owner correction and the next visual-definition gate.
+
 - **Package:** `PS-SLATE-STUDIO-IA-001` — Slate Studio direction and
   information architecture (Project Croatia).
 - **Package status:** In Progress — direction/architecture only; no runtime

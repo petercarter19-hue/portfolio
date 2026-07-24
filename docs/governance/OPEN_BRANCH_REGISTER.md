@@ -20,6 +20,25 @@ exists.
 each item needs. No branch here may be merged, reworked, or deleted without an
 explicit owner decision and a normal Azure pull request.
 
+## Preserved rejected candidate - 2026-07-24
+
+| Field | Value |
+| --- | --- |
+| Branch | `codex/2026-07-24-slate-studio-slice-2-architecture` |
+| Exact tip | `f6c2b52763d50d0773f20294acacd8d8165e59da` |
+| Position at verification | 1 ahead, 0 behind `origin/main` |
+| Disposition | **Preserve / rejected / do not merge** |
+| Authority | None. Historical candidate only. |
+
+This remote branch contains an unaccepted Slice 2 read-model/visual package and
+embedded raster concepts. The owner correction in
+`PS-SLATE-STUDIO-IA-001/12_OWNER_CORRECTION_RECORD_GOALS_WORKSHOP_AND_PROJECTS.md`
+rejects it as current Workshop, Build Your Future, Goal Board, or Slice 2
+authority. Do not merge, cherry-pick, copy its schema/language/visual direction,
+or treat its visuals as ChatGPT-created/Pete-locked authority. Preserve the
+branch and SHA for historical traceability until Pete gives an explicit later
+disposition.
+
 ## Verification commands
 
 Re-run these before acting on any row; `origin` moves.

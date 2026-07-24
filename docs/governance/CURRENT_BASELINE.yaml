@@ -15,8 +15,14 @@
 # the work-first relationship controlling: Journal preserves canonical history;
 # Studio activates private work; the public Slate presents approved output; and
 # Community connects selected output. Slice 1 is released and verified
-# default-off; Slice 2 begins with supported-read-model architecture and
-# ChatGPT-created visual authority, not runtime implementation.
+# default-off. The earlier supported-read-model Slice 2 candidate is now
+# preserved/rejected/do-not-merge after the owner corrected Build Your Future
+# to a future-facing Goal Board. Revised Workshop and Build visual authority
+# begins with the approved page-purpose inventories and ChatGPT-created
+# concepts, not runtime implementation.
+# The 2026-07-24 page-purpose / AI-evaluation governance lane makes the
+# Markdown Bible v2.9 and Roadmap v2.8 controlling while retaining their exact
+# approved DOCX files as frozen source snapshots. It adds no runtime behavior.
 # Reconciled on 2026-07-21 by PS-GOV-TRUTH-RECONCILIATION-001. The July 20
 # governance releases advanced the authority documents but did not record
 # Azure PRs 103-110 and 112-117 and 119, and they carried forward a stale
@@ -26,7 +32,7 @@
 # no route, schema, feature flag, template, application behavior, or member
 # capability, and it makes no new live claim.
 # This is a verified snapshot, not a substitute for fetching origin before work.
-schema_version: 3
+schema_version: 4
 updated_at: "2026-07-24"
 
 authority:
@@ -208,20 +214,34 @@ manager:
   eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
   owner_decision_date: "2026-07-24"
   current_session_manager: "Current ChatGPT Work/Codex task, designated by Pete on 2026-07-24 for Slate Studio sequencing and ChatGPT visual-authority governance"
-  current_session_manager_scope: "Slice 1 release closeout, PS-AI-OPS-VISUAL-AUTHORITY-001, and the bounded Slice 2 architecture/visual-authority kickoff. The separate Claude Interview Me audio lane remains read-only to this manager until its owner returns an exact branch and pushed SHA. No Journal, Owner Home, Community, Capture, public Interview Studio runtime, public Slate, homepage, shared-service, schema, migration, or deployment-configuration ownership transfers with this designation."
+  current_session_manager_scope: "Documentation-only PS-GOV-PAGE-PURPOSE-AI-EVAL-001 governance closeout and the next ChatGPT-created Workshop / Build Your Future visual-authority round. The separate Claude Interview Me audio lane remains read-only to this manager until its owner returns an exact branch and pushed SHA. No Journal, Owner Home, Community, Capture, public Interview Studio runtime, public Slate, homepage, shared-service, schema, migration, or deployment-configuration ownership transfers with this designation."
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "PS-SLATE-STUDIO-SLICE-1-001 is released and production-verified default-off through PR 171, merge 43d415cfb50717d94b69c07d7be648a12691f1f8, and automatic pipeline 233. Slice 2 starts as architecture only: establish the supported owner-scoped read model, preserve canonical-source references and authorization-before-retrieval, and create every new or materially revised visual authority through ChatGPT for Pete to lock. Runtime implementation, Slice 1 enablement, drag persistence, editing, experiments, AI, publishing, and Interview Studio changes remain unauthorized. The separate Claude Interview Me audio lane owns its own files and branch. Journal remains canonical infrastructure; Studio is the private work-first experiential center; public Slate presents approved output; Community connects selected output. Existing Journal, Owner Home, Community, Capture, and return/AI/messaging packages continue independently under their own ownership and release state; bounded Return and owner-only Ask Slate may proceed after private Journal foundations without waiting for public Journal. Any Home /app/capture link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates."
+  current_assignments: "PS-SLATE-STUDIO-SLICE-1-001 is released and production-verified default-off through PR 171, merge 43d415cfb50717d94b69c07d7be648a12691f1f8, and automatic pipeline 233. The unmerged work-history Slice 2 candidate at f6c2b52763d50d0773f20294acacd8d8165e59da is preserved/rejected/do-not-merge. The next Studio work is ChatGPT-created Workshop and Build Your Future concepts based only on Pete-approved page-purpose inventories: Workshop remains a same-page Workbench, and Build Your Future centers a private future-facing Goal Board. No runtime implementation, Slice 1 enablement, Goal persistence/editing, experiments, Ask Slate integration, publishing, or Interview Studio change is authorized by this governance package. Projects is the next major purpose discussion after Workshop and Build direction are settled. The separate Claude Interview Me audio lane owns its own files and branch. Journal remains canonical infrastructure; Studio is the private work-first experiential center; public Slate presents approved output; Community connects selected output. Existing Journal, Owner Home, Community, Capture, and return/AI/messaging packages continue independently under their own ownership and release state; bounded Return and owner-only Ask Slate may proceed after private Journal foundations without waiting for public Journal. Any Home /app/capture link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates."
 
 governing_documents:
   bible:
     version: "2.9"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.docx"
-    sha256: "1BB3DF535B2A7478D36C539521D64E452A01B163FEBE367615A96F345459224F"
+    controlling_format: "markdown"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
+    markdown_path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
+    markdown_sha256: "21DDFB3382E552DF38E2591280001BD503C37DAD349ADE56DC06820845173C21"
+    frozen_source_snapshot:
+      format: "docx"
+      path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.docx"
+      sha256: "1BB3DF535B2A7478D36C539521D64E452A01B163FEBE367615A96F345459224F"
   roadmap:
     version: "2.8"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx"
-    sha256: "612C23CF21CBA4A58905E77B067ADB82FF8A7BEA5A24A107742C973FE48495A1"
+    controlling_format: "markdown"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"
+    markdown_path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"
+    markdown_sha256: "BD9AC419B0BAB577181CEAD8A0B6D19A8E9AFD51006A78702D0F0D303A957AC7"
+    frozen_source_snapshot:
+      format: "docx"
+      path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx"
+      sha256: "612C23CF21CBA4A58905E77B067ADB82FF8A7BEA5A24A107742C973FE48495A1"
+  authority_markdown_conversion:
+    manifest_path: "docs/governance/AUTHORITY_MARKDOWN_CONVERSION_MANIFEST.md"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -233,6 +253,8 @@ governing_documents:
     path: "docs/governance/approved_owner_visual_baseline/"
   visual_integrity:
     path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
+  page_purpose_inventory:
+    path: "docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"
   story_composition:
     path: "docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md"
   legal_and_site_readiness:
@@ -308,11 +330,11 @@ active_packages:
     lane: community_tab_model_and_people_interests_removal
     package_path: "docs/initiatives/PS-COMMUNITY-TABS-001/README.md"
     status: "active_owner_started_early_visual_authority_owner_feed_example"
-  - id: PS-GOV-TRUTH-RECONCILIATION-001
-    owner: "Claude Code sole session manager designated by Pete on 2026-07-21"
-    lane: governance_record_reconciliation
-    package_path: "docs/initiatives/PS-GOV-TRUTH-RECONCILIATION-001/README.md"
-    status: "in_progress_governance_only_awaiting_owner_acceptance"
+  - id: PS-GOV-PAGE-PURPOSE-AI-EVAL-001
+    owner: "Pete-authorized current ChatGPT Work/Codex governance lane; Codex sole documentation writer"
+    lane: page_purpose_ai_evaluation_and_markdown_authority
+    package_path: "docs/initiatives/PS-GOV-PAGE-PURPOSE-AI-EVAL-001/README.md"
+    status: "documentation_complete_owner_accepted_azure_merge_pending_no_runtime"
   - id: PS-HOME-FRONTEND-001
     owner: "Owner reassignment 2026-07-21: Fable architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh) reviewer — the originally assigned separate Codex frontend task never opened a branch"
     lane: owner_home_exact_authority_frontend
@@ -325,11 +347,11 @@ active_packages:
     package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
     status: "architecture_current_private_core_entry_gate_unassigned"
   - id: PS-SLATE-STUDIO-IA-001
-    owner: "Pete owner; current ChatGPT Work/Codex task designated manager; ChatGPT creates new or materially revised Slice 2 visual authority"
-    lane: work_first_slate_studio_slice_2_architecture
-    roadmap_phase: "Bounded cross-phase Phase 4/Phase 10 read-only Board slice"
+    owner: "Pete owner; current ChatGPT Work/Codex task designated manager; Pete approved both page-purpose inventories on 2026-07-24; ChatGPT is authorized to create the next Workshop and Build Your Future visual concepts"
+    lane: workshop_and_build_your_future_page_purpose_and_visual_definition
+    roadmap_phase: "Post-Slice 1 Studio visual-definition gate; no Phase 4/Phase 10 runtime work authorized"
     package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
-    status: "slice1_released_default_off_slice2_architecture_next"
+    status: "slice1_released_default_off_slice2_candidate_rejected_inventories_approved_chatgpt_visual_creation_next"
 
 planned_packages:
   - id: PS-SHELL-001
@@ -374,6 +396,12 @@ planned_packages:
     roadmap_phase: "After private Journal and authorization foundations"
     package_path: "docs/initiatives/PS-ASK-SLATE-AI-001/README.md"
     status: "committed_architecture_planned_not_active"
+  - id: PS-AI-PRODUCT-EVAL-001
+    owner: "Pete product direction; future designated manager and writer unassigned"
+    lane: cross_product_ai_quality_model_prompt_and_evaluation_program
+    roadmap_phase: "After Workshop, Build Your Future, and Projects purpose definition; before broad Ask Slate or advanced coaching"
+    package_path: "docs/initiatives/PS-AI-PRODUCT-EVAL-001/README.md"
+    status: "planned_not_active_no_runtime_authorization"
   - id: PS-MESSAGING-001
     owner: "future designated manager and writer unassigned"
     lane: consent_and_safety_gated_member_messaging
@@ -393,7 +421,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "Merge the ChatGPT visual-authority governance package, then create the bounded Slate Studio Slice 2 architecture package from exact current Azure origin/main. Architecture must first establish one owner-scoped supported read model and its populated, true-empty, unavailable, and missing/revoked-item states without copying canonical Moment or evidence bodies. ChatGPT creates every new or materially revised visual authority; Pete locks it before runtime implementation. The Slice 2 visual set covers spatial desktop/tablet, structured mobile and 200-percent reflow, populated/selected/long/many/missing states, keyboard/touch selection, zoom, and fullscreen. Slice 2 excludes drag persistence, editing, experiment creation, AI, publishing, Slice 1 enablement, and all public Interview Studio/audio work. Journal private-core work continues independently under PS-JOURNAL-001. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "Merge the documentation-only page-purpose / AI-evaluation / Markdown-authority governance package. Pete approved both page-purpose inventories on 2026-07-24. After the merge, ChatGPT creates the next production-intent concept round: multiple same-page Workshop concepts and two Goal Board concepts, with no unlisted meaningful item. Workshop retains four persistent doors, a dominant Workbench, Voice, optional Ask Slate, governed evidence, resume-page content proposals, and explicit reasons for any off-page transition. Build Your Future remains a private future-facing Goal Board with Short Term, Long Term, Work, and Custom categories; a small Add Goal prompt; optional soft ETA/background/Feed proposal; Voice; optional Ask Slate; progress; supportive Sparks; Try Another Future; and Small Experiments. Work-history cards, Projects as a Goal category, connecting lines, zoom, arrange, current-focus markers, uploads, automatic publication, and automatic canonical/destination updates are rejected; fullscreen is deferred. The preserved Slice 2 candidate f6c2b52763d50d0773f20294acacd8d8165e59da must not merge. Runtime implementation requires a later activated package and exact Pete-locked visual authority. Projects receives the next major purpose discussion after Workshop and Build direction are settled. The separate Interview Studio/audio lane remains out of scope. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

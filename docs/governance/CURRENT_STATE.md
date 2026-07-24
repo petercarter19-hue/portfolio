@@ -17,6 +17,15 @@ are the current work-first Studio, universal-Capture, Journal, return-value, AI,
 and future messaging authority after this governance release merges.
 Every manager and writer must still fetch `origin` before starting._
 
+_Updated 2026-07-24 for PS-GOV-PAGE-PURPOSE-AI-EVAL-001. This
+documentation-only governance lane establishes the mandatory page-purpose/
+non-redundancy gate, records future Workshop and Goal Board corrections,
+preserves a rejected Slice 2 candidate, creates the planned AI product
+evaluation charter, and moves Bible v2.9/Roadmap v2.8 control to verified
+Markdown while retaining their exact DOCX bytes as frozen source snapshots. It
+does not change any route, UI, visual authority, schema, provider/model,
+feature flag, deployment, or live member capability._
+
 ## Verified production and repository baseline
 
 - `origin` is Azure DevOps and the only source of truth. `github` is a public
@@ -593,10 +602,39 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   browser-local behavior, truth boundary, visual authority, audio behavior, and
   homepage parity are not authorized for rename or restructure by Studio Slice
   1 or Slice 2.
-- The next Studio unit is Slice 2 architecture: establish the supported
-  owner-scoped read model before a populated Board, then create new or
-  materially revised visual authority through ChatGPT for Pete to lock. No
-  Slice 2 runtime implementation or Slice 1 enablement is yet authorized.
+- The former work-history Slice 2 candidate is preserved/rejected/do-not-merge.
+  Pete approved the Workshop and Build Your Future page-purpose inventories on
+  2026-07-24. The next Studio unit is ChatGPT-created production-intent
+  concepts. No revised runtime implementation or Slice 1 enablement is yet
+  authorized.
+
+## Page-purpose, AI evaluation, and authority format status (2026-07-24)
+
+- `PS-GOV-PAGE-PURPOSE-AI-EVAL-001` is an active documentation-only governance
+  lane. It does not make any product capability live.
+- Every future material visual authority must have Pete-approved
+  page-purpose/non-redundancy inventory before visual lock. This is a governance
+  gate, not visual authority by itself.
+- Pete approved the Workshop and Build Your Future inventories on 2026-07-24
+  through his instruction to complete the next two stated steps. ChatGPT visual
+  creation is now the next gate; no Workshop or Goal Board visual is locked and
+  no runtime capability is authorized by that approval.
+- Build Your Future's future Goal Board is private, future-facing, and separate
+  from work history, Projects, canonical truth, automatic publication, and the
+  released Slice 1 shell. Workshop remains a same-page future Workbench; its
+  referenced `Workshop\8.png` is discussion-only until package-copied,
+  hash-pinned, and owner-locked. Projects is the next major purpose discussion,
+  not implementation work.
+- `PS-AI-PRODUCT-EVAL-001` is planned and inactive. It schedules the owner-led
+  quality/model/prompt/evaluation decision program after Workshop, Build Your
+  Future, and Projects purpose are settled, before broad Ask Slate or advanced
+  coaching behavior.
+- Bible v2.9 and Roadmap v2.8 are now controlling verified Markdown records;
+  their exact owner-approved DOCX files remain frozen source snapshots. The
+  format migration did not alter their semantic versions or runtime status.
+- `codex/2026-07-24-slate-studio-slice-2-architecture` at
+  `f6c2b52763d50d0773f20294acacd8d8165e59da` is preserved/rejected/do-not-merge
+  candidate history, not implementation authority.
 
 ## Required release evidence
 

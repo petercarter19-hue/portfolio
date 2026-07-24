@@ -282,6 +282,9 @@ mockup, storyboard, or walkthrough is a binding minimum: implementation must be
 recognizably the same interaction model and match or exceed its hierarchy,
 composition, clarity, and finish.
 
+Before ChatGPT creates or materially revises that authority, complete and obtain
+Pete's approval of `docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
+
 ChatGPT is the sole creation lane for new or materially revised PeerSlate
 production-intent visual authority. It creates or revises the concept, mockup,
 responsive/state set, style exploration, or image asset; Pete selects and locks

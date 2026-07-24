@@ -74,6 +74,13 @@ Before design or implementation, the initiative records:
 5. the files, routes, data, and capabilities the package may not change; and
 6. whether the logged-out homepage presents or links this experience, which
    section is affected, and whether parity work is required.
+7. a completed `PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` using the
+   controlled template. Before ChatGPT creates or materially revises a visual,
+   every meaningful visible page item, card, control, and status in the proposed
+   experience must state its member purpose, source/capability truth,
+   action/destination, privacy/audience/lifecycle, unique relationship to the
+   rest of the page, and one owner decision: **Keep, Change, Combine, Remove,
+   or Defer**. Repeated decoration may be grouped; meaningful elements may not.
 
 Codex or Claude may implement the locked authority, capture real-browser
 evidence, identify parity, usability, truth, or accessibility defects, and make
@@ -98,6 +105,14 @@ and recovery states that can occur. It must show desktop, touch mobile, 200%
 zoom/reflow, visible keyboard focus, reduced motion, and applicable landscape
 behavior. Editable source, component inventory, truth labels, and state mapping
 are required. A collage or attractive hero alone is not build authority.
+
+Pete approves the page-purpose/non-redundancy inventory before the visual lock.
+The visual lock may not introduce a meaningful item, card, control, or status
+that is absent from that approved inventory; a newly needed meaningful item
+returns through the same inventory decision before it is locked. This gate does
+not prohibit visual refinement or grouped repeated decoration. It prevents a
+page from accumulating unexamined product claims, duplicated actions, or
+unexplained interface furniture.
 
 ### V2 - Implementation comparison
 

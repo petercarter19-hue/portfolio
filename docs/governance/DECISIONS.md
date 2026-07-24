@@ -519,3 +519,43 @@ This is an append-only operational decision record. The current Bible and Roadma
   locks the revised exact authority.
 - Browser screenshots, accessibility evidence, and bounded parity critique are
   implementation/review evidence, not competing visual creation.
+
+## 2026-07-24 - Require page-purpose review and stage the AI quality program
+
+- Before ChatGPT creates or materially revises a production-intent visual, Pete
+  approves a page-purpose/non-redundancy inventory for every meaningful visible
+  item, card, control, and status. Each retained item names its member purpose,
+  source/capability truth, action/destination, privacy/audience/lifecycle,
+  unique relationship, and a Keep/Change/Combine/Remove/Defer decision.
+  Repeated decoration may group; meaningful product elements may not. Locked
+  visuals do not add unlisted meaningful items.
+- Build Your Future's future Goal Board is future-facing, private by default,
+  and not work history, a Project tracker, or a second truth store. Its category
+  contract is Short Term, Long Term, Work, and Custom. The exact future
+  Workshop/Goal Board purpose decisions and inventories remain in
+  `PS-SLATE-STUDIO-IA-001`; no visual or runtime behavior is approved here.
+- `PS-AI-PRODUCT-EVAL-001` is the planned cross-product program for the later
+  owner dialogue on good-answer anatomy, What Worked Well, Improve Next Time,
+  Improved Draft, natural voice, sources/no-evidence, model/provider
+  evaluation, prompts/program architecture, golden cases, privacy/adversarial
+  checks, cost/latency, agents/roles, and launch thresholds. It occurs after
+  Workshop, Build Your Future, and Projects purpose are settled, before broad
+  Ask Slate or advanced coaching implementation. It does not select a permanent
+  product model or authorize runtime work.
+- Bible v2.9 and Roadmap v2.8 now have verified Markdown as their controlling
+  format; their exact DOCX files are frozen owner-approved source snapshots.
+  Their semantic versions remain unchanged. The conversion manifest preserves
+  source/output hashes and equivalence evidence.
+- The unmerged branch `codex/2026-07-24-slate-studio-slice-2-architecture` at
+  `f6c2b52763d50d0773f20294acacd8d8165e59da` is preserved/rejected/do-not-merge
+  history. It is not current Studio, Workshop, Goal, or implementation
+  authority.
+
+### Owner approval follow-through
+
+- Pete approved the Workshop and Build Your Future page-purpose inventories on
+  2026-07-24 by instructing the designated manager to complete the next two
+  stated steps: merge this governance package and lock the inventories.
+- This approval authorizes ChatGPT visual creation within the approved rows. It
+  does not select or lock a visual, authorize runtime implementation, activate
+  Slice 1, or change the rejected Slice 2 disposition.

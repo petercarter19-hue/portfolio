@@ -9,14 +9,26 @@ the complete-diff self-review → one fresh central Sol High review is mandatory
 because this protected slice carries authorization/privacy risk → the same writer
 corrects accepted findings → Pete gives final visual acceptance on the corrected
 candidate → release/closeout. Model versions remain controlled by
-`docs/AI_MODEL_AND_ROLE_ROUTING.md`; the earlier Fable/Sonnet/Opus/Claude chain
-is historical. See [11](11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md).
+`docs/AI_MODEL_AND_ROLE_ROUTING.md`; its equivalent Claude lane remains Fable
+architecture, Sonnet implementation, and Opus independent review when Claude
+is the selected working ecosystem. See
+[11](11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md).
 **Branch:** `work/2026-07-22-slate-studio-direction` from `origin/main` at
 `e1272220f539f41810698855341b9399b14ebd73`.
 **Status:** SLICE 1 GOVERNANCE RELEASED. Azure PR 168 squash-merged at
 `f9f4637d4c54305ae33f3a3ca51d419af97a2569`; automatic pipeline 229
 (`20260724.6`) passed Build and Deploy. The bounded runtime entry gate opens
 after the governance closeout merges.
+
+## Current-direction supersession and limited-scope warning
+
+Earlier locked material in documents 04, 05, and 06 remains historical
+authority **only for the released Slice 1 protected Studio shell/frame where
+applicable**. It is not current authority for the Goal Board, same-page
+Workshop, Work-history, zoom, fullscreen, or any Slice 2 direction. Preserve
+that history; use documents 12, 13, and 14 for the current owner correction,
+Pete's required inventory approval, and the next visual-definition gate. The
+preserved Slice 2 candidate is rejected and must not be merged.
 
 ## What this package is
 
@@ -47,6 +59,8 @@ The authoritative statement of the direction is
 | Closeout | Slice 1 visual-direction acceptance and current handoff | current in 10 and superseded for activation/roles by 11 |
 | Activation | Owner activation and Codex manager gate | accepted in 11; governance released through PR 168/pipeline 229 |
 | Governance release report | Bible v2.9, Roadmap v2.8, pointer updates, and validation | complete in `GOVERNANCE_ACTIVATION_COMPLETION_REPORT.md`; closeout merge pending |
+| Owner correction | Goal Board, Workshop, Projects, and rejected Slice 2 candidate record | current in 12; documentation only |
+| Page-purpose inventories | Workshop and Build Your Future non-redundancy decisions | Pete approved 13 and 14 on 2026-07-24; ChatGPT visual creation is next, but no visual is locked |
 
 ## Inputs
 
@@ -89,6 +103,20 @@ The authoritative statement of the direction is
 - Pete's activation, current-main reconciliation, Codex manager acceptance,
   controlled-governance reservation, and current runtime entry condition are
   in `11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md`.
+- The owner correction for the future-facing Goal Board, the same-page Workshop
+  purpose, next Projects discussion, the exact Workshop discussion-only image,
+  and the preserved/rejected Slice 2 candidate is in
+  `12_OWNER_CORRECTION_RECORD_GOALS_WORKSHOP_AND_PROJECTS.md`.
+- The required V0/V1 page-purpose/non-redundancy inventories for future Workshop
+  and Build Your Future visual creation are in 13 and 14. Pete approved both on
+  2026-07-24; ChatGPT visual creation is next, while exact visual lock remains
+  a later owner decision.
+- The current lane is
+  `workshop_and_build_your_future_page_purpose_and_visual_definition`: a
+  post-Slice 1 Studio visual-definition gate with no Phase 4/Phase 10 runtime
+  work.
+  Its status is
+  `slice1_released_default_off_slice2_candidate_rejected_inventories_approved_chatgpt_visual_creation_next`.
 
 ## Writable surface and collision control
 
@@ -112,5 +140,8 @@ The authoritative statement of the direction is
 No runtime product code, route changes, feature-flag activation, public-page
 rewrites, second truth stores, mandatory-AI flows, public-by-default goals,
 career scoring, or silent Bible/Roadmap edits. Fixture behavior is never
-represented as live member behavior. The full restriction set from the adopted
-planning instructions binds this package.
+represented as live member behavior. The preserved/rejected candidate branch
+`codex/2026-07-24-slate-studio-slice-2-architecture` at
+`f6c2b52763d50d0773f20294acacd8d8165e59da` is not implementation authority.
+The full restriction set from the adopted planning instructions binds this
+package.

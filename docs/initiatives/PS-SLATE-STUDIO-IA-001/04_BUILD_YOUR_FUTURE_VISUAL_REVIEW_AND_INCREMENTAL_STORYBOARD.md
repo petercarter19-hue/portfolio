@@ -10,6 +10,13 @@ Interview Studio, or amend the controlled Bible/Roadmap. The later
 owner-accepted Slice 1 responsive/state adaptations are preserved separately
 under `visual-authority/slice-1/` and documented in package document 10.
 
+> **Current-direction supersession and limited-scope warning:** Preserve this
+> earlier locked material as history. It remains authority only for the released
+> Slice 1 protected Studio shell/frame where applicable. It is not current
+> authority for the Goal Board, same-page Workshop, Work-history, zoom,
+> fullscreen, or any Slice 2 direction. Documents 12, 13, and 14 define the
+> current owner correction and the next visual-definition gate.
+
 ## 1. Reviewed mockups and verdict
 
 Locked visual authority:

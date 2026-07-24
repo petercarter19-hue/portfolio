@@ -46,6 +46,10 @@ intentional deviation and its reason, and state Pete's and the designated
 session manager's visual
 acceptance. A functional pass is not visual acceptance.
 
+For a new or materially revised visual authority, include the Pete-approved
+`docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` and state whether
+the locked visual introduced any unlisted meaningful item.
+
 For every user-facing package, name any logged-out homepage section that
 presents, demonstrates, or links the product. State whether it remains current
 with the accepted product across function, truth labels, hierarchy, theme,

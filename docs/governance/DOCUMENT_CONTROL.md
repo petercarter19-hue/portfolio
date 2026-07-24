@@ -8,7 +8,10 @@ When repository documents disagree, use this order and report the conflict:
 
 1. The owner’s current explicit decision.
 2. `docs/governance/CURRENT_BASELINE.yaml` for current versions, packages, holds, lane ownership, and verified repository/production evidence.
-3. The Bible and Roadmap paths named in that baseline.
+3. The controlling Markdown Bible and Roadmap paths/hashes named in that
+   baseline. Their owner-approved DOCX files are frozen source snapshots,
+   retained for provenance and equivalence evidence but are non-controlling
+   unless a later owner decision changes the baseline.
 4. `OWNER_VISUAL_INTEGRITY_STANDARD.md`,
    `OWNER_STORY_COMPOSITION_STANDARD.md`, and
    `EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md` for their bounded operational
@@ -26,8 +29,8 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 | Record | Current version/status | Purpose |
 |---|---|---|
-| Company and Product Bible | v2.9 | Product language, boundaries, one-Journal system, work-first Slate Studio relationship, universal Capture action, derived Journal membership, audience projections, trusted return services, Ask Slate AI, later messaging, visual integrity, Story composition, Projects covenant, and intended model |
-| Product Strategy and Architecture Roadmap | v2.8 | Evidence state, package order, bounded Slate Studio Slice 1 activation, private-Journal execution, return-value staging, AI and messaging gates, Story Composer allocation, and Projects sequencing |
+| Company and Product Bible | v2.9 Markdown controlling; exact DOCX frozen source snapshot | Product language, boundaries, one-Journal system, work-first Slate Studio relationship, universal Capture action, derived Journal membership, audience projections, trusted return services, Ask Slate AI, later messaging, visual integrity, Story composition, Projects covenant, and intended model |
+| Product Strategy and Architecture Roadmap | v2.8 Markdown controlling; exact DOCX frozen source snapshot | Evidence state, package order, bounded Slate Studio Slice 1 activation, private-Journal execution, return-value staging, AI and messaging gates, Story Composer allocation, and Projects sequencing |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
 | Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
@@ -37,6 +40,7 @@ No agent may silently choose an older instruction because it is more detailed. S
 | Early Legal and Site Readiness Standard | Approved architecture gate | Terms/privacy/cookie/accessibility/community/AI/media/messaging readiness inventory and counsel/security activation gates |
 | AI Model and Role Routing | Current operational guidance | One manager, one self-managed writer, risk-based reviewer, current-model verification, and token-efficient Claude/Codex routing |
 | Manager Session Handoff | Current snapshot | Active-lane state, stop conditions, and next-manager kickoff |
+| Authority Markdown Conversion Manifest | Current format-equivalence evidence | Source/output hashes, body counts, image reuse/extraction, and reproduction commands for the Bible/Roadmap format migration |
 
 ## Known supersessions
 

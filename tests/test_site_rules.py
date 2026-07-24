@@ -91,10 +91,30 @@ class GovernanceDocsTests(unittest.TestCase):
         for rel in (
                 'docs/governance/CURRENT_BASELINE.yaml',
                 'docs/governance/DOCUMENT_CONTROL.md',
+                'docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md',
                 'docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.docx',
+                'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md',
                 'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx',
                 'docs/PEERSLATE_SITE_RULES.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
+
+    def test_page_purpose_gate_preserves_truth_before_visual_creation(self):
+        standard = _read(os.path.join(
+            ROOT, 'docs', 'governance', 'OWNER_VISUAL_INTEGRITY_STANDARD.md'))
+        template = _read(os.path.join(
+            ROOT, 'docs', 'templates', 'PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md'))
+        for expected in (
+                'Before ChatGPT creates or materially revises a visual',
+                'meaningful visible page item, card, control, and status',
+                'Pete approves the page-purpose/non-redundancy inventory before the visual lock.',
+                'The visual lock may not introduce a meaningful item'):
+            self.assertIn(expected, standard)
+        for expected in (
+                'Member purpose',
+                'Source / capability truth',
+                'Privacy, audience, and lifecycle',
+                'Keep / Change / Combine / Remove / Defer'):
+            self.assertIn(expected, template)
 
     def test_claude_md_points_to_current_governance(self):
         content = _read(os.path.join(ROOT, 'CLAUDE.md'))

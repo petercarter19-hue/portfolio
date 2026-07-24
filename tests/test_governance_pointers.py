@@ -56,12 +56,16 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "governance", "DOCUMENT_CONTROL.md"),
         ("docs", "governance", "DECISIONS.md"),
         ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
+        ("docs", "governance", "AUTHORITY_MARKDOWN_CONVERSION_MANIFEST.md"),
+        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.9.md"),
+        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"),
         ("docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"),
         ("docs", "governance", "EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md"),
         ("docs", "governance", "MANAGER_SESSION_HANDOFF.md"),
         ("docs", "governance", "AI_DELIVERY_AUDIT_REGISTER.md"),
         ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
         ("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
+        ("docs", "templates", "PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"),
         ("docs", "initiatives", "PS-GOV-001", "README.md"),
         ("docs", "initiatives", "PS-GOV-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-BASELINE-001", "README.md"),
@@ -112,6 +116,12 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"),
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "01_DISCOVERY_AGENDA.md"),
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-AI-PRODUCT-EVAL-001", "README.md"),
+        ("docs", "initiatives", "PS-AI-PRODUCT-EVAL-001", "01_AI_EXPERIENCE_AND_EVALUATION_CHARTER.md"),
+        ("docs", "initiatives", "PS-AI-PRODUCT-EVAL-001", "02_INTERVIEW_COACHING_AND_MODEL_EVALUATION.md"),
+        ("docs", "initiatives", "PS-AI-PRODUCT-EVAL-001", "03_DISCOVERY_SEQUENCE_AND_LAUNCH_GATES.md"),
+        ("docs", "initiatives", "PS-GOV-PAGE-PURPOSE-AI-EVAL-001", "README.md"),
+        ("docs", "initiatives", "PS-GOV-PAGE-PURPOSE-AI-EVAL-001", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-PROJECTS-001", "README.md"),
         ("docs", "initiatives", "PS-PROJECTS-001", "01_REQUIREMENTS.md"),
         ("docs", "initiatives", "PS-PROJECTS-001", "02_EXPERIENCE_AND_VISUAL_DIRECTION.md"),
@@ -167,6 +177,9 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-ASK-SLATE-AI-001", "01_ARCHITECTURE.md"),
         ("docs", "initiatives", "PS-MESSAGING-001", "README.md"),
         ("docs", "initiatives", "PS-MESSAGING-001", "01_ARCHITECTURE_AND_SAFETY.md"),
+        ("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "12_OWNER_CORRECTION_RECORD_GOALS_WORKSHOP_AND_PROJECTS.md"),
+        ("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "13_WORKSHOP_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"),
+        ("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "14_BUILD_YOUR_FUTURE_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"),
     )
 
     def test_required_records_exist(self):
@@ -518,7 +531,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             [
                 "PS-CAPTURE-MEDIA-001",
                 "PS-COMMUNITY-TABS-001",
-                "PS-GOV-TRUTH-RECONCILIATION-001",
+                "PS-GOV-PAGE-PURPOSE-AI-EVAL-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
                 "PS-SLATE-STUDIO-IA-001",
@@ -1277,6 +1290,413 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertIn("withdrew Voice visual acceptance", self.state)
         self.assertIn("pipeline 113", self.state)
         self.assertIn("functionally deployed, visually accepted, and closed", self.state)
+
+
+class PagePurposeAiAndMarkdownAuthorityTests(unittest.TestCase):
+    """PS-GOV-PAGE-PURPOSE-AI-EVAL-001 durable governance guardrails."""
+
+    def test_page_purpose_gate_is_central_and_reusable(self):
+        standard = _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md")
+        template = _read("docs", "templates", "PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md")
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
+
+        for expected in (
+            "### V0 - Authority and truth boundary",
+            "### V1 - Design readiness",
+            "meaningful visible page item, card, control, and status",
+            "member purpose, source/capability truth",
+            "privacy/audience/lifecycle",
+            "Keep, Change, Combine, Remove,\n   or Defer",
+            "Repeated decoration may be grouped; meaningful elements may not.",
+            "Pete approves the page-purpose/non-redundancy inventory before the visual lock.",
+            "absent from that approved inventory",
+        ):
+            self.assertIn(expected, standard)
+        for expected in (
+            "Member purpose",
+            "Source / capability truth",
+            "Action / destination",
+            "Privacy, audience, and lifecycle",
+            "Unique relationship on this page",
+            "Keep / Change / Combine / Remove / Defer",
+            "Pete approves this inventory before the visual lock",
+            "locked visual introduces no unlisted meaningful item",
+        ):
+            self.assertIn(expected, template)
+        self.assertEqual(1, workflow.count("PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"))
+        self.assertEqual(1, report.count("PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md"))
+        for path in ("AGENTS.md", "CLAUDE.md", "docs/AI_MODEL_AND_ROLE_ROUTING.md"):
+            self.assertNotIn("PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md", _read(*path.split("/")))
+
+    def test_studio_goal_workshop_correction_and_rejected_branch_are_explicit(self):
+        package = _read("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "README.md")
+        correction = _read(
+            "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+            "12_OWNER_CORRECTION_RECORD_GOALS_WORKSHOP_AND_PROJECTS.md",
+        )
+        workshop = _read(
+            "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+            "13_WORKSHOP_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
+        )
+        build = _read(
+            "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+            "14_BUILD_YOUR_FUTURE_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
+        )
+        branch_register = _read("docs", "governance", "OPEN_BRANCH_REGISTER.md")
+
+        for expected in (
+            "future-facing private workspace",
+            "Short Term",
+            "Long Term",
+            "Work",
+            "Custom",
+            "Add\nGoal",
+            "soft ETA",
+            "private background",
+            "Feed-sharing choice",
+            "Voice, Ask Slate, progress, supportive\nSparks, Try Another Future, and Small Experiments",
+            "connecting lines, zoom\ncontrols, arrange controls, current-focus markers, file uploads",
+            "Fullscreen is deferred",
+            "Two future Goal Board concepts may be created by ChatGPT after the V0/V1",
+            "Workshop\\8.png",
+            "discussion reference only",
+            "persistent four doors",
+            "dominant **Workbench**",
+            "not a resume-template builder",
+            "Story, Interview, and Goal outputs",
+            "Worth\nTrying",
+            "Projects is the next major **purpose discussion**",
+            "f6c2b52763d50d0773f20294acacd8d8165e59da",
+            "preserved,\nrejected candidate",
+        ):
+            self.assertIn(expected, correction)
+        allowed_decisions = {"Keep", "Change", "Combine", "Remove", "Defer"}
+        for inventory in (workshop, build):
+            decisions = []
+            for line in inventory.splitlines():
+                if not line.startswith("| ") or line.startswith("| ---"):
+                    continue
+                cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+                if cells[0] == "Item":
+                    continue
+                self.assertEqual(8, len(cells), line)
+                decisions.append(cells[6])
+            self.assertTrue(decisions)
+            self.assertTrue(set(decisions).issubset(allowed_decisions), decisions)
+            self.assertNotIn("Review", decisions)
+            self.assertIn("unique", inventory.lower())
+        for expected in (
+            "**Continue where I left off** door",
+            "**I brought something** door",
+            "**Work on something** door",
+            "**Give me a spark** door",
+            "| Voice |",
+            "| Ask Slate |",
+            "Current focus header",
+            "Experiment draft header",
+            "Working draft — private status",
+            "Published Slate status",
+            "Edit this",
+            "Add evidence",
+            "Add photograph",
+            "Add context to a photograph",
+            "Explain in 30 seconds",
+            "Revisit an accomplishment",
+            "Check in on experiment",
+        ):
+            self.assertIn(expected, workshop)
+        for expected in (
+            "| Goal text |",
+            "| Save Goal / Cancel |",
+            "| Goal item and professional handwritten treatment |",
+            "| Goal detail pop-out |",
+            "| Mark Goal Complete |",
+            "| Completion proposals: Feed, Story, résumé page |",
+            "| Voice |",
+            "| Ask Slate |",
+            "| Progress |",
+            "| Supportive Sparks |",
+            "| Try Another Future |",
+            "| Small Experiments |",
+            "| Future Postcard |",
+            "| Defer | Keep it optional and non-permanent",
+        ):
+            self.assertIn(expected, build)
+        build_decisions = {}
+        for line in build.splitlines():
+            if not line.startswith("| ") or line.startswith("| ---"):
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if cells[0] != "Item" and len(cells) == 8:
+                build_decisions[cells[0]] = cells[6]
+        for kept_item in (
+            "Voice",
+            "Ask Slate",
+            "Progress",
+            "Supportive Sparks",
+            "Try Another Future",
+            "Small Experiments",
+            "Mark Goal Complete",
+        ):
+            self.assertEqual("Keep", build_decisions[kept_item], kept_item)
+        self.assertEqual("Defer", build_decisions["Future Postcard"])
+        self.assertIn("12_OWNER_CORRECTION_RECORD_GOALS_WORKSHOP_AND_PROJECTS.md", package)
+        self.assertIn("13 and 14", package)
+        for expected in (
+            "codex/2026-07-24-slate-studio-slice-2-architecture",
+            "f6c2b52763d50d0773f20294acacd8d8165e59da",
+            "**Preserve / rejected / do not merge**",
+        ):
+            self.assertIn(expected, branch_register)
+
+    def test_ai_evaluation_program_is_planned_and_task_based(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        current_state = _read("docs", "governance", "CURRENT_STATE.md")
+        backlog = _read("docs", "peerslate", "PeerSlate_Product_Backlog.md")
+        roadmap = _read("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md")
+        readme = _read("docs", "initiatives", "PS-AI-PRODUCT-EVAL-001", "README.md")
+        charter = _read(
+            "docs", "initiatives", "PS-AI-PRODUCT-EVAL-001",
+            "01_AI_EXPERIENCE_AND_EVALUATION_CHARTER.md",
+        )
+        interview = _read(
+            "docs", "initiatives", "PS-AI-PRODUCT-EVAL-001",
+            "02_INTERVIEW_COACHING_AND_MODEL_EVALUATION.md",
+        )
+        sequence = _read(
+            "docs", "initiatives", "PS-AI-PRODUCT-EVAL-001",
+            "03_DISCOVERY_SEQUENCE_AND_LAUNCH_GATES.md",
+        )
+
+        for expected in (
+            "Planned - not active",
+            "No runtime work, model selection, provider change, prompt\ndeployment",
+            "after Workshop and Build Your Future direction\nare settled and after Projects has a defined purpose",
+            "before broad Ask Slate\nbehavior or advanced coaching",
+        ):
+            self.assertIn(expected, readme)
+        for expected in (
+            "Ask Pete / Ask [Name]",
+            "Ask Slate",
+            "Deterministically identify",
+            "versioned task instruction",
+            "Human review is the primary adjudication",
+            "Model-as-judge may prioritize",
+            "adversarial and privacy cases",
+            "latency, cost",
+            "No universal numeric threshold is invented here",
+        ):
+            self.assertIn(expected, charter)
+        for expected in (
+            "What Worked Well",
+            "Improve Next Time",
+            "Improved Draft",
+            "natural voice",
+            "request a follow-up instead of grading",
+            "When no source exists",
+            "task-based provider evaluation",
+        ):
+            self.assertIn(expected, interview)
+        for expected in (
+            "Roles and agents",
+            "Launch stop conditions",
+            "golden cases",
+            "rollback/disable control",
+        ):
+            self.assertIn(expected, sequence)
+        self.assertIn("PS-AI-PRODUCT-EVAL-001", baseline)
+        self.assertIn("planned_not_active_no_runtime_authorization", baseline)
+        self.assertIn("PS-AI-PRODUCT-EVAL-001", current_state)
+        self.assertIn("PS-AI-PRODUCT-EVAL-001", backlog)
+        self.assertNotIn("PS-AI-PRODUCT-EVAL-001", roadmap)
+        self.assertNotIn("AI product quality and evaluation gate", roadmap)
+
+    def test_current_studio_forward_pointers_reject_the_obsolete_slice_two_direction(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        initiatives = _read("docs", "governance", "ACTIVE_INITIATIVES.md")
+        package = _read("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "README.md")
+        for record in (baseline, initiatives):
+            self.assertIn(
+                "f6c2b52763d50d0773f20294acacd8d8165e59da",
+                record,
+            )
+            self.assertIn("do-not-merge", record)
+            self.assertIn("page-purpose", record)
+            self.assertIn("ChatGPT-created", record)
+        next_gate = baseline.split('next_gate: "', 1)[1].split('"\n', 1)[0]
+        for rejected_direction in (
+            "supported owner-scoped read model",
+            "career-experience",
+            "zoom, and fullscreen",
+        ):
+            self.assertNotIn(rejected_direction, next_gate)
+        self.assertIn("future-facing Goal Board", next_gate)
+        self.assertIn("Projects receives the next major purpose discussion", next_gate)
+        for record in (baseline, initiatives, package):
+            self.assertIn(
+                "workshop_and_build_your_future_page_purpose_and_visual_definition",
+                record,
+            )
+            self.assertIn(
+                "post-slice 1 studio visual-definition gate",
+                record.lower(),
+            )
+            self.assertIn(
+                "slice1_released_default_off_slice2_candidate_rejected_inventories_approved_chatgpt_visual_creation_next",
+                record,
+            )
+        for inventory in (
+            _read(
+                "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+                "13_WORKSHOP_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
+            ),
+            _read(
+                "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+                "14_BUILD_YOUR_FUTURE_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md",
+            ),
+        ):
+            self.assertIn("Pete-approved page-purpose inventory", inventory)
+            self.assertIn("“do the next 2”", inventory)
+            self.assertIn("- [x] Pete approved this inventory on 2026-07-24", inventory)
+            self.assertIn("does not lock", inventory)
+            self.assertIn("does not", inventory)
+
+    def test_current_studio_documents_limit_earlier_material_to_released_slice_one(self):
+        for filename in (
+            "README.md",
+            "04_BUILD_YOUR_FUTURE_VISUAL_REVIEW_AND_INCREMENTAL_STORYBOARD.md",
+            "05_OWNER_VISUAL_LOCK_COMPLETION_AND_NEW_SESSION_HANDOFF.md",
+            "06_D3_SLATE_STUDIO_INFORMATION_ARCHITECTURE.md",
+        ):
+            body = _read("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", filename)
+            normalized = re.sub(r"\s+", " ", body.replace(">", ""))
+            for expected in (
+                "Current-direction supersession and limited-scope warning",
+                "released Slice 1 protected Studio shell/frame",
+                "Goal Board, same-page",
+                "Workshop, Work-history, zoom,",
+                "fullscreen, or any Slice 2 direction",
+                "current owner correction",
+                "next visual-definition gate",
+            ):
+                self.assertIn(expected, normalized)
+
+    def test_markdown_authority_and_frozen_docx_evidence_remain_exact(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        manifest = _read("docs", "governance", "AUTHORITY_MARKDOWN_CONVERSION_MANIFEST.md")
+        expected = {
+            "PeerSlate_Company_and_Product_Bible_v2.9": (
+                "21DDFB3382E552DF38E2591280001BD503C37DAD349ADE56DC06820845173C21",
+                "1BB3DF535B2A7478D36C539521D64E452A01B163FEBE367615A96F345459224F",
+                ("Ask Slate AI", "Save Moment", "derived"),
+                ("CANDIDATE AWAITING OWNER APPROVAL", "Journal UI remains on hold"),
+            ),
+            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8": (
+                "BD9AC419B0BAB577181CEAD8A0B6D19A8E9AFD51006A78702D0F0D303A957AC7",
+                "612C23CF21CBA4A58905E77B067ADB82FF8A7BEA5A24A107742C973FE48495A1",
+                ("PS-GOV-JOURNAL-SYSTEM-001", "PS-ASK-SLATE-AI-001"),
+                ("CANDIDATE AWAITING OWNER APPROVAL", "Journal UI remains on hold"),
+            ),
+        }
+        self.assertIn("schema_version: 4", baseline)
+        self.assertEqual(2, baseline.count('controlling_format: "markdown"'))
+        self.assertEqual(2, baseline.count("frozen_source_snapshot:"))
+        bible_record = baseline.split("  bible:\n", 1)[1].split("  roadmap:\n", 1)[0]
+        roadmap_record = baseline.split("  roadmap:\n", 1)[1].split(
+            "  authority_markdown_conversion:\n", 1
+        )[0]
+        self.assertIn(
+            'path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"',
+            bible_record,
+        )
+        self.assertIn(
+            'markdown_path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"',
+            bible_record,
+        )
+        self.assertIn(
+            'path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"',
+            roadmap_record,
+        )
+        self.assertIn(
+            'markdown_path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"',
+            roadmap_record,
+        )
+        for stem, (markdown_hash, frozen_hash, required, forbidden) in expected.items():
+            markdown_path = os.path.join(ROOT, "docs", "governance", f"{stem}.md")
+            docx_path = os.path.join(ROOT, "docs", "governance", f"{stem}.docx")
+            with self.subTest(authority=stem), open(markdown_path, "rb") as markdown:
+                self.assertEqual(markdown_hash, hashlib.sha256(markdown.read()).hexdigest().upper())
+            with open(docx_path, "rb") as source:
+                self.assertEqual(frozen_hash, hashlib.sha256(source.read()).hexdigest().upper())
+            markdown_body = _read("docs", "governance", f"{stem}.md")
+            for phrase in required:
+                self.assertIn(phrase, markdown_body)
+            for phrase in forbidden:
+                self.assertNotIn(phrase, markdown_body)
+            self.assertNotIn("# Table of Contents", markdown_body)
+            self.assertNotIn("This table updates automatically", markdown_body)
+            self.assertNotIn("PAGEREF", markdown_body)
+            for link in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", markdown_body):
+                image_path = os.path.normpath(os.path.join(os.path.dirname(markdown_path), link))
+                self.assertTrue(os.path.isfile(image_path), image_path)
+        for expected_text in (
+            "979 | 92 | 10 | 4 | 312",
+            "1268 | 119 | 1 | 1 | 490",
+            "Ordered-list counters\nrestart at true list boundaries",
+            "No Roadmap addendum is permitted",
+            "frozen,\nnon-controlling source snapshots",
+        ):
+            self.assertIn(expected_text, manifest)
+
+    def test_converted_ordered_lists_restart_after_true_boundaries(self):
+        for filename in (
+            "PeerSlate_Company_and_Product_Bible_v2.9.md",
+            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md",
+        ):
+            body = _read("docs", "governance", filename)
+            previous_number = None
+            previous_was_ordered_item = False
+            for line in body.splitlines():
+                match = re.fullmatch(r"( *)?(\d+)\. .+", line)
+                if match:
+                    number = int(match.group(2))
+                    # Source documents also use section labels such as
+                    # "16. Phase 11" in ordinary paragraphs. They are not
+                    # Word numbered-list items and do not participate here.
+                    if number > 9:
+                        previous_number = None
+                        previous_was_ordered_item = False
+                        continue
+                    if not previous_was_ordered_item:
+                        self.assertEqual(1, number, (filename, line))
+                    elif number != 1:
+                        self.assertEqual(previous_number + 1, number, (filename, line))
+                    previous_number = number
+                    previous_was_ordered_item = True
+                elif line.strip():
+                    previous_number = None
+                    previous_was_ordered_item = False
+
+    def test_roadmap_core_sequence_preserves_normal_style_continuations(self):
+        roadmap = _read(
+            "docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md"
+        )
+        sequence = roadmap.split("The new core sequence is:\n", 1)[1].split(
+            "## Package allocation", 1
+        )[0]
+        self.assertEqual(
+            [str(number) for number in range(1, 10)],
+            re.findall(r"(?m)^(\d+)\. ", sequence),
+        )
+        for expected in (
+            "2. audit/allocate exact routes, shell ownership, source/Moment services, derived Journal retrieval, migration, rollback, visual authority, and tests;",
+            "3. build the private owner slice: context-preserving Type/Speak composer, one idempotent Save Moment operation",
+            "9. implement messaging only after Connection/consent, block/report/mute, lifecycle, notification, moderation, legal, and security operations pass.",
+        ):
+            self.assertIn(expected, sequence)
+        self.assertNotIn("\n\nderived Journal retrieval", sequence)
+        self.assertNotIn("\n\nidempotent Save Moment operation", sequence)
 
 
 if __name__ == "__main__":
