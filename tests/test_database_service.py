@@ -1,6 +1,13 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
-from services.database_service import ALLOWED_PROCEDURES, DatabaseService
+from mssql_python import DatabaseError
+
+from services.database_service import (
+    ALLOWED_PROCEDURES,
+    DatabaseService,
+    DatabaseServiceError,
+)
 
 
 class DatabaseServiceTests(unittest.TestCase):
@@ -36,6 +43,24 @@ class DatabaseServiceTests(unittest.TestCase):
         result = self.service.last_result("usp_AddSlateItem")
 
         self.assertEqual(result, [{"saved_id": 42}])
+
+    @patch("services.database_service.get_connection")
+    def test_driver_error_during_procedure_is_not_retried(self, get_connection):
+        connection = MagicMock()
+        cursor = connection.__enter__.return_value.cursor.return_value
+        cursor.execute.side_effect = DatabaseError(
+            "test driver error", "test database error"
+        )
+        get_connection.return_value = connection
+
+        with self.assertRaises(DatabaseServiceError):
+            self.service.execute_procedure(
+                "usp_UpsertAppUserFromAuth",
+                [("@AuthProvider", "aad")],
+            )
+
+        get_connection.assert_called_once_with()
+        cursor.execute.assert_called_once()
 
     def test_capture_lifecycle_procedures_are_explicitly_allowlisted(self):
         expected = {

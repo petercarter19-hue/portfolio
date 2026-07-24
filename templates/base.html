@@ -257,6 +257,8 @@
                     <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}">
                         <button class="nav-sign-out__btn" type="submit">Sign out</button>
                     </form>
+                    {% elif auth_enabled and not identity_storage_available %}
+                    <a class="sign-in-btn" href="{{ owner_workspace_url }}">Workspace waking</a>
                     {% else %}
                     <a class="sign-in-btn" href="{{ auth_sign_in_url }}">Sign In</a>
                     {% endif %}

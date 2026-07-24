@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from app import app
+from services.database_service import DatabaseServiceError
 
 
 def easy_auth_header(subject, display_name="Example Member"):
@@ -101,6 +102,46 @@ class AuthenticationFlowTests(unittest.TestCase):
             ("@AuthIssuer", "https://example.ciamlogin.com/example/v2.0"),
             parameters,
         )
+
+    @patch("identity.database_service.first_row")
+    def test_signed_in_member_sees_truthful_workspace_wakeup_state(self, first_row):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        first_row.side_effect = DatabaseServiceError("identity storage unavailable")
+
+        response = self.client.get("/app", headers=easy_auth_header("pete-id"))
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.headers["Retry-After"], "5")
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertIn(b"Your private workspace is waking up", response.data)
+        self.assertIn(b"You are signed in", response.data)
+        self.assertIn(b'href="/app">Try again</a>', response.data)
+        self.assertIn(b">Workspace waking</a>", response.data)
+        self.assertNotIn(b"Sign in is not configured", response.data)
+        self.assertNotIn(b">Sign In</a>", response.data)
+        first_row.assert_called_once()
+
+    @patch("identity.database_service.first_row")
+    def test_session_reports_authenticated_workspace_unavailable(self, first_row):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        first_row.side_effect = DatabaseServiceError("identity storage unavailable")
+
+        response = self.client.get(
+            "/auth/session", headers=easy_auth_header("pete-id")
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.headers["Retry-After"], "5")
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertEqual(
+            response.get_json(),
+            {
+                "signed_in": True,
+                "available": False,
+                "state": "workspace_unavailable",
+            },
+        )
+        first_row.assert_called_once()
 
     @patch("identity.database_service.first_row")
     def test_two_provider_subjects_resolve_to_two_internal_accounts(self, first_row):

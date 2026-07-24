@@ -6,7 +6,9 @@ from urllib.parse import urlencode, urlsplit
 from flask import (
     Blueprint,
     current_app,
+    g,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
@@ -61,6 +63,25 @@ def _render_auth_unavailable():
     )
 
 
+def _render_identity_storage_unavailable():
+    # Rendering base.html normally resolves the navigation identity again. The
+    # request has already proved that the trusted principal reached Flask and
+    # that only identity storage failed, so prevent a duplicate SQL wake-up
+    # attempt while building this truthful recovery state.
+    g.peerslate_identity_storage_unavailable = True
+    response = make_response(
+        render_template(
+            "identity_storage_unavailable.html",
+            page_title="Your workspace is waking up",
+            retry_path=url_for("auth.owner_workspace"),
+        ),
+        503,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Retry-After"] = "5"
+    return response
+
+
 @auth.get("/auth/sign-in")
 def sign_in():
     return_path = _safe_return_path(request.args.get("return_to"))
@@ -98,7 +119,17 @@ def session_status():
         identity = get_optional_identity()
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate identity storage is unavailable.")
-        return jsonify({"signed_in": False, "available": False}), 503
+        response = jsonify(
+            {
+                "signed_in": True,
+                "available": False,
+                "state": "workspace_unavailable",
+            }
+        )
+        response.status_code = 503
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Retry-After"] = "5"
+        return response
 
     if identity is None:
         return jsonify({"signed_in": False, "available": _auth_enabled()})
@@ -124,7 +155,7 @@ def owner_workspace():
         return redirect(url_for("auth.sign_in", return_to=return_path))
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate owner workspace identity lookup failed.")
-        return _render_auth_unavailable()
+        return _render_identity_storage_unavailable()
 
     # PS-HOME-FRONTEND-001: with the flag off, /app is byte-identical to the
     # released owner workspace fallback below (PEERSLATE_OWNER_HOME_ENABLED
@@ -163,13 +194,17 @@ def owner_workspace():
 
 @auth.app_context_processor
 def shared_authentication_state():
-    try:
-        identity = get_optional_identity()
-        identity_storage_available = True
-    except DatabaseServiceError:
-        current_app.logger.error("PeerSlate navigation identity lookup failed.")
+    if getattr(g, "peerslate_identity_storage_unavailable", False):
         identity = None
         identity_storage_available = False
+    else:
+        try:
+            identity = get_optional_identity()
+            identity_storage_available = True
+        except DatabaseServiceError:
+            current_app.logger.error("PeerSlate navigation identity lookup failed.")
+            identity = None
+            identity_storage_available = False
 
     return {
         "current_member": identity,

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-auth-001-1">
+{% endblock %}
+
+{% block content %}
+<main class="owner-app" id="main-content">
+    <section class="owner-app__panel" aria-labelledby="identity-storage-title">
+        <p class="owner-app__eyebrow">PeerSlate account</p>
+        <h1 id="identity-storage-title">Your private workspace is waking up.</h1>
+        <p>
+            You are signed in, but PeerSlate could not reach your private
+            workspace yet. Secure storage may still be starting. Try again in
+            a moment.
+        </p>
+        <a class="owner-app__secondary" href="{{ retry_path }}">Try again</a>
+        <a class="owner-app__secondary" href="{{ url_for('home') }}">Return home</a>
+    </section>
+</main>
+{% endblock %}

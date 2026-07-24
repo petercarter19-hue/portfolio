@@ -1,13 +1,22 @@
+import logging
 import os    # Reads environment variables
 import re
+import time
 from datetime import date, datetime    # Handles SQL date and time values
 from decimal import Decimal    # Handles SQL decimal values
 
 from dotenv import load_dotenv    # Loads the local .env file
+from mssql_python import Error as MssqlError
 from mssql_python import connect    # Connects Python to Azure SQL
 
 
 load_dotenv()    # Loads the protected connection string from .env
+
+logger = logging.getLogger(__name__)
+
+SQL_CONNECT_ATTEMPTS = 2
+SQL_CONNECT_TIMEOUT_SECONDS = 60
+SQL_CONNECT_RETRY_DELAY_SECONDS = 1
 
 
 def normalize_connection_string(connection_string):
@@ -28,7 +37,12 @@ def normalize_connection_string(connection_string):
 
 
 def get_connection():
-    """Open and return an Azure SQL connection."""
+    """Open and return an Azure SQL connection.
+
+    Azure SQL serverless deliberately rejects the first login that wakes a
+    paused database. Retry only connection establishment so a stored procedure
+    or other database operation is never replayed.
+    """
 
     connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")    # Reads the connection string
 
@@ -37,13 +51,34 @@ def get_connection():
             "AZURE_SQL_CONNECTIONSTRING is missing. Check the root .env file."
         )
 
-    connection = connect(
-        normalize_connection_string(connection_string),
-        timeout=60,
-    )    # Opens the Azure SQL connection and allows a paused database time to resume
-    connection.setautocommit(True)    # Commits stored-procedure actions automatically
+    normalized_connection_string = normalize_connection_string(connection_string)
 
-    return connection
+    for attempt in range(1, SQL_CONNECT_ATTEMPTS + 1):
+        connection = None
+        try:
+            connection = connect(
+                normalized_connection_string,
+                timeout=SQL_CONNECT_TIMEOUT_SECONDS,
+            )
+            connection.setautocommit(True)
+            return connection
+        except MssqlError:
+            if connection is not None:
+                try:
+                    connection.close()
+                except MssqlError:
+                    pass
+
+            if attempt >= SQL_CONNECT_ATTEMPTS:
+                raise
+
+            logger.warning(
+                "Azure SQL connection attempt %s/%s failed; retrying after "
+                "the bounded serverless wake-up delay.",
+                attempt,
+                SQL_CONNECT_ATTEMPTS,
+            )
+            time.sleep(SQL_CONNECT_RETRY_DELAY_SECONDS)
 
 
 def serialize_sql_value(value):
