@@ -60,6 +60,12 @@ class AuthenticationFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertIn(b"Sign in is not configured yet", response.data)
+        callback_script = b"/static/js/easy-auth-callback.js?v=ps-auth-callback-1"
+        self.assertIn(callback_script, response.data)
+        self.assertLess(
+            response.data.index(callback_script),
+            response.data.index(b"REAL TABLETS GET THE DESKTOP LAYOUT"),
+        )
 
     def test_sign_in_uses_easy_auth_and_rejects_external_return_urls(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
@@ -158,6 +164,7 @@ class AuthenticationFlowTests(unittest.TestCase):
         response = self.client.get("/", base_url="https://peerslate.com")
         rejected_host = self.client.get("/", base_url="https://attacker.example")
 
+        self.assertNotIn(b"easy-auth-callback.js", response.data)
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response.headers["X-Frame-Options"], "SAMEORIGIN")
         self.assertIn("max-age=", response.headers["Strict-Transport-Security"])

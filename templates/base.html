@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# PS-AUTH-CALLBACK-001: load only on private account/authentication routes,
+       before page-specific scripts, so an Entra fragment-only return cannot
+       leave a stale pre-sign-in document visible. The script discards the
+       fragment without parsing or storing its value, then requests the same
+       route again so Easy Auth can supply trusted server-side identity
+       headers. Public pages remain byte-identical. #}
+    {% if request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/') %}<script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}?v=ps-auth-callback-1"></script>{% endif %}
 
     <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
          2026-07-06)

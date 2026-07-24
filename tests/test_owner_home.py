@@ -33,9 +33,11 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # hash makes any such drift a hard failure. Recapture deliberately (never to
 # silence a real regression) only when `templates/owner_workspace.html` or
 # the non-standalone branch of `templates/base.html` legitimately changes.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18051
+# PS-AUTH-CALLBACK-001 deliberately adds one early script tag to private /app
+# and /auth routes; this authorized security behavior is the sole byte delta.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18138
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "f8b82204e2d0e5035b403b613c91b67916ab5892334c36b97a769dd3b57016f9"
+    "c747bdd6f80aa77594cad8d9fae059da297f3bbec43dc50e2c73d6fbfe2b65b9"
 )
 
 
