@@ -8,20 +8,50 @@ If another repository document conflicts with this file about Git workflow, foll
 
 ## Repository map
 
-- `origin` is the Azure DevOps repository and the only authoritative remote.
-- `origin/main` is the production branch and the source of truth for current code.
-- `github` is the GitHub backup mirror. It is not a development or deployment source.
+- Azure DevOps is the authoritative repository. `origin/main` there is the production branch and the source of truth for current code.
+- GitHub is the backup mirror. It is never a merge target and never a deployment source.
 - GitHub Actions deployment is intentionally disabled. Do not enable it or use it to publish PeerSlate.
 - Azure Pipelines is the only production deployment path.
 - `archive/*` tags preserve historical or unfinished work. They are recovery references, not active development branches.
 - There is no active remote named `azure`. Instructions that say to push to `azure` are obsolete.
 
-Expected remote URLs:
+**`origin` does not mean the same thing in every checkout. Verify it; never assume it.**
+
+In a local clone on Pete's own computers:
 
 ```text
 origin  https://dev.azure.com/peerslate19/portfolio-site/_git/portfolio-site
 github  https://github.com/petercarter19-hue/portfolio.git
 ```
+
+In a hosted agent session (Claude Code on the web, or any cloud container), the
+only wired remote is GitHub, and it is named `origin`. Such a session cannot
+reach Azure at all. This is a real and supported configuration, not a
+misconfiguration, so a cloud session's branch legitimately lands on GitHub
+first. Always run `git remote -v` before pushing and state which remote you
+pushed to in the handoff.
+
+### How cloud-agent work reaches production
+
+GitHub therefore serves two purposes: a backup mirror, and an inbox for
+cloud-agent branches. It is still never a merge target and never a deploy path.
+
+```text
+cloud agent session pushes branch      →  GitHub (agent inbox)
+        ↓  fetch that branch into a local clone that has Azure as origin
+        ↓  rebase or cherry-pick onto current Azure origin/main, rerun tests
+Azure pull request  →  squash merge to Azure main  →  Azure Pipelines deploys
+        ↓  verify production
+git push github main --follow-tags     →  GitHub re-synced as backup
+```
+
+**A cloud agent's base can be stale.** GitHub only advances when the mirror push
+above is run, so its `main` may sit behind Azure `main`. Work branched from a
+stale GitHub `main` is built and tested against code that is no longer current,
+and its test results do not describe the real base. Before trusting any
+cloud-session evidence, rebase or cherry-pick the change onto current Azure
+`origin/main` and rerun the tests there. Report the results from that run, not
+from the cloud session.
 
 ## Non-negotiable rules
 
@@ -36,7 +66,7 @@ github  https://github.com/petercarter19-hue/portfolio.git
 9. Preserve unrelated and unfinished work. Never discard it to make a checkout look clean.
 10. Never expose, read, copy, commit, or transmit credentials or secrets.
 11. Do not rewrite shared history, force-push, prune objects, or perform destructive Git cleanup without a verified recovery reference and explicit justification.
-12. Keep GitHub a one-way mirror of Azure. GitHub must never become an alternate production path.
+12. GitHub is a backup mirror and an inbox for cloud-agent branches. It must never become a merge target, an alternate production path, or the source of truth. Merges and deployments happen only on Azure.
 13. Assigned writers self-manage their own delivery lane: implementation, complete-diff review, correction, testing, evidence, PR readiness, approved release, production verification, and closeout.
 14. The package-designated session manager manages sequencing, cross-lane file ownership, shared authority, and final manager acceptance. ChatGPT Work/Codex and Claude Co-Work have equal manager authority when assigned. The manager does not routinely repeat a writer's complete technical review when the self-certification evidence is coherent.
 

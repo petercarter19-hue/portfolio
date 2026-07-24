@@ -1,245 +1,140 @@
-# ChatGPT Codex — Session Startup Prompt for Pete Carter's Portfolio
+# ChatGPT Codex — Session Startup Prompt for PeerSlate
 
-Copy and paste everything below this line into Codex at the start of every session.
+Paste everything below the line into Codex at the start of a session.
 
----
-
-You are helping Pete Carter build and maintain a personal Flask portfolio website on a Mac (MacBook Pro 14" M5). Pete is a beginner coder. Explain everything clearly and step by step. Never make assumptions about his setup.
-
----
-
-## CRITICAL RULES — Read Before Doing Anything
-
-These rules prevent mistakes that have already broken the project once. Follow them without exception.
-
-1. **The project folder is `/Users/petercarter/portfolio`.** Never cd to any other location. There is no `Documents/Website/portfolio` or any similar path. If you are ever unsure, ask Pete to confirm the folder before running commands.
-
-2. **Never create a new virtual environment.** A working venv already exists at `/Users/petercarter/portfolio/venv`. It has Flask, anthropic, and python-dotenv installed. Never run `python3 -m venv` or `python -m venv` under any circumstances.
-
-3. **Always activate the existing venv with exactly this command:**
-   ```
-   source venv/bin/activate
-   ```
-   Never use `.venv`, `env`, or any other name. If the terminal prompt does not show `(venv)` at the start, the venv is not active. Do not run Flask until it is.
-
-4. **The site runs at `http://127.0.0.1:5000`.** The port in `app.py` is set to 5000. Do not change it.
-
-5. **Never touch, modify, or create a `.env` file.** The `.env` file contains Pete's private Anthropic API key. It already exists on this machine. Never display, copy, commit, or ask for its contents.
-
-6. **Never commit `.env`, `venv/`, or `__pycache__/` to GitHub.** These are already excluded in `.gitignore`. Never change `.gitignore`.
-
-7. **Always use `git commit -m "your message here"` with the `-m` flag.** Never run `git commit` without `-m`. It opens a Vim editor that is confusing for a beginner.
-
-8. **Before editing any file Pete has open in VS Code, tell him to press Cmd+S first.** This prevents VS Code save conflicts.
+This file is a launcher, not an authority. It never overrides `START_HERE.md`,
+`docs/governance/CURRENT_BASELINE.yaml`, the current Bible and Roadmap, or
+`docs/AI_WORKFLOW.md`. When this file disagrees with any of those, they win and
+the conflict should be reported.
 
 ---
 
-## Who Pete Is
+You are working on **PeerSlate**, a reusable multi-user product built as a Python
+and Flask web application. It is not a single person's personal website. Pete
+Carter's profile is fixture content used to demonstrate the product; it is never
+product logic. Do not hardcode one person, profile, career, tenant, or story
+into shared behavior.
 
-- Pete Carter — Systems Engineer at Northrop Grumman
-- Beginner coder, learning Python and web development
-- Mac user (MacBook Pro 14" M5), using VS Code
-- Email: petercarter19@gmail.com
-- GitHub username: petercarter19-hue
-- GitHub repo: https://github.com/petercarter19-hue/portfolio.git
+## Before you do anything
 
----
+Open and follow **`START_HERE.md`** in the repository root. It is the mandatory
+pre-work gate for every session. In order, it requires you to:
 
-## The Project
+1. synchronize from the authoritative remote and inspect the checkout;
+2. read `docs/AI_WORKFLOW.md`, `docs/governance/CURRENT_BASELINE.yaml`,
+   `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`,
+   and the Bible and Roadmap versions named by the baseline;
+3. read `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md` and
+   `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`; and
+4. confirm the package, designated session manager, branch owner, reserved
+   files, and entry gate before writing.
 
-A personal portfolio website built with Python and Flask. It showcases Pete's engineering career and demonstrates his AI and software skills to recruiters.
+`docs/governance/DOCUMENT_CONTROL.md` decides precedence when an older document
+conflicts with the current Bible or Roadmap. Do not infer the current version
+from memory, from this file, or from a document's own title — read the baseline.
 
-**Two goals:**
-1. Show real, hireable tech skills
-2. Create a live public site to share with employers
+Stop and report rather than guess when authority, ownership, scope, or the
+current document version is unclear.
 
-**Tech stack:**
-- Backend: Python + Flask
-- AI: Anthropic Claude API (claude-haiku-4-5-20251001 model)
-- Frontend: HTML, CSS, JavaScript (Jinja2 templates)
-- Version control: GitHub
+## Environment — do not assume a machine
 
----
-
-## Exact Folder Structure
-
-```
-/Users/petercarter/portfolio/
-├── app.py                          ← Main Flask app, all routes defined here
-├── .env                            ← API key — NEVER touch this
-├── .gitignore                      ← NEVER change this
-├── AGENTS.md                       ← Project memory for Cowork (Claude desktop app)
-├── CLAUDE.md                       ← Project memory for Cowork (Claude desktop app)
-├── CODE_GUIDE.md                   ← General coding reference
-├── CODEX_PROMPT.md                 ← This file
-├── docs/
-│   ├── chatbot_requirements.md
-│   └── knowledge/                  ← Knowledge base files for the chatbot
-│       ├── professional_summary.md
-│       ├── career_history.md
-│       ├── technical_skills.md
-│       ├── accomplishments.md
-│       ├── recruiter_faq.md
-│       └── portfolio_projects.md
-├── static/
-│   ├── css/
-│   │   ├── style.css               ← Main site styles
-│   │   └── chatbot.css             ← Chatbot widget styles
-│   ├── js/
-│   │   └── chatbot.js              ← Chatbot widget behavior
-│   └── images/
-├── templates/
-│   ├── base.html                   ← Shared layout used by every page
-│   ├── index.html                  ← Home page
-│   ├── about.html
-│   ├── work.html
-│   ├── skills.html
-│   ├── hobbies.html
-│   └── contact.html
-└── venv/                           ← Python virtual environment — NEVER recreate this
-```
-
----
-
-## How to Start a Session
-
-Run these commands in the VS Code terminal at the start of every session:
+Pete works from more than one computer, and agent sessions also run in cloud
+containers. **Never hardcode an absolute path.** Determine the repository root
+at the start of the session and work relative to it.
 
 ```bash
-cd /Users/petercarter/portfolio
-source venv/bin/activate
+pwd
+git rev-parse --show-toplevel
+```
+
+A Python virtual environment is expected but is **not** in version control, so a
+fresh clone or a second computer will not have one. Creating a venv on a machine
+that lacks one is correct and expected:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate          # macOS/Linux
+venv\Scripts\activate             # Windows PowerShell
+pip install -r requirements.txt
+```
+
+If a venv already exists, activate it rather than recreating it. The shell
+prompt should show `(venv)` before you run the app or the tests.
+
+`.env` is also excluded from version control and must exist locally with
+`ANTHROPIC_API_KEY` set, or `app.py` raises a `RuntimeError` on import. Use
+`.env.example` as the template. **Never display, copy, commit, or ask for the
+contents of `.env`.**
+
+Run the app and the tests from the repository root:
+
+```bash
 python app.py
+python -m pytest tests/ -q
 ```
 
-The terminal will show:
-```
-* Running on http://127.0.0.1:5000
-```
+## Git rules — these are non-negotiable
 
-Open `http://127.0.0.1:5000` in a browser to see the site.
+`docs/AI_WORKFLOW.md` is the controlling authority. The rules that matter most:
 
-To stop Flask: press `Ctrl+C` in the terminal.
+- **Never commit or push directly to `main`.** Not on any remote, ever.
+- Start each task from current `origin/main` on a short-lived branch named
+  `work/YYYY-MM-DD-short-task-name`.
+- One branch has exactly one active writer. Do not continue another agent's
+  branch without an explicit handoff naming the branch and the exact full SHA.
+- Merge through an **Azure DevOps pull request using squash merge**, then delete
+  the task branch. Azure Pipelines is the only production deployment path.
+- GitHub is a backup mirror and an inbox for cloud-agent branches. It is never a
+  merge target or a deployment path. GitHub Actions deployment is intentionally
+  disabled; do not enable it.
+- Verify which remote you are on before pushing. In a local clone `origin` is
+  Azure DevOps; in a cloud agent session `origin` may be GitHub. Check, do not
+  assume:
 
----
+  ```bash
+  git remote -v
+  ```
 
-## Current State of the Project
+- Stage specific paths and inspect the staged patch before committing. Never
+  commit `.env`, `venv/`, credentials, publish profiles, or machine-local
+  configuration such as `.claude/launch.json`.
+- Preserve unrelated and unfinished work. Never discard it to make a checkout
+  look clean.
+- Never run a destructive Git operation — `reset --hard`, `clean -fd`,
+  `branch -D`, force-push, history rewrite — without a verified recovery
+  reference and Pete's explicit confirmation.
 
-**Completed:**
-- Flask app with 6 working routes: `/`, `/about`, `/work`, `/skills`, `/hobbies`, `/contact`
-- Shared base template (`base.html`) used by all pages
-- Main CSS (`style.css`) with navy/gold color scheme, responsive layout, sticky header
-- Chatbot widget MVP 0 complete: floating button, slide-in panel, suggestion chips, mock responses
-- Knowledge base: 6 Markdown files in `docs/knowledge/` with Pete's professional background
-- `anthropic` and `python-dotenv` packages installed in venv
-- `.env` file with `ANTHROPIC_API_KEY` already exists on this machine
+## Product invariants that apply to every change
 
-**Next step — MVP 1 (real Claude API):**
-- Add `/api/chat` POST route to `app.py`
-- Load knowledge base files as context for Claude
-- Replace `getMockResponse()` in `chatbot.js` with a `fetch()` call to `/api/chat`
+- User content is private by default. Identity and ownership are server-derived,
+  and authorization is checked before protected data is returned or changed.
+- Canonical user truth, source evidence, AI proposals, and derived projections
+  are different data classes. Do not silently collapse one into another.
+- AI proposes; people decide. AI output must never silently save, publish, send,
+  delete, apply, or become canonical truth.
+- The core experience must remain understandable and useful when AI is
+  unavailable.
+- Never present fixture, seeded, demo, locally inferred, or flag-disabled
+  behavior as verified live behavior.
+- Meet WCAG 2.2 AA: keyboard use, visible focus, semantic structure, contrast,
+  motion preferences, and responsive behavior.
 
----
+## Security
 
-## app.py — Current Contents
+- Never commit secrets, and never place them in HTML, CSS, or JavaScript.
+- Never discuss classified information, internal program names, or proprietary
+  employer details.
+- Treat user-facing copy as a truth surface: do not claim a capability is live,
+  stored, transmitted, or private unless the code actually does that.
 
-```python
-import os
-from flask import Flask, render_template
+## Working style
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-@app.route('/work')
-def work():
-    return render_template('work.html')
-
-@app.route('/skills')
-def skills():
-    return render_template('skills.html')
-
-@app.route('/hobbies')
-def hobbies():
-    return render_template('hobbies.html')
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-```
-
----
-
-## Git Workflow
-
-After making changes, save them to GitHub with:
-
-```bash
-git add .
-git commit -m "Brief description of what changed"
-git push origin main
-```
-
-To check current status before committing:
-```bash
-git status
-```
-
-To pull changes from GitHub (e.g., work done on another computer):
-```bash
-git stash
-git pull origin main
-git stash pop
-```
-
----
-
-## Installed Python Packages (inside venv)
-
-- Flask 3.1.3
-- anthropic 0.112.0
-- python-dotenv 2.2.2
-
-Do not install new packages without asking Pete first.
-
----
-
-## The Chatbot — How It Works (MVP 0)
-
-The chatbot widget lives in three files:
-- `templates/base.html` — the HTML structure (button, panel, input)
-- `static/css/chatbot.css` — all visual styles
-- `static/js/chatbot.js` — all behavior (open/close, send, get response)
-
-Currently, `chatbot.js` uses a `getMockResponse()` function that returns hardcoded answers based on keyword matching. This is MVP 0 — no real AI yet.
-
-MVP 1 will replace `getMockResponse()` with a `fetch()` call to a new Flask route `/api/chat`, which will call the Claude API using Pete's knowledge base files as context.
-
----
-
-## Security Rules — Never Violate These
-
-- Never include the API key in any file that gets committed to GitHub
-- Never put secrets in HTML, CSS, or JavaScript files
-- Never discuss classified information, internal program names, or proprietary employer details
-- The `.env` file must never be committed — it is already in `.gitignore`
-- The chatbot must only answer from the approved knowledge base files
-
----
-
-## Pete's Working Style
-
-- Complete beginner — explain everything step by step with no assumptions
-- Always explain WHY something works, not just the command
-- Comment all code thoroughly so Pete can read and learn from it
-- Ask before creating new files or folders
-- Never run destructive commands (delete, overwrite, force push) without explicit confirmation
-- Pete works from two computers (Mac and Windows PC) and syncs via GitHub
+- Explain what you are doing and why, not just the command.
+- Comment non-obvious code so it stays readable later.
+- Ask before creating new files, adding dependencies, or widening scope.
+- Report failures honestly. A merge is not a deployment, and a passing test is
+  not production verification.
+- Close out material work with
+  `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`, reporting base and
+  final SHAs, changed files, tests with results, pipeline and production status,
+  and anything deferred.
