@@ -1,0 +1,84 @@
+# PeerSlate Completion & Handoff Report
+
+## A. Status
+
+- **Package:** `PS-SLATE-STUDIO-SLICE-1-001` - Protected Studio shell and Build Your Future frame.
+- **Status:** **Pass - technical and final visual-product acceptance satisfied** at corrected candidate `e75da1e9204ded18ac03623e507451032c8ab3ad`.
+- **Branch and commit history:** `work/2026-07-24-slate-studio-slice-1-shell` began at Azure `origin/main` `15e38cb1f55e9a5a736d1c493b1af7cd88d15f91`. The independent reviewer evaluated predecessor `a7976c8e07ae3658c55e86bbe0df05990e2bde15` and returned **Conditional**. Same-writer corrections are commit `bb1e6f9231ff945f9a04222957c0b21bf45f6a62`. Current Azure `origin/main` was merged without rebasing at `c9da291438f079438cf9e94dd7463c1dcf8036db`; correction evidence was recorded at `0c3e1ff6c92871b06b410b775aad1e2386d5a762`; mobile clipping was corrected at `076587a83803da401eac45ae701eba4df4504476`; reflow/navigation polish was corrected at `c2ac3f845bf54db4f4c571d1ed3d2db791082f50`; and final Theme-label spacing was corrected and visually rechecked at `e75da1e9204ded18ac03623e507451032c8ab3ad`. This tracked status update cannot truthfully contain its own final commit SHA; the exact pushed handoff tip is supplied externally.
+- **PR / pipeline / environment:** No PR opened, no pipeline run, no environment change.
+- **Production state:** Not deployed. `PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED` defaults to `false`; the new route therefore remains a neutral 404 in the deployed-default configuration.
+- **Visual authority and status:** Owner-accepted direction in `PS-SLATE-STUDIO-IA-001` documents 04, 07, and 10 plus `visual-authority/slice-1/ASSET_MANIFEST.md`. Corrected-candidate browser evidence is recorded under `C:\Users\peter\.codex\visualizations\2026\07\24\019f93d2-a0b8-7f00-ae4e-381a394e2fde\` as `studio-slice1-corrected-desktop-light.jpg`, `studio-slice1-corrected-desktop-dark.jpg`, `studio-slice1-corrected-desktop-light-1200.jpg`, `studio-slice1-corrected-desktop-dark-1200.jpg`, `studio-slice1-corrected-bottom-light.jpg`, `studio-slice1-corrected-mobile-390-light.jpg`, `studio-slice1-corrected-mobile-390-dark.jpg`, `studio-slice1-corrected-reflow-640-dark.png`, and `studio-slice1-final-mobile-320-dark.png`.
+- **Homepage product projection:** Not Applicable for this slice. The logged-out homepage does not present Build Your Future as live, and this branch does not change `/`, the homepage shell, or any public product projection.
+- **Pete / designated session manager visual acceptance:** Satisfied. Pete instructed the team to move forward while scrutinizing visual implementation; the designated manager completed that scrutiny against the corrected build and returned **Pass**.
+- **Designated session manager:** Active ChatGPT Work/Codex task.
+- **Manager handoff status and next receiver:** PR-ready. Await explicit manager action to open the Azure pull request; no additional technical or visual review is required unless the branch changes.
+- **Lane owner and self-managed authority:** Sole implementation writer retains ownership for review corrections.
+- **Self-certification:** **Pass** - focused tests, regressions, privacy checks, static accessibility checks, route-local no-JavaScript behavior, corrected browser evidence, remote equality, final diff verification, and final visual-product acceptance pass.
+- **Complete-diff review:** Completed by the writer; no out-of-scope runtime surface, migration, API, service, storage, public route, or shared-governance file was changed.
+- **Acceptance requested:** None remaining for implementation handoff. The branch is PR-ready; no PR, deployment, enablement, or release action has yet occurred.
+
+## B. What changed technically
+
+- Added `PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED`, default `false`, in `app.py`. It is independent of the existing Owner Home flag.
+- Added protected `GET /app/studio/build-your-future` in `auth_routes.py`. Flag-off aborts before identity/template resolution; flag-on redirects an unauthenticated request to the exact safe same-origin sign-in return; successful renders set `Cache-Control: private, no-store`.
+- Added a finite server-owned `studio-frame.v1` model. It derives member display name/account destination and every navigation destination on the server. It neither receives browser-supplied owner/slate values nor loads Board/Work/Moment/Project data.
+- Added an honest recovery frame for identity-storage unavailability: `503`, `private, no-store`, `Retry-After: 5`, a same-route retry, and no member payload.
+- Published Slate and My Slate are deliberately **not connected**, rather than pointing at the Pete fixture. No empty state is emitted because Slice 1 has no authorized supported-item source contract.
+- Added a route-local template, partials, and scoped stylesheet. It provides a polished branded header, two distinct navigation levels, restrained iconography, a Board-shaped truthful state, a future-direction panel, and a three-part trust strip. Dark primary headings are off-white with gold reserved for navigation/state accents. It contains no Board cards, selection, curves, editing, upload, AI, practice grounding, publishing, or mutation control.
+- The Theme control is server-rendered with `hidden` and is revealed only after the existing theme enhancement successfully loads and binds. With JavaScript disabled, the control cannot appear enabled while doing nothing; the full private frame remains usable in its default light theme. No shared JavaScript asset was changed.
+- At effective 200% reflow and all narrower widths, the horizontally scrollable Studio navigation is start-aligned, so Workshop remains fully reachable without negative-side clipping. At 320px, global navigation uses three equal columns, visual order follows DOM/focus order, and the Studio row remains horizontally reachable.
+- Added focused contract/privacy tests and static DOM/CSS accessibility tests. No schema, migration, database/service, API, storage, shared shell, public route, homepage, Community, Journal, Capture, Owner Home, or public Interview Studio file changed.
+
+## C. What this means in plain English
+
+A signed-in member can reach the private Build Your Future frame once a future owner enablement decision turns on its flag. They can orient themselves in Studio, return to Workshop, go to Community, and see that this early workspace is not connected to Board content or a published Slate yet. The page does not pretend that any notes, editing, or public output exist.
+
+## D. What the website or member can do now
+
+- In the default configuration: nothing new is visible; the new route returns an ordinary 404 before loading identity, Studio HTML, or Studio assets.
+- In a future flag-on environment: a signed-in member can view the protected private frame and truthful not-connected/recovery states. The page contains no write operation and no publication action.
+- Still unavailable: Board data, empty/has-supported-items admission, member published-Slate lookup, editing, persistence, AI, practice grounding, publishing, Community pulse, public-page alignment, and any Interview Studio rename/restructure.
+
+## E. How this connects to PeerSlate
+
+This is the bounded first implementation of the work-first covenant: Journal preserves canonical member history; Slate Studio is the private workspace for active future-building; public Slate presents approved output; Community connects selected output. The frame remains an experience layer over future governed records rather than creating a new Resume, Story, Work, Project, Board, Journal, or publication truth store. It preserves authorization-before-retrieval, private-by-default behavior, optional AI, and the current public/browser-local Interview Studio boundary.
+
+## F. Verification and validation
+
+### Automated verification
+
+- `python -m py_compile app.py auth_routes.py tests/test_owner_studio_slice1.py tests/test_owner_studio_slice1_accessibility.py` - passed with the repository virtual environment.
+- `python -m unittest tests.test_owner_studio_slice1 tests.test_owner_studio_slice1_accessibility` - **12 passed**.
+- `python -m unittest tests.test_auth tests.test_owner_home tests.test_owner_home_accessibility tests.test_owner_studio_slice1 tests.test_owner_studio_slice1_accessibility` - **64 passed**. This includes existing `/app`, authentication, and Owner Home regression coverage.
+- `python -m unittest discover -s tests -p 'test_*.py'` - **917 passed, 3 skipped**.
+- Final closeout guardrails: `python -m unittest tests.test_owner_studio_slice1 tests.test_owner_studio_slice1_accessibility tests.test_governance_pointers tests.test_site_rules` - **48 passed**.
+- Final focused verification through `e75da1e9204ded18ac03623e507451032c8ab3ad` - **12/12 passed**, exact Azure remote match, and clean final diff.
+- `git diff --check` - passed for tracked changes. The final all-file whitespace check is repeated after staging before commit.
+
+### Contract and privacy checks
+
+Focused tests prove flag-off no identity/template asset exposure; the exact signed-out return; private no-store; two-member display-name isolation; no opaque owner key in rendered HTML; no browser-supplied published-Slate URL; payload-free identity-storage recovery; GET-only route registration; and no member identity in the denied template state.
+
+### Accessibility and visual evidence
+
+The route-local DOM tests prove one `main`, one `h1`, skip navigation, named global/Studio navigation, real current links, no dead hash links, state/trust text, visible-focus CSS, forced-colors CSS, reduced-motion CSS, and a narrow-mobile layout rule. A dedicated no-JavaScript response check proves the Theme control is hidden in raw server HTML and is only revealed by the successful route-local script-load enhancement.
+
+The accepted light/dark direction assets and manager predecessor captures were inspected for hierarchy and state wording. The correction restores the branded header treatment, off-white dark-theme headings with restrained gold accents, state iconography, future-direction panel, and three-part trust strip. The footer now states explicitly that nothing is automatically saved, accepted, placed, or published. It still deviates where the direction depicts a published-Slate action: current runtime has no reusable member-owned published-Slate resolver, so the implementation displays `not connected yet` rather than a fixture or dead link.
+
+Corrected browser checks confirm no page-level overflow, no console logs, an off-white dark-theme `h1` with restrained gold accents, and a raw no-JavaScript response with the Theme control hidden. At effective-200% `640x900`, document and viewport width are both `625px`, Studio navigation is start-aligned, and Workshop begins fully visible at `x=20`. At `320x568` dark, document and viewport width are both `305px`; global navigation uses three equal columns with `scrollWidth=clientWidth=277`; brand -> global -> account -> Studio visual order matches DOM/focus order; global destinations retain a 44px minimum height; Studio navigation is start-aligned and horizontally reachable; and Theme icon-label spacing is 6px with a 44px minimum target. The designated manager returned final **Pass** at exact candidate `e75da1e9204ded18ac03623e507451032c8ab3ad`.
+
+## G. Known gaps, risks, and exclusions
+
+1. `studio-frame.v1` correctly reports published Slate as unavailable because no Slice 1-authorized server contract can establish a member-owned published route. A later package must not change this without a governed published-Slate resolver.
+2. The admitted-empty visual direction is not a member-path state. It is correctly excluded until a later authorized supported-item contract returns a successful zero result.
+3. The `denied` template is structurally tested but no current Slice 1 authorization source produces that condition; no simulated member denial is represented as live behavior.
+4. Technical review, corrected-candidate browser verification, and Pete/manager final visual-product acceptance pass.
+5. Production enablement, deployment, and live verification are explicitly out of scope. The flag stays off after any eventual deployment until a separate owner decision.
+
+## H. Clear next step
+
+The exact corrected branch is ready for an Azure pull request using the required squash workflow once the designated manager initiates that step. Do not deploy or enable the default-off flag merely because the branch is PR-ready.
+
+## I. What Pete needs to do or decide
+
+No implementation or visual decision remains. Pete's next future decision is production enablement after merge/deployment evidence; that decision is separate and is not requested here.

@@ -93,6 +93,12 @@ app.config.update(
     PEERSLATE_OWNER_HOME_ENABLED=(
         os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
     ),
+    # PS-SLATE-STUDIO-SLICE-1-001: keep the protected Studio shell dark until
+    # its separate owner enablement decision.  This flag is intentionally
+    # independent of Owner Home; it must not change /app or any public route.
+    PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED=(
+        os.environ.get('PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED', 'false').lower() == 'true'
+    ),
     # Backend-only Slice J1: derived private Journal read + one-step Save
     # Moment. Keep off until the visual gate and the proposed migration pass.
     PEERSLATE_JOURNAL_ENABLED=(

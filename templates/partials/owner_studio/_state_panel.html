@@ -1,0 +1,29 @@
+{% from "partials/owner_studio/_icons.html" import studio_icon %}
+{% if frame.workspace.access_state == 'denied' %}
+<section class="ss-state-panel ss-state-panel--denied" aria-labelledby="studio-state-title">
+    {{ studio_icon("shield") }}
+    <p class="ss-state-panel__eyebrow">Protected workspace</p>
+    <h3 id="studio-state-title">This protected workspace isn't available to your current session.</h3>
+    <p>Nothing private has been shown. You can return to Workshop. Nothing has been created or changed.</p>
+    <a class="ss-action" href="{{ frame.navigation.workshop_url }}">Return to Workshop</a>
+</section>
+{% elif frame.workspace.access_state == 'unavailable' %}
+<section class="ss-state-panel ss-state-panel--unavailable" aria-labelledby="studio-state-title">
+    {{ studio_icon("tray") }}
+    <p class="ss-state-panel__eyebrow">Temporary connection</p>
+    <h3 id="studio-state-title">Build Your Future is temporarily unavailable.</h3>
+    <p>We couldn't load the protected workspace right now. Try again or return to Workshop. Nothing has been created or changed.</p>
+    <div class="ss-state-panel__actions">
+        <a class="ss-action" href="{{ frame.navigation.retry_url }}">Try again</a>
+        <a class="ss-action ss-action--quiet" href="{{ frame.navigation.workshop_url }}">Return to Workshop</a>
+    </div>
+</section>
+{% else %}
+<section class="ss-state-panel ss-state-panel--not-connected" aria-labelledby="studio-state-title">
+    {{ studio_icon("tray") }}
+    <p class="ss-state-panel__eyebrow">Workspace status</p>
+    <h3 id="studio-state-title">Your Build Your Future workspace is not connected yet.</h3>
+    <p>Board items, editing, and future tools will arrive in later slices. Nothing has been created or changed.</p>
+    <a class="ss-action ss-action--quiet" href="{{ frame.navigation.workshop_url }}">Return to Workshop</a>
+</section>
+{% endif %}

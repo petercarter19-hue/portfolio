@@ -1,0 +1,36 @@
+<header class="ss-header">
+    <div class="ss-header__top">
+        <a class="ss-brand" href="{{ frame.navigation.workshop_url }}" aria-label="PeerSlate Workshop">
+            <img src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}" alt="PeerSlate">
+            <span aria-hidden="true">/</span>
+            <span>Slate Studio</span>
+        </a>
+
+        <nav class="ss-global-nav" aria-label="Studio global navigation">
+            {% if frame.navigation.my_slate_url %}
+            <a href="{{ frame.navigation.my_slate_url }}">My Slate</a>
+            {% else %}
+            <span class="ss-global-nav__unavailable">My Slate <span class="ss-sr-only">is not connected yet</span></span>
+            {% endif %}
+            <a href="{{ frame.navigation.build_your_future_url }}" aria-current="page">Slate Studio</a>
+            <a href="{{ frame.navigation.community_url }}">Community</a>
+        </nav>
+
+        <div class="ss-account">
+            {% if frame.member.account_url %}
+            <a href="{{ frame.member.account_url }}">{{ frame.member.display_name }}</a>
+            <form method="post" action="{{ frame.navigation.sign_out_url }}">
+                <button type="submit">Sign out</button>
+            </form>
+            {% else %}
+            <span>Signed-in workspace</span>
+            {% endif %}
+            <button class="ss-theme-toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark theme" data-theme-toggle-requires-js hidden>
+                <span aria-hidden="true">◐</span>
+                <span>Theme</span>
+            </button>
+        </div>
+    </div>
+
+    {% include "partials/owner_studio/_studio_navigation.html" %}
+</header>

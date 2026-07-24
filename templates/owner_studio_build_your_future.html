@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>{{ page_title }} | PeerSlate</title>
+    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}?v=ps-auth-callback-1"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-studio.css') }}?v=ps-slate-studio-s1-2">
+</head>
+<body class="owner-studio-shell" data-theme="modern-blue">
+    <script>
+        (function () {
+            try {
+                if (window.localStorage.getItem('ps-theme') === 'dark') {
+                    document.body.setAttribute('data-theme', 'dark');
+                }
+            } catch (error) { /* The existing theme preference is optional. */ }
+        })();
+    </script>
+
+    <a class="ss-skip-link" href="#main-content">Skip to Build Your Future</a>
+    {% include "partials/owner_studio/_global_header.html" %}
+
+    <main class="ss-main" id="main-content">
+        <section class="ss-introduction" aria-labelledby="build-your-future-title">
+            <div>
+                <p class="ss-eyebrow">Slate Studio</p>
+                <h1 id="build-your-future-title">Build Your Future</h1>
+                <p class="ss-display-line">Start with what is real. See where it could lead.</p>
+                <p class="ss-lede">This is your private place to develop what is true, explore possible directions, and decide what belongs in your Slate.</p>
+            </div>
+            {% include "partials/owner_studio/_workspace_status.html" %}
+        </section>
+
+        {% include "partials/owner_studio/_build_future_frame.html" %}
+    </main>
+
+    <noscript>
+        <p class="ss-noscript">Build Your Future works without JavaScript. The page remains in its default light theme.</p>
+    </noscript>
+    <script
+        src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"
+        onload="document.getElementById('theme-toggle').hidden = false"
+    ></script>
+</body>
+</html>

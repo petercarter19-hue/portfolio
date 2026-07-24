@@ -1,0 +1,40 @@
+{% from "partials/owner_studio/_icons.html" import studio_icon %}
+<section class="ss-stage" aria-labelledby="studio-stage-title"{% if frame.workspace.access_state == 'unavailable' %} aria-busy="false"{% endif %}>
+    <div class="ss-board-surface">
+        <div class="ss-stage__heading">
+            <div>
+                <p class="ss-eyebrow">Private future builder</p>
+                <h2 id="studio-stage-title">Slate Board</h2>
+            </div>
+            <p class="ss-stage__private">Private by default</p>
+        </div>
+
+        {% include "partials/owner_studio/_state_panel.html" %}
+    </div>
+
+    <aside class="ss-coming-later" aria-labelledby="studio-future-directions-title">
+        <h3 id="studio-future-directions-title">Explore what could come next</h3>
+        <div class="ss-coming-later__panel">
+            {{ studio_icon("folder") }}
+            <div>
+                <p class="ss-coming-later__label">Future directions</p>
+                <p>More directions will appear here when they are available.</p>
+            </div>
+        </div>
+    </aside>
+
+    <footer class="ss-trust-strip" aria-label="Studio trust promises">
+        <div class="ss-trust-strip__item">
+            {{ studio_icon("shield") }}
+            <p>Nothing you try here changes what is live until you decide.</p>
+        </div>
+        <div class="ss-trust-strip__item">
+            {{ studio_icon("lock") }}
+            <p>Private by default.</p>
+        </div>
+        <div class="ss-trust-strip__item">
+            {{ studio_icon("eye") }}
+            <p>Nothing is automatically saved, accepted, placed, or published.</p>
+        </div>
+    </footer>
+</section>

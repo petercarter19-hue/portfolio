@@ -5,6 +5,7 @@ from urllib.parse import urlencode, urlsplit
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     g,
     jsonify,
@@ -146,6 +147,73 @@ def _owner_home_enabled():
     return current_app.config.get("PEERSLATE_OWNER_HOME_ENABLED", False) is True
 
 
+def _studio_slice1_enabled():
+    return current_app.config.get("PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED", False) is True
+
+
+def _studio_frame_view_model(identity=None, *, access_state="ready"):
+    """Return the deliberately finite, server-owned Slice 1 frame.
+
+    This shell has no Board, work, publication, or member-data service in its
+    approved scope.  In particular, the current application cannot establish a
+    member's published Slate URL without using the Pete fixture or introducing
+    a new contract, so it truthfully reports that connection as unavailable.
+    """
+    is_ready = access_state == "ready" and identity is not None
+    account_url = url_for("owner.settings") if is_ready else None
+    return {
+        "schema_version": "studio-frame.v1",
+        "member": {
+            "display_name": (
+                (identity.display_name or "PeerSlate member") if is_ready else None
+            ),
+            "account_url": account_url,
+        },
+        "navigation": {
+            "my_slate_url": None,
+            "community_url": url_for("the_slate"),
+            "workshop_url": url_for("auth.owner_workspace"),
+            "build_your_future_url": url_for("auth.studio_build_your_future"),
+            "public_interview_studio_url": url_for("interview_studio"),
+            "sign_out_url": url_for("auth.sign_out"),
+            "retry_url": url_for("auth.studio_build_your_future"),
+        },
+        "workspace": {
+            "access_state": access_state,
+            # Slice 1 deliberately has no authorized supported-item contract.
+            # It must therefore never claim the visual empty state.
+            "content_state": "not_connected",
+        },
+        "published_slate": {
+            # Do not point a reusable member experience at the existing Pete
+            # fixture.  A later published-Slate contract may change this only
+            # when it can resolve a member-owned route on the server.
+            "state": "unavailable",
+            "url": None,
+        },
+    }
+
+
+def _render_studio_unavailable():
+    """Return a private, payload-free Studio recovery frame.
+
+    The trusted principal reached Flask, but identity storage did not.  The
+    route does not fall back to fixture identity, Board data, or a public URL.
+    """
+    g.peerslate_identity_storage_unavailable = True
+    response = make_response(
+        render_template(
+            "owner_studio_build_your_future.html",
+            page_title="Build Your Future",
+            frame=_studio_frame_view_model(access_state="unavailable"),
+        ),
+        503,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Retry-After"] = "5"
+    return response
+
+
 @auth.get("/app")
 def owner_workspace():
     try:
@@ -190,6 +258,30 @@ def owner_workspace():
         home_failed=home_failed,
         standalone_owner_shell=True,
     ), (503 if home_failed else 200), {"Cache-Control": "private, no-store"}
+
+
+@auth.get("/app/studio/build-your-future")
+def studio_build_your_future():
+    """Render the default-off, protected Slice 1 Studio shell and frame."""
+    # Fail before identity resolution or template rendering so the disabled
+    # route exposes no Studio asset, server view-model, or private payload.
+    if not _studio_slice1_enabled():
+        abort(404)
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return_path = _safe_return_path(request.full_path.rstrip("?"))
+        return redirect(url_for("auth.sign_in", return_to=return_path))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Studio identity lookup failed.")
+        return _render_studio_unavailable()
+
+    return render_template(
+        "owner_studio_build_your_future.html",
+        page_title="Build Your Future",
+        frame=_studio_frame_view_model(identity),
+    ), 200, {"Cache-Control": "private, no-store"}
 
 
 @auth.app_context_processor

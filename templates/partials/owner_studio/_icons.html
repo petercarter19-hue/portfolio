@@ -1,0 +1,20 @@
+{% macro studio_icon(name) -%}
+<svg class="ss-icon ss-icon--{{ name }}" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    {% if name == "lock" %}
+    <rect x="7" y="14" width="18" height="14" rx="3"></rect>
+    <path d="M11 14V9a5 5 0 0 1 10 0v5"></path>
+    <path d="M16 20v3"></path>
+    {% elif name == "eye" %}
+    <path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16Z"></path>
+    <circle cx="16" cy="16" r="4"></circle>
+    {% elif name == "folder" %}
+    <path d="M3 9a3 3 0 0 1 3-3h7l3 4h10a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9Z"></path>
+    {% elif name == "shield" %}
+    <path d="M16 3 27 7v8c0 7-4.5 11.5-11 14-6.5-2.5-11-7-11-14V7l11-4Z"></path>
+    <path d="m16 9 1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6L16 9Z"></path>
+    {% else %}
+    <path d="M9 22h14l2-3V8H7v11l2 3Z"></path>
+    <path d="M11 22v3h10v-3"></path>
+    {% endif %}
+</svg>
+{%- endmacro %}

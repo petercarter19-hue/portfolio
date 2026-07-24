@@ -1,0 +1,30 @@
+{% from "partials/owner_studio/_icons.html" import studio_icon %}
+<aside class="ss-workspace-status" aria-label="Studio workspace status">
+    <div class="ss-status-row">
+        {{ studio_icon("lock") }}
+        <div>
+            <p class="ss-workspace-status__label">Studio workspace</p>
+            {% if frame.workspace.access_state == 'ready' %}
+            <p class="ss-workspace-status__value">Private</p>
+            {% elif frame.workspace.access_state == 'denied' %}
+            <p class="ss-workspace-status__value">Not available to this session</p>
+            {% else %}
+            <p class="ss-workspace-status__value">Temporarily unavailable</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="ss-published-status ss-status-row">
+        {{ studio_icon("eye") }}
+        <div>
+            <p class="ss-published-status__label">Published Slate</p>
+            {% if frame.published_slate.state == 'available' and frame.published_slate.url %}
+            <a href="{{ frame.published_slate.url }}">View published Slate</a>
+            {% elif frame.published_slate.state == 'not_published' %}
+            <p>No published Slate yet</p>
+            {% else %}
+            <p>Your published Slate is not connected yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</aside>
