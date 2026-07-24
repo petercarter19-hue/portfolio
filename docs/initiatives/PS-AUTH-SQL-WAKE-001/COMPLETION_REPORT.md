@@ -2,15 +2,12 @@
 
 ## 1. Executive result
 
-Implementation and local verification are complete for the
-Azure SQL serverless wake-up failure reproduced after a successful Microsoft
-Entra External ID sign-in. PeerSlate now retries only SQL connection
-establishment and presents an honest temporary workspace state if secure
-identity storage remains unavailable.
-
-This report does not describe the change as deployed or live until the Azure
-DevOps merge, exact-commit pipeline, and production verification sections are
-complete.
+Implementation, Azure release, and production cold-resume verification are
+complete for the Azure SQL serverless wake-up failure reproduced after a
+successful Microsoft Entra External ID sign-in. PeerSlate retries only SQL
+connection establishment and presents an honest temporary workspace state if
+secure identity storage remains unavailable. The live retry then returns the
+signed-in member to the private owner workspace after storage is online.
 
 ## 2. Authority, base, and ownership
 
@@ -24,7 +21,11 @@ complete.
   `C:\Users\peter\Documents\portfolio-auth-sql-wake-001`.
 - Implementation source commit:
   `908fd3726e935c3b20d2d7512f80a809638b7338`.
-- Azure squash-merge commit: pending.
+- Release source tip:
+  `6fd5c037477e7e2fd1531eada413595584489b22`.
+- Azure PR: 166.
+- Azure squash-merge commit:
+  `7ebab4de77be874f79abf93cb58dbd254c98e61d`.
 - No other worktree, branch, file, or artifact was changed.
 
 ## 3. Changed files
@@ -68,9 +69,10 @@ All commands use a process-local non-secret
 | Repository suite, `test_[q-z]*.py` | Pass — 98 tests. |
 | Complete Python total | Pass — 906 tests, 3 expected skips, no failures. |
 | `git diff --check` and complete-diff self-review | Pass. |
-| Real-browser visual automation | Not run — the Playwright skill's required `npx` launcher is not installed; semantic render assertions and exact copy/header checks passed. |
-| Azure DevOps Build and Deploy | Pending. |
-| Production `/app` signed-in verification | Pending. |
+| In-app real-browser semantic verification | Pass — live `/app` rendered “Your private workspace is waking up,” identified the request as signed in, exposed one “Try again” link, and did not present the configuration-error copy. |
+| Azure DevOps pipeline 227, build `20260724.4` | Pass — Build and Deploy both succeeded for exact merge `7ebab4de77be874f79abf93cb58dbd254c98e61d`. |
+| Azure SQL serverless activity evidence | Pass — the database auto-pause operation started and succeeded at `2026-07-24T01:47:08Z`; no auto-pause, capacity, schema, or data setting was changed by this package. |
+| Production `/app` recovery | Pass — the live “Try again” action loaded `My PeerSlate`, “Welcome, Pete Carter,” Account `Signed in`, and Default audience `Private`; database status was then `Online`. |
 
 ## 6. Visual, accessibility, and homepage parity
 
@@ -92,28 +94,32 @@ is required.
 |---|---|
 | Local implementation | Complete |
 | Local self-review | Complete |
-| Azure DevOps branch push | Pending |
-| Azure DevOps pull request and squash merge | Pending |
-| Exact-commit pipeline build/deploy | Pending |
-| Production signed-in verification | Pending |
-| Natural cold-resume observation | Pending; cannot be forced without changing live database configuration |
+| Azure DevOps branch push | Complete |
+| Azure DevOps pull request and squash merge | Complete — PR 166 |
+| Exact-commit pipeline build/deploy | Complete — pipeline 227 / `20260724.4` |
+| Production signed-in verification | Complete |
+| Natural cold-resume observation | Complete — activity-log pause, truthful 503 recovery state, successful retry |
 
 ## 8. Remaining risks and decisions
 
 - A serverless resume can take about one minute. Two 60-second connection
   attempts remain within the platform request boundary, but an unusually slow
   resume can still reach the truthful 503 state and require the explicit retry.
-- A deterministic test proves the cold-start contract. A natural production
-  auto-pause/resume observation remains separate because this package is not
-  authorized to pause or reconfigure the live database.
+- The first production checks briefly returned the known App Service restart
+  404 after deployment. The same routes recovered without code or
+  configuration changes before acceptance testing proceeded.
+- Azure's activity log independently recorded the natural auto-pause used for
+  production acceptance. No manual pause or database reconfiguration was used.
 - The in-memory Flask-Limiter warning in local tests is pre-existing and outside
   this bounded package.
 - GitHub mirror updates remain on hold under the current baseline.
 
 ## 9. Truth labels
 
-- Connection-only wake-up retry: **implemented and locally verified**.
-- Workspace-waking state: **implemented and locally verified**.
+- Connection-only wake-up retry: **implemented, locally verified, deployed,
+  and exercised by the live cold-resume request**.
+- Workspace-waking state: **implemented, deployed, and observed in
+  production**.
 - Azure SQL serverless configuration: **unchanged**.
-- Azure deployment: **pending**.
-- Natural production cold-resume acceptance: **pending**.
+- Azure deployment: **live through PR 166 and pipeline 227**.
+- Natural production cold-resume acceptance: **passed**.
