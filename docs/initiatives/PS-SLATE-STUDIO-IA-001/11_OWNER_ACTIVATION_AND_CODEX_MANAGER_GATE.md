@@ -53,8 +53,8 @@ production-verification requirements.
 ## D. Manager review result
 
 The manager reviewed documents 06 through 10, the accepted visual manifest,
-the current Bible v2.8 and Roadmap v2.7, the current governance records, the
-affected routes, and current-main application boundaries.
+the current Bible and Roadmap named by `CURRENT_BASELINE.yaml`, the current
+governance records, the affected routes, and current-main application boundaries.
 
 **Result: Pass for controlled governance activation; Conditional for runtime
 entry until the governance PR merges.**
@@ -121,14 +121,21 @@ No application behavior is changed by the governance activation.
 
 ## G. Codex delivery roles after governance
 
-- **Manager:** this ChatGPT Work/Codex task.
-- **Sole implementation writer:** one bounded Codex writer on a fresh branch
-  from the exact post-governance `origin/main`.
-- **Independent reviewer:** one fresh review-only Codex task at the exact
-  pushed implementation SHA.
-- **Corrections:** the same implementation writer.
-- **Visual/product acceptance:** Pete plus the Codex manager before the
-  implementation PR.
+- **Architect/manager:** this ChatGPT Work/Codex task only if a materially new
+  architecture question appears; the accepted Slice 1 package is not
+  re-architected by default.
+- **Sole implementation writer:** one bounded central Terra writer on a fresh
+  branch from the exact post-governance `origin/main`; it tests and self-reviews
+  the complete diff.
+- **Independent reviewer:** one fresh central Sol High review-only task at the
+  exact pushed implementation SHA. This review is mandatory because the
+  protected slice includes identity, authorization, private server-derived data,
+  and a default-off exposure boundary.
+- **Corrections:** the same implementation writer corrects accepted findings and
+  reruns affected evidence.
+- **Visual/product acceptance:** Pete gives final visual acceptance on the
+  corrected candidate; the Codex manager confirms scope/product readiness before
+  the implementation PR.
 - **Release/closeout:** the accepted writer completes Azure PR, pipeline, and
   production verification under manager oversight.
 

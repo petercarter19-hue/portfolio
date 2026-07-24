@@ -15,12 +15,21 @@ branched for runtime, implemented, merged, deployed, enabled, or live. Document
   `work/2026-07-24-slate-studio-slice-1-shell`
 - **Base:** current `origin/main` at the time Pete activates the package, never
   this direction branch's historical base
-- **Designated manager:** active ChatGPT Work/Codex manager task
-- **Sole implementation writer:** one bounded Codex writer assigned only after
-  the controlled governance merge
-- **Visual acceptance:** Pete plus the designated manager
-- **Independent review:** one fresh review-only Codex task
-- **Final audit / governance closeout:** the Codex manager
+- **Architect/manager:** active ChatGPT Work/Codex manager task only if a
+  materially new architecture question appears; the accepted package is not
+  re-authored by default
+- **Sole implementation writer:** one bounded central Terra writer assigned only
+  after the controlled governance merge; it tests and self-reviews the complete
+  diff
+- **Independent review:** one fresh central Sol High review-only task at the
+  exact pushed candidate; mandatory for this protected authorization/privacy
+  slice
+- **Corrections:** the same implementation writer corrects accepted findings and
+  reruns affected evidence
+- **Visual acceptance:** Pete gives final visual acceptance on the corrected
+  candidate; the designated manager confirms scope/product readiness
+- **Release/closeout:** the accepted writer completes Azure PR, pipeline, live
+  verification, and compact closeout
 
 These roles implement Pete's 2026-07-24 instruction to keep the manager,
 writer, and reviewer inside the active agent family. They do not waive the
@@ -262,8 +271,11 @@ Pete explicitly includes it in the activated package.
   accepted Slice 1 responsive/state mockups;
 - every intentional deviation recorded;
 - self-certification `Pass`, `Conditional`, or `Fail`;
-- Pete/manager visual acceptance before PR; and
-- Opus review plus Claude final audit per the owner-set pipeline.
+- one fresh central Sol High review of the exact candidate because this protected
+  slice carries identity, authorization, privacy, and default-off exposure risk;
+- same-writer corrections and affected-test reruns; and
+- Pete's final visual acceptance on the corrected candidate plus manager
+  scope/product-readiness acceptance before PR.
 
 ## 10. Homepage assessment
 

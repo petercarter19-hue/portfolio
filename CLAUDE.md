@@ -4,14 +4,14 @@
 > **MANDATORY PRE-WORK GATE**
 > Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [`START_HERE.md`](START_HERE.md). Synchronize from authoritative `origin/main`, then read `docs/governance/CURRENT_BASELINE.yaml`, `docs/governance/CURRENT_STATE.md`, `docs/governance/ACTIVE_INITIATIVES.md`, the current Bible/Roadmap named there, and your assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use [`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 >
-> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml` (currently Bible v2.8 + Roadmap v2.7).** This supersedes any version-specific note below.
+> **Authoritative versions are always the ones named in `docs/governance/CURRENT_BASELINE.yaml`.** Do not hardcode a Bible or Roadmap version in this file.
 
 # Claude / Claude Code instructions
 
-The live authority is `docs/governance/CURRENT_BASELINE.yaml` and its referenced
-Bible v2.8 / Roadmap v2.7 documents. Consult `docs/governance/DOCUMENT_CONTROL.md` when
-an older specification conflicts. Do not treat v1.1-v1.4 or Iris/Direction C
-language as current merely because it remains in repository history.
+The live authority is `docs/governance/CURRENT_BASELINE.yaml` and the Bible and
+Roadmap paths it names. Consult `docs/governance/DOCUMENT_CONTROL.md` when an
+older specification conflicts. Do not treat superseded product language as
+current merely because it remains in repository history.
 
 PeerSlate uses a package-designated session manager. ChatGPT Work/Codex manager
 sessions and Claude Co-Work have the same manager authority when the active
@@ -25,13 +25,12 @@ and exact `origin/main` base. Do not begin another lane unless it has a separate
 writer, branch, worktree, and non-overlapping files.
 
 Use `docs/AI_MODEL_AND_ROLE_ROUTING.md` for current Claude/Codex role and model
-routing. Keep one durable package manager, one implementation writer, and an
-independent reviewer only when the package's risk warrants it. Do not spend a
-second model on re-authoring an already accepted package merely to
-cross-pollinate. Verify the actual model shown by the tool before relying on a
-marketing nickname or remembered label.
+routing. Packages name stable roles, not model versions. The routing document is
+the central version authority and its availability check must be followed before
+a major package or scheduled audit. Do not spend a second model re-authoring an
+accepted package merely to cross-pollinate.
 
-Owner decision, 2026-07-19: Claude self-manages its assigned branch. That means
+Owner decision, 2026-07-24: Claude self-manages its assigned branch. That means
 implementing, reviewing the complete diff, finding and fixing its own issues,
 running focused/full/responsive/accessibility/visual checks, producing the
 completion report and exact evidence, synchronizing with `origin/main`, and
@@ -40,6 +39,14 @@ Claude may complete the PR, pipeline, production verification, and closeout.
 The designated manager may rely on Claude's coherent `Pass` self-certification rather than
 repeat the full technical audit. Report `Conditional` or `Fail` whenever an
 issue, conflict, or evidence gap remains.
+
+Use the lean delivery route in `docs/AI_WORKFLOW.md`: architecture only when
+needed; the same writer implements, tests, and self-reviews; a fresh independent
+reviewer is mandatory only for the defined risk triggers or an explicit package
+control; and the same writer corrects accepted findings. Do not add another
+architecture pass, final audit, or documentation-only deployment by habit. For
+material visual work, Pete reviews the corrected real build last; this does not
+replace the visual evidence, accessibility checks, or release verification.
 
 The guardrail suites `tests/test_site_rules.py` and
 `tests/test_governance_pointers.py` must stay green.

@@ -3,11 +3,14 @@
 **Program nickname:** Project Croatia (owner-chosen).
 **Owner:** Pete. **Current designated manager:** the active ChatGPT Work/Codex
 manager task, by Pete's 2026-07-24 owner override recorded in document 11.
-**Current Codex delivery pipeline:** Codex manager → one sole Codex
-implementation writer → Pete visual review → fresh review-only Codex task →
-same writer corrections → Codex manager closeout. The earlier
-Fable/Sonnet/Opus/Claude chain is historical and is not a dependency when Pete
-is running the work in Codex. See [11](11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md).
+**Current Codex delivery pipeline:** architect/manager only if a materially new
+architecture question appears → one central Terra implementation writer performs
+the complete-diff self-review → one fresh central Sol High review is mandatory
+because this protected slice carries authorization/privacy risk → the same writer
+corrects accepted findings → Pete gives final visual acceptance on the corrected
+candidate → release/closeout. Model versions remain controlled by
+`docs/AI_MODEL_AND_ROLE_ROUTING.md`; the earlier Fable/Sonnet/Opus/Claude chain
+is historical. See [11](11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md).
 **Branch:** `work/2026-07-22-slate-studio-direction` from `origin/main` at
 `e1272220f539f41810698855341b9399b14ebd73`.
 **Status:** SLICE 1 GOVERNANCE RELEASED. Azure PR 168 squash-merged at

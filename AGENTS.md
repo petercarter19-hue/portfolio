@@ -20,6 +20,7 @@ Read [AI_WORKFLOW.md](docs/AI_WORKFLOW.md) before material work and use [AI_MODE
 - Only one active writer may own a file or mutable surface at a time. Do not edit files reserved by another lane.
 - Writers are self-managed for bounded implementation, testing, documentation, and handoff. Product acceptance, visual acceptance, deployment authority, and scope changes remain with the owner or designated manager.
 - Keep work on a short-lived task branch. Never push directly to `main`. Handoffs must identify the exact branch, commit, changed files, tests, and remaining decisions.
+- Follow the lean delivery policy in `docs/AI_WORKFLOW.md`: perform each distinct responsibility once, use architecture and independent review only when their defined risk triggers apply, and retain the required tests, acceptance, release, and audit evidence. Packages name stable roles; `docs/AI_MODEL_AND_ROLE_ROUTING.md` is the central model-version authority.
 
 ## Always-on product and trust invariants
 
@@ -57,6 +58,7 @@ When a package links a more specific contract, fixture, decision record, or acce
 - Do not add database dependencies, migrations, external services, feature flags, or compatibility layers without a documented product or technical reason inside scope.
 - Keep changes reviewable and proportional. Avoid speculative refactors and do not broaden an initiative because adjacent work is convenient.
 - Validate locally before handoff. Use focused tests for the changed contract and the broader repository checks required by the package or risk level.
+- Do not replace a required quality control with ceremony: preserve complete-diff self-review, pre-merge verification, risk-based independent review, final visual acceptance where applicable, and runtime pipeline/live verification. Use the central audit cadence rather than adding duplicate per-slice audits.
 - Merge through an Azure DevOps pull request using the repository's required squash workflow. Delete the remote task branch after verified merge.
 - A successful merge is not proof of deployment. When deployment is in scope, verify the exact pipeline run and collect production evidence before reporting the work as deployed.
 - Update the GitHub mirror only when `CURRENT_BASELINE.yaml` records authorization to do so.

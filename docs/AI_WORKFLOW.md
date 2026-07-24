@@ -2,7 +2,7 @@
 
 This is the canonical operating agreement for Peter, Codex, Claude, and any other coding agent working on PeerSlate. It applies on every computer and in every worktree.
 
-Read this file in full before making repository changes or running Git write operations. `AGENTS.md` supplies shared product and quality rules to Codex. `CLAUDE.md` supplies Claude-specific entry instructions. This file controls Git collaboration, branch ownership, handoffs, pull requests, deployment, and cleanup. `docs/AI_MODEL_AND_ROLE_ROUTING.md` controls model selection and manager/writer/reviewer routing so that accepted design and audit work is not needlessly repeated.
+Read this file in full before making repository changes or running Git write operations. `AGENTS.md` supplies shared product and quality rules to Codex. `CLAUDE.md` supplies Claude-specific entry instructions. This file controls Git collaboration, branch ownership, handoffs, pull requests, deployment, cleanup, lean delivery, and audits. `docs/AI_MODEL_AND_ROLE_ROUTING.md` is the central model-version and stable-role authority.
 
 If another repository document conflicts with this file about Git workflow, follow this file and report the conflict. Explicit instructions from Peter for a specific task can create an exception, but the exception must be stated and recorded in the handoff.
 
@@ -39,6 +39,84 @@ github  https://github.com/petercarter19-hue/portfolio.git
 12. Keep GitHub a one-way mirror of Azure. GitHub must never become an alternate production path.
 13. Assigned writers self-manage their own delivery lane: implementation, complete-diff review, correction, testing, evidence, PR readiness, approved release, production verification, and closeout.
 14. The package-designated session manager manages sequencing, cross-lane file ownership, shared authority, and final manager acceptance. ChatGPT Work/Codex and Claude Co-Work have equal manager authority when assigned. The manager does not routinely repeat a writer's complete technical review when the self-certification evidence is coherent.
+
+## Lean delivery and audit policy
+
+Owner decision, 2026-07-24: PeerSlate uses one pass for each distinct
+responsibility. Remove duplicated architecture, review, closeout, and
+documentation/release ceremony unless a defined risk, conflicting evidence, or
+material scope change justifies more work. This policy applies equally to Codex
+and Claude. It does not remove testing, authorization/privacy controls, visual
+acceptance, rollback/stop controls, Azure release evidence, or honest status
+boundaries.
+
+### Delivery route
+
+1. Confirm package scope, writable files, truth boundary, release boundary,
+   acceptance evidence, and risk classification.
+2. Use one architect only when the package needs new or materially changed
+   architecture. Keep the accepted result in the package; do not re-architect it
+   in another ecosystem.
+3. One writer implements, runs applicable tests, inspects the complete diff, and
+   corrects its own findings before handoff.
+4. A fresh independent reviewer is mandatory only for: architecture-heavy work;
+   authentication, session, authorization, privacy, or cross-user data;
+   schema or migration work; publication, audience, or deletion behavior;
+   consequential AI; shared infrastructure; conflicting evidence; or an explicit
+   package risk control. The review is against the exact package, diff, SHA, and
+   evidence; it is not a new design exercise.
+5. The same writer corrects accepted findings and reruns affected evidence. Do
+   not automatically repeat a full review of the corrected diff; recheck only an
+   unresolved or conditional finding, or escalate when the correction changes
+   the risk or architecture.
+6. For material user-facing work, the writer supplies final comparison evidence
+   and Pete gives final visual acceptance on the corrected real build. The
+   manager accepts scope/product readiness without replaying the technical audit.
+7. Complete pre-merge verification, Azure PR and squash merge, runtime pipeline,
+   live verification, rollback/stop evidence, and a compact closeout. A
+   documentation-only package does not deploy merely to record its closeout.
+
+Ordinary bounded work skips the architecture track and receives independent
+review only when a listed trigger applies. A model change alone is not review
+independence. Packages name manager, architect when used, writer, reviewer when
+triggered, and Pete's visual role when applicable; they do not duplicate model
+versions from the routing document.
+
+### Periodic audits
+
+Each runtime slice retains its lightweight quality check: scope/risk
+classification, complete-diff self-review, applicable tests, required evidence,
+and honest `Pass`, `Conditional`, or `Fail` status. System-level audits sample
+integration and evidence; they do not replay every prior implementation review.
+
+| Audit | When | Minimum scope |
+|---|---|---|
+| Checkpoint | Every four completed runtime implementation slices or a major phase boundary, whichever comes first | Cross-slice integration, authorization/privacy, canonical truth/provenance, accessibility/visual consistency, release truth, and governance drift |
+| Readiness | Before enabling a default-off feature or opening a new public, identity, data, or publication boundary | The exact enablement/boundary contract, rollback or stop control, and production readiness evidence |
+| Full site | Quarterly or before a major launch or public beta | The live system's critical journeys, security/privacy boundaries, visual quality, accessibility, operational evidence, and release truth |
+| Triggered | Immediately after an incident, regression, cross-user risk, unsafe migration, conflicting evidence, or `Conditional`/`Fail` result | The affected contract plus the smallest necessary upstream/downstream integration scope |
+
+One fresh reviewer in the active ecosystem performs an audit against exact
+evidence and SHAs and returns one ranked `Pass`, `Conditional`, or `Fail` report
+with owners and next action. Expand only when findings require it; use a deeper
+architectural review only when the audit exposes an architecture question. Audit
+evidence belongs in the affected package or a dedicated audit package and does
+not by itself require a deployment.
+
+The designated manager keeps
+`docs/governance/AI_DELIVERY_AUDIT_REGISTER.md` current during normal runtime
+slice closeout. The register counts only completed runtime implementation slices;
+documentation, architecture, audit, and activation-only work does not count.
+
+### Audit result handling
+
+A `Conditional` or `Fail` result from delivery self-review, independent review,
+acceptance, pipeline, or live-release verification triggers the targeted audit
+defined above. A `Conditional` or `Fail` from the audit itself does **not** start
+another audit: the assigned owner corrects the finding and obtains one focused
+recheck against the same audit scope. Escalate only when that correction changes
+the architecture, risk classification, or evidence boundary. The register's
+counter resets only when the checkpoint or phase-boundary audit closes `Pass`.
 
 ## Beginning every session
 
@@ -116,7 +194,7 @@ git push -u origin HEAD
 
 ## Self-managed delivery lanes
 
-Owner decision, 2026-07-19: Codex and Claude may self-manage an assigned branch
+Owner decision, 2026-07-24: Codex and Claude may self-manage an assigned branch
 from implementation through self-review and release closeout. The assigned
 writer performs the work that previously required a separate manager technical
 pass.
@@ -129,8 +207,9 @@ The writer must:
    exact `origin/main` base;
 3. find and correct its own regressions, missing requirements, accessibility
    failures, visual deviations, unsafe assumptions, and unrelated changes;
-4. run every required focused, guardrail, full-suite, migration, infrastructure,
-   responsive, accessibility, and production-intent check that applies;
+4. run the focused, guardrail, full-suite, migration, infrastructure,
+   responsive, accessibility, and production-intent checks that the package or
+   risk level requires, including a pre-merge verification gate;
 5. synchronize with current `origin/main`, resolve only in-scope conflicts, and
    rerun affected evidence before requesting acceptance;
 6. write the standard completion report with exact commands/results, branch,
@@ -144,15 +223,16 @@ The writer must:
    release closeout unless the package assigns those actions elsewhere.
 
 Self-certification is acceptable completion evidence. The designated session manager may rely on
-the report and a short product/visual acceptance review instead of rerunning the
-entire implementation audit. It may request an independent or deeper review
-when evidence conflicts, a high-risk exception is disclosed, shared-file scope
-drifts, or the real product does not match the report.
+the report and a short product/readiness acceptance review instead of rerunning the
+entire implementation audit. Independent review follows the defined lean-delivery
+triggers; deeper review is reserved for conflicting evidence, material scope
+drift, or an architecture question exposed by evidence.
 
 This delegation does not permit a writer to approve its own owner acceptance.
 For material user-facing work, the writer performs and reports the visual
-comparison; Pete and the designated session manager still accept or reject the real result. The
-acceptance may be concise and report-based. A writer also may not use a UI
+comparison; Pete gives final visual acceptance on the corrected real result and
+the designated session manager accepts scope/product readiness. The acceptance
+may be concise and report-based. A writer also may not use a UI
 capability flag as authorization: backend access, audience, publication, and
 data-lifecycle controls remain server-enforced.
 
@@ -204,11 +284,11 @@ composition, clarity, and finish.
 
 The writer must return named desktop/mobile and applicable focus, 200% zoom,
 reduced-motion, long-content, processing, failure, and recovery evidence plus a
-parity/deviation summary and self-certification. The designated session manager and Pete must
-accept material user-facing work visually before merge unless Pete explicitly
-delegates that gate. The manager may rely on the returned evidence and a focused
-review of the real product rather than recreating the writer's entire visual
-audit. Passing tests, a clean branch, or a working happy path does not by itself
+parity/deviation summary and self-certification. Pete gives final visual
+acceptance for material user-facing work on the corrected build unless explicitly
+delegated. The manager confirms scope/product readiness and may rely on the
+returned evidence and a focused review rather than recreating the writer's entire
+visual audit. Passing tests, a clean branch, or a working happy path does not by itself
 satisfy visual completion. Demonstrations must still state honestly which
 behavior is live, illustrative, stored, transmitted, local-only, private,
 public, or future.
@@ -289,10 +369,13 @@ Never claim that work is deployed merely because it is committed or pushed.
 3. The self-managed writer reviews the complete diff and confirms the branch contains no unrelated work.
 4. Run the relevant tests, syntax checks, and smoke checks.
 5. For material user-facing work, the writer self-certifies the named visual
-   authority comparison and documented deviations, then obtains Pete and
-   designated-session-manager visual acceptance. Acceptance may rely on the report and a focused
-   product review; a second line-by-line implementation audit is not required.
-6. Resolve review feedback on the same task branch.
+   authority comparison and documented deviations, resolves applicable review
+   findings on the same branch, then obtains Pete's final visual acceptance on
+   the corrected build and the manager's scope/product-readiness acceptance.
+   Acceptance may rely on the report and focused product review; a second
+   line-by-line implementation audit is not required.
+6. Resolve review feedback before acceptance, rerunning affected tests and
+   evidence; recheck only unresolved or conditional findings.
 7. Squash-merge the pull request.
 8. Delete the source branch after the merge.
 9. Confirm the Azure pipeline associated with the merged `main` commit succeeds.

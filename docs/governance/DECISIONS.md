@@ -459,3 +459,39 @@ This is an append-only operational decision record. The current Bible and Roadma
 - This authority package changes no route, schema, feature flag, deployment
   setting, audience, AI service, message path, or live product behavior. The
   next product gate is one bounded private-Journal-core implementation package.
+
+## 2026-07-24 - Adopt lean delivery with risk-based review and periodic audits
+
+- Owner decision: use one pass for each distinct delivery responsibility across
+  PeerSlate. Remove duplicated architecture, review, closeout, and
+  documentation/release ceremony unless a defined risk, conflicting evidence, or
+  material change makes more work necessary.
+- Architecture is used only when needed. One writer implements, tests, and
+  self-reviews. A fresh independent reviewer is mandatory for architecture-heavy
+  work; authentication/session/authorization/privacy/cross-user data; schema or
+  migrations; publication/audience/deletion; consequential AI; shared
+  infrastructure; conflicting evidence; or an explicit package risk control.
+  The same writer corrects accepted findings and reruns affected evidence.
+- Pete is the final visual reviewer for material user-facing work and reviews the
+  corrected real build. The manager accepts scope/product readiness without
+  repeating the writer's full technical audit.
+- Retain pre-merge verification, complete-diff self-review, applicable tests,
+  runtime pipeline/deploy, live verification, truth/status boundaries, and
+  rollback/stop controls. Documentation-only work does not deploy merely to
+  record governance.
+- Use lightweight quality checks for every runtime slice; checkpoint audits every
+  four completed runtime implementation slices or at a major phase boundary;
+  readiness audits before default-off enablement or a new public, identity, data,
+  or publication boundary; full site audits quarterly or before a major
+  launch/public beta; and immediate audits after incidents, regressions,
+  cross-user risk, unsafe migrations, conflicting evidence, or a `Conditional`
+  or `Fail` result.
+- Each audit uses one fresh reviewer in the active ecosystem, exact evidence and
+  SHAs, and one compact ranked `Pass`, `Conditional`, or `Fail` report. It
+  samples cross-system drift rather than replaying prior reviews and expands only
+  on findings.
+- Packages use stable role names. `docs/AI_MODEL_AND_ROLE_ROUTING.md` is the
+  periodically verified central authority for current model versions and role
+  routing. This decision supersedes older package instructions that require
+  duplicate model passes or stale hardcoded model versions, except for a
+  necessary package-specific risk control that remains explicitly recorded.

@@ -10,18 +10,20 @@ commit or lane status._
 > finding and `docs/governance/OPEN_BRANCH_REGISTER.md` for pushed work that
 > sits outside every lane record.
 >
-> **Standing instruction for every future manager:** when a package closes,
-> update `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and
-> `ACTIVE_INITIATIVES.md` in the closeout pull request itself. A governance
-> release that rewrites these files must reconcile every merged pull request
-> since the last recorded one, not only its own lineage.
+> **Standing instruction for every future manager:** at closeout, update
+> `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and
+> `ACTIVE_INITIATIVES.md` together only when authority, package ownership/status,
+> or verified production truth changed. Otherwise do not create pointer churn:
+> the completion report must explicitly affirm that no pointer update was needed.
+> A governance release that does rewrite these files must reconcile every merged
+> pull request since the last recorded one, not only its own lineage.
 
 ## Current authority
 
 - Azure DevOps remote `origin` and `origin/main` are the only source of truth.
   GitHub is a backup mirror and is not a release source.
-- `docs/governance/CURRENT_BASELINE.yaml` names Bible v2.8 and Roadmap v2.7 as
-  current.
+- `docs/governance/CURRENT_BASELINE.yaml` names the current Bible and Roadmap;
+  do not hardcode their versions in this handoff.
 - Their Journal-system activation is on authoritative `origin/main` through
   source `578081f5191dd74daa154941604a2b199c5fed58`, Azure PR 118, squash
   merge `3d7c9e10811dcbcc763d965d7770bd0d35e51d4b`, and automatic pipeline 171.

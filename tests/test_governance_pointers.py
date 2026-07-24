@@ -59,6 +59,7 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "governance", "OWNER_STORY_COMPOSITION_STANDARD.md"),
         ("docs", "governance", "EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md"),
         ("docs", "governance", "MANAGER_SESSION_HANDOFF.md"),
+        ("docs", "governance", "AI_DELIVERY_AUDIT_REGISTER.md"),
         ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
         ("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-GOV-001", "README.md"),
@@ -95,6 +96,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-VOICE-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "README.md"),
         ("docs", "initiatives", "PS-SELF-MANAGED-LANES-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-AI-OPS-LEAN-001", "README.md"),
+        ("docs", "initiatives", "PS-AI-OPS-LEAN-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "README.md"),
         ("docs", "initiatives", "PS-PORTABLE-SESSION-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-CAPTURE-MEDIA-001", "README.md"),
@@ -177,6 +180,101 @@ class GovernanceRecordsTests(unittest.TestCase):
             with self.subTest(report=os.path.join(*parts)):
                 for letter in "ABCDEFGHI":
                     self.assertRegex(body, rf"(?m)^## {letter}\.")
+
+
+class LeanDeliveryPolicyTests(unittest.TestCase):
+    """The lean delivery decision must stay central and testable."""
+
+    def test_central_policy_preserves_risk_controls_and_audit_cadence(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        routing = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")
+        for required in (
+            "one pass for each distinct",
+            "A fresh independent reviewer is mandatory only for",
+            "Every four completed runtime implementation slices",
+            "default-off feature",
+            "Quarterly or before a major launch",
+            "Pete gives final visual acceptance on the corrected real build",
+        ):
+            self.assertIn(required, workflow)
+        for required in (
+            "GPT-5.6 Sol, Extra High",
+            "GPT-5.6 Terra, Extra High",
+            "Fresh GPT-5.6 Sol, High",
+            "Claude Fable 5",
+            "Claude Sonnet 5",
+            "Claude Opus 4.8",
+            "Packages name roles, not model versions",
+        ):
+            self.assertIn(required, routing)
+
+    def test_claude_inherits_current_baseline_and_lean_policy(self):
+        claude = _read("CLAUDE.md")
+        self.assertIn("the Bible and\nRoadmap paths it names", claude)
+        self.assertIn("lean delivery route", claude)
+        self.assertNotIn("currently Bible", claude)
+        self.assertNotIn("Bible v2.8 / Roadmap v2.7", claude)
+
+    def test_audit_register_and_active_protected_slice_use_the_central_route(self):
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        register = _read("docs", "governance", "AI_DELIVERY_AUDIT_REGISTER.md")
+        handoff = _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md")
+        report = _read(
+            "docs", "initiatives", "PS-AI-OPS-LEAN-001", "COMPLETION_REPORT.md"
+        )
+        slice_readme = _read("docs", "initiatives", "PS-SLATE-STUDIO-IA-001", "README.md")
+        activation = _read(
+            "docs",
+            "initiatives",
+            "PS-SLATE-STUDIO-IA-001",
+            "11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md",
+        )
+        proposal = _read(
+            "docs",
+            "initiatives",
+            "PS-SLATE-STUDIO-IA-001",
+            "08_D6_SLICE_1_ACTIVATION_PROPOSAL.md",
+        )
+
+        for required in (
+            "AI_DELIVERY_AUDIT_REGISTER.md",
+            "does **not** start\nanother audit",
+            "normal runtime\nslice closeout",
+        ):
+            self.assertIn(required, workflow)
+        for required in (
+            "Register owner",
+            "completed runtime implementation slice",
+            "0 of 4 since policy start",
+            "2026-10-24",
+            "Do not recursively create a\n   new audit",
+            "Focused targeted audit",
+            "`Pass` - 36/36 focused tests",
+            "does not\n  increment or reset",
+        ):
+            self.assertIn(required, register)
+        for required in (
+            "do not hardcode their versions",
+            "no pointer update was needed",
+        ):
+            self.assertIn(required, handoff)
+        for required in (
+            "37c921f2e09e81ad8a98f145138692c31b77b7e1",
+            "40464edbea5c9ff75a6f6969419fc5099542fa6e",
+            "**Conditional**",
+            "**Pass**",
+            "Azure PR 170 open and not merged",
+        ):
+            self.assertIn(required, report)
+        for document_name, body in (
+            ("slice readme", slice_readme),
+            ("activation gate", activation),
+            ("activation proposal", proposal),
+        ):
+            with self.subTest(document=document_name):
+                self.assertIn("central Terra", body)
+                self.assertIn("central Sol High", body)
+                self.assertRegex(body, r"corrected\s+candidate")
 
 
 class BaselineCoherenceTests(unittest.TestCase):

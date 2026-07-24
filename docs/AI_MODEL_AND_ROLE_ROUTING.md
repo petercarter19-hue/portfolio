@@ -1,248 +1,184 @@
 # PeerSlate AI Model and Role Routing
 
-**Operational standard:** July 20, 2026
+**Operational standard:** July 24, 2026
 
-**Current-model snapshot:** Verify the available model and resolved alias in the
-actual product before each major package. Model names, limits, prices, and plan
-access can change; the one-manager/one-writer/evidence workflow remains stable.
+This is the central authority for model versions and stable delivery roles.
+Packages name roles, not model versions. Verify the available model and resolved
+alias before each major package, at each quarterly audit, and whenever
+the active surface changes; availability, limits, and aliases can change without
+changing this delivery policy.
 
-## The short answer
+## Lean operating model
 
-PeerSlate does not need a chain of agents independently redesigning the same
-work. Use:
+PeerSlate uses one pass for each distinct responsibility:
 
 ```text
-one designated manager creates and accepts one durable package
+architect only when architecture is needed
         ↓
-one sole writer implements, tests, and reviews the complete diff
+one sole writer implements, tests, and self-reviews the complete diff
         ↓
-one fresh independent reviewer only when risk/size warrants it
+one fresh independent reviewer only for a defined risk trigger
         ↓
-the same writer corrects accepted findings
+the same writer corrects accepted findings and refreshes evidence
         ↓
-Pete/designated manager accepts; writer completes Azure release/closeout
+Pete gives final visual acceptance on the corrected build when material visual work applies
+        ↓
+Azure PR, pipeline, live verification, and compact closeout
 ```
 
-Changing brands is not automatically an independent review. A fresh context,
-clear review-only scope, exact branch/SHA, and evidence matter more.
+Do not ask another model to recreate accepted architecture, repeat a complete
+technical audit, or run a documentation-only deployment. When architecture is
+accepted, do not send it to another premium model to recreate it. A model switch
+alone does not establish independent review.
 
 ## Stable role rules
 
-- Each package names exactly one manager and one active writer. For product
-  implementation, the manager ordinarily reviews while the writer writes; they
-  may use the same vendor but may not be simultaneous writers on one branch. A
-  governance-only package may explicitly assign the manager as its sole writer,
-  provided no second writer is active and the package still receives a fresh
-  complete-diff review before release.
-- The manager owns product decisions, scope, sequencing, shared-governance
-  reservations, visual authority, conflict resolution, and final acceptance.
-- The writer owns implementation, complete-diff self-review, corrections,
-  tests, evidence, PR readiness, and approved release/closeout.
-- An independent reviewer challenges the completed diff against the approved
-  package. It does not receive an open-ended “redesign this” instruction.
-- The original writer fixes accepted review findings; do not hand the branch to
-  a fourth session for routine corrections.
-- Every handoff uses repository artifacts, branch, exact full SHA, tests,
-  screenshots/infrastructure evidence, known gaps, and forbidden scope—not a
-  pasted chat transcript.
-- Premium models are reserved for decisions or reviews where marginal quality
-  changes the outcome. Deterministic tests and smaller models handle inventory,
-  extraction, transformation, and log summaries.
+- Each package names exactly one manager and one active writer. The manager
+  owns product decisions, scope, sequencing, shared-governance reservations,
+  visual authority, conflict resolution, and final scope/product readiness.
+- The architect is used only for new or materially changed architecture. Preserve
+  its accepted package; a second architect is an escalation, not normal process.
+- The writer owns implementation, complete-diff self-review, corrections, tests,
+  evidence, PR readiness, and approved release/closeout.
+- A fresh independent reviewer is review-only. It challenges the exact package,
+  diff, SHA, and evidence; it does not receive an open-ended redesign brief.
+- The original writer fixes accepted findings. Recheck only an unresolved or
+  conditional finding unless the correction changes risk or architecture.
+- Pete is the final visual reviewer for material user-facing work and reviews the
+  corrected real build. The manager does not repeat the technical audit.
+- Handoffs use repository artifacts, branch, exact full SHA, evidence, known
+  gaps, and forbidden scope—not a chat transcript.
+- A governance-only package may assign its manager as sole writer when no second
+  writer is active; it still receives complete-diff review and applicable tests.
 
-## Current Codex/OpenAI routing
+## Mandatory independent-review triggers
 
-Official OpenAI guidance describes GPT-5.6 Sol as the flagship for complex
-work, Terra as the everyday workhorse, Luna as the clear/repeatable-work tier,
-and Ultra as maximum reasoning with automatic delegation. It also recommends
-using the lowest reasoning effort that reliably succeeds.
+A fresh independent reviewer is required for the exact branch/SHA evidence when:
 
-| Work | Recommended choice | Why |
+1. architecture-heavy changes;
+2. authentication, session, authorization, privacy, or cross-user data;
+3. schema or migration work;
+4. publication, audience, or deletion behavior;
+5. consequential AI behavior;
+6. shared infrastructure;
+7. conflicting evidence; or
+8. an explicit package risk control.
+
+Ordinary bounded work skips architecture unless it needs it and skips the
+independent reviewer unless one of these triggers applies. The required
+pre-merge tests, complete-diff self-review, evidence, release truth, and
+rollback/stop controls remain in every applicable package.
+
+## Current OpenAI / Codex routing
+
+| Stable role | Current choice | Use |
 |---|---|---|
-| Foundational product/data/privacy architecture; constitutional documents; complex migration; high-risk cross-domain review | **GPT-5.6 Sol, Extra High or Ultra** | Highest judgment/polish; Ultra only when work splits cleanly into independent evidence lanes |
-| Difficult implementation or debugging where ambiguity/risk remains high | **GPT-5.6 Sol, High/Extra High** | Deep reasoning without automatic multi-agent overhead by default |
-| Normal implementation, tests, documentation, maintenance, bounded refactors | **GPT-5.6 Terra, Medium/High** | Strong everyday tool use and cost/quality balance |
-| File inventory, extraction, classification, formatting, trace matrices, log/test summarization | **GPT-5.6 Luna, Low/Medium** | Clear repeatable outcomes at lower cost |
-| Near-instant focused text-only code iteration when available | **Codex Spark** | Preview optimized for small interactive changes; not final architecture or multimodal/visual authority |
-| Independent high-risk Codex review | **Fresh GPT-5.6 Sol, High/Extra High** | Review exact diff/SHA against fixed requirements; do not re-author scope |
+| Architect | **GPT-5.6 Sol, Extra High** | New or materially changed product, data, privacy, or technical architecture |
+| Implementer | **GPT-5.6 Terra, Extra High** | Bounded repository implementation, tests, documentation, corrections, and closeout |
+| Independent reviewer | **Fresh GPT-5.6 Sol, High** | Exact-SHA, risk-triggered review and audit findings |
 
-Use **Ultra** for packages like the present Journal constitutional
-reconciliation, broad authorization/privacy architecture, major migrations, or
-evidence work with genuinely parallel lanes. Do not use Ultra for a one-file
-copy edit, routine test fix, or a second pass over an already approved design.
-
-For current OpenAI model guidance, verify:
-
-- https://learn.chatgpt.com/docs/models
-- https://developers.openai.com/api/docs/guides/latest-model
-
-The first source says the default Power setting uses GPT-5.6 Sol at medium,
-Sol is for complex open-ended/high-value work, Terra for everyday work, Luna
-for clear repeatable work, and Ultra adds automatic subagent delegation.
+Use a smaller capable tool for read-only inventory, extraction, formatting, or
+test-log reduction. Do not lower a required role's evidence standard because a
+model, plan, or cost limit changes; record an exception and obtain direction
+when the specified role is unavailable.
 
 ## Current Claude routing
 
-As of this snapshot, Anthropic officially offers Fable 5 and Sonnet 5, and
-Opus 4.8 is its high-judgment Opus release. “Sonic” is not an official model
-name; Peter should verify the active picker because the intended name is almost
-certainly **Sonnet**. “Claude Table” was likely **Claude Fable**.
-
-| Work | Recommended choice | Why |
+| Stable role | Current choice | Use |
 |---|---|---|
-| Exceptional foundational architecture, long-horizon multi-stage work, major migration | **Claude Fable 5** | Anthropic positions it for its most ambitious, long-running coding and knowledge work; expensive, so use once |
-| Default Claude Code implementation, ordinary planning/debugging/refactoring/docs | **Claude Sonnet 5** | Anthropic positions it across the software lifecycle with strong efficiency |
-| Fresh independent high-risk requirements/privacy/regression review | **Claude Opus 4.8** | Strong judgment and self-critique; review-only brief avoids duplicate architecture |
-| Read-only exploration, inventories, file discovery, mechanical summaries | **Claude Haiku 4.5 / Explore agent** | Fast, lower-cost context reduction |
+| Architect | **Claude Fable 5** | New or materially changed product, data, privacy, or technical architecture |
+| Implementer | **Claude Sonnet 5** | Bounded Claude Code implementation, tests, documentation, corrections, and closeout |
+| Independent reviewer | **Claude Opus 4.8** | Exact-SHA, risk-triggered review and audit findings |
 
-Official sources:
+In Claude Code, confirm the resolved model with `/model` and `/status` before a
+major package or audit. Do not treat a remembered marketing nickname or an
+`opusplan` alias as evidence that the required role is active.
 
-- https://www.anthropic.com/claude/fable
-- https://www.anthropic.com/claude/sonnet
-- https://www.anthropic.com/news/claude-opus-4-8
-- https://code.claude.com/docs/en/model-config
+## Delivery routes
 
-Fable access and billing vary by plan and changed around July 2026; verify the
-actual plan/picker before assuming it is included. In Claude Code, use `/model`
-and `/status` to confirm what the session resolved. Model aliases can change.
+### Architecture or high-risk package
 
-## Recommended workflows by risk
+1. One architect creates or updates the durable package only where architecture
+   is needed.
+2. The manager confirms the bounded scope and visual/truth authority.
+3. One implementer builds, tests, self-reviews, and returns exact evidence.
+4. One fresh independent reviewer addresses the defined risk question.
+5. The same implementer corrects accepted findings and reruns affected evidence.
+6. Pete reviews the corrected build for material visual work; the manager gives
+   scope/product-readiness acceptance; then release proceeds.
 
-### Foundational/high-risk product package
+### Ordinary bounded package
 
-Use for Journal architecture, authorization, public projection, messaging,
-private AI retrieval, consequential migrations, major route maps, and release
-security boundaries.
+1. The manager supplies an accepted package and the writer confirms scope.
+2. One implementer builds, tests, self-reviews, corrects findings, and returns
+   evidence.
+3. Add one reviewer only when a mandatory trigger applies.
+4. Obtain applicable acceptance, then release and close out.
 
-1. One Sol Ultra **or** Fable manager creates the architecture—never both.
-2. Pete/designated manager accepts the durable package/visual authority.
-3. Terra/Sol or Sonnet 5 becomes sole implementation writer, based on risk.
-4. Writer tests and performs complete-diff self-review.
-5. Fresh Opus 4.8 or Sol reviews requirements/privacy/regressions when the risk
-   warrants independence.
-6. Same writer corrects findings and refreshes evidence.
-7. Pete/designated manager accepts; writer completes Azure PR/pipeline/live
-   closeout.
+### Mechanical or governance propagation
 
-When a high-judgment architecture is already accepted and preserved in a
-durable package, do not send it to another premium model to “build the
-architecture” again. If independence is valuable, give a fresh reviewer the
-exact package plus branch/SHA and ask for bounded contradiction, privacy,
-security, regression, and evidence findings.
+1. One capable writer performs the bounded update and complete-diff review.
+2. Run deterministic checks and the relevant guardrails.
+3. Use a premium reviewer only when product meaning changes, evidence conflicts,
+   or another mandatory trigger applies.
+4. Do not deploy merely to record documentation.
 
-### Ordinary feature package
+## Audit role and reporting
 
-1. Terra or Sonnet plans within an approved package.
-2. The same session implements, tests, and self-reviews.
-3. Use a separate reviewer only for material privacy/security/data/visual risk
-   or evidence conflict.
-4. Manager/Pete accepts.
-
-### Mechanical/governance propagation
-
-1. Luna, Haiku, or Terra performs inventory/formatting/cross-reference work.
-2. Deterministic tests and exact diff prove the result.
-3. Premium review is unnecessary unless product meaning changed.
-
-### Medium Claude plan/execute shortcut
-
-Claude Code's `opusplan` alias uses Opus in plan mode and Sonnet in execution.
-It can replace two sessions for medium work, but inspect `/status` because
-aliases and current model availability change. For foundational PeerSlate work,
-an approved repository package followed by a fresh writer is clearer.
-
-## Which surface to use
-
-| Surface | Best PeerSlate use |
-|---|---|
-| ChatGPT Work / Codex desktop manager | Multi-document product architecture, governed files, images, verification, long-running repository coordination |
-| Codex CLI/IDE/desktop writer | Repository implementation, tests, Git/Azure evidence, complete-diff review |
-| ChatGPT image generation | All requested concept imagery, visual exploration, and image editing; selected output becomes one named visual authority |
-| Claude Chat | Focused ideation/critique and short product questions |
-| Claude Cowork | Long-running multi-document deliverables when its extra usage is justified |
-| Claude Code | Repository implementation, testing, branch evidence, and code review |
-| Claude Design | Only when Peter specifically wants an interactive prototype; do not create a competing visual authority beside the selected ChatGPT design |
+The audit cadence and trigger conditions live in `docs/AI_WORKFLOW.md`. An audit
+uses one fresh reviewer in the active ecosystem, exact evidence and SHAs, and a
+compact ranked `Pass`, `Conditional`, or `Fail` report with owners and one next
+action. It samples cross-system drift rather than replaying every implementation
+review. Escalate to a deeper architect review only when an audit finding raises a
+real architecture question.
 
 ## Visual workflow
 
-Peter's preferred imaging lane remains ChatGPT/image generation. Use:
-
 ```text
-ChatGPT creates/refines concepts
-→ Pete selects one exact production-intent authority
-→ manager writes the interaction/truth/accessibility contract
-→ one Codex or Claude Code writer implements
-→ writer compares desktop/mobile/failure states to the authority
-→ optional fresh reviewer challenges the diff
-→ Pete/manager gives visual-product acceptance
+Pete selects one exact production-intent visual authority
+→ manager records interaction, truth, and accessibility contract
+→ one writer implements and compares the real build at required states/viewports
+→ one reviewer only if a defined risk trigger applies
+→ same writer corrects findings
+→ Pete reviews the corrected real build for final visual acceptance
+→ Azure release evidence and live verification
 ```
 
-Do not ask both ChatGPT and Claude Design to independently define the same
-screen unless the task is explicitly a comparison study. Store the selected
-asset and its truth boundary in the initiative package.
+Do not create a competing visual authority by having multiple agents redesign
+the same screen. A visual acceptance does not replace accessibility, truth,
+security/privacy, or release checks.
 
-## Token and session economy
-
-- Put stable product rules in Bible/Roadmap/governance; repo workflow in
-  `AGENTS.md`/`CLAUDE.md`; package scope in the initiative; reusable procedures
-  in skills. Do not paste all four into each prompt.
-- Start a fresh session for a different package. Compact only while continuing
-  the same objective.
-- Use exact file paths and SHA instead of replaying discussions.
-- Delegate verbose searches, inventories, and test-log reduction to smaller
-  subagents; keep final judgment with the manager/writer.
-- Keep agent teams small and give each a bounded independent question.
-- Ask the reviewer for ranked findings with requirement/file evidence, not a
-  rewrite.
-- Do not run two premium architecture passes “for confidence.” Cross-vendor
-  review is valuable only when it is independent and question-driven.
-
-## Required handoff block
+## Handoff requirements
 
 Every substantial handoff contains:
 
-1. package, status, owner decision, designated manager, and sole writer;
-2. authoritative base, branch, exact full SHA, and whether writer ownership is
-   retained or relinquished;
-3. governing requirements, visual authority, truth boundary, and explicit
-   exclusions/deferred items;
-4. complete changed-file list and migration/infrastructure impact;
-5. focused/full/accessibility/responsive/security tests and exact results;
-6. screenshots or infrastructure evidence and every accepted deviation;
-7. open findings, risks, conflicts, and required next reviewer/action;
-8. PR/pipeline/live state stated separately; and
-9. clear stop conditions.
-
-The receiving agent reads the package and complete diff. It does not rebuild
-the requirements from chat.
+1. package, status, owner decision, manager, and sole writer;
+2. authoritative base, branch, exact full SHA, and ownership status;
+3. governing requirements, visual authority, truth boundary, exclusions, and
+   whether a review trigger applied;
+4. changed files and migration/infrastructure impact;
+5. tests and exact results, evidence, and accepted deviations;
+6. findings, risks, conflicts, stop controls, and next action; and
+7. PR, pipeline, deployment, and live status stated separately.
 
 ## PS-AI-OPS requirements
 
-- **PS-AI-OPS-001:** One package shall have exactly one designated manager and
-  one active branch writer.
-- **PS-AI-OPS-002:** Architecture shall be authored once and stored durably.
-- **PS-AI-OPS-003:** The writer shall self-review the complete diff before
-  handoff.
-- **PS-AI-OPS-004:** Independent review shall be risk-based and review-only.
-- **PS-AI-OPS-005:** The same writer shall fix accepted review findings.
-- **PS-AI-OPS-006:** A model switch shall not be treated as evidence of
-  independence when the same context or unbounded task is reused.
-- **PS-AI-OPS-007:** Foundational work uses Sol Ultra/Extra High or Fable once,
-  not both by default.
-- **PS-AI-OPS-008:** Normal implementation defaults to Terra or Sonnet.
-- **PS-AI-OPS-009:** Mechanical work defaults to Luna, Haiku, or deterministic
-  scripts/tests.
-- **PS-AI-OPS-010:** Premium reviewers are reserved for material risk.
-- **PS-AI-OPS-011:** Imaging uses one selected ChatGPT authority unless Peter
-  explicitly requests a comparison.
-- **PS-AI-OPS-012:** Chat transcripts are not the source of truth.
-- **PS-AI-OPS-013:** Handoffs require exact branch/SHA/evidence and ownership
-  status.
-- **PS-AI-OPS-014:** Implementation, self-review, acceptance, merge,
-  deployment, and live verification shall be reported separately.
-- **PS-AI-OPS-015:** Current model/alias availability shall be verified in the
-  actual surface before a major run.
-- **PS-AI-OPS-016:** Model cost/limit pressure may change model choice but shall
-  not remove required evidence or authority controls.
-- **PS-AI-OPS-017:** Cross-vendor review shall target a defined risk question,
-  not repeat the complete workflow.
-- **PS-AI-OPS-018:** A package may use multi-agent work only when lanes are
-  independent, bounded, and synthesizable by the active manager/writer.
+- **PS-AI-OPS-001:** One package has one designated manager and one active
+  branch writer.
+- **PS-AI-OPS-002:** Architecture is authored once, only when needed, and stored
+  durably.
+- **PS-AI-OPS-003:** The writer self-reviews the complete diff before handoff.
+- **PS-AI-OPS-004:** Independent review is risk-based, fresh, exact-SHA, and
+  review-only.
+- **PS-AI-OPS-005:** The same writer fixes accepted review findings and reruns
+  affected evidence.
+- **PS-AI-OPS-006:** Pete gives final visual acceptance for material visual work
+  after corrections.
+- **PS-AI-OPS-007:** Pre-merge verification, runtime pipeline, live verification,
+  rollback/stop controls, and truthful status boundaries remain required.
+- **PS-AI-OPS-008:** Checkpoint, readiness, full-site, and triggered audits use
+  the workflow cadence and one fresh reviewer.
+- **PS-AI-OPS-009:** Packages use stable role names; this document is the
+  periodically verified model-version authority.
+- **PS-AI-OPS-010:** Cross-vendor work is used only for a bounded independent
+  risk question, never to duplicate the delivery route.
