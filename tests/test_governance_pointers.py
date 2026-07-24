@@ -133,8 +133,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-JOURNAL-001", "05_IMPLEMENTATION_TEST_AND_RELEASE_SEQUENCE.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-JOURNAL-001", "source", "PeerSlate_Company_and_Product_Bible_v1.5.1.docx"),
-        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.8.docx"),
-        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx"),
+        ("docs", "governance", "PeerSlate_Company_and_Product_Bible_v2.9.docx"),
+        ("docs", "governance", "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "README.md"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "10_ACTIVATION_CHECKLIST.md"),
         ("docs", "initiatives", "PS-GOV-CONNECTED-SYSTEM-001", "11_OWNER_APPROVAL_AND_ACTIVATION.md"),
@@ -199,8 +199,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual([], stale, f"Baseline points at missing paths: {stale}")
 
     def test_baseline_names_current_authority_and_manager(self):
-        self.assertIn("Bible_v2.8", self.baseline)
-        self.assertIn("Roadmap_v2.7", self.baseline)
+        self.assertIn("Bible_v2.9", self.baseline)
+        self.assertIn("Roadmap_v2.8", self.baseline)
         self.assertIn('role: "package_designated_session_manager"', self.baseline)
         self.assertIn(
             'eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"',
@@ -269,19 +269,19 @@ class BaselineCoherenceTests(unittest.TestCase):
 
     def test_journal_system_authority_is_current_traceable_and_runtime_honest(self):
         expected = {
-            "PeerSlate_Company_and_Product_Bible_v2.8.docx": (
-                "47f9771c29a3faea18858865f402df0e342840dad80ecf4650b8abcc537de963",
-                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.7",
-                "Authority: v2.8 is CURRENT and controlling.",
-                "Version 2.8 Universal Capture, one Journal, and trusted return authority",
-                "CURRENT BIBLE v2.8 • JULY 20, 2026",
+            "PeerSlate_Company_and_Product_Bible_v2.9.docx": (
+                "1bb3df535b2a7478d36c539521d64e452a01b163febe367615a96f345459224f",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 24, 2026; SUPERSEDES v2.8",
+                "Authority: v2.9 is CURRENT and controlling.",
+                "Version 2.9 Work-first Slate Studio and one-Journal authority",
+                "CURRENT BIBLE v2.9 • JULY 24, 2026",
             ),
-            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx": (
-                "899f0054483e886f79aacb4115ae0e160acc44fa3bffe5eea2882a5c70ee6a83",
-                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 20, 2026; SUPERSEDES v2.6",
-                "Roadmap authority: v2.7 is CURRENT and controlling.",
-                "Version 2.7 Journal-system execution sequence",
-                "CURRENT ROADMAP v2.7 • JULY 20, 2026",
+            "PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx": (
+                "612c23cf21cba4a58905e77b067adb82ff8a7bea5a24a107742c973fe48495a1",
+                "CURRENT AND LOCKED - APPROVED BY THE OWNER ON JULY 24, 2026; SUPERSEDES v2.7",
+                "Roadmap authority: v2.8 is CURRENT and controlling.",
+                "Version 2.8 Work-first Slate Studio activation sequence",
+                "CURRENT ROADMAP v2.8 • JULY 24, 2026",
             ),
         }
         for filename, (
@@ -380,6 +380,7 @@ class BaselineCoherenceTests(unittest.TestCase):
                 "PS-GOV-TRUTH-RECONCILIATION-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
+                "PS-SLATE-STUDIO-IA-001",
             ],
             active_ids,
         )

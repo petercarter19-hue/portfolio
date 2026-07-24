@@ -8,12 +8,13 @@ recorded as open after it had been implemented, released, closed out, and
 verified live. Both are corrected below. The reconciliation changes governance
 records only and makes no new live claim._
 
-_Updated 2026-07-20 for the released flag-off Photo experience, released
+_Updated 2026-07-24 for the owner-activated, manager-accepted work-first Slate
+Studio Slice 1 governance gate, in addition to the released flag-off Photo experience, released
 default-off Owner Home backend, released/live-verified 5A-light/5C-dark
 Interview Studio, the exact-authority Owner Home frontend activation, and the
-owner-authorized one-Journal system architecture. Bible v2.8 and Roadmap v2.7
-are the current universal-Capture, Journal, return-value, AI, and future
-messaging authority.
+owner-authorized one-Journal system architecture. Bible v2.9 and Roadmap v2.8
+are the current work-first Studio, universal-Capture, Journal, return-value, AI,
+and future messaging authority after this governance release merges.
 Every manager and writer must still fetch `origin` before starting._
 
 ## Verified production and repository baseline
@@ -147,8 +148,8 @@ Every manager and writer must still fetch `origin` before starting._
   member-facing behavior.
 - The July 20 one-Journal authority replaces the candidate connected-system
   assumptions that required a Capture destination, a draft-to-Journal
-  promotion, or a separately authored Journal-entry body. Bible v2.8, Roadmap
-  v2.7, `PS-GOV-JOURNAL-SYSTEM-001`, the controlling `PS-JOURNAL-001`
+  promotion, or a separately authored Journal-entry body. Bible v2.9, Roadmap
+  v2.8, `PS-GOV-JOURNAL-SYSTEM-001`, the controlling `PS-JOURNAL-001`
   architecture, `PS-RETURN-VALUE-001`, `PS-ASK-SLATE-AI-001`,
   `PS-MESSAGING-001`, and the legal/model-routing standards are governance and
   implementation authority. Source
@@ -549,6 +550,38 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   to shrink or move it so it no longer obscures the sailboat in the Maui image.
 - This decision does not modify the current public Story or start the future
   implementation package.
+
+## Slate Studio direction and Slice 1 activation (2026-07-24)
+
+- Pete activated `PS-SLATE-STUDIO-IA-001` and its bounded runtime package
+  `PS-SLATE-STUDIO-SLICE-1-001` on 2026-07-24. The current ChatGPT Work/Codex
+  task is the designated manager. Claude is not a dependency of this lane.
+- Direction branch `work/2026-07-22-slate-studio-direction` was synchronized
+  with current Azure `origin/main` and records the accepted package at source
+  `470295243c5cf1cf32da22392106bc06f1cee2f2`.
+- Bible v2.9 and Roadmap v2.8 make the relationship controlling: Journal
+  preserves canonical member history; Slate Studio is the private work-first
+  experiential center; the public Slate presents member-approved output; and
+  Community connects selected output. No surface becomes a competing truth
+  store, and AI remains optional, source-grounded, proposal-only, and
+  non-authoritative.
+- This governance release activates only the future default-off protected
+  `/app/studio/build-your-future` shell and frame. It does not implement, merge,
+  deploy, enable, or make that route live. The runtime writer and fresh
+  review-only reviewer are assigned only after this governance release merges
+  to Azure `origin/main`.
+- Current live evidence remains honest: signed-out `/app` redirects to sign-in;
+  `/app/studio/build-your-future` returns 404; and the released public
+  `/interview-studio` remains unchanged. Its name, route, browser-local
+  behavior, truth boundary, visual authority, and homepage parity are not
+  authorized for rename or restructure.
+- Slice 1 may add only its default-off flag, protected route and finite
+  server-derived frame contract, route-local template/static assets, bounded
+  tests, and package-local evidence. It may not change `/app` selection, Owner
+  Home, Journal, Community, Capture, public Interview Studio, public Slate,
+  homepage, shared services, schema, migrations, deployment configuration,
+  Board persistence/editing, experiments, AI/practice grounding, publishing,
+  Community pulse, or public alignment.
 
 ## Required release evidence
 

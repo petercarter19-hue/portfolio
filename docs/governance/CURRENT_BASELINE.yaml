@@ -9,11 +9,13 @@
 # activated downstream homepage Interview parity architecture/implementation,
 # plus the activated exact-authority Owner Home frontend implementation lane
 # and the owner-authorized one-Journal system architecture.
-# Bible v2.8 and Roadmap v2.7 are now the owner-approved authority for
+# Bible v2.9 and Roadmap v2.8 are now the owner-approved authority. They retain
 # universal Capture, derived Journal membership, trusted return services,
-# Ask Slate AI, later messaging, and the Journal/My Story boundary. This
-# activation is architecture and governance only; it does not claim that any
-# new Journal, return-value, AI, messaging, or public-projection runtime is live.
+# Ask Slate AI, later messaging, and the Journal/My Story boundary while making
+# the work-first relationship controlling: Journal preserves canonical history;
+# Studio activates private work; the public Slate presents approved output; and
+# Community connects selected output. Slice 1 is activated for bounded runtime
+# work only after this governance change merges; no new Studio runtime is live.
 # Reconciled on 2026-07-21 by PS-GOV-TRUTH-RECONCILIATION-001. The July 20
 # governance releases advanced the authority documents but did not record
 # Azure PRs 103-110 and 112-117 and 119, and they carried forward a stale
@@ -24,7 +26,7 @@
 # capability, and it makes no new live claim.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 3
-updated_at: "2026-07-21"
+updated_at: "2026-07-24"
 
 authority:
   remote: origin
@@ -188,22 +190,22 @@ mirror:
 manager:
   role: "package_designated_session_manager"
   eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
-  owner_decision_date: "2026-07-19"
-  current_session_manager: "Claude Code, designated by Pete on 2026-07-21 as the sole session manager for PS-GOV-TRUTH-RECONCILIATION-001"
-  current_session_manager_scope: "This designation reserves the shared governance records docs/governance/CURRENT_BASELINE.yaml, CURRENT_STATE.md, ACTIVE_INITIATIVES.md, MANAGER_SESSION_HANDOFF.md, NEXT_TASK_BOARD.md, OPEN_BRANCH_REGISTER.md, and tests/test_governance_pointers.py for the duration of this reconciliation. Pete stated at the outset that no concurrent session was running; PRs 121 and 122 later proved a second writer lane was in fact active, so that assumption was wrong and is corrected in concurrent_session_note above. No product lane, writer branch, or visual authority transfers with this designation."
+  owner_decision_date: "2026-07-24"
+  current_session_manager: "Current ChatGPT Work/Codex task, designated by Pete on 2026-07-24 for PS-SLATE-STUDIO-IA-001 and PS-SLATE-STUDIO-SLICE-1-001"
+  current_session_manager_scope: "This designation reserves docs/governance/CURRENT_BASELINE.yaml, CURRENT_STATE.md, ACTIVE_INITIATIVES.md, DOCUMENT_CONTROL.md, the Bible v2.9 and Roadmap v2.8 activation artifacts, tests/test_governance_pointers.py, and the PS-SLATE-STUDIO-IA-001 package through the governance release. After that exact release, the manager assigns one separate Codex writer to the bounded Slice 1 runtime branch and one fresh review-only Codex reviewer. Claude is not a dependency of this lane. No Journal, Owner Home, Community, Capture, public Interview Studio, public Slate, homepage, shared-service, schema, migration, or deployment-configuration ownership transfers with this designation."
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
-  current_assignments: "The Interview implementation/release lane is closed through PR 101 and its governance closeout passed PR 102/pipeline 150. PS-HOME-INTERVIEW-PARITY-001 is complete: activated by PR 103/pipeline 151, implemented and released by PR 105/pipeline 154, closed out by PR 106/pipeline 156, and verified live. It has no remaining writer. PS-CAPTURE-PHOTO-LIFECYCLE-001 is likewise complete through PRs 107, 108, and 109 with pipelines 157, 158, and 160; Photo remains flag-off. PS-HOME-FRONTEND-001 was activated by PR 104/pipeline 153 under the ChatGPT Work/Codex manager with the separately assigned Codex frontend task as sole writer; as of 2026-07-21 no home-frontend writer branch exists on origin, so that lane is activated but not started. PS-GOV-JOURNAL-SYSTEM-001 completed authority activation through source 578081f5191dd74daa154941604a2b199c5fed58, PR 118, merge 3d7c9e10811dcbcc763d965d7770bd0d35e51d4b, and automatic pipeline 171. PS-JOURNAL-001 now has a controlling architecture and an unassigned private-core implementation gate. PS-RETURN-VALUE-001, PS-ASK-SLATE-AI-001, and PS-MESSAGING-001 are committed planned packages with no runtime writer. PS-ASK-PETE-AI-001 is the public Ask Pete / Ask [Name] surface only. Photo and Home backend remain released flag-off."
+  current_assignments: "PS-SLATE-STUDIO-IA-001 is owner-activated and manager-accepted for governance release on 2026-07-24 from direction source 470295243c5cf1cf32da22392106bc06f1cee2f2. PS-SLATE-STUDIO-SLICE-1-001 may create its runtime branch only from the exact post-governance origin/main. Its runtime writer and fresh review-only reviewer remain unassigned until that merge. Slice 1 is limited to a default-off flag, the protected /app/studio/build-your-future shell and frame, route-local navigation, finite server-derived published-Slate truth, and truthful states. Journal remains canonical infrastructure; Studio is the private work-first experiential center; public Slate presents approved output; Community connects selected output. The current public Interview Studio name, route, behavior, truth boundary, visual authority, and homepage parity remain unchanged. Existing Journal, Owner Home, Community, Capture, and return/AI/messaging packages continue independently under their own ownership and release state; bounded Return and owner-only Ask Slate may proceed after private Journal foundations without waiting for public Journal. Any Home /app/capture link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates."
 
 governing_documents:
   bible:
-    version: "2.8"
-    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.8.docx"
-    sha256: "47F9771C29A3FAEA18858865F402DF0E342840DAD80ECF4650B8ABCC537DE963"
+    version: "2.9"
+    path: "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.docx"
+    sha256: "1BB3DF535B2A7478D36C539521D64E452A01B163FEBE367615A96F345459224F"
   roadmap:
-    version: "2.7"
-    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx"
-    sha256: "899F0054483E886F79AACB4115AE0E160ACC44FA3BFFE5EEA2882A5C70EE6A83"
+    version: "2.8"
+    path: "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.docx"
+    sha256: "612C23CF21CBA4A58905E77B067ADB82FF8A7BEA5A24A107742C973FE48495A1"
   sync_standard:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
@@ -306,6 +308,12 @@ active_packages:
     roadmap_phase: "Phase 5 - Universal Capture and private Journal"
     package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
     status: "architecture_current_private_core_entry_gate_unassigned"
+  - id: PS-SLATE-STUDIO-IA-001
+    owner: "Pete owner; current ChatGPT Work/Codex task designated manager; runtime writer and fresh reviewer assigned after governance merge"
+    lane: work_first_slate_studio_slice_1_activation
+    roadmap_phase: "Bounded cross-phase Phase 4/Phase 10 shell-and-frame slice"
+    package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
+    status: "owner_activated_manager_accepted_governance_release_pending"
 
 planned_packages:
   - id: PS-SHELL-001
@@ -369,7 +377,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "From the post-authority origin/main tip, assign one package-designated manager and exactly one writer to a fresh PS-JOURNAL-001 private-core implementation branch. The writer must satisfy the route, data, lifecycle, authorization-before-retrieval, visual, accessibility, migration, rollback, and two-member gates in that package. Capture remains an action available wherever authorized, not a destination page, and Save Moment must yield one private canonical Moment whose Journal membership is derived. Return-value services, owner-only Ask Slate AI, messaging, public Journal, and My Story composition remain separate packages; bounded Return and owner-only Ask Slate may start after the private Journal foundation without waiting for public Journal. PS-HOME-FRONTEND-001 continues independently under the active-lane transition record; PS-HOME-INTERVIEW-PARITY-001 is closed and needs no further writer. The four previously unrecorded branches are all resolved as of 2026-07-21: three released through PRs 123, 124, and 125 with pipelines 177, 178, and 179, and one archived under tag archive/2026-07-21/bible-v27-activation; docs/governance/OPEN_BRANCH_REGISTER.md is now a historical record rather than an open queue. A separate PS-JOURNAL-001 visual-handoff writer lane is active and released PRs 121 and 122; verify concurrent writers by fetching origin rather than assuming exclusivity. Any Home `/app/capture` link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "Merge this governance activation through an Azure DevOps squash pull request and verify its automatic pipeline. From that exact post-governance origin/main tip, create work/2026-07-24-slate-studio-slice-1-shell and assign exactly one separate Codex writer. The writer may add only PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED in app.py, the protected /app/studio/build-your-future route and finite server-derived view model in auth_routes.py, the package-named route-local template/static assets, bounded tests, and package-local evidence. Default-off must be neutral 404. The lane must not change /app selection, Owner Home, Journal, Community, Capture, public Interview Studio, public Slate, homepage, shared services, schema, migrations, deployment configuration, or any later Slice capability. After writer self-review and manager visual/product acceptance, assign one fresh review-only Codex reviewer and return corrections to the same writer. Journal private-core work continues independently under PS-JOURNAL-001. Production enablement is a separate explicit owner decision. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"
@@ -381,8 +389,10 @@ superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.5.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.6.docx"
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.7.docx"
+  - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.8.docx"
   - "docs/initiatives/PS-JOURNAL-001/source/PeerSlate_Company_and_Product_Bible_v1.5.1.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.3.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.4.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.5.docx"
   - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.6.docx"
+  - "docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.7.docx"

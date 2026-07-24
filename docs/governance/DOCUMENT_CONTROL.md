@@ -26,8 +26,8 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 | Record | Current version/status | Purpose |
 |---|---|---|
-| Company and Product Bible | v2.8 | Product language, boundaries, one-Journal system, universal Capture action, derived Journal membership, audience projections, trusted return services, Ask Slate AI, later messaging, visual integrity, Story composition, Projects covenant, and intended model |
-| Product Strategy and Architecture Roadmap | v2.7 | Evidence state, package order, private-Journal-first execution, return-value staging, AI and messaging gates, Story Composer allocation, and Projects sequencing |
+| Company and Product Bible | v2.9 | Product language, boundaries, one-Journal system, work-first Slate Studio relationship, universal Capture action, derived Journal membership, audience projections, trusted return services, Ask Slate AI, later messaging, visual integrity, Story composition, Projects covenant, and intended model |
+| Product Strategy and Architecture Roadmap | v2.8 | Evidence state, package order, bounded Slate Studio Slice 1 activation, private-Journal execution, return-value staging, AI and messaging gates, Story Composer allocation, and Projects sequencing |
 | Repository Sync Standard | v1.1 | Multi-agent repository coordination |
 | Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
@@ -40,8 +40,8 @@ No agent may silently choose an older instruction because it is more detailed. S
 
 ## Known supersessions
 
-- Bible v2.8 supersedes v2.7, v2.6, v2.5, v2.4, v2.3, and v1.1 through v1.5.1 for current product decisions. The exact v1.5.1 source remains preserved as Journal decision provenance.
-- Roadmap v2.7 supersedes Roadmap v2.6, v2.5, v2.4, and v2.3 for current sequencing and architecture decisions.
+- Bible v2.9 supersedes v2.8, v2.7, v2.6, v2.5, v2.4, v2.3, and v1.1 through v1.5.1 for current product decisions. The exact v1.5.1 source remains preserved as Journal decision provenance.
+- Roadmap v2.8 supersedes Roadmap v2.7, v2.6, v2.5, v2.4, and v2.3 for current sequencing and architecture decisions.
 - The one Journal, universal Capture action, exact-reference projection model,
   and trusted return services are constitutional. Capture and connective
   patterns belong in authorized contexts and existing rooms; Capture is not a
@@ -57,9 +57,16 @@ No agent may silently choose an older instruction because it is more detailed. S
   delay, replace, or silently rewrite it. Owner-Journal membership is derived
   from eligible saved Moments and stores no second fact body. Downstream rooms
   and audience views use exact governed references.
-- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.8,
-  Roadmap v2.7, and `PS-JOURNAL-001` control the architecture while preserving
+- Peter's explicit July 20, 2026 decision lifts the Journal hold. Bible v2.9,
+  Roadmap v2.8, and `PS-JOURNAL-001` control the architecture while preserving
   the safety and provenance value of the deployed Capture-to-Moment sequence.
+- Peter's explicit July 24, 2026 decision makes the work-first relationship
+  controlling: Journal preserves canonical member history; Slate Studio is the
+  private experiential workspace for building, practice, exploration, and
+  future-shaping; the public Slate presents approved output; and Community
+  connects selected output. `PS-SLATE-STUDIO-IA-001` activates only the bounded
+  Slice 1 shell and frame. It does not authorize later Studio capabilities or
+  any rename or restructure of the released public Interview Studio.
 - Existing public résumé, Story, Interview Studio, and Ask Pete surfaces remain
   governed by their released packages. The one-Journal authority does not make
   a public Journal, Ask Slate AI, messaging, or any new audience view live.

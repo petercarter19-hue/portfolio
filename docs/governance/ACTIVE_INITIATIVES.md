@@ -7,12 +7,13 @@ and `PS-CAPTURE-PHOTO-LIFECYCLE-001` (PRs 107/108/109, pipelines 157/158/160).
 Fifteen merged pull requests in the 103-119 range were absent from this record
 entirely. Both defects are corrected below._
 
-_Updated 2026-07-20 after the flag-off Photo experience release, default-off
+_Updated 2026-07-24 for the owner-activated, Codex-manager-accepted work-first
+Slate Studio Slice 1 governance gate, after the flag-off Photo experience release, default-off
 Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
 release, exact-authority Owner Home frontend activation, and the
-owner-authorized one-Journal architecture. Bible v2.8 and Roadmap v2.7 are
-activated as current universal-Capture, Journal, trusted-return, AI, and future
-messaging authority._
+owner-authorized one-Journal architecture. Bible v2.9 and Roadmap v2.8 become
+the current work-first Studio, universal-Capture, Journal, trusted-return, AI,
+and future messaging authority through this governance release._
 
 ## Operating model
 
@@ -40,6 +41,7 @@ only for high-risk or expressly required packages.
 | Governance reconciliation | Claude Code sole session manager, designated 2026-07-21 | PS-GOV-TRUTH-RECONCILIATION-001 | the shared governance pointer records, the open-branch register, and the governance guardrail suite | any application code; the Bible, Roadmap, DOCUMENT_CONTROL, or DECISIONS; other packages' files; executing any branch or worktree deletion |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
+| Slate Studio Slice 1 | Current ChatGPT Work/Codex task as manager; one separate Codex writer and one fresh Codex reviewer assigned after governance merge | PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 | controlled governance activation now; later the default-off protected Build Your Future shell/frame and finite server-derived truth | `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio, public Slate, homepage, shared services, schema, migrations, deployment configuration, or later Slice capabilities |
 
 ## Current active gate
 
@@ -464,3 +466,33 @@ The separately assigned Codex frontend task never opened
 `work/2026-07-21-home-frontend-001-impl`. All previously accepted authority,
 briefs, contracts, decisions, and the flag-off boundary remain binding and
 unchanged.
+
+
+## PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 - owner activated,
+manager accepted, governance release pending
+
+- Source package: `docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md`; owner and
+  manager gate: `11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md`.
+- Pete activated Slice 1 on 2026-07-24. The current ChatGPT Work/Codex task is
+  its designated manager. Each Codex task carries its own named role; Claude is
+  not part of this package's dependency chain.
+- Direction source `470295243c5cf1cf32da22392106bc06f1cee2f2` is accepted for
+  governance release. It makes Bible v2.9 and Roadmap v2.8 current and records
+  the work-first relationship: Journal preserves; Studio activates and shapes;
+  the public Slate presents; Community connects selected output.
+- No Slice 1 runtime branch exists yet. After this governance change
+  squash-merges and its automatic Azure pipeline passes, the manager creates
+  `work/2026-07-24-slate-studio-slice-1-shell` from that exact `origin/main`
+  commit and assigns one separate Codex writer.
+- Runtime scope is a package-specific default-off flag, the protected
+  `/app/studio/build-your-future` route, a route-local signed-in shell/frame,
+  finite server-derived published-Slate truth, truthful unavailable and empty
+  states, bounded tests, visual/accessibility evidence, and package-local
+  closeout.
+- The current public Interview Studio remains unchanged. Board persistence or
+  editing, experiments, AI/practice grounding, publishing, Community pulse,
+  public alignment, schema/storage, and every other product surface remain
+  excluded.
+- After writer self-review and manager visual/product acceptance, one fresh
+  review-only Codex task reviews the complete diff. Corrections return to the
+  same writer. Production enablement remains a separate explicit owner gate.
