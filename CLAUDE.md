@@ -57,6 +57,19 @@ visual authority before implementation. A selected mockup or demonstration is a
 binding minimum: the real experience must match or exceed it, and material work
 requires comparison screenshots plus Pete and the designated session manager's
 visual acceptance.
+Owner decision, 2026-07-24: ChatGPT is the sole creator of new or materially
+revised PeerSlate production-intent visual authority, including concepts,
+mockups, responsive and state sets, style exploration, and image edits.
+Existing Pete-locked authorities remain valid until materially revised. Claude
+may architect non-visual product and technical contracts, implement an exact
+locked visual, capture real-browser evidence, report parity or accessibility
+findings, and make documented non-material adaptations for semantic structure,
+focus, contrast, touch targets, reduced motion, truthful state wiring, or text
+reflow. Claude Chat, Co-Work, Code, and Design must not originate or substitute
+the visual direction. A change to composition, hierarchy, dominant
+object/action, typography family, color language, or responsive interaction
+model is material: stop and return it to the ChatGPT visual-creation lane; work
+resumes only after Pete locks the revised exact authority.
 Do not treat functional completion as permission to ship a visual downgrade.
 For every such package, complete the homepage-impact check required by the
 standard. If `/` presents or links that product, a material product or visual

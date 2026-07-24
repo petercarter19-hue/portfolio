@@ -22,7 +22,7 @@ documentation-only, and unmerged work do not count.
 | Field | Current value |
 |---|---|
 | Policy start | 2026-07-24 |
-| Current completed-runtime-slice count | 0 of 4 since policy start |
+| Current completed-runtime-slice count | 1 of 4 since policy start |
 | Last checkpoint audit | None since policy start |
 | Next checkpoint audit | After the fourth counted slice, or the next major phase boundary, whichever comes first |
 | Last quarterly/full-site audit | None since policy start |
@@ -58,3 +58,16 @@ documentation-only, and unmerged work do not count.
   and no blockers
 - **Counter effect:** governance-only; this closed targeted audit does not
   increment or reset the completed-runtime-slice count
+
+- **Counted runtime slice:** PS-SLATE-STUDIO-SLICE-1-001
+- **Release:** Azure PR 171, squash merge
+  `43d415cfb50717d94b69c07d7be648a12691f1f8`
+- **Pipeline:** automatic run 233 (`20260724.10`), Build and Deploy succeeded
+- **Production verification:** `/` and `/interview-studio` returned 200;
+  `/app` retained its safe 302 sign-in return; the new protected Studio route
+  returned the intended default-off 404; the deployed Studio stylesheet
+  contained the corrected reflow and theme-spacing rules
+- **Closeout:** exact implementation handoff and visual acceptance are recorded
+  in `PS-SLATE-STUDIO-SLICE-1-001/OWNER_TECHNICAL_COMPLETION_REPORT.md`
+- **Counter effect:** incremented the completed-runtime-slice count from 0 to
+  1 of 4; no checkpoint audit is triggered

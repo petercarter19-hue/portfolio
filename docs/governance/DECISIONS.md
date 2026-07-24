@@ -495,3 +495,27 @@ This is an append-only operational decision record. The current Bible and Roadma
   routing. This decision supersedes older package instructions that require
   duplicate model passes or stale hardcoded model versions, except for a
   necessary package-specific risk control that remains explicitly recorded.
+
+## 2026-07-24 - Make ChatGPT the sole visual-authority creation lane
+
+- Owner decision: every new or materially revised PeerSlate production-intent
+  visual is created through ChatGPT. This includes concepts, mockups,
+  storyboards, responsive and state sets, style exploration, and image
+  generation or editing. Authorities Pete locked before this decision remain
+  valid until materially revised.
+- Pete selects and locks the exact durable visual authority before a writer
+  implements it.
+- Codex and Claude may implement the locked authority, capture implementation
+  evidence, report parity, usability, truth, or accessibility findings, and
+  make documented non-material adaptations for semantic structure, focus,
+  WCAG contrast, touch targets, reduced motion, truthful state wiring, or text
+  reflow. They may not originate or substitute the visual direction.
+- The current Codex and Claude architect, implementer, and reviewer choices
+  remain centralized in `docs/AI_MODEL_AND_ROLE_ROUTING.md`; this decision does
+  not duplicate mutable model versions.
+- A change to composition, hierarchy, dominant object/action, typography
+  family, color language, or responsive interaction model is material. The
+  writer returns that visual decision to ChatGPT, and work resumes after Pete
+  locks the revised exact authority.
+- Browser screenshots, accessibility evidence, and bounded parity critique are
+  implementation/review evidence, not competing visual creation.

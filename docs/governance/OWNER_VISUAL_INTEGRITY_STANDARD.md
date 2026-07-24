@@ -42,6 +42,11 @@ Truth and beauty are simultaneous requirements:
 - **Visual authority:** the exact named mockup, screen set, storyboard,
   walkthrough, or existing production state that controls the package's look
   and interaction hierarchy.
+- **Visual-creation lane:** ChatGPT is the sole creator of new or materially
+  revised PeerSlate production-intent concepts, mockups, storyboards,
+  responsive/state sets, style exploration, and image assets. Pete locks the
+  exact durable output before implementation. Authorities Pete locked before
+  the 2026-07-24 decision remain valid until materially revised.
 - **Production-intent demonstration:** a clearly labeled, non-live walkthrough
   that shows how an approved real experience is intended to work.
 - **Match or exceed:** preserve the recognizable composition, interaction
@@ -59,7 +64,9 @@ Truth and beauty are simultaneous requirements:
 
 Before design or implementation, the initiative records:
 
-1. the exact visual authority and its durable location;
+1. the exact ChatGPT-created visual authority and Pete's lock, or the exact
+   grandfathered Pete-locked authority when no material revision is proposed,
+   plus its durable location;
 2. which behavior is live, illustrative, future, local-only, private, public,
    sent to a service, stored, or not stored;
 3. the dominant object and dominant action for every primary state;
@@ -67,6 +74,21 @@ Before design or implementation, the initiative records:
 5. the files, routes, data, and capabilities the package may not change; and
 6. whether the logged-out homepage presents or links this experience, which
    section is affected, and whether parity work is required.
+
+Codex or Claude may implement the locked authority, capture real-browser
+evidence, identify parity, usability, truth, or accessibility defects, and make
+documented non-material adaptations for semantic structure, focus visibility,
+WCAG contrast, touch targets, reduced motion, truthful state wiring, or text
+reflow. Those adaptations follow the manager-approved deviation record and do
+not require a new visual-creation pass when they preserve the dominant
+object/action, composition, hierarchy, typography family, color language, and
+responsive interaction model.
+
+Codex and Claude may not originate or substitute the visual direction. A change
+to any preserved visual-direction control above is material: the writer stops
+that visual decision and returns the requirement to ChatGPT; Pete must lock the
+revised exact authority before implementation continues. Evidence capture and
+bounded critique are not separate visual-creation passes.
 
 ### V1 - Design readiness
 

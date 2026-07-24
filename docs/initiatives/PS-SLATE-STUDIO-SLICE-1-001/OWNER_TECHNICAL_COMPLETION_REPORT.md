@@ -3,19 +3,19 @@
 ## A. Status
 
 - **Package:** `PS-SLATE-STUDIO-SLICE-1-001` - Protected Studio shell and Build Your Future frame.
-- **Status:** **Pass - technical and final visual-product acceptance satisfied** at corrected candidate `e75da1e9204ded18ac03623e507451032c8ab3ad`.
-- **Branch and commit history:** `work/2026-07-24-slate-studio-slice-1-shell` began at Azure `origin/main` `15e38cb1f55e9a5a736d1c493b1af7cd88d15f91`. The independent reviewer evaluated predecessor `a7976c8e07ae3658c55e86bbe0df05990e2bde15` and returned **Conditional**. Same-writer corrections are commit `bb1e6f9231ff945f9a04222957c0b21bf45f6a62`. Current Azure `origin/main` was merged without rebasing at `c9da291438f079438cf9e94dd7463c1dcf8036db`; correction evidence was recorded at `0c3e1ff6c92871b06b410b775aad1e2386d5a762`; mobile clipping was corrected at `076587a83803da401eac45ae701eba4df4504476`; reflow/navigation polish was corrected at `c2ac3f845bf54db4f4c571d1ed3d2db791082f50`; and final Theme-label spacing was corrected and visually rechecked at `e75da1e9204ded18ac03623e507451032c8ab3ad`. This tracked status update cannot truthfully contain its own final commit SHA; the exact pushed handoff tip is supplied externally.
-- **PR / pipeline / environment:** No PR opened, no pipeline run, no environment change.
-- **Production state:** Not deployed. `PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED` defaults to `false`; the new route therefore remains a neutral 404 in the deployed-default configuration.
+- **Status:** **Released Pass - technical, final visual-product, pipeline, and production verification satisfied.** The final runtime candidate is `e75da1e9204ded18ac03623e507451032c8ab3ad`.
+- **Branch and commit history:** `work/2026-07-24-slate-studio-slice-1-shell` began at Azure `origin/main` `15e38cb1f55e9a5a736d1c493b1af7cd88d15f91`. The independent reviewer evaluated predecessor `a7976c8e07ae3658c55e86bbe0df05990e2bde15` and returned **Conditional**. Same-writer corrections are commit `bb1e6f9231ff945f9a04222957c0b21bf45f6a62`. Current Azure `origin/main` was merged without rebasing at `c9da291438f079438cf9e94dd7463c1dcf8036db`; correction evidence was recorded at `0c3e1ff6c92871b06b410b775aad1e2386d5a762`; mobile clipping was corrected at `076587a83803da401eac45ae701eba4df4504476`; reflow/navigation polish was corrected at `c2ac3f845bf54db4f4c571d1ed3d2db791082f50`; and final Theme-label spacing was corrected and visually rechecked at `e75da1e9204ded18ac03623e507451032c8ab3ad`. The exact pushed source tip was `09cc54d1a002760f80405df3370dc7b217972e75`; Azure PR 171 squash-merged it to `43d415cfb50717d94b69c07d7be648a12691f1f8`.
+- **PR / pipeline / environment:** Azure PR 171 completed through the required squash workflow. Automatic pipeline 233 (`20260724.10`) passed Build and Deploy for exact merge `43d415cfb50717d94b69c07d7be648a12691f1f8`. Redundant manual run 234 was canceled before it performed release work after the delayed automatic run became visible; it is not failed release evidence.
+- **Production state:** Deployed and production-verified with `PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED` still at its default `false`. The new protected route therefore remains the intended neutral 404; no enablement has occurred.
 - **Visual authority and status:** Owner-accepted direction in `PS-SLATE-STUDIO-IA-001` documents 04, 07, and 10 plus `visual-authority/slice-1/ASSET_MANIFEST.md`. Corrected-candidate browser evidence is recorded under `C:\Users\peter\.codex\visualizations\2026\07\24\019f93d2-a0b8-7f00-ae4e-381a394e2fde\` as `studio-slice1-corrected-desktop-light.jpg`, `studio-slice1-corrected-desktop-dark.jpg`, `studio-slice1-corrected-desktop-light-1200.jpg`, `studio-slice1-corrected-desktop-dark-1200.jpg`, `studio-slice1-corrected-bottom-light.jpg`, `studio-slice1-corrected-mobile-390-light.jpg`, `studio-slice1-corrected-mobile-390-dark.jpg`, `studio-slice1-corrected-reflow-640-dark.png`, and `studio-slice1-final-mobile-320-dark.png`.
 - **Homepage product projection:** Not Applicable for this slice. The logged-out homepage does not present Build Your Future as live, and this branch does not change `/`, the homepage shell, or any public product projection.
 - **Pete / designated session manager visual acceptance:** Satisfied. Pete instructed the team to move forward while scrutinizing visual implementation; the designated manager completed that scrutiny against the corrected build and returned **Pass**.
 - **Designated session manager:** Active ChatGPT Work/Codex task.
-- **Manager handoff status and next receiver:** PR-ready. Await explicit manager action to open the Azure pull request; no additional technical or visual review is required unless the branch changes.
+- **Manager handoff status and next receiver:** Released and closed. The next Studio delivery unit is the separately governed Slice 2 supported-read-model and visual-authority architecture; it does not reopen Slice 1 or enable its flag.
 - **Lane owner and self-managed authority:** Sole implementation writer retains ownership for review corrections.
 - **Self-certification:** **Pass** - focused tests, regressions, privacy checks, static accessibility checks, route-local no-JavaScript behavior, corrected browser evidence, remote equality, final diff verification, and final visual-product acceptance pass.
 - **Complete-diff review:** Completed by the writer; no out-of-scope runtime surface, migration, API, service, storage, public route, or shared-governance file was changed.
-- **Acceptance requested:** None remaining for implementation handoff. The branch is PR-ready; no PR, deployment, enablement, or release action has yet occurred.
+- **Acceptance requested:** None remaining for Slice 1 release. Production enablement remains a separate future owner decision.
 
 ## B. What changed technically
 
@@ -31,7 +31,7 @@
 
 ## C. What this means in plain English
 
-A signed-in member can reach the private Build Your Future frame once a future owner enablement decision turns on its flag. They can orient themselves in Studio, return to Workshop, go to Community, and see that this early workspace is not connected to Board content or a published Slate yet. The page does not pretend that any notes, editing, or public output exist.
+The Slice 1 code is deployed safely but remains intentionally hidden behind its default-off flag. A signed-in member can reach the private Build Your Future frame only after a future owner enablement decision. Nothing currently claims that Board content, editing, or public output exists.
 
 ## D. What the website or member can do now
 
@@ -55,6 +55,21 @@ This is the bounded first implementation of the work-first covenant: Journal pre
 - Final focused verification through `e75da1e9204ded18ac03623e507451032c8ab3ad` - **12/12 passed**, exact Azure remote match, and clean final diff.
 - `git diff --check` - passed for tracked changes. The final all-file whitespace check is repeated after staging before commit.
 
+### Release and production verification
+
+- Azure PR 171 squash-merged source
+  `09cc54d1a002760f80405df3370dc7b217972e75` at exact main commit
+  `43d415cfb50717d94b69c07d7be648a12691f1f8`.
+- Automatic pipeline 233 (`20260724.10`) completed with Build and Deploy
+  succeeded for that exact merge.
+- Canonical production checks returned 200 for `/` and
+  `/interview-studio`, the expected 302 sign-in return for `/app`, and the
+  intended default-off 404 for `/app/studio/build-your-future`.
+- The deployed versioned Studio stylesheet returned 200 and contained the
+  accepted narrow-reflow start alignment and Theme spacing correction.
+- The public Interview Studio route, audio behavior, and assets were not
+  modified by this slice.
+
 ### Contract and privacy checks
 
 Focused tests prove flag-off no identity/template asset exposure; the exact signed-out return; private no-store; two-member display-name isolation; no opaque owner key in rendered HTML; no browser-supplied published-Slate URL; payload-free identity-storage recovery; GET-only route registration; and no member identity in the denied template state.
@@ -73,12 +88,19 @@ Corrected browser checks confirm no page-level overflow, no console logs, an off
 2. The admitted-empty visual direction is not a member-path state. It is correctly excluded until a later authorized supported-item contract returns a successful zero result.
 3. The `denied` template is structurally tested but no current Slice 1 authorization source produces that condition; no simulated member denial is represented as live behavior.
 4. Technical review, corrected-candidate browser verification, and Pete/manager final visual-product acceptance pass.
-5. Production enablement, deployment, and live verification are explicitly out of scope. The flag stays off after any eventual deployment until a separate owner decision.
+5. Deployment and default-off live verification are complete. Production
+   enablement remains out of scope and requires a separate owner decision.
 
 ## H. Clear next step
 
-The exact corrected branch is ready for an Azure pull request using the required squash workflow once the designated manager initiates that step. Do not deploy or enable the default-off flag merely because the branch is PR-ready.
+Close Slice 1 and begin only the separately governed Slice 2 architecture:
+define the supported read model and have ChatGPT create any new or materially
+revised visual authority before runtime implementation. Do not enable Slice 1
+as part of that work.
 
 ## I. What Pete needs to do or decide
 
-No implementation or visual decision remains. Pete's next future decision is production enablement after merge/deployment evidence; that decision is separate and is not requested here.
+No Slice 1 implementation or release decision remains. Pete's next Studio
+visual decision is to review and lock ChatGPT-created Slice 2 authority. Slice
+1 production enablement remains a separate future decision and is not requested
+here.

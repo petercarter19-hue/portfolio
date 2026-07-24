@@ -245,12 +245,16 @@ class LeanDeliveryPolicyTests(unittest.TestCase):
         for required in (
             "Register owner",
             "completed runtime implementation slice",
-            "0 of 4 since policy start",
+            "1 of 4 since policy start",
             "2026-10-24",
             "Do not recursively create a\n   new audit",
             "Focused targeted audit",
             "`Pass` - 36/36 focused tests",
             "does not\n  increment or reset",
+            "PS-SLATE-STUDIO-SLICE-1-001",
+            "Azure PR 171",
+            "Pipeline:** automatic run 233",
+            "default-off 404",
         ):
             self.assertIn(required, register)
         for required in (
@@ -275,6 +279,45 @@ class LeanDeliveryPolicyTests(unittest.TestCase):
                 self.assertIn("central Terra", body)
                 self.assertIn("central Sol High", body)
                 self.assertRegex(body, r"corrected\s+candidate")
+
+    def test_studio_slice1_release_closeout_supports_the_runtime_counter(self):
+        completion = _read(
+            "docs",
+            "initiatives",
+            "PS-SLATE-STUDIO-SLICE-1-001",
+            "OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        )
+        state = _read("docs", "governance", "CURRENT_STATE.md")
+        active = _read("docs", "governance", "ACTIVE_INITIATIVES.md")
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+
+        for document_name, body in (
+            ("completion", completion),
+            ("current state", state),
+            ("active initiatives", active),
+            ("current baseline", baseline),
+        ):
+            with self.subTest(document=document_name):
+                self.assertIn(
+                    "43d415cfb50717d94b69c07d7be648a12691f1f8",
+                    body,
+                )
+                self.assertIn("PR 171", body)
+                self.assertIn("pipeline 233", body)
+                self.assertRegex(body, r"(?i)default-off")
+
+        self.assertIn("Released Pass", completion)
+        self.assertNotIn("No PR opened", completion)
+        self.assertNotIn("Not deployed", completion)
+        self.assertNotIn("No Slice 1 runtime branch exists yet", active)
+        self.assertNotIn("| Slate Studio Slice 1 |", active)
+        self.assertNotIn("assigned after governance merge", active)
+        self.assertNotIn(
+            "later the default-off protected Build Your Future shell/frame",
+            active,
+        )
+        self.assertIn("slate_studio_slice1_pr: 171", baseline)
+        self.assertIn("slate_studio_slice1_pipeline: 233", baseline)
 
 
 class BaselineCoherenceTests(unittest.TestCase):
@@ -1012,6 +1055,49 @@ class BaselineCoherenceTests(unittest.TestCase):
             "do not send it to another premium model",
         ):
             self.assertIn(expected, routing)
+
+    def test_chatgpt_is_the_sole_visual_authority_creation_lane(self):
+        routing = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")
+        visual_standard = _read(
+            "docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"
+        )
+        decision_log = _read("docs", "governance", "DECISIONS.md")
+        package = _read(
+            "docs", "initiatives", "PS-AI-OPS-VISUAL-AUTHORITY-001",
+            "README.md"
+        )
+
+        for relative_path in (
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/AI_WORKFLOW.md",
+            "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+            "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                self.assertIn("ChatGPT", body)
+                self.assertRegex(body, r"(?i)sole (creator|creation lane)")
+
+        controlling_surfaces = (
+            routing, visual_standard, decision_log, package,
+            _read("docs", "AI_WORKFLOW.md"),
+            _read("AGENTS.md"),
+            _read("CLAUDE.md"),
+        )
+        for body in controlling_surfaces:
+            self.assertRegex(
+                body, r"(?i)(existing Pete-locked|authorities Pete locked)"
+            )
+            self.assertRegex(body, r"(?i)implement")
+            self.assertRegex(body, r"(?i)evidence|screenshot")
+            self.assertRegex(body, r"(?i)non-material")
+            self.assertRegex(
+                body,
+                r"(?is)return(?:s|ed)?.{0,120}?"
+                r"\bto\s+(?:the\s+)?ChatGPT",
+            )
+            self.assertIn("Pete", body)
 
     def test_projects_is_planned_connected_and_not_claimed_live(self):
         package = _read(

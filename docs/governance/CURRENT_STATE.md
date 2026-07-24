@@ -571,23 +571,32 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   Community connects selected output. No surface becomes a competing truth
   store, and AI remains optional, source-grounded, proposal-only, and
   non-authoritative.
-- This completed governance release activates only the future default-off protected
-  `/app/studio/build-your-future` shell and frame. It does not implement, merge,
-  deploy, enable, or make that route live. The runtime writer and fresh
-  review-only reviewer are assigned only after the governance closeout merges
-  to Azure `origin/main`.
-- Current live evidence remains honest: signed-out `/app` redirects to sign-in;
-  `/app/studio/build-your-future` returns 404; and the released public
-  `/interview-studio` remains unchanged. Its name, route, browser-local
-  behavior, truth boundary, visual authority, and homepage parity are not
-  authorized for rename or restructure.
-- Slice 1 may add only its default-off flag, protected route and finite
+- Slice 1 source `09cc54d1a002760f80405df3370dc7b217972e75`
+  squash-merged through Azure PR 171 at
+  `43d415cfb50717d94b69c07d7be648a12691f1f8`. Automatic pipeline 233
+  (`20260724.10`) passed Build and Deploy for that exact merge. Redundant
+  manual run 234 was canceled before release work after the delayed automatic
+  run became visible; it is not failed release evidence.
+- Slice 1 is deployed but remains default-off. Canonical production checks
+  returned 200 for `/` and `/interview-studio`, the expected 302 sign-in return
+  for `/app`, and the intended 404 for
+  `/app/studio/build-your-future`. The deployed Studio stylesheet returned 200
+  and contains the accepted narrow-reflow and Theme-spacing corrections.
+- The release added only its default-off flag, protected route and finite
   server-derived frame contract, route-local template/static assets, bounded
-  tests, and package-local evidence. It may not change `/app` selection, Owner
-  Home, Journal, Community, Capture, public Interview Studio, public Slate,
-  homepage, shared services, schema, migrations, deployment configuration,
-  Board persistence/editing, experiments, AI/practice grounding, publishing,
+  tests, and package evidence. It did not change `/app` selection, Owner Home,
+  Journal, Community, Capture, public Interview Studio, public Slate, homepage,
+  shared services, schema, migrations, deployment configuration, Board
+  persistence/editing, experiments, AI/practice grounding, publishing,
   Community pulse, or public alignment.
+- The current public `/interview-studio` remains unchanged. Its name, route,
+  browser-local behavior, truth boundary, visual authority, audio behavior, and
+  homepage parity are not authorized for rename or restructure by Studio Slice
+  1 or Slice 2.
+- The next Studio unit is Slice 2 architecture: establish the supported
+  owner-scoped read model before a populated Board, then create new or
+  materially revised visual authority through ChatGPT for Pete to lock. No
+  Slice 2 runtime implementation or Slice 1 enablement is yet authorized.
 
 ## Required release evidence
 

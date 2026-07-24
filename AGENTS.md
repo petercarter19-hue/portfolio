@@ -21,6 +21,7 @@ Read [AI_WORKFLOW.md](docs/AI_WORKFLOW.md) before material work and use [AI_MODE
 - Writers are self-managed for bounded implementation, testing, documentation, and handoff. Product acceptance, visual acceptance, deployment authority, and scope changes remain with the owner or designated manager.
 - Keep work on a short-lived task branch. Never push directly to `main`. Handoffs must identify the exact branch, commit, changed files, tests, and remaining decisions.
 - Follow the lean delivery policy in `docs/AI_WORKFLOW.md`: perform each distinct responsibility once, use architecture and independent review only when their defined risk triggers apply, and retain the required tests, acceptance, release, and audit evidence. Packages name stable roles; `docs/AI_MODEL_AND_ROLE_ROUTING.md` is the central model-version authority.
+- Owner decision, 2026-07-24: ChatGPT is the sole creator of new or materially revised PeerSlate production-intent visual authority. Existing Pete-locked authorities remain valid until materially revised. Codex and Claude writers may implement the exact locked authority, capture implementation evidence, and make documented non-material accessibility, truth, and reflow adaptations, but they may not originate or substitute visual designs. A material visual-direction change returns to the ChatGPT visual-creation lane and Pete for a new exact lock before implementation continues.
 
 ## Always-on product and trust invariants
 

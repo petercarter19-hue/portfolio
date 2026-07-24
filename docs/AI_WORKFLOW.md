@@ -282,6 +282,20 @@ mockup, storyboard, or walkthrough is a binding minimum: implementation must be
 recognizably the same interaction model and match or exceed its hierarchy,
 composition, clarity, and finish.
 
+ChatGPT is the sole creation lane for new or materially revised PeerSlate
+production-intent visual authority. It creates or revises the concept, mockup,
+responsive/state set, style exploration, or image asset; Pete selects and locks
+the exact durable authority. Authorities Pete locked before this 2026-07-24
+decision remain valid until a material revision is needed. Codex and Claude
+writers implement the authority, capture browser evidence, report mismatches,
+and may make documented non-material adaptations for semantic structure, focus
+visibility, WCAG contrast, touch targets, reduced motion, truthful state wiring,
+or text reflow. Those adaptations do not change the dominant object/action,
+composition, hierarchy, typography family, color language, or responsive
+interaction model. A change to one of those visual-direction controls is
+material and returns to ChatGPT and Pete for a revised exact lock. This does not
+add a duplicate reviewer or visual pass.
+
 The writer must return named desktop/mobile and applicable focus, 200% zoom,
 reduced-motion, long-content, processing, failure, and recovery evidence plus a
 parity/deviation summary and self-certification. Pete gives final visual

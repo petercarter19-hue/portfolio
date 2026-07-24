@@ -135,7 +135,8 @@ real architecture question.
 ## Visual workflow
 
 ```text
-Pete selects one exact production-intent visual authority
+ChatGPT creates the complete production-intent visual and state set
+→ Pete selects and locks one exact durable authority
 → manager records interaction, truth, and accessibility contract
 → one writer implements and compares the real build at required states/viewports
 → one reviewer only if a defined risk trigger applies
@@ -144,9 +145,22 @@ Pete selects one exact production-intent visual authority
 → Azure release evidence and live verification
 ```
 
-Do not create a competing visual authority by having multiple agents redesign
-the same screen. A visual acceptance does not replace accessibility, truth,
-security/privacy, or release checks.
+ChatGPT is the sole visual-creation surface for new or materially revised
+PeerSlate authority. This rule covers concepts, mockups, storyboards, responsive
+and state sets, style exploration, and image generation or editing. Authorities
+Pete locked before 2026-07-24 remain valid until materially revised. Codex and
+Claude implementers may translate the exact locked authority into code, capture
+implementation screenshots, report parity, usability, truth, or accessibility
+findings, and make documented non-material adaptations for semantic structure,
+focus, WCAG contrast, touch targets, reduced motion, truthful state wiring, or
+text reflow. Those evidence and implementation activities are not new visual
+design. Claude Chat, Co-Work, Code, and Design may not originate or substitute
+the visual authority. A change to composition, hierarchy, dominant
+object/action, typography family, color language, or responsive interaction
+model is material and returns to ChatGPT and Pete for a revised exact lock.
+
+A visual acceptance does not replace accessibility, truth, security/privacy, or
+release checks.
 
 ## Handoff requirements
 
@@ -182,3 +196,8 @@ Every substantial handoff contains:
   periodically verified model-version authority.
 - **PS-AI-OPS-010:** Cross-vendor work is used only for a bounded independent
   risk question, never to duplicate the delivery route.
+- **PS-AI-OPS-011:** ChatGPT is the sole creator of new or materially revised
+  production-intent visual authority. Existing Pete-locked authorities remain
+  valid; implementation/review agents may compare and make documented
+  non-material accessibility, truth, and reflow adaptations, but may not create
+  a competing or substitute design.

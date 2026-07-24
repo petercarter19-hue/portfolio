@@ -7,13 +7,12 @@ and `PS-CAPTURE-PHOTO-LIFECYCLE-001` (PRs 107/108/109, pipelines 157/158/160).
 Fifteen merged pull requests in the 103-119 range were absent from this record
 entirely. Both defects are corrected below._
 
-_Updated 2026-07-24 for the owner-activated, Codex-manager-accepted work-first
-Slate Studio Slice 1 governance gate, after the flag-off Photo experience release, default-off
-Owner Home backend release, live-verified 5A-light/5C-dark Interview Studio
-release, exact-authority Owner Home frontend activation, and the
-owner-authorized one-Journal architecture. Bible v2.9 and Roadmap v2.8 become
-the current work-first Studio, universal-Capture, Journal, trusted-return, AI,
-and future messaging authority through this governance release._
+_Updated 2026-07-24 after Slate Studio Slice 1 released and was verified
+default-off through Azure PR 171 and automatic pipeline 233. Slice 2 begins
+with the supported-read-model architecture and ChatGPT-created visual authority,
+not runtime implementation. Bible v2.9 and Roadmap v2.8 remain the current
+work-first Studio, universal-Capture, Journal, trusted-return, AI, and future
+messaging authority._
 
 ## Operating model
 
@@ -41,7 +40,7 @@ only for high-risk or expressly required packages.
 | Governance reconciliation | Claude Code sole session manager, designated 2026-07-21 | PS-GOV-TRUTH-RECONCILIATION-001 | the shared governance pointer records, the open-branch register, and the governance guardrail suite | any application code; the Bible, Roadmap, DOCUMENT_CONTROL, or DECISIONS; other packages' files; executing any branch or worktree deletion |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
-| Slate Studio Slice 1 | Current ChatGPT Work/Codex task as manager; one separate Codex writer and one fresh Codex reviewer assigned after governance merge | PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 | controlled governance activation now; later the default-off protected Build Your Future shell/frame and finite server-derived truth | `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio, public Slate, homepage, shared services, schema, migrations, deployment configuration, or later Slice capabilities |
+| Slate Studio Slice 2 architecture | Current ChatGPT Work/Codex task as architect/manager; no runtime writer assigned | PS-SLATE-STUDIO-IA-001; bounded Slice 2 package to be created after visual-governance merge | supported owner-scoped read model first; then ChatGPT-created visual authority for Pete to lock | runtime implementation, Slice 1 enablement, drag/edit/AI/publishing, `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio or its separate audio lane, public Slate, homepage, shared services, schema, migrations, or deployment configuration |
 
 ## Current active gate
 
@@ -468,8 +467,8 @@ briefs, contracts, decisions, and the flag-off boundary remain binding and
 unchanged.
 
 
-## PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 - governance released,
-runtime entry open
+## PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 - Slice 1 released
+default-off; Slice 2 architecture next
 
 - Source package: `docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md`; owner and
   manager gate: `11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md`.
@@ -486,18 +485,25 @@ runtime entry open
   (`20260724.6`) passed Build and Deploy. Live route verification preserved `/`
   and public Interview Studio at 200, protected `/app` at its signed-out
   redirect, and the future Build Your Future route at honest 404.
-- No Slice 1 runtime branch exists yet. After this closeout merges, the manager creates
-  `work/2026-07-24-slate-studio-slice-1-shell` from that exact `origin/main`
-  commit and assigns one separate Codex writer.
-- Runtime scope is a package-specific default-off flag, the protected
-  `/app/studio/build-your-future` route, a route-local signed-in shell/frame,
-  finite server-derived published-Slate truth, truthful unavailable and empty
-  states, bounded tests, visual/accessibility evidence, and package-local
-  closeout.
-- The current public Interview Studio remains unchanged. Board persistence or
-  editing, experiments, AI/practice grounding, publishing, Community pulse,
-  public alignment, schema/storage, and every other product surface remain
-  excluded.
-- After writer self-review and manager visual/product acceptance, one fresh
-  review-only Codex task reviews the complete diff. Corrections return to the
-  same writer. Production enablement remains a separate explicit owner gate.
+- Slice 1 source `09cc54d1a002760f80405df3370dc7b217972e75`
+  squash-merged through Azure PR 171 at
+  `43d415cfb50717d94b69c07d7be648a12691f1f8`. Automatic pipeline 233
+  (`20260724.10`) passed Build and Deploy.
+- Production verification passed with `/` and `/interview-studio` at 200,
+  `/app` at its expected 302 sign-in return, and the new protected Studio route
+  at its intended default-off 404. The deployed Studio stylesheet contains the
+  accepted reflow and Theme-spacing corrections.
+- Slice 1 is closed. Its flag stays off until a separate explicit owner
+  enablement decision.
+- Slice 2 begins with architecture only: define one supported owner-scoped read
+  model that can distinguish populated, true-empty, unavailable, and
+  missing/revoked-item states without copying canonical Moment or evidence
+  bodies into a second truth store.
+- Any new or materially revised Slice 2 visual authority is created through
+  ChatGPT and locked by Pete before runtime implementation. Existing
+  Pete-locked authority remains valid; Codex or Claude may later implement the
+  locked authority and make documented non-material accessibility/reflow
+  adaptations.
+- Slice 2 excludes drag persistence, editing, experiment creation, AI,
+  publishing, Slice 1 enablement, Interview Studio rename/restructure, and the
+  separate Interview Me audio lane.
