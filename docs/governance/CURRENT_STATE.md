@@ -559,16 +559,22 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - Direction branch `work/2026-07-22-slate-studio-direction` was synchronized
   with current Azure `origin/main` and records the accepted package at source
   `470295243c5cf1cf32da22392106bc06f1cee2f2`.
+- The final governance source
+  `1e26339a944b4a25fb5cd77db5e2ea736ab186af` squash-merged through Azure PR
+  168 at `f9f4637d4c54305ae33f3a3ca51d419af97a2569`. Automatic pipeline 229
+  (`20260724.6`) passed Build and Deploy for that exact merge. A redundant
+  manual run 230 was canceled after Azure's delayed listing revealed the
+  automatic run; it is not failed release evidence.
 - Bible v2.9 and Roadmap v2.8 make the relationship controlling: Journal
   preserves canonical member history; Slate Studio is the private work-first
   experiential center; the public Slate presents member-approved output; and
   Community connects selected output. No surface becomes a competing truth
   store, and AI remains optional, source-grounded, proposal-only, and
   non-authoritative.
-- This governance release activates only the future default-off protected
+- This completed governance release activates only the future default-off protected
   `/app/studio/build-your-future` shell and frame. It does not implement, merge,
   deploy, enable, or make that route live. The runtime writer and fresh
-  review-only reviewer are assigned only after this governance release merges
+  review-only reviewer are assigned only after the governance closeout merges
   to Azure `origin/main`.
 - Current live evidence remains honest: signed-out `/app` redirects to sign-in;
   `/app/studio/build-your-future` returns 404; and the released public

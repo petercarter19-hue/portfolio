@@ -10,9 +10,10 @@ Fable/Sonnet/Opus/Claude chain is historical and is not a dependency when Pete
 is running the work in Codex. See [11](11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md).
 **Branch:** `work/2026-07-22-slate-studio-direction` from `origin/main` at
 `e1272220f539f41810698855341b9399b14ebd73`.
-**Status:** SLICE 1 OWNER-ACTIVATED AND MANAGER-ACCEPTED — controlled
-governance activation pending. **No runtime branch starts until that governance
-change merges to Azure `origin/main`.**
+**Status:** SLICE 1 GOVERNANCE RELEASED. Azure PR 168 squash-merged at
+`f9f4637d4c54305ae33f3a3ca51d419af97a2569`; automatic pipeline 229
+(`20260724.6`) passed Build and Deploy. The bounded runtime entry gate opens
+after the governance closeout merges.
 
 ## What this package is
 
@@ -37,12 +38,12 @@ The authoritative statement of the direction is
 | D3 | Studio IA package definition | direction/architecture complete in 06 and manager-accepted in 11 |
 | D4 | Candidate idea inventory and dispositions | current inventory complete; reconciled with the 2026-07-23 owner decisions (03) |
 | D5 | Sequencing recommendation | incremental storyboard and one-slice-at-a-time roadmap complete for this direction checkpoint in 04 |
-| D6 | Bounded first implementation wave | Slice 1 activated by Pete and accepted by the Codex manager in 11; controlled governance merge pending |
+| D6 | Bounded first implementation wave | Slice 1 activated by Pete and accepted by the Codex manager in 11; governance released through PR 168/pipeline 229 |
 | D7 | Production-intent prototype brief | original desktop light/dark authority is hash-pinned in 04; owner-accepted Slice 1 responsive/state direction is preserved and hash-pinned under `visual-authority/slice-1/`; implementation proof remains |
 | Handoff | Owner visual lock completion and new-session continuation | ready in 05; exact final pushed branch tip is supplied in the owner handoff response |
 | Closeout | Slice 1 visual-direction acceptance and current handoff | current in 10 and superseded for activation/roles by 11 |
-| Activation | Owner activation and Codex manager gate | accepted in 11; runtime entry waits for controlled governance merge |
-| Governance release report | Bible v2.9, Roadmap v2.8, pointer updates, and validation | in `GOVERNANCE_ACTIVATION_COMPLETION_REPORT.md`; Azure PR/pipeline pending |
+| Activation | Owner activation and Codex manager gate | accepted in 11; governance released through PR 168/pipeline 229 |
+| Governance release report | Bible v2.9, Roadmap v2.8, pointer updates, and validation | complete in `GOVERNANCE_ACTIVATION_COMPLETION_REPORT.md`; closeout merge pending |
 
 ## Inputs
 

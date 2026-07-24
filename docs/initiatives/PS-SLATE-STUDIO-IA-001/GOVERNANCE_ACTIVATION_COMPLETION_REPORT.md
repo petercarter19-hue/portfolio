@@ -4,14 +4,17 @@
 
 - Package: `PS-SLATE-STUDIO-IA-001` governance activation for
   `PS-SLATE-STUDIO-SLICE-1-001`.
-- Status: In Progress - manager gate passed; Azure PR, squash merge, and
-  automatic pipeline remain.
+- Status: Complete - manager gate, Azure squash merge, automatic pipeline, and
+  live boundary verification passed.
 - Branch and authority content commit:
   `work/2026-07-22-slate-studio-direction` at
   `36f09294de465551d92586e2fc5f3a74612eec2a`.
 - Base: Azure `origin/main` at
   `a14033ca6e578fefa8ca43adaa2d49135417b165`.
-- PR / pipeline / environment: pending.
+- PR / pipeline / environment: Azure PR 168; squash merge
+  `f9f4637d4c54305ae33f3a3ca51d419af97a2569`; automatic pipeline 229
+  (`20260724.6`) passed Build and Deploy. Redundant manual run 230 was canceled
+  after the delayed automatic-run listing became visible.
 - Production state: unchanged. Slice 1 is not implemented, deployed, enabled,
   or live.
 - Visual authority and status: Accepted for Slice 1 direction; runtime
@@ -27,8 +30,7 @@
   post-merge `origin/main`.
 - Lane owner and self-managed authority: current Codex task owns this governance
   release only; the later writer owns only the bounded Slice 1 runtime branch.
-- Self-certification: Pass for PR readiness; Conditional for release until
-  Azure merge and pipeline evidence exist.
+- Self-certification: Pass.
 - Complete-diff review: Passed for the authority content commit.
 - Acceptance requested: governance release.
 
@@ -88,7 +90,11 @@ forward.
 - `git diff --check` passed.
 - Live pre-implementation evidence: `/app` redirected signed-out requests to
   sign-in; `/app/studio/build-your-future` returned 404; public
-  `/interview-studio` remained available.
+  `/interview-studio` remained available. Post-deploy checks also returned 200
+  for `/`.
+- Azure release evidence: PR 168 completed with the required squash strategy;
+  automatic pipeline 229 passed Build and Deploy for the exact merge
+  `f9f4637d4c54305ae33f3a3ca51d419af97a2569`.
 - Evidence limit: the bundled environment had no LibreOffice renderer. A
   bounded Microsoft Word PDF-export attempt did not complete, so this report
   does not claim fresh page-by-page rendered visual QA for the two governance
@@ -96,8 +102,8 @@ forward.
 
 ## G. Known gaps, risks, and exclusions
 
-- Azure PR, squash merge, automatic pipeline, and post-merge pointer
-  verification remain.
+- This closeout commit must merge before the runtime writer branch is created,
+  so the repository's current status remains accurate.
 - No runtime implementation or production enablement is authorized by a local
   commit alone.
 - Slice 1 excludes `/app` selection, Owner Home, Journal, Community, Capture,
@@ -111,12 +117,11 @@ forward.
 
 ## H. Clear next step
 
-Open and complete the Azure governance pull request. After its exact squash
-merge and automatic pipeline pass, create
+Merge this governance closeout. Then create
 `work/2026-07-24-slate-studio-slice-1-shell` from the resulting
 `origin/main` and assign one separate Codex writer.
 
 ## I. What Pete needs to do or decide
 
-None for the governance PR. Pete's next required decision is runtime
+None for governance closeout. Pete's next required decision is runtime
 visual/product acceptance after the writer supplies real browser evidence.

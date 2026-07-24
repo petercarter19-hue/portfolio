@@ -171,6 +171,13 @@ authority:
   photo_proof_readiness_pr: 125
   photo_proof_readiness_pipeline: 179
   photo_proof_readiness_redundant_pipeline: 180
+  slate_studio_governance_source_commit: "1e26339a944b4a25fb5cd77db5e2ea736ab186af"
+  slate_studio_governance_merge_commit: "f9f4637d4c54305ae33f3a3ca51d419af97a2569"
+  slate_studio_governance_pr: 168
+  slate_studio_governance_pipeline: 229
+  slate_studio_governance_pipeline_build: "20260724.6"
+  slate_studio_governance_redundant_pipeline: 230
+  slate_studio_governance_redundant_pipeline_result: "canceled_after_automatic_run_became_visible"
   interview_studio_asset_signature: "studio-5a5c-4"
   production_url: "https://peerslate.com"
   deployed_main_commit: "74a7427e775d3b49df839fbecc1ffa20c545c471"
@@ -313,7 +320,7 @@ active_packages:
     lane: work_first_slate_studio_slice_1_activation
     roadmap_phase: "Bounded cross-phase Phase 4/Phase 10 shell-and-frame slice"
     package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
-    status: "owner_activated_manager_accepted_governance_release_pending"
+    status: "governance_released_runtime_entry_open_writer_unassigned"
 
 planned_packages:
   - id: PS-SHELL-001
@@ -377,7 +384,7 @@ planned_packages:
     package_path: "docs/initiatives/PS-ASK-PETE-AI-001/README.md"
     status: "public_typed_slice_live_future_refinement_not_active"
 
-next_gate: "Merge this governance activation through an Azure DevOps squash pull request and verify its automatic pipeline. From that exact post-governance origin/main tip, create work/2026-07-24-slate-studio-slice-1-shell and assign exactly one separate Codex writer. The writer may add only PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED in app.py, the protected /app/studio/build-your-future route and finite server-derived view model in auth_routes.py, the package-named route-local template/static assets, bounded tests, and package-local evidence. Default-off must be neutral 404. The lane must not change /app selection, Owner Home, Journal, Community, Capture, public Interview Studio, public Slate, homepage, shared services, schema, migrations, deployment configuration, or any later Slice capability. After writer self-review and manager visual/product acceptance, assign one fresh review-only Codex reviewer and return corrections to the same writer. Journal private-core work continues independently under PS-JOURNAL-001. Production enablement is a separate explicit owner decision. The public GitHub backup remains on hold pending explicit owner approval."
+next_gate: "After this governance closeout merges, create work/2026-07-24-slate-studio-slice-1-shell from that exact origin/main and assign exactly one separate Codex writer. The writer may add only PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED in app.py, the protected /app/studio/build-your-future route and finite server-derived view model in auth_routes.py, the package-named route-local template/static assets, bounded tests, and package-local evidence. Default-off must be neutral 404. The lane must not change /app selection, Owner Home, Journal, Community, Capture, public Interview Studio, public Slate, homepage, shared services, schema, migrations, deployment configuration, or any later Slice capability. After writer self-review and manager visual/product acceptance, assign one fresh review-only Codex reviewer and return corrections to the same writer. Journal private-core work continues independently under PS-JOURNAL-001. Production enablement is a separate explicit owner decision. The public GitHub backup remains on hold pending explicit owner approval."
 
 superseded_documents:
   - "PeerSlate_Company_and_Product_Bible_v1.1.docx"

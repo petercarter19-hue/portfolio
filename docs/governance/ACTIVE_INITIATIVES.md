@@ -468,8 +468,8 @@ briefs, contracts, decisions, and the flag-off boundary remain binding and
 unchanged.
 
 
-## PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 - owner activated,
-manager accepted, governance release pending
+## PS-SLATE-STUDIO-IA-001 / PS-SLATE-STUDIO-SLICE-1-001 - governance released,
+runtime entry open
 
 - Source package: `docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md`; owner and
   manager gate: `11_OWNER_ACTIVATION_AND_CODEX_MANAGER_GATE.md`.
@@ -480,8 +480,13 @@ manager accepted, governance release pending
   governance release. It makes Bible v2.9 and Roadmap v2.8 current and records
   the work-first relationship: Journal preserves; Studio activates and shapes;
   the public Slate presents; Community connects selected output.
-- No Slice 1 runtime branch exists yet. After this governance change
-  squash-merges and its automatic Azure pipeline passes, the manager creates
+- Governance source `1e26339a944b4a25fb5cd77db5e2ea736ab186af`
+  squash-merged through Azure PR 168 at
+  `f9f4637d4c54305ae33f3a3ca51d419af97a2569`. Automatic pipeline 229
+  (`20260724.6`) passed Build and Deploy. Live route verification preserved `/`
+  and public Interview Studio at 200, protected `/app` at its signed-out
+  redirect, and the future Build Your Future route at honest 404.
+- No Slice 1 runtime branch exists yet. After this closeout merges, the manager creates
   `work/2026-07-24-slate-studio-slice-1-shell` from that exact `origin/main`
   commit and assigns one separate Codex writer.
 - Runtime scope is a package-specific default-off flag, the protected
