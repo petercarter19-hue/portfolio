@@ -482,11 +482,21 @@ class ReviewSchemaTests(unittest.TestCase):
         self.assertEqual(sum(item['score'] for item in review['dimensions']), 82)
         self.assertEqual(review['star']['action']['status'], 'strong')
 
-    def test_inconsistent_overall_score_is_rejected(self):
+    def test_inconsistent_overall_score_is_healed_to_the_dimension_total(self):
+        """A routine model arithmetic slip must not discard a complete review.
+
+        The five dimension scores are the itemized breakdown the reader sees, and
+        the prompt already requires overallScore to equal their exact sum. When a
+        capable model still writes an overall that is off by a point or two, the
+        review is healed to the true dimension total (here 17+16+16+16+17 = 82)
+        rather than rejected as a 502. Every dimension stays clamped to 0-20, so a
+        healed total is always a sane 0-100.
+        """
         raw = valid_review()
-        raw['overallScore'] = 90
-        with self.assertRaisesRegex(ValueError, 'dimension total'):
-            validate_interview_review(raw, 100, {'modernization'})
+        raw['overallScore'] = 90  # dimensions actually sum to 82
+        review = validate_interview_review(raw, 100, {'modernization'})
+        self.assertEqual(review['overallScore'], 82)
+        self.assertEqual(sum(item['score'] for item in review['dimensions']), 82)
 
     def test_dimension_over_twenty_is_rejected(self):
         raw = valid_review()
@@ -951,22 +961,25 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertIn('reason=no_json_object', '\n'.join(logged.output))
 
-    def test_score_arithmetic_mismatch_is_its_own_distinguishable_cause(self):
+    def test_score_arithmetic_mismatch_is_healed_rather_than_failed(self):
         """Dimension scores that do not sum to overallScore.
 
-        This one is genuinely stochastic, unlike the empty-field cause, so the
-        two must not be conflated in the logs.
+        This slip is genuinely stochastic, and it used to sink the entire review
+        as a 502. The itemized dimension scores are the source of truth the reader
+        sees, so the endpoint now heals the overall to their true sum (5 x 12 = 60)
+        and delivers the coaching instead of discarding it.
         """
-        with self.assertLogs(app.logger, level='WARNING') as logged:
-            response = self.post_review(json.dumps(review_payload(overallScore=77)))
-        self.assertEqual(response.status_code, 502)
-        self.assertIn('reason=score_arithmetic_mismatch', '\n'.join(logged.output))
+        response = self.post_review(json.dumps(review_payload(overallScore=77)))
+        self.assertEqual(response.status_code, 200)
+        review = response.get_json()['review']
+        self.assertEqual(review['overallScore'], 60)
+        self.assertEqual(sum(item['score'] for item in review['dimensions']), 60)
 
     def test_the_distinct_causes_produce_distinct_labels(self):
         seen = set()
         for reply, stop_reason in (
             (json.dumps(review_payload(verdict='')), 'end_turn'),
-            (json.dumps(review_payload(overallScore=77)), 'end_turn'),
+            (json.dumps(review_payload(star='nope')), 'end_turn'),
             (json.dumps(review_payload())[:400], 'max_tokens'),
             ('no json here at all', 'end_turn'),
         ):
@@ -985,7 +998,7 @@ class InterviewCoachingFailurePathTests(unittest.TestCase):
         model_sentinel = 'MODELREPLYSENTINEL'
         with self.assertLogs(app.logger, level='WARNING') as logged:
             self.post_review(
-                json.dumps(review_payload(verdict=model_sentinel, overallScore=77)),
+                json.dumps(review_payload(verdict=model_sentinel, improvements=[])),
                 answer=answer_sentinel,
             )
         line = '\n'.join(logged.output)
@@ -1297,7 +1310,6 @@ class InterviewFailureReasonTests(unittest.TestCase):
         source = (Path(__file__).parents[1] / 'app.py').read_text(encoding='utf-8')
         tree = ast.parse(source)
         watched = {
-            '_clamp_score',
             '_dimension_score',
             '_string_list',
             '_extract_json_object',

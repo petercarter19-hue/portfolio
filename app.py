@@ -1977,14 +1977,6 @@ INTERVIEW_STAR_PARTS = ('situation', 'task', 'action', 'result')
 INTERVIEW_STAR_STATUSES = ('strong', 'present', 'partial', 'missing')
 
 
-def _clamp_score(value):
-    """Coerce a model-provided score to an int in 0-100 or raise ValueError."""
-    score = int(value)
-    if score < 0 or score > 100:
-        raise ValueError('score out of range')
-    return score
-
-
 def _dimension_score(value):
     score = int(value)
     if score < 0 or score > 20:
@@ -2011,7 +2003,6 @@ def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None
         raise ValueError('review is not an object')
 
     review = {
-        'overallScore': _clamp_score(raw.get('overallScore')),
         'verdict': _strip_md(raw.get('verdict', ''))[:80],
         'encouragement': _strip_md(raw.get('encouragement', ''))[:300],
         'strengths': _string_list(raw.get('strengths', []), 4),
@@ -2062,8 +2053,20 @@ def validate_interview_review(raw, answer_length=None, allowed_evidence_ids=None
         raise ValueError('incomplete dimensions')
     order = {key: i for i, key in enumerate(INTERVIEW_REVIEW_DIMENSIONS)}
     review['dimensions'] = sorted(clean_dimensions, key=lambda d: order[d['key']])
-    if sum(item['score'] for item in review['dimensions']) != review['overallScore']:
-        raise ValueError('overall score does not equal dimension total')
+    # The five dimension scores are the transparent, itemized breakdown the
+    # reader actually sees -- each shown with its own rationale and next action --
+    # and the coaching prompt already requires overallScore to equal their exact
+    # sum. A capable model still slips that arithmetic on a meaningful fraction of
+    # otherwise-complete replies: dimensions that are individually valid, but an
+    # overall that is off by a point or two. Rejecting the entire review as a 502
+    # in that case throws away real, itemized coaching over a display-number
+    # mismatch, and it strikes non-deterministically -- the same "passes the clean
+    # fixture, fails on real output" failure class recorded twice already in
+    # docs/governance/CURRENT_STATE.md. Derive the overall from the parts so the
+    # number in the ring always equals the breakdown beneath it, rather than
+    # discarding the review. The individual scores remain clamped to 0-20 and all
+    # five dimensions are still required, so the healed total stays within 0-100.
+    review['overallScore'] = sum(item['score'] for item in review['dimensions'])
 
     star = raw.get('star')
     if not isinstance(star, dict):
@@ -2249,9 +2252,7 @@ INTERVIEW_FAILURE_REASONS = {
     'dimensions missing': 'incomplete_dimensions',
     'incomplete dimensions': 'incomplete_dimensions',
     'dimension explanation is incomplete': 'incomplete_dimensions',
-    'score out of range': 'score_out_of_range',
     'dimension score out of range': 'score_out_of_range',
-    'overall score does not equal dimension total': 'score_arithmetic_mismatch',
     'STAR assessment missing': 'invalid_star',
     'invalid STAR assessment': 'invalid_star',
     'STAR reason missing': 'invalid_star',
