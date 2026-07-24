@@ -610,8 +610,12 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 
 ## Page-purpose, AI evaluation, and authority format status (2026-07-24)
 
-- `PS-GOV-PAGE-PURPOSE-AI-EVAL-001` is an active documentation-only governance
-  lane. It does not make any product capability live.
+- `PS-GOV-PAGE-PURPOSE-AI-EVAL-001` is complete and released. Source
+  `f48ee990dfe7f19dfb6678600902076405c41433` squash-merged through Azure PR
+  173 at `3e79e2c5986e915ac3d2a17276b57f740c431f3c`; pipeline 236
+  (`20260724.13`) passed Build and Deploy. The lane and shared-governance
+  reservation are closed. The release changed no product capability or
+  application behavior.
 - Every future material visual authority must have Pete-approved
   page-purpose/non-redundancy inventory before visual lock. This is a governance
   gate, not visual authority by itself.

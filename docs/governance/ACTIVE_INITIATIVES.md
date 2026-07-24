@@ -11,8 +11,8 @@ _Updated 2026-07-24 after Slate Studio Slice 1 released and was verified
 default-off through Azure PR 171 and automatic pipeline 233. The later
 supported-read-model Slice 2 candidate is preserved/rejected/do-not-merge after
 Pete corrected Build Your Future to a future-facing Goal Board. The next
-Studio step is Pete approval of the page-purpose inventories followed by
-ChatGPT-created Workshop and Goal Board concepts, not runtime implementation.
+Studio step is ChatGPT-created Workshop and Goal Board concepts from the
+Pete-approved page-purpose inventories, not runtime implementation.
 Bible v2.9 and Roadmap v2.8 remain the current work-first Studio,
 universal-Capture, Journal, trusted-return, AI, and future messaging authority._
 
@@ -22,6 +22,12 @@ Workshop and Goal Board correction records, planned cross-product AI evaluation
 program, and controlling-Markdown/frozen-DOCX authority migration. It changes
 no runtime behavior. The old PS-GOV-TRUTH-RECONCILIATION-001 reservation is
 historical only; its branch no longer exists locally or on Azure._
+
+_Released 2026-07-24 through Azure PR 173 at squash merge
+`3e79e2c5986e915ac3d2a17276b57f740c431f3c`; pipeline 236
+(`20260724.13`) passed Build and Deploy. The governance lane is closed and its
+shared-file reservation is released. Both page-purpose inventories are
+Pete-approved; ChatGPT visual creation is the active Studio gate._
 
 ## Operating model
 
@@ -46,12 +52,25 @@ only for high-risk or expressly required packages.
 |---|---|---|---|---|
 | Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement and Owner Home sequencing (Interview homepage parity closed 2026-07-20) | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later universal-composer/Save Moment integration or explicit temporary exception, plus signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling the current source-only Photo path; rebuilding Voice; blending Owner Home work |
-| Page-purpose / AI-evaluation governance | Pete-authorized current ChatGPT Work/Codex governance lane; Codex sole documentation writer | PS-GOV-PAGE-PURPOSE-AI-EVAL-001 | named governance documents, Studio correction records, planned AI charter, and governance guardrail suite | application code, UI/visual assets, schema, migration, deployment, Interview Me audio lane, or product enablement |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
 | Workshop / Build Your Future visual definition | Current ChatGPT Work/Codex task as visual-governance manager; no runtime writer assigned | PS-SLATE-STUDIO-IA-001 owner correction plus Pete-approved Workshop and Build page-purpose inventories | ChatGPT creates the Workshop and two Goal Board concept sets; Pete scrutinizes and locks exact authority | runtime implementation, rejected Slice 2 reuse, Slice 1 enablement, Goal persistence/editing, AI/publishing, Projects implementation, `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio or its separate audio lane, public Slate, homepage, shared services, schema, migrations, or deployment configuration |
 
 ## Current active gate
+
+### PS-GOV-PAGE-PURPOSE-AI-EVAL-001 - complete, released, and lane closed
+
+- Source `f48ee990dfe7f19dfb6678600902076405c41433` squash-merged
+  through Azure PR 173 at
+  `3e79e2c5986e915ac3d2a17276b57f740c431f3c`.
+- Pipeline 236 (`20260724.13`) passed Build and Deploy. It was the single
+  manual run queued after the automatic main trigger did not materialize during
+  the bounded observation window.
+- This documentation-only release changed no runtime behavior, visual
+  authority, audio behavior, route, schema, migration, feature flag, or member
+  capability. The shared-governance reservation is released.
+- Pete approved both page-purpose inventories. ChatGPT visual creation and
+  scrutiny are next; exact visual lock remains a separate owner decision.
 
 PS-VOICE-001 is no longer an active gate. Pete and ChatGPT Work accepted the
 corrected implementation after Claude Code relinquished exact tip

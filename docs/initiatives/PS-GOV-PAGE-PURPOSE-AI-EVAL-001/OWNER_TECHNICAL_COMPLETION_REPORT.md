@@ -3,12 +3,16 @@
 ## A. Status
 
 - Package: PS-GOV-PAGE-PURPOSE-AI-EVAL-001
-- Status: Complete locally and owner accepted; Azure merge pending.
+- Status: Complete, owner accepted, squash-merged, and pipeline-verified.
 - Branch and commit: `codex/2026-07-24-page-purpose-markdown-governance` from
-  `be8fd7a60614ef78d8f016e3f35c87785776de1a`; no task commit, push, PR, merge,
-  pipeline, or deployment was requested or performed.
-- PR / pipeline / environment: Not applicable.
-- Production state: Unchanged.
+  `be8fd7a60614ef78d8f016e3f35c87785776de1a`; final source
+  `f48ee990dfe7f19dfb6678600902076405c41433`.
+- PR / pipeline / environment: Azure PR 173 squash-merged at
+  `3e79e2c5986e915ac3d2a17276b57f740c431f3c`; pipeline 236
+  (`20260724.13`) passed Build and Deploy.
+- Production state: Latest deployed main is
+  `3e79e2c5986e915ac3d2a17276b57f740c431f3c`; application behavior remains
+  the prior Slice 1 release because this package changed documentation only.
 - Visual authority and status: Not Applicable. The records add gates and future
   inventories only; they do not create or lock a visual.
 - Homepage product projection: Not Applicable.
@@ -18,8 +22,8 @@
   been selected or locked.
 - Designated session manager: Pete-authorized current ChatGPT Work/Codex
   governance lane.
-- Manager handoff status and next receiver: Ready for the parent manager's
-  review; active writer has not relinquished until that handoff is accepted.
+- Manager handoff status and next receiver: Governance lane closed. The next
+  ChatGPT visual-creation session receives the Pete-approved inventories.
 - Lane owner and self-managed authority: Codex sole documentation writer.
 - Self-certification: Passed. All relevant documentation/governance checks and
   the full site-rule suite pass using the repository virtual environment with
@@ -27,7 +31,7 @@
 - Complete-diff review: Passed; scope is documentation/governance only and no
   forbidden runtime or protected-content file is changed.
 - Acceptance requested: satisfied for the governance record and both
-  inventories; Azure merge evidence remains.
+  inventories.
 
 ## B. What changed technically
 
@@ -67,7 +71,7 @@ Bible v2.9/Roadmap v2.8 without changing either semantic version.
 
 ## F. Verification and validation
 
-Passed: `python -m unittest tests.test_governance_pointers` (36 tests) and
+Passed: `python -m unittest tests.test_governance_pointers` (38 tests) and
 `python -m unittest tests.test_site_rules` (11 tests). The site-rule suite used
 the repository virtual environment and a process-local non-secret
 `ANTHROPIC_API_KEY` test placeholder. The resulting guardrails cover frozen
@@ -79,12 +83,14 @@ hashes, including the Roadmap's joined nine-step core sequence. `git diff --chec
 `docs/knowledge/technical_skills.md` and both frozen DOCX files did not change
 passed in the final handoff check.
 
-No production verification or real-member validation applies because no runtime
-or deployment action occurred.
+Pipeline 236 deployed the documentation-only merge. Post-deploy checks returned
+200 for `/` and `/interview-studio`, the expected 302 for `/app`, and the
+intended default-off 404 for `/app/studio/build-your-future`. No real-member
+validation applies because no runtime behavior changed.
 
 ## G. Known gaps, risks, and exclusions
 
-The new Workshop and Goal Board inventories are owner-direction records, not
+The Workshop and Goal Board inventories are Pete-approved inputs, not
 Pete-approved visual locks. The AI charter intentionally selects no product
 model or provider and has no live prompt/program implementation. The format
 migration omits automatic Word TOC/page-field artifacts but otherwise preserves
@@ -93,14 +99,14 @@ Interview Me audio branch is excluded.
 
 ## H. Clear next step
 
-Parent manager reviews this documentation-only diff and, if accepted, chooses
-whether to commit/push it as the governance package. After Workshop, Build Your
-Future, and Projects purpose are settled, hold the owner-led AI product
-evaluation discussion before authorizing broad Ask Slate or advanced coaching.
+Start the ChatGPT visual-creation session using the approved Workshop and Build
+Your Future inventories. Scrutinize the concepts, obtain Pete's exact file/hash
+locks, then prepare separate bounded implementation-information packages
+without starting runtime implementation in that visual session.
 
 ## I. What Pete needs to do or decide
 
-- Approve the relevant Workshop/Build page-purpose inventory before ChatGPT
-  creates or Pete locks any future visual authority.
+- Scrutinize and select or combine the ChatGPT-created Workshop and Goal Board
+  concepts; approval of the inventories is already complete.
 - Later, participate in the AI product/evaluation dialogue and approve the
   first workflow's golden cases and launch threshold.

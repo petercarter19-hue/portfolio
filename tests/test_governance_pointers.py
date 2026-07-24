@@ -531,7 +531,6 @@ class BaselineCoherenceTests(unittest.TestCase):
             [
                 "PS-CAPTURE-MEDIA-001",
                 "PS-COMMUNITY-TABS-001",
-                "PS-GOV-PAGE-PURPOSE-AI-EVAL-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
                 "PS-SLATE-STUDIO-IA-001",
@@ -1581,6 +1580,53 @@ class PagePurposeAiAndMarkdownAuthorityTests(unittest.TestCase):
                 "next visual-definition gate",
             ):
                 self.assertIn(expected, normalized)
+
+    def test_visual_creation_kickoff_preserves_scope_and_parallel_claude_lane(self):
+        kickoff = _read(
+            "docs", "initiatives", "PS-SLATE-STUDIO-IA-001",
+            "15_CHATGPT_VISUAL_CREATION_AND_BOUNDED_PACKAGE_KICKOFF.md",
+        )
+        normalized = re.sub(r"\s+", " ", kickoff)
+        for expected in (
+            "ChatGPT is the sole creator",
+            "multiple purposefully different concepts",
+            "exactly two meaningfully different Goal Board directions",
+            "quiet professional whiteboard",
+            "editorial goal wall",
+            "Pete is the visual reviewer",
+            "prepare two separate packages",
+            "does not implement, merge, or enable Workshop or Build Your Future",
+            "Claude is still working on a separately assigned task",
+            "Treat that lane as active and protected",
+            "exact branch and pushed SHA",
+            "do not change public Interview Studio, Interview Me audio",
+            "f6c2b52763d50d0773f20294acacd8d8165e59da",
+        ):
+            self.assertIn(expected, normalized)
+
+    def test_page_purpose_governance_release_evidence_is_closed_and_exact(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        state = _read("docs", "governance", "CURRENT_STATE.md")
+        initiatives = _read("docs", "governance", "ACTIVE_INITIATIVES.md")
+        report = _read(
+            "docs", "initiatives", "PS-GOV-PAGE-PURPOSE-AI-EVAL-001",
+            "OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        )
+        for record in (baseline, state, initiatives, report):
+            for expected in (
+                "f48ee990dfe7f19dfb6678600902076405c41433",
+                "3e79e2c5986e915ac3d2a17276b57f740c431f3c",
+                "pipeline 236",
+            ):
+                self.assertIn(expected, record)
+        self.assertIn("page_purpose_ai_eval_pr: 173", baseline)
+        self.assertIn("PS-GOV-PAGE-PURPOSE-AI-EVAL-001", baseline.split(
+            "completed_packages:", 1
+        )[1].split("public_safe_slices:", 1)[0])
+        self.assertNotIn("PS-GOV-PAGE-PURPOSE-AI-EVAL-001", baseline.split(
+            "active_packages:", 1
+        )[1].split("planned_packages:", 1)[0])
+        self.assertIn("no runtime behavior changed", report.lower())
 
     def test_markdown_authority_and_frozen_docx_evidence_remain_exact(self):
         baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")

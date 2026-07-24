@@ -58,9 +58,10 @@ The authoritative statement of the direction is
 | Handoff | Owner visual lock completion and new-session continuation | ready in 05; exact final pushed branch tip is supplied in the owner handoff response |
 | Closeout | Slice 1 visual-direction acceptance and current handoff | current in 10 and superseded for activation/roles by 11 |
 | Activation | Owner activation and Codex manager gate | accepted in 11; governance released through PR 168/pipeline 229 |
-| Governance release report | Bible v2.9, Roadmap v2.8, pointer updates, and validation | complete in `GOVERNANCE_ACTIVATION_COMPLETION_REPORT.md`; closeout merge pending |
+| Governance release report | Bible v2.9, Roadmap v2.8, pointer updates, and validation | released through Azure PR 168/pipeline 229; report retained in `GOVERNANCE_ACTIVATION_COMPLETION_REPORT.md` |
 | Owner correction | Goal Board, Workshop, Projects, and rejected Slice 2 candidate record | current in 12; documentation only |
 | Page-purpose inventories | Workshop and Build Your Future non-redundancy decisions | Pete approved 13 and 14 on 2026-07-24; ChatGPT visual creation is next, but no visual is locked |
+| Visual-session kickoff | ChatGPT concept creation, scrutiny, Claude lane boundary, and separate bounded implementation-information packages | current in 15; no runtime authority |
 
 ## Inputs
 

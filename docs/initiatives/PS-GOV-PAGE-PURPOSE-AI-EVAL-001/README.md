@@ -1,10 +1,13 @@
 # PS-GOV-PAGE-PURPOSE-AI-EVAL-001 - page-purpose, AI evaluation, and Markdown authority governance
 
-**Status:** Documentation-only governance lane in progress.
+**Status:** Complete, released, and lane closed. Source
+`f48ee990dfe7f19dfb6678600902076405c41433` squash-merged through Azure PR
+173 at `3e79e2c5986e915ac3d2a17276b57f740c431f3c`; pipeline 236
+(`20260724.13`) passed Build and Deploy.
 **Owner:** Pete.
 **Designated manager:** Pete-authorized current ChatGPT Work/Codex governance
 lane.
-**Writer:** Codex sole documentation writer on
+**Writer:** Codex sole documentation writer on the deleted-after-merge branch
 `codex/2026-07-24-page-purpose-markdown-governance`.
 **Base:** `be8fd7a60614ef78d8f016e3f35c87785776de1a`.
 
@@ -20,10 +23,11 @@ versions.
 ## Non-goals
 
 No runtime code, route, UI, visual asset, visual lock, schema, migration,
-provider/model change, prompt deployment, feature flag, production resource,
-deployment, PR, or production verification is in scope. The separate Claude
-Interview Me audio lane remains untouched. `docs/knowledge/technical_skills.md`
-is forbidden and remains byte-for-byte unchanged.
+provider/model change, prompt deployment, feature flag, or production resource
+change was authorized. The documentation-only Azure PR/pipeline release did not
+change application behavior. The separate Claude Interview Me audio lane
+remained untouched. `docs/knowledge/technical_skills.md` was forbidden and
+remained byte-for-byte unchanged.
 
 ## Writable records
 
