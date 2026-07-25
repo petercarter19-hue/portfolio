@@ -84,11 +84,20 @@ when the specified role is unavailable.
 
 ## Current Claude routing
 
+Owner decision, 2026-07-25: architecture and independent review both use Opus 5;
+implementation uses Sonnet 5.
+
 | Stable role | Current choice | Use |
 |---|---|---|
-| Architect | **Claude Fable 5** | New or materially changed product, data, privacy, or technical architecture |
+| Architect | **Claude Opus 5** | New or materially changed product, data, privacy, or technical architecture |
 | Implementer | **Claude Sonnet 5** | Bounded Claude Code implementation, tests, documentation, corrections, and closeout |
-| Independent reviewer | **Claude Opus 4.8** | Exact-SHA, risk-triggered review and audit findings |
+| Independent reviewer | **Claude Opus 5** | Exact-SHA, risk-triggered review and audit findings |
+
+Architecture and review deliberately name the same model. That satisfies the
+role requirement but never satisfies independence on its own: a reviewer must
+receive a fresh context, a review-only brief, and the exact branch and SHA. Per
+PS-AI-OPS-006, reusing the architect's session or an unbounded task is not an
+independent review regardless of which model runs it.
 
 In Claude Code, confirm the resolved model with `/model` and `/status` before a
 major package or audit. Do not treat a remembered marketing nickname or an
@@ -137,6 +146,7 @@ real architecture question.
 ```text
 ChatGPT creates the complete production-intent visual and state set
 → Pete selects and locks one exact durable authority
+→ Pete reviews the locked authority BEFORE any implementation begins  ← entry gate
 → manager records interaction, truth, and accessibility contract
 → one writer implements and compares the real build at required states/viewports
 → one reviewer only if a defined risk trigger applies
@@ -144,6 +154,16 @@ ChatGPT creates the complete production-intent visual and state set
 → Pete reviews the corrected real build for final visual acceptance
 → Azure release evidence and live verification
 ```
+
+Owner decision, 2026-07-25: **Pete reviews every created or materially revised
+visual authority before implementation starts.** This is an entry gate, not a
+formality, and it is separate from the final acceptance review of the built
+result. A writer may not begin implementing a visual — including a layout,
+composition, or control-placement change to an existing screen — until Pete has
+seen and approved that authority. Selecting or locking an asset is not the same
+as reviewing it for implementation; the gate is a distinct confirmation. When a
+package reaches this point without that confirmation, stop and request it rather
+than proceeding on the assumption that a locked asset implies approval to build.
 
 ChatGPT is the sole visual-creation surface for new or materially revised
 PeerSlate authority. This rule covers concepts, mockups, storyboards, responsive

@@ -214,10 +214,17 @@ class LeanDeliveryPolicyTests(unittest.TestCase):
             "GPT-5.6 Sol, Extra High",
             "GPT-5.6 Terra, Extra High",
             "Fresh GPT-5.6 Sol, High",
-            "Claude Fable 5",
-            "Claude Sonnet 5",
-            "Claude Opus 4.8",
             "Packages name roles, not model versions",
+        ):
+            self.assertIn(required, routing)
+        # Owner decision, 2026-07-25: architect and independent reviewer both use
+        # Opus 5; implementer uses Sonnet 5. Pinned as role->model rows rather
+        # than bare model names so that reassigning a role — not merely renaming
+        # a model — is what breaks this test and forces a deliberate update.
+        for required in (
+            "| Architect | **Claude Opus 5** |",
+            "| Implementer | **Claude Sonnet 5** |",
+            "| Independent reviewer | **Claude Opus 5** |",
         ):
             self.assertIn(required, routing)
 
