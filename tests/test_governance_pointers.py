@@ -688,7 +688,11 @@ class BaselineCoherenceTests(unittest.TestCase):
             "ChatGPT Work",
             "Claude Co-Work",
             "Capture Media manager planning",
-            "GitHub mirror is not current",
+            # Owner decision, 2026-07-25: the mirror-push hold is lifted and the
+            # mirror is current, so "GitHub mirror is not current" is no longer
+            # true. The boundary that must stay recorded is the one that did not
+            # change -- GitHub is never a release source or a merge target.
+            "must never be used as a release source or merge target",
             "Voice is functionally deployed",
             "self-certification",
             "Placement reference model is live",

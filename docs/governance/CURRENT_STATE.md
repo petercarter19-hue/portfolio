@@ -28,8 +28,13 @@ feature flag, deployment, or live member capability._
 
 ## Verified production and repository baseline
 
-- `origin` is Azure DevOps and the only source of truth. `github` is a public
-  backup mirror whose pushes remain on hold pending explicit owner approval.
+- Azure DevOps is the only source of truth, the only merge target, and the only
+  deployment path. `github` is a public backup mirror and, for cloud agent
+  sessions, the inbox their branches land on. Owner decision, 2026-07-25: the
+  mirror-push hold is lifted and the mirror was re-synced to
+  `be7f85766d10e8f6846d48ad507d8a55490ff566`. What `origin` names depends on the
+  checkout: Azure in a local clone, GitHub in a hosted agent session. Verify with
+  `git remote -v` rather than assuming.
 - PS-RESUME-PUBLIC-REFINE-001 squash-merged through Azure PR 62 at `d88ca480a2cfcdc697d3bfffd219268c20368520`; pipeline 83 (`20260718.6`) succeeded for that exact commit.
 - PS-CAPTURE-002 squash-merged through Azure PR 63 at `65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd`; pipeline 85 (`20260718.8`) succeeded for that exact commit.
 - PS-MOMENT-001 squash-merged through Azure PR 66 at `43afd9353af1a0693aafab0c918f3dff92802376`; pipeline 91 (`20260718.14`) succeeded for that exact commit after both Build and Deploy passed.
@@ -493,8 +498,13 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
   research options are preserved in the Revisit Register, not promised for the
   first release.
 - No second resume dataset, Journal UI, authentication rewrite, public projection, audience change, placement UI, downstream consumer, or global navigation/theme redesign is authorized by PS-VOICE-001.
-- The GitHub mirror is not current and must not be used as a release source;
-  it is public, so advancing it requires explicit owner approval.
+- The GitHub mirror must never be used as a release source or merge target, but
+  it is no longer stale or held: the owner lifted the hold on 2026-07-25 and the
+  mirror was advanced to `be7f85766d10e8f6846d48ad507d8a55490ff566`, matching
+  Azure `main`. It is public, so it carries only what Azure `main` already
+  carries. A cloud agent session branches from this mirror, so its base can fall
+  behind Azure whenever the mirror push lags; reconcile onto current Azure
+  `origin/main` and rerun tests there before reporting cloud-session evidence.
 - The current public My Story separates fixture content from repository-authored
   layout metadata, but a signed-in member cannot yet move, resize, save, or
   publish a personal composition. `PS-STORY-COMPOSER-001` is planned, not live.
