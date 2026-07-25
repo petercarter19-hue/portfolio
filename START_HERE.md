@@ -2,14 +2,44 @@
 
 This is the mandatory first file for every Cowork, Claude Code, Codex, human developer, and reviewer session. Do not write code, change documents, run a migration, or make a product decision until this checklist is complete.
 
-## 1. Synchronize the authority
+## 1. Identify this checkout, then synchronize the authority
+
+Run this first, in one block, before anything else. It answers "where am I, what
+is `origin` here, am I current, and is anything unsaved" — the questions that
+cause the most wasted work when they are assumed instead of checked.
 
 ```bash
 git status --short --branch
+pwd
+git remote -v
 git branch --show-current
-git remote get-url origin
-git remote get-url github
+git log -1 --format='%H %s'
+git ls-files -v .claude/launch.json
 git fetch origin --prune
+git status --short --branch
+```
+
+Read the result before continuing:
+
+- **`git remote -v`** — `origin` is not the same everywhere. In a local clone on
+  Pete's computers `origin` is Azure DevOps and `github` is the mirror. In a
+  hosted agent session the only remote is GitHub, named `origin`, and Azure is
+  unreachable. Both are valid. Record which one you are in; never assume.
+- **The second `git status --short --branch`** — after fetching, this reports
+  `behind N` when your base is stale. **A cloud session branched from GitHub can
+  be many commits behind Azure `main`.** Work built and tested on a stale base
+  produces test results that do not describe the real code. Reconcile with
+  current Azure `origin/main` and rerun the tests there before reporting
+  evidence. See "Repository map" in `docs/AI_WORKFLOW.md`.
+- **`git ls-files -v .claude/launch.json`** — `S` means skip-worktree is set and
+  the machine-local file is protected. `H` means it is not, and a routine
+  `git add -A` on this clone would commit another machine's local configuration.
+  Index flags are per-clone and do not transfer, so this must be checked on each
+  computer.
+
+Then move to `main` and update:
+
+```bash
 git switch main
 git pull --ff-only origin main
 git status --short
@@ -17,9 +47,10 @@ git status --short
 
 Inspect before switching. If the checkout is dirty, contains an untracked file,
 or is already on another task branch, identify and preserve that work before any
-branch change. Use a clean task worktree when that is safer. Stop if `main` does
-not fast-forward or `origin` is not the authoritative Azure DevOps remote. Do
-not copy a repository folder between computers as a synchronization method.
+branch change. Uncommitted changes in a worktree are not captured by a branch
+bundle, so preserve them explicitly. Use a clean task worktree when that is
+safer. Stop if `main` does not fast-forward. Do not copy a repository folder
+between computers as a synchronization method.
 
 ## 2. Read in this order
 

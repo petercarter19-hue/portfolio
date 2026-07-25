@@ -1,5 +1,24 @@
 # Deploying the Portfolio to Azure at pete.peerslate.com
 
+> **SUPERSEDED HISTORICAL INSTRUCTIONS — DO NOT DEPLOY FROM THIS FILE.** This
+> document records the original 2026-07-02 first-deployment session, when the
+> site was published from GitHub using GitHub Actions continuous deployment.
+> **That path is now intentionally disabled and must not be re-enabled.** The
+> steps below — including "leave the build provider as GitHub Actions" and
+> "merge into main and push → GitHub Actions deploys automatically" — describe
+> a configuration PeerSlate deliberately retired. Following them would create a
+> second, unauthorized production path.
+>
+> Current deployment authority is `docs/AZURE_DEVOPS_DEPLOYMENT_RUNBOOK.md`,
+> `azure-pipelines.yml`, and the release rules in `docs/AI_WORKFLOW.md`. Azure
+> Pipelines is the only production deployment path; see
+> `docs/PEERSLATE_SITE_RULES.md` rule 79. The tracked GitHub workflow at
+> `.github/workflows/main_peerslate-pete.yml` is retained as history only and is
+> reduced to `workflow_dispatch`.
+>
+> This file is kept because the DNS, App Service, and custom-domain background
+> remain accurate and useful. Read it for that context only.
+
 *Written 2026-07-02 · For Pete, doing this from the Mac · Estimated time: 1–2 hours (most of it waiting)*
 
 ---

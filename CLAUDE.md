@@ -116,8 +116,9 @@ retired public fixture or build a task-management suite.
 - Read the current baseline, document-control record, and assigned initiative
   package before planning changes.
 - Start in plan mode and inspect the repository before editing.
-- At the start of every session, inspect `git status`, the current branch, both remotes, and the latest commit before editing.
-- `origin` is Azure DevOps and the only source of truth. `github` is a backup mirror. There is no active remote named `azure`.
+- At the start of every session, run the identification block in `START_HERE.md` section 1 before editing. It reports the checkout path, both remotes, the branch, the latest commit, whether the base is stale, and whether `.claude/launch.json` is protected on this clone.
+- Azure DevOps is the only source of truth and the only deployment path. GitHub is a backup mirror and an inbox for cloud-agent branches, never a merge target. There is no active remote named `azure`.
+- **Verify what `origin` means in this checkout; do not assume.** In a local clone `origin` is Azure DevOps and `github` is the mirror. In a hosted agent session the only remote is GitHub, named `origin`, and Azure is unreachable — a valid configuration, but one whose base can sit behind Azure `main`. Work tested on a stale base must be reconciled onto current Azure `origin/main` and retested there before its evidence is reported. See "Repository map" in `docs/AI_WORKFLOW.md`.
 - Never commit or push directly to `main`. Start each new task from current `origin/main` on a short-lived `work/YYYY-MM-DD-task-name` branch.
 - Only one writer may own a branch. Do not overwrite Codex changes, merge branches, switch worktrees, or continue another agent's branch without an explicit handoff containing the branch and exact full SHA.
 - Before handing work to Codex or another computer, commit it, push it to `origin`, provide the required handoff, and state that active-writer ownership is relinquished.
