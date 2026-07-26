@@ -64,7 +64,8 @@ The CSS selectors and numeric values above are current-shell reference
 evidence, not a permanent implementation API. If the approved Context Rail or
 shared shell later changes, the invariant below controls.
 
-The Studio-aligned working target for ChatGPT's first visual candidates is:
+Pete approved the Studio-aligned starting target for ChatGPT's first visual
+candidates on 2026-07-26:
 
 `shell inline-size: min(92vw, 90rem)` at 100-percent browser zoom, with
 computed CSS `zoom: 1` and `transform: none`.
@@ -79,16 +80,19 @@ Keeping the current external ribbon proportions for comparison gives:
 | 3840 | 1440 px | 1200 px | 140 px | 32 px | 1268 px |
 
 This target aligns the Overview visual exercise with the newer Studio stage
-scale without importing Studio's visual authority. It is a candidate to show
-Pete, not a substitute for his exact visual lock.
+scale without importing Studio's visual authority. It is approved starting
+geometry, not a substitute for Pete's exact visual file/hash lock. Complete
+2560- and 3840-pixel frames may lead Pete to widen or otherwise adjust the
+exact stage.
 
 The planned [PS-SHELL-001 package](../PS-SHELL-001/README.md) still records an
 older approximate
 1120–1200-pixel universal content stage. That estimate would narrow the current
 résumé center canvas and conflicts with the newer wide-stage concern. This
-Overview package does not silently override a separate package; the two
-directions must be reconciled in the exact visual lock before either is
-implemented.
+Overview package does not silently override a separate package, but the older
+estimate does not narrow or block the Overview visual exercise. The exact
+Pete-locked Overview geometry and shared shell must be reconciled before
+runtime implementation.
 
 ## 4. Durable width invariant
 
@@ -139,8 +143,8 @@ set must include full shared-shell frames at:
 The set must show:
 
 - the Overview in the actual résumé center-content relationship;
-- the `min(92vw, 90rem)` normal-scale working target as the first candidate,
-  unless Pete explicitly redirects the visual exercise;
+- the owner-approved `min(92vw, 90rem)` normal-scale starting target, unless
+  Pete explicitly redirects the visual exercise after reviewing the frames;
 - the applicable external contextual control outside that canvas;
 - at least standard and rich public states at wide desktop;
 - a sparse state proving that width does not collapse into a skinny card;
@@ -154,8 +158,8 @@ references. They cannot be the sole desktop visual evidence, be simply
 upscaled, or be centered at their source width inside a larger blank browser
 frame.
 
-At 2560 and 3840, the selected stage, rail, and outer gutters require Pete's
-explicit visual approval. The current declared unscaled approximately
+At 2560 and 3840, the exact stage, rail, and outer gutters still require Pete's
+explicit visual file/hash approval. The current declared unscaled approximately
 1428-pixel center canvas is not the visible current result because of desktop
 CSS zoom, and neither the current zoomed canvas nor the working target is
 automatic acceptance for the eventual shared shell.

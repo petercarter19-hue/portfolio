@@ -1,8 +1,8 @@
 # Member Overview page-purpose and non-redundancy inventory
 
 This record follows
-`docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` and must be
-Pete-approved before ChatGPT locks a production-intent visual.
+`docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`. Pete approved it
+for the production-intent visual-creation gate on 2026-07-26.
 
 ## A. Scope and approval
 
@@ -18,8 +18,9 @@ Pete-approved before ChatGPT locks a production-intent visual.
   Authenticated multi-user Overview composition, publication records, and style
   rendering do not exist.
 - **Prepared by / date:** Codex, 2026-07-25
-- **Pete inventory approval / date:** Pending
-- **Inventory status:** Draft ready for Pete review
+- **Pete inventory approval / date:** Approved, 2026-07-26
+- **Inventory status:** Owner-approved for visual creation; exact visual
+  authority remains pending
 
 ## B. Meaningful public item decisions
 
@@ -31,8 +32,8 @@ Pete-approved before ChatGPT locks a production-intent visual.
 | Future left Context Rail | Approved target pattern for the résumé, not current implementation | `OWNER_CONTEXT_RAIL_STANDARD.md`; adoption/migration needs its own package and visual acceptance | Same local section destinations only | Public sections only | Future replacement for the current ribbon | Defer implementation | Pete's left-rail direction is preserved without misrepresenting it as live or authorized here |
 | Overview / Summary first section entry | Reach the opening that actually renders | Derived from publication state | Published: **Overview** → `#overview`; no publication: **Summary** → `#summary`; existing `#summary` and `#resume-overview` aliases reach the absorbed opening | Public; exactly one first entry | Prevents duplicate Overview and Summary destinations | Keep / change dynamically | One opening, one contextual destination |
 | Existing Summary opening | Provide portrait, identity, positioning, intro, actions, and public Ask panel today | Existing live `/petec/resume` region | Existing Summary/Ask/Resume/Contact behavior | Public approved résumé data | Fallback opening when no Overview is published | Combine / fallback | A published Overview absorbs this job; it must not render a second hero |
-| Ask [Name] AI public entry/panel | Let visitors explore approved public history | Existing public-only grounded Ask capability | One clear action opens/uses the approved panel | Public sources only; no private Slate retrieval | Distinct interactive exploration, not identity copy | Keep / relocate without regression | Exact visual must preserve truthful capability without duplicating hero/ribbon actions |
-| Résumé PDF action | Let the visitor obtain the existing résumé document | Existing public PDF path | Opens/downloads the approved PDF | Public | Document action | Keep once in contextual/hero action system | Do not repeat it throughout Overview |
+| Ask [Name] AI public entry/panel | Let visitors explore approved public history | Existing public-only grounded Ask capability | One shared contextual action opens/uses the approved panel | Public sources only; no private Slate retrieval | Distinct interactive exploration, not identity copy | Keep in shared context | Do not duplicate it in the hero; mobile may use one compact accessible shared-actions menu |
+| Résumé PDF action | Let the visitor obtain the existing résumé document | Existing public PDF path | One shared contextual action opens/downloads the approved PDF | Public | Document action | Keep in shared context | Do not duplicate it in the hero or throughout Overview |
 | Résumé begins here boundary | Tell the visitor that concise orientation ends and the detailed résumé starts | System-owned label, not member copy | May be a heading/landmark; no required action | Public when Overview renders | Separates the absorbed opening from Impact, Skills, Experience, and Credentials | Keep | Replaces the mockups' duplicate Full Résumé block |
 | Full Résumé summary shown in concepts | Preview the résumé again | Duplicates the actual résumé immediately below | Repeated download/print actions | Public duplication | No unique job | Remove | Pete directed that the real résumé starts there |
 | Concept top navigation | Move among concept sections | Illustrative concept chrome | Duplicates site navigation/rail | Public if implemented | No unique job in Overview | Remove | Do not establish a new navigation layer |
@@ -47,10 +48,10 @@ Pete-approved before ChatGPT locks a production-intent visual.
 | Professional headline | State role, direction, or professional identity | Member-authored/accepted projection; may reference current role | Static unless paired with a precise destination | Public published wording | One concise positioning statement | Keep | Needed in both styles |
 | Intro / bottom-line statement | Explain value and focus in a few sentences | Member-authored or accepted source-grounded projection | Optional destination when the statement has fuller public context | Public published wording with revision history | Connects identity to proof | Keep | Replaces long summary duplication |
 | Location/contact items | Let eligible visitors understand location or connect | Approved public profile fields | Specific `mailto`, LinkedIn, contact, or approved route | Individually audience-controlled; never expose private contact data | Practical contact context | Keep optional | Maximum and visibility rules prevent clutter |
-| Primary hero action | Offer the best next step | Existing eligible destination | Resume download, contact, or another approved action | Public and validated | One dominant action | Keep optional | Must not duplicate a stronger shared-shell action |
-| Secondary hero action | Offer one distinct alternate next step | Existing eligible destination | Contact, résumé, Story, or Work as appropriate | Public and validated | A different job from the primary action | Keep optional | Omit when redundant |
-| Proof band | Give immediate scale, outcomes, or truthful differentiators | Exact eligible source or explicitly member-confirmed fact | Optional supporting experience/project/evidence destination | Public only after owner review; source state owner-visible | Fast quantitative/qualitative evidence | Keep optional | Zero to four items; one receives a feature treatment |
-| Proof item | Communicate one outcome or scope fact | Source-linked or explicitly confirmed | One supporting destination or static presentation | Must fail closed if its source becomes ineligible | One claim, one label, one source relationship | Keep optional | Never force invented metrics |
+| Primary hero action | Offer the best next step | Existing eligible contact destination | **Connect** | Public and validated | One dominant relationship action | Keep | Owner-approved hero primary; shared Download PDF and Ask [Name] AI stay outside the hero |
+| Secondary hero action | Move directly to the detailed record below | Stable same-page résumé destination | **View résumé** | Public and validated | One navigation action distinct from Connect | Keep | Targets the actual résumé below; no duplicate PDF behavior |
+| Proof band | Give immediate scale, outcomes, or truthful differentiators | Optional authored Overview claims with member-supplied exact values | Optional validated public destination | Public only through normal owner preview and publish; no first-release metric source/provenance system | Fast quantitative/qualitative evidence | Keep optional | Zero to four items; one receives a feature treatment; AI cannot invent or alter a value |
+| Proof item | Communicate one outcome or scope claim | Member supplies the exact value directly or explicitly in the current AI request; label is member-authored or accepted | One validated supporting destination or static presentation | Public authored projection; no source, evidence, verification badge, or provenance state in first release | One value and one concise label | Keep optional | Never force a metric; AI may preserve a supplied value and edit its label only |
 | Career Arc / Career Focus | Show selected progression without repeating every role | One to four selected eligible résumé roles | View full experience or a specific role | Public projection over existing role records | Concise time/progression relationship | Keep optional | One role becomes Career Focus; dense role bodies stay below |
 | Impact Highlights | Surface selected outcomes distinct from the proof band | Selected outcome/role/project records plus approved summary | Supporting experience, Work, Project, or public evidence | Public and source-linked | Explains why a result matters | Keep optional | Editor warns when it duplicates a proof item |
 | Flexible Spotlight | Explain one capability, specialty, leadership theme, value, personal dimension, or future direction | Record-linked, authored, or hybrid content | Zero or one eligible destination | Public projection; personal material is optional and audience-controlled | Reusable bounded feature, not a hardcoded industry section | Keep optional | Replaces hardcoded Sustainment/Data/Systems sections |
@@ -120,12 +121,12 @@ Pete-approved before ChatGPT locks a production-intent visual.
 | Moving the current right ribbon to the left Context Rail | Defer | Separate résumé rail migration package under the approved standard | Exact package, visual authority, and owner acceptance |
 | Concept top navigation/footer | Remove from Overview | Existing PeerSlate shell and current résumé ribbon; future Context Rail remains separately gated | A separately approved shell/navigation package |
 | Hardcoded Systems Engineering, Sustainment, Data/AI, or similar sections | Combine into Flexible Spotlight / Capability feature | These are Pete fixture examples, not reusable product sections | A future broadly reusable block need |
-| Repeated hero metrics and impact claims | Combine or select one use | Duplication warning requires one primary expression | Owner deliberately approves distinct meanings/sources |
+| Repeated hero metrics and impact claims | Combine or select one use | Duplication warning requires one primary expression | Owner deliberately approves distinct meanings |
 | Story Spotlight + Story Chapters + Philosophy all by default | Change to optional selections | Member includes only narrative blocks that add distinct value | Owner composition choice |
 | Generic `More` | Remove | Destination-specific action with count/context | None |
 | Visitor style toggle | Defer | One owner-selected published style | Explicit audience-projection package |
 | Multiple public Overviews | Defer | One public publication at a stable location | Explicit audience/version product decision |
-| Independently selectable Overview audience | Open decision | Initially may inherit public résumé audience; exact choice pending owner | Before publication architecture |
+| Independently selectable Overview audience | Defer | First release inherits the public résumé audience and cannot be broader | Separate audience product decision |
 | Arbitrary custom block type | Remove | Bounded Flexible Spotlight with finite fields | Proven reusable need plus new inventory/visual gate |
 | AI-generated documentary-looking workplace/family media | Remove | Member-selected authentic media or clearly labeled illustration | Separate media-truth standard and owner approval |
 
@@ -141,7 +142,7 @@ Pete-approved before ChatGPT locks a production-intent visual.
   states.
 - [x] Privacy, canonical/projection, AI, draft/published, and Story/Journal
   boundaries are explicit.
-- [ ] Pete has approved this exact inventory.
+- [x] Pete approved this exact inventory on 2026-07-26.
 - [ ] ChatGPT has created the production-intent visual/state set.
 - [ ] Pete has locked exact visual files and hashes.
 - [ ] The locked visuals introduce no unlisted meaningful item.

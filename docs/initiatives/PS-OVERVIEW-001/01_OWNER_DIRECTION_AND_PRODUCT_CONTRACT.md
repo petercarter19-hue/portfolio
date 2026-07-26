@@ -66,7 +66,8 @@ The Overview stores presentation decisions, not duplicate authoritative facts.
 ### Record-linked content
 
 Roles, dates, education, certifications, awards, skills, projects, and factual
-metrics reference eligible canonical or approved public projection records.
+record-linked outcomes reference eligible canonical or approved public
+projection records.
 The Overview may store:
 
 - selected record/version identifiers;
@@ -77,6 +78,22 @@ The Overview may store:
 - the state last reviewed by the member.
 
 It does not copy a new authoritative employer, degree, award, skill, or date.
+
+### First-release proof metrics
+
+An optional proof metric is an authored Overview claim, not a canonical fact or
+a PeerSlate-verified claim. The member supplies the exact value directly or
+explicitly in the current AI request. The first release has no metric
+source-backing, evidence-linking, verification, or provenance-state system.
+
+AI may preserve the exact member-supplied value and help format or shorten its
+label. It may not invent, infer, calculate, round, embellish, change, or
+silently substitute the value. An AI wording proposal treats the numeric token
+as immutable unless the member explicitly supplies a replacement value.
+
+Normal draft, preview, publish, version, hide, reorder, and remove behavior
+still applies. A future source-backed metric system is a separate deferred
+decision and may not be inferred from the record-linked contracts below.
 
 ### Authored content
 
@@ -131,10 +148,11 @@ The public wording retains owner-visible lineage to its supporting records.
   migration under `OWNER_CONTEXT_RAIL_STANDARD.md`. This package defines the
   section semantics but does not authorize moving or restyling the current
   ribbon. Either control remains outside the center canvas.
-- Public Ask [Name] AI and Résumé PDF remain page-level capabilities. The
-  production visual must give each retained capability one clear placement in
-  the contextual action area or another inventoried treatment; the Overview
-  hero must not duplicate it.
+- The Overview hero uses **Connect** as its primary action and **View résumé**
+  as its secondary same-page action to the actual résumé below.
+- Public **Download PDF** and **Ask [Name] AI** remain page-level capabilities
+  in the shared contextual action area. They do not repeat in the hero. Mobile
+  may place those shared controls in one compact accessible menu.
 - Overview cards use visible descriptive actions to eligible sections such as
   **View full experience**, **View all 12 skills**, or **Read my full story**.
 - The concepts' top navigation and footer are illustrative and do not replace
@@ -153,9 +171,10 @@ The Overview root fills 100 percent of the resolved résumé center-content
 column. It must not introduce a second arbitrary narrow page stage merely to
 match the 941- or 864-pixel width of a supplied concept image.
 
-The Studio-aligned starting geometry for ChatGPT visual creation is a centered
-shell of `min(92vw, 90rem)` at 100-percent browser zoom, with the current
-140-pixel contextual ribbon and responsive gap outside the center canvas:
+Pete approved the Studio-aligned starting geometry for ChatGPT visual creation:
+a centered shell of `min(92vw, 90rem)` at 100-percent browser zoom, with the
+current 140-pixel contextual ribbon and responsive gap outside the center
+canvas:
 
 | CSS viewport | Candidate shell | Candidate center canvas |
 | ---: | ---: | ---: |
@@ -187,10 +206,11 @@ creation and Pete's exact file/hash lock; architecture and implementation may
 not introduce one independently.
 
 The planned `PS-SHELL-001` package still contains an older approximate
-1120–1200-pixel stage direction. That value is not silently overridden here,
-but it is now a mandatory shared-shell reconciliation item before the Overview
-visual lock or any later shell rollout. The exact Pete-locked Overview and
-shared-shell geometry must agree.
+1120–1200-pixel stage direction. That estimate does not narrow or block the
+Overview visual exercise. ChatGPT starts with the approved candidate and Pete
+may redirect the exact geometry after seeing complete 2560- and 3840-pixel
+frames. The exact Pete-locked Overview and shared-shell geometry must agree
+before runtime implementation.
 
 See `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` for the measured reference geometry
 and evidence contract.
@@ -202,9 +222,11 @@ A good published Overview usually contains:
 
 - one identity hero;
 - zero or one proof band;
-- four to six meaningful content bands after the hero; and
-- no more than approximately eight content bands without an explicit future
-  visual decision.
+- four to six meaningful major content bands normally; and
+- no more than eight major content bands in the first release.
+
+The hero and optional proof band do not count toward the four-to-six target or
+eight-band maximum.
 
 The product reduces selection and wording before it reduces type size. It
 never solves density by clipping sentences, hiding content in card scrollbars,
@@ -248,6 +270,8 @@ experience. There is no public setup prompt or blank Overview container.
 ## 10. First-release publication model
 
 - One private draft may evolve while one published revision remains stable.
+- The first-release Overview inherits the public résumé audience and cannot be
+  broader. A separately selectable Overview audience is deferred.
 - Publication pins the selected style definition/version, selected content
   versions, block order, emphasis, media focal data, destinations, and public
   audience result the member previewed.
@@ -292,7 +316,10 @@ The future feature is successful only when:
 - a member with one degree and no awards sees no awkward gaps or pressure to
   invent content;
 - a member can build and maintain the Overview without AI or a developer;
-- every public fact is owner-approved and source-traceable where applicable;
+- every public claim is owner-approved; record-linked facts are source-traceable
+  where applicable, while first-release proof metrics are clearly treated as
+  authored member claims without a source or verification claim;
+- AI cannot invent or alter a proof metric value;
 - every action has a real eligible destination;
 - the page remains readable on mobile, at 200% text/zoom, by keyboard, with
   reduced motion, and without essential JavaScript;

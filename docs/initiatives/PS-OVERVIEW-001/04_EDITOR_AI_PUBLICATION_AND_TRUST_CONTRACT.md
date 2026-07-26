@@ -146,9 +146,9 @@ AI may, from explicitly eligible selected context:
 - cluster selected records into a capability or specialty spotlight;
 - shorten or clarify projection wording;
 - identify repetition;
-- identify possible metrics for member review;
-- copy an exact metric from a selected eligible source and cite that source;
-  and
+- preserve an exact metric value that the member typed in the metric field or
+  explicitly supplied in the current request;
+- propose or shorten a metric label while treating its value as immutable; and
 - ask a focused question when the source does not support a truthful proposal.
 
 ## 9. AI may not do
@@ -158,8 +158,8 @@ AI may not:
 - invent or embellish employers, roles, dates, degrees, certifications, awards,
   skills, projects, outcomes, scale, money, percentages, team counts, or
   personal history;
-- infer a publishable metric from ambiguous text or perform an unsupported
-  calculation;
+- retrieve, insert, infer, calculate, round, embellish, change, or silently
+  substitute a metric value the member did not explicitly supply;
 - retrieve records the member is not authorized to use;
 - turn private Journal or Goal content into a public block automatically;
 - mutate canonical résumé, Story, Journal, Project, or profile facts;
@@ -176,36 +176,47 @@ AI may not:
 Each proposal shows:
 
 - the requested task;
-- the exact eligible source records/versions used;
+- the exact eligible source records/versions used where the task is
+  source-grounded;
 - the proposed text, selection, order, or style change;
 - a before/after comparison when replacing existing draft content;
 - uncertainty or missing evidence;
 - **Accept into draft**, **Edit**, and **Reject** actions; and
 - a clear statement that no public change has occurred.
 
-Accepting a proposal inserts it into the private draft with provenance. The
-member may edit it. It becomes published projection wording only through the
-normal preview and explicit whole-Overview publication.
+Accepting a proposal inserts it into the private draft with proposal lineage.
+Source references remain visible for source-grounded tasks. First-release proof
+metrics have no metric-source or provenance-state system; their exact value is
+member-supplied and remains locked during AI label editing. The member may edit
+the draft. It becomes published projection wording only through the normal
+preview and explicit whole-Overview publication.
 
 If AI is unavailable, times out, or returns invalid output, the current draft
 is preserved and the complete manual workflow remains available.
 
 ## 11. Metrics and credibility
 
-Every public proof item has an owner-visible provenance state:
+Pete approved a deliberately simple first-release metric model:
 
-1. **Exact sourced fact** — copied from an eligible selected record/version.
-2. **Member-confirmed fact** — entered or confirmed by the member, with no
-   claim that PeerSlate independently verified it.
-3. **Unsupported proposal** — not publishable.
+- a proof metric is optional authored Overview projection content;
+- the member supplies the exact displayed value directly or explicitly in the
+  current AI request;
+- AI may preserve the exact value and help format or shorten the label;
+- AI may not invent, retrieve, infer, calculate, round, embellish, alter, or
+  silently substitute the value;
+- the metric passes through normal owner draft, exact preview, and explicit
+  whole-Overview publication; and
+- the product makes no PeerSlate-verified or source-backed claim about it.
 
-AI may suggest that a selected source contains a possible metric, but it must
-display the source and exact support. It cannot convert vague language such as
-“large program” into a number.
+There is no first-release metric source selector, evidence attachment,
+verification badge, or sourced/member-confirmed/unsupported provenance state.
+The member can edit, hide, reorder, or remove a metric. If AI receives no exact
+member-supplied value, it leaves the value unchanged and asks for one.
 
-Whether Member-confirmed facts without a canonical source are publishable in
-the first release is an owner decision that must be settled before publication
-architecture is locked.
+Source-backed proof metrics are deferred until the basic system has been
+implemented and reviewed live. A future enhancement requires a new product
+decision, migration treatment for existing authored metrics, privacy and
+authorization rules, UX states, tests, and visual acceptance.
 
 ## 12. Media, privacy, and truth
 
@@ -249,8 +260,9 @@ The future publication operation must:
 
 1. authorize the owner and target profile;
 2. require the exact current draft revision to prevent lost updates;
-3. validate every selected source, destination, media item, audience, and
-   style/block definition;
+3. validate every applicable selected source, destination, media item,
+   audience, and style/block definition, plus the authored proof-metric field
+   contract without requiring metric provenance;
 4. generate the exact public representation for preview parity;
 5. pin the style definition/version, block definitions, source/projection
    versions, order, emphasis, media focal data, and audience result;
@@ -334,15 +346,14 @@ destination, and audience eligibility and creates a new publication revision.
 | Public renderer cannot load optional media | Preserve text/meaning; no broken empty slot |
 | Entire Overview unavailable | Preserve truthful résumé access when safely possible; never expose a draft fallback |
 
-## 19. Audience decision still required
+## 19. First-release audience
 
-Before implementation architecture, Pete must choose one first-release rule:
+Pete approved one first-release rule: the Overview inherits the public résumé
+audience and cannot be broader. Individual blocks may be narrower only by
+omission from that public publication.
 
-- **Recommended:** Overview inherits the public résumé audience and cannot be
-  broader. Individual blocks can be narrower only by omission from that public
-  publication.
-- **Later-capable alternative:** Overview has its own explicit audience
-  selection with exact preview and server-side projection authorization.
+A separately selectable Overview audience is a later-capable enhancement and
+requires its own product, preview, authorization, test, and visual decisions.
 
 The system must never infer that public résumé visibility automatically makes
 private Story, Journal, Goal, media, or source evidence public.

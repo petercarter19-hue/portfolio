@@ -71,7 +71,7 @@ concept or assumptions in the Claude draft:
 | Stat strip permits 0 or 2–4, never 1 | Permit one truthful proof item and render it as a featured proof treatment. Early-career members must not be forced to invent a second metric. |
 | Thin Education/Certification/Award cards automatically merge | Each category remains semantically honest. One degree may render as a confident compact Education preview; count-aware layout may place groups together without renaming facts into a misleading category. |
 | The system automatically selects Full/Compact/Starter and prevents member choice | The member explicitly chooses Story & Career or Work & Impact in the draft. Each style has deterministic sparse/standard/rich arrangements; content readiness may block a broken publication but does not silently change the member's selected style. |
-| AI may never fill a stat value | AI may copy an exact metric from an eligible selected source and show that source. It may not infer, calculate from ambiguous material, embellish, or invent a metric. Member-entered unsourced claims require explicit confirmation and remain distinguishable. |
+| AI may never fill a stat value | Refine for the first release: the member supplies the exact value directly or explicitly in the current AI request. AI may preserve that exact value and propose label wording, but may not derive, retrieve, calculate, round, embellish, or change it. No metric source-backing or provenance-state system is included. |
 | Public and owner rendering use the same payload with `editable: true` | They may share an internal rendering contract, but the authorized owner editor and public viewer receive different representations. The public response contains no owner controls, private sources, draft content, or edit metadata. |
 | Authored AI text is not saved until an explicit Save | Private draft autosave is allowed and preferred. Accepting an AI proposal changes only the private draft. Publication is always a separate explicit action. |
 | Sticky internal rail after its content ends | Defer to future visual design; it is not required and must not compete with the real context rail. |
@@ -111,19 +111,31 @@ concept or assumptions in the Claude draft:
 | Wide-desktop evidence | Full-browser 1440 × 900, 1920 × 1080, 2560 × 1440, and 3840 × 2160 CSS-pixel views are required before visual lock |
 | Reading measure | Controlled inside cards/bands; it never justifies narrowing the entire Overview |
 | Fit technique | CSS `zoom` or transform scaling may not be used to make the future Overview fit |
-| Shared-shell width | Reconcile the exact Overview stage with the older planned `PS-SHELL-001` 1120–1200-pixel estimate before visual lock |
+| Shared-shell width | The older planned `PS-SHELL-001` 1120–1200-pixel estimate does not narrow or block Overview visual creation. Reconcile the exact Pete-locked Overview geometry with the shared shell before runtime implementation. |
+| Page-purpose inventory | Pete approved `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` on 2026-07-26 |
+| Public audience | First release inherits the public résumé audience and cannot be broader |
+| Proof metrics | Optional member-authored Overview claims; no source-backing, evidence-linking, verification, or provenance-state system in the first release |
+| AI and proof values | AI may preserve an exact member-supplied value and edit its label; it may not invent, infer, calculate, round, embellish, or change the value |
+| Public content length | Four to six major content bands normally; eight absolute maximum; hero and optional proof band do not count |
+| Member-facing style names | Story & Career and Work & Impact |
+| Public action placement | Hero: Connect primary and View résumé same-page secondary. Shared context: Download PDF and Ask [Name] AI. No duplicates; compact accessible mobile menu permitted |
+| Starting visual geometry | Pete approved `min(92vw, 90rem)` at normal scale as the first candidate, subject to exact full-browser visual review and later file/hash lock |
 
-## 6. Remaining owner approvals
+## 6. Owner approvals recorded 2026-07-26
 
-Pete's direction is captured. Before visual creation is locked, Pete still
-reviews:
+Pete approved:
 
 1. the exact meaningful-item inventory;
-2. the initial content budgets and maximum public length;
-3. whether a member-confirmed metric without a canonical source may publish
-   with an owner-visible provenance state;
-4. whether the Overview shares the public résumé audience in the first release
-   or receives an independently selectable audience; and
-5. the exact ChatGPT-created desktop/mobile/state visual files for both styles,
-   including the full-browser wide-desktop evidence required by
-   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`.
+2. the public résumé audience for the first release;
+3. optional member-entered proof metrics with no first-release source-backing
+   or provenance system and with AI unable to invent or alter values;
+4. four to six major content bands normally and eight maximum, excluding the
+   hero and optional proof band;
+5. Story & Career and Work & Impact as the member-facing style names;
+6. Connect and View résumé in the hero, with Download PDF and Ask [Name] AI in
+   shared contextual controls; and
+7. `min(92vw, 90rem)` at normal scale as the first wide visual candidate, with
+   exact 2560-/3840-pixel review before visual file/hash lock.
+
+The remaining owner gate is the exact ChatGPT-created visual/state set for both
+styles. See `09_OWNER_DECISIONS_2026-07-26.md`.

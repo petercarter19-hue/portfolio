@@ -1,5 +1,58 @@
 # PeerSlate Completion & Handoff Report
 
+## 2026-07-26 owner-decision amendment
+
+- **Status:** Pete approved the exact page-purpose inventory and six
+  first-release decisions. This documentation-only amendment authorizes the
+  ChatGPT visual-creation gate; it does not authorize runtime implementation or
+  constitute an exact visual file/hash lock.
+- **Branch / base:**
+  `work/2026-07-26-overview-owner-decisions-001` from authoritative Azure
+  `origin/main` `e915b173ec4a2c14ea6d499f45416335a6b93b29`.
+- **Reserved scope:** `docs/initiatives/PS-OVERVIEW-001/**` only. No runtime,
+  shared governance pointer, Studio package, Shell package, route, template,
+  CSS, JavaScript, schema, migration, flag, or deployment file changes.
+- **Inventory:** Pete approved
+  `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` on 2026-07-26.
+- **Audience:** First release inherits the public résumé audience and cannot be
+  broader.
+- **Metrics:** Optional proof metrics are authored Overview claims. The member
+  supplies the exact value directly or explicitly in the current AI request.
+  There is no metric source-backing, evidence-linking, verification, or
+  provenance-state system in the first release. AI may preserve the supplied
+  value and edit its label, but may not invent, retrieve, infer, calculate,
+  round, embellish, alter, or silently substitute the value.
+- **Density:** Four to six major content bands is normal; eight is the absolute
+  first-release maximum. Hero and optional proof band do not count.
+- **Style names:** Story & Career and Work & Impact.
+- **Actions:** Connect is the hero primary; View résumé is the same-page hero
+  secondary. Download PDF and Ask [Name] AI are shared contextual controls and
+  do not repeat in the hero. Mobile may use one compact accessible menu.
+- **Wide geometry:** Pete approved `min(92vw, 90rem)` at normal scale as the
+  starting visual candidate. Complete 2560- and 3840-pixel frames may lead Pete
+  to adjust the exact stage before file/hash lock. The older `PS-SHELL-001`
+  estimate does not narrow or block visual creation; exact locked
+  Overview/shared-shell geometry must agree before runtime implementation.
+- **Deferred:** Source-backed metrics/provenance, independent Overview audience,
+  and guardrail changes learned through visual, implementation, or real-member
+  review require later explicit decisions.
+- **Durable decision record:** `09_OWNER_DECISIONS_2026-07-26.md`.
+- **Production state:** Unchanged. No Overview editor, renderer, publication,
+  metric, or AI behavior was implemented or activated.
+- **Validation:** Strict UTF-8 decoding passed for all 13 package Markdown/text
+  files; package-local Markdown links resolved with zero missing targets; the
+  three registered source hashes remained unchanged; changed paths are the 12
+  package-local Markdown files named by this amendment; `git diff --check`
+  passed; `tests.test_governance_pointers` passed 38/38; and
+  `tests.test_site_rules` passed 11/11 with the expected Flask-Limiter
+  in-memory-store warning.
+- **Delivery:** The final source SHA, Azure PR, squash merge, pipeline, and
+  public-baseline verification are recorded in the final owner handoff after
+  those events. This source report does not pre-claim them.
+- **Next gate:** ChatGPT creates the complete production-intent visual/state
+  sets from the approved decisions. Pete then locks exact durable files and
+  hashes. No runtime writer starts before a separate package is activated.
+
 ## 2026-07-25 wide-desktop amendment
 
 - **Status:** Documentation-only width correction complete before production
@@ -31,8 +84,9 @@
   target behavior.
 - **Cross-package finding:** Planned `PS-SHELL-001` still records an older
   approximate 1120–1200-pixel universal stage. This amendment does not silently
-  overwrite that separate package. Exact shared-shell and Overview geometry
-  must be reconciled before either visual lock or later shell implementation.
+  overwrite that separate package. The older estimate does not narrow or block
+  Overview visual creation. Exact Pete-locked shared-shell and Overview
+  geometry must be reconciled before runtime implementation.
 - **New durable artifact:**
   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`, linked through the package README and
   cross-computer handoff.
@@ -59,19 +113,21 @@
 - **Final source SHA:** The report-only follow-up commit and exact final source
   SHA are recorded in the Azure PR and final owner handoff because a commit
   cannot contain its own hash.
-- **Next gate:** ChatGPT creates the measured normal-scale visual/state set;
-  Pete reviews the 2560/3840 silhouettes and reconciles the exact stage with
-  `PS-SHELL-001`; Pete then locks durable files and hashes. No runtime writer
-  starts before that gate.
+- **Next gate:** ChatGPT creates the measured normal-scale visual/state set
+  from the 2026-07-26 approved starting geometry. Pete reviews the 2560/3840
+  silhouettes and then locks durable files and hashes. No runtime writer starts
+  before that gate.
 
 Sections A–I below preserve the original direction-package completion record.
-The amendment above is the controlling addendum for wide-desktop geometry.
+The 2026-07-26 addendum controls owner decisions; the 2026-07-25 amendment
+controls wide-desktop evidence where the newer addendum does not refine it.
 
 ## A. Status
 
 - Package: `PS-OVERVIEW-001`
-- Status: Documentation-only direction package complete; page-purpose
-  inventory and exact production visual authority remain pending Pete review.
+- Status: Documentation-only direction package complete; Pete approved the
+  page-purpose inventory and six first-release decisions on 2026-07-26. Exact
+  production visual authority remains pending.
 - Branch and commit:
   `work/2026-07-25-overview-direction-001` from Azure `origin/main`
   `598cb7d7a5f067564ce3e00540352176decd2b8b`. Initial candidate
@@ -91,12 +147,12 @@ The amendment above is the controlling addendum for wide-desktop geometry.
   future implementation must perform the visual standard's homepage impact and
   parity gate because the homepage presents the résumé/Slate capability.
 - Pete / designated session manager visual acceptance: Pete selected the
-  one-system/two-style direction. Exact inventory and visual-state acceptance
-  remain pending.
+  one-system/two-style direction and approved the inventory and first-release
+  choices. Exact visual-state acceptance remains pending.
 - Designated session manager: Current Pete-authorized Codex task for
   `PS-OVERVIEW-001`.
-- Manager handoff status and next receiver: Prepared for cross-computer owner
-  inventory review and ChatGPT visual creation.
+- Manager handoff status and next receiver: Prepared for ChatGPT visual
+  creation and Pete's exact file/hash review.
 - Lane owner and self-managed authority: Codex sole documentation writer;
   package-local files only.
 - Self-certification: Pass for the bounded documentation package.
@@ -104,8 +160,7 @@ The amendment above is the controlling addendum for wide-desktop geometry.
   fourteen package-local files; no shared pointer or runtime file changed.
 - Shared governance pointer disposition: No update required. This direction
   package changes no controlling baseline, verified production truth, or active
-  runtime ownership. It remains pending owner inventory acceptance and exact
-  visual lock.
+  runtime ownership. It remains pending exact visual lock.
 - Acceptance requested: Documentation/product-direction release. No runtime or
   visual acceptance is requested.
 
@@ -221,11 +276,10 @@ runtime packages.
 
 ## G. Known gaps, risks, and exclusions
 
-- Pete has not approved the exact meaningful-item inventory.
 - ChatGPT has not created the required production visual/state sets.
 - Pete has not locked visual files/hashes.
-- First-release Overview audience and policy for member-confirmed unsourced
-  metrics remain owner decisions.
+- First-release source-backed metrics/provenance and an independent Overview
+  audience are deliberately deferred.
 - Initial content budgets require validation against locked typography.
 - No schema/API/route architecture has been accepted.
 - No runtime code, data migration, editor, publication, unpublish, restore, or
@@ -239,17 +293,15 @@ These gaps are intentional gates, not hidden incomplete implementation.
 
 ## H. Clear next step
 
-Pete reviews the exact page-purpose inventory and five owner decisions. ChatGPT
-then creates complete production-intent Story & Career and Work & Impact
-visual/state sets. Pete locks exact files and hashes. Only then should a
-separate bounded architecture/implementation package be prepared.
+ChatGPT creates complete production-intent Story & Career and Work & Impact
+visual/state sets from the approved inventory and 2026-07-26 decisions. Pete
+locks exact files and hashes. Only then should a separate bounded
+architecture/implementation package be prepared.
 
 ## I. What Pete needs to do or decide
 
-1. Approve or correct the page-purpose inventory.
-2. Confirm first-release audience behavior.
-3. Confirm whether a member-confirmed metric needs a canonical source to
-   publish.
-4. Confirm the approximately eight-band rich maximum and the two style names.
-5. Confirm the hero versus shared-shell action rule.
-6. Scrutinize and lock the later ChatGPT-created visual/state set.
+1. Scrutinize the later ChatGPT-created visual/state set, especially metric
+   editing/AI-value-lock behavior, action placement, sparse/rich density, and
+   the full-browser 2560-/3840-pixel silhouettes.
+2. Correct or approve the exact candidates.
+3. Lock the final durable visual files and SHA-256 hashes.

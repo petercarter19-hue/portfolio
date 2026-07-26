@@ -15,7 +15,9 @@ self-service Member Overview system with:
   requirements;
 - an explicit wide-desktop canvas/evidence contract that prevents the narrow
   portrait concepts from becoming target browser widths;
-- a page-purpose inventory ready for Pete's review; and
+- Pete's approved page-purpose inventory and six first-release decisions;
+- optional member-authored proof metrics with no first-release source-backing
+  or provenance system and with AI unable to invent or change the value; and
 - durable package copies/hashes of both concepts and the supplied Claude draft.
 
 No runtime capability was implemented or activated.
@@ -37,6 +39,12 @@ The 2026-07-25 wide-desktop clarification lane was:
 
 - Branch: `work/2026-07-25-overview-width-amendment-001`
 - Base: `52128a57c81969788c9dde68636d26c0ebd6a7db`
+- Reserved scope: `docs/initiatives/PS-OVERVIEW-001/**`
+
+The 2026-07-26 owner-decision amendment lane is:
+
+- Branch: `work/2026-07-26-overview-owner-decisions-001`
+- Base: `e915b173ec4a2c14ea6d499f45416335a6b93b29`
 - Reserved scope: `docs/initiatives/PS-OVERVIEW-001/**`
 
 The final owner handoff for this task records the exact source commit, Azure
@@ -69,8 +77,10 @@ Do not reopen these without an explicit Pete decision:
 8. The current right-side ribbon stays truthful; its first entry is Overview or
    Summary according to the opening. The approved left Context Rail migration
    remains separately gated and outside the center canvas.
-9. Existing public Ask [Name] AI and Résumé PDF remain available once without
-   duplicated hero actions.
+9. The hero primary action is Connect and its secondary is View résumé,
+   targeting the actual résumé below. Existing public Ask [Name] AI and
+   Download PDF remain available once in shared context, not duplicated in the
+   hero. Mobile may use one compact accessible shared-actions menu.
 10. Skills precedes Education, Certifications, and Awards.
 11. Optional missing sections create no public wrapper or gap.
 12. Manual composition is complete; AI only proposes.
@@ -91,26 +101,33 @@ Do not reopen these without an explicit Pete decision:
     visual lock. Physical monitor diagonal is context, not a breakpoint.
 20. The first ChatGPT visual candidate uses the Studio-aligned
     `min(92vw, 90rem)` shell at normal scale; CSS `zoom` or transform fitting
-    is prohibited. Pete's exact visual lock remains controlling.
-21. The exact wide stage must be reconciled with the older
-    `PS-SHELL-001` 1120–1200-pixel estimate before either package can silently
-    constrain the other.
+    is prohibited. Pete approved this starting geometry; exact visual lock
+    remains controlling.
+21. The older `PS-SHELL-001` 1120–1200-pixel estimate does not narrow or block
+    Overview visual creation. Reconcile the exact Pete-locked Overview
+    geometry with the shared shell before runtime implementation.
+22. The first-release Overview inherits the public résumé audience and cannot
+    be broader.
+23. Proof metrics are optional authored Overview claims. The member supplies
+    the exact value; there is no first-release metric source-backing,
+    evidence-linking, verification, or provenance-state system.
+24. AI may preserve an exact member-supplied metric value and edit its label,
+    but may not invent, retrieve, infer, calculate, round, embellish, change,
+    or silently substitute the value.
+25. Four to six major content bands is normal and eight is the absolute
+    first-release maximum; hero and optional proof band do not count.
+26. The member-facing style names are Story & Career and Work & Impact.
 
-## 5. Next owner gate
+## 5. Next gate
 
 The next task is **not implementation**. It is:
 
-1. Pete reviews
-   `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
-2. Pete settles the five choices in
-   `05_STYLE_MANIFESTS_AND_VISUAL_GATE.md`:
-   first-release audience, metric provenance, public band maximum, style names,
-   and hero/shared-shell actions.
-3. ChatGPT creates the complete production-intent visual/state sets for both
+1. ChatGPT creates the complete production-intent visual/state sets for both
    styles, including the annotated full-browser wide-desktop set required by
-   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`.
-4. Pete scrutinizes and locks exact durable files and hashes.
-5. A separate bounded implementation-information/architecture package is
+   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` and the owner decisions in
+   `09_OWNER_DECISIONS_2026-07-26.md`.
+2. Pete scrutinizes and locks exact durable files and hashes.
+3. A separate bounded implementation-information/architecture package is
    prepared and activated.
 
 No code writer should start from the two concept PNGs alone.
@@ -129,8 +146,9 @@ On the other computer:
 6. Read the current baseline, state, active initiatives, baseline-named Bible
    and Roadmap, visual/story standards, and this package.
 7. Verify the three source hashes above.
-8. Read `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` and compare the current
-   `PS-SHELL-001` width direction before creating or locking visuals.
+8. Read `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` and
+   `09_OWNER_DECISIONS_2026-07-26.md`. Start the Overview visual exercise at the
+   approved width without letting the older `PS-SHELL-001` estimate narrow it.
 9. Reserve only the exact next package files. Do not take the active Studio,
    Journal, Home, Community, Capture, or other writer's lane.
 10. Keep current public résumé and Story behavior read-only until a separate
@@ -140,26 +158,33 @@ On the other computer:
 
 > Continue PeerSlate from current Azure `origin/main`. Read and follow
 > `START_HERE.md`, `docs/AI_WORKFLOW.md`, the current governance chain, and
-> `docs/initiatives/PS-OVERVIEW-001/**`. This is the owner review and ChatGPT
-> visual-creation gate only. Preserve one Overview system with Story & Career as
+> `docs/initiatives/PS-OVERVIEW-001/**`. The owner inventory and six
+> first-release decisions are approved; this is the ChatGPT visual-creation
+> gate only. Preserve one Overview system with Story & Career as
 > the flagship and Work & Impact as the alternate, one public Overview at a
 > time, shared canonical/projection truth, manual-first editing, optional
 > proposal-only AI, deterministic no-gap reflow, and the real résumé below.
+> The Overview inherits the public résumé audience. Proof metrics are optional
+> authored Overview claims: the member supplies the exact value, there is no
+> first-release metric source/provenance system, and AI may preserve the value
+> and edit its label but may not invent, derive, or change it. Use four to six
+> major content bands normally and eight maximum, excluding hero and proof.
 > Treat the supplied PNGs as editorial direction boards, never CSS-width
 > authority. Create annotated full-browser 1440×900, 1920×1080, 2560×1440,
 > and 3840×2160 CSS-pixel frames; make the Overview root fill the resolved
 > résumé content column while keeping readable text measure inside blocks.
 > Start with the Studio-aligned `min(92vw, 90rem)` shell at normal scale; do
 > not use CSS `zoom` or transform fitting.
-> Show and obtain Pete's explicit approval of the stage, rail, and gutters at
-> 2560 and 3840, and reconcile the selected geometry with the older
-> `PS-SHELL-001` 1120–1200-pixel estimate before visual lock.
-> A published Overview must absorb the current Summary, preserve one truthful
-> Ask [Name] AI/PDF treatment, use Overview/Summary as the dynamic first section
+> Show and obtain Pete's explicit approval of the exact stage, rail, and gutters
+> at 2560 and 3840. The older `PS-SHELL-001` estimate does not narrow or block
+> this visual exercise; reconcile the exact locked geometry with the shared
+> shell before implementation.
+> A published Overview must absorb the current Summary, use Connect and View
+> résumé in the hero, preserve Download PDF and Ask [Name] AI once in shared
+> context, use Overview/Summary as the dynamic first section
 > destination, support atomic unpublish to the Summary fallback, and fail
-> closed on corrective source supersession. First review the exact page-purpose
-> inventory and settle its five owner choices. Then create complete
-> desktop/mobile/sparse/rich/editor/failure visual
+> closed on corrective source supersession for record-linked content. Create
+> complete desktop/mobile/sparse/rich/editor/failure visual
 > authority candidates for both styles and obtain Pete's exact file/hash lock.
 > Do not implement runtime code, schema, routes, flags, or publication behavior
 > in that visual session.
@@ -175,8 +200,8 @@ Stop and return to Pete if:
 - a request would treat either current concept as exact locked implementation
   authority;
 - the visual set lacks full-browser measured wide-desktop evidence;
-- the proposed Overview width conflicts with `PS-SHELL-001` and no explicit
-  reconciliation/owner lock exists;
-- a request would begin runtime work before owner inventory and visual lock; or
+- a proposed visual silently narrows the approved starting candidate to the
+  older `PS-SHELL-001` estimate;
+- a request would begin runtime work before exact visual lock; or
 - implementation would duplicate canonical résumé, Story, Journal, Project, or
   media truth.

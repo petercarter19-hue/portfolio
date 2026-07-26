@@ -19,7 +19,8 @@ creating a second résumé or Story store.
 | --- | --- | --- |
 | Overview draft | Current private composition and revision state for one owner/profile | Public authority, copied private source bodies |
 | Block placement | Block type/version, semantic order, visibility, emphasis, bounded projection fields | Arbitrary HTML/CSS/coordinates |
-| Source reference | Exact eligible canonical/projection record and reviewed version | Duplicated authoritative fact |
+| Source reference | Exact eligible canonical/projection record and reviewed version for record-linked/hybrid content | Duplicated authoritative fact or a hidden first-release proof-metric source relation |
+| Authored proof metric | Member-supplied exact value, short accepted label, optional validated destination, and normal draft/publication lifecycle | Canonical-fact status, source/evidence/provenance relation, verification claim, or AI-derived value |
 | Destination reference | Stable typed route/section/public record target | Unvalidated arbitrary owner ID or private URL |
 | Media reference | Eligible media ID/version, focal data, alt/decorative state, consent/provenance | Duplicated raw media bytes |
 | AI proposal | Proposed change, sources, model/program provenance, decision state | Canonical fact or publication authority |
@@ -36,6 +37,7 @@ plus private draft and version history according to retention policy.
 eligible canonical/public records
             ↓ exact authorized references
 private Overview draft + member projection wording
+            ← member-supplied proof values (no first-release source relation)
             ↓ validation and exact visitor preview
 explicit atomic publication revision
             ↓ audience-authorized public representation
@@ -53,7 +55,8 @@ The server must:
 - authorize before returning draft/source/media/version data;
 - return only eligible source choices;
 - validate source versions, audience, destinations, media, block definitions,
-  and style compatibility;
+  style compatibility, and authored proof-metric field rules without requiring
+  metric provenance;
 - prevent cross-member references;
 - save drafts with revision/concurrency protection;
 - store AI proposals separately from accepted draft state;
@@ -112,9 +115,10 @@ approved left Context Rail remains a separately activated migration.
 
 ## 7. Recommended delivery sequence
 
-### Gate 0 — owner inventory and exact visual authority
+### Gate 0 — approved inventory and exact visual authority
 
-- Pete approves the page-purpose inventory.
+- Pete approved the page-purpose inventory and six first-release decisions on
+  2026-07-26.
 - ChatGPT creates both complete style/state sets.
 - Pete locks exact files and hashes.
 - The implementation package names writable/forbidden files, routes,
@@ -123,6 +127,8 @@ approved left Context Rail remains a separately activated migration.
 ### Slice 1 — projection/read model and generic renderer fixtures
 
 - Define the minimal source-eligibility and projection contracts.
+- Define the authored proof-metric contract without source, evidence,
+  verification, or provenance-state plumbing.
 - Define versioned block/style manifests.
 - Prove sparse, standard, rich, no-media, one-degree, one-role, and generic
   multi-member rendering without a public mutation path.
@@ -134,6 +140,8 @@ approved left Context Rail remains a separately activated migration.
 - Implement record selection, bounded authored fields, order, visibility,
   emphasis, destinations, media metadata, validation, autosave, and exact
   preview.
+- Let members manually enter, edit, hide, reorder, and remove exact metric
+  values and labels.
 - The manual path is complete before AI is required.
 
 ### Slice 3 — publication and restore
@@ -147,13 +155,18 @@ approved left Context Rail remains a separately activated migration.
   redirect, and download behavior.
 - Replace/absorb the current Summary only when an Overview is published;
   preserve Summary as the no-publication/unpublish fallback, dynamically map the
-  first ribbon entry, and preserve one truthful Ask [Name] AI/PDF treatment.
+  first ribbon entry, use Connect and View résumé in the hero, and preserve
+  Download PDF and Ask [Name] AI once in shared context.
 
 ### Slice 4 — optional AI proposals
 
 - Add scoped source-grounded proposal actions inside the working composer.
-- Prove proposal provenance, accept/edit/reject, failure fallback, no canonical
-  mutation, and no publication authority.
+- Prove proposal provenance where applicable, accept/edit/reject, failure
+  fallback, no canonical mutation, and no publication authority.
+- For metrics, accept only an exact value explicitly supplied by the member,
+  treat it as immutable during AI label editing, and prove AI cannot invent,
+  retrieve, infer, calculate, round, embellish, change, or silently substitute
+  a value.
 - AI can follow the manual release if separating it reduces risk; the product
   remains complete without it.
 
@@ -175,8 +188,8 @@ Pete may remain an acceptance example, but reusable behavior needs at least:
 1. early-career member: one role, one degree, no metrics, no awards, no images;
 2. career changer: multiple roles, transferable skills, authored future
    direction, no public Story;
-3. experienced leader: four proof items, four roles, impacts, credentials,
-   multiple eligible images;
+3. experienced leader: four member-authored proof metrics, four roles, impacts,
+   credentials, multiple eligible images;
 4. independent/creative professional: projects/skills/story emphasis with no
    conventional corporate metrics;
 5. privacy-restricted member: some selected sources/media later become private;
@@ -196,10 +209,13 @@ images.
 | Area | Minimum acceptance |
 | --- | --- |
 | Manual creation | Member completes, previews, and publishes without AI |
-| AI creation | Proposal uses eligible sources, is reviewable, and never saves/publishes itself |
+| AI creation | Proposal uses eligible sources where applicable, is reviewable, and never saves/publishes itself |
+| Manual proof metrics | Member enters/edits/removes exact values and labels with no source/provenance requirement |
+| AI proof-metric value lock | AI can preserve an explicitly member-supplied value and edit its label but cannot generate, retrieve, infer, calculate, round, embellish, alter, or substitute the value |
+| Metric data boundary | Public/draft metric contract contains no source, evidence, verification, or provenance-state field in the first release |
 | Style switch | No content loss; draft only until publish; prior public revision unchanged |
 | Sparse content | Deliberate result with no gaps or public setup prompts |
-| Rich content | Readable, bounded, non-repetitive result |
+| Rich content | Readable, bounded, non-repetitive result; eight major bands maximum, excluding hero and proof band |
 | Missing media | Text-led reflow, no broken/stock placeholder |
 | One proof item | Feature treatment; no forced second claim |
 | One role | Career Focus; no fake timeline |
@@ -220,7 +236,7 @@ images.
 | Contextual navigation | First entry is Overview or Summary according to actual opening; left-rail migration remains separately gated |
 | Wide-desktop canvas | Overview root aligns to the resolved résumé content-column edges; no undocumented nested page stage |
 | Wide-desktop text measure | Bands/media/grids use the canvas while representative body copy retains the Pete-locked readable measure |
-| Existing public AI/PDF | Ask [Name] AI grounding/function and résumé PDF remain available once without duplicated actions |
+| Approved actions | Connect and View résumé appear in the hero; Ask [Name] AI and Download PDF remain available once in shared context without duplication |
 | Public response | No drafts, private sources, edit metadata, or AI proposal state |
 | Cross-member isolation | Owner A cannot retrieve/reference/publish Owner B data |
 | No JavaScript | Public meaning and real destinations remain usable |
@@ -271,12 +287,13 @@ The future browser acceptance test must:
 8. repeat reflow checks at 200 percent zoom and supported intermediate/mobile
    widths.
 
-The first ChatGPT visual candidate uses the Studio-aligned
+Pete approved the first ChatGPT visual candidate starting with the Studio-aligned
 `min(92vw, 90rem)` shell at normal scale. The current zoomed résumé geometry is
-reference evidence, not automatic acceptance of the future shared shell.
-Before visual lock, the selected geometry must be reconciled with the older
-`PS-SHELL-001` 1120–1200-pixel estimate. Implementation may match only the
-resulting exact Pete-locked authority.
+reference evidence, not automatic acceptance of the future shared shell. The
+older `PS-SHELL-001` 1120–1200-pixel estimate does not narrow or block Overview
+visual creation. Complete 2560- and 3840-pixel frames may lead Pete to adjust
+the exact stage. Implementation may match only the resulting exact Pete-locked
+Overview authority reconciled with the shared shell.
 
 WCAG 2.2 AA is the minimum target. Automated checks supplement but do not
 replace keyboard, reading-order, responsive, content, and owner visual review.
@@ -304,6 +321,8 @@ An activated writer must provide:
 - exact current Azure base and final source SHA;
 - complete-diff self-review;
 - focused block/style/editor/publication/AI tests;
+- explicit first-release proof-metric tests with no source/provenance plumbing
+  and with immutable member-supplied values in AI label proposals;
 - full configured repository suite;
 - migration and rollback evidence when storage changes;
 - authorization-before-retrieval and two-owner isolation evidence;
@@ -316,7 +335,7 @@ An activated writer must provide:
 - responsive/accessibility/visual comparison set;
 - captured wide-desktop shell/content/Overview geometry at
   1440/1920/2560/3840 CSS-pixel viewports;
-- explicit `PS-SHELL-001` width reconciliation;
+- exact Pete-locked Overview/shared-shell width reconciliation before runtime;
 - homepage parity assessment/evidence;
 - independent-review result and corrections;
 - Pete's corrected-real-build visual acceptance;
@@ -333,6 +352,8 @@ Stop rather than improvise if an implementation would:
 - use client filtering as a privacy boundary;
 - permit arbitrary layout or unreviewed custom HTML;
 - publish an AI proposal or source change silently;
+- add metric source-backing/provenance or permit AI-derived proof values without
+  a new owner-approved enhancement package;
 - expose private Journal/Goal/source content;
 - implement only Pete's rich profile without sparse/generic fixtures;
 - create a dead destination or public empty slot;

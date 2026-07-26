@@ -44,12 +44,18 @@ the equivalent of:
 The source record remains authoritative. Projection wording and layout metadata
 have their own lifecycle and never overwrite it.
 
+The optional first-release Proof Band is the deliberate exception to requiring
+a source relationship. Its member-supplied value and accepted label are
+authored Overview projection fields. It has no metric source, evidence,
+verification, or provenance-state field. This exception does not weaken the
+source contract for record-linked or hybrid blocks.
+
 ## 3. Finite block library
 
 | Block | Source modes | Public fields | Initial visible budget | Count behavior |
 | --- | --- | --- | --- | --- |
 | Profile Hero | Record-linked + authored | Name, headline, intro, portrait, up to 3 contact items, up to 2 actions | Headline about 70 characters; intro 250–300 characters | One hero when Overview publishes; absorbs current Summary hero |
-| Proof Band | Record-linked or confirmed | Value/fact, short label, optional icon, source/destination | 0–4 proof items; value about 12 characters; label about 30 | 0 omit; 1 feature; 2–4 equal/reflowing group |
+| Proof Band | Authored first-release metric projection | Member-supplied exact value, short member-authored/accepted label, optional icon and validated destination; no source/provenance field | 0–4 proof items; value about 12 characters; label about 30 | 0 omit; 1 feature; 2–4 equal/reflowing group |
 | Story Spotlight | Hybrid over one eligible published Story projection | Eyebrow, title, grounded teaser, optional image, Story action | Summary 250–320 characters | 0 omit; 1 spotlight; unavailable without same-audience public Story |
 | Career Arc | Record-linked + optional summary | 1–4 roles with organization/title/date and concise preview | 3 default, 4 maximum | 1 Career Focus; 2–4 arc/list |
 | Impact Highlights | Hybrid | 1–4 outcome title/summary/icon and destinations | Title about 40; summary about 100 characters | 1 feature; 2–4 count-aware grid |
@@ -66,6 +72,23 @@ have their own lifecycle and never overwrite it.
 The budgets are initial visual-design targets, not database field lengths. The
 locked visual must validate them with the real type scale at desktop, mobile,
 and large-text states before implementation values are finalized.
+
+### Proof metric input and AI rule
+
+- The member supplies the exact value by typing it in the metric field or by
+  explicitly including it in the current AI request.
+- AI may preserve that exact value while proposing or shortening the label.
+- AI may not invent, retrieve from another record, infer, calculate, round,
+  embellish, change, or silently substitute a value.
+- A wording proposal treats existing numeric tokens as immutable. If the member
+  wants a different value, the member must explicitly supply it.
+- A metric has normal draft, preview, publish, version, hide, reorder, remove,
+  and optional-destination behavior.
+- The first release has no metric source selector, evidence attachment,
+  verification badge, or provenance/readiness state.
+- Source-backed metrics are a deferred enhancement requiring a separate product
+  decision and migration treatment; they are not hidden future fields in this
+  contract.
 
 ## 4. Flexible Spotlight types
 
@@ -137,7 +160,9 @@ duplicate blocks produce misleading or broken output.
 1. **No valid public content means no wrapper.** Empty, hidden, invalid,
    unauthorized, unpublished, or unsupported blocks consume no public space.
    A claim invalidated by corrective source supersession also consumes no space
-   and is never replaced with unreviewed corrected wording.
+   and is never replaced with unreviewed corrected wording. Corrective-source
+   behavior applies to record-linked content; a first-release authored metric
+   changes only through member edit/publish or removal.
 2. **No fixed public card heights.** Cards grow with accepted content and use
    style-owned minimum spacing only.
 3. **No masonry.** DOM, reading, keyboard, and default visual order remain the

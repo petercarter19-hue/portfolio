@@ -1,7 +1,9 @@
 # PS-OVERVIEW-001 — Member Overview direction and self-service contract
 
-**Status:** Documentation-only direction package complete and ready for owner
-inventory review. It is not runtime implementation authorization and does not
+**Status:** Documentation-only direction package complete. Pete approved the
+page-purpose inventory and six first-release decisions on 2026-07-26. The next
+gate is ChatGPT production-intent visual creation and Pete's exact file/hash
+lock. This package is not runtime implementation authorization and does not
 lock either supplied concept as production visual authority.
 
 **Owner:** Pete.
@@ -18,6 +20,9 @@ package.
 
 **Wide-desktop amendment base:** Azure DevOps `origin/main` at
 `52128a57c81969788c9dde68636d26c0ebd6a7db`.
+
+**Owner-decision amendment base:** Azure DevOps `origin/main` at
+`e915b173ec4a2c14ea6d499f45416335a6b93b29`.
 
 **Reserved files:** `docs/initiatives/PS-OVERVIEW-001/**` only.
 
@@ -51,6 +56,11 @@ The Overview is a curated projection over canonical résumé, Slate, and
 eligible public Story records. It is not a second résumé, a competing truth
 store, or a freeform web-page builder.
 
+Optional first-release proof metrics are bounded authored Overview claims:
+members supply the exact values, AI cannot invent or alter them, and no metric
+source-backing or provenance system is included. Source-backed metrics are
+deferred until after the basic experience is working and reviewed live.
+
 ## Placement and page boundary
 
 - The Overview renders above the member's actual résumé.
@@ -67,9 +77,10 @@ store, or a freeform web-page builder.
   **Overview** when an Overview is published and **Summary** when the fallback
   Summary renders. The approved future left Context Rail remains a separately
   gated migration; either contextual control stays outside the center canvas.
-- The public Ask [Name] AI and Résumé PDF actions remain truthful page-level
-  capabilities and must receive one nonduplicative approved placement when the
-  Summary is absorbed.
+- The hero uses Connect as its primary action and View résumé as its
+  same-page secondary action. Public Download PDF and Ask [Name] AI remain
+  truthful shared contextual capabilities outside the hero. Each action
+  appears once; mobile may use one compact accessible shared-actions menu.
 - The concepts' top navigation, internal left-looking column, and footer are not
   a new navigation system.
 - All Overview content belongs to the same center canvas. A style may use
@@ -125,6 +136,9 @@ type, and layouts that work for only one person's content.
 - [Wide-desktop canvas and evidence amendment](08_WIDE_DESKTOP_WIDTH_AMENDMENT.md)
   records the 27-/32-inch-monitor concern as CSS-viewport requirements,
   current-shell reference geometry, and exact visual/implementation evidence.
+- [Owner decisions — 2026-07-26](09_OWNER_DECISIONS_2026-07-26.md) records
+  Pete's inventory approval, first-release audience and metric rules, public
+  density, style names, action placement, and starting wide geometry.
 - [Completion and handoff report](OWNER_TECHNICAL_COMPLETION_REPORT.md) records
   the documentation result and its evidence limits.
 
@@ -157,10 +171,17 @@ independent review against its exact branch, SHA, and evidence.
 
 ## Next gate
 
-Pete reviews the inventory and the small set of owner decisions in
-[the style and visual gate](05_STYLE_MANIFESTS_AND_VISUAL_GATE.md). After that
-approval, ChatGPT creates the complete Story & Career and Work & Impact visual
-authority set, including sparse, long-content, editing, visitor-preview, mobile,
-large-text, failure, and full-browser 1440/1920/2560/3840-wide states. No
-implementation begins until Pete locks those exact files and a separate bounded
-implementation package is activated.
+The inventory and first-release choices are owner-approved. ChatGPT now creates
+the complete Story & Career and Work & Impact production-intent visual
+authority candidates from the approved contract, including sparse,
+long-content, editing, visitor-preview, mobile, large-text, failure, and
+full-browser 1440/1920/2560/3840-wide states.
+
+The visual exercise starts at `min(92vw, 90rem)` at normal scale. Pete may
+redirect the exact stage after seeing the complete 2560- and 3840-pixel frames;
+the older `PS-SHELL-001` estimate does not narrow or block visual creation.
+Before implementation, the exact Pete-locked Overview geometry and shared shell
+must be reconciled.
+
+No implementation begins until Pete locks exact durable visual files and
+hashes and a separate bounded implementation package is activated.

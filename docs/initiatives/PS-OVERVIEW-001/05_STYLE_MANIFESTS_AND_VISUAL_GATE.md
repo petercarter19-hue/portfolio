@@ -102,8 +102,8 @@ clear opening and a concise path into the résumé.
 - show the member editor without turning the public page into a design canvas;
 - absorb the current résumé Summary instead of creating a second portrait/name/
   intro opening; and
-- preserve one truthful public Ask [Name] AI placement outside duplicated hero
-  actions.
+- show Connect and View résumé in the hero, with one truthful Download PDF and
+  Ask [Name] AI treatment in the shared context outside the hero.
 
 ## 5. Work & Impact manifest
 
@@ -148,7 +148,8 @@ value, scope, capabilities, and supporting record.
 - use authentic/clearly labeled media rules;
 - preserve readable type instead of fitting the entire rich example at once;
 - absorb the current résumé Summary and preserve Ask [Name] AI/PDF capability
-  without repeating actions.
+  in shared context without repeating it in the hero; and
+- show Connect as hero primary and View résumé as the same-page secondary.
 
 ## 6. Style switching
 
@@ -186,8 +187,8 @@ templates:
 | State | Typical content | Requirement |
 | --- | --- | --- |
 | Sparse | Hero plus one or two meaningful blocks; optional one proof | Deliberate text-led composition, no setup prompt, no fake empty slots |
-| Standard | Hero, optional proof, three to five content bands | Recommended public density |
-| Rich | Hero, proof, six to eight distinct bands | Must remain readable and non-repetitive; visual review required |
+| Standard | Hero, optional proof, four to six major content bands | Recommended public density; hero and proof do not count |
+| Rich | Hero, optional proof, seven or eight distinct major bands | Eight is the absolute first-release maximum; hero and proof do not count; visual review required |
 
 The system may warn that the content is too sparse or rich for a selected
 emphasis combination. It must not silently switch the member to the other
@@ -207,10 +208,12 @@ For each style, provide annotated full-browser standard-state frames at:
 - 2560 × 1440 CSS pixels; and
 - 3840 × 2160 CSS pixels.
 
-The first visual candidate uses a centered `min(92vw, 90rem)` shell at
+Pete approved the first visual candidate starting at a centered
+`min(92vw, 90rem)` shell at
 100-percent browser zoom, with computed CSS `zoom: 1` and `transform: none`.
-This is the Studio-aligned working target for Pete to scrutinize, not a
-pre-claimed final lock.
+This is the Studio-aligned starting target, not a pre-claimed final file/hash
+lock. Complete 2560- and 3840-pixel frames may lead Pete to widen or otherwise
+adjust the exact stage.
 
 Record the CSS viewport, device-pixel ratio, browser zoom, shell width,
 Overview content-column width, external contextual-control width, column gap,
@@ -234,9 +237,10 @@ The visual candidate must:
 At 2560 and 3840 CSS pixels, a capped stage with intentional margins may be the
 correct result, but it must be shown full-frame and explicitly accepted by
 Pete. Neither the concepts' 941/864-pixel widths nor the planned
-`PS-SHELL-001` 1120–1200-pixel estimate is automatically binding. The final
-Overview width and shared-shell width must be reconciled before visual lock;
-one package may not silently clamp the other.
+`PS-SHELL-001` 1120–1200-pixel estimate is binding or a blocker to Overview
+visual creation. One package may not silently clamp the other. The exact
+Pete-locked Overview geometry and shared-shell width must be reconciled before
+runtime implementation.
 
 See `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` for current-shell reference
 measurements and the durable edge-alignment invariant.
@@ -253,6 +257,8 @@ both styles. At minimum:
 - 390-pixel-class mobile standard and sparse;
 - text-only/no portrait/no feature media;
 - one proof item and no proof items;
+- manual proof-metric entry and an AI label proposal with the member-supplied
+  value visibly locked;
 - one role and multiple roles;
 - one degree with no other credentials;
 - missing Story;
@@ -268,10 +274,12 @@ both styles. At minimum:
 - initial choice: build from résumé, build manually, or AI proposal;
 - block catalog and record selection;
 - field/item limit feedback;
+- direct metric value editing, no metric source/provenance control, and AI
+  label assistance that cannot change the value;
 - reorder with keyboard-equivalent controls;
 - media focal/alt/consent state;
 - source changed/private source/missing destination blockers;
-- AI source comparison and accept/edit/reject;
+- AI source comparison where applicable and accept/edit/reject;
 - exact visitor preview with editing furniture absent;
 - at least one 1920- or 2560-pixel-wide owner-editor/visitor-preview pair that
   preserves the same published canvas geometry;
@@ -290,7 +298,9 @@ both styles. At minimum:
 - one dynamic first entry: Overview when published, Summary for fallback;
 - existing Summary absorbed when Overview is published and restored after
   unpublish;
-- one clear nonduplicative Ask [Name] AI and Résumé PDF treatment;
+- Connect and View résumé in the hero;
+- one clear nonduplicative Ask [Name] AI and Download PDF treatment in shared
+  context, with a compact accessible shared-actions menu on mobile;
 - existing shared shell;
 - Overview above the real résumé;
 - **Résumé begins here** boundary;
@@ -299,7 +309,7 @@ both styles. At minimum:
 
 ## 10. Visual lock checklist
 
-- [ ] Pete approves
+- [x] Pete approved on 2026-07-26
   `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
 - [ ] ChatGPT creates both complete visual/state sets.
 - [ ] Every meaningful visible item maps to an approved inventory row.
@@ -311,31 +321,34 @@ both styles. At minimum:
   stage, content-column, rail, gutter, and text-measure relationships.
 - [ ] The selected Overview is shown at normal scale without CSS `zoom` or
   transform fitting.
-- [ ] The selected width is reconciled with `PS-SHELL-001`; neither package
-  silently narrows the other.
+- [ ] The exact Pete-locked width is reconciled with the shared shell before
+  implementation; `PS-SHELL-001` does not narrow the visual exercise.
 - [ ] Desktop/mobile/large-text/focus/reduced-motion states pass owner scrutiny.
 - [ ] Editing and visitor preview truth are visually explicit.
 - [ ] Pete locks exact durable files and SHA-256 hashes.
 - [ ] A separate implementation-information package names the locked files,
   authorized scope, writer, tests, and release boundary.
 
-## 11. Owner decisions before visual lock
+## 11. Owner decisions locked for visual creation
 
-Pete should settle these during inventory/visual review:
+Pete approved the inventory and these six choices on 2026-07-26:
 
-1. **Audience:** Inherit the public résumé audience for the first release
-   (recommended), or design an independent Overview audience now.
-2. **Member-confirmed metrics:** Permit publish with clear owner-visible
-   provenance, or require an eligible canonical supporting source.
-3. **Public maximum:** Confirm approximately eight bands as the rich upper
-   bound, with four to six recommended.
-4. **Style naming:** Confirm Story & Career and Work & Impact as the
-   member-facing editor labels.
-5. **Hero action:** Decide whether résumé download/contact primarily belongs to
-   the shared shell, the hero, or one of each only when their jobs differ.
-6. **Wide stage:** After reviewing the annotated 2560- and 3840-pixel frames,
-   lock the exact shared-shell/Overview width, outer gutters, and contextual
-   control relationship and reconcile the older `PS-SHELL-001` estimate.
+1. **Audience:** Inherit the public résumé audience; do not create an
+   independent first-release Overview audience.
+2. **Metrics:** Permit optional member-supplied proof values with no
+   first-release metric source-backing or provenance system. AI may preserve an
+   exact member-supplied value and edit its label, but may not invent or alter
+   the value.
+3. **Public maximum:** Four to six major content bands normally and eight
+   maximum; hero and optional proof band do not count.
+4. **Style naming:** Story & Career and Work & Impact.
+5. **Actions:** Connect is hero primary; View résumé is hero secondary;
+   Download PDF and Ask [Name] AI are shared contextual controls; no duplicates.
+6. **Wide stage:** Start at `min(92vw, 90rem)` at normal scale. Show complete
+   2560- and 3840-pixel frames before Pete's exact file/hash lock; the old
+   `PS-SHELL-001` estimate does not narrow or block this visual exercise.
 
-These decisions do not block merging this requirements package. They block the
-exact visual lock and publication architecture.
+These decisions authorize ChatGPT visual creation, not runtime implementation.
+Source-backed metrics, independent Overview audience, and changes learned from
+real-member testing are deferred decisions. The exact visual/state files and
+hashes remain Pete's next approval gate.
