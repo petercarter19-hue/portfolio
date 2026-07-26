@@ -7,6 +7,10 @@
 - PR / pipeline / environment:
 - Production state:
 - Visual authority and status: Not Applicable / Not Started / In Design / In Review / Accepted / Blocked
+- Visual inspector: Not Applicable / Pete personally / Assigned writer or agent
+- Approved-mockup fidelity evidence: Not Applicable / Agent-run loop Open / Agent-run Exact Parity / Pete-run inspection Open / Pete-run Accepted; authority path/hash/frame/state/viewport
+- Agent-run compare-refine pass count by state/viewport and visual mismatch register: Not Applicable / Empty / Unresolved (list)
+- Pete-run inspection record: Not Applicable / renders reviewed, correction directions, refinements returned, and final visual decision
 - Homepage product projection: Not Applicable / Current / Update Included / Downstream Package Required / Blocked
 - Pete / designated session manager visual acceptance:
 - Designated session manager:
@@ -42,9 +46,27 @@ For user-facing work, follow
 `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`, separately name the approved visual authority, list the
 desktop/mobile/zoom/focus/reduced-motion/long-content/failure screenshots or
 evidence reviewed, compare the implementation with that authority, record every
-intentional deviation and its reason, and state Pete's and the designated
-session manager's visual
-acceptance. A functional pass is not visual acceptance.
+permitted narrow truth/accessibility/reflow adaptation and its reason, and state
+Pete's and the designated session manager's visual acceptance. A functional
+pass is not visual acceptance.
+
+When the work is based on an approved mockup, record the exact durable
+path/hash, selected frame or region, depicted state, and intended viewport.
+Record whether Pete or the assigned writer/agent performed the visual
+inspection. When Pete did not personally perform it, report the agent-run
+compare-refine pass count for every required state and viewport, the compact
+visual mismatch register, the correction made for each mismatch, and the final
+side-by-side plus applicable overlay/pixel/geometry evidence that closed it.
+Confirm that the writer reviewed the approved mockup again during every cycle
+and reopened the loop after every later visual-affecting change. Agent-run
+`Pass` requires an empty mismatch register except for explicitly permitted and
+recorded narrow adaptations; otherwise report `Conditional` or `Fail`.
+
+When Pete personally performed the visual inspection, report the renders he
+reviewed, his correction directions, the refinements returned to him, and his
+final visual decision. Do not invent a duplicate autonomous agent pass count or
+mismatch register unless Pete requested or delegated that inspection. The
+approved mockup remains the visual authority under either path.
 
 For a new or materially revised visual authority, include the Pete-approved
 `docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` and state whether

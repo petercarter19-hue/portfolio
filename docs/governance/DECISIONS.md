@@ -559,3 +559,44 @@ This is an append-only operational decision record. The current Bible and Roadma
 - This approval authorizes ChatGPT visual creation within the approved rows. It
   does not select or lock a visual, authorize runtime implementation, activate
   Slice 1, or change the rejected Slice 2 disposition.
+
+## 2026-07-26 - Require continuous approved-mockup fidelity
+
+- Owner decision: whenever PeerSlate work is based on a Pete-approved mockup,
+  that exact mockup remains the primary visual authority throughout
+  implementation, review, correction, acceptance, and release. It is never
+  merely first-pass inspiration.
+- Clarification from Pete on the same date: the mandatory autonomous agent
+  inspection loop applies when Pete is not personally performing the visual
+  inspection. The package must record whether Pete or the assigned writer/agent
+  is the visual inspector.
+- When Pete is not personally inspecting, the writer reviews the mockup,
+  implements a bounded pass, renders the corresponding real state and viewport,
+  reviews the mockup again, compares the two, records every visible mismatch,
+  refines the implementation, and repeats the cycle without a fixed pass limit
+  until exact parity.
+- When Pete personally performs the visual inspection, he compares the approved
+  mockup with the real renders, directs corrections, decides whether another
+  pass is needed, and gives or withholds final visual acceptance. The writer
+  implements his corrections and returns updated renders. A duplicate
+  autonomous agent inspection or mismatch register is not required unless Pete
+  requests or delegates it.
+- Implementation screenshots, the current build, framework defaults, writer or
+  reviewer taste, passing tests, schedule pressure, resemblance, or a plan to
+  polish later cannot replace the authority or close the visual gate.
+- Under the agent-run path, a later code, content, asset, or layout change that
+  can affect the visible result reopens the same compare-refine loop before
+  handoff, acceptance, merge, or release. Under the Pete-run path, it returns to
+  Pete's comparison and correction cycle before acceptance.
+- Truthful content, semantic structure, focus, contrast, touch targets, reduced
+  motion, and responsive reflow remain mandatory. A narrow documented
+  adaptation must preserve the locked direction. A material visual change or
+  an authority that cannot represent a required truthful, accessible state
+  returns through ChatGPT and Pete for a revised exact lock; the writer does not
+  improvise a substitute.
+- The completion evidence records the authority identity and visual inspector.
+  Agent-run inspection records passes by state and viewport, mismatch closure,
+  final comparison, and any approved narrow adaptation; an unresolved mismatch
+  is `Conditional` or `Fail`, never `Pass`. Pete-run inspection records the
+  renders he reviewed, his correction directions, returned refinements, and his
+  final visual decision.

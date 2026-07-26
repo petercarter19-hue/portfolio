@@ -185,7 +185,18 @@ These rules govern product copy, information architecture, data behavior, AI beh
 87. An owner-approved production-intent demonstration, mockup, storyboard, or
     walkthrough is a binding visual minimum. The real product must be
     recognizably the same interaction model and match or exceed its professional
-    polish; it may not silently ship as a generic downgrade.
+    polish; it may not silently ship as a generic downgrade. When the work is
+    based on an approved mockup, that exact mockup remains the primary visual
+    authority throughout delivery. Record the visual inspector. When Pete is
+    not personally performing the visual inspection, the assigned writer/agent
+    must, after every bounded implementation or refinement pass, render the
+    corresponding state and viewport, review the mockup again, compare, correct
+    every mismatch, and repeat without a fixed pass limit until exact parity.
+    This is the continuous compare-refine loop; any later visual-affecting
+    change reopens it. When Pete personally performs the inspection, the writer
+    implements his correction directions, returns updated renders, and records
+    his final visual decision without a duplicate autonomous inspection unless
+    he requests one.
 88. Demonstrations must identify what is illustrative, live, stored,
     transmitted, local-only, private, public, or future. A demonstration may
     truthfully preview approved future behavior without claiming it already

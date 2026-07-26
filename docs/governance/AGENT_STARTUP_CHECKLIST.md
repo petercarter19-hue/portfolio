@@ -18,6 +18,8 @@
 - [ ] Confirmed whether the lane is self-managed, who grants final acceptance, and who owns post-acceptance PR/deploy/closeout
 - [ ] Confirmed whether shared governance files are reserved or package-local records only may change
 - [ ] Named the visual authority and current owner/manager acceptance state for user-facing work
+- [ ] For approved-mockup work, recorded the exact file/hash/frame/state/viewport and whether Pete or the assigned writer/agent is the visual inspector
+- [ ] When Pete is not personally performing the visual inspection, planned the continuous compare-refine loop through exact parity; when Pete is inspecting, planned the render/correction cycle he directs
 - [ ] Identified current roadmap position, entry gate, exit gate, and next required evidence
 - [ ] Created a new work branch from current `origin/main`
 

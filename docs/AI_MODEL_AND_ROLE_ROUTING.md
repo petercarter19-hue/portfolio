@@ -138,9 +138,17 @@ real architecture question.
 ChatGPT creates the complete production-intent visual and state set
 → Pete selects and locks one exact durable authority
 → manager records interaction, truth, and accessibility contract
-→ one writer implements and compares the real build at required states/viewports
+→ package records whether Pete or the assigned writer/agent is the visual inspector
+→ if Pete is not personally inspecting: writer reviews the exact authority,
+  implements one bounded pass, renders the matching state/viewport, compares,
+  records mismatches, refines, and repeats without a fixed pass limit
+→ agent-run path reaches exact parity and an empty mismatch register at every
+  required state/viewport
+→ if Pete is personally inspecting: writer returns renders, implements Pete's
+  correction directions, and records Pete's final visual decision
 → one reviewer only if a defined risk trigger applies
-→ same writer corrects findings
+→ same writer corrects findings and reopens the compare-refine loop for any
+  visual-affecting change when the agent-run path applies
 → Pete reviews the corrected real build for final visual acceptance
 → Azure release evidence and live verification
 ```
@@ -158,6 +166,20 @@ design. Claude Chat, Co-Work, Code, and Design may not originate or substitute
 the visual authority. A change to composition, hierarchy, dominant
 object/action, typography family, color language, or responsive interaction
 model is material and returns to ChatGPT and Pete for a revised exact lock.
+
+When implementation is based on an approved mockup, that exact mockup remains
+the primary visual authority throughout delivery; neither the current build nor
+implementation screenshots replace it. Record who performs the visual
+inspection. When Pete is not personally performing it, the writer must run the
+continuous compare-refine loop in `OWNER_VISUAL_INTEGRITY_STANDARD.md` after
+every bounded pass and after every later visual-affecting change. Exact
+comparable-state and comparable-viewport parity with an empty mismatch register
+is required for an agent-run `Pass`; an unresolved mismatch is `Conditional` or
+`Fail`. When Pete personally performs the inspection, the writer implements his
+correction directions, returns updated renders, and records Pete's final visual
+decision without duplicating his inspection unless asked. Functional
+completion, passing tests, resemblance, time pressure, or "polish later" cannot
+replace visual acceptance under either path.
 
 A visual acceptance does not replace accessibility, truth, security/privacy, or
 release checks.
@@ -201,3 +223,10 @@ Every substantial handoff contains:
   valid; implementation/review agents may compare and make documented
   non-material accessibility, truth, and reflow adaptations, but may not create
   a competing or substitute design.
+- **PS-AI-OPS-012:** An approved mockup remains the primary authority throughout
+  implementation and review. When Pete is not personally performing the visual
+  inspection, the writer repeatedly renders, compares, records, refines, and
+  rechecks without a fixed pass limit until exact parity; any later
+  visual-affecting change reopens the loop. When Pete personally inspects, the
+  writer implements his corrections and records his final visual decision
+  without a duplicate autonomous inspection unless requested.

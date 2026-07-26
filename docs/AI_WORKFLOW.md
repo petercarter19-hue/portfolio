@@ -88,7 +88,12 @@ boundaries.
    architecture. Keep the accepted result in the package; do not re-architect it
    in another ecosystem.
 3. One writer implements, runs applicable tests, inspects the complete diff, and
-   corrects its own findings before handoff.
+   corrects its own findings before handoff. When the work is based on an
+   approved mockup, record the visual inspector. When Pete is not personally
+   performing the visual inspection, that writer also runs the continuous
+   compare-refine loop against the exact mockup after every bounded pass until
+   exact parity. When Pete performs the inspection, the writer implements his
+   corrections and returns each updated render to him.
 4. A fresh independent reviewer is mandatory only for: architecture-heavy work;
    authentication, session, authorization, privacy, or cross-user data;
    schema or migration work; publication, audience, or deletion behavior;
@@ -100,8 +105,10 @@ boundaries.
    unresolved or conditional finding, or escalate when the correction changes
    the risk or architecture.
 6. For material user-facing work, the writer supplies final comparison evidence
-   and Pete gives final visual acceptance on the corrected real build. The
-   manager accepts scope/product readiness without replaying the technical audit.
+   and Pete gives final visual acceptance on the corrected real build.
+   Mockup-based evidence includes the pass-by-pass mismatch closure and an empty
+   final mismatch register across required states and viewports. The manager
+   accepts scope/product readiness without replaying the technical audit.
 7. Complete pre-merge verification, Azure PR and squash merge, runtime pipeline,
    live verification, rollback/stop evidence, and a compact closeout. A
    documentation-only package does not deploy merely to record its closeout.
@@ -235,20 +242,28 @@ The writer must:
    shared integration zones before editing;
 2. implement the bounded package and inspect the complete diff against its
    exact `origin/main` base;
-3. find and correct its own regressions, missing requirements, accessibility
+3. for approved-mockup work, keep the exact mockup as the primary visual
+   authority and record who performs the visual inspection; when Pete is not
+   personally performing it, repeatedly review the mockup, render and compare
+   the real result, refine every mismatch, and recheck until exact
+   comparable-state and comparable-viewport parity; when Pete performs it,
+   implement his correction directions and return updated renders until he
+   gives or withholds final visual acceptance;
+4. find and correct its own regressions, missing requirements, accessibility
    failures, visual deviations, unsafe assumptions, and unrelated changes;
-4. run the focused, guardrail, full-suite, migration, infrastructure,
+5. run the focused, guardrail, full-suite, migration, infrastructure,
    responsive, accessibility, and production-intent checks that the package or
    risk level requires, including a pre-merge verification gate;
-5. synchronize with current `origin/main`, resolve only in-scope conflicts, and
+6. synchronize with current `origin/main`, resolve only in-scope conflicts, and
    rerun affected evidence before requesting acceptance;
-6. write the standard completion report with exact commands/results, branch,
-   full SHA, screenshots, parity/deviation evidence, limitations, conflicts,
-   and a self-certification result of `Pass`, `Conditional`, or `Fail`;
-7. stop and report `Conditional` or `Fail` rather than hide a failed check,
+7. write the standard completion report with exact commands/results, branch,
+   full SHA, screenshots, visual mismatch closure and any permitted adaptation,
+   limitations, conflicts, and a self-certification result of `Pass`,
+   `Conditional`, or `Fail`;
+8. stop and report `Conditional` or `Fail` rather than hide a failed check,
    unresolved security/privacy issue, destructive migration uncertainty,
    unsupported production claim, or material design deviation; and
-8. after Pete/designated-session-manager acceptance, complete its own Azure PR, pipeline,
+9. after Pete/designated-session-manager acceptance, complete its own Azure PR, pipeline,
    production verification, package-local architecture/evidence update, and
    release closeout unless the package assigns those actions elsewhere.
 
@@ -312,6 +327,21 @@ mockup, storyboard, or walkthrough is a binding minimum: implementation must be
 recognizably the same interaction model and match or exceed its hierarchy,
 composition, clarity, and finish.
 
+For approved-mockup work, the exact mockup remains the primary visual authority
+throughout implementation, review, correction, acceptance, and release. It is
+not a starting suggestion and the current build never becomes a substitute
+authority. Record whether Pete is personally performing the visual inspection.
+When he is not, the writer reviews the mockup, implements or refines one bounded
+pass, renders the corresponding real state and viewport, reviews the mockup
+again, compares the two, records and corrects every visible mismatch, and
+repeats without a fixed pass limit until exact parity. Any later
+visual-affecting change reopens this continuous compare-refine loop. When Pete
+personally performs the inspection, he compares the approved mockup with the
+real renders, directs corrections, and gives or withholds final visual
+acceptance; the writer implements his directions and does not duplicate his
+inspection unless asked. The detailed comparison, permitted-adaptation,
+evidence, and escalation rules are in `OWNER_VISUAL_INTEGRITY_STANDARD.md`.
+
 Before ChatGPT creates or materially revises that authority, complete and obtain
 Pete's approval of `docs/templates/PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
 
@@ -331,14 +361,17 @@ add a duplicate reviewer or visual pass.
 
 The writer must return named desktop/mobile and applicable focus, 200% zoom,
 reduced-motion, long-content, processing, failure, and recovery evidence plus a
-parity/deviation summary and self-certification. Pete gives final visual
-acceptance for material user-facing work on the corrected build unless explicitly
-delegated. The manager confirms scope/product readiness and may rely on the
-returned evidence and a focused review rather than recreating the writer's entire
-visual audit. Passing tests, a clean branch, or a working happy path does not by itself
-satisfy visual completion. Demonstrations must still state honestly which
-behavior is live, illustrative, stored, transmitted, local-only, private,
-public, or future.
+parity summary and any permitted narrow adaptation. For agent-run inspection,
+also return the mockup pass count, mismatch-closure record, and
+self-certification. For Pete-run inspection, record the renders he reviewed,
+his correction directions, the refinements returned, and his final visual
+decision. Pete gives final visual acceptance for material user-facing work on
+the corrected build unless explicitly delegated. The manager confirms
+scope/product readiness and may rely on the returned evidence and a focused
+review rather than recreating the visual inspection. Passing tests, a clean
+branch, or a working happy path does not by itself satisfy visual completion.
+Demonstrations must still state honestly which behavior is live, illustrative,
+stored, transmitted, local-only, private, public, or future.
 
 Every user-facing package must also perform the homepage-product parity check
 defined in the same standard. If the logged-out homepage presents, demonstrates,
@@ -416,9 +449,14 @@ Never claim that work is deployed merely because it is committed or pushed.
 3. The self-managed writer reviews the complete diff and confirms the branch contains no unrelated work.
 4. Run the relevant tests, syntax checks, and smoke checks.
 5. For material user-facing work, the writer self-certifies the named visual
-   authority comparison and documented deviations, resolves applicable review
-   findings on the same branch, then obtains Pete's final visual acceptance on
-   the corrected build and the manager's scope/product-readiness acceptance.
+   authority comparison when the agent-run inspection path applies, records any
+   permitted narrow adaptations, and resolves applicable review findings on the
+   same branch. For mockup-based work that Pete is not personally inspecting,
+   the writer confirms that the continuous compare-refine loop ended with an
+   empty mismatch register across required states and viewports. When Pete
+   personally inspects, the writer instead records Pete's correction cycle and
+   final visual decision. The writer then obtains Pete's final visual acceptance
+   on the corrected build and the manager's scope/product-readiness acceptance.
    Acceptance may rely on the report and focused product review; a second
    line-by-line implementation audit is not required.
 6. Resolve review feedback before acceptance, rerunning affected tests and
@@ -572,8 +610,10 @@ Every completed task must report:
 - Azure pull request and merge status
 - changed files or areas
 - tests and checks run with results
-- named visual authority, parity/deviation evidence, and owner/manager visual
-  acceptance status for user-facing work
+- named visual authority, visual inspector, the applicable agent-run
+  compare-refine/mismatch-closure evidence or Pete-run correction/decision
+  record, any permitted narrow adaptation, and owner/manager visual acceptance
+  status for user-facing work
 - working-tree status
 - Azure pipeline result
 - production verification result

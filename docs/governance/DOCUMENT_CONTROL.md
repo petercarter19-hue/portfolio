@@ -35,7 +35,7 @@ No agent may silently choose an older instruction because it is more detailed. S
 | Shared AI and Git Workflow | Current; self-managed lanes adopted 2026-07-19 | Branch ownership, writer self-review/certification, final acceptance, Azure release, handoff, and closeout |
 | Current baseline/state/initiatives | Updated by PS-BASELINE-001 | Operational truth and active ownership |
 | Deep Navy Gold visual baseline | Approved | Shared owner visual foundation |
-| Owner Visual Integrity Standard | Approved | Demonstration parity, product-to-homepage projection convergence, visual evidence, and owner/manager acceptance gates |
+| Owner Visual Integrity Standard | Approved; continuous approved-mockup fidelity and visual-inspector responsibility clarified 2026-07-26 | Binding visual authority; agent-run repeated compare-refine parity when Pete is not personally inspecting; Pete-directed correction evidence when he is; product-to-homepage projection convergence; and owner/manager acceptance gates |
 | Owner Story Composition Standard | Approved | Member-controlled Story layout, accessible manipulation, responsive projection, persistence, and publication gates |
 | Early Legal and Site Readiness Standard | Approved architecture gate | Terms/privacy/cookie/accessibility/community/AI/media/messaging readiness inventory and counsel/security activation gates |
 | AI Model and Role Routing | Current operational guidance | One manager, one self-managed writer, risk-based reviewer, current-model verification, and token-efficient Claude/Codex routing |

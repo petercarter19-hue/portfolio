@@ -77,6 +77,17 @@ owner, entry gate, current production baseline, named visual authority and
 acceptance status when user-facing work is involved, and next required evidence.
 Create a work branch from current `origin/main`.
 
+For work based on an approved mockup, also confirm the exact durable file, hash
+when available, selected frame or region, state, and viewport. The mockup
+remains the primary visual authority throughout delivery. Record whether Pete
+is personally performing the visual inspection. When he is not, the assigned
+writer/agent must plan, execute, and document the continuous compare-refine loop
+in `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; a one-time or end-only
+comparison is not sufficient. When Pete is performing the inspection, implement
+his correction directions, return each updated render to him, and record his
+final visual decision without creating a duplicate autonomous inspection unless
+he requests it.
+
 Also confirm whether the package uses the self-managed delivery model, who owns
 post-acceptance PR/deploy/closeout, whether shared governance files are reserved,
 and which `Pass`, `Conditional`, or `Fail` evidence is required before final

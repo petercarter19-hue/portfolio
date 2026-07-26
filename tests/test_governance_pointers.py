@@ -111,6 +111,8 @@ class GovernanceRecordsTests(unittest.TestCase):
         ("docs", "initiatives", "PS-NEXT-WAVE-MANAGER-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "README.md"),
         ("docs", "initiatives", "PS-VISUAL-INTEGRITY-GOV-001", "COMPLETION_REPORT.md"),
+        ("docs", "initiatives", "PS-GOV-MOCKUP-FIDELITY-001", "README.md"),
+        ("docs", "initiatives", "PS-GOV-MOCKUP-FIDELITY-001", "OWNER_TECHNICAL_COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "README.md"),
         ("docs", "initiatives", "PS-STORY-COMPOSER-DIRECTION-001", "COMPLETION_REPORT.md"),
         ("docs", "initiatives", "PS-ASK-PETE-AI-001", "README.md"),
@@ -711,6 +713,73 @@ class BaselineCoherenceTests(unittest.TestCase):
                 self.assertIn("OWNER_VISUAL_INTEGRITY_STANDARD.md", body)
         report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
         self.assertIn("Pete / designated session manager visual acceptance", report)
+
+    def test_continuous_approved_mockup_fidelity_is_enforced(self):
+        standard = _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md")
+        normalized_standard = re.sub(r"\s+", " ", standard)
+        for expected in (
+            "## Continuous approved-mockup fidelity rule",
+            "primary visual authority throughout implementation, review, correction, acceptance, and",
+            "Implementation screenshots, framework defaults, the current build",
+            "There is no fixed maximum number of passes.",
+            "When Pete is not personally performing the visual inspection",
+            "Under the agent-run path, the loop may end in `Pass` only at exact visual parity.",
+            "Pete-run inspection",
+            "A second autonomous agent inspection, pass count, or mismatch register is not required",
+            "manager records Pete's visual decision and does not repeat his inspection",
+            "visual mismatch register",
+            "Any later code, content, asset, or layout change",
+        ):
+            self.assertIn(expected, normalized_standard)
+
+        for relative_path in (
+            "AGENTS.md",
+            "CLAUDE.md",
+            "docs/AI_WORKFLOW.md",
+            "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+            "docs/PEERSLATE_SITE_RULES.md",
+        ):
+            with self.subTest(path=relative_path):
+                body = _read(*relative_path.split("/"))
+                normalized_body = re.sub(r"\s+", " ", body)
+                self.assertRegex(normalized_body, r"(?i)approved mockup")
+                self.assertRegex(normalized_body, r"(?i)compare-refine")
+                self.assertRegex(normalized_body, r"(?i)exact (?:visual )?parity")
+                self.assertRegex(normalized_body, r"(?i)(?:no|without a) fixed")
+                self.assertRegex(
+                    normalized_body,
+                    r"(?i)Pete is not personally (?:performing|inspecting)",
+                )
+                self.assertRegex(normalized_body, r"(?i)Pete.*personally")
+
+        start_here = re.sub(r"\s+", " ", _read("START_HERE.md"))
+        self.assertIn("continuous compare-refine loop", start_here)
+        self.assertIn("one-time or end-only comparison is not sufficient", start_here)
+        self.assertIn("Record whether Pete is personally performing the visual inspection", start_here)
+
+        report = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
+        normalized_report = re.sub(r"\s+", " ", report)
+        for expected in (
+            "Visual inspector",
+            "Approved-mockup fidelity evidence",
+            "Agent-run compare-refine pass count",
+            "Pete-run inspection record",
+            "Agent-run `Pass` requires an empty mismatch register",
+            "The approved mockup remains the visual authority under either path.",
+        ):
+            self.assertIn(expected, normalized_report)
+
+        decision_log = _read("docs", "governance", "DECISIONS.md")
+        self.assertIn("2026-07-26 - Require continuous approved-mockup fidelity", decision_log)
+        package = _read(
+            "docs", "initiatives", "PS-GOV-MOCKUP-FIDELITY-001", "README.md"
+        )
+        self.assertIn("No change to the controlling Bible or Roadmap", package)
+        self.assertIn("exact visual parity", package)
+        self.assertIn(
+            "mandatory autonomous agent inspection loop applies when he is not personally",
+            re.sub(r"\s+", " ", package),
+        )
 
     def test_interview_dual_theme_authority_and_live_release_state_are_explicit(self):
         brief = _read(

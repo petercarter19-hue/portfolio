@@ -116,6 +116,29 @@ class GovernanceDocsTests(unittest.TestCase):
                 'Keep / Change / Combine / Remove / Defer'):
             self.assertIn(expected, template)
 
+    def test_approved_mockup_requires_continuous_exact_fidelity(self):
+        standard = _read(os.path.join(
+            ROOT, 'docs', 'governance', 'OWNER_VISUAL_INTEGRITY_STANDARD.md'))
+        site_rules = _read(os.path.join(ROOT, 'docs', 'PEERSLATE_SITE_RULES.md'))
+        normalized_standard = ' '.join(standard.split())
+        normalized_site_rules = ' '.join(site_rules.split())
+        for expected in (
+                'Continuous approved-mockup fidelity rule',
+                'There is no fixed maximum number of passes.',
+                'Under the agent-run path, the loop may end in `Pass` only at exact visual',
+                'When Pete is not personally performing the visual inspection',
+                'Pete-run inspection',
+                'visual mismatch register'):
+            self.assertIn(expected, normalized_standard)
+        for expected in (
+                'exact mockup remains the primary visual',
+                'continuous compare-refine loop',
+                'without a fixed',
+                'until exact parity',
+                'When Pete is not personally performing the visual inspection',
+                'When Pete personally performs the inspection'):
+            self.assertIn(expected, normalized_site_rules)
+
     def test_claude_md_points_to_current_governance(self):
         content = _read(os.path.join(ROOT, 'CLAUDE.md'))
         self.assertIn('PEERSLATE_SITE_RULES.md', content)

@@ -57,6 +57,20 @@ visual authority before implementation. A selected mockup or demonstration is a
 binding minimum: the real experience must match or exceed it, and material work
 requires comparison screenshots plus Pete and the designated session manager's
 visual acceptance.
+Owner decision, 2026-07-26: when the package is based on a Pete-approved
+mockup, that exact mockup remains the primary visual authority at every stage;
+it is not initial inspiration that the implementation later replaces. Record
+who is performing the visual inspection. When Pete is not personally performing
+it, review the mockup, implement or refine one bounded pass, render the
+corresponding real state and viewport, review the mockup again, compare, correct
+every visible mismatch, and repeat without a fixed pass limit until exact
+parity. Any later visual-affecting change reopens this continuous compare-refine
+loop. Record the pass-by-pass mismatch closure required by the standard. When
+Pete personally performs the inspection, implement his correction directions,
+return updated renders, and record his final visual decision; do not create a
+duplicate autonomous inspection unless he asks for it. Functional completion,
+tests, resemblance, schedule pressure, or "polish later" cannot replace visual
+acceptance.
 Owner decision, 2026-07-24: ChatGPT is the sole creator of new or materially
 revised PeerSlate production-intent visual authority, including concepts,
 mockups, responsive and state sets, style exploration, and image edits.
