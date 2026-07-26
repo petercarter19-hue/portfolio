@@ -10,7 +10,8 @@
 - Status: **Pass** at clarified policy source
   `df499613ca848138dbea263270a9774973dd95ea`; owner authorized official
   release on 2026-07-26; Azure PR 181 squash-merged to `main` at
-  `4db44270b524c77556b601c82d036b7af9d1c802`
+  `4db44270b524c77556b601c82d036b7af9d1c802`; automatic pipeline 245
+  (`20260726.4`) passed Build and Deploy
 
 ## Owner decision
 

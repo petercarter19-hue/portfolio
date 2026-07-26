@@ -10,10 +10,11 @@
 - Base: Azure `origin/main` at
   `9d01fa7315115599bae0b45c237b72b265ac24e8`
 - PR / pipeline / environment: Azure PR 181 squash-merged successfully at
-  `4db44270b524c77556b601c82d036b7af9d1c802`; no automatic pipeline appeared
-  during the bounded post-merge window, and this documentation-only package did
-  not manually initiate a production deployment
-- Production state: unchanged; no runtime files or production behavior changed
+  `4db44270b524c77556b601c82d036b7af9d1c802`; automatic pipeline 245
+  (`20260726.4`) completed successfully with Build and Deploy passed
+- Production state: unchanged; no runtime files or production behavior changed;
+  post-deploy HTTP checks returned homepage 200, Interview Studio 200, and the
+  expected `/app` 302 sign-in redirect
 - Visual authority and status: Not Applicable; this package governs fidelity to
   future package-named authorities and creates no product visual
 - Visual inspector: Not Applicable to this documentation-only governance package
@@ -104,10 +105,14 @@ current Bible, Roadmap, product visual, runtime package, or release state.
     `4db44270b524c77556b601c82d036b7af9d1c802`.
   - The merge tree is byte-equivalent to the exact PR source tip, Azure
     `origin/main` resolves to that merge, and the remote task branch was deleted.
-  - No automatic pipeline for the merge appeared during the bounded post-merge
-    observation window. Because this package changes repository governance only,
-    no manual production deployment was initiated and no deployment claim is
-    made.
+  - Automatic pipeline 245 (`20260726.4`) was queued from exact policy merge
+    `4db44270b524c77556b601c82d036b7af9d1c802` and completed `succeeded`.
+    Its Build and Deploy stages both completed `succeeded`; no manual or
+    redundant pipeline was initiated.
+  - Post-deploy HTTP checks returned 200 for `/`, 200 for
+    `/interview-studio`, and the expected 302 from `/app` to
+    `/auth/sign-in?return_to=/app`. This verifies continuity only; the package
+    changed no runtime behavior.
 - Focused guardrails:
   - Command:
     `python -m unittest tests.test_governance_pointers tests.test_site_rules`
@@ -151,8 +156,8 @@ current Bible, Roadmap, product visual, runtime package, or release state.
 ## G. Known gaps, risks, and exclusions
 
 - No current implementation is retroactively certified by this package.
-- No runtime, visual asset, Bible/Roadmap, baseline, active-lane, pipeline, or
-  production status changes are claimed.
+- No runtime, visual asset, Bible/Roadmap, baseline, active-lane, pipeline
+  configuration, or product-behavior change is claimed.
 - `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and `ACTIVE_INITIATIVES.md` did
   not need pointer churn: the controlling standard path, Bible/Roadmap versions,
   active product ownership, and verified production truth did not change. This
