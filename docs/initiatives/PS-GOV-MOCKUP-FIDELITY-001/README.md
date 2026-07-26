@@ -9,7 +9,8 @@
   `9d01fa7315115599bae0b45c237b72b265ac24e8`
 - Status: **Pass** at clarified policy source
   `df499613ca848138dbea263270a9774973dd95ea`; owner authorized official
-  release on 2026-07-26; Azure PR 181 publication/merge pending
+  release on 2026-07-26; Azure PR 181 squash-merged to `main` at
+  `4db44270b524c77556b601c82d036b7af9d1c802`
 
 ## Owner decision
 

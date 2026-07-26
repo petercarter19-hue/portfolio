@@ -3,14 +3,16 @@
 ## A. Status
 
 - Package: `PS-GOV-MOCKUP-FIDELITY-001`
-- Status: Complete on task branch; owner-authorized Azure release pending
+- Status: Complete, officially released to Azure `main`, and lane closed
 - Branch and commit:
   `work/2026-07-26-mockup-authority-rule-001`; policy source
   `df499613ca848138dbea263270a9774973dd95ea`
 - Base: Azure `origin/main` at
   `9d01fa7315115599bae0b45c237b72b265ac24e8`
-- PR / pipeline / environment: Azure draft PR 181 is active and owner-authorized
-  for publication/merge; no pipeline or environment change has been started
+- PR / pipeline / environment: Azure PR 181 squash-merged successfully at
+  `4db44270b524c77556b601c82d036b7af9d1c802`; no automatic pipeline appeared
+  during the bounded post-merge window, and this documentation-only package did
+  not manually initiate a production deployment
 - Production state: unchanged; no runtime files or production behavior changed
 - Visual authority and status: Not Applicable; this package governs fidelity to
   future package-named authorities and creates no product visual
@@ -21,14 +23,14 @@
 - Homepage product projection: Not Applicable
 - Pete / designated session manager visual acceptance: Not Applicable
 - Designated session manager: current ChatGPT Work/Codex task
-- Manager handoff status and next receiver: current writer retains the branch
-  through the owner-authorized PR 181 release
+- Manager handoff status and next receiver: policy released; package lane closed;
+  no next receiver
 - Lane owner and self-managed authority: current ChatGPT Work/Codex governance
   writer
 - Self-certification: Pass
 - Complete-diff review: Passed; one wording loophole and one brittle test
   assertion corrected
-- Acceptance requested: Azure governance release
+- Acceptance requested: None; owner-authorized Azure governance release complete
 
 ## B. What changed technically
 
@@ -90,13 +92,22 @@ current Bible, Roadmap, product visual, runtime package, or release state.
   - Final pre-commit fetch confirmed `origin/main` and the merge base remained
     exactly `9d01fa7315115599bae0b45c237b72b265ac24e8`.
 - Azure review surface:
-  - Initial policy source and closeout were pushed to Azure `origin`.
-  - Draft PR 181 was opened from
+  - Policy source and pre-merge closeout were pushed to Azure `origin`.
+  - PR 181 was opened from
     `work/2026-07-26-mockup-authority-rule-001` to `main`.
   - Pete clarified the personal-inspection boundary and authorized making the
     rule official. Clarified policy source
-    `df499613ca848138dbea263270a9774973dd95ea` is ready for the same PR.
-  - No merge or deployment has occurred at this report source.
+    `df499613ca848138dbea263270a9774973dd95ea` and PR source tip
+    `bc431171b2ae9f5b336f251de66974ae41a92f2c` were published in the same PR.
+  - PR 181 completed with merge status `succeeded`, squash strategy, source-tip
+    match, and merge commit
+    `4db44270b524c77556b601c82d036b7af9d1c802`.
+  - The merge tree is byte-equivalent to the exact PR source tip, Azure
+    `origin/main` resolves to that merge, and the remote task branch was deleted.
+  - No automatic pipeline for the merge appeared during the bounded post-merge
+    observation window. Because this package changes repository governance only,
+    no manual production deployment was initiated and no deployment claim is
+    made.
 - Focused guardrails:
   - Command:
     `python -m unittest tests.test_governance_pointers tests.test_site_rules`
@@ -139,8 +150,6 @@ current Bible, Roadmap, product visual, runtime package, or release state.
 
 ## G. Known gaps, risks, and exclusions
 
-- The rule is not shared repository authority until PR 181 is published and
-  squash-merged.
 - No current implementation is retroactively certified by this package.
 - No runtime, visual asset, Bible/Roadmap, baseline, active-lane, pipeline, or
   production status changes are claimed.
@@ -151,8 +160,8 @@ current Bible, Roadmap, product visual, runtime package, or release state.
 
 ## H. Clear next step
 
-Publish PR 181 from draft and complete the normal Azure squash-merge and
-release-evidence path already authorized by Pete.
+None. The policy is official on Azure `main`; apply it to future
+approved-mockup packages using the recorded visual-inspector path.
 
 ## I. What Pete needs to do or decide
 
