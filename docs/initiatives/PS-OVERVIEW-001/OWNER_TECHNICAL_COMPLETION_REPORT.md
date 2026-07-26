@@ -1,5 +1,72 @@
 # PeerSlate Completion & Handoff Report
 
+## 2026-07-25 wide-desktop amendment
+
+- **Status:** Documentation-only width correction complete before production
+  visual creation. It changes no runtime capability and is not Pete's exact
+  visual lock.
+- **Owner concern resolved:** The 941 × 1672 and 864 × 1821 source PNGs are
+  explicitly editorial direction boards, never browser-width specifications.
+- **Branch / base:**
+  `work/2026-07-25-overview-width-amendment-001` from authoritative Azure
+  `origin/main` `52128a57c81969788c9dde68636d26c0ebd6a7db`.
+- **Reserved scope:** `docs/initiatives/PS-OVERVIEW-001/**` only. No runtime,
+  shared governance pointer, Studio package, Shell package, route, template,
+  CSS, JavaScript, schema, migration, flag, or deployment file changed.
+- **Result:** The Overview root must fill the resolved résumé content column.
+  The first ChatGPT visual candidate uses the Studio-aligned
+  `min(92vw, 90rem)` shell at normal scale, with the contextual section control
+  outside the center canvas. CSS `zoom` or transform fitting is prohibited.
+- **Readable density:** Bands, media, rules, and structured grids may use the
+  full center canvas; primary body copy remains at least 16 CSS pixels and
+  initially targets approximately 55–70 characters per line.
+- **Required wide evidence:** Full-browser 1440 × 900, 1920 × 1080,
+  2560 × 1440, and 3840 × 2160 CSS-pixel frames for both styles, with measured
+  shell/content/rail/gutter/text relationships. Pete explicitly accepts the
+  wide cap and gutters before file/hash lock.
+- **Present-state finding:** The current résumé declares a
+  `min(96vw, 100rem)` grid but applies desktop `zoom: 0.9` to its children. Its
+  approximate visible center canvas is 1092 pixels at a 1440-pixel viewport
+  and 1285 pixels at 1920/2560/3840. That zoom is evidence, not inherited
+  target behavior.
+- **Cross-package finding:** Planned `PS-SHELL-001` still records an older
+  approximate 1120–1200-pixel universal stage. This amendment does not silently
+  overwrite that separate package. Exact shared-shell and Overview geometry
+  must be reconciled before either visual lock or later shell implementation.
+- **New durable artifact:**
+  `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`, linked through the package README and
+  cross-computer handoff.
+- **Validation:** Strict UTF-8 decoding passed for all package Markdown/text;
+  package-local Markdown links resolved with zero missing targets; the three
+  registered source hashes remained unchanged; changed paths were package
+  local; `git diff --check` passed; `tests.test_governance_pointers` passed
+  38/38; and `tests.test_site_rules` passed 11/11 with the expected
+  Flask-Limiter in-memory-store warning.
+- **Complete-diff self-review:** Pass for the exact nine package-local files.
+  No source image/text bytes, runtime files, shared governance pointers, or
+  other initiative packages changed.
+- **Evidence limit:** Both source concepts and an existing full-desktop résumé
+  screenshot were inspected. Static CSS geometry was independently reviewed.
+  The local Playwright library was present but its browser binary was not
+  installed, so this documentation amendment does not claim live DOM
+  measurements. The future visual and implementation gates require them.
+- **Independent review:** The pre-amendment audit was Conditional and required
+  this package-local correction. Two read-only reviews of exact candidate
+  `3f5e8b9838cee69b0bd4fd38f136d18746244115` passed with no actionable
+  findings: one recalculated both geometry tables and normal-scale acceptance;
+  the other checked the complete nine-file contract, wide-gutter disclosure,
+  scope, evidence truth, and mandatory `PS-SHELL-001` reconciliation.
+- **Final source SHA:** The report-only follow-up commit and exact final source
+  SHA are recorded in the Azure PR and final owner handoff because a commit
+  cannot contain its own hash.
+- **Next gate:** ChatGPT creates the measured normal-scale visual/state set;
+  Pete reviews the 2560/3840 silhouettes and reconciles the exact stage with
+  `PS-SHELL-001`; Pete then locks durable files and hashes. No runtime writer
+  starts before that gate.
+
+Sections A–I below preserve the original direction-package completion record.
+The amendment above is the controlling addendum for wide-desktop geometry.
+
 ## A. Status
 
 - Package: `PS-OVERVIEW-001`

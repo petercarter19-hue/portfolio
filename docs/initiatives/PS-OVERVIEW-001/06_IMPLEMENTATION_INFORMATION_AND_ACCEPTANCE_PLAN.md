@@ -218,6 +218,8 @@ images.
 | Corrective supersession | Known invalid claim/block fails closed immediately; no corrected wording auto-publishes |
 | Summary integration | Published Overview and current Summary never render as two openings; Summary returns when Overview is absent |
 | Contextual navigation | First entry is Overview or Summary according to actual opening; left-rail migration remains separately gated |
+| Wide-desktop canvas | Overview root aligns to the resolved résumé content-column edges; no undocumented nested page stage |
+| Wide-desktop text measure | Bands/media/grids use the canvas while representative body copy retains the Pete-locked readable measure |
 | Existing public AI/PDF | Ask [Name] AI grounding/function and résumé PDF remain available once without duplicated actions |
 | Public response | No drafts, private sources, edit metadata, or AI proposal state |
 | Cross-member isolation | Owner A cannot retrieve/reference/publish Owner B data |
@@ -228,7 +230,8 @@ images.
 For both styles, compare the real implementation with the exact locked
 authority at:
 
-- representative 1440 × 900 and 1920 × 1080 desktop;
+- full-browser 1440 × 900, 1920 × 1080, 2560 × 1440, and 3840 × 2160
+  CSS-pixel desktop;
 - at least 390 × 844 mobile;
 - intermediate reflow widths;
 - 200% zoom/large text;
@@ -244,6 +247,36 @@ authority at:
 - current-ribbon versus separately gated Context Rail relationship;
 - corrective-source block omission and whole-Overview fallback;
 - both generic and Pete acceptance profiles.
+
+For each desktop frame, record `window.innerWidth`, `window.innerHeight`,
+device-pixel ratio, browser zoom, and the computed rectangles for the shared
+shell, resolved résumé content column, external contextual control, and
+Overview root.
+
+The future browser acceptance test must:
+
+1. compare the Overview root and resolved content-column inline edges using
+   `getBoundingClientRect()` and allow no more than two CSS pixels of expected
+   layout rounding;
+2. detect an undocumented descendant acting as a second page-level
+   `max-width`;
+3. record outer gutters and compare them with the exact Pete-locked visual;
+4. confirm computed CSS `zoom: 1` and `transform: none` on the future Overview
+   fitting chain at 100-percent browser zoom;
+5. confirm primary body copy is at least 16 CSS pixels and measure
+   representative line length separately from canvas occupancy;
+6. test sparse, standard, rich, missing-media, and missing-optional-section
+   states at wide desktop;
+7. fail on horizontal overflow, clipping, or two-dimensional scrolling; and
+8. repeat reflow checks at 200 percent zoom and supported intermediate/mobile
+   widths.
+
+The first ChatGPT visual candidate uses the Studio-aligned
+`min(92vw, 90rem)` shell at normal scale. The current zoomed résumé geometry is
+reference evidence, not automatic acceptance of the future shared shell.
+Before visual lock, the selected geometry must be reconciled with the older
+`PS-SHELL-001` 1120–1200-pixel estimate. Implementation may match only the
+resulting exact Pete-locked authority.
 
 WCAG 2.2 AA is the minimum target. Automated checks supplement but do not
 replace keyboard, reading-order, responsive, content, and owner visual review.
@@ -281,6 +314,9 @@ An activated writer must provide:
   `#resume-overview` compatibility aliases, Ask [Name] AI, PDF, and
   current-route compatibility evidence;
 - responsive/accessibility/visual comparison set;
+- captured wide-desktop shell/content/Overview geometry at
+  1440/1920/2560/3840 CSS-pixel viewports;
+- explicit `PS-SHELL-001` width reconciliation;
 - homepage parity assessment/evidence;
 - independent-review result and corrections;
 - Pete's corrected-real-build visual acceptance;
@@ -300,6 +336,8 @@ Stop rather than improvise if an implementation would:
 - expose private Journal/Goal/source content;
 - implement only Pete's rich profile without sparse/generic fixtures;
 - create a dead destination or public empty slot;
+- preserve a concept-image or stale shared-shell width that conflicts with the
+  exact wide-desktop visual lock;
 - change shared navigation, homepage, or résumé behavior outside the activated
   package;
 - add a schema, migration, service, flag, or provider without documented need

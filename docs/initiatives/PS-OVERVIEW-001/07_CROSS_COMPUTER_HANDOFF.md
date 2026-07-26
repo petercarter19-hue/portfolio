@@ -13,6 +13,8 @@ self-service Member Overview system with:
 - deterministic no-gap/count-aware rendering;
 - exact draft, preview, publish, restore, source-change, privacy, and failure
   requirements;
+- an explicit wide-desktop canvas/evidence contract that prevents the narrow
+  portrait concepts from becoming target browser widths;
 - a page-purpose inventory ready for Pete's review; and
 - durable package copies/hashes of both concepts and the supplied Claude draft.
 
@@ -29,6 +31,12 @@ The temporary source lane was:
 
 - Branch: `work/2026-07-25-overview-direction-001`
 - Base: `598cb7d7a5f067564ce3e00540352176decd2b8b`
+- Reserved scope: `docs/initiatives/PS-OVERVIEW-001/**`
+
+The 2026-07-25 wide-desktop clarification lane was:
+
+- Branch: `work/2026-07-25-overview-width-amendment-001`
+- Base: `52128a57c81969788c9dde68636d26c0ebd6a7db`
 - Reserved scope: `docs/initiatives/PS-OVERVIEW-001/**`
 
 The final owner handoff for this task records the exact source commit, Azure
@@ -76,6 +84,17 @@ Do not reopen these without an explicit Pete decision:
     geometry/type/spacing/reflow.
 17. The Overview is a governed projection, never a second résumé/Story/Journal
     truth store.
+18. The direction PNGs are editorial boards, not browser-width specifications.
+    The Overview root fills the resolved résumé content column while readable
+    text measure is managed inside blocks.
+19. Full-browser 1440/1920/2560/3840 CSS-pixel evidence is required before
+    visual lock. Physical monitor diagonal is context, not a breakpoint.
+20. The first ChatGPT visual candidate uses the Studio-aligned
+    `min(92vw, 90rem)` shell at normal scale; CSS `zoom` or transform fitting
+    is prohibited. Pete's exact visual lock remains controlling.
+21. The exact wide stage must be reconciled with the older
+    `PS-SHELL-001` 1120–1200-pixel estimate before either package can silently
+    constrain the other.
 
 ## 5. Next owner gate
 
@@ -88,7 +107,8 @@ The next task is **not implementation**. It is:
    first-release audience, metric provenance, public band maximum, style names,
    and hero/shared-shell actions.
 3. ChatGPT creates the complete production-intent visual/state sets for both
-   styles.
+   styles, including the annotated full-browser wide-desktop set required by
+   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`.
 4. Pete scrutinizes and locks exact durable files and hashes.
 5. A separate bounded implementation-information/architecture package is
    prepared and activated.
@@ -109,9 +129,11 @@ On the other computer:
 6. Read the current baseline, state, active initiatives, baseline-named Bible
    and Roadmap, visual/story standards, and this package.
 7. Verify the three source hashes above.
-8. Reserve only the exact next package files. Do not take the active Studio,
+8. Read `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` and compare the current
+   `PS-SHELL-001` width direction before creating or locking visuals.
+9. Reserve only the exact next package files. Do not take the active Studio,
    Journal, Home, Community, Capture, or other writer's lane.
-9. Keep current public résumé and Story behavior read-only until a separate
+10. Keep current public résumé and Story behavior read-only until a separate
    implementation package is activated.
 
 ## 7. Paste-ready next-task prompt
@@ -123,6 +145,15 @@ On the other computer:
 > the flagship and Work & Impact as the alternate, one public Overview at a
 > time, shared canonical/projection truth, manual-first editing, optional
 > proposal-only AI, deterministic no-gap reflow, and the real résumé below.
+> Treat the supplied PNGs as editorial direction boards, never CSS-width
+> authority. Create annotated full-browser 1440×900, 1920×1080, 2560×1440,
+> and 3840×2160 CSS-pixel frames; make the Overview root fill the resolved
+> résumé content column while keeping readable text measure inside blocks.
+> Start with the Studio-aligned `min(92vw, 90rem)` shell at normal scale; do
+> not use CSS `zoom` or transform fitting.
+> Show and obtain Pete's explicit approval of the stage, rail, and gutters at
+> 2560 and 3840, and reconcile the selected geometry with the older
+> `PS-SHELL-001` 1120–1200-pixel estimate before visual lock.
 > A published Overview must absorb the current Summary, preserve one truthful
 > Ask [Name] AI/PDF treatment, use Overview/Summary as the dynamic first section
 > destination, support atomic unpublish to the Summary fallback, and fail
@@ -143,6 +174,9 @@ Stop and return to Pete if:
 - a proposed visual adds an unlisted meaningful action, state, or destination;
 - a request would treat either current concept as exact locked implementation
   authority;
+- the visual set lacks full-browser measured wide-desktop evidence;
+- the proposed Overview width conflicts with `PS-SHELL-001` and no explicit
+  reconciliation/owner lock exists;
 - a request would begin runtime work before owner inventory and visual lock; or
 - implementation would duplicate canonical résumé, Story, Journal, Project, or
   media truth.

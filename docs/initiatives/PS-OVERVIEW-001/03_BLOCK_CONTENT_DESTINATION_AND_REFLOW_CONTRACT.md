@@ -156,6 +156,10 @@ duplicate blocks produce misleading or broken output.
    a shrunken desktop grid.
 10. **Overview absent means résumé first.** There is no public setup card or
     empty Overview landmark.
+11. **The outer canvas does not shrink with content count.** The Overview root
+    remains 100 percent of the resolved résumé content column in sparse,
+    standard, and rich states. Missing blocks collapse inside that canvas
+    rather than causing a narrow nested page.
 
 ## 7. Count-aware state matrix
 
@@ -251,6 +255,21 @@ is prohibited.
 ## 10. Responsive and typography rules
 
 - DOM order is the one semantic source of order.
+- The Overview root uses the full inline size of the resolved résumé
+  center-content column. It does not inherit the source images' 941- or
+  864-pixel raster widths and does not add another arbitrary page-level
+  `max-width`.
+- Wide composition uses the available canvas through declared bands, media,
+  rules, whitespace, and count-aware columns. It does not merely lengthen every
+  line of text.
+- Representative body copy initially targets approximately 55–70 characters
+  per line, subject to validation against the locked typography and language.
+  Primary body copy is at least 16 CSS pixels at normal scale. That inner
+  measure never narrows the Overview root.
+- The future Overview uses normal CSS scale. `zoom` or `transform` scaling may
+  not be used to fit a desktop composition into the accepted shell.
+- Internal band and grid changes respond to the available center container,
+  not assumptions about the monitor's physical diagonal.
 - Wide-screen columns collapse to the same semantic order on mobile and large
   text.
 - Normal reading never requires two-dimensional scrolling at 200% zoom.
@@ -265,3 +284,6 @@ is prohibited.
 - The exact visual gate must include at least desktop, mobile, 200% zoom or
   equivalent large-text, keyboard/focus, reduced-motion, missing-media,
   sparse-content, and maximum-content states for both styles.
+- Full-browser desktop evidence includes 1440 × 900, 1920 × 1080,
+  2560 × 1440, and 3840 × 2160 CSS-pixel viewports. Physical monitor inches
+  are context only.

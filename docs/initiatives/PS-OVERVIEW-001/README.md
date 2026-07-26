@@ -9,11 +9,15 @@ lock either supplied concept as production visual authority.
 **Designated session manager:** The current Pete-authorized Codex task for this
 package.
 
-**Sole documentation writer:** Codex on
-`work/2026-07-25-overview-direction-001`.
+**Sole documentation writer:** Codex on the initial
+`work/2026-07-25-overview-direction-001` lane and the package-local follow-up
+`work/2026-07-25-overview-width-amendment-001` lane.
 
-**Authoritative base:** Azure DevOps `origin/main` at
+**Initial authoritative base:** Azure DevOps `origin/main` at
 `598cb7d7a5f067564ce3e00540352176decd2b8b`.
+
+**Wide-desktop amendment base:** Azure DevOps `origin/main` at
+`52128a57c81969788c9dde68636d26c0ebd6a7db`.
 
 **Reserved files:** `docs/initiatives/PS-OVERVIEW-001/**` only.
 
@@ -21,6 +25,12 @@ package.
 JavaScript, APIs, databases, migrations, feature flags, deployment
 configuration, shared governance pointers, current résumé records, Story,
 Journal, Studio, Home, Community, and every other initiative package.
+
+**Wide-desktop amendment:** Pete's 2026-07-25 monitor-width review is captured
+in [Wide-desktop canvas and evidence amendment](08_WIDE_DESKTOP_WIDTH_AMENDMENT.md).
+The direction PNGs are tall editorial boards, not browser-shaped viewport
+specifications. A future Overview must occupy the full resolved résumé content
+column and may not be placed inside another arbitrary narrow stage.
 
 ## Owner direction captured
 
@@ -65,6 +75,18 @@ store, or a freeform web-page builder.
 - All Overview content belongs to the same center canvas. A style may use
   columns at wide viewports, but no content block is treated as the permanent
   site rail.
+- The Overview root fills the resolved résumé center-content column. The
+  Studio-aligned visual-creation target starts with a shell of
+  `min(92vw, 90rem)` at normal browser scale. With the current external ribbon
+  proportions, that gives an approximately 1,156-pixel center canvas at a
+  1440-pixel viewport and approximately 1,268 pixels at 1920, 2560, and 3840.
+  Pete's exact visual lock and shared-shell reconciliation remain controlling.
+- Wide bands, media, and count-aware grids may use that canvas. Readable text
+  measure is controlled inside each block instead of narrowing the entire
+  Overview.
+- The future Overview is not fitted with CSS `zoom` or `transform` scaling.
+  The current résumé's desktop `zoom: 0.9` is documented as present-state
+  evidence, not inherited target behavior.
 - Skills appears before Education, Certifications, and Awards. The member-facing
   name is **Skills**, not **Core Tools**.
 
@@ -100,6 +122,9 @@ type, and layouts that work for only one person's content.
   and test matrix without authorizing code.
 - [Cross-computer handoff](07_CROSS_COMPUTER_HANDOFF.md) gives the next session
   a bounded restart path.
+- [Wide-desktop canvas and evidence amendment](08_WIDE_DESKTOP_WIDTH_AMENDMENT.md)
+  records the 27-/32-inch-monitor concern as CSS-viewport requirements,
+  current-shell reference geometry, and exact visual/implementation evidence.
 - [Completion and handoff report](OWNER_TECHNICAL_COMPLETION_REPORT.md) records
   the documentation result and its evidence limits.
 
@@ -136,5 +161,6 @@ Pete reviews the inventory and the small set of owner decisions in
 [the style and visual gate](05_STYLE_MANIFESTS_AND_VISUAL_GATE.md). After that
 approval, ChatGPT creates the complete Story & Career and Work & Impact visual
 authority set, including sparse, long-content, editing, visitor-preview, mobile,
-large-text, and failure states. No implementation begins until Pete locks those
-exact files and a separate bounded implementation package is activated.
+large-text, failure, and full-browser 1440/1920/2560/3840-wide states. No
+implementation begins until Pete locks those exact files and a separate bounded
+implementation package is activated.

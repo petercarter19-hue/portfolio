@@ -17,6 +17,11 @@ No input below is production visual authority by itself.
 | S-2 | `source/work-and-impact-owner-concept-2026-07-25.png` | 864 × 1821 PNG | `B5276B1728B80A17BE395DD4F1ABBB9BEC74346AEF8D928E9CC8DFA7B59412E6` | Alternate Work & Impact direction |
 | S-3 | `source/claude-overview-system-requirements-draft-2026-07-25.txt` | UTF-8 text | `09E026EAE767CF0B21F262F9D2236E5ABE360631162FAF049AE7D6219979DD43` | Requirements input, not controlling authority |
 
+S-1 and S-2 are portrait editorial boards. Their raster widths and aspect
+ratios do not specify a CSS `max-width`, browser viewport, or outer production
+silhouette. The exact wide-desktop correction is recorded in
+`08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`.
+
 ## 3. Pete's controlling corrections
 
 The following owner statements control over visual implications in either
@@ -37,6 +42,9 @@ concept or assumptions in the Claude draft:
   developer or AI to maintain an Overview.
 - The Portfolio concept is the preferred combined résumé/portfolio direction;
   the Business concept remains valuable as a second results-forward option.
+- The tall concepts cannot be treated as browser-width authority. The Overview
+  must use the full resolved résumé center-content column, with readable text
+  measure managed inside its blocks.
 
 ## 4. Claude draft reconciliation
 
@@ -98,6 +106,12 @@ concept or assumptions in the Claude draft:
 | Corrected canonical fact | Corrective supersession fails the old public claim closed; no replacement wording auto-publishes |
 | Story Spotlight | Requires eligible published Story; standalone narrative uses Flexible Spotlight |
 | Current concepts' status | Owner-selected direction inputs, not locked production authority |
+| Wide-desktop canvas | Overview root fills the resolved résumé content column; no second arbitrary narrow page stage |
+| Wide-stage visual candidate | Start ChatGPT visual creation at `min(92vw, 90rem)` at normal scale, with the contextual control outside the center canvas; Pete's exact lock controls |
+| Wide-desktop evidence | Full-browser 1440 × 900, 1920 × 1080, 2560 × 1440, and 3840 × 2160 CSS-pixel views are required before visual lock |
+| Reading measure | Controlled inside cards/bands; it never justifies narrowing the entire Overview |
+| Fit technique | CSS `zoom` or transform scaling may not be used to make the future Overview fit |
+| Shared-shell width | Reconcile the exact Overview stage with the older planned `PS-SHELL-001` 1120–1200-pixel estimate before visual lock |
 
 ## 6. Remaining owner approvals
 
@@ -110,4 +124,6 @@ reviews:
    with an owner-visible provenance state;
 4. whether the Overview shares the public résumé audience in the first release
    or receives an independently selectable audience; and
-5. the exact ChatGPT-created desktop/mobile/state visual files for both styles.
+5. the exact ChatGPT-created desktop/mobile/state visual files for both styles,
+   including the full-browser wide-desktop evidence required by
+   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md`.

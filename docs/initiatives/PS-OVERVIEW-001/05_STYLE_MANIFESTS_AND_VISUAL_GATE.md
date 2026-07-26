@@ -193,7 +193,55 @@ The system may warn that the content is too sparse or rich for a selected
 emphasis combination. It must not silently switch the member to the other
 style.
 
-## 8. Required production-intent visual set
+## 8. Wide-desktop geometry gate
+
+The supplied direction images are portrait editorial boards, not
+browser-shaped desktop authorities. Before Pete can lock either style, the
+visual set must prove its outer silhouette in the actual shared-shell and
+résumé-content relationship.
+
+For each style, provide annotated full-browser standard-state frames at:
+
+- 1440 × 900 CSS pixels;
+- 1920 × 1080 CSS pixels;
+- 2560 × 1440 CSS pixels; and
+- 3840 × 2160 CSS pixels.
+
+The first visual candidate uses a centered `min(92vw, 90rem)` shell at
+100-percent browser zoom, with computed CSS `zoom: 1` and `transform: none`.
+This is the Studio-aligned working target for Pete to scrutinize, not a
+pre-claimed final lock.
+
+Record the CSS viewport, device-pixel ratio, browser zoom, shell width,
+Overview content-column width, external contextual-control width, column gap,
+outer gutters, and representative body-copy measure. Physical monitor inches
+are evidence context only.
+
+The visual candidate must:
+
+- make the Overview root use the full resolved résumé center-content column;
+- use the wide canvas through declared media, bands, proof grouping, rules,
+  whitespace, and columns while bounding readable text measure inside blocks;
+- show a sparse wide state that does not collapse into one narrow centered
+  card;
+- preserve the external contextual control outside the Overview canvas;
+- show the real résumé boundary beneath the Overview; and
+- avoid horizontal overflow, clipped content, stretched billboard-length body
+  copy, and filler blocks; and
+- keep primary body copy at least 16 CSS pixels at normal scale and use an
+  approximately 55–70-character readable measure.
+
+At 2560 and 3840 CSS pixels, a capped stage with intentional margins may be the
+correct result, but it must be shown full-frame and explicitly accepted by
+Pete. Neither the concepts' 941/864-pixel widths nor the planned
+`PS-SHELL-001` 1120–1200-pixel estimate is automatically binding. The final
+Overview width and shared-shell width must be reconciled before visual lock;
+one package may not silently clamp the other.
+
+See `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` for current-shell reference
+measurements and the durable edge-alignment invariant.
+
+## 9. Required production-intent visual set
 
 ChatGPT must create durable, package-copied visual authority candidates for
 both styles. At minimum:
@@ -201,6 +249,7 @@ both styles. At minimum:
 ### Public visitor
 
 - desktop standard, sparse, and rich;
+- the annotated full-browser wide-desktop set in Section 8;
 - 390-pixel-class mobile standard and sparse;
 - text-only/no portrait/no feature media;
 - one proof item and no proof items;
@@ -224,6 +273,8 @@ both styles. At minimum:
 - source changed/private source/missing destination blockers;
 - AI source comparison and accept/edit/reject;
 - exact visitor preview with editing furniture absent;
+- at least one 1920- or 2560-pixel-wide owner-editor/visitor-preview pair that
+  preserves the same published canvas geometry;
 - style-switch change summary;
 - draft saving/saved/failed;
 - publish confirmation/success/failure/conflict;
@@ -246,7 +297,7 @@ both styles. At minimum:
 - no duplicate Full Résumé summary; and
 - mobile navigation treatment consistent with the approved site shell.
 
-## 9. Visual lock checklist
+## 10. Visual lock checklist
 
 - [ ] Pete approves
   `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
@@ -256,13 +307,19 @@ both styles. At minimum:
 - [ ] Work & Impact remains a style over the same content system.
 - [ ] The concepts' repeated résumé/nav/footer are removed.
 - [ ] Sparse and rich generic profiles look intentional.
+- [ ] Full-browser 1440/1920/2560/3840 CSS-pixel frames prove the selected
+  stage, content-column, rail, gutter, and text-measure relationships.
+- [ ] The selected Overview is shown at normal scale without CSS `zoom` or
+  transform fitting.
+- [ ] The selected width is reconciled with `PS-SHELL-001`; neither package
+  silently narrows the other.
 - [ ] Desktop/mobile/large-text/focus/reduced-motion states pass owner scrutiny.
 - [ ] Editing and visitor preview truth are visually explicit.
 - [ ] Pete locks exact durable files and SHA-256 hashes.
 - [ ] A separate implementation-information package names the locked files,
   authorized scope, writer, tests, and release boundary.
 
-## 10. Owner decisions before visual lock
+## 11. Owner decisions before visual lock
 
 Pete should settle these during inventory/visual review:
 
@@ -276,6 +333,9 @@ Pete should settle these during inventory/visual review:
    member-facing editor labels.
 5. **Hero action:** Decide whether résumé download/contact primarily belongs to
    the shared shell, the hero, or one of each only when their jobs differ.
+6. **Wide stage:** After reviewing the annotated 2560- and 3840-pixel frames,
+   lock the exact shared-shell/Overview width, outer gutters, and contextual
+   control relationship and reconcile the older `PS-SHELL-001` estimate.
 
 These decisions do not block merging this requirements package. They block the
 exact visual lock and publication architecture.

@@ -142,7 +142,60 @@ The public wording retains owner-visible lineage to its supporting records.
 - After **Résumé begins here**, the canonical résumé is authoritative for its
   detailed sections and existing anchor behavior.
 
-## 6. Public density and content hierarchy
+## 6. Wide-desktop canvas and readable measure
+
+Physical monitor diagonal is not a layout breakpoint. A 27-inch or 32-inch
+screen may expose different CSS viewport widths because of native resolution,
+operating-system scaling, browser zoom, and window size. Visual evidence and
+acceptance therefore use CSS pixels and record the browser viewport.
+
+The Overview root fills 100 percent of the resolved résumé center-content
+column. It must not introduce a second arbitrary narrow page stage merely to
+match the 941- or 864-pixel width of a supplied concept image.
+
+The Studio-aligned starting geometry for ChatGPT visual creation is a centered
+shell of `min(92vw, 90rem)` at 100-percent browser zoom, with the current
+140-pixel contextual ribbon and responsive gap outside the center canvas:
+
+| CSS viewport | Candidate shell | Candidate center canvas |
+| ---: | ---: | ---: |
+| 1440 px | 1324.8 px | 1156 px |
+| 1920 px | 1440 px | 1268 px |
+| 2560 px | 1440 px | 1268 px |
+| 3840 px | 1440 px | 1268 px |
+
+At the widest viewports, the shared shell's cap intentionally leaves outer page
+margins. The requirement is not edge-to-edge stretching; it is complete use of
+the resolved content column.
+
+The current résumé applies desktop `zoom: 0.9` to its children, producing an
+approximately 1092-pixel visible center canvas at a 1440-pixel viewport and
+1285 pixels at wider viewports. That is present-state evidence, not the future
+Overview fit method. The Overview candidate must use normal scale and may not
+use CSS `zoom` or `transform` to simulate the accepted width.
+
+Readable text measure is a separate inner-block concern. A paragraph may use an
+approximately 55–70-character line while its band, media, background, rules,
+and neighboring composition establish the full-width silhouette. Sparse
+content must remain deliberately composed across the canvas rather than
+collapsing into one skinny centered card.
+
+If a future Context Rail or shared-shell revision changes the available column,
+the Overview resolves against that new column. A materially narrower outer
+silhouette is a visual-direction change and must return to ChatGPT visual
+creation and Pete's exact file/hash lock; architecture and implementation may
+not introduce one independently.
+
+The planned `PS-SHELL-001` package still contains an older approximate
+1120–1200-pixel stage direction. That value is not silently overridden here,
+but it is now a mandatory shared-shell reconciliation item before the Overview
+visual lock or any later shell rollout. The exact Pete-locked Overview and
+shared-shell geometry must agree.
+
+See `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` for the measured reference geometry
+and evidence contract.
+
+## 7. Public density and content hierarchy
 
 The richest mockup is an upper-bound configuration, not the required default.
 A good published Overview usually contains:
@@ -157,7 +210,7 @@ The product reduces selection and wording before it reduces type size. It
 never solves density by clipping sentences, hiding content in card scrollbars,
 shrinking body copy below the accepted scale, or duplicating the full résumé.
 
-## 7. Manual-first self service
+## 8. Manual-first self service
 
 A member can complete every required Overview task manually:
 
@@ -175,7 +228,7 @@ A member can complete every required Overview task manually:
 AI may accelerate the same tasks, but it is never the only way to complete
 them.
 
-## 8. Owner and visitor experiences
+## 9. Owner and visitor experiences
 
 ### Owner
 
@@ -192,7 +245,7 @@ hidden block metadata, AI proposal state, or unpublished records.
 When no Overview is published, the page begins with the existing résumé
 experience. There is no public setup prompt or blank Overview container.
 
-## 9. First-release publication model
+## 10. First-release publication model
 
 - One private draft may evolve while one published revision remains stable.
 - Publication pins the selected style definition/version, selected content
@@ -212,7 +265,7 @@ experience. There is no public setup prompt or blank Overview container.
 - Multiple audience-specific Overviews are a possible later projection feature,
   not a side effect of the two styles.
 
-## 10. Explicit non-goals
+## 11. Explicit non-goals
 
 This package does not authorize:
 
@@ -226,10 +279,12 @@ This package does not authorize:
 - generic or AI-generated workplace/family imagery represented as documentary
   evidence;
 - public display of owner-only empty states or readiness errors;
-- a new permanent navigation layer; or
+- a new permanent navigation layer;
+- a narrow nested page stage derived from either concept image's raster width;
+  or
 - the mockups' repeated Full Résumé summary.
 
-## 11. Success criteria
+## 12. Success criteria
 
 The future feature is successful only when:
 
@@ -247,4 +302,7 @@ The future feature is successful only when:
   deleting the draft or publication history;
 - corrective source supersession cannot leave a known inaccurate claim public;
   and
-- the full résumé remains the detailed source beneath the concise Overview.
+- the full résumé remains the detailed source beneath the concise Overview;
+  and
+- the Overview uses the full resolved résumé content column at wide desktop
+  while body copy retains a readable inner measure.
