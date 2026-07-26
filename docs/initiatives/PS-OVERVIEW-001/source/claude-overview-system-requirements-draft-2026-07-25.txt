@@ -1,0 +1,290 @@
+# Member Overview — System Requirements Draft
+
+**Working package name:** `PS-OVERVIEW-001`
+**Status:** Draft requirements for owner review. Not a visual authority. Not implementation authorization.
+**Visual authority:** The Pete overview composition (owner-supplied image, 2026-07-25). Exact file/hash lock pending.
+**Scope:** The member-configurable Overview band that renders above the full résumé on a public Slate.
+**Out of scope:** The full résumé itself, Story, Work, Slate Board, Interview Studio.
+
+---
+
+## 0. The governing principle
+
+> **A member never edits a layout. A member fills a content model. The layout is computed from what they filled.**
+
+Every requirement below exists to serve that sentence. The moment a member can drag a box or set a
+width, the design stops being able to guarantee it looks right, and "weird gaps" become
+unavoidable. Instead: the member chooses *what to say*, and the system deterministically decides
+*how it renders* from the volume and type of what they said.
+
+This also satisfies the existing canonical-truth rule. The Overview is a **projection**, not a
+second truth store.
+
+---
+
+## 1. Content model
+
+### 1.1 Two card families
+
+| Family | Source of content | Member action | Can it be empty? |
+|---|---|---|---|
+| **Derived** | Canonical résumé records | Select which surface, and their order | No — it renders only if canonical records exist |
+| **Authored** | Member-written text (optionally AI-drafted) | Write, edit, approve, publish | Yes — an unfilled authored card simply does not render |
+
+**Derived cards never duplicate a fact.** The Education card in the Overview and the Education
+section in the résumé are the same records rendered twice. Editing either edits the canonical
+record. There is no second copy and no sync problem.
+
+This single decision eliminates most empty-state risk: a member with no certifications cannot
+produce an empty Certifications card, because the card's existence is a function of the data.
+
+### 1.2 Card inventory
+
+**Rail (left column) — stacked, order configurable within rules**
+
+| # | Card | Family | Canonical source | Min to render | Max shown | Overflow |
+|---|---|---|---|---|---|---|
+| 1 | Executive Brief | Authored | — | 40 chars | 320 chars | none (hard cap) |
+| 2 | Career Snapshot | Derived | roles | 1 role | 4 roles | `View full experience →` |
+| 3 | **Skills** *(was Core Tools)* | Derived | skills | 3 skills | 12 skills | `View all N skills →` |
+| 4 | Education | Derived | education | 1 entry | 4 entries | `View all N degrees →` |
+| 5 | Certifications | Derived | certifications | 1 entry | 4 entries | `View all N certifications →` |
+| 6 | Awards | Derived | awards | 1 entry | 4 entries | `View all N awards →` |
+| 7 | Custom list | Authored | — | 2 items | 5 items | none |
+
+Order reflects the owner's 2026-07-25 correction: **Skills above Education; Certifications and
+Awards below both.** A member may reorder, but the Executive Brief is pinned first.
+
+**Bands (right column) — full-width rows, member picks 0–6 from a library**
+
+| Band type | Suggested purpose | Media slot |
+|---|---|---|
+| Discipline band | A domain of expertise (e.g. "Systems Engineering & Requirements") | optional |
+| Leadership band | Scope of people/program responsibility | optional |
+| Outcomes band | 2–8 metric tiles, no prose | none |
+| Lifecycle / specialty band | A named specialty (e.g. "Sustainment & Lifecycle") | optional |
+| Emerging-work band | What they're learning or applying now | optional |
+| Personal band | "The person behind the work" | optional |
+| Forward band | "What I'm building toward" | optional |
+| Custom band | Member-titled | optional |
+
+**Every band is optional.** A member may publish an Overview with zero bands. Band types are
+templates for prompting and media behavior, not required sections.
+
+**Stat strip (below hero) — 0, or 2 to 4 items**
+
+| Field | Limit |
+|---|---|
+| Value | 12 chars (`9 / $19.2M` = 10) |
+| Label | 28 chars |
+| Icon | chosen from a fixed set, or omitted |
+| Source link | optional; points at the canonical record supporting the number |
+
+---
+
+## 2. Degradation rules — how gaps are prevented
+
+This is the core of the spec. Each rule is a hard product rule, not a styling preference.
+
+### R1 — Nothing renders below its minimum
+
+A card with less than its `min to render` does not render as a card. It is either merged (R2) or
+omitted. **The system never pads a thin card to fill space.**
+
+### R2 — Collapse and merge, never stretch
+
+When credential-type cards fall below minimum individually, they merge:
+
+| Condition | Result |
+|---|---|
+| Education = 1 entry AND Certifications ≤ 2 | Single card: **Education & Certifications** |
+| Certifications ≤ 2 AND Awards ≤ 2 | Single card: **Credentials** |
+| All three thin | Single card: **Credentials & Education** |
+| Any one is rich (≥3) | It stands alone; the others may still merge |
+
+A member with one bachelor's degree and one cert gets one tidy card, not two stubs and a gap.
+
+### R3 — The stat strip is 0, 2, 3, or 4 — never 1, never 5+
+
+- 0 items → the strip does not render; the hero flows directly into the body
+- 2 → halves; 3 → thirds; 4 → quarters (equal distribution, no orphan cell)
+- A member may enter at most 4. A 5th requires removing one.
+- 1 item is not permitted; the editor prompts for a second or offers to move it into an Outcomes band
+
+### R4 — Metric grids reduce columns rather than orphan a row
+
+Outcomes bands hold 2–8 tiles. Column count is chosen so the **final row is at least half full**.
+
+| Tiles | Columns | Rows |
+|---|---|---|
+| 2 | 2 | 2 |
+| 3 | 3 | 3 |
+| 4 | 4 | 4 |
+| 5 | 3 | 3 + 2 |
+| 6 | 3 | 3 + 3 |
+| 7 | 4 | 4 + 3 |
+| 8 | 4 | 4 + 4 |
+
+Never 4 + 1.
+
+### R5 — Bands with no media pair up
+
+A band with a media slot filled renders full-width (text left, image right — the locked
+composition). A band with **no media** renders as a text block. Two consecutive text-only bands
+render as a **two-column row**. Three consecutive text-only bands render 2-up then 1 full-width.
+
+This prevents a stack of short, image-less bands reading as sparse.
+
+### R6 — The rail does not stretch to match the bands
+
+The rail and the band column are independent flows aligned to the top. When the rail ends first,
+it ends — optionally becoming sticky. **No rule may stretch, center, or pad the rail to match
+column height.** This must be stated so a later change does not "fix" it.
+
+### R7 — Layout variant is selected by content volume, not by the member
+
+| Variant | Requires | Composition |
+|---|---|---|
+| **A — Full** | ≥2 stats, ≥3 rail cards, ≥3 bands | The locked composition: hero + strip + rail + bands |
+| **B — Compact** | ≥1 rail card, ≥1 band | Hero + optional strip + bands full-width + one horizontal credentials row |
+| **C — Starter** | Any published profile | Hero + Executive Brief + Career Snapshot + a truthful "your Overview grows as you add" state |
+
+The system selects the richest variant the content supports. The member can preview the others and
+sees exactly what is needed to unlock the next one ("Add one more band to use the Full layout").
+**A member cannot select a variant their content would break.**
+
+### R8 — Overflow becomes a specific link, never a silent trim
+
+Content over a card's `max shown` is not cut off. The card shows its first N and renders a
+specific link: **`View all 6 skills →`**, not `More`. The remainder lives in the résumé below.
+
+- The link renders only if the target section exists **and** holds more than the card shows
+- If the target is absent or equal, the card renders with no link rather than a link to nothing
+
+### R9 — Authored text over hard cap blocks publish, not typing
+
+The editor never blocks keystrokes. It shows live state: **Fits** / **Will show 3 of 6 — a
+"View all" link will appear** / **Too long — trim N characters to publish.** Publish is blocked
+only in the third case.
+
+---
+
+## 3. Deep-link contract
+
+Every derived card's link targets the corresponding résumé section.
+
+- Target sections carry stable anchors (`#education`, `#skills`, `#certifications`, `#awards`, `#experience`)
+- Activating a link moves **focus** to the target section heading, not just scroll position
+- `prefers-reduced-motion: reduce` → instant jump, no smooth scroll
+- Links are real anchors — they work with middle-click, keyboard, and JS disabled
+- If a member has hidden the target résumé section, the Overview card renders without a link
+
+---
+
+## 4. Editing model
+
+### 4.1 Owner-only affordances
+
+- Edit state is **server-derived** from the session. A client flag never grants edit capability.
+- Public render and owner render use **the same view model**; the owner payload adds `editable: true` per slot.
+- Edit controls are real `<button>` elements in the tab order. **Hover-only reveal is not permitted** —
+  reveal on hover *and* on focus, and keep them reachable on touch.
+- A persistent **Preview as visitor** toggle shows the exact audience result, including which cards
+  drop out at the visitor's audience level.
+
+### 4.2 Draft, preview, publish
+
+Editing the Overview does **not** change the public page. Three explicit states:
+
+1. **Draft** — private, autosaved, unlimited iteration
+2. **Preview** — exact rendered audience result, including the selected variant
+3. **Publish** — explicit action; publishes the whole Overview atomically
+
+Rationale: a half-edited Overview must never be the public page. Matches the existing Story
+composition standard (layout save and publication are separate explicit actions).
+
+### 4.3 Reordering
+
+- Rail cards and bands are reorderable by drag **and** by an equivalent keyboard/structured control
+  (move up / move down / move to position N)
+- The Executive Brief is pinned first
+- Default order follows §1.2; a member may deviate
+
+### 4.4 Per-slot controls
+
+Every slot offers: **Edit**, **Hide from Overview** (keeps the canonical record), **Revert to canonical**,
+and for authored slots, **Clear**.
+
+---
+
+## 5. AI model
+
+Both paths are first-class. Neither is the default.
+
+### 5.1 What AI may do
+
+- Draft an Executive Brief from the member's canonical records
+- Draft a band title and body from a selected role, project, or skill cluster
+- **Propose which bands to use** based on what the résumé contains ("Your history is heavy on
+  sustainment — want a Sustainment band?")
+- Suggest which skills to surface in the rail
+- Rewrite for length when a slot is over its cap
+
+### 5.2 What AI may never do
+
+- **Fill a stat value.** Every number is typed by the member or pulled from a canonical record.
+  A fabricated `$36M+` is a real-world harm to a real person's credibility.
+- Save, publish, or change audience
+- Overwrite an existing authored slot without the member accepting the replacement
+- Invent an award, degree, certification, employer, date, or title
+
+### 5.3 How a draft behaves
+
+An AI draft lands **in the editor as editable text**, visibly marked as a draft, with the canonical
+records it drew from listed and inspectable. The member edits, accepts, or discards. Accepting
+converts it to member-authored content. Nothing is saved until the member saves.
+
+---
+
+## 6. Empty and partial states
+
+| Situation | Behavior |
+|---|---|
+| Brand-new member, no résumé | Variant C. Honest prompt: what to add first, and what it will unlock. |
+| Résumé but no authored content | Variant C or B from derived cards alone. Overview is usable with zero writing. |
+| Bachelor's only, no certs/awards | R2 merge → one Credentials & Education card. |
+| No quantified outcomes | No stat strip. Hero flows into body. |
+| No images at all | R5 text-band pairing. Never an empty media box. |
+| Member hides everything | Overview does not render; résumé is the first content on the page. |
+
+---
+
+## 7. Accessibility requirements
+
+- DOM order matches visual reading order; no CSS reordering that breaks screen-reader sequence
+- Each card is a labelled region with a heading; the rail is a `<nav>`-free list, not a menu
+- Edit affordances reachable and operable by keyboard, with visible focus
+- Deep links manage focus (§3)
+- All state changes (draft saved, published, variant changed) announced politely
+- Text scales to 200% without loss of content or function; bands reflow to single column
+- Contrast meets WCAG 2.2 AA against both the light body and the navy strip
+
+---
+
+## 8. Open decisions for the owner
+
+1. **Custom bands** — free-titled bands, or a fixed library only? Free titles risk quality drift.
+2. **Band count cap** — 6 proposed. Higher risks the Overview becoming a second résumé.
+3. **Stat source links** — should each stat be required to link to supporting evidence, or optional?
+   Required is stronger and matches the évidence-linked résumé, but it raises the bar to publish.
+4. **Overview visibility** — always public with the résumé, or independently audience-controlled?
+5. **Variant override** — may a member force Variant B when their content supports A?
+6. **Hero** — is the hero (photo, title, pull-quote) part of this system or separate profile chrome?
+
+---
+
+## 9. What this does not authorize
+
+This is a requirements draft. It authorizes no route, schema, migration, flag, template, or
+member-facing capability. It does not lock a visual authority. Implementation requires a bounded
+package, an exact owner-locked visual, and an entry gate.

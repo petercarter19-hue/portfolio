@@ -1,0 +1,188 @@
+# PeerSlate Completion & Handoff Report
+
+## A. Status
+
+- Package: `PS-OVERVIEW-001`
+- Status: Documentation-only direction package complete; page-purpose
+  inventory and exact production visual authority remain pending Pete review.
+- Branch and commit:
+  `work/2026-07-25-overview-direction-001` from Azure `origin/main`
+  `598cb7d7a5f067564ce3e00540352176decd2b8b`. Initial candidate
+  `13a32b7f721c541c33454492b213c7dc50ed2fad` received a Conditional
+  independent review. Corrected candidate
+  `a1235458055584311648e3ce94a13de390890bfa` received a Pass. The final
+  report-only source SHA is recorded in the PR and final owner handoff because a
+  commit cannot contain its own hash.
+- PR / pipeline / environment: Delivery occurs after this source report is
+  committed. The final owner handoff records the exact Azure PR, squash merge,
+  pipeline result, and unchanged public baseline; this report does not
+  pre-claim those future events.
+- Production state: Unchanged. This package adds no runtime behavior.
+- Visual authority and status: Not Started. Two durable owner-selected
+  direction inputs are preserved; neither is a locked production authority.
+- Homepage product projection: Not Applicable to this documentation change. A
+  future implementation must perform the visual standard's homepage impact and
+  parity gate because the homepage presents the résumé/Slate capability.
+- Pete / designated session manager visual acceptance: Pete selected the
+  one-system/two-style direction. Exact inventory and visual-state acceptance
+  remain pending.
+- Designated session manager: Current Pete-authorized Codex task for
+  `PS-OVERVIEW-001`.
+- Manager handoff status and next receiver: Prepared for cross-computer owner
+  inventory review and ChatGPT visual creation.
+- Lane owner and self-managed authority: Codex sole documentation writer;
+  package-local files only.
+- Self-certification: Pass for the bounded documentation package.
+- Complete-diff review: Pass. The cumulative base-to-final diff contains
+  fourteen package-local files; no shared pointer or runtime file changed.
+- Shared governance pointer disposition: No update required. This direction
+  package changes no controlling baseline, verified production truth, or active
+  runtime ownership. It remains pending owner inventory acceptance and exact
+  visual lock.
+- Acceptance requested: Documentation/product-direction release. No runtime or
+  visual acceptance is requested.
+
+## B. What changed technically
+
+The package:
+
+- preserves exact package-local copies and hashes of the two owner concepts and
+  the supplied Claude requirements draft;
+- defines one Overview system with Story & Career and Work & Impact style
+  manifests over one shared projection model;
+- defines canonical/source, authored, hybrid, destination, media, block,
+  style-version, draft, preview, publication, restore, and failure boundaries;
+- supplies the required page-purpose/non-redundancy inventory;
+- defines a finite block library, initial content budgets, count-aware sparse
+  behavior, no-gap reflow, deep-link/focus behavior, and responsive/accessibility
+  requirements;
+- defines the complete manual editor and optional source-grounded AI proposal
+  path;
+- defines owner authorization, cross-member isolation, audience, media,
+  source-change, deletion/revocation, atomic publication, concurrency, and
+  restore requirements;
+- reconciles the future Overview with the current résumé Summary, Ask [Name] AI,
+  PDF action, right-side section ribbon, and compatibility anchors while
+  leaving the future left Context Rail migration separately gated;
+- defines atomic owner-controlled unpublish, Summary fallback, retained history,
+  failure recovery, and cache behavior;
+- distinguishes benign source evolution from corrective supersession so a known
+  invalid public claim fails closed without silently publishing replacement
+  wording;
+- reserves Story Spotlight for an eligible same-audience published Story and
+  gives standalone authored narrative a truthful Flexible Spotlight;
+- supplies conceptual implementation sequencing, generic fixtures, acceptance
+  evidence, and stop conditions; and
+- supplies a durable cross-computer restart prompt.
+
+No application code, route, template, stylesheet, JavaScript, API, database,
+migration, service, provider, model, feature flag, deployment configuration,
+shared governance pointer, or current initiative file changed.
+
+## C. What this means in plain English
+
+A future member will not have to hire a developer or depend on AI to keep a
+beautiful Overview. They will choose what to show, write concise content,
+select real records and images, put the blocks in order, preview exactly what a
+visitor sees, and publish deliberately. PeerSlate will keep the layout
+professional and automatically remove empty spaces.
+
+The same member content can appear in a more human Story & Career style or a
+faster Work & Impact style. The member publishes one version. The detailed
+résumé remains immediately below it.
+
+## D. What the website or member can do now
+
+Nothing new. The current public résumé, Story, owner workspace, routes, data,
+and AI behavior are unchanged. This package defines what a later authorized
+feature must do; it does not claim that an editor, style switcher, Overview
+publication, or AI proposal flow exists.
+
+## E. How this connects to PeerSlate
+
+The Overview is a deliberate public Slate projection over member-approved
+records. It follows the controlling relationship:
+
+- Journal preserves canonical history;
+- Studio helps the member work, practice, explore, and shape;
+- the public Slate presents approved output; and
+- Community may connect selected output.
+
+It preserves one authoritative fact source, explicit audience/publication,
+member control, optional proposal-only AI, the Story/Journal distinction, and
+the existing real résumé rather than creating a duplicate profile store.
+
+## F. Verification and validation
+
+Source validation is closed:
+
+- Story & Career concept: `941 × 1672`, SHA-256
+  `0F2F70EB8AB4E417CE6F2A0CEB3F47BC00C7EEAD9BFFC78A9B6C6D3D081613C4`.
+- Work & Impact concept: `864 × 1821`, SHA-256
+  `B5276B1728B80A17BE395DD4F1ABBB9BEC74346AEF8D928E9CC8DFA7B59412E6`.
+- Supplied Claude draft: strict UTF-8, SHA-256
+  `09E026EAE767CF0B21F262F9D2236E5ABE360631162FAF049AE7D6219979DD43`.
+- Working-tree, Git-index, and committed source bytes matched the registered
+  hashes after correction.
+- Strict UTF-8 decoding for package Markdown/text: Pass.
+- Package-local Markdown link resolution: Pass; no missing local target.
+- Package-only changed-path check: Pass.
+- `git diff --check`: Pass before each candidate commit.
+- Repository venv interpreter:
+  `C:\Users\peter\Documents\portfolio\venv\Scripts\python.exe`; command:
+  `-m unittest tests.test_governance_pointers`; Pass, 38 tests.
+- `ANTHROPIC_API_KEY=test-placeholder` with the same repository venv
+  interpreter; command: `-m unittest tests.test_site_rules`; Pass, 11 tests.
+  The expected Flask-Limiter in-memory-storage warning was the only warning.
+- Complete-diff self-review: Pass.
+- Independent review of initial exact candidate
+  `13a32b7f721c541c33454492b213c7dc50ed2fad`: Conditional. It identified
+  résumé Summary integration, owner unpublish, corrective-source propagation,
+  Story eligibility, and report-closeout gaps.
+- Focused independent re-review of corrected exact candidate
+  `a1235458055584311648e3ce94a13de390890bfa`: Pass. Findings 1–4 were closed,
+  and no new P0/P1 regression was found.
+
+The delivery record—final source SHA, Azure PR, squash merge, pipeline, and
+public-baseline verification—is necessarily created after this report commit
+and must be stated in the final owner handoff without changing the package's
+source-completion result.
+
+No browser, responsive, accessibility, or real-member evidence applies to this
+documentation-only package. Those are required for the future visual and
+runtime packages.
+
+## G. Known gaps, risks, and exclusions
+
+- Pete has not approved the exact meaningful-item inventory.
+- ChatGPT has not created the required production visual/state sets.
+- Pete has not locked visual files/hashes.
+- First-release Overview audience and policy for member-confirmed unsourced
+  metrics remain owner decisions.
+- Initial content budgets require validation against locked typography.
+- No schema/API/route architecture has been accepted.
+- No runtime code, data migration, editor, publication, unpublish, restore, or
+  AI behavior exists.
+- The current public My Story remains fixture-driven; private Journal content
+  is not an Overview source.
+- The package does not update the homepage or résumé; a future user-facing
+  implementation must assess and satisfy homepage parity.
+
+These gaps are intentional gates, not hidden incomplete implementation.
+
+## H. Clear next step
+
+Pete reviews the exact page-purpose inventory and five owner decisions. ChatGPT
+then creates complete production-intent Story & Career and Work & Impact
+visual/state sets. Pete locks exact files and hashes. Only then should a
+separate bounded architecture/implementation package be prepared.
+
+## I. What Pete needs to do or decide
+
+1. Approve or correct the page-purpose inventory.
+2. Confirm first-release audience behavior.
+3. Confirm whether a member-confirmed metric needs a canonical source to
+   publish.
+4. Confirm the approximately eight-band rich maximum and the two style names.
+5. Confirm the hero versus shared-shell action rule.
+6. Scrutinize and lock the later ChatGPT-created visual/state set.
