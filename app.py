@@ -23,6 +23,13 @@ from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
+from overview_projection_service import (
+    STYLE_MANIFESTS,
+    OverviewProjectionError,
+    build_overview_projection,
+    list_fixture_options,
+    load_fixture_catalog,
+)
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -30,7 +37,13 @@ load_dotenv()
 
 
 def _configured_trusted_hosts():
-    hosts = {"localhost", "127.0.0.1", "peerslate.com", ".peerslate.com"}
+    hosts = {
+        "localhost",
+        "127.0.0.1",
+        "[::1]",
+        "peerslate.com",
+        ".peerslate.com",
+    }
     azure_hostname = os.environ.get("WEBSITE_HOSTNAME")
     if azure_hostname:
         hosts.add(azure_hostname.strip().lower())
@@ -1883,6 +1896,62 @@ def living_resume_v2():
         resume_version=2,
         is_internal_preview=True,
     )
+
+
+@app.route('/_internal/member-overview')
+def member_overview_preview():
+    """Render the generic Overview foundation for bounded visual review only."""
+    preview_enabled = os.environ.get('ENABLE_DESIGN_SYSTEM_PREVIEW') == '1'
+    request_host = request.host.lower()
+    if request_host.startswith('['):
+        clean_host = request_host.split(']', 1)[0].lstrip('[')
+    else:
+        clean_host = request_host.split(':', 1)[0]
+    if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
+        abort(404)
+
+    submitted_identity_keys = {
+        'member',
+        'member_id',
+        'owner',
+        'owner_id',
+        'profile',
+        'profile_slug',
+    }.intersection(request.args)
+    if submitted_identity_keys:
+        abort(400)
+
+    fixture_id = request.args.get('fixture', 'experienced-leader')
+    style_id = request.args.get('style', 'story-career')
+    try:
+        fixture_catalog = load_fixture_catalog()
+        projection = build_overview_projection(
+            fixture_catalog,
+            fixture_id,
+            style_id,
+        )
+        fixture_options = list_fixture_options(fixture_catalog)
+    except OverviewProjectionError as exc:
+        if exc.code in {'unknown_fixture', 'unsupported_style'}:
+            abort(404)
+        abort(400)
+
+    style_options = [
+        {'id': manifest['id'], 'label': manifest['label']}
+        for manifest in STYLE_MANIFESTS.values()
+    ]
+    response = app.make_response(
+        render_template(
+            'overview_preview.html',
+            projection=projection,
+            fixture_options=fixture_options,
+            style_options=style_options,
+            capture=request.args.get('capture') == '1',
+            large_text=request.args.get('largeText') == '1',
+        )
+    )
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @app.route('/<profile_slug>/resume-ledger')

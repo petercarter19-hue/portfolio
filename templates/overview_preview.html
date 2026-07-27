@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>{{ projection.style.label }} · Member Overview renderer review</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/member-overview.css') }}"
+    />
+  </head>
+  <body
+    class="overview-preview{% if capture %} capture-mode{% endif %}{% if large_text %} large-text{% endif %}"
+  >
+    <a class="overview-skip-link" href="#overview-stage">Skip to Overview</a>
+
+    {% if not capture %}
+      <form
+        class="overview-review-toolbar"
+        method="get"
+        action="{{ url_for('member_overview_preview') }}"
+        aria-label="Fixture review controls"
+        data-preview-controls
+      >
+        <p>
+          <strong>Internal fixture review</strong>
+          <span>Unavailable to members · no save or publish</span>
+        </p>
+        <label>
+          Fixture
+          <select name="fixture">
+            {% for option in fixture_options %}
+              <option value="{{ option.id }}"{% if option.id == projection.fixture.id %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Style
+          <select name="style">
+            {% for option in style_options %}
+              <option value="{{ option.id }}"{% if option.id == projection.style.id %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="overview-review-checkbox">
+          <input type="checkbox" name="largeText" value="1"{% if large_text %} checked{% endif %} />
+          Large text
+        </label>
+        <button type="submit">Review fixture</button>
+      </form>
+    {% endif %}
+
+    <header class="overview-preview-header">
+      <a class="overview-preview-brand" href="#overview-stage" aria-label="PeerSlate Overview review">
+        <span aria-hidden="true">P</span>
+        <strong>PeerSlate</strong>
+      </a>
+      <nav aria-label="Simulated profile room">
+        <span>Member Slate</span>
+        <span>Community</span>
+        <span>Interview Studio</span>
+        <strong>Résumé</strong>
+      </nav>
+      <span class="overview-preview-status">Fixture review</span>
+    </header>
+
+    <div class="overview-mobile-context" aria-label="Résumé context">
+      <span class="overview-avatar" aria-hidden="true">{{ projection.profile.initials }}</span>
+      <strong>{{ projection.profile.display_name }}</strong>
+      <span aria-current="location">Overview</span>
+      <span>Sections</span>
+    </div>
+
+    <div class="overview-review-layout">
+      <aside class="overview-context-rail" aria-label="Résumé sections">
+        <div class="overview-context-person">
+          <span class="overview-avatar" aria-hidden="true">{{ projection.profile.initials }}</span>
+          <strong>{{ projection.profile.display_name }}</strong>
+          <small>{{ projection.fixture.notice }}</small>
+        </div>
+        <p class="overview-rail-label">Résumé sections</p>
+        <nav>
+          {% for item in projection.navigation %}
+            <a href="{{ item.destination }}"{% if loop.first %} aria-current="location"{% endif %}>
+              <span aria-hidden="true">{{ ["⌂", "↗", "▦", "▣", "◇"][loop.index0] }}</span>
+              {{ item.label }}
+            </a>
+          {% endfor %}
+        </nav>
+        <div class="overview-rail-tool">
+          <a href="#preview-pdf-note">
+            <span aria-hidden="true">▤</span>
+            Résumé PDF
+          </a>
+          <p id="preview-pdf-note">Document export is outside this renderer slice.</p>
+        </div>
+      </aside>
+
+      <main class="overview-center-stage" id="overview-stage">
+        <p class="overview-fixture-notice" role="note">{{ projection.fixture.notice }}</p>
+        {% include "partials/member_overview.html" %}
+      </main>
+
+      <aside class="overview-ai-rail" aria-labelledby="overview-ai-title">
+        <span class="overview-ai-icon" aria-hidden="true">◇</span>
+        <p class="overview-rail-label">Public context preview</p>
+        <h2 id="overview-ai-title">Ask {{ projection.profile.first_name }} AI</h2>
+        <p>
+          Ask about {{ projection.profile.first_name }}’s work, experience,
+          skills, or professional story.
+        </p>
+        <div class="overview-ai-truth">
+          <strong>Illustrative only</strong>
+          <span>No AI request is sent from this renderer.</span>
+        </div>
+        <a href="#overview">Return to Overview</a>
+      </aside>
+    </div>
+
+    {% if not capture %}
+      <script
+        src="{{ url_for('static', filename='js/member-overview-preview.js') }}"
+        defer
+      ></script>
+    {% endif %}
+  </body>
+</html>

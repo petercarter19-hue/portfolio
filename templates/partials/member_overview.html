@@ -1,0 +1,336 @@
+{% set blocks = projection.block_by_definition %}
+{% set hero = blocks["identity_hero"] %}
+<article
+  class="member-overview {{ projection.style.css_class }} density-{{ projection.density }}"
+  id="overview"
+  data-overview-root
+  data-style-id="{{ projection.style.id }}"
+  data-style-version="{{ projection.style.version }}"
+  data-fixture-id="{{ projection.fixture.id }}"
+>
+  <div class="overview-opening{% if "proof_band" not in blocks %} overview-opening--without-proof{% endif %}">
+    <header class="overview-hero{% if hero.media %} overview-hero--with-media{% endif %}" aria-labelledby="overview-name">
+      {% if projection.style.id == "story-career" and hero.media %}
+        <figure class="overview-hero-media overview-media">
+          <img
+            src="{{ hero.media[0].src }}"
+            alt="{{ hero.media[0].alt }}"
+            style="object-position: {{ hero.media[0].focal }}"
+          />
+          <figcaption>{{ hero.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+
+      <div class="overview-hero-copy">
+        <p class="overview-kicker">{{ hero.content.eyebrow }}</p>
+        <h1 id="overview-name">{{ projection.profile.display_name }}</h1>
+        <p class="overview-headline">{{ projection.profile.headline }}</p>
+        <p class="overview-intro">{{ projection.profile.intro }}</p>
+        {% if projection.profile.location %}
+          <p class="overview-location">
+            <span aria-hidden="true">⌖</span>
+            {{ projection.profile.location }}
+          </p>
+        {% endif %}
+        <div class="overview-hero-actions">
+          <a
+            class="overview-button overview-button--primary"
+            href="{{ projection.profile.contact_destination.value }}"
+          >{{ projection.profile.contact_label }}</a>
+          <a
+            class="overview-button overview-button--secondary"
+            href="#resume-start"
+          >View résumé</a>
+        </div>
+      </div>
+
+      {% if projection.style.id == "work-impact" and hero.media %}
+        <figure class="overview-hero-media overview-media">
+          <img
+            src="{{ hero.media[0].src }}"
+            alt="{{ hero.media[0].alt }}"
+            style="object-position: {{ hero.media[0].focal }}"
+          />
+          <figcaption>{{ hero.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </header>
+
+    {% if "proof_band" in blocks and blocks["proof_band"].content.claims %}
+      {% set proof = blocks["proof_band"] %}
+      <section
+        class="overview-proof overview-proof--{{ projection.layout.proof_variant }}"
+        aria-labelledby="overview-proof-heading"
+        data-proof-count="{{ projection.layout.proof_count }}"
+      >
+        <h2 class="visually-hidden" id="overview-proof-heading">Selected proof</h2>
+        {% for claim in proof.content.claims if claim.visible %}
+          <article class="overview-proof-item">
+            {% if claim.icon %}<span class="overview-proof-icon" aria-hidden="true">{{ claim.icon }}</span>{% endif %}
+            {% if claim.destination %}
+              <a href="{{ claim.destination.value }}">
+                <strong>{{ claim.value }}</strong>
+                <span>{{ claim.label }}</span>
+              </a>
+            {% else %}
+              <strong>{{ claim.value }}</strong>
+              <span>{{ claim.label }}</span>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </section>
+    {% endif %}
+  </div>
+
+  {% if "story_spotlight" in blocks %}
+    {% set story = blocks["story_spotlight"] %}
+    <section class="overview-story{% if story.media %} overview-story--with-media{% endif %}" id="story" aria-labelledby="overview-story-heading">
+      <div class="overview-story-copy">
+        <p class="overview-section-kicker">{{ story.content.kicker }}</p>
+        <h2 id="overview-story-heading">{{ story.content.heading }}</h2>
+        <span class="overview-accent-rule" aria-hidden="true"></span>
+        <p>{{ story.content.body }}</p>
+        {% if story.destination and story.content.action %}
+          <a class="overview-text-link" href="{{ story.destination.value }}">{{ story.content.action }} <span aria-hidden="true">→</span></a>
+        {% endif %}
+      </div>
+      {% if story.media %}
+        <figure class="overview-story-media overview-media">
+          <img
+            src="{{ story.media[0].src }}"
+            alt="{{ story.media[0].alt }}"
+            style="object-position: {{ story.media[0].focal }}"
+          />
+          <figcaption>{{ story.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if "career" in blocks %}
+    {% set career = blocks["career"] %}
+    <section class="overview-career{% if career.media %} overview-career--with-media{% endif %} overview-ruled" id="experience" aria-labelledby="overview-career-heading">
+      <div class="overview-career-copy">
+        <p class="overview-section-kicker">{{ projection.layout.career_heading }}</p>
+        <h2 class="visually-hidden" id="overview-career-heading">{{ projection.layout.career_heading }}</h2>
+        {% if projection.layout.career_count == 1 %}
+          {% set role = career.records[0] %}
+          <article class="overview-career-focus">
+            <p class="overview-record-period">{{ role.period }}</p>
+            <h3>{{ role.title }}</h3>
+            <p class="overview-record-org">{{ role.organization }}</p>
+            <p>{{ role.summary }}</p>
+            {% if role.highlights %}
+              <ul>
+                {% for highlight in role.highlights %}<li>{{ highlight }}</li>{% endfor %}
+              </ul>
+            {% endif %}
+          </article>
+        {% else %}
+          <ol class="overview-timeline">
+            {% for role in career.records %}
+              <li>
+                <div class="overview-record-period">
+                  {{ role.period }}
+                  {% if role.location %}<span>{{ role.location }}</span>{% endif %}
+                </div>
+                <div>
+                  <h3>{{ role.title }}</h3>
+                  <p class="overview-record-org">{{ role.organization }}</p>
+                  <p>{{ role.summary }}</p>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        {% endif %}
+        <a class="overview-inline-action" href="#resume-start">View detailed experience</a>
+      </div>
+      {% if career.media %}
+        <figure class="overview-career-media overview-media">
+          <img
+            src="{{ career.media[0].src }}"
+            alt="{{ career.media[0].alt }}"
+            style="object-position: {{ career.media[0].focal }}"
+          />
+          <figcaption>{{ career.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if "impact" in blocks %}
+    {% set impact = blocks["impact"] %}
+    <section class="overview-impact{% if impact.media %} overview-impact--with-media{% endif %} overview-ruled" id="impact" aria-labelledby="overview-impact-heading">
+      <p class="overview-section-kicker">{{ impact.content.heading }}</p>
+      <h2 class="visually-hidden" id="overview-impact-heading">{{ impact.content.heading }}</h2>
+      <div class="overview-impact-grid overview-impact-grid--{{ impact.content["items"]|length }}">
+        {% for item in impact.content["items"] %}
+          <article>
+            {% if item.icon %}<span class="overview-impact-icon" aria-hidden="true">{{ item.icon }}</span>{% endif %}
+            {% if item.value %}<strong>{{ item.value }}</strong>{% endif %}
+            <h3>{{ item.heading }}</h3>
+            <p>{{ item.body }}</p>
+          </article>
+        {% endfor %}
+      </div>
+      {% if impact.media %}
+        <figure class="overview-impact-media overview-media">
+          <img
+            src="{{ impact.media[0].src }}"
+            alt="{{ impact.media[0].alt }}"
+            style="object-position: {{ impact.media[0].focal }}"
+          />
+          <figcaption>{{ impact.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if "skills" in blocks %}
+    {% set skills = blocks["skills"] %}
+    <section class="overview-skills overview-ruled" id="skills" aria-labelledby="overview-skills-heading">
+      <p class="overview-section-kicker">{{ skills.content.heading }}</p>
+      <h2 class="visually-hidden" id="overview-skills-heading">{{ skills.content.heading }}</h2>
+      <ul>
+        {% for skill in skills.content["items"] %}<li>{{ skill }}</li>{% endfor %}
+      </ul>
+      <a class="overview-inline-action" href="#resume-start">View all skills</a>
+    </section>
+  {% endif %}
+
+  {% if projection.layout.has_credentials %}
+    <div
+      class="overview-credentials overview-credentials--{% if "education" in blocks %}education-{% endif %}{% if "certifications" in blocks %}certifications-{% endif %}{% if "awards" in blocks %}awards{% endif %} overview-ruled"
+      id="credentials"
+      aria-label="Credentials"
+    >
+      {% if "education" in blocks %}
+        <section aria-labelledby="overview-education-heading">
+          <p class="overview-section-kicker">Education</p>
+          <h2 class="visually-hidden" id="overview-education-heading">Education</h2>
+          <ul class="overview-record-list">
+            {% for record in blocks["education"].records %}
+              <li>
+                <strong>{{ record.credential }}</strong>
+                <span>{{ record.institution }}{% if record.period %} · {{ record.period }}{% endif %}</span>
+                {% if record.detail %}<p>{{ record.detail }}</p>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          <a class="overview-inline-action" href="#resume-start">View education</a>
+        </section>
+      {% endif %}
+      {% if "certifications" in blocks %}
+        <section aria-labelledby="overview-certifications-heading">
+          <p class="overview-section-kicker">Certifications</p>
+          <h2 class="visually-hidden" id="overview-certifications-heading">Certifications</h2>
+          <ul class="overview-record-list">
+            {% for record in blocks["certifications"].records %}
+              <li>
+                <strong>{{ record.title }}</strong>
+                <span>{{ record.issuer }}{% if record.period %} · {{ record.period }}{% endif %}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          <a class="overview-inline-action" href="#resume-start">View certifications</a>
+        </section>
+      {% endif %}
+      {% if "awards" in blocks %}
+        <section aria-labelledby="overview-awards-heading">
+          <p class="overview-section-kicker">Awards &amp; recognition</p>
+          <h2 class="visually-hidden" id="overview-awards-heading">Awards and recognition</h2>
+          <ul class="overview-record-list">
+            {% for record in blocks["awards"].records %}
+              <li>
+                <strong>{{ record.title }}</strong>
+                <span>{{ record.issuer }}{% if record.period %} · {{ record.period }}{% endif %}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          <a class="overview-inline-action" href="#resume-start">View awards</a>
+        </section>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if "story_chapters" in blocks %}
+    {% set chapters = blocks["story_chapters"] %}
+    <section class="overview-chapters{% if chapters.media %} overview-chapters--with-media{% endif %} overview-ruled" aria-labelledby="overview-chapters-heading">
+      <div>
+        <p class="overview-section-kicker">{{ chapters.content.heading }}</p>
+        <h2 class="visually-hidden" id="overview-chapters-heading">{{ chapters.content.heading }}</h2>
+        <ol>
+          {% for item in chapters.content["items"] %}
+            <li>
+              <strong>{{ item.heading }}</strong>
+              <span>{{ item.body }}</span>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% if chapters.media %}
+        <figure class="overview-chapters-media overview-media">
+          <img
+            src="{{ chapters.media[0].src }}"
+            alt="{{ chapters.media[0].alt }}"
+            style="object-position: {{ chapters.media[0].focal }}"
+          />
+          <figcaption>{{ chapters.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if "quote" in blocks %}
+    <figure class="overview-quote overview-ruled">
+      <blockquote>{{ blocks["quote"].content.quote }}</blockquote>
+      <figcaption>— {{ blocks["quote"].content.attribution }}</figcaption>
+    </figure>
+  {% endif %}
+
+  {% if "philosophy" in blocks %}
+    <section class="overview-philosophy overview-ruled" aria-labelledby="overview-philosophy-heading">
+      <p class="overview-section-kicker">Philosophy</p>
+      <h2 id="overview-philosophy-heading">{{ blocks["philosophy"].content.heading }}</h2>
+      <p>{{ blocks["philosophy"].content.body }}</p>
+    </section>
+  {% endif %}
+
+  {% if "future_direction" in blocks %}
+    {% set future = blocks["future_direction"] %}
+    <section class="overview-future{% if future.media %} overview-future--with-media{% endif %} overview-ruled" aria-labelledby="overview-future-heading">
+      <div>
+        <p class="overview-section-kicker">What’s next</p>
+        <h2 id="overview-future-heading">{{ future.content.heading }}</h2>
+        <p>{{ future.content.body }}</p>
+      </div>
+      {% if future.media %}
+        <figure class="overview-future-media overview-media">
+          <img
+            src="{{ future.media[0].src }}"
+            alt="{{ future.media[0].alt }}"
+            style="object-position: {{ future.media[0].focal }}"
+          />
+          <figcaption>{{ future.media[0].truth_label }}</figcaption>
+        </figure>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <footer class="overview-connect" id="connect">
+    <div>
+      <p class="overview-section-kicker">Connect</p>
+      <h2>Let’s build what’s next.</h2>
+      <p>Start a thoughtful conversation about the work, ideas, and opportunities ahead.</p>
+    </div>
+    <a
+      class="overview-button overview-button--primary"
+      href="{{ projection.profile.contact_destination.value }}"
+    >{{ projection.profile.contact_label }}</a>
+  </footer>
+
+  <section class="overview-resume-transition" id="resume-start" tabindex="-1" aria-labelledby="overview-resume-heading">
+    <h2 id="overview-resume-heading">Résumé begins here</h2>
+    <p>{{ blocks["resume_transition"].content.description }}</p>
+  </section>
+</article>

@@ -1,0 +1,1204 @@
+{
+  "schema_version": "overview-fixtures.v1",
+  "fixtures": [
+    {
+      "fixture_id": "early-career",
+      "label": "Early career · sparse",
+      "owner_key": "fixture-owner-early",
+      "density": "sparse",
+      "profile": {
+        "display_name": "Avery Reed",
+        "first_name": "Avery",
+        "initials": "AR",
+        "headline": "Junior product analyst · Curious problem solver",
+        "intro": "I turn customer questions and product data into clear next steps for teams building useful, dependable tools.",
+        "location": "Columbus, Ohio",
+        "contact_label": "Connect",
+        "contact_destination": {
+          "kind": "anchor",
+          "value": "#connect"
+        }
+      },
+      "records": [
+        {
+          "id": "fixture-owner-early:role:analyst",
+          "owner_key": "fixture-owner-early",
+          "kind": "role",
+          "period": "2025 — Present",
+          "title": "Junior Product Analyst",
+          "organization": "Northline Tools",
+          "location": "Columbus, Ohio",
+          "summary": "Supports discovery, reporting, and release learning for a small business-software team.",
+          "highlights": [
+            "Synthesizes interview notes into recurring needs",
+            "Maintains weekly product-health reporting"
+          ]
+        },
+        {
+          "id": "fixture-owner-early:education:bs",
+          "owner_key": "fixture-owner-early",
+          "kind": "education",
+          "credential": "B.S. Information Science",
+          "institution": "Lakeshore State University",
+          "period": "2025",
+          "detail": "Coursework in human-centered design, statistics, and information systems."
+        }
+      ],
+      "media": [],
+      "blocks": [
+        {
+          "placement_id": "early-hero",
+          "definition_id": "identity_hero",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 10,
+          "visible": true,
+          "emphasis": "hero",
+          "content": {
+            "eyebrow": "Learning quickly. Contributing thoughtfully."
+          }
+        },
+        {
+          "placement_id": "early-career",
+          "definition_id": "career",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-early:role:analyst"
+          ],
+          "order": 30,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {}
+        },
+        {
+          "placement_id": "early-skills",
+          "definition_id": "skills",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 50,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Strengths",
+            "items": [
+              "Customer research",
+              "Product analytics",
+              "Data storytelling",
+              "SQL",
+              "Workshop notes",
+              "Release learning"
+            ]
+          }
+        },
+        {
+          "placement_id": "early-education",
+          "definition_id": "education",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-early:education:bs"
+          ],
+          "order": 60,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "early-resume-transition",
+          "definition_id": "resume_transition",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 999,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "description": "Detailed experience and skills continue below."
+          }
+        }
+      ]
+    },
+    {
+      "fixture_id": "career-changer",
+      "label": "Career changer · standard",
+      "owner_key": "fixture-owner-changer",
+      "density": "standard",
+      "profile": {
+        "display_name": "Jordan Blake",
+        "first_name": "Jordan",
+        "initials": "JB",
+        "headline": "Operations leader moving into service design",
+        "intro": "I bring frontline operating experience into service design, helping teams see where a process breaks and build a better path through it.",
+        "location": "Richmond, Virginia",
+        "contact_label": "Connect",
+        "contact_destination": {
+          "kind": "anchor",
+          "value": "#connect"
+        }
+      },
+      "records": [
+        {
+          "id": "fixture-owner-changer:role:service-fellow",
+          "owner_key": "fixture-owner-changer",
+          "kind": "role",
+          "period": "2026 — Present",
+          "title": "Service Design Fellow",
+          "organization": "Civic Practice Lab",
+          "location": "Richmond, Virginia",
+          "summary": "Maps resident journeys and prototypes clearer handoffs for a public-benefits program.",
+          "highlights": [
+            "Facilitates research synthesis with policy and delivery teams",
+            "Tests low-fidelity service changes with frontline staff"
+          ]
+        },
+        {
+          "id": "fixture-owner-changer:role:operations",
+          "owner_key": "fixture-owner-changer",
+          "kind": "role",
+          "period": "2021 — 2026",
+          "title": "Regional Operations Manager",
+          "organization": "Harbor House Services",
+          "location": "Virginia",
+          "summary": "Led multi-site service delivery, coaching, scheduling, and improvement work.",
+          "highlights": [
+            "Built a shared review rhythm across five locations",
+            "Translated recurring customer friction into operating changes"
+          ]
+        },
+        {
+          "id": "fixture-owner-changer:role:coordinator",
+          "owner_key": "fixture-owner-changer",
+          "kind": "role",
+          "period": "2017 — 2021",
+          "title": "Program Coordinator",
+          "organization": "East River Community Network",
+          "location": "Richmond, Virginia",
+          "summary": "Coordinated volunteers, community partners, and neighborhood programs.",
+          "highlights": [
+            "Created accessible program guides",
+            "Learned to design around real-world constraints"
+          ]
+        },
+        {
+          "id": "fixture-owner-changer:education:certificate",
+          "owner_key": "fixture-owner-changer",
+          "kind": "education",
+          "credential": "Graduate Certificate, Service Design",
+          "institution": "Commonwealth School of Design",
+          "period": "2026",
+          "detail": "Part-time study in qualitative research, service blueprints, and prototyping."
+        }
+      ],
+      "media": [],
+      "blocks": [
+        {
+          "placement_id": "changer-hero",
+          "definition_id": "identity_hero",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 10,
+          "visible": true,
+          "emphasis": "hero",
+          "content": {
+            "eyebrow": "Frontline perspective. Designed services."
+          }
+        },
+        {
+          "placement_id": "changer-career",
+          "definition_id": "career",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-changer:role:service-fellow",
+            "fixture-owner-changer:role:operations",
+            "fixture-owner-changer:role:coordinator"
+          ],
+          "order": 30,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {}
+        },
+        {
+          "placement_id": "changer-impact",
+          "definition_id": "impact",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 40,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "heading": "Transferable impact",
+            "items": [
+              {
+                "icon": "↔",
+                "heading": "Better handoffs",
+                "body": "Finds the moments where people, policy, and tools stop connecting."
+              },
+              {
+                "icon": "◎",
+                "heading": "Grounded research",
+                "body": "Pairs observation and interviews with operating data."
+              },
+              {
+                "icon": "◇",
+                "heading": "Practical change",
+                "body": "Tests small improvements before asking teams to scale them."
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "changer-skills",
+          "definition_id": "skills",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 50,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Transferable strengths",
+            "items": [
+              "Service blueprints",
+              "Qualitative research",
+              "Facilitation",
+              "Process mapping",
+              "Frontline operations",
+              "Change communication",
+              "Team coaching",
+              "Journey mapping"
+            ]
+          }
+        },
+        {
+          "placement_id": "changer-education",
+          "definition_id": "education",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-changer:education:certificate"
+          ],
+          "order": 60,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "changer-future",
+          "definition_id": "future_direction",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 90,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "What I’m building toward",
+            "body": "A service-design practice focused on public systems that are easier to understand, navigate, and trust."
+          }
+        },
+        {
+          "placement_id": "changer-resume-transition",
+          "definition_id": "resume_transition",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 999,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "description": "Detailed roles, projects, and capabilities continue below."
+          }
+        }
+      ]
+    },
+    {
+      "fixture_id": "experienced-leader",
+      "label": "Experienced leader · rich",
+      "owner_key": "fixture-owner-leader",
+      "density": "rich",
+      "profile": {
+        "display_name": "Maya Chen",
+        "first_name": "Maya",
+        "initials": "MC",
+        "headline": "Platform engineering leader · Systems builder",
+        "intro": "I build durable platforms and high-trust engineering organizations that help product teams move with clarity, speed, and confidence.",
+        "location": "Seattle, Washington",
+        "contact_label": "Connect",
+        "contact_destination": {
+          "kind": "anchor",
+          "value": "#connect"
+        }
+      },
+      "records": [
+        {
+          "id": "fixture-owner-leader:role:vp",
+          "owner_key": "fixture-owner-leader",
+          "kind": "role",
+          "period": "2022 — Present",
+          "title": "VP, Platform Engineering",
+          "organization": "Lumen Harbor",
+          "location": "Seattle, Washington",
+          "summary": "Leads the platform, reliability, and developer-experience organization for a multi-product software company.",
+          "highlights": [
+            "Established a shared platform strategy across four product groups",
+            "Built leadership and operating systems for a distributed organization"
+          ]
+        },
+        {
+          "id": "fixture-owner-leader:role:director",
+          "owner_key": "fixture-owner-leader",
+          "kind": "role",
+          "period": "2018 — 2022",
+          "title": "Director of Engineering",
+          "organization": "Northstar Commerce",
+          "location": "Seattle, Washington",
+          "summary": "Led infrastructure modernization and reliability programs through rapid company growth.",
+          "highlights": [
+            "Unified service ownership and incident learning",
+            "Expanded manager and staff-engineer development"
+          ]
+        },
+        {
+          "id": "fixture-owner-leader:role:manager",
+          "owner_key": "fixture-owner-leader",
+          "kind": "role",
+          "period": "2014 — 2018",
+          "title": "Engineering Manager",
+          "organization": "Fieldnote Systems",
+          "location": "Portland, Oregon",
+          "summary": "Managed teams responsible for data infrastructure and internal developer tools.",
+          "highlights": [
+            "Introduced service-level objectives and operational reviews",
+            "Created a technical-leadership apprenticeship"
+          ]
+        },
+        {
+          "id": "fixture-owner-leader:role:engineer",
+          "owner_key": "fixture-owner-leader",
+          "kind": "role",
+          "period": "2009 — 2014",
+          "title": "Software Engineer",
+          "organization": "Orbit Works",
+          "location": "Portland, Oregon",
+          "summary": "Built distributed data services and learned the craft of reliable operations.",
+          "highlights": [
+            "Designed fault-tolerant ingestion services",
+            "Supported critical systems through on-call rotations"
+          ]
+        },
+        {
+          "id": "fixture-owner-leader:education:ms",
+          "owner_key": "fixture-owner-leader",
+          "kind": "education",
+          "credential": "M.S. Computer Science",
+          "institution": "Cascadia University",
+          "period": "2011",
+          "detail": "Distributed systems and human-centered computing."
+        },
+        {
+          "id": "fixture-owner-leader:education:bs",
+          "owner_key": "fixture-owner-leader",
+          "kind": "education",
+          "credential": "B.S. Computer Engineering",
+          "institution": "Western Technical University",
+          "period": "2009",
+          "detail": "Computer architecture, networks, and embedded systems."
+        },
+        {
+          "id": "fixture-owner-leader:cert:sre",
+          "owner_key": "fixture-owner-leader",
+          "kind": "certification",
+          "title": "Site Reliability Leadership",
+          "issuer": "Reliability Practice Institute",
+          "period": "2023"
+        },
+        {
+          "id": "fixture-owner-leader:cert:coach",
+          "owner_key": "fixture-owner-leader",
+          "kind": "certification",
+          "title": "Leadership Coaching",
+          "issuer": "Northwest Coaching Collaborative",
+          "period": "2021"
+        },
+        {
+          "id": "fixture-owner-leader:award:mentor",
+          "owner_key": "fixture-owner-leader",
+          "kind": "award",
+          "title": "Engineering Mentor Award",
+          "issuer": "Cascadia Technology Council",
+          "period": "2024"
+        },
+        {
+          "id": "fixture-owner-leader:award:platform",
+          "owner_key": "fixture-owner-leader",
+          "kind": "award",
+          "title": "Platform Team of the Year",
+          "issuer": "Lumen Harbor",
+          "period": "2023"
+        }
+      ],
+      "media": [
+        {
+          "id": "fixture-owner-leader:media:portrait",
+          "owner_key": "fixture-owner-leader",
+          "public_eligible": true,
+          "src": "/static/images/journal/maya-fixture-hero-v1.png",
+          "alt": "Illustrative portrait of Maya Chen used for renderer review",
+          "decorative": false,
+          "focal": "20% 35%",
+          "truth_label": "Illustrative fixture image"
+        },
+        {
+          "id": "fixture-owner-leader:media:collaboration",
+          "owner_key": "fixture-owner-leader",
+          "public_eligible": true,
+          "src": "/static/images/feed/feed-team-demo-2026-07-21-1280.webp",
+          "alt": "Illustrative team collaborating around a table",
+          "decorative": false,
+          "focal": "50% 50%",
+          "truth_label": "Illustrative fixture image"
+        },
+        {
+          "id": "fixture-owner-leader:media:systems",
+          "owner_key": "fixture-owner-leader",
+          "public_eligible": true,
+          "src": "/static/images/feed/feed-workflow-whiteboard-2026-07-21-1280.webp",
+          "alt": "Illustrative systems workflow on a whiteboard",
+          "decorative": false,
+          "focal": "50% 50%",
+          "truth_label": "Illustrative fixture image"
+        },
+        {
+          "id": "fixture-owner-leader:media:future",
+          "owner_key": "fixture-owner-leader",
+          "public_eligible": true,
+          "src": "/static/images/feed/feed-mountain-ridge-2026-07-21-1280.webp",
+          "alt": "Illustrative mountain ridge at sunrise",
+          "decorative": false,
+          "focal": "50% 55%",
+          "truth_label": "Illustrative fixture image"
+        }
+      ],
+      "blocks": [
+        {
+          "placement_id": "leader-hero",
+          "definition_id": "identity_hero",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-leader:media:portrait"
+          ],
+          "order": 10,
+          "visible": true,
+          "emphasis": "hero",
+          "content": {
+            "eyebrow": "Engineer at heart. Leader in practice."
+          }
+        },
+        {
+          "placement_id": "leader-proof",
+          "definition_id": "proof_band",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 20,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "claims": [
+              {
+                "value": "14+",
+                "label": "Years building platforms",
+                "icon": "◇",
+                "order": 1,
+                "visible": true
+              },
+              {
+                "value": "45",
+                "label": "Engineers and managers led",
+                "icon": "◎",
+                "order": 2,
+                "visible": true
+              },
+              {
+                "value": "4",
+                "label": "Product groups on one platform",
+                "icon": "▦",
+                "order": 3,
+                "visible": true
+              },
+              {
+                "value": "24/7",
+                "label": "Reliability culture",
+                "icon": "◷",
+                "order": 4,
+                "visible": true
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "leader-story",
+          "definition_id": "story_spotlight",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-leader:media:future"
+          ],
+          "destination": {
+            "kind": "anchor",
+            "value": "#story"
+          },
+          "order": 30,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "kicker": "My story",
+            "heading": "Build the system. Grow the people.",
+            "body": "My work has always lived at the intersection of technical systems and human systems: creating the conditions for both to become more resilient.",
+            "action": "Explore the story"
+          }
+        },
+        {
+          "placement_id": "leader-career",
+          "definition_id": "career",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-leader:role:vp",
+            "fixture-owner-leader:role:director",
+            "fixture-owner-leader:role:manager",
+            "fixture-owner-leader:role:engineer"
+          ],
+          "media_ids": [
+            "fixture-owner-leader:media:collaboration"
+          ],
+          "order": 40,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {}
+        },
+        {
+          "placement_id": "leader-impact",
+          "definition_id": "impact",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-leader:media:systems"
+          ],
+          "order": 50,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Selected impact",
+            "items": [
+              {
+                "icon": "↗",
+                "value": "4 teams",
+                "heading": "Shared platform",
+                "body": "Aligned product groups around one paved path."
+              },
+              {
+                "icon": "◷",
+                "value": "Weekly",
+                "heading": "Reliability learning",
+                "body": "Made operational learning part of normal delivery."
+              },
+              {
+                "icon": "◎",
+                "value": "45 people",
+                "heading": "Leadership system",
+                "body": "Built clearer growth paths for engineers and managers."
+              },
+              {
+                "icon": "◇",
+                "value": "One view",
+                "heading": "Service ownership",
+                "body": "Connected customer impact, reliability, and team decisions."
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "leader-skills",
+          "definition_id": "skills",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 60,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Technical strengths",
+            "items": [
+              "Platform strategy",
+              "Distributed systems",
+              "Developer experience",
+              "Site reliability",
+              "Engineering leadership",
+              "Organization design",
+              "Service ownership",
+              "Technical roadmaps",
+              "Incident learning",
+              "Leadership coaching"
+            ]
+          }
+        },
+        {
+          "placement_id": "leader-education",
+          "definition_id": "education",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-leader:education:ms",
+            "fixture-owner-leader:education:bs"
+          ],
+          "order": 70,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "leader-certifications",
+          "definition_id": "certifications",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-leader:cert:sre",
+            "fixture-owner-leader:cert:coach"
+          ],
+          "order": 80,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "leader-awards",
+          "definition_id": "awards",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-leader:award:mentor",
+            "fixture-owner-leader:award:platform"
+          ],
+          "order": 90,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "leader-story-chapters",
+          "definition_id": "story_chapters",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 100,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Story chapters",
+            "items": [
+              {
+                "heading": "Learning the craft",
+                "body": "Reliability, systems thinking, and service ownership."
+              },
+              {
+                "heading": "Leading through growth",
+                "body": "Building teams while the company and architecture changed."
+              },
+              {
+                "heading": "A platform as a product",
+                "body": "Making the paved path useful, trusted, and measurable."
+              },
+              {
+                "heading": "Growing leaders",
+                "body": "Creating room for others to own consequential work."
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "leader-quote",
+          "definition_id": "quote",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 110,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "quote": "The strongest platform is a shared promise between the teams who build it and the teams who depend on it.",
+            "attribution": "Maya"
+          }
+        },
+        {
+          "placement_id": "leader-philosophy",
+          "definition_id": "philosophy",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 120,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Clarity creates leverage.",
+            "body": "Good systems make the right path easier to see, easier to use, and easier to improve together."
+          }
+        },
+        {
+          "placement_id": "leader-future",
+          "definition_id": "future_direction",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-leader:media:future"
+          ],
+          "order": 130,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "What I’m building toward",
+            "body": "Platform organizations that pair deep technical judgment with humane, durable ways of working."
+          }
+        },
+        {
+          "placement_id": "leader-resume-transition",
+          "definition_id": "resume_transition",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 999,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "description": "Detailed experience, skills, and credentials continue below."
+          }
+        }
+      ]
+    },
+    {
+      "fixture_id": "independent-creative",
+      "label": "Independent creative · story-led",
+      "owner_key": "fixture-owner-creative",
+      "density": "standard",
+      "profile": {
+        "display_name": "Sam Rivera",
+        "first_name": "Sam",
+        "initials": "SR",
+        "headline": "Independent documentary designer · Visual storyteller",
+        "intro": "I shape research, images, and lived experience into documentary work that helps communities recognize themselves and one another.",
+        "location": "Santa Fe, New Mexico",
+        "contact_label": "Connect",
+        "contact_destination": {
+          "kind": "anchor",
+          "value": "#connect"
+        }
+      },
+      "records": [
+        {
+          "id": "fixture-owner-creative:role:studio",
+          "owner_key": "fixture-owner-creative",
+          "kind": "work",
+          "period": "2019 — Present",
+          "title": "Independent Documentary Designer",
+          "organization": "Riverlight Studio",
+          "location": "Santa Fe, New Mexico",
+          "summary": "Creates visual essays, exhibitions, and participatory archives with cultural and community partners.",
+          "highlights": [
+            "Leads projects from field research through public installation",
+            "Builds consent and attribution into the creative process"
+          ]
+        },
+        {
+          "id": "fixture-owner-creative:role:museum",
+          "owner_key": "fixture-owner-creative",
+          "kind": "work",
+          "period": "2015 — 2019",
+          "title": "Exhibition Designer",
+          "organization": "Mesa Arts Collaborative",
+          "location": "New Mexico",
+          "summary": "Designed interpretive environments with artists, educators, historians, and fabricators.",
+          "highlights": [
+            "Translated dense research into accessible visitor journeys",
+            "Developed adaptable systems for traveling exhibitions"
+          ]
+        }
+      ],
+      "media": [
+        {
+          "id": "fixture-owner-creative:media:field-notes",
+          "owner_key": "fixture-owner-creative",
+          "public_eligible": true,
+          "src": "/static/images/feed/feed-coffee-notes-2026-07-21-1280.webp",
+          "alt": "Illustrative field notes beside a cup of coffee",
+          "decorative": false,
+          "focal": "50% 50%",
+          "truth_label": "Illustrative fixture image"
+        },
+        {
+          "id": "fixture-owner-creative:media:landscape",
+          "owner_key": "fixture-owner-creative",
+          "public_eligible": true,
+          "src": "/static/images/feed/feed-mountain-hike-2026-07-21-1120.webp",
+          "alt": "Illustrative mountain landscape used in a story composition",
+          "decorative": false,
+          "focal": "50% 50%",
+          "truth_label": "Illustrative fixture image"
+        }
+      ],
+      "blocks": [
+        {
+          "placement_id": "creative-hero",
+          "definition_id": "identity_hero",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 10,
+          "visible": true,
+          "emphasis": "hero",
+          "content": {
+            "eyebrow": "Listen closely. Shape with care."
+          }
+        },
+        {
+          "placement_id": "creative-story",
+          "definition_id": "story_spotlight",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-creative:media:landscape"
+          ],
+          "destination": {
+            "kind": "anchor",
+            "value": "#story"
+          },
+          "order": 20,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "kicker": "My story",
+            "heading": "Stories are places we meet.",
+            "body": "I learned to make documentary work by staying with a question long enough for many people, materials, and memories to reshape it.",
+            "action": "Explore the story"
+          }
+        },
+        {
+          "placement_id": "creative-career",
+          "definition_id": "career",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-creative:role:studio",
+            "fixture-owner-creative:role:museum"
+          ],
+          "media_ids": [
+            "fixture-owner-creative:media:field-notes"
+          ],
+          "order": 30,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {}
+        },
+        {
+          "placement_id": "creative-skills",
+          "definition_id": "skills",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 50,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Creative practice",
+            "items": [
+              "Documentary research",
+              "Visual storytelling",
+              "Exhibition design",
+              "Editorial systems",
+              "Oral history",
+              "Participatory workshops",
+              "Art direction",
+              "Archival practice"
+            ]
+          }
+        },
+        {
+          "placement_id": "creative-story-chapters",
+          "definition_id": "story_chapters",
+          "definition_version": 1,
+          "mode": "authored",
+          "media_ids": [
+            "fixture-owner-creative:media:landscape"
+          ],
+          "order": 60,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Story chapters",
+            "items": [
+              {
+                "heading": "Learning to notice",
+                "body": "Field notes, family archives, and the discipline of attention."
+              },
+              {
+                "heading": "Making with communities",
+                "body": "Consent, authorship, and shared decisions in public work."
+              },
+              {
+                "heading": "Designing the encounter",
+                "body": "Turning material into a place where visitors can linger."
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "creative-quote",
+          "definition_id": "quote",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 70,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "quote": "The work is finished only when people can find their own way into it.",
+            "attribution": "Sam"
+          }
+        },
+        {
+          "placement_id": "creative-future",
+          "definition_id": "future_direction",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 80,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "What I’m exploring next",
+            "body": "Small, traveling story rooms that let local archives remain locally governed while still reaching new audiences."
+          }
+        },
+        {
+          "placement_id": "creative-resume-transition",
+          "definition_id": "resume_transition",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 999,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "description": "Selected work and project details continue below."
+          }
+        }
+      ]
+    },
+    {
+      "fixture_id": "text-only",
+      "label": "Text only · no media",
+      "owner_key": "fixture-owner-text",
+      "density": "text-only",
+      "profile": {
+        "display_name": "Morgan Lee",
+        "first_name": "Morgan",
+        "initials": "ML",
+        "headline": "Policy researcher · Clear-language advocate",
+        "intro": "I study how public rules become everyday experiences, then help teams make those rules easier to understand and use.",
+        "location": "Minneapolis, Minnesota",
+        "contact_label": "Connect",
+        "contact_destination": {
+          "kind": "anchor",
+          "value": "#connect"
+        }
+      },
+      "records": [
+        {
+          "id": "fixture-owner-text:role:researcher",
+          "owner_key": "fixture-owner-text",
+          "kind": "role",
+          "period": "2023 — Present",
+          "title": "Senior Policy Researcher",
+          "organization": "Public Systems Lab",
+          "location": "Minneapolis, Minnesota",
+          "summary": "Studies the implementation of public programs and turns findings into practical guidance.",
+          "highlights": [
+            "Combines administrative data with interviews",
+            "Writes plain-language decision briefs"
+          ]
+        },
+        {
+          "id": "fixture-owner-text:role:analyst",
+          "owner_key": "fixture-owner-text",
+          "kind": "role",
+          "period": "2018 — 2023",
+          "title": "Policy Analyst",
+          "organization": "North County Partnership",
+          "location": "Minnesota",
+          "summary": "Supported cross-agency learning on housing and benefits access.",
+          "highlights": [
+            "Built shared definitions for program reporting",
+            "Facilitated reviews with residents and case workers"
+          ]
+        },
+        {
+          "id": "fixture-owner-text:education:mpp",
+          "owner_key": "fixture-owner-text",
+          "kind": "education",
+          "credential": "Master of Public Policy",
+          "institution": "Great Lakes University",
+          "period": "2018",
+          "detail": "Program evaluation, public finance, and administrative systems."
+        },
+        {
+          "id": "fixture-owner-text:cert:plain-language",
+          "owner_key": "fixture-owner-text",
+          "kind": "certification",
+          "title": "Plain Language for Public Services",
+          "issuer": "Civic Communication Institute",
+          "period": "2024"
+        }
+      ],
+      "media": [],
+      "blocks": [
+        {
+          "placement_id": "text-hero",
+          "definition_id": "identity_hero",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 10,
+          "visible": true,
+          "emphasis": "hero",
+          "content": {
+            "eyebrow": "Research for decisions people can use."
+          }
+        },
+        {
+          "placement_id": "text-proof",
+          "definition_id": "proof_band",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 20,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "claims": [
+              {
+                "value": "8",
+                "label": "Years in public policy",
+                "icon": "◇",
+                "order": 1,
+                "visible": true
+              },
+              {
+                "value": "3",
+                "label": "Research methods in every study",
+                "icon": "◎",
+                "order": 2,
+                "visible": true
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "text-career",
+          "definition_id": "career",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-text:role:researcher",
+            "fixture-owner-text:role:analyst"
+          ],
+          "order": 30,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {}
+        },
+        {
+          "placement_id": "text-impact",
+          "definition_id": "impact",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 40,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "heading": "How I work",
+            "items": [
+              {
+                "icon": "◎",
+                "heading": "Mixed methods",
+                "body": "Pairs quantitative patterns with the experiences behind them."
+              },
+              {
+                "icon": "↔",
+                "heading": "Shared definitions",
+                "body": "Makes measures understandable across policy and delivery teams."
+              }
+            ]
+          }
+        },
+        {
+          "placement_id": "text-skills",
+          "definition_id": "skills",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 50,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Research strengths",
+            "items": [
+              "Program evaluation",
+              "Policy analysis",
+              "Qualitative research",
+              "Administrative data",
+              "Plain language",
+              "Facilitation",
+              "Decision briefs",
+              "Public participation"
+            ]
+          }
+        },
+        {
+          "placement_id": "text-education",
+          "definition_id": "education",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-text:education:mpp"
+          ],
+          "order": 60,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "text-certification",
+          "definition_id": "certifications",
+          "definition_version": 1,
+          "mode": "record_linked",
+          "record_ids": [
+            "fixture-owner-text:cert:plain-language"
+          ],
+          "order": 70,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {}
+        },
+        {
+          "placement_id": "text-philosophy",
+          "definition_id": "philosophy",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 90,
+          "visible": true,
+          "emphasis": "feature",
+          "content": {
+            "heading": "Clarity is part of the policy.",
+            "body": "A rule is not truly accessible until the people affected can understand what it means, what happens next, and where to get help."
+          }
+        },
+        {
+          "placement_id": "text-resume-transition",
+          "definition_id": "resume_transition",
+          "definition_version": 1,
+          "mode": "authored",
+          "order": 999,
+          "visible": true,
+          "emphasis": "standard",
+          "content": {
+            "description": "Detailed research, writing, and policy experience continue below."
+          }
+        }
+      ]
+    }
+  ]
+}
