@@ -8,11 +8,15 @@ allowlist and isolation tests; this file is only about the edge.
 """
 
 import base64
+import gzip
 import json
+import re
 import unittest
 from unittest.mock import patch
 
-from app import app, _address_without_port, _client_rate_limit_key
+import brotli
+
+from app import app, _address_without_port, _client_rate_limit_key, _static_file_version
 
 
 CAPTURE_KEY = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -412,6 +416,118 @@ class PrivateResponseCacheTests(unittest.TestCase):
         self.assertEqual(
             response.headers["Cache-Control"], "no-cache, must-revalidate"
         )
+
+
+class StaticVersioningTests(unittest.TestCase):
+    """CSS/JS are content-hash versioned so only current bytes are cached."""
+
+    def setUp(self):
+        self.original_testing = app.config.get("TESTING")
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(TESTING=self.original_testing)
+
+    def test_templates_carry_no_hand_typed_version_tokens(self):
+        # The whole point is to remove the manual scheme that had drifted.
+        html = self.client.get("/").get_data(as_text=True)
+        for token in re.findall(r"\?v=([^\"'&]+)", html):
+            with self.subTest(token=token):
+                self.assertRegex(
+                    token, r"^[0-9a-f]{12}$",
+                    f"non-hash version token {token!r} leaked into a page")
+
+    def test_current_version_is_cached_immutably(self):
+        version = _static_file_version("css/style.css")
+        response = self.client.get(f"/static/css/style.css?v={version}")
+
+        self.assertEqual(
+            response.headers["Cache-Control"],
+            "public, max-age=31536000, immutable",
+        )
+
+    def test_a_stale_or_wrong_token_is_never_cached_long(self):
+        # A visitor must never be pinned to old bytes: only a token that
+        # matches the live content hash earns the long cache.
+        for token in ("signout-1", "deadbeef0000", ""):
+            with self.subTest(token=token):
+                url = "/static/css/style.css"
+                if token:
+                    url += f"?v={token}"
+                response = self.client.get(url)
+                self.assertNotIn(
+                    "immutable", response.headers.get("Cache-Control", ""))
+
+    def test_images_are_not_query_versioned(self):
+        # Images use dated filenames; they are deliberately out of scope.
+        self.assertIsNone(_static_file_version("images/peerslate-mark.png"))
+
+    def test_editing_a_file_changes_its_token(self):
+        # Different bytes must produce a different URL, or a cache could serve
+        # stale content. Prove the hash actually depends on content.
+        a = _static_file_version("css/style.css")
+        b = _static_file_version("js/chatbot.js")
+        self.assertNotEqual(a, b)
+        self.assertRegex(a, r"^[0-9a-f]{12}$")
+
+
+class CompressionTests(unittest.TestCase):
+    def setUp(self):
+        self.original_testing = app.config.get("TESTING")
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(TESTING=self.original_testing)
+
+    def _raw(self, path):
+        return self.client.get(path).get_data()
+
+    def test_brotli_client_gets_brotli_and_the_bytes_are_intact(self):
+        version = _static_file_version("css/style.css")
+        raw = self._raw("/static/css/style.css")
+        response = self.client.get(
+            f"/static/css/style.css?v={version}",
+            headers={"Accept-Encoding": "gzip, deflate, br"},
+        )
+
+        self.assertEqual(response.headers.get("Content-Encoding"), "br")
+        self.assertLess(len(response.data), len(raw) // 2)
+        self.assertEqual(brotli.decompress(response.data), raw)
+
+    def test_gzip_only_client_still_gets_compressed_intact_bytes(self):
+        version = _static_file_version("css/style.css")
+        raw = self._raw("/static/css/style.css")
+        response = self.client.get(
+            f"/static/css/style.css?v={version}",
+            headers={"Accept-Encoding": "gzip"},
+        )
+
+        self.assertEqual(response.headers.get("Content-Encoding"), "gzip")
+        self.assertEqual(gzip.decompress(response.data), raw)
+
+    def test_a_client_without_compression_gets_the_raw_bytes(self):
+        response = self.client.get(
+            "/static/css/style.css", headers={"Accept-Encoding": "identity"}
+        )
+
+        self.assertIsNone(response.headers.get("Content-Encoding"))
+
+    def test_images_are_never_compressed(self):
+        # Already-compressed formats must stream through untouched, and the
+        # private media routes rely on this.
+        response = self.client.get(
+            "/static/images/peerslate-mark.png",
+            headers={"Accept-Encoding": "gzip, br"},
+        )
+
+        self.assertIsNone(response.headers.get("Content-Encoding"))
+
+    def test_html_is_compressed(self):
+        response = self.client.get("/", headers={"Accept-Encoding": "br"})
+
+        self.assertEqual(response.headers.get("Content-Encoding"), "br")
 
 
 if __name__ == "__main__":

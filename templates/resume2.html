@@ -20,8 +20,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <link rel="canonical" href="{{ canonical_resume_url }}">
 <meta property="og:url" content="{{ canonical_resume_url }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}?v=solid-header-4">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}?v=resume-refine-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% endblock %}
@@ -425,5 +425,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}?v=resume-consolidated-4"></script>
+<script src="{{ url_for('static', filename='js/living-resume-v2.js') }}"></script>
 {% endblock %}

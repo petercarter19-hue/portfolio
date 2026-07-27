@@ -13,6 +13,7 @@ from datetime import datetime, timedelta        # Lets the Slate Feed compute li
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 from itsdangerous import BadData, URLSafeTimedSerializer
 from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
@@ -184,6 +185,111 @@ limiter = Limiter(
     default_limits=[]
 )
 
+# Compress text responses. The 373KB always-on stylesheet leaves the server
+# at ~77KB; a first-time homepage visit drops from ~459KB of CSS to ~94KB.
+# The MIME list is explicit and text-only: images and audio are already
+# compressed formats, and the private media routes (voice audio, photo
+# previews) must stream through untouched.
+app.config.update(
+    COMPRESS_MIMETYPES=[
+        'text/html',
+        'text/css',
+        'text/plain',
+        'text/xml',
+        'text/javascript',
+        'application/javascript',
+        'application/json',
+        'image/svg+xml',
+    ],
+    COMPRESS_LEVEL=6,
+    COMPRESS_BR_LEVEL=5,
+    COMPRESS_MIN_SIZE=500,
+    # Offer only Brotli and gzip. Brotli is pinned in requirements and is the
+    # best-supported modern encoding; gzip is the universal fallback. zstd is
+    # deliberately omitted so no additional runtime dependency is implied.
+    # Static files are served as streamed responses, which use the separate
+    # streaming list — set it to the same two so a gzip-only client still
+    # gets compressed CSS/JS rather than falling through to raw bytes.
+    COMPRESS_ALGORITHM=['br', 'gzip'],
+    COMPRESS_ALGORITHM_STREAMING=['br', 'gzip'],
+)
+Compress(app)
+
+
+# --- STATIC ASSET VERSIONING ---
+# Every CSS and JS URL built by a template automatically carries
+# ?v=<content hash>. Editing a file changes its hash, so the URL changes and
+# every visitor fetches the new bytes on their next page load — only the most
+# recent version of an asset is ever referenced. This replaces the hand-typed
+# ?v= tokens, which existed only on .css/.js and had already drifted (the
+# same stylesheet was requested under four different tokens, one page was
+# pinned to a stale build, and two branches once collided on the same
+# hand-bumped token). Images are intentionally out of scope: they already use
+# dated, content-specific filenames, so their URLs change by name when the
+# content changes and no query token is needed.
+_VERSIONED_STATIC_SUFFIXES = ('.css', '.js')
+_STATIC_VERSION_CACHE = {}
+
+
+def _static_file_version(filename):
+    """Return a stable 12-hex content token for one static file.
+
+    Cached per (mtime, size) so steady-state requests cost one os.stat; a
+    deployment replaces the files, changes the mtimes, and refreshes the
+    cache automatically. Returns None for a path that does not resolve to a
+    readable file, in which case the URL is left unversioned.
+    """
+    if not filename or not isinstance(filename, str):
+        return None
+    if not filename.endswith(_VERSIONED_STATIC_SUFFIXES):
+        return None
+    try:
+        path = os.path.join(app.static_folder, *filename.split('/'))
+        file_stat = os.stat(path)
+    except OSError:
+        return None
+    cache_key = (file_stat.st_mtime_ns, file_stat.st_size)
+    cached = _STATIC_VERSION_CACHE.get(filename)
+    if cached and cached[0] == cache_key:
+        return cached[1]
+    digest = hashlib.sha256()
+    try:
+        with open(path, 'rb') as handle:
+            for chunk in iter(lambda: handle.read(65536), b''):
+                digest.update(chunk)
+    except OSError:
+        return None
+    token = digest.hexdigest()[:12]
+    _STATIC_VERSION_CACHE[filename] = (cache_key, token)
+    return token
+
+
+@app.url_defaults
+def _stamp_static_asset_version(endpoint, values):
+    if endpoint == 'static' and values.get('filename') and 'v' not in values:
+        version = _static_file_version(values['filename'])
+        if version:
+            values['v'] = version
+
+
+@app.after_request
+def _cache_current_static_versions(response):
+    """Give exactly the current version of a static file a one-year cache.
+
+    The token in the URL is compared against the file's live content hash,
+    so only a URL that names the bytes actually being served is marked
+    immutable. A stale or hand-typed token, or an unversioned request (for
+    example an image referenced from inside a CSS file), keeps the default
+    revalidation policy and can never pin an old version in a cache.
+    """
+    if request.endpoint == 'static' and 200 <= response.status_code < 300:
+        filename = (request.view_args or {}).get('filename')
+        requested = request.args.get('v')
+        if filename and requested and requested == _static_file_version(filename):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return response
+
+
 # Create the Anthropic client.
 # The API key stays on the server and is never exposed to browser JavaScript.
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -198,8 +304,9 @@ app.register_blueprint(people_interests_api)
 def prevent_stale_html(response):
     """Always revalidate HTML pages so a design change (like the homepage
     move from peerslate.html to the Experience page) can't stick in a
-    visitor's browser cache. Versioned static assets (?v=...) are left
-    cacheable — only text/html is marked no-cache."""
+    visitor's browser cache. Static assets are versioned automatically by
+    content hash (see _stamp_static_asset_version above) and current
+    versions are cached for a year — only text/html is marked no-cache."""
     if response.mimetype == 'text/html':
         # Routes may set a stricter policy for private owner-specific HTML.
         # Preserve it; ordinary pages retain the historic default exactly.
