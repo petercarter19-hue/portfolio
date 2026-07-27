@@ -17,6 +17,7 @@ from typing import Any
 
 FIXTURE_SCHEMA_VERSION = "overview-fixtures.v1"
 PROJECTION_SCHEMA_VERSION = "member-overview-projection.v1"
+PUBLICATION_SCHEMA_VERSION = "member-overview-publication.v1"
 
 STYLE_MANIFESTS = {
     "story-career": {
@@ -142,6 +143,198 @@ def list_fixture_options(catalog: dict[str, Any]) -> list[dict[str, str]]:
             }
         )
     return options
+
+
+def build_public_overview_projection(
+    resume_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Build one ready public projection from already-authorized profile data.
+
+    The caller owns retrieval and audience authorization. This adapter only
+    resolves a profile-owned publication selection against that same loaded
+    public record, then delegates all block, media, count, destination, and
+    semantic-order validation to the generic Slice 1 projector.
+
+    An absent or non-published selection returns ``None`` so the caller can
+    render its truthful Summary fallback. Invalid published selections fail
+    closed with ``OverviewProjectionError``.
+    """
+
+    if not isinstance(resume_data, dict):
+        _fail("invalid_public_profile", "public profile data must be an object")
+
+    publication = resume_data.get("overview_publication")
+    if publication is None:
+        return None
+    if not isinstance(publication, dict):
+        _fail("invalid_publication", "overview_publication must be an object")
+    if publication.get("state") != "published":
+        return None
+    if publication.get("schema_version") != PUBLICATION_SCHEMA_VERSION:
+        _fail(
+            "unsupported_publication_version",
+            f"expected {PUBLICATION_SCHEMA_VERSION}",
+        )
+
+    profile_source = resume_data.get("profile")
+    if not isinstance(profile_source, dict):
+        _fail("invalid_public_profile", "profile must be an object")
+    profile_slug = _required_text(profile_source, "slug", "profile")
+    owner_key = f"public-profile:{profile_slug}"
+    publication_revision = publication.get("published_revision")
+    if (
+        not isinstance(publication_revision, int)
+        or isinstance(publication_revision, bool)
+        or publication_revision < 1
+    ):
+        _fail(
+            "invalid_publication_revision",
+            "published_revision must be a positive integer",
+        )
+
+    positioning = _required_text(profile_source, "positioning", "profile")
+    location = _optional_text(profile_source.get("location"))
+    contact_value = _optional_text(profile_source.get("contact_url"))
+    if contact_value:
+        contact_destination = {"kind": "public_path", "value": contact_value}
+    else:
+        contact_destination = {
+            "kind": "email",
+            "value": _required_text(profile_source, "email_url", "profile"),
+        }
+
+    fixture_profile = {
+        "display_name": _required_text(profile_source, "name", "profile"),
+        "first_name": _required_text(profile_source, "name", "profile").split()[0],
+        "headline": " · ".join(
+            part.strip()
+            for part in positioning.split("|")
+            if part.strip()
+        ),
+        "intro": _required_text(profile_source, "summary", "profile"),
+        "location": (
+            " · ".join(part.strip() for part in location.split("|") if part.strip())
+            if location
+            else None
+        ),
+        "contact_label": "Connect",
+        "contact_destination": contact_destination,
+    }
+
+    records, record_ids = _public_profile_records(resume_data, owner_key)
+    media, media_ids = _public_profile_media(publication, owner_key)
+    metrics = _index_source_records(resume_data.get("metrics"), "metric")
+    public_skills = {
+        item_id: item
+        for item_id, item in _index_source_records(
+            resume_data.get("skills"),
+            "skill",
+        ).items()
+        if item.get("public_display") is True
+    }
+
+    raw_blocks = publication.get("blocks")
+    if not isinstance(raw_blocks, list):
+        _fail("invalid_publication", "publication blocks must be a list")
+
+    blocks = []
+    for raw_block in raw_blocks:
+        if not isinstance(raw_block, dict):
+            _fail("invalid_block", "each publication block must be an object")
+        block = copy.deepcopy(raw_block)
+        definition_id = _required_text(block, "definition_id", "block")
+
+        configured_media_ids = block.pop("media_ids", [])
+        block["media_ids"] = _resolve_publication_ids(
+            configured_media_ids,
+            media_ids,
+            "media",
+        )
+
+        if definition_id == "proof_band":
+            metric_ids = block.pop("metric_ids", [])
+            icons = block.pop("metric_icons", {})
+            if not isinstance(icons, dict):
+                _fail("invalid_publication", "metric_icons must be an object")
+            claims = []
+            for order, metric_id in enumerate(
+                _validated_id_list(metric_ids, "metric"),
+                start=1,
+            ):
+                metric = metrics.get(metric_id)
+                if metric is None:
+                    _fail("unknown_metric", f"metric {metric_id!r} does not exist")
+                claims.append(
+                    {
+                        "value": _required_text(metric, "value", "metric"),
+                        "label": _required_text(metric, "label", "metric"),
+                        "icon": _optional_text(icons.get(metric_id)),
+                        "order": order,
+                        "visible": True,
+                    }
+                )
+            block["content"] = {"claims": claims}
+        elif definition_id == "skills":
+            skill_ids = block.pop("skill_ids", [])
+            skills = []
+            for skill_id in _validated_id_list(skill_ids, "skill"):
+                skill = public_skills.get(skill_id)
+                if skill is None:
+                    _fail(
+                        "unknown_public_skill",
+                        f"public skill {skill_id!r} does not exist",
+                    )
+                skills.append(_required_text(skill, "display_name", "skill"))
+            content = block.get("content", {})
+            if not isinstance(content, dict):
+                _fail("invalid_block_content", "skills content must be an object")
+            content["items"] = skills
+            block["content"] = content
+        elif definition_id in {"career", "education", "certifications", "awards"}:
+            source_field = {
+                "career": "role_ids",
+                "education": "education_ids",
+                "certifications": "education_ids",
+                "awards": "achievement_ids",
+            }[definition_id]
+            selected_ids = block.pop(source_field, [])
+            block["record_ids"] = _resolve_publication_ids(
+                selected_ids,
+                record_ids[definition_id],
+                definition_id,
+            )
+
+        blocks.append(block)
+
+    fixture_id = f"published-{profile_slug}-r{publication_revision}"
+    catalog = {
+        "schema_version": FIXTURE_SCHEMA_VERSION,
+        "fixtures": [
+            {
+                "fixture_id": fixture_id,
+                "label": f"{fixture_profile['display_name']} public Overview",
+                "owner_key": owner_key,
+                "density": publication.get("density", "standard"),
+                "profile": fixture_profile,
+                "records": records,
+                "media": media,
+                "blocks": blocks,
+            }
+        ],
+    }
+    projection = build_overview_projection(
+        catalog,
+        fixture_id,
+        _required_text(publication, "style_id", "publication"),
+    )
+    projection.pop("fixture", None)
+    projection["publication"] = {
+        "schema_version": PUBLICATION_SCHEMA_VERSION,
+        "state": "published",
+        "profile_slug": profile_slug,
+        "revision": publication_revision,
+    }
+    return projection
 
 
 def build_overview_projection(
@@ -493,6 +686,15 @@ def _validate_destination(destination: Any) -> dict[str, str]:
         and value.startswith("https://")
     ):
         return {"kind": kind, "value": value}
+    if (
+        kind == "public_path"
+        and isinstance(value, str)
+        and value.startswith("/")
+        and not value.startswith("//")
+        and "\n" not in value
+        and "\r" not in value
+    ):
+        return {"kind": kind, "value": value}
     _fail("unknown_destination", f"destination {kind!r}:{value!r} is not supported")
 
 
@@ -578,3 +780,189 @@ def _optional_text(value: Any) -> str | None:
         _fail("invalid_text", "optional text values must be strings")
     value = value.strip()
     return value or None
+
+
+def _index_source_records(items: Any, item_kind: str) -> dict[str, dict[str, Any]]:
+    if not isinstance(items, list):
+        _fail(
+            f"invalid_{item_kind}_collection",
+            f"{item_kind}s must be a list",
+        )
+    indexed = {}
+    for item in items:
+        if not isinstance(item, dict):
+            _fail(f"invalid_{item_kind}", f"each {item_kind} must be an object")
+        item_id = _required_text(item, "id", item_kind)
+        if item_id in indexed:
+            _fail(
+                f"duplicate_{item_kind}_id",
+                f"duplicate {item_kind} ID {item_id!r}",
+            )
+        indexed[item_id] = item
+    return indexed
+
+
+def _public_profile_records(
+    resume_data: dict[str, Any],
+    owner_key: str,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, str]]]:
+    role_sources = _index_source_records(resume_data.get("career_roles"), "role")
+    education_sources = _index_source_records(
+        resume_data.get("education"),
+        "education",
+    )
+    achievement_sources = _index_source_records(
+        resume_data.get("achievements"),
+        "achievement",
+    )
+
+    records = []
+    record_ids = {
+        "career": {},
+        "education": {},
+        "certifications": {},
+        "awards": {},
+    }
+    for source_id, source in role_sources.items():
+        qualified_id = f"{owner_key}:role:{source_id}"
+        raw_accomplishments = source.get("accomplishments", [])
+        if not isinstance(raw_accomplishments, list):
+            _fail(
+                "invalid_accomplishment_collection",
+                f"role {source_id!r} accomplishments must be a list",
+            )
+        highlights = []
+        for accomplishment in raw_accomplishments[:2]:
+            if not isinstance(accomplishment, dict):
+                _fail(
+                    "invalid_accomplishment",
+                    f"role {source_id!r} contains an invalid accomplishment",
+                )
+            highlights.append(
+                _required_text(accomplishment, "text", "accomplishment")
+            )
+        record_ids["career"][source_id] = qualified_id
+        records.append(
+            {
+                "id": qualified_id,
+                "owner_key": owner_key,
+                "kind": "role",
+                "period": _required_text(source, "dates", "role"),
+                "title": _required_text(source, "title", "role"),
+                "organization": _required_text(source, "employer", "role"),
+                "location": _optional_text(source.get("location")),
+                "summary": _required_text(source, "summary", "role"),
+                "highlights": highlights,
+            }
+        )
+
+    for source_id, source in education_sources.items():
+        qualified_id = f"{owner_key}:education:{source_id}"
+        record = {
+            "id": qualified_id,
+            "owner_key": owner_key,
+            "kind": "education",
+            "credential": _required_text(source, "credential", "education"),
+            "institution": _required_text(source, "institution", "education"),
+            "period": (
+                _optional_text(source.get("date"))
+                or _required_text(source, "status", "education")
+            ),
+            "detail": _optional_text(source.get("detail")),
+            "title": _required_text(source, "credential", "education"),
+            "issuer": _required_text(source, "institution", "education"),
+        }
+        records.append(record)
+        record_ids["education"][source_id] = qualified_id
+        record_ids["certifications"][source_id] = qualified_id
+
+    for source_id, source in achievement_sources.items():
+        qualified_id = f"{owner_key}:achievement:{source_id}"
+        record_ids["awards"][source_id] = qualified_id
+        records.append(
+            {
+                "id": qualified_id,
+                "owner_key": owner_key,
+                "kind": "award",
+                "title": _required_text(source, "title", "achievement"),
+                "issuer": _required_text(source, "org", "achievement"),
+                "period": _optional_text(source.get("year")),
+            }
+        )
+
+    return records, record_ids
+
+
+def _public_profile_media(
+    publication: dict[str, Any],
+    owner_key: str,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    raw_media = publication.get("media", [])
+    if not isinstance(raw_media, list):
+        _fail("invalid_media_collection", "publication media must be a list")
+
+    media = []
+    media_ids = {}
+    for item in raw_media:
+        if not isinstance(item, dict):
+            _fail("invalid_media", "each publication media item must be an object")
+        item_id = _required_text(item, "id", "media")
+        if item_id in media_ids:
+            _fail("duplicate_media_id", f"duplicate media ID {item_id!r}")
+        asset_path = _required_text(item, "asset_path", "media").lstrip("/")
+        if (
+            not asset_path
+            or asset_path.startswith(".")
+            or ".." in asset_path.split("/")
+            or "://" in asset_path
+        ):
+            _fail("invalid_media_path", f"media {item_id!r} has an unsafe path")
+        qualified_id = f"{owner_key}:media:{item_id}"
+        media_ids[item_id] = qualified_id
+        media.append(
+            {
+                "id": qualified_id,
+                "owner_key": owner_key,
+                "public_eligible": item.get("public_eligible") is True,
+                "src": f"/static/{asset_path}",
+                "alt": _optional_text(item.get("alt")),
+                "decorative": item.get("decorative", False),
+                "focal": _optional_text(item.get("focal")) or "50% 50%",
+                "truth_label": _required_text(item, "truth_label", "media"),
+            }
+        )
+    return media, media_ids
+
+
+def _validated_id_list(items: Any, item_kind: str) -> list[str]:
+    if not isinstance(items, list) or not all(
+        isinstance(item_id, str) and item_id
+        for item_id in items
+    ):
+        _fail(
+            f"invalid_{item_kind}_reference",
+            f"{item_kind} IDs must be a non-empty string list",
+        )
+    if len(items) != len(set(items)):
+        _fail(
+            f"duplicate_{item_kind}_reference",
+            f"{item_kind} IDs must be unique",
+        )
+    return items
+
+
+def _resolve_publication_ids(
+    selected_ids: Any,
+    available_ids: dict[str, str],
+    item_kind: str,
+) -> list[str]:
+    resolved = []
+    for source_id in _validated_id_list(selected_ids, item_kind):
+        qualified_id = available_ids.get(source_id)
+        if qualified_id is None:
+            _fail(
+                f"unknown_{item_kind}",
+                f"{item_kind} {source_id!r} does not exist",
+            )
+        resolved.append(qualified_id)
+    return resolved

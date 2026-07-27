@@ -4926,3 +4926,356 @@ body[data-theme="dark"] .r2-section-heading p { color: #66645f; }
 body[data-theme="dark"] .r2-exp-card__visual {
     background: linear-gradient(135deg, color-mix(in srgb, var(--role-accent) 10%, #fbf9f2), rgb(250 248 242 / 95%));
 }
+
+/* =====================================================================
+   PS-OVERVIEW-PUBLIC-INTEGRATION-001
+   The published Overview and retained résumé share one normal-scale center
+   stage. The Career Constellation stays outside this grid and therefore keeps
+   its existing large/full-width presentation and legacy scale unchanged.
+   ===================================================================== */
+
+.resume-v2[data-public-overview] > .r2-page-grid {
+    zoom: 1;
+}
+
+.resume-v2 .r2-page-grid {
+    width: min(98vw, 118rem);
+    grid-template-columns: 11rem minmax(0, 90rem) 15rem;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.resume-v2 .r2-content {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.resume-v2[data-public-overview] .member-overview {
+    scroll-margin-top: 9rem;
+    border-radius: 1.25rem;
+}
+
+.resume-v2[data-public-overview] .overview-resume-transition {
+    scroll-margin-top: 9rem;
+}
+
+.resume-v2[data-public-overview] .member-overview .overview-button--primary {
+    color: #fff;
+}
+
+.r2-overview-context-rail {
+    z-index: 40;
+    top: 8.75rem;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.r2-overview-avatar {
+    display: block;
+    object-fit: cover;
+    object-position: 50% 42%;
+}
+
+.r2-overview-context-rail nav svg,
+.r2-context-actions svg,
+.r2-overview-mobile-nav svg,
+.r2-overview-ai-rail .overview-ai-icon svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.r2-overview-context-rail nav a.is-current {
+    background: #edf4ff;
+    color: #075cf0;
+}
+
+.r2-context-actions {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.r2-context-actions > a,
+.r2-context-actions > button {
+    width: 100%;
+    min-height: 2.65rem;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.35rem;
+    border: 0;
+    border-radius: 0.42rem;
+    background: transparent;
+    color: #173c6c;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.55rem 0.6rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.r2-context-actions > :is(a, button):hover {
+    background: #edf4ff;
+    color: #075cf0;
+}
+
+.r2-context-ask-compact {
+    display: none;
+}
+
+.resume-consolidated .r2-overview-ai-rail {
+    position: sticky;
+    z-index: 35;
+    top: 8.75rem;
+    display: block;
+    min-height: 0;
+    max-height: calc(100vh - 10rem);
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    overflow: auto;
+    padding: 1.1rem;
+    border-radius: 0.75rem;
+}
+
+.r2-overview-ai-rail .overview-ai-icon svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.r2-overview-ai-rail .r2-ai-suggestions {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.9rem;
+}
+
+.r2-ai-context {
+    display: grid;
+    gap: 0.18rem;
+    margin-top: 0.85rem;
+    padding: 0.7rem;
+    border: 1px solid rgb(48 129 171 / 18%);
+    border-radius: 0.55rem;
+    background: rgb(246 250 255 / 88%);
+}
+
+.r2-ai-context > span {
+    color: #64758a;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.r2-ai-context > strong {
+    color: #173c6c;
+    font-family: var(--r2-display);
+    font-size: 1.05rem;
+}
+
+.r2-ai-context > small {
+    color: #52637a;
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-chip {
+    min-height: 0;
+    border-radius: 0.55rem;
+    font-size: 0.72rem;
+    padding: 0.55rem 0.65rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search {
+    margin-top: 1rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__label {
+    font-size: 0.72rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__input,
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__button {
+    width: 100%;
+    min-height: 2.7rem;
+    border-radius: 0.45rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__button {
+    color: #fff;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__input {
+    border: 1px solid rgb(48 129 171 / 26%);
+    background: #fff;
+    padding: 0.65rem 0.7rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__status {
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.r2-overview-mobile-nav {
+    display: none;
+}
+
+.r2-summary--fallback {
+    grid-template-columns: minmax(15rem, 0.8fr) minmax(20rem, 1.2fr);
+}
+
+body[data-theme="dark"] .r2-overview-context-rail,
+body[data-theme="dark"] .resume-consolidated .r2-overview-ai-rail {
+    border-color: #e2ddd2;
+    background: #f6f5f0;
+    color: #0a1730;
+}
+
+body[data-theme="dark"] .r2-overview-context-rail nav a,
+body[data-theme="dark"] .r2-context-actions > :is(a, button) {
+    color: #3a3d42;
+}
+
+body[data-theme="dark"] .r2-overview-context-rail nav a.is-current,
+body[data-theme="dark"] .r2-overview-context-rail nav a:hover,
+body[data-theme="dark"] .r2-context-actions > :is(a, button):hover {
+    background: #fffaf0;
+    color: #8a6500;
+}
+
+@media (max-width: 82rem) {
+    .resume-v2 .r2-page-grid {
+        width: min(97vw, 78rem);
+        grid-template-columns: 10.5rem minmax(0, 1fr);
+    }
+
+    .resume-v2 .r2-content {
+        grid-column: 2;
+    }
+
+    .resume-consolidated .r2-overview-ai-rail {
+        display: none;
+    }
+
+    .r2-context-ask-compact {
+        display: grid;
+    }
+
+    .r2-summary--fallback {
+        grid-template-columns: minmax(14rem, 0.8fr) minmax(18rem, 1.2fr);
+    }
+}
+
+@media (max-width: 64rem) {
+    .resume-v2 .r2-page-grid {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .r2-overview-context-rail {
+        display: none;
+    }
+
+    .r2-overview-mobile-nav {
+        position: sticky;
+        z-index: 45;
+        top: 7.4rem;
+        display: flex;
+        overflow-x: auto;
+        grid-column: 1;
+        grid-row: 1;
+        border-block: 1px solid var(--r2-line);
+        background: rgb(255 255 255 / 96%);
+        box-shadow: 0 0.65rem 1.4rem rgb(35 73 129 / 12%);
+        scrollbar-width: none;
+        white-space: nowrap;
+    }
+
+    .r2-overview-mobile-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .r2-overview-mobile-nav :is(a, button) {
+        display: flex;
+        min-height: 3rem;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 0.35rem;
+        border: 0;
+        border-right: 1px solid var(--r2-line);
+        background: transparent;
+        color: #17345f;
+        font: inherit;
+        font-size: 0.76rem;
+        font-weight: 750;
+        padding: 0.55rem 0.7rem;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .r2-overview-mobile-nav :is(a.is-current, a:hover, button:hover) {
+        background: #edf4ff;
+        color: #075cf0;
+    }
+
+    .resume-v2 .r2-content {
+        grid-column: 1;
+        grid-row: 2;
+        gap: 1.25rem;
+        padding: 1rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview {
+        scroll-margin-top: 11rem;
+    }
+
+    .r2-summary--fallback {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    }
+}
+
+@media (max-width: 46.5rem) {
+    .r2-overview-mobile-nav {
+        top: 5.95rem;
+    }
+
+    .r2-overview-mobile-nav :is(a, button) {
+        min-width: 4.25rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.15rem;
+        font-size: 0.66rem;
+    }
+
+    .resume-v2 .r2-content {
+        padding: 0.75rem;
+    }
+
+    .r2-summary--fallback {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (forced-colors: active) {
+    .r2-overview-context-rail,
+    .resume-consolidated .r2-overview-ai-rail,
+    .r2-overview-mobile-nav,
+    .member-overview {
+        border: 2px solid CanvasText;
+        background: Canvas;
+        box-shadow: none;
+    }
+}

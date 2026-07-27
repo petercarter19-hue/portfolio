@@ -33,6 +33,215 @@
       }
     ]
   },
+  "overview_publication": {
+    "schema_version": "member-overview-publication.v1",
+    "state": "published",
+    "published_revision": 1,
+    "style_id": "story-career",
+    "density": "rich",
+    "media": [
+      {
+        "id": "portrait",
+        "asset_path": "images/story/pete-headshot.jpg",
+        "alt": "Professional portrait of Pete Carter",
+        "focal": "50% 42%",
+        "truth_label": "Public profile photo",
+        "public_eligible": true
+      },
+      {
+        "id": "story",
+        "asset_path": "images/story/pete-danielle-maui-beach.jpg",
+        "alt": "Pete and Danielle standing together on lava rocks at a Maui beach",
+        "focal": "50% 45%",
+        "truth_label": "Pete and Danielle in Maui",
+        "public_eligible": true
+      },
+      {
+        "id": "future",
+        "asset_path": "images/story/pete-garden-bridge.jpg",
+        "alt": "Pete smiling on a green garden bridge with mountains behind",
+        "focal": "50% 45%",
+        "truth_label": "Still smiling. Still climbing.",
+        "public_eligible": true
+      }
+    ],
+    "blocks": [
+      {
+        "placement_id": "petec-overview-hero",
+        "definition_id": "identity_hero",
+        "definition_version": 1,
+        "mode": "authored",
+        "media_ids": ["portrait"],
+        "order": 10,
+        "visible": true,
+        "emphasis": "hero",
+        "content": {
+          "eyebrow": "Engineer at heart. Leader in practice."
+        }
+      },
+      {
+        "placement_id": "petec-overview-proof",
+        "definition_id": "proof_band",
+        "definition_version": 1,
+        "mode": "authored",
+        "metric_ids": ["engineers-led", "redesigns", "issue-time", "repair-test"],
+        "metric_icons": {
+          "engineers-led": "◎",
+          "redesigns": "◇",
+          "issue-time": "↗",
+          "repair-test": "△"
+        },
+        "order": 20,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {}
+      },
+      {
+        "placement_id": "petec-overview-story",
+        "definition_id": "story_spotlight",
+        "definition_version": 1,
+        "mode": "authored",
+        "media_ids": ["story"],
+        "destination": {
+          "kind": "public_path",
+          "value": "/petec/my-story"
+        },
+        "order": 30,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "kicker": "My story",
+          "heading": "The person behind the work.",
+          "body": "Built on curiosity. Driven by people. Grounded in purpose. Everything else is just details.",
+          "action": "Explore the story"
+        }
+      },
+      {
+        "placement_id": "petec-overview-career",
+        "definition_id": "career",
+        "definition_version": 1,
+        "mode": "record_linked",
+        "role_ids": ["northrop", "l3harris", "dod"],
+        "order": 40,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {}
+      },
+      {
+        "placement_id": "petec-overview-skills",
+        "definition_id": "skills",
+        "definition_version": 1,
+        "mode": "authored",
+        "skill_ids": [
+          "systems-engineering",
+          "requirements-management",
+          "mbse",
+          "sysml-modeling",
+          "project-management",
+          "control-account-management",
+          "sustainment",
+          "integrated-logistics-support",
+          "data-analytics",
+          "ai"
+        ],
+        "order": 50,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "heading": "Skills in practice"
+        }
+      },
+      {
+        "placement_id": "petec-overview-education",
+        "definition_id": "education",
+        "definition_version": 1,
+        "mode": "record_linked",
+        "education_ids": ["education-ms", "education-bs", "education-phd"],
+        "order": 60,
+        "visible": true,
+        "emphasis": "standard",
+        "content": {}
+      },
+      {
+        "placement_id": "petec-overview-certification",
+        "definition_id": "certifications",
+        "definition_version": 1,
+        "mode": "record_linked",
+        "education_ids": ["education-pmp"],
+        "order": 70,
+        "visible": true,
+        "emphasis": "standard",
+        "content": {}
+      },
+      {
+        "placement_id": "petec-overview-awards",
+        "definition_id": "awards",
+        "definition_version": 1,
+        "mode": "record_linked",
+        "achievement_ids": ["burdick", "emerging-leader"],
+        "order": 80,
+        "visible": true,
+        "emphasis": "standard",
+        "content": {}
+      },
+      {
+        "placement_id": "petec-overview-chapters",
+        "definition_id": "story_chapters",
+        "definition_version": 1,
+        "mode": "authored",
+        "order": 90,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "heading": "Story chapters",
+          "items": [
+            {
+              "heading": "The bet on myself.",
+              "body": "I walked away from certainty to build a future I believed in."
+            },
+            {
+              "heading": "United States Air Force.",
+              "body": "Service. Systems. Responsibility. A different kind of mission."
+            },
+            {
+              "heading": "L3Harris, then Northrop Grumman.",
+              "body": "Systems effectiveness, then systems engineering, integration, and test."
+            },
+            {
+              "heading": "Ph.D. in Systems Engineering.",
+              "body": "Still learning. Still building. The next chapter is already in motion."
+            }
+          ]
+        }
+      },
+      {
+        "placement_id": "petec-overview-future",
+        "definition_id": "future_direction",
+        "definition_version": 1,
+        "mode": "authored",
+        "media_ids": ["future"],
+        "order": 100,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "heading": "The story isn't finished.",
+          "body": "I'm still becoming who I'm meant to be."
+        }
+      },
+      {
+        "placement_id": "petec-overview-resume-transition",
+        "definition_id": "resume_transition",
+        "definition_version": 1,
+        "mode": "authored",
+        "order": 999,
+        "visible": true,
+        "emphasis": "standard",
+        "content": {
+          "description": "Impact, skills, experience, and credentials continue below."
+        }
+      }
+    ]
+  },
   "living_resume": {
     "quote": "Every chapter changed what came next.",
     "constellation_quote": "I connect people, processes, and systems to deliver measurable results that strengthen missions and build the future.",

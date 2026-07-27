@@ -4,10 +4,19 @@
   class="member-overview {{ projection.style.css_class }} density-{{ projection.density }}"
   id="overview"
   data-overview-root
+  {% if overview_public_embed %}data-resume-section data-resume-section-target="overview"{% endif %}
   data-style-id="{{ projection.style.id }}"
   data-style-version="{{ projection.style.version }}"
-  data-fixture-id="{{ projection.fixture.id }}"
+  {% if projection.fixture %}data-fixture-id="{{ projection.fixture.id }}"{% endif %}
+  {% if projection.publication %}
+    data-publication-state="{{ projection.publication.state }}"
+    data-publication-revision="{{ projection.publication.revision }}"
+  {% endif %}
 >
+  {% if overview_public_embed %}
+    <span class="r2-anchor-alias" id="summary" aria-hidden="true"></span>
+    <span class="r2-anchor-alias" id="resume-overview" aria-hidden="true"></span>
+  {% endif %}
   <div class="overview-opening{% if "proof_band" not in blocks %} overview-opening--without-proof{% endif %}">
     <header class="overview-hero{% if hero.media %} overview-hero--with-media{% endif %}" aria-labelledby="overview-name">
       {% if projection.style.id == "story-career" and hero.media %}
@@ -84,7 +93,7 @@
 
   {% if "story_spotlight" in blocks %}
     {% set story = blocks["story_spotlight"] %}
-    <section class="overview-story{% if story.media %} overview-story--with-media{% endif %}" id="story" aria-labelledby="overview-story-heading">
+    <section class="overview-story{% if story.media %} overview-story--with-media{% endif %}" id="{% if overview_public_embed %}overview-story{% else %}story{% endif %}" aria-labelledby="overview-story-heading">
       <div class="overview-story-copy">
         <p class="overview-section-kicker">{{ story.content.kicker }}</p>
         <h2 id="overview-story-heading">{{ story.content.heading }}</h2>
@@ -109,7 +118,7 @@
 
   {% if "career" in blocks %}
     {% set career = blocks["career"] %}
-    <section class="overview-career{% if career.media %} overview-career--with-media{% endif %} overview-ruled" id="experience" aria-labelledby="overview-career-heading">
+    <section class="overview-career{% if career.media %} overview-career--with-media{% endif %} overview-ruled" id="{% if overview_public_embed %}overview-career{% else %}experience{% endif %}" aria-labelledby="overview-career-heading">
       <div class="overview-career-copy">
         <p class="overview-section-kicker">{{ projection.layout.career_heading }}</p>
         <h2 class="visually-hidden" id="overview-career-heading">{{ projection.layout.career_heading }}</h2>
@@ -143,7 +152,7 @@
             {% endfor %}
           </ol>
         {% endif %}
-        <a class="overview-inline-action" href="#resume-start">View detailed experience</a>
+        <a class="overview-inline-action" href="{% if overview_public_embed %}#experience{% else %}#resume-start{% endif %}">View detailed experience</a>
       </div>
       {% if career.media %}
         <figure class="overview-career-media overview-media">
@@ -160,7 +169,7 @@
 
   {% if "impact" in blocks %}
     {% set impact = blocks["impact"] %}
-    <section class="overview-impact{% if impact.media %} overview-impact--with-media{% endif %} overview-ruled" id="impact" aria-labelledby="overview-impact-heading">
+    <section class="overview-impact{% if impact.media %} overview-impact--with-media{% endif %} overview-ruled" id="{% if overview_public_embed %}overview-impact{% else %}impact{% endif %}" aria-labelledby="overview-impact-heading">
       <p class="overview-section-kicker">{{ impact.content.heading }}</p>
       <h2 class="visually-hidden" id="overview-impact-heading">{{ impact.content.heading }}</h2>
       <div class="overview-impact-grid overview-impact-grid--{{ impact.content["items"]|length }}">
@@ -188,20 +197,20 @@
 
   {% if "skills" in blocks %}
     {% set skills = blocks["skills"] %}
-    <section class="overview-skills overview-ruled" id="skills" aria-labelledby="overview-skills-heading">
+    <section class="overview-skills overview-ruled" id="{% if overview_public_embed %}overview-skills{% else %}skills{% endif %}" aria-labelledby="overview-skills-heading">
       <p class="overview-section-kicker">{{ skills.content.heading }}</p>
       <h2 class="visually-hidden" id="overview-skills-heading">{{ skills.content.heading }}</h2>
       <ul>
         {% for skill in skills.content["items"] %}<li>{{ skill }}</li>{% endfor %}
       </ul>
-      <a class="overview-inline-action" href="#resume-start">View all skills</a>
+      <a class="overview-inline-action" href="{% if overview_public_embed %}#skills{% else %}#resume-start{% endif %}">View all skills</a>
     </section>
   {% endif %}
 
   {% if projection.layout.has_credentials %}
     <div
       class="overview-credentials overview-credentials--{% if "education" in blocks %}education-{% endif %}{% if "certifications" in blocks %}certifications-{% endif %}{% if "awards" in blocks %}awards{% endif %} overview-ruled"
-      id="credentials"
+      id="{% if overview_public_embed %}overview-credentials{% else %}credentials{% endif %}"
       aria-label="Credentials"
     >
       {% if "education" in blocks %}
@@ -217,7 +226,7 @@
               </li>
             {% endfor %}
           </ul>
-          <a class="overview-inline-action" href="#resume-start">View education</a>
+          <a class="overview-inline-action" href="{% if overview_public_embed %}#credentials{% else %}#resume-start{% endif %}">View education</a>
         </section>
       {% endif %}
       {% if "certifications" in blocks %}
@@ -232,7 +241,7 @@
               </li>
             {% endfor %}
           </ul>
-          <a class="overview-inline-action" href="#resume-start">View certifications</a>
+          <a class="overview-inline-action" href="{% if overview_public_embed %}#credentials{% else %}#resume-start{% endif %}">View certifications</a>
         </section>
       {% endif %}
       {% if "awards" in blocks %}
@@ -247,7 +256,7 @@
               </li>
             {% endfor %}
           </ul>
-          <a class="overview-inline-action" href="#resume-start">View awards</a>
+          <a class="overview-inline-action" href="{% if overview_public_embed %}#credentials{% else %}#resume-start{% endif %}">View awards</a>
         </section>
       {% endif %}
     </div>
@@ -317,17 +326,19 @@
     </section>
   {% endif %}
 
-  <footer class="overview-connect" id="connect">
-    <div>
-      <p class="overview-section-kicker">Connect</p>
-      <h2>Let’s build what’s next.</h2>
-      <p>Start a thoughtful conversation about the work, ideas, and opportunities ahead.</p>
-    </div>
-    <a
-      class="overview-button overview-button--primary"
-      href="{{ projection.profile.contact_destination.value }}"
-    >{{ projection.profile.contact_label }}</a>
-  </footer>
+  {% if not overview_public_embed %}
+    <footer class="overview-connect" id="connect">
+      <div>
+        <p class="overview-section-kicker">Connect</p>
+        <h2>Let’s build what’s next.</h2>
+        <p>Start a thoughtful conversation about the work, ideas, and opportunities ahead.</p>
+      </div>
+      <a
+        class="overview-button overview-button--primary"
+        href="{{ projection.profile.contact_destination.value }}"
+      >{{ projection.profile.contact_label }}</a>
+    </footer>
+  {% endif %}
 
   <section class="overview-resume-transition" id="resume-start" tabindex="-1" aria-labelledby="overview-resume-heading">
     <h2 id="overview-resume-heading">Résumé begins here</h2>

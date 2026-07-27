@@ -1,4 +1,5 @@
 import copy
+import json
 import unittest
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from overview_projection_service import (
     BLOCK_DEFINITIONS,
     OverviewProjectionError,
     build_overview_projection,
+    build_public_overview_projection,
     list_fixture_options,
     load_fixture_catalog,
 )
@@ -262,6 +264,112 @@ class MemberOverviewProjectionTests(unittest.TestCase):
         self.assertNotIn("Pete Carter", fixture_text)
         self.assertNotIn('"source"', fixture_text)
         self.assertNotIn('"provenance"', fixture_text)
+
+    def test_profile_owned_publication_resolves_against_public_resume_data(self):
+        resume_data = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "static/data/resume_data.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        projection = build_public_overview_projection(resume_data)
+
+        self.assertEqual(
+            projection["publication"],
+            {
+                "schema_version": "member-overview-publication.v1",
+                "state": "published",
+                "profile_slug": "petec",
+                "revision": 1,
+            },
+        )
+        self.assertNotIn("fixture", projection)
+        self.assertEqual(projection["style"]["id"], "story-career")
+        self.assertEqual(projection["profile"]["display_name"], "Pete Carter")
+        self.assertEqual(
+            [
+                claim["value"]
+                for claim in projection["block_by_definition"]["proof_band"][
+                    "content"
+                ]["claims"]
+            ],
+            ["30+", "9 / $19.2M", "35%", "70%"],
+        )
+        for claim in projection["block_by_definition"]["proof_band"]["content"][
+            "claims"
+        ]:
+            self.assertFalse(
+                {
+                    "source",
+                    "source_id",
+                    "evidence",
+                    "verification",
+                    "provenance",
+                }.intersection(claim)
+            )
+
+    def test_absent_or_nonpublished_selection_returns_summary_fallback_state(self):
+        resume_data = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "static/data/resume_data.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        no_selection = copy.deepcopy(resume_data)
+        no_selection.pop("overview_publication")
+        self.assertIsNone(build_public_overview_projection(no_selection))
+
+        draft_selection = copy.deepcopy(resume_data)
+        draft_selection["overview_publication"]["state"] = "draft"
+        self.assertIsNone(build_public_overview_projection(draft_selection))
+
+    def test_invalid_publication_references_and_media_paths_fail_closed(self):
+        resume_data = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "static/data/resume_data.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        unknown_metric = copy.deepcopy(resume_data)
+        unknown_metric["overview_publication"]["blocks"][1]["metric_ids"][0] = (
+            "another-owner:metric"
+        )
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(unknown_metric)
+        self.assertEqual(raised.exception.code, "unknown_metric")
+
+        unsafe_media = copy.deepcopy(resume_data)
+        unsafe_media["overview_publication"]["media"][0]["asset_path"] = (
+            "../private/headshot.jpg"
+        )
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(unsafe_media)
+        self.assertEqual(raised.exception.code, "invalid_media_path")
+
+        invalid_role = copy.deepcopy(resume_data)
+        invalid_role["career_roles"][0]["accomplishments"] = "not-a-list"
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(invalid_role)
+        self.assertEqual(
+            raised.exception.code,
+            "invalid_accomplishment_collection",
+        )
+
+    def test_shared_projection_service_contains_no_pete_content(self):
+        service_text = (
+            Path(__file__).resolve().parents[1]
+            / "overview_projection_service.py"
+        ).read_text(encoding="utf-8")
+        for profile_specific_text in (
+            "Pete Carter",
+            "Northrop Grumman",
+            "L3Harris",
+            "Department of Defense",
+        ):
+            self.assertNotIn(profile_specific_text, service_text)
 
 
 if __name__ == "__main__":

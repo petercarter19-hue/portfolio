@@ -263,14 +263,15 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="lr-page resume-v2 resume-consolidated"', response_text)
         self.assertIn(
-            'css/resume2.css?v=resume-refine-1',
+            'css/resume2.css?v=overview-public-1',
             response_text,
         )
 
         section_positions = [
             response_text.index(f'id="{section_id}"')
             for section_id in (
-                'summary',
+                'overview',
+                'resume-start',
                 'impact',
                 'skills',
                 'experience',
@@ -353,13 +354,18 @@ class Resume2Tests(unittest.TestCase):
         response = self.client.get('/petec/resume', base_url='http://localhost')
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b'id="overview"', response.data)
         self.assertIn(b'id="summary"', response.data)
         self.assertIn(b'images/story/pete-headshot.jpg', response.data)
         self.assertIn(b'Professional portrait of Pete Carter', response.data)
         self.assertIn(b'Engineer at heart. Leader in practice.', response.data)
-        self.assertIn(b'Systems Engineer &amp; Technical Leader', response.data)
-        self.assertIn(b'r2-ai-card resume-ai-panel', response.data)
-        self.assertNotIn(b'images/story/danielle', response.data.lower())
+        self.assertIn(
+            b'Systems Engineer \xc2\xb7 Technical Leader \xc2\xb7 MBSE, Sustainment, and Requirements',
+            response.data,
+        )
+        self.assertIn(b'r2-overview-ai-rail resume-ai-panel', response.data)
+        self.assertNotIn(b'class="r2-summary', response.data)
+        self.assertNotIn(b'Maya Chen', response.data)
 
     def test_career_impact_renders_the_five_approved_metrics_in_order(self):
         response = self.client.get('/petec/resume', base_url='http://localhost')
@@ -478,35 +484,32 @@ class Resume2Tests(unittest.TestCase):
                 )
 
     def test_opening_states_ask_ai_and_positioning_without_duplication(self):
-        # PS-RESUME-PUBLIC-REFINE-001: the opening identity keeps one dominant
-        # Ask AI surface (the inline panel) plus the persistent ribbon control,
-        # and states the positioning once instead of repeating it.
+        # PS-OVERVIEW-PUBLIC-INTEGRATION-001: the published Overview absorbs
+        # Summary, keeps Connect/View résumé in the hero, and uses the distinct
+        # contextual AI rail for the public assistant.
         response = self.client.get('/petec/resume', base_url='http://localhost')
         text = response.get_data(as_text=True)
 
-        summary_start = text.index('<section class="r2-summary"')
-        summary_end = text.index('id="impact"', summary_start)
-        summary_html = text[summary_start:summary_end]
+        overview_start = text.index('data-overview-root')
+        overview_end = text.index('id="impact"', overview_start)
+        overview_html = text[overview_start:overview_end]
+        ai_start = text.index('r2-overview-ai-rail')
+        constellation_start = text.index(
+            '<!-- shared-career-constellation:start -->'
+        )
+        ai_html = text[ai_start:constellation_start]
 
-        # The Ask experience is the inline panel; the identity no longer repeats
-        # a chat-opening Ask button in its action row.
-        self.assertIn('r2-ai-card resume-ai-panel', summary_html)
-        self.assertNotIn('data-chat-open', summary_html)
-        # The two distinct secondary actions remain in the opening.
-        self.assertIn('View Résumé', summary_html)
-        self.assertIn('Contact', summary_html)
+        self.assertIn('>Connect</a>', overview_html)
+        self.assertIn('>View résumé</a>', overview_html)
+        self.assertNotIn('data-chat-open', overview_html)
+        self.assertNotIn('View Résumé', overview_html)
+        self.assertNotIn('>Contact</a>', overview_html)
 
-        # Positioning is stated once: the role line keeps the first two parts,
-        # the tags line carries only the remaining descriptor (no repeat).
-        self.assertIn('Systems Engineer &amp; Technical Leader', summary_html)
-        self.assertIn('MBSE, Sustainment, and Requirements', summary_html)
-        self.assertNotIn('Systems Engineer · Technical Leader', summary_html)
-
-        # The persistent ribbon still offers Ask AI so the assistant stays one
-        # control away for the rest of the page.
-        ribbon_start = text.index('r2-section-ribbon__actions')
-        ribbon_html = text[ribbon_start:ribbon_start + 600]
-        self.assertIn('data-chat-open', ribbon_html)
+        self.assertIn('Systems Engineer · Technical Leader', overview_html)
+        self.assertIn('MBSE, Sustainment, and Requirements', overview_html)
+        self.assertIn('Ask Pete AI', ai_html)
+        self.assertIn('Approved public context only', ai_html)
+        self.assertIn('data-hero-ai-search', ai_html)
 
     def test_experience_preview_defers_bullets_to_the_on_demand_chapter(self):
         # The default preview is a scannable summary + selected impact; the

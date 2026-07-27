@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const resumeNavLinks = [...page.querySelectorAll('[data-resume-nav]')];
     const resumeSections = [...page.querySelectorAll('[data-resume-section], [data-resume-section-target]')];
+    const aiContextSection = page.querySelector('[data-r2-ai-context]');
     const resumeDock = page.querySelector('.lr-resume-dock');
     const resumeRail = page.querySelector('.lr-ledger__rail');
     const ledgerBody = page.querySelector('.lr-resume-layout');
@@ -16,6 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ledgerStatus = page.querySelector('[data-ledger-status]');
 
     function setCurrentResumeSection(sectionId) {
+        const sectionLabels = {
+            overview: 'Overview',
+            summary: 'Summary',
+            impact: 'Impact',
+            skills: 'Skills',
+            experience: 'Experience',
+            credentials: 'Credentials',
+        };
         resumeNavLinks.forEach((link) => {
             const isCurrent = link.hash === `#${sectionId}`;
             link.classList.toggle('is-current', isCurrent);
@@ -25,11 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.removeAttribute('aria-current');
             }
         });
+        if (aiContextSection) {
+            aiContextSection.textContent = sectionLabels[sectionId] || 'Résumé';
+        }
     }
 
     function updatePersistentNavigation() {
-        const readingLine = window.innerWidth <= 768 ? 170 : 150;
-        let activeSectionId = 'summary';
+        // The desktop shell and sticky section rails occupy roughly the
+        // first quarter of the viewport. Reading against that visible
+        // content line keeps the selected rail item and AI context in sync
+        // after an in-page section link settles below the fixed headers.
+        const readingLine = window.innerWidth <= 768 ? 170 : 260;
+        const openingSection = resumeSections[0];
+        let activeSectionId = openingSection
+            ? (openingSection.dataset.resumeSectionTarget || openingSection.id)
+            : 'summary';
 
         resumeSections.forEach((section) => {
             if (section.getBoundingClientRect().top <= readingLine) {

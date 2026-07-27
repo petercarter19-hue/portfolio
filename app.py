@@ -27,6 +27,7 @@ from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
     build_overview_projection,
+    build_public_overview_projection,
     list_fixture_options,
     load_fixture_catalog,
 )
@@ -1830,6 +1831,18 @@ def _render_living_resume(
             _external=True,
         )
 
+    public_overview_projection = None
+    try:
+        public_overview_projection = build_public_overview_projection(resume_data)
+    except OverviewProjectionError as exc:
+        # A malformed public selection must fail closed to the existing
+        # truthful Summary opening. Never partially render a public Overview.
+        app.logger.error(
+            'Public Overview projection failed for %s: %s',
+            profile_slug,
+            exc.code,
+        )
+
     return render_template(
         template_name,
         resume=resume_data,
@@ -1856,6 +1869,7 @@ def _render_living_resume(
         profile_slug=profile_slug,
         profile_first_name=profile_first_name,
         canonical_resume_url=canonical_resume_url,
+        public_overview_projection=public_overview_projection,
         resume_version=resume_version,
         is_internal_preview=is_internal_preview,
     )

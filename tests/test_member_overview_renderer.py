@@ -129,11 +129,14 @@ class MemberOverviewRendererTests(unittest.TestCase):
             404,
         )
 
-    def test_public_resume_contract_has_no_internal_overview_state(self):
+    def test_public_resume_renders_published_overview_without_fixture_state(self):
         response = self.client.get("/petec/resume", base_url="http://localhost")
         self.assertEqual(response.status_code, 200)
         for current_marker in (
             b'class="lr-page resume-v2 resume-consolidated"',
+            b'data-overview-root',
+            b'data-publication-state="published"',
+            b'data-publication-revision="1"',
             b'id="resume-overview"',
             b'id="impact"',
             b'id="skills"',
@@ -145,9 +148,11 @@ class MemberOverviewRendererTests(unittest.TestCase):
             self.assertIn(current_marker, response.data)
         for internal_marker in (
             b"Fixture review",
-            b"data-overview-root",
+            b"data-fixture-id",
             b"overview_fixtures",
             b"Member Overview renderer review",
+            b"Maya Chen",
+            b"Illustrative renderer fixture",
         ):
             self.assertNotIn(internal_marker, response.data)
 

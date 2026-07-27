@@ -17,7 +17,10 @@
   --overview-sans: Inter, Aptos, "Segoe UI", Arial, sans-serif;
 }
 
-* {
+.member-overview,
+.member-overview *,
+body.overview-preview,
+body.overview-preview * {
   box-sizing: border-box;
 }
 
@@ -42,24 +45,25 @@ body.large-text {
   font-size: 20px;
 }
 
-a {
+body.overview-preview a {
   color: inherit;
 }
 
-img {
+.member-overview img,
+body.overview-preview img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-button,
-select,
-input {
+.member-overview :is(button, select, input),
+body.overview-preview :is(button, select, input) {
   font: inherit;
 }
 
-:focus-visible {
+.member-overview :focus-visible,
+body.overview-preview :focus-visible {
   outline: 3px solid #ffb523;
   outline-offset: 3px;
 }
@@ -554,6 +558,7 @@ input {
 }
 
 .overview-proof-item a {
+  color: inherit;
   text-decoration: none;
 }
 
@@ -1627,9 +1632,12 @@ body.large-text .overview-credentials > section:last-child {
     scroll-behavior: auto;
   }
 
-  *,
-  *::before,
-  *::after {
+  .member-overview *,
+  .member-overview *::before,
+  .member-overview *::after,
+  body.overview-preview *,
+  body.overview-preview *::before,
+  body.overview-preview *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

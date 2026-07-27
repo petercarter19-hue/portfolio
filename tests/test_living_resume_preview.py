@@ -53,7 +53,7 @@ class LivingResumePreviewTests(unittest.TestCase):
         javascript = (project_root / 'static/js/living-resume-v2.js').read_text(encoding='utf-8')
 
         for section_id in (
-            'summary',
+            'overview',
             'impact',
             'skills',
             'experience',
@@ -65,7 +65,7 @@ class LivingResumePreviewTests(unittest.TestCase):
         ordered_sections = [
             response.data.index(f'id="{section_id}"'.encode())
             for section_id in (
-                'summary',
+                'overview',
                 'impact',
                 'skills',
                 'experience',
@@ -88,7 +88,8 @@ class LivingResumePreviewTests(unittest.TestCase):
         ):
             self.assertIn(f'id="{legacy_alias}"'.encode(), response.data)
 
-        self.assertIn(b'r2-ai-card resume-ai-panel', response.data)
+        self.assertIn(b'r2-overview-ai-rail', response.data)
+        self.assertIn(b'resume-ai-panel', response.data)
         self.assertGreaterEqual(response.data.count(b'data-chat-open'), 3)
         self.assertIn('.living-resume-v2-page #chat-toggle', css)
         self.assertIn('updatePersistentNavigation', javascript)
