@@ -211,6 +211,22 @@ def prevent_stale_html(response):
         'Permissions-Policy',
         'camera=(self), microphone=(self), geolocation=()',
     )
+    # A deliberately partial Content-Security-Policy. These four directives
+    # are safe to enforce today because the site uses no <object>, <embed> or
+    # <base> tag and posts every form same-origin, so nothing legitimate is
+    # blocked. base-uri and form-action are the two directives that most
+    # directly blunt an injected-markup escalation, and no existing header
+    # covers either.
+    #
+    # script-src and style-src are intentionally absent: the pages carry
+    # inline bootstrap scripts and load Google Fonts, so enforcing those
+    # would need nonces threaded through the templates. That is a separate,
+    # visual-risk-bearing change and must not be smuggled in here.
+    response.headers.setdefault(
+        'Content-Security-Policy',
+        "base-uri 'self'; object-src 'none'; form-action 'self'; "
+        "frame-ancestors 'self'",
+    )
     if request.is_secure:
         response.headers.setdefault(
             'Strict-Transport-Security', 'max-age=31536000'

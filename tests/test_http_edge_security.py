@@ -317,6 +317,42 @@ class CrawlerExclusionTests(unittest.TestCase):
                 self.assertNotIn(f"<loc>{private}", body)
 
 
+class ContentSecurityPolicyTests(unittest.TestCase):
+    def setUp(self):
+        self.original_testing = app.config.get("TESTING")
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(TESTING=self.original_testing)
+
+    def test_injection_escalation_directives_are_enforced(self):
+        policy = self.client.get("/").headers["Content-Security-Policy"]
+
+        for directive in (
+            "base-uri 'self'",
+            "object-src 'none'",
+            "form-action 'self'",
+            "frame-ancestors 'self'",
+        ):
+            with self.subTest(directive=directive):
+                self.assertIn(directive, policy)
+
+    def test_script_and_style_are_not_restricted_yet(self):
+        # Enforcing these needs nonces threaded through the templates. Pin the
+        # deliberate omission so it is a decision, not an oversight, and so a
+        # future change to add them is made knowingly.
+        policy = self.client.get("/").headers["Content-Security-Policy"]
+
+        self.assertNotIn("script-src", policy)
+        self.assertNotIn("style-src", policy)
+
+    def test_the_policy_is_present_on_a_private_surface_too(self):
+        response = self.client.get("/app")
+
+        self.assertIn("Content-Security-Policy", response.headers)
+
+
 class PrivateResponseCacheTests(unittest.TestCase):
     """Private member responses must not be stored by any cache."""
 
