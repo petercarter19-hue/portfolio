@@ -2017,7 +2017,10 @@ def chat():
     except Exception as e:
         # If anything goes wrong (network issue, API error, etc.),
         # return a friendly error message instead of crashing
-        print(f"Claude API error: {e}")
+        # Use the app logger, not print: under gunicorn a bare print goes to a
+        # different stream than every other diagnostic in this file, so these
+        # failures were effectively invisible in production.
+        app.logger.exception('Claude API error during chat.')
         return jsonify({'error': 'Something went wrong. Please try again.'}), 500
 
 
@@ -2752,9 +2755,15 @@ def server_error(e):
 
 @app.route('/robots.txt')
 def robots_txt():
+    # The private member surfaces and JSON APIs are already protected by
+    # server-side authorization; excluding them here simply keeps them out of
+    # crawl budget and out of search results for signed-in URLs.
     lines = [
         'User-agent: *',
         'Allow: /',
+        'Disallow: /app',
+        'Disallow: /api/',
+        'Disallow: /owner',
         f'Sitemap: {request.url_root.rstrip("/")}/sitemap.xml',
     ]
     return app.response_class('\n'.join(lines) + '\n', mimetype='text/plain')

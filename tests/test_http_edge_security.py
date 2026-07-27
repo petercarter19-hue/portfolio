@@ -207,6 +207,116 @@ class OwnerWriteOriginTests(unittest.TestCase):
         self.assertNotEqual(response.status_code, 403)
 
 
+class AuthIssuerTests(unittest.TestCase):
+    """A configured expected issuer must be enforced, not merely defaulted."""
+
+    def setUp(self):
+        self.original_config = {
+            "TESTING": app.config.get("TESTING"),
+            "PEERSLATE_TRUST_EASYAUTH_HEADERS": app.config.get(
+                "PEERSLATE_TRUST_EASYAUTH_HEADERS"
+            ),
+            "PEERSLATE_AUTH_ISSUER": app.config.get("PEERSLATE_AUTH_ISSUER"),
+        }
+        app.config.update(TESTING=True, PEERSLATE_TRUST_EASYAUTH_HEADERS=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(**self.original_config)
+
+    @patch("identity.database_service.first_row")
+    def test_foreign_issuer_is_refused_before_any_account_upsert(self, first_row):
+        app.config["PEERSLATE_AUTH_ISSUER"] = "https://example.ciamlogin.com/example/v2.0"
+
+        response = self.client.get(
+            "/auth/session",
+            # A principal minted by a different issuer entirely.
+            headers=self._principal("https://attacker.example/v2.0"),
+        )
+
+        self.assertEqual(response.get_json()["signed_in"], False)
+        first_row.assert_not_called()
+
+    @patch("identity.database_service.first_row")
+    def test_matching_issuer_is_accepted_ignoring_a_trailing_slash(self, first_row):
+        app.config["PEERSLATE_AUTH_ISSUER"] = "https://example.ciamlogin.com/example/v2.0"
+        first_row.return_value = {
+            "account_key": "issuer-owner",
+            "user_key": "issuer-owner",
+            "display_name": "Edge Member",
+            "email": "edge@example.com",
+        }
+
+        response = self.client.get(
+            "/auth/session",
+            headers=self._principal("https://example.ciamlogin.com/example/v2.0/"),
+        )
+
+        self.assertEqual(response.get_json()["signed_in"], True)
+        first_row.assert_called_once()
+
+    @patch("identity.database_service.first_row")
+    def test_unset_expected_issuer_preserves_existing_behaviour(self, first_row):
+        # Production currently leaves this unset; the change must be inert then.
+        app.config["PEERSLATE_AUTH_ISSUER"] = None
+        first_row.return_value = {
+            "account_key": "issuer-owner",
+            "user_key": "issuer-owner",
+            "display_name": "Edge Member",
+            "email": "edge@example.com",
+        }
+
+        response = self.client.get(
+            "/auth/session", headers=self._principal("https://anything.example/v2.0")
+        )
+
+        self.assertEqual(response.get_json()["signed_in"], True)
+        first_row.assert_called_once()
+
+    @staticmethod
+    def _principal(issuer):
+        principal = {
+            "auth_typ": "aad",
+            "claims": [
+                {"typ": "iss", "val": issuer},
+                {"typ": "oid", "val": "edge-member"},
+                {"typ": "name", "val": "Edge Member"},
+                {"typ": "email", "val": "edge@example.com"},
+            ],
+        }
+        encoded = base64.b64encode(json.dumps(principal).encode("utf-8")).decode(
+            "ascii"
+        )
+        return {"X-MS-CLIENT-PRINCIPAL": encoded}
+
+
+class CrawlerExclusionTests(unittest.TestCase):
+    def setUp(self):
+        self.original_testing = app.config.get("TESTING")
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(TESTING=self.original_testing)
+
+    def test_private_surfaces_are_excluded_from_crawling(self):
+        body = self.client.get("/robots.txt").get_data(as_text=True)
+
+        for path in ("Disallow: /app", "Disallow: /api/"):
+            with self.subTest(path=path):
+                self.assertIn(path, body)
+        # The public site must still be crawlable.
+        self.assertIn("Allow: /", body)
+        self.assertIn("Sitemap:", body)
+
+    def test_sitemap_lists_no_private_path(self):
+        body = self.client.get("/sitemap.xml").get_data(as_text=True)
+
+        for private in ("/app", "/api/", "/owner"):
+            with self.subTest(private=private):
+                self.assertNotIn(f"<loc>{private}", body)
+
+
 class PrivateResponseCacheTests(unittest.TestCase):
     """Private member responses must not be stored by any cache."""
 

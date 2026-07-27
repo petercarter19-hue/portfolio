@@ -33,6 +33,36 @@ class DeploymentPolicyTests(unittest.TestCase):
                     ' — GitHub Actions must not deploy PeerSlate')
 
 
+class DependencyPinTests(unittest.TestCase):
+    def test_shared_pins_match_between_requirements_files(self):
+        """requirements-sql.txt re-pins packages requirements.txt also pins.
+
+        Two files pinning the same package can drift silently, so the local
+        database tooling would resolve a different version than the deployed
+        application. Keep the shared pins identical or remove the duplicate.
+        """
+
+        def pins(filename):
+            found = {}
+            for line in _read(os.path.join(ROOT, filename)).splitlines():
+                line = line.split('#', 1)[0].strip()
+                if '==' in line:
+                    name, version = line.split('==', 1)
+                    found[name.strip().lower()] = version.strip()
+            return found
+
+        app_pins = pins('requirements.txt')
+        sql_pins = pins('requirements-sql.txt')
+        shared = set(app_pins) & set(sql_pins)
+        self.assertTrue(shared, 'expected requirements-sql.txt to share pins')
+        for package in sorted(shared):
+            self.assertEqual(
+                sql_pins[package], app_pins[package],
+                f'{package} is pinned to {sql_pins[package]} in '
+                f'requirements-sql.txt but {app_pins[package]} in '
+                'requirements.txt')
+
+
 class OwnershipGuardrailTests(unittest.TestCase):
     REUSABLE_CODE = ('services', 'db.py', 'identity.py',
                      'peerslate_api.py', 'people_interests_api.py')
