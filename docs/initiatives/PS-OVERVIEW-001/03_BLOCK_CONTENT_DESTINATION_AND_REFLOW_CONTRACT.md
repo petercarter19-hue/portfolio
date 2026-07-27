@@ -312,3 +312,24 @@ is prohibited.
 - Full-browser desktop evidence includes 1440 × 900, 1920 × 1080,
   2560 × 1440, and 3840 × 2160 CSS-pixel viewports. Physical monitor inches
   are context only.
+
+## 11. Final rail and reflow relationship
+
+Block destinations and the left Context Rail use the same typed destination
+resolver. They do not create competing anchor systems.
+
+- The left rail renders only destinations that exist in the combined
+  Overview/résumé representation.
+- The first entry is Overview or Summary according to the actual opening.
+- Hiding or omitting a section removes its wrapper, space, destination action,
+  and rail entry together.
+- An Overview preview action may jump into the detailed résumé below; the
+  center page remains one scroll/document context.
+- The right contextual AI rail may receive the current public/private section
+  identifier as disclosed context, but it does not own destination resolution
+  and does not change the URL or active section.
+- At widths where the AI rail undocks, the center and all destinations keep the
+  same semantic order and stable anchors.
+- At mobile/large-text reflow, the left rail becomes the approved Sections
+  control/chip treatment and the AI rail becomes a drawer/sheet or prominent
+  action. Neither becomes a duplicate bottom navigation layer.

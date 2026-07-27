@@ -11,16 +11,17 @@ for the production-intent visual-creation gate on 2026-07-26.
 - **Member need this page serves:** Give a visitor a concise, credible, human,
   and navigable orientation to the member without repeating the full résumé
 - **Named capability and visual authority status:** One Overview system; Story &
-  Career flagship and Work & Impact alternate. Supplied concepts are direction
-  inputs only; no production visual authority is locked.
+  Career flagship and Work & Impact alternate. Owner-approved public, editor,
+  rail, AI-context, and publication-review references are registered in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`.
 - **Known source / capability limits:** Current public résumé is live and
   fixture/data-driven. Current public My Story is a fixed fixture projection.
   Authenticated multi-user Overview composition, publication records, and style
   rendering do not exist.
 - **Prepared by / date:** Codex, 2026-07-25
 - **Pete inventory approval / date:** Approved, 2026-07-26
-- **Inventory status:** Owner-approved for visual creation; exact visual
-  authority remains pending
+- **Inventory status:** Owner-approved and incorporated into the final product
+  and logical implementation architecture
 
 ## B. Meaningful public item decisions
 
@@ -28,11 +29,11 @@ for the production-intent visual-creation gate on 2026-07-26.
 
 | Item | Member purpose | Source / capability truth | Action / destination | Privacy, audience, and lifecycle | Unique relationship on this page | Decision | Owner rationale |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Current résumé section ribbon | Orient the visitor among sections on `/petec/resume` | Existing right-side control; first entry is currently Summary | Stable same-page anchors and focus | Public destinations only; no hidden-section link | Current page-depth control outside the center canvas | Keep / update first entry | Overview must replace a weaker opening, not add a second navigation layer |
-| Future left Context Rail | Approved target pattern for the résumé, not current implementation | `OWNER_CONTEXT_RAIL_STANDARD.md`; adoption/migration needs its own package and visual acceptance | Same local section destinations only | Public sections only | Future replacement for the current ribbon | Defer implementation | Pete's left-rail direction is preserved without misrepresenting it as live or authorized here |
+| Current résumé section ribbon | Orient the visitor among sections on `/petec/resume` | Existing right-side control; first entry is currently Summary | Stable same-page anchors and focus | Public destinations only; no hidden-section link | Present-state page-depth control outside the center canvas | Replace in integration slice | Preserve current behavior until the activated Overview/public-integration slice replaces it atomically |
+| Final left Context Rail | Consolidate member identity and local résumé depth without repeating global/profile navigation | `OWNER_CONTEXT_RAIL_STANDARD.md` plus Pete's final 2026-07-26 shell decision | Overview/Summary, Impact, Skills, Experience, Credentials; separated Résumé PDF action | Public section destinations only; omitted section has no entry | One local-section system replacing the current ribbon | Keep as target architecture | The right region is reserved for contextual AI, not duplicate section links |
 | Overview / Summary first section entry | Reach the opening that actually renders | Derived from publication state | Published: **Overview** → `#overview`; no publication: **Summary** → `#summary`; existing `#summary` and `#resume-overview` aliases reach the absorbed opening | Public; exactly one first entry | Prevents duplicate Overview and Summary destinations | Keep / change dynamically | One opening, one contextual destination |
 | Existing Summary opening | Provide portrait, identity, positioning, intro, actions, and public Ask panel today | Existing live `/petec/resume` region | Existing Summary/Ask/Resume/Contact behavior | Public approved résumé data | Fallback opening when no Overview is published | Combine / fallback | A published Overview absorbs this job; it must not render a second hero |
-| Ask [Name] AI public entry/panel | Let visitors explore approved public history | Existing public-only grounded Ask capability | One shared contextual action opens/uses the approved panel | Public sources only; no private Slate retrieval | Distinct interactive exploration, not identity copy | Keep in shared context | Do not duplicate it in the hero; mobile may use one compact accessible shared-actions menu |
+| Ask [Name] AI public rail/panel | Let visitors explore approved public history in the context of the page/section | Existing public-only grounded Ask capability; future rail treatment | Persistent wide contextual rail; drawer/sheet or prominent action when narrower | Public sources only; no private Slate retrieval | Distinct interactive exploration, not navigation or identity copy | Keep in right context | Do not duplicate it in the hero or left rail; public and private AI names/contexts remain distinct |
 | Résumé PDF action | Let the visitor obtain the existing résumé document | Existing public PDF path | One shared contextual action opens/downloads the approved PDF | Public | Document action | Keep in shared context | Do not duplicate it in the hero or throughout Overview |
 | Résumé begins here boundary | Tell the visitor that concise orientation ends and the detailed résumé starts | System-owned label, not member copy | May be a heading/landmark; no required action | Public when Overview renders | Separates the absorbed opening from Impact, Skills, Experience, and Credentials | Keep | Replaces the mockups' duplicate Full Résumé block |
 | Full Résumé summary shown in concepts | Preview the résumé again | Duplicates the actual résumé immediately below | Repeated download/print actions | Public duplication | No unique job | Remove | Pete directed that the real résumé starts there |
@@ -91,11 +92,11 @@ for the production-intent visual-creation gate on 2026-07-26.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Edit Overview entry | Enter authorized composition | Server-authorized owner capability, future | Opens private composer | Owner only | Single clear edit entry | Keep |
 | Setup choice | Start from records, build manually, or ask AI for a proposal | All paths create the same private draft contract | Select a starting path | Owner only; no public effect | Reduces setup friction without making AI mandatory | Keep |
-| Overview style selector | Compare Story & Career and Work & Impact | Two direction-approved style choices; exact manifests remain pending visual lock | Change draft style and preview | Owner only until publish | Presentation choice, not content duplication | Keep |
+| Overview style selector | Compare Story & Career and Work & Impact | Two owner-approved style choices over one content system | Change draft style and preview | Owner only until publish | Presentation choice, not content duplication | Keep |
 | Block catalog | Add one finite supported block | Approved block definitions only | Add to private draft | Owner only | Structured extensibility | Keep |
 | Record selector | Choose eligible canonical/public records | Authorization-filtered records with source status | Add references to a block | Owner only; authorization before retrieval | Source grounding | Keep |
 | Copy editor | Write or revise bounded projection text | Member-authored draft | Edit draft | Owner only until publication | Manual path | Keep |
-| Ask AI action | Request a scoped proposal | Eligible selected sources only | Opens proposal comparison | Owner only; optional; never auto-applies | Assistance inside the current task | Keep optional |
+| Ask Slate AI contextual rail/action | Request scoped private assistance in the current editor/review task | Authenticated owner plus authorized draft/eligible context only | Opens contextual rail/sheet and proposal comparison | Owner only; optional; never auto-saves, applies, or publishes | Assistance inside the current task, distinct from public Ask [Name] AI | Keep prominent but optional |
 | AI proposal comparison | Understand support and exact change | Proposed text/order plus cited sources | Accept into draft, edit, or reject | Private proposal lifecycle | Human decision point | Keep |
 | Emphasis selector | Choose Feature, Standard, or Compact where supported | Manifest-approved variants | Change draft presentation | Owner only until publication | Bounded visual control | Keep |
 | Reorder controls | Set semantic sequence | Current draft order | Drag plus move up/down/to-position | Owner only; keyboard equivalent required | Member-owned narrative order | Keep |
@@ -118,8 +119,8 @@ for the production-intent visual-creation gate on 2026-07-26.
 | --- | --- | --- | --- |
 | Mockup Full Résumé summary | Remove | Real résumé begins immediately after the boundary | None unless page architecture changes |
 | Separate Overview plus current Summary heroes | Combine | Published Overview absorbs Summary; Summary remains the no-publication/unpublish fallback | A future owner-approved page hierarchy change |
-| Moving the current right ribbon to the left Context Rail | Defer | Separate résumé rail migration package under the approved standard | Exact package, visual authority, and owner acceptance |
-| Concept top navigation/footer | Remove from Overview | Existing PeerSlate shell and current résumé ribbon; future Context Rail remains separately gated | A separately approved shell/navigation package |
+| Moving the current right ribbon to the left Context Rail | Include in later public-integration slice | Final left local-section rail defined by this package; no duplicate right-side section navigation | Activated public-integration package, corrected real-build visual acceptance, and release evidence |
+| Concept top navigation/footer | Remove from Overview | Existing PeerSlate global/profile navigation plus the final local-section Context Rail | A separately approved global shell/navigation package |
 | Hardcoded Systems Engineering, Sustainment, Data/AI, or similar sections | Combine into Flexible Spotlight / Capability feature | These are Pete fixture examples, not reusable product sections | A future broadly reusable block need |
 | Repeated hero metrics and impact claims | Combine or select one use | Duplication warning requires one primary expression | Owner deliberately approves distinct meanings |
 | Story Spotlight + Story Chapters + Philosophy all by default | Change to optional selections | Member includes only narrative blocks that add distinct value | Owner composition choice |

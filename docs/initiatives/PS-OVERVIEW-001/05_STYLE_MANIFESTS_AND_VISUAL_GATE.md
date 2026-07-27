@@ -2,12 +2,14 @@
 
 ## 1. Status
 
-Story & Career and Work & Impact are approved product directions for one
-Overview system. Their supplied images are not exact production-intent visual
-authority.
+Story & Career and Work & Impact are owner-approved presentation styles for one
+Overview system. The controlling production-intent references are registered in
+`10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`.
 
-This record defines what a future ChatGPT visual-creation session must preserve
-and what Pete must lock before implementation.
+This record defines the style-manifest requirements and remaining
+implementation visual evidence. The final shell, navigation, contextual AI,
+responsive, editor, and publication architecture is in
+`11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`.
 
 ## 2. Shared style-manifest contract
 
@@ -91,9 +93,8 @@ clear opening and a concise path into the résumé.
 
 - remove concept top navigation/footer as Overview content;
 - remove the duplicate Full Résumé block;
-- compose against the current right-side section ribbon outside the center
-  canvas; do not depict the future left Context Rail as active without its
-  separate migration authority;
+- compose inside the final three-region shell: left local-section Context Rail,
+  dominant center stage, and right contextual AI rail;
 - enlarge body text and reduce content instead of shrinking type;
 - show sparse and text-only variants;
 - avoid requiring multiple personal/family images;
@@ -102,8 +103,8 @@ clear opening and a concise path into the résumé.
 - show the member editor without turning the public page into a design canvas;
 - absorb the current résumé Summary instead of creating a second portrait/name/
   intro opening; and
-- show Connect and View résumé in the hero, with one truthful Download PDF and
-  Ask [Name] AI treatment in the shared context outside the hero.
+- show Connect and View résumé in the hero, one Résumé PDF action in the left
+  rail, and one public Ask [Name] AI treatment in the right contextual rail.
 
 ## 5. Work & Impact manifest
 
@@ -136,9 +137,8 @@ value, scope, capabilities, and supporting record.
 ### Corrections the production concept must make
 
 - treat the apparent left column as center-canvas content, not the site rail;
-- compose against the current right-side section ribbon outside the center
-  canvas; do not depict the future left Context Rail as active without its
-  separate migration authority;
+- compose inside the final three-region shell: left local-section Context Rail,
+  dominant center stage, and right contextual AI rail;
 - place Skills before Education, Certifications, and Awards;
 - remove the duplicate Full Résumé summary;
 - replace hardcoded discipline names with member-defined bounded Spotlights;
@@ -147,8 +147,8 @@ value, scope, capabilities, and supporting record.
 - provide one-degree, one-role, one-proof, no-media, and no-credential states;
 - use authentic/clearly labeled media rules;
 - preserve readable type instead of fitting the entire rich example at once;
-- absorb the current résumé Summary and preserve Ask [Name] AI/PDF capability
-  in shared context without repeating it in the hero; and
+- absorb the current résumé Summary, place PDF once in the left rail, and
+  preserve Ask [Name] AI once in the right contextual rail; and
 - show Connect as hero primary and View résumé as the same-page secondary.
 
 ## 6. Style switching
@@ -293,14 +293,16 @@ both styles. At minimum:
 
 ### Shared page context
 
-- the current right-side ribbon outside the center canvas and its separately
-  gated target left Context Rail relationship;
+- the final left local-section Context Rail outside the center canvas;
+- the final right contextual AI rail, public Ask [Name] AI versus private Ask
+  Slate AI according to the current surface;
 - one dynamic first entry: Overview when published, Summary for fallback;
 - existing Summary absorbed when Overview is published and restored after
   unpublish;
 - Connect and View résumé in the hero;
-- one clear nonduplicative Ask [Name] AI and Download PDF treatment in shared
-  context, with a compact accessible shared-actions menu on mobile;
+- one Résumé PDF action in the left rail and one Ask [Name] AI/Ask Slate AI
+  treatment in the right context, with responsive drawer/sheet/action
+  treatment on narrower screens;
 - existing shared shell;
 - Overview above the real résumé;
 - **Résumé begins here** boundary;
@@ -311,6 +313,10 @@ both styles. At minimum:
 
 - [x] Pete approved on 2026-07-26
   `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`.
+- [x] Pete approved the final left local-section rail and right contextual AI
+  rail direction.
+- [x] Product/logical architecture is complete in
+  `11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`.
 - [ ] ChatGPT creates both complete visual/state sets.
 - [ ] Every meaningful visible item maps to an approved inventory row.
 - [ ] Story & Career remains the flagship/default recommendation.
@@ -326,8 +332,8 @@ both styles. At minimum:
 - [ ] Desktop/mobile/large-text/focus/reduced-motion states pass owner scrutiny.
 - [ ] Editing and visitor preview truth are visually explicit.
 - [ ] Pete locks exact durable files and SHA-256 hashes.
-- [ ] A separate implementation-information package names the locked files,
-  authorized scope, writer, tests, and release boundary.
+- [x] The separate Slice 1 package names its authorized renderer-only scope,
+  writer, tests, and release boundary.
 
 ## 11. Owner decisions locked for visual creation
 
@@ -343,12 +349,15 @@ Pete approved the inventory and these six choices on 2026-07-26:
    maximum; hero and optional proof band do not count.
 4. **Style naming:** Story & Career and Work & Impact.
 5. **Actions:** Connect is hero primary; View résumé is hero secondary;
-   Download PDF and Ask [Name] AI are shared contextual controls; no duplicates.
+   Résumé PDF is in the left Context Rail and Ask [Name] AI/Ask Slate AI is in
+   the right contextual AI rail; no duplicates.
 6. **Wide stage:** Start at `min(92vw, 90rem)` at normal scale. Show complete
    2560- and 3840-pixel frames before Pete's exact file/hash lock; the old
    `PS-SHELL-001` estimate does not narrow or block this visual exercise.
 
-These decisions authorize ChatGPT visual creation, not runtime implementation.
-Source-backed metrics, independent Overview audience, and changes learned from
-real-member testing are deferred decisions. The exact visual/state files and
-hashes remain Pete's next approval gate.
+These decisions and the final architecture do not authorize runtime
+implementation on this branch. Source-backed metrics, independent Overview
+audience, cross-product AI-rail adoption, and changes learned from real-member
+testing remain separately gated. Pete explicitly approved the corrected
+mobile-editor raster on 2026-07-26. Its durable file and exact hash are recorded
+in `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`; the visual package lock is closed.

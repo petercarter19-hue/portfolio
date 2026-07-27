@@ -1,2 +1,7 @@
 source/*.png binary
 source/claude-overview-system-requirements-draft-2026-07-25.txt binary
+visual-authority/generated-direction/*.png binary
+visual-authority/media/*.jpg binary
+visual-authority/media/*.webp binary
+visual-authority/evidence/*.png binary
+visual-authority/evidence/*.jpg binary

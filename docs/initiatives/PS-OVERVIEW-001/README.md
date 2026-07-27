@@ -1,19 +1,24 @@
 # PS-OVERVIEW-001 — Member Overview direction and self-service contract
 
-**Status:** Documentation-only direction package complete. Pete approved the
-page-purpose inventory and six first-release decisions on 2026-07-26. The next
-gate is ChatGPT production-intent visual creation and Pete's exact file/hash
-lock. This package is not runtime implementation authorization and does not
-lock either supplied concept as production visual authority.
+**Status:** Final product and logical implementation architecture complete.
+Pete approved the page-purpose inventory, first-release product decisions,
+Story & Career and Work & Impact public directions, sparse/narrow/mobile
+treatments, editor states, consolidated left résumé-section rail, contextual
+right AI rail, and Review & Publish treatment on 2026-07-26. The controlling
+architecture is
+`11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`. Exact approved visual files and
+superseded generation history are recorded in
+`10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`. This package still does not implement
+or change the public résumé.
 
 **Owner:** Pete.
 
 **Designated session manager:** The current Pete-authorized Codex task for this
 package.
 
-**Sole documentation writer:** Codex on the initial
-`work/2026-07-25-overview-direction-001` lane and the package-local follow-up
-`work/2026-07-25-overview-width-amendment-001` lane.
+**Sole package writer:** Codex on the recorded direction/amendment lanes and
+the current package-local
+`work/2026-07-26-overview-visual-authority-001` lane.
 
 **Initial authoritative base:** Azure DevOps `origin/main` at
 `598cb7d7a5f067564ce3e00540352176decd2b8b`.
@@ -23,6 +28,11 @@ package.
 
 **Owner-decision amendment base:** Azure DevOps `origin/main` at
 `e915b173ec4a2c14ea6d499f45416335a6b93b29`.
+
+**Visual-authority branch base:** Azure DevOps `origin/main` at
+`9d01fa7315115599bae0b45c237b72b265ac24e8`.
+
+**Visual-authority branch:** `work/2026-07-26-overview-visual-authority-001`.
 
 **Reserved files:** `docs/initiatives/PS-OVERVIEW-001/**` only.
 
@@ -73,25 +83,29 @@ deferred until after the basic experience is working and reviewed live.
   Overview ends at a system-owned **Résumé begins here** boundary, after which
   the detailed Impact, Skills, Experience, and Credentials résumé sections
   start.
-- The current résumé uses a right-side section ribbon. Its first entry is
-  **Overview** when an Overview is published and **Summary** when the fallback
-  Summary renders. The approved future left Context Rail remains a separately
-  gated migration; either contextual control stays outside the center canvas.
+- The public-integration slice replaces the current weaker right-side section
+  ribbon with the approved left Context Rail. It contains the member identity,
+  Overview/Summary, Impact, Skills, Experience, Credentials, and one separated
+  Résumé PDF action. It never repeats route-level My Story, Work, Slate Board,
+  Community, or Interview Studio navigation.
+- The right region is a distinct contextual AI rail: public **Ask [Name] AI**
+  uses approved public information only; private **Ask Slate AI** uses only
+  authenticated, authorized workspace context. It is not section navigation.
 - The hero uses Connect as its primary action and View résumé as its
   same-page secondary action. Public Download PDF and Ask [Name] AI remain
   truthful shared contextual capabilities outside the hero. Each action
   appears once; mobile may use one compact accessible shared-actions menu.
-- The concepts' top navigation, internal left-looking column, and footer are not
-  a new navigation system.
+- The concepts' internal content columns and footer are not a new navigation
+  system. The final shared-shell interpretation is the left local-section rail,
+  dominant center stage, and right contextual AI rail.
 - All Overview content belongs to the same center canvas. A style may use
   columns at wide viewports, but no content block is treated as the permanent
   site rail.
-- The Overview root fills the resolved résumé center-content column. The
-  Studio-aligned visual-creation target starts with a shell of
-  `min(92vw, 90rem)` at normal browser scale. With the current external ribbon
-  proportions, that gives an approximately 1,156-pixel center canvas at a
-  1440-pixel viewport and approximately 1,268 pixels at 1920, 2560, and 3840.
-  Pete's exact visual lock and shared-shell reconciliation remain controlling.
+- The Overview root fills the resolved center stage. The earlier
+  `min(92vw, 90rem)` amendment remains the starting center-stage candidate when
+  the shell has sufficient space. With both rails docked, the center resolves
+  from available width; the AI rail undocks before the center becomes cramped.
+  Monitor inches never determine the breakpoint.
 - Wide bands, media, and count-aware grids may use that canvas. Readable text
   measure is controlled inside each block instead of narrowing the entire
   Overview.
@@ -139,6 +153,19 @@ type, and layouts that work for only one person's content.
 - [Owner decisions — 2026-07-26](09_OWNER_DECISIONS_2026-07-26.md) records
   Pete's inventory approval, first-release audience and metric rules, public
   density, style names, action placement, and starting wide geometry.
+- [Visual authority selection and lock — 2026-07-26](10_VISUAL_AUTHORITY_LOCK_2026-07-26.md)
+  names the exact composite authority, hashes, interpretation, truth labels,
+  geometry, and homepage impact.
+- [Final Overview architecture contract — 2026-07-26](11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md)
+  is the controlling product/logical architecture for page composition,
+  section and AI rails, responsive behavior, records, services, editor,
+  publication, failure recovery, implementation slices, and supersession.
+- [`visual-authority/`](visual-authority/) contains the exact generated
+  standard-state files, image-generation record, responsive editable
+  interpretation, state/geometry contract, and measured evidence.
+- [Slice 1 implementation package](implementation-slice-1/README.md) activates
+  a separate generic read-model/renderer foundation after this visual package
+  is merged; it does not authorize runtime work on this visual branch.
 - [Completion and handoff report](OWNER_TECHNICAL_COMPLETION_REPORT.md) records
   the documentation result and its evidence limits.
 
@@ -149,21 +176,30 @@ type, and layouts that work for only one person's content.
 | Owner-supplied Portfolio Overview | `source/story-and-career-owner-concept-2026-07-25.png` | `0F2F70EB8AB4E417CE6F2A0CEB3F47BC00C7EEAD9BFFC78A9B6C6D3D081613C4` | Direction input; not visual authority |
 | Owner-supplied Business Overview | `source/work-and-impact-owner-concept-2026-07-25.png` | `B5276B1728B80A17BE395DD4F1ABBB9BEC74346AEF8D928E9CC8DFA7B59412E6` | Direction input; not visual authority |
 | Claude requirements draft supplied by Pete | `source/claude-overview-system-requirements-draft-2026-07-25.txt` | `09E026EAE767CF0B21F262F9D2236E5ABE360631162FAF049AE7D6219979DD43` | Consulted input; reconciled by this package |
+| Story & Career rich desktop | `visual-authority/generated-direction/story-and-career-rich-desktop-2026-07-26.png` | `E4DFDB298DF3EEB706F3ACDB5955E546E526F9B3D0F42475A67B1BF3DD37E1B2` | Owner-approved flagship rich direction |
+| Work & Impact rich desktop | `visual-authority/generated-direction/work-and-impact-rich-desktop-2026-07-26.png` | `959F39E741ABC9438891487C031A8093759422FF6266F288E9AAD44CFE86A538` | Owner-approved alternate rich direction |
+| Story & Career narrow desktop | `visual-authority/generated-direction/story-and-career-narrow-desktop-2026-07-26.png` | `081445064CEAC73A47A94450B9E023216AA5D5118238DE373E7DD9FD97CF7BC8` | Owner-approved responsive reference |
+| Work & Impact narrow desktop | `visual-authority/generated-direction/work-and-impact-narrow-desktop-2026-07-26.png` | `052E70263114DCC5C6D701BEAC14F66A36C9B37B98ACD0D427A92F618CD60606` | Owner-selected responsive reference |
+| Corrected mobile proof-point editor | `visual-authority/generated-direction/overview-editor-proof-point-mobile-390x844-2026-07-26.png` | `123C50D65685F49C392C6EBC5E3163A10FFEB380CCC5C4384D3774B87FC1F6A6` | Owner-approved mobile editor authority |
+| Consolidated rails and public Ask AI | `visual-authority/generated-direction/ask-pete-ai-overview-open-desktop-2026-07-26.png` | `B9D884F34D1CBD9E1C02E69F2CB243043C7883CA28C9993379083444E379F831` | Owner-approved shell/context direction |
+| Review and publish | `visual-authority/generated-direction/overview-review-publish-desktop-2026-07-26.png` | `6305581DF81514E80EA74CA167819918CBD16CECA87F0C265B027D8A9081CB93` | Owner-approved publication-review direction |
 
 The local download and attachment paths are intentionally not authoritative.
 The package copies and hashes are the durable cross-computer references.
 
 ## Authority and release boundary
 
-This package records requirements and owner direction only. It adds no route,
-schema, migration, API, flag, template, visual asset for runtime use, or
-member-facing capability. The existing public résumé and Story remain
-unchanged.
+This package records requirements, owner direction, and production-intent
+visual authority only. It adds no route, schema, migration, API, flag, runtime
+template, runtime asset, or member-facing capability. The existing public
+résumé and Story remain unchanged.
 
-The supplied concepts are not exact implementation screenshots. ChatGPT must
-create the production-intent visual/state set from the owner-approved inventory,
-and Pete must lock exact durable files and hashes before architecture or runtime
-implementation begins.
+The owner-supplied source concepts remain direction provenance. The approved
+rich, sparse, narrow, mobile, editor, rails, AI-context, and publication-review
+references plus the package contracts form the composite authority. The early
+generated `*-wide-standard*` pair is superseded generation history and does not
+control implementation. None of these files is a screenshot of implemented or
+live behavior.
 
 Because the future system includes audience/publication and consequential AI
 boundaries, an activated implementation package will require a fresh
@@ -171,17 +207,15 @@ independent review against its exact branch, SHA, and evidence.
 
 ## Next gate
 
-The inventory and first-release choices are owner-approved. ChatGPT now creates
-the complete Story & Career and Work & Impact production-intent visual
-authority candidates from the approved contract, including sparse,
-long-content, editing, visitor-preview, mobile, large-text, failure, and
-full-browser 1440/1920/2560/3840-wide states.
+The architecture and visual lock are complete, including Pete's explicit
+approval of the corrected mobile proof-point editor. Finish package-local
+visual/source/hash validation and complete-diff self-review, then merge this
+documentation/design package through Azure.
 
-The visual exercise starts at `min(92vw, 90rem)` at normal scale. Pete may
-redirect the exact stage after seeing the complete 2560- and 3840-pixel frames;
-the older `PS-SHELL-001` estimate does not narrow or block visual creation.
-Before implementation, the exact Pete-locked Overview geometry and shared shell
-must be reconciled.
-
-No implementation begins until Pete locks exact durable visual files and
-hashes and a separate bounded implementation package is activated.
+After that merge, start
+`PS-OVERVIEW-SLICE-1-001` on its own branch from the new current
+`origin/main`. Slice 1 is limited to a generic projection service, semantic
+renderer, fixtures, and internal review route. The existing public résumé
+remains unchanged, and the member Overview remains unavailable until later
+composer, publication, public-integration, acceptance, and release packages
+are separately completed.

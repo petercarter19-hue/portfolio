@@ -139,20 +139,21 @@ The public wording retains owner-visible lineage to its supporting records.
   it—the existing Summary remains the fallback opening and the detailed résumé
   continues unchanged.
 - Overview is a page region, not a new global destination or navigation layer.
-- The current right-side section ribbon derives its first entry from the
-  opening that actually renders: **Overview** targets `#overview` when
-  published; **Summary** targets `#summary` for the fallback. Existing
-  `#summary` and `#resume-overview` compatibility anchors must continue to reach
-  the absorbed opening when Overview is published.
-- The approved future left Context Rail is a separate deliberate résumé
-  migration under `OWNER_CONTEXT_RAIL_STANDARD.md`. This package defines the
-  section semantics but does not authorize moving or restyling the current
-  ribbon. Either control remains outside the center canvas.
+- The public-integration slice replaces the current right-side section ribbon
+  with the final left Context Rail under
+  `OWNER_CONTEXT_RAIL_STANDARD.md`. Its first entry derives from the opening
+  that actually renders: **Overview** targets `#overview` when published;
+  **Summary** targets `#summary` for the fallback. Existing `#summary` and
+  `#resume-overview` compatibility anchors continue to reach the absorbed
+  opening.
+- The left rail contains local résumé depth only. The right region is
+  contextual AI, not duplicate section navigation. Both remain outside the
+  center canvas.
 - The Overview hero uses **Connect** as its primary action and **View résumé**
   as its secondary same-page action to the actual résumé below.
-- Public **Download PDF** and **Ask [Name] AI** remain page-level capabilities
-  in the shared contextual action area. They do not repeat in the hero. Mobile
-  may place those shared controls in one compact accessible menu.
+- Public **Résumé PDF** appears once as the separated left-rail tool.
+  **Ask [Name] AI** appears once in the right contextual rail/drawer/action.
+  Neither repeats in the hero.
 - Overview cards use visible descriptive actions to eligible sections such as
   **View full experience**, **View all 12 skills**, or **Read my full story**.
 - The concepts' top navigation and footer are illustrative and do not replace
@@ -172,9 +173,10 @@ column. It must not introduce a second arbitrary narrow page stage merely to
 match the 941- or 864-pixel width of a supplied concept image.
 
 Pete approved the Studio-aligned starting geometry for ChatGPT visual creation:
-a centered shell of `min(92vw, 90rem)` at 100-percent browser zoom, with the
-current 140-pixel contextual ribbon and responsive gap outside the center
-canvas:
+a center-stage candidate of `min(92vw, 90rem)` at 100-percent browser zoom.
+The earlier current-ribbon table remains reference evidence. The final shell
+uses the left local-section rail and right contextual AI rail; the AI rail
+undocks before the center becomes cramped:
 
 | CSS viewport | Candidate shell | Candidate center canvas |
 | ---: | ---: | ---: |

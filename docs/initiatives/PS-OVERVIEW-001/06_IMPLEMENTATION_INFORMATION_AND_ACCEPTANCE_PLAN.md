@@ -96,8 +96,9 @@ template branches.
 
 For the current `/petec/resume` fixture, the renderer has one opening slot:
 published Overview or existing Summary fallback. It never emits both. The
-current ribbon's first entry follows that state. Moving the ribbon to the
-approved left Context Rail remains a separately activated migration.
+public-integration slice replaces the current right ribbon with the approved
+left Context Rail. Its first entry follows the actual opening state. The right
+region is contextual AI, not duplicate section navigation.
 
 ## 6. Style and block version compatibility
 
@@ -119,8 +120,14 @@ approved left Context Rail remains a separately activated migration.
 
 - Pete approved the page-purpose inventory and six first-release decisions on
   2026-07-26.
-- ChatGPT creates both complete style/state sets.
-- Pete locks exact files and hashes.
+- Pete approved the public style, sparse/narrow/mobile, editor,
+  consolidated-rail/public-AI, and Review & Publish directions registered in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`.
+- Pete explicitly approved the corrected mobile proof-point editor on
+  2026-07-26. Its durable file, dimensions, and SHA-256 are hash-locked in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`.
+- The product/logical architecture is complete in
+  `11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`.
 - The implementation package names writable/forbidden files, routes,
   authorization, data, migrations, rollback, evidence, and homepage parity.
 
@@ -144,23 +151,31 @@ approved left Context Rail remains a separately activated migration.
   values and labels.
 - The manual path is complete before AI is required.
 
-### Slice 3 — publication and restore
+### Slice 3 — exact preview, publication, and restore
 
 - Add atomic publish, prior-publication stability, version history, restore,
   unpublish, benign-source review, corrective-supersession propagation,
-  revocation fail-closed behavior, and public rendering.
-- Integrate above the actual résumé behind the exact approved release boundary.
+  revocation fail-closed behavior, and the exact public projection.
+
+### Slice 4 — public résumé integration and Context Rail migration
+
+- Integrate the published projection above the actual résumé behind the exact
+  approved release boundary.
   Pete's acceptance fixture remains `/petec/resume`; reusable routing and
   authorization must be member-derived and preserve current canonical,
   redirect, and download behavior.
 - Replace/absorb the current Summary only when an Overview is published;
-  preserve Summary as the no-publication/unpublish fallback, dynamically map the
-  first ribbon entry, use Connect and View résumé in the hero, and preserve
-  Download PDF and Ask [Name] AI once in shared context.
+  preserve Summary as the no-publication/unpublish fallback, replace the
+  current right ribbon with the final left local-section Context Rail, use
+  Connect and View résumé in the hero, place Résumé PDF once in the left rail,
+  and preserve public Ask [Name] AI once in the right contextual rail.
+- Prove the AI rail becomes a drawer/sheet/action before the center becomes
+  materially cramped.
 
-### Slice 4 — optional AI proposals
+### Slice 5 — optional Overview AI proposals
 
-- Add scoped source-grounded proposal actions inside the working composer.
+- Add scoped, authorized proposal actions inside the working composer and
+  private Ask Slate AI context.
 - Prove proposal provenance where applicable, accept/edit/reject, failure
   fallback, no canonical mutation, and no publication authority.
 - For metrics, accept only an exact value explicitly supplied by the member,
@@ -170,13 +185,20 @@ approved left Context Rail remains a separately activated migration.
 - AI can follow the manual release if separating it reduces risk; the product
   remains complete without it.
 
-### Slice 5 — enablement and public parity
+### Slice 6 — enablement and public parity
 
 - Complete independent review and Pete/designated-manager acceptance.
 - Complete homepage product-projection parity or an exact authorized downstream
   parity package if the homepage presents the résumé/Slate capability.
 - Release through Azure, verify the exact pipeline and live member/public
   boundaries, and keep a rollback/disable path.
+
+### Separate cross-product AI-rail adoption
+
+Workshop, Slate Board, Interview Studio, Community, Story, Journal, and other
+rooms are outside this package. A future shared component or room adoption
+requires its own page-purpose decision, permitted-context contract, visual
+authority, activated files, tests, and acceptance.
 
 Slices are planning units, not activated packages. A later owner decision may
 combine or subdivide them after current-code inspection.
@@ -233,10 +255,11 @@ images.
 | Benign source evolution | Existing still-valid claim stays pinned; draft requires review for new source version |
 | Corrective supersession | Known invalid claim/block fails closed immediately; no corrected wording auto-publishes |
 | Summary integration | Published Overview and current Summary never render as two openings; Summary returns when Overview is absent |
-| Contextual navigation | First entry is Overview or Summary according to actual opening; left-rail migration remains separately gated |
+| Contextual navigation | Final left rail contains only local résumé depth, first entry is Overview or Summary according to the actual opening, hidden sections have no entry, and route-level navigation is not duplicated |
+| Contextual AI | Right rail is public Ask [Name] AI over public context or private Ask Slate AI over authorized owner context; it never becomes duplicate navigation |
 | Wide-desktop canvas | Overview root aligns to the resolved résumé content-column edges; no undocumented nested page stage |
 | Wide-desktop text measure | Bands/media/grids use the canvas while representative body copy retains the Pete-locked readable measure |
-| Approved actions | Connect and View résumé appear in the hero; Ask [Name] AI and Download PDF remain available once in shared context without duplication |
+| Approved actions | Connect and View résumé appear in the hero; Résumé PDF appears once in the left rail; Ask [Name] AI/Ask Slate AI appears once in the right context without duplication |
 | Public response | No drafts, private sources, edit metadata, or AI proposal state |
 | Cross-member isolation | Owner A cannot retrieve/reference/publish Owner B data |
 | No JavaScript | Public meaning and real destinations remain usable |
@@ -260,7 +283,9 @@ authority at:
 - sparse and maximum-content states;
 - validation, save, AI, preview, publish, conflict, and failure states; and
 - unpublish and Summary-fallback states;
-- current-ribbon versus separately gated Context Rail relationship;
+- current-right-ribbon replacement by the final left Context Rail;
+- public Ask [Name] AI versus private Ask Slate AI rail/drawer/mobile-action
+  behavior and grounding;
 - corrective-source block omission and whole-Overview fallback;
 - both generic and Pete acceptance profiles.
 
@@ -330,8 +355,9 @@ An activated writer must provide:
 - benign-versus-corrective source-change evidence;
 - publish/unpublish/restore concurrency and cache evidence;
 - Summary absorption/fallback, first-section-entry, existing `#summary` and
-  `#resume-overview` compatibility aliases, Ask [Name] AI, PDF, and
-  current-route compatibility evidence;
+  `#resume-overview` compatibility aliases, left Context Rail, public Ask
+  [Name] AI, private Ask Slate AI, PDF, and current-route compatibility
+  evidence;
 - responsive/accessibility/visual comparison set;
 - captured wide-desktop shell/content/Overview geometry at
   1440/1920/2560/3840 CSS-pixel viewports;
@@ -361,6 +387,8 @@ Stop rather than improvise if an implementation would:
   exact wide-desktop visual lock;
 - change shared navigation, homepage, or résumé behavior outside the activated
   package;
+- adopt the contextual AI rail in another Slate/Studio room without that
+  room's own activated package and permitted-context contract;
 - add a schema, migration, service, flag, or provider without documented need
   and authority; or
 - describe fixture/default-off/planned behavior as live.

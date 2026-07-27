@@ -202,3 +202,36 @@ local Playwright package was available, but its browser binary was not
 installed. Real browser measurements are explicitly required at the future
 visual/implementation gates rather than being inferred from these direction
 boards.
+
+## 9. Final three-region shell reconciliation — 2026-07-26
+
+Pete's final visual review replaces the earlier unresolved
+current-ribbon-versus-future-Context-Rail question:
+
+1. the public-integration slice replaces the current weaker right ribbon with
+   the approved left local-section Context Rail;
+2. the center contains the Overview and detailed résumé;
+3. the right region is contextual AI, not duplicate section navigation; and
+4. both rails may remain sticky only while the center retains the accepted
+   readable composition.
+
+The numeric tables in Sections 3 and 6 remain useful present-state and
+single-external-control evidence. They are not a fixed dual-rail CSS grid.
+
+The final geometry algorithm is behavioral:
+
+- resolve the shared shell at normal scale;
+- reserve the approved left local-section rail;
+- give the center the remaining dominant width up to its accepted cap;
+- dock the right AI rail only when the center remains at or above the accepted
+  implementation floor;
+- otherwise move the AI experience into a drawer/side sheet while leaving a
+  prominent contextual action; and
+- collapse local sections to the approved mobile/intermediate Sections
+  control/chip treatment when the desktop rail no longer reflows accessibly.
+
+Implementation evidence must record left-rail, center, right-rail, gaps, outer
+gutters, and text measure separately at every wide viewport. It must also show
+the exact width at which the right rail undocks and prove that no breakpoint
+uses CSS zoom, transforms, physical monitor inches, or a Pete-specific pixel
+branch.

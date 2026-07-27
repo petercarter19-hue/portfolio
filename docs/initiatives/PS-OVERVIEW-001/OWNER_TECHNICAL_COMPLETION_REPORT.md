@@ -1,5 +1,80 @@
 # PeerSlate Completion & Handoff Report
 
+## 2026-07-26 final architecture reconciliation
+
+- **Status:** The final product and logical architecture for
+  `PS-OVERVIEW-001` is complete. The controlling contract is
+  `11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`.
+- **Branch / authority check:** Work is package-local on
+  `work/2026-07-26-overview-visual-authority-001`. Its original
+  visual-authority base was
+  `9d01fa7315115599bae0b45c237b72b265ac24e8`. Before final validation, the
+  complete worktree was preserved, the branch was rebased without conflict
+  onto authoritative Azure `origin/main`
+  `453662adc022b6ea0b1b38208c7100697d119a8b`, and the preserved package was
+  restored. The intervening Azure commits did not change
+  `docs/initiatives/PS-OVERVIEW-001/**`.
+- **Reserved scope:** `docs/initiatives/PS-OVERVIEW-001/**` only. No runtime,
+  route, template, CSS, JavaScript, schema, migration, service, model,
+  feature-flag, deployment, or shared-governance file changed.
+- **Opening model:** One published Overview replaces the current Summary
+  opening. The detailed résumé remains below it. Summary returns when there is
+  no published Overview or the member explicitly unpublishes.
+- **Styles:** Story & Career is the flagship; Work & Impact is the alternate.
+  Both styles use one logical block, destination, draft, preview, publication,
+  restore, and no-gap reflow model.
+- **Final desktop shell:** The left Context Rail owns member identity and local
+  section navigation: Overview or Summary, Impact, Skills, Experience,
+  Credentials, and Résumé PDF. The center is the dominant readable stage. The
+  right rail is contextual AI.
+- **AI contexts:** Public pages use Ask [Member] AI with approved public
+  profile context only. Authenticated editor/review surfaces use Ask Slate AI
+  with authorized private workspace or draft context. AI remains optional and
+  proposal-only; it cannot save, apply, publish, unpublish, or change canonical
+  truth.
+- **Responsive model:** Rails may remain sticky only while the center retains
+  its accepted readable width. The right AI rail undocks before the center is
+  cramped. Mobile uses a compact Sections control and a prominent Ask Slate AI
+  action or sheet.
+- **Editor and publication:** Manual editing is complete without AI. Blocks
+  add, edit, reorder, hide, remove, reflow, preview, and publish through an
+  explicit private-draft workflow. Review & Publish discloses destination,
+  changes, retained detailed résumé sections, included/omitted Overview
+  sections, preview state, and the explicit publication consequence.
+- **Proof points:** First release contains optional member-authored values and
+  labels only. It has no source-backed/member-confirmed badge, evidence link,
+  provenance status, or verification UI.
+- **Architecture boundary:** Product behavior, logical records, state
+  transitions, service responsibilities, authorization boundaries,
+  responsive behavior, failures, accessibility, and delivery slices are
+  closed. Physical table names, columns, endpoint paths, and concrete service
+  classes are deliberately assigned to a later activated implementation
+  package and do not reopen product architecture.
+- **Visual authority:** The approved public, editor, shell, AI-rail, and
+  Review & Publish images and exact hashes are recorded in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`. The earlier two
+  `*-wide-standard-*` images are superseded generation history. Pete explicitly
+  approved the corrected mobile proof-point editor on 2026-07-26; its durable
+  file and exact hash are included in the visual lock.
+- **Production state:** Unchanged. This package implements no runtime
+  capability and makes no deployed/live claim.
+- **Validation:** Strict UTF-8 decoding passed for every package text/code/data
+  artifact; all package-local Markdown links resolved; all 19 registered
+  raster hashes and dimensions matched; the registered Claude source-draft
+  hash matched; the existing measured visual evidence reports 40/40 passed
+  cases; changed paths are package-local; `git diff --check` passed;
+  `tests.test_governance_pointers` passed 39/39; and
+  `tests.test_site_rules` passed 12/12 with only the expected Flask-Limiter
+  in-memory-store warning. Node syntax checks passed for the package-local
+  prototype JavaScript and evidence-rendering module.
+- **Complete-diff self-review:** Pass. The final records consistently assign
+  local section navigation and Résumé PDF to the left rail, contextual AI to
+  the right rail, Overview/detailed résumé content to the center, and physical
+  persistence/API/route naming to a later activated implementation package.
+  No runtime or shared-governance path entered the change set.
+- **Next gate:** Validate and deliver this documentation/design package through
+  Azure. Do not begin runtime implementation from this architecture task.
+
 ## 2026-07-26 owner-decision amendment
 
 - **Status:** Pete approved the exact page-purpose inventory and six
@@ -26,8 +101,10 @@
   first-release maximum. Hero and optional proof band do not count.
 - **Style names:** Story & Career and Work & Impact.
 - **Actions:** Connect is the hero primary; View résumé is the same-page hero
-  secondary. Download PDF and Ask [Name] AI are shared contextual controls and
-  do not repeat in the hero. Mobile may use one compact accessible menu.
+  secondary. Résumé PDF appears once in the left Context Rail. Ask [Name] AI
+  or Ask Slate AI appears once in the right contextual AI rail according to
+  public/private context. Mobile uses compact Sections and Ask AI controls or
+  sheets.
 - **Wide geometry:** Pete approved `min(92vw, 90rem)` at normal scale as the
   starting visual candidate. Complete 2560- and 3840-pixel frames may lead Pete
   to adjust the exact stage before file/hash lock. The older `PS-SHELL-001`
@@ -125,9 +202,9 @@ controls wide-desktop evidence where the newer addendum does not refine it.
 ## A. Status
 
 - Package: `PS-OVERVIEW-001`
-- Status: Documentation-only direction package complete; Pete approved the
-  page-purpose inventory and six first-release decisions on 2026-07-26. Exact
-  production visual authority remains pending.
+- Status: Documentation-only direction, approved visual authority, and final
+  product/logical architecture are complete under the newer reconciliation
+  above. The corrected mobile proof-point editor is approved and hash-locked.
 - Branch and commit:
   `work/2026-07-25-overview-direction-001` from Azure `origin/main`
   `598cb7d7a5f067564ce3e00540352176decd2b8b`. Initial candidate
@@ -141,18 +218,23 @@ controls wide-desktop evidence where the newer addendum does not refine it.
   pipeline result, and unchanged public baseline; this report does not
   pre-claim those future events.
 - Production state: Unchanged. This package adds no runtime behavior.
-- Visual authority and status: Not Started. Two durable owner-selected
-  direction inputs are preserved; neither is a locked production authority.
+- Visual authority and status: Approved public, editor, shell, AI-rail, and
+  review/publish authority is recorded in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`. The initial owner concepts remain
+  direction inputs, and the early `*-wide-standard-*` generation pair is
+  superseded.
 - Homepage product projection: Not Applicable to this documentation change. A
   future implementation must perform the visual standard's homepage impact and
   parity gate because the homepage presents the résumé/Slate capability.
 - Pete / designated session manager visual acceptance: Pete selected the
-  one-system/two-style direction and approved the inventory and first-release
-  choices. Exact visual-state acceptance remains pending.
+  one-system/two-style direction, approved the inventory and first-release
+  choices, and approved the exact authority listed in the visual lock.
+  This includes the final corrected mobile proof-point editor accepted on
+  2026-07-26.
 - Designated session manager: Current Pete-authorized Codex task for
   `PS-OVERVIEW-001`.
-- Manager handoff status and next receiver: Prepared for ChatGPT visual
-  creation and Pete's exact file/hash review.
+- Manager handoff status and next receiver: Final architecture prepared for
+  package validation and a later separately authorized implementation package.
 - Lane owner and self-managed authority: Codex sole documentation writer;
   package-local files only.
 - Self-certification: Pass for the bounded documentation package.
@@ -184,8 +266,8 @@ The package:
   source-change, deletion/revocation, atomic publication, concurrency, and
   restore requirements;
 - reconciles the future Overview with the current résumé Summary, Ask [Name] AI,
-  PDF action, right-side section ribbon, and compatibility anchors while
-  leaving the future left Context Rail migration separately gated;
+  PDF action, compatibility anchors, the final left Context Rail, and the
+  right contextual AI rail;
 - defines atomic owner-controlled unpublish, Summary fallback, retained history,
   failure recovery, and cache behavior;
 - distinguishes benign source evolution from corrective supersession so a known
@@ -276,12 +358,12 @@ runtime packages.
 
 ## G. Known gaps, risks, and exclusions
 
-- ChatGPT has not created the required production visual/state sets.
-- Pete has not locked visual files/hashes.
 - First-release source-backed metrics/provenance and an independent Overview
   audience are deliberately deferred.
 - Initial content budgets require validation against locked typography.
-- No schema/API/route architecture has been accepted.
+- Physical schema names, API paths, and concrete route/service classes are
+  deliberately deferred to an activated implementation package; the product
+  and logical architecture is accepted and complete.
 - No runtime code, data migration, editor, publication, unpublish, restore, or
   AI behavior exists.
 - The current public My Story remains fixture-driven; private Journal content
@@ -293,15 +375,12 @@ These gaps are intentional gates, not hidden incomplete implementation.
 
 ## H. Clear next step
 
-ChatGPT creates complete production-intent Story & Career and Work & Impact
-visual/state sets from the approved inventory and 2026-07-26 decisions. Pete
-locks exact files and hashes. Only then should a separate bounded
-architecture/implementation package be prepared.
+The architecture and visual lock are complete. After exact package validation
+and Azure delivery, a separately authorized bounded implementation package may
+translate this architecture into physical schema/API/route choices and runtime
+slices.
 
 ## I. What Pete needs to do or decide
 
-1. Scrutinize the later ChatGPT-created visual/state set, especially metric
-   editing/AI-value-lock behavior, action placement, sparse/rich density, and
-   the full-browser 2560-/3840-pixel silhouettes.
-2. Correct or approve the exact candidates.
-3. Lock the final durable visual files and SHA-256 hashes.
+1. No further visual decision is required for this package.
+2. Separately authorize the first runtime implementation slice when ready.

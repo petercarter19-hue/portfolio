@@ -357,3 +357,43 @@ requires its own product, preview, authorization, test, and visual decisions.
 
 The system must never infer that public résumé visibility automatically makes
 private Story, Journal, Goal, media, or source evidence public.
+
+## 20. Final contextual AI and Review & Publish contract
+
+### Public versus private assistant
+
+- The public résumé/Overview uses **Ask [Name] AI** and public eligible context
+  only.
+- The private editor/review workspace uses **Ask Slate AI** and only the
+  authenticated owner's authorized draft/workspace context.
+- The visual rail skeleton may be shared; names, permitted context, quick
+  prompts, disclosures, and actions are resolved for the current public/private
+  mode.
+- Closing or undocking the rail does not change the draft.
+- A public assistant cannot retrieve or infer from private drafts, Journal,
+  Goals, messages, media, or another member's records.
+
+### Review screen
+
+Before publication the owner sees:
+
+- the public destination;
+- the exact selected style;
+- what will replace the current Summary opening;
+- confirmation that detailed Impact, Skills, Experience, and Credentials
+  remain below;
+- desktop/mobile exact preview controls;
+- included and omitted sections;
+- the no-empty-space consequence of omission;
+- any deterministic blockers or conflicts;
+- **Back to editor** and **Save and exit** alternatives; and
+- one explicit **Publish Overview** action.
+
+Ask Slate AI may help the owner ask what changed, what is missing, where the
+Overview repeats the résumé, or how a hiring manager may read the draft. Its
+response remains a proposal. It cannot invoke the publication command or
+change the included/omitted set.
+
+The publication command is enabled only by deterministic authorization and
+validation. The presence, wording, or confidence of an AI response never
+controls publication eligibility.

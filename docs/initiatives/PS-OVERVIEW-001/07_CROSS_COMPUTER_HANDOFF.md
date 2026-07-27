@@ -1,5 +1,31 @@
 # Cross-computer handoff
 
+## 2026-07-26 architecture-complete continuation
+
+This section controls the older visual-creation restart instructions below.
+
+- **Current branch:** `work/2026-07-26-overview-visual-authority-001`
+- **Branch base:** Azure `origin/main`
+  `9d01fa7315115599bae0b45c237b72b265ac24e8`
+- **Most recently inspected Azure main:**
+  `453662adc022b6ea0b1b38208c7100697d119a8b`
+- **Upstream package overlap:** None between the branch base and the inspected
+  Azure main.
+- **Architecture status:** Final product and logical architecture is complete
+  in `11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`.
+- **Visual status:** Approved assets and hashes are recorded in
+  `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`, including the corrected mobile
+  proof-point editor Pete explicitly approved on 2026-07-26.
+- **Final shell:** Member/local-section Context Rail on the left, dominant
+  center stage, contextual AI rail on the right. Résumé PDF belongs in the
+  left rail; Ask [Member] AI or Ask Slate AI belongs in the right rail.
+- **Next work:** Do not redo the architecture or recreate approved visuals.
+  Validate and deliver the documentation package. Runtime work requires a
+  separate activated implementation task.
+- **Forbidden in this continuation:** Runtime implementation, shared shell
+  changes, schema/migration work, route changes, commit, merge, deploy, or live
+  claims without explicit new authority.
+
 ## 1. What is ready
 
 `PS-OVERVIEW-001` is a complete documentation-only direction package for one
@@ -74,13 +100,15 @@ Do not reopen these without an explicit Pete decision:
 6. A published Overview absorbs the current résumé Summary opening; Summary
    returns when no Overview is published or the owner unpublishes.
 7. The mockup Full Résumé summaries are excluded.
-8. The current right-side ribbon stays truthful; its first entry is Overview or
-   Summary according to the opening. The approved left Context Rail migration
-   remains separately gated and outside the center canvas.
+8. The final left Context Rail owns member identity and local résumé-section
+   navigation. Its first entry is Overview or Summary according to the
+   published opening, followed by Impact, Skills, Experience, Credentials, a
+   divider, and Résumé PDF.
 9. The hero primary action is Connect and its secondary is View résumé,
-   targeting the actual résumé below. Existing public Ask [Name] AI and
-   Download PDF remain available once in shared context, not duplicated in the
-   hero. Mobile may use one compact accessible shared-actions menu.
+   targeting the actual résumé below. Résumé PDF remains once in the left
+   rail. Public Ask [Name] AI occupies the right contextual rail; authenticated
+   editing/review uses Ask Slate AI. Neither repeats in the hero. Mobile uses
+   compact Sections and Ask AI controls/sheets.
 10. Skills precedes Education, Certifications, and Awards.
 11. Optional missing sections create no public wrapper or gap.
 12. Manual composition is complete; AI only proposes.
@@ -120,17 +148,14 @@ Do not reopen these without an explicit Pete decision:
 
 ## 5. Next gate
 
-The next task is **not implementation**. It is:
+The next task is **not implementation**:
 
-1. ChatGPT creates the complete production-intent visual/state sets for both
-   styles, including the annotated full-browser wide-desktop set required by
-   `08_WIDE_DESKTOP_WIDTH_AMENDMENT.md` and the owner decisions in
-   `09_OWNER_DECISIONS_2026-07-26.md`.
-2. Pete scrutinizes and locks exact durable files and hashes.
-3. A separate bounded implementation-information/architecture package is
-   prepared and activated.
+1. The exact documentation package is validated and delivered.
+2. A separate bounded implementation package is prepared and activated only
+   after explicit authorization.
 
-No code writer should start from the two concept PNGs alone.
+No code writer should start from the concept PNGs, generated images, or this
+architecture package without that separate activation.
 
 ## 6. Safe restart checklist
 
@@ -156,38 +181,20 @@ On the other computer:
 
 ## 7. Paste-ready next-task prompt
 
-> Continue PeerSlate from current Azure `origin/main`. Read and follow
-> `START_HERE.md`, `docs/AI_WORKFLOW.md`, the current governance chain, and
-> `docs/initiatives/PS-OVERVIEW-001/**`. The owner inventory and six
-> first-release decisions are approved; this is the ChatGPT visual-creation
-> gate only. Preserve one Overview system with Story & Career as
-> the flagship and Work & Impact as the alternate, one public Overview at a
-> time, shared canonical/projection truth, manual-first editing, optional
-> proposal-only AI, deterministic no-gap reflow, and the real résumé below.
-> The Overview inherits the public résumé audience. Proof metrics are optional
-> authored Overview claims: the member supplies the exact value, there is no
-> first-release metric source/provenance system, and AI may preserve the value
-> and edit its label but may not invent, derive, or change it. Use four to six
-> major content bands normally and eight maximum, excluding hero and proof.
-> Treat the supplied PNGs as editorial direction boards, never CSS-width
-> authority. Create annotated full-browser 1440×900, 1920×1080, 2560×1440,
-> and 3840×2160 CSS-pixel frames; make the Overview root fill the resolved
-> résumé content column while keeping readable text measure inside blocks.
-> Start with the Studio-aligned `min(92vw, 90rem)` shell at normal scale; do
-> not use CSS `zoom` or transform fitting.
-> Show and obtain Pete's explicit approval of the exact stage, rail, and gutters
-> at 2560 and 3840. The older `PS-SHELL-001` estimate does not narrow or block
-> this visual exercise; reconcile the exact locked geometry with the shared
-> shell before implementation.
-> A published Overview must absorb the current Summary, use Connect and View
-> résumé in the hero, preserve Download PDF and Ask [Name] AI once in shared
-> context, use Overview/Summary as the dynamic first section
-> destination, support atomic unpublish to the Summary fallback, and fail
-> closed on corrective source supersession for record-linked content. Create
-> complete desktop/mobile/sparse/rich/editor/failure visual
-> authority candidates for both styles and obtain Pete's exact file/hash lock.
-> Do not implement runtime code, schema, routes, flags, or publication behavior
-> in that visual session.
+> Continue PeerSlate from current authoritative Azure `origin/main`. Read and
+> follow `START_HERE.md`, `docs/AI_WORKFLOW.md`, the current governance chain,
+> and `docs/initiatives/PS-OVERVIEW-001/**`. Do not redo the approved visuals
+> or reopen the final product/logical architecture in
+> `11_FINAL_ARCHITECTURE_CONTRACT_2026-07-26.md`. The final shell is a left
+> member/local-section Context Rail, dominant center stage, and right
+> contextual AI rail. Public context uses Ask [Member] AI over approved public
+> information; authenticated editor/review context uses Ask Slate AI over
+> authorized private draft/workspace information. AI is proposal-only. The
+> corrected mobile editor is approved and hash-locked in
+> `10_VISUAL_AUTHORITY_LOCK_2026-07-26.md`. Validate and deliver the package.
+> Do not implement runtime code, schema, routes,
+> migrations, flags, shared shell changes, or publication behavior unless Pete
+> separately activates an implementation task.
 
 ## 8. Stop conditions
 
@@ -202,6 +209,7 @@ Stop and return to Pete if:
 - the visual set lacks full-browser measured wide-desktop evidence;
 - a proposed visual silently narrows the approved starting candidate to the
   older `PS-SHELL-001` estimate;
-- a request would begin runtime work before exact visual lock; or
+- a request would begin runtime work before separate implementation
+  authorization; or
 - implementation would duplicate canonical résumé, Story, Journal, Project, or
   media truth.

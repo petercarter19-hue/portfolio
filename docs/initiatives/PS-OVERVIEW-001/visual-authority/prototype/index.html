@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PeerSlate Member Overview visual authority</title>
+    <link rel="stylesheet" href="overview.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#overview-content">Skip to Overview</a>
+
+    <form class="review-toolbar" data-review-ui aria-label="Visual review controls">
+      <label>
+        Style
+        <select id="style-control">
+          <option value="story">Story &amp; Career</option>
+          <option value="work">Work &amp; Impact</option>
+        </select>
+      </label>
+      <label>
+        Density
+        <select id="state-control">
+          <option value="standard">Standard</option>
+          <option value="sparse">Sparse</option>
+          <option value="rich">Rich</option>
+          <option value="text">Text only</option>
+        </select>
+      </label>
+      <label>
+        Proof
+        <select id="proof-control">
+          <option value="4">Four</option>
+          <option value="1">One</option>
+          <option value="0">None</option>
+        </select>
+      </label>
+      <a class="toolbar-link" href="?style=story&amp;state=standard&amp;proof=4">Reset</a>
+    </form>
+
+    <main class="mockup-stage" id="overview-content">
+      <div class="mockup-canvas">
+        <article class="style-panel style-panel--story" data-style-panel="story">
+          <header class="story-site-header">
+            <a class="story-monogram" href="#story-top" aria-label="Pete Carter home">PC</a>
+            <nav class="story-nav" aria-label="Story and Career sections">
+              <a class="is-current" href="#story-top">Overview</a>
+              <a href="#story-career">Experience</a>
+              <a href="#story-spotlight">Story</a>
+              <a href="#story-skills">Strengths</a>
+              <a href="#story-credentials">Credentials</a>
+              <a href="#story-contact">Contact</a>
+            </nav>
+            <div class="shared-actions">
+              <a class="button button--ink button--small" href="#resume-start-story">Download résumé (PDF)</a>
+              <a class="text-action" href="#story-contact">Ask Pete AI</a>
+            </div>
+          </header>
+
+          <section class="story-hero" id="story-top" aria-labelledby="story-name">
+            <figure class="story-portrait media-frame">
+              <img src="../media/pete-headshot.jpg" alt="Pete Carter in a navy suit" />
+            </figure>
+            <div class="story-identity">
+              <p class="eyebrow">Systems engineer · Technical leader</p>
+              <h1 id="story-name">Pete Carter</h1>
+              <p class="hero-intro">
+                I build high-performing teams and resilient systems that solve
+                real-world problems in demanding environments.
+              </p>
+              <ul class="contact-line" aria-label="Contact details">
+                <li>⌖ Melbourne, FL</li>
+                <li>✉ pete.carter@protonmail.com</li>
+                <li>in linkedin.com/in/petecarter</li>
+              </ul>
+              <div class="hero-actions">
+                <a class="button button--ink" href="#story-contact">Connect</a>
+                <a class="button button--outline" href="#resume-start-story" data-view-resume>View résumé</a>
+              </div>
+            </div>
+            <div class="story-metric-stack" data-proof-group aria-label="Career highlights">
+              <div class="story-metric" data-proof-item>
+                <strong>20+</strong>
+                <span>Years of experience</span>
+              </div>
+              <div class="story-metric" data-proof-item>
+                <strong>15+</strong>
+                <span>High-performing teams led</span>
+              </div>
+              <div class="story-metric" data-proof-item>
+                <strong>$250M+</strong>
+                <span>Program value influenced</span>
+              </div>
+              <div class="story-metric" data-proof-item>
+                <strong>100%</strong>
+                <span>Mission focus every day</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="story-spotlight" id="story-spotlight" data-density="standard">
+            <div class="story-spotlight-copy">
+              <p class="section-kicker">My story</p>
+              <h2>Purpose. People. Impact.</h2>
+              <span class="gold-rule" aria-hidden="true"></span>
+              <p>
+                My journey began long before engineering—with mentors, teammates,
+                and experiences that taught me the power of curiosity, discipline,
+                and service.
+              </p>
+              <a class="gold-link" href="#story-chapters">Read my full story →</a>
+            </div>
+          </section>
+
+          <section class="story-career-layout ruled-section" id="story-career" data-density="standard">
+            <div class="career-panel">
+              <p class="section-kicker">Experience timeline</p>
+              <ol class="career-timeline">
+                <li>
+                  <div class="career-date">2021 — Present<br /><span>Melbourne, FL</span></div>
+                  <div>
+                    <em>Principal Systems Engineer</em>
+                    <strong>Northrop Grumman</strong>
+                    <p>Lead systems engineering for complex mission programs and guide architecture, requirements, and verification.</p>
+                  </div>
+                </li>
+                <li>
+                  <div class="career-date">2015 — 2021<br /><span>Melbourne, FL</span></div>
+                  <div>
+                    <em>Principal Systems Engineer</em>
+                    <strong>L3Harris Technologies</strong>
+                    <p>Led systems integration and developed architectures and interface-control documents across multiple programs.</p>
+                  </div>
+                </li>
+                <li>
+                  <div class="career-date">2008 — 2013<br /><span>Offutt AFB, NE</span></div>
+                  <div>
+                    <em>Electrical Systems Specialist</em>
+                    <strong>United States Air Force</strong>
+                    <p>Maintained and troubleshot electrical and environmental systems on RC-135 aircraft.</p>
+                  </div>
+                </li>
+                <li data-density="rich">
+                  <div class="career-date">1998 — 2008<br /><span>Multiple locations</span></div>
+                  <div>
+                    <em>Managerial &amp; Operations Leadership</em>
+                    <strong>Multiple roles</strong>
+                    <p>Built the leadership and problem-solving foundation that continues to shape my approach today.</p>
+                  </div>
+                </li>
+              </ol>
+              <a class="button button--outline button--small" href="#resume-start-story">View detailed experience</a>
+            </div>
+            <div class="story-media-stack">
+              <figure class="feature-photo feature-photo--team media-frame">
+                <img src="../media/work-leadership.webp" alt="A team collaborating around a table" />
+              </figure>
+              <blockquote>
+                <span aria-hidden="true">“</span>
+                Great systems start with listening well, asking better questions,
+                and empowering the team.
+                <cite>— Pete</cite>
+              </blockquote>
+              <figure class="feature-photo feature-photo--personal media-frame" data-density="rich">
+                <img src="../media/pete-hawaii-overlook.jpg" alt="Pete overlooking a coastal landscape" />
+              </figure>
+            </div>
+          </section>
+
+          <section class="story-impact ruled-section" data-density="standard" aria-labelledby="story-impact-title">
+            <div>
+              <p class="section-kicker" id="story-impact-title">Key impact &amp; achievements</p>
+              <div class="impact-grid">
+                <article>
+                  <span class="line-icon" aria-hidden="true">◇</span>
+                  <h3>Mission success</h3>
+                  <p>Focused on the mission across every program and phase.</p>
+                </article>
+                <article>
+                  <span class="line-icon" aria-hidden="true">♙</span>
+                  <h3>Team builder</h3>
+                  <p>Led and mentored 15+ engineering teams to deliver results.</p>
+                </article>
+                <article>
+                  <span class="line-icon" aria-hidden="true">↗</span>
+                  <h3>Delivery excellence</h3>
+                  <p>Delivered systems and capabilities to the warfighter.</p>
+                </article>
+                <article>
+                  <span class="line-icon" aria-hidden="true">$</span>
+                  <h3>Value driven</h3>
+                  <p>Influenced programs with more than $250M in value.</p>
+                </article>
+              </div>
+            </div>
+            <figure class="impact-photo media-frame">
+              <img src="../media/pete-hawaii-overlook.jpg" alt="Pete standing above the Hawaiian coast" />
+            </figure>
+          </section>
+
+          <section class="story-chapters-skills ruled-section" id="story-chapters" data-density="standard">
+            <div class="story-chapters">
+              <p class="section-kicker">Story chapters</p>
+              <div class="chapters-inner">
+                <ol>
+                  <li><strong>Rooted values</strong><span>Lessons from family, faith, and community.</span></li>
+                  <li><strong>First steps</strong><span>Early curiosity, hands-on learning, and a love for systems.</span></li>
+                  <li><strong>Called to serve</strong><span>The Air Force years that shaped discipline and perspective.</span></li>
+                  <li><strong>Building &amp; leading</strong><span>Engineering complex systems and leading incredible teams.</span></li>
+                  <li><strong>Looking ahead</strong><span>Continuing to learn, grow, and build what matters next.</span></li>
+                </ol>
+                <figure class="chapter-photo media-frame">
+                  <img src="../media/future-path.jpg" alt="A mountain path at sunrise" />
+                </figure>
+              </div>
+              <a class="gold-link" href="#story-contact">Read the full story →</a>
+            </div>
+            <div class="skills-panel" id="story-skills">
+              <p class="section-kicker">Technical strengths</p>
+              <ul class="skills-list">
+                <li>Systems Engineering</li>
+                <li>Modeling &amp; Analysis</li>
+                <li>Requirements &amp; Architecture</li>
+                <li>Risk Management</li>
+                <li>Integration &amp; Test</li>
+                <li>CSISR / ISR Systems</li>
+                <li>Verification &amp; Validation</li>
+                <li>Cross-functional Leadership</li>
+                <li>Program Management</li>
+                <li>Process Improvement</li>
+              </ul>
+              <a class="button button--outline button--small" href="#resume-start-story">View all skills &amp; tools</a>
+            </div>
+          </section>
+
+          <section class="credentials-grid ruled-section" id="story-credentials" data-density="standard">
+            <article>
+              <p class="section-kicker">Education</p>
+              <h3>B.S. Engineering Management</h3>
+              <p>Embry-Riddle Aeronautical University · 2016</p>
+              <h3>A.A.S. Electrical Systems Technology</h3>
+              <p>Community College of the Air Force · 2011</p>
+              <a class="button button--outline button--small" href="#resume-start-story">View education</a>
+            </article>
+            <article>
+              <p class="section-kicker">Certifications</p>
+              <ul class="compact-list">
+                <li>INCOSE Certified Systems Engineering Professional</li>
+                <li>DAU Systems Planning, Research, Development &amp; Engineering</li>
+                <li>Project Management Professional</li>
+                <li>Lean Six Sigma Green Belt</li>
+              </ul>
+              <a class="button button--outline button--small" href="#resume-start-story">View certifications</a>
+            </article>
+            <article>
+              <p class="section-kicker">Awards &amp; recognition</p>
+              <ul class="compact-list">
+                <li>Northrop Grumman Technical Excellence Award</li>
+                <li>L3Harris Team Excellence Award</li>
+                <li>USAF Commendation Medal</li>
+                <li>Air Force Good Conduct Medal</li>
+              </ul>
+              <a class="button button--outline button--small" href="#resume-start-story">View awards</a>
+            </article>
+          </section>
+
+          <section class="philosophy-banner" data-density="standard">
+            <div>
+              <p class="section-kicker">My philosophy</p>
+              <h2>Lead with integrity. Serve with humility.<br />Build systems that matter.</h2>
+              <p>I believe the best outcomes come when diverse, trusted teams are empowered with clarity, purpose, and the freedom to solve hard problems.</p>
+            </div>
+          </section>
+
+          <footer class="overview-close" id="story-contact">
+            <div>
+              <p class="section-kicker">What’s next</p>
+              <h2>Let’s build what’s next.</h2>
+              <p>I’m always open to meaningful conversations about challenging problems, high-performing teams, and opportunities to make a lasting impact.</p>
+            </div>
+            <a class="button button--ink" href="mailto:pete.carter@protonmail.com">Connect</a>
+          </footer>
+
+          <section class="resume-boundary" id="resume-start-story" tabindex="-1">
+            <span>Résumé begins here</span>
+            <p>The member’s full Living Résumé continues below this boundary.</p>
+          </section>
+        </article>
+
+        <article class="style-panel style-panel--work" data-style-panel="work" hidden>
+          <header class="work-site-header">
+            <a class="wordmark" href="#work-top">Pete Carter</a>
+            <nav class="work-nav" aria-label="Work and Impact sections">
+              <a href="#work-person">My Story</a>
+              <a href="#resume-start-work">Résumé</a>
+              <a href="#work-career">Experience</a>
+              <a href="#work-skills">Skills</a>
+              <a href="#work-proof">Proof</a>
+              <a href="#work-person">Life</a>
+              <a href="#work-future">What’s Next</a>
+            </nav>
+            <div class="shared-actions">
+              <a class="button button--ink button--small" href="#work-contact">Let’s connect</a>
+              <a class="text-action" href="#resume-start-work">PDF · Ask Pete AI</a>
+            </div>
+          </header>
+
+          <section class="work-hero" id="work-top" aria-labelledby="work-name">
+            <div class="work-hero-copy">
+              <p class="blue-kicker">Engineer at heart. Leader in practice.</p>
+              <h1 id="work-name">Systems Engineer.<br />Technical Leader.</h1>
+              <p class="discipline-line">MBSE · Sustainment · Requirements</p>
+              <p class="hero-intro">
+                I build complex systems, lead through change, and turn complexity
+                into clarity so teams can do their best work and deliver real impact.
+              </p>
+              <p class="location-line">⌖ Athens, Alabama · Huntsville Area</p>
+              <div class="hero-actions">
+                <a class="button button--ink" href="#work-contact">Connect</a>
+                <a class="button button--outline" href="#resume-start-work" data-view-resume>View résumé</a>
+              </div>
+            </div>
+            <figure class="work-portrait media-frame">
+              <img src="../media/pete-headshot.jpg" alt="Pete Carter in a navy suit and tie" />
+              <blockquote>
+                <span aria-hidden="true">“</span>
+                I connect people, processes, and systems to deliver measurable results.
+                <i aria-hidden="true"></i>
+              </blockquote>
+            </figure>
+          </section>
+
+          <section class="work-proof-band" id="work-proof" data-proof-group aria-label="Selected career proof">
+            <article data-proof-item><span class="proof-icon" aria-hidden="true">♙</span><strong>30+</strong><p>Engineers led</p></article>
+            <article data-proof-item><span class="proof-icon" aria-hidden="true">⟳</span><strong>9 / $19.2M</strong><p>Redesign efforts</p></article>
+            <article data-proof-item><span class="proof-icon" aria-hidden="true">▣</span><strong>$36M+</strong><p>Contract oversight</p></article>
+            <article data-proof-item><span class="proof-icon" aria-hidden="true">◴</span><strong>35%</strong><p>Faster issue-to-action</p></article>
+          </section>
+
+          <div class="work-body-grid" data-density="standard">
+            <aside class="work-summary-column" aria-label="Professional summary">
+              <section>
+                <p class="work-section-label">▣ Executive brief</p>
+                <p>I build complex systems, lead through change, and turn complexity into clarity so teams can do their best work and deliver real impact.</p>
+              </section>
+              <section id="work-career">
+                <p class="work-section-label">▤ Career snapshot</p>
+                <ol class="work-timeline">
+                  <li><span>2025—Present</span><strong>Northrop Grumman</strong><em>Systems Engineer</em></li>
+                  <li><span>2024—2025</span><strong>L3Harris Technologies</strong><em>Systems Effectiveness Engineer</em></li>
+                  <li><span>2021—2024</span><strong>Department of Defense / U.S. Air Force</strong><em>Lead Systems Engineer</em></li>
+                </ol>
+              </section>
+              <section id="work-skills">
+                <p class="work-section-label">⌁ Skills</p>
+                <div class="skill-chips">
+                  <span>DOORS</span><span>MBSE</span><span>Requirements</span>
+                  <span>Architecture</span><span>Integration &amp; Test</span>
+                  <span>Sustainment</span><span>Program Management</span><span>Risk Management</span>
+                </div>
+                <a class="work-link" href="#resume-start-work">View all skills →</a>
+              </section>
+              <section>
+                <p class="work-section-label">⌂ Education</p>
+                <ul class="record-list">
+                  <li><strong>M.S. Engineering Management</strong><span>University of Arkansas · May 2025</span></li>
+                  <li><strong>B.S. Electrical Engineering</strong><span>Kennesaw State University · July 2020</span></li>
+                  <li><strong>A.S. Science</strong><span>Dalton State College · May 2018</span></li>
+                  <li><strong>Systems Engineering Ph.D.</strong><span>University of South Alabama · continuing study</span></li>
+                </ul>
+                <a class="work-link" href="#resume-start-work">View education →</a>
+              </section>
+              <section>
+                <p class="work-section-label">◇ Certification</p>
+                <p>Project Management Professional (PMP)</p>
+              </section>
+              <section>
+                <p class="work-section-label">☆ Awards</p>
+                <ul class="record-list">
+                  <li>SET Engineer of the Year · 2024</li>
+                  <li>Defense Civilian Emerging Leader · FY2024</li>
+                  <li>Outstanding Engineer Team Award · 2023</li>
+                </ul>
+              </section>
+            </aside>
+
+            <div class="work-feature-column">
+              <section class="work-feature-row">
+                <div class="feature-copy">
+                  <h2>Systems Engineering<br />&amp; Requirements</h2>
+                  <p>DOORS decomposition, bidirectional traceability, MBSE architecture, integration and test.</p>
+                </div>
+                <figure class="media-frame"><img src="../media/work-systems.webp" alt="Two people mapping a system on a glass board" /></figure>
+              </section>
+              <section class="work-feature-row">
+                <div class="feature-copy">
+                  <h2>Technical Leadership &amp;<br />Program Execution</h2>
+                  <p>Led 30+ engineers; guided nine redesign efforts valued at $19.2M; oversaw $36M+ in engineering services.</p>
+                </div>
+                <figure class="media-frame"><img src="../media/work-leadership.webp" alt="A small team reviewing a design together" /></figure>
+              </section>
+              <section class="work-outcome-grid" aria-label="Selected outcomes">
+                <article><span class="outcome-icon">$</span><strong>$4.6M</strong><p>Navigation modernization</p></article>
+                <article><span class="outcome-icon">↗</span><strong>70%</strong><p>Repair and test improvement</p></article>
+                <article><span class="outcome-icon">✓</span><strong>52%</strong><p>Missing-part reduction</p></article>
+                <article><span class="outcome-icon">♙</span><strong>$9.1M</strong><p>Sustainment effort managed as CAM</p></article>
+              </section>
+              <section class="work-feature-row">
+                <div class="feature-copy">
+                  <h2>Sustainment &amp; Lifecycle</h2>
+                  <p>Integrated lifecycle planning, reliability, and supportability across complex systems.</p>
+                </div>
+                <figure class="media-frame"><img src="../media/work-components.webp" alt="Precision components arranged on a workbench" /></figure>
+              </section>
+              <section class="work-feature-row" data-density="standard">
+                <div class="feature-copy">
+                  <h2>Data, Automation &amp; AI</h2>
+                  <p>Applying automation and AI to requirements, verification, analysis, and engineering productivity.</p>
+                </div>
+                <figure class="systems-diagram" aria-label="Illustrative systems flow diagram">
+                  <span>Inputs</span><i></i><span>Model</span><i></i><span>Decision</span>
+                </figure>
+              </section>
+              <section class="work-feature-row" id="work-person" data-density="standard">
+                <div class="feature-copy">
+                  <h2>The person behind the work.</h2>
+                  <p>I went back at 36: A.S. → B.S. Electrical Engineering → M.S. Engineering Management → continuing study.</p>
+                </div>
+                <figure class="media-frame"><img src="../media/pete-hawaii-overlook.jpg" alt="Pete standing above the coast in Hawaii" /></figure>
+              </section>
+              <section class="work-feature-row" id="work-future" data-density="standard">
+                <div class="feature-copy">
+                  <h2>What I’m building toward.</h2>
+                  <p>AI and automation for systems engineering · MBSE and digital engineering · mentoring, research, and teaching.</p>
+                </div>
+                <figure class="media-frame"><img src="../media/future-path.jpg" alt="A winding mountain road at sunrise" /></figure>
+              </section>
+            </div>
+          </div>
+
+          <footer class="work-close" id="work-contact">
+            <h2>Let’s build what’s next.</h2>
+            <a class="button button--light" href="mailto:pete.carter@protonmail.com">Connect →</a>
+          </footer>
+
+          <section class="resume-boundary resume-boundary--work" id="resume-start-work" tabindex="-1">
+            <span>Résumé begins here</span>
+            <p>The member’s full Living Résumé continues below this boundary.</p>
+          </section>
+        </article>
+      </div>
+    </main>
+
+    <aside class="editor-panel" data-editor-panel hidden aria-label="Overview editor state">
+      <div class="editor-heading">
+        <div>
+          <span>Private editor</span>
+          <strong data-editor-title>Build your Overview</strong>
+        </div>
+        <button type="button" aria-label="Close editor">×</button>
+      </div>
+      <div data-editor-copy>
+        Choose a starting style, add only the sections you want, and preview the
+        exact public result before publishing.
+      </div>
+      <div class="editor-state-card">
+        <span>Public preview</span>
+        <strong data-editor-status>Draft not published</strong>
+      </div>
+      <div class="editor-actions">
+        <button type="button">Save draft</button>
+        <button type="button">Preview</button>
+        <button class="editor-primary" type="button">Publish Overview</button>
+      </div>
+    </aside>
+
+    <script src="overview.js"></script>
+  </body>
+</html>

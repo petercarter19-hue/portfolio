@@ -1,0 +1,3380 @@
+{
+  "generatedAt": "2026-07-26T19:02:01.769Z",
+  "browserExecutable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "prototype": "prototype/index.html",
+  "requirements": {
+    "shellInlineSize": "min(92vw, 90rem)",
+    "overviewEdgeToleranceCssPx": 2,
+    "minimumPrimaryBodyCssPx": 16,
+    "requiredZoom": "1",
+    "requiredTransform": "none",
+    "rightSideRail": "absent"
+  },
+  "cases": [
+    {
+      "name": "story-standard-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-standard-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-standard-1920x1080",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-standard-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-standard-2560x1440",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-standard-2560x1440.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 2560,
+        "height": 1440,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 560,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 560,
+        "right": 2000,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 560,
+        "right": 560
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 2560,
+      "bodyScrollWidth": 2560,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-standard-3840x2160",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-standard-3840x2160.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 3840,
+        "height": 2160,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 1200,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 1200,
+        "right": 2640,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 1200,
+        "right": 1200
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 3840,
+      "bodyScrollWidth": 3840,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-standard-full-page-1920x1080",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-standard-full-page-1920x1080.jpg",
+      "fullPage": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-mobile-standard-390x844",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-mobile-standard-390x844.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5773.92,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5773.92
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5773.92,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5773.92
+      },
+      "overview": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5773.92,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5773.92
+      },
+      "hero": {
+        "x": 0,
+        "y": 59.19,
+        "width": 390,
+        "height": 828.36,
+        "left": 0,
+        "right": 390,
+        "top": 59.19,
+        "bottom": 887.55
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 59.19,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 59.19
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 0,
+        "right": 0
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-mobile-sparse-390x844",
+      "query": "style=story&state=sparse&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "story-mobile-sparse-390x844.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1545.41,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1545.41
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1545.41,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1545.41
+      },
+      "overview": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1545.41,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1545.41
+      },
+      "hero": {
+        "x": 0,
+        "y": 59.19,
+        "width": 390,
+        "height": 623.27,
+        "left": 0,
+        "right": 390,
+        "top": 59.19,
+        "bottom": 682.45
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 59.19,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 59.19
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 0,
+        "right": 0
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-sparse view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-sparse-1920x1080",
+      "query": "style=story&state=sparse&view=public&editor=setup&proof=1&largeText=0&focus=0&capture=1",
+      "screenshot": "story-sparse-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1036.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1068.59
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1036.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1068.59
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1036.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1068.59
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-sparse view-public proof-count-1 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-rich-1920x1080",
+      "query": "style=story&state=rich&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-rich-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3092.8,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3124.8
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3092.8,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3124.8
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3092.8,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3124.8
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-rich view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-text-only-1440x900",
+      "query": "style=story&state=text&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "story-text-only-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2510.72,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2542.72
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2510.72,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2542.72
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2510.72,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2542.72
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-text view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-one-proof-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=1&largeText=0&focus=0&capture=1",
+      "screenshot": "story-one-proof-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-1 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-no-proof-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "story-no-proof-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-large-text-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=1&focus=0&capture=1",
+      "screenshot": "story-large-text-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 2873.05,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 2905.05
+      },
+      "canvas": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 2873.05,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 2905.05
+      },
+      "overview": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 2873.05,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 2905.05
+      },
+      "hero": {
+        "x": 112,
+        "y": 101.59,
+        "width": 1216,
+        "height": 394,
+        "left": 112,
+        "right": 1328,
+        "top": 101.59,
+        "bottom": 495.59
+      },
+      "header": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 69.59,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 112,
+        "right": 112
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 20,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture large-text",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-focus-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=1&capture=1",
+      "screenshot": "story-focus-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "button button--outline",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-reduced-motion-1440x900",
+      "query": "style=story&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-reduced-motion-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2611.23,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2643.23
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 360,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": true,
+      "activeElement": "style-story state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-standard-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-standard-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-standard-1920x1080",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-standard-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-standard-2560x1440",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-standard-2560x1440.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 2560,
+        "height": 1440,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 560,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 560,
+        "right": 2000,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 560,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 560,
+        "right": 2000,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 560,
+        "right": 560
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 2560,
+      "bodyScrollWidth": 2560,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-standard-3840x2160",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-standard-3840x2160.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 3840,
+        "height": 2160,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 1200,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 1200,
+        "right": 2640,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 1200,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 1200,
+        "right": 2640,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 1200,
+        "right": 1200
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 3840,
+      "bodyScrollWidth": 3840,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-standard-full-page-1920x1080",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-standard-full-page-1920x1080.jpg",
+      "fullPage": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-mobile-standard-390x844",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-mobile-standard-390x844.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 446,
+        "height": 966,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5293.27,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5293.27
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5293.27,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5293.27
+      },
+      "overview": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 5293.27,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 5293.27
+      },
+      "hero": {
+        "x": 0,
+        "y": 59.19,
+        "width": 390,
+        "height": 653.58,
+        "left": 0,
+        "right": 390,
+        "top": 59.19,
+        "bottom": 712.77
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 59.19,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 59.19
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 0,
+        "right": 56
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 446,
+      "bodyScrollWidth": 446,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-mobile-sparse-390x844",
+      "query": "style=work&state=sparse&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "work-mobile-sparse-390x844.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1411.28,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1411.28
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1411.28,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1411.28
+      },
+      "overview": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 1411.28,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 1411.28
+      },
+      "hero": {
+        "x": 0,
+        "y": 59.19,
+        "width": 390,
+        "height": 653.58,
+        "left": 0,
+        "right": 390,
+        "top": 59.19,
+        "bottom": 712.77
+      },
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 59.19,
+        "left": 0,
+        "right": 390,
+        "top": 0,
+        "bottom": 59.19
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 0,
+        "right": 0
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-sparse view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-sparse-1920x1080",
+      "query": "style=work&state=sparse&view=public&editor=setup&proof=1&largeText=0&focus=0&capture=1",
+      "screenshot": "work-sparse-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1098.69,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1130.69
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1098.69,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1130.69
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 1098.69,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 1130.69
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-sparse view-public proof-count-1 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-rich-1920x1080",
+      "query": "style=work&state=rich&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-rich-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-rich view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-text-only-1440x900",
+      "query": "style=work&state=text&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "work-text-only-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2227.41,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2259.41
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2227.41,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2259.41
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 2227.41,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 2259.41
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-text view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-one-proof-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=1&largeText=0&focus=0&capture=1",
+      "screenshot": "work-one-proof-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-1 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-no-proof-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=0&largeText=0&focus=0&capture=1",
+      "screenshot": "work-no-proof-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3108.83,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3140.83
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3108.83,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3140.83
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3108.83,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3140.83
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-0 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-large-text-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=1&focus=0&capture=1",
+      "screenshot": "work-large-text-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 4657.88,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 4689.88
+      },
+      "canvas": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 4657.88,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 4689.88
+      },
+      "overview": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 4657.88,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 4689.88
+      },
+      "hero": {
+        "x": 112,
+        "y": 101.59,
+        "width": 1216,
+        "height": 400,
+        "left": 112,
+        "right": 1328,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 112,
+        "y": 32,
+        "width": 1216,
+        "height": 69.59,
+        "left": 112,
+        "right": 1328,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 112,
+        "right": 112
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 20,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture large-text",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-focus-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=1&capture=1",
+      "screenshot": "work-focus-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "button button--outline",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-reduced-motion-1440x900",
+      "query": "style=work&state=standard&view=public&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-reduced-motion-1440x900.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "canvas": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "overview": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 3227.22,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 3259.22
+      },
+      "hero": {
+        "x": 57.59,
+        "y": 101.59,
+        "width": 1324.8,
+        "height": 400,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 57.59,
+        "y": 32,
+        "width": 1324.8,
+        "height": 69.59,
+        "left": 57.59,
+        "right": 1382.39,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 57.59,
+        "right": 57.61
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "horizontalOverflow": false,
+      "reducedMotion": true,
+      "activeElement": "style-work state-standard view-public proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-setup-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=setup&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-setup-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-compose-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=compose&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-compose-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-metric-ai-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=metric-ai&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-metric-ai-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-save-failed-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=save-failed&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-save-failed-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-publish-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=publish&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-publish-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-unpublish-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=unpublish&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-unpublish-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-blocked-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=blocked&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-blocked-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "story-editor-restore-1920x1080",
+      "query": "style=story&state=standard&view=editor&editor=restore&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "story-editor-restore-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 2652.95,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 2684.95
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 360,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 461.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 25.28,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-story state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-editor-compose-1920x1080",
+      "query": "style=work&state=standard&view=editor&editor=compose&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-editor-compose-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    },
+    {
+      "name": "work-editor-metric-ai-1920x1080",
+      "query": "style=work&state=standard&view=editor&editor=metric-ai&proof=4&largeText=0&focus=0&capture=1",
+      "screenshot": "work-editor-metric-ai-1920x1080.jpg",
+      "fullPage": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1
+      },
+      "shell": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "canvas": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "overview": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 3402.5,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 3434.5
+      },
+      "hero": {
+        "x": 240,
+        "y": 101.59,
+        "width": 1440,
+        "height": 400,
+        "left": 240,
+        "right": 1680,
+        "top": 101.59,
+        "bottom": 501.59
+      },
+      "header": {
+        "x": 240,
+        "y": 32,
+        "width": 1440,
+        "height": 69.59,
+        "left": 240,
+        "right": 1680,
+        "top": 32,
+        "bottom": 101.59
+      },
+      "rail": null,
+      "rightSideRailPresent": false,
+      "outerGutters": {
+        "left": 240,
+        "right": 240
+      },
+      "measuredGap": null,
+      "overviewEdgeDelta": {
+        "left": 0,
+        "right": 0
+      },
+      "bodyFontPx": 16,
+      "primaryBodyFontPx": 16,
+      "primaryBodyLineHeightPx": 24.8,
+      "overviewZoom": "1",
+      "overviewTransform": "none",
+      "documentScrollWidth": 1920,
+      "bodyScrollWidth": 1920,
+      "horizontalOverflow": false,
+      "reducedMotion": false,
+      "activeElement": "style-work state-standard view-editor proof-count-4 capture",
+      "result": "Pass",
+      "failures": []
+    }
+  ],
+  "summary": {
+    "total": 40,
+    "passed": 40,
+    "failed": 0
+  }
+}
