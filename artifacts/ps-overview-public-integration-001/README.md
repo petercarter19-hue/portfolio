@@ -24,6 +24,8 @@ Career Constellation remains at its existing large/full-width presentation.
 | `petec-resume-overview-1440x900.jpg` | Public opening with local left rail, dominant Overview, and right Ask Pete AI rail | `68503ac5b32f6611538bda1da55587e935892155c66286ec3981709e28dd0df5` |
 | `petec-resume-boundary-1440x900.jpg` | `Résumé begins here` boundary and retained detailed Impact section below it | `b9df82c8daf9888a624bd682fe18de4d78e732342c2a596dad93d03acba31f0f` |
 | `petec-resume-overview-390x844.jpg` | Mobile reflow with horizontal local section navigation | `5b2a4f135487211b2b1f2ef77d8a840cf7d0d6eb59848a1d271a541e42115af9` |
+| `petec-resume-production-1440x900.jpg` | Live production opening after Azure deployment and App Service restart | `5a402337d30fab53aa5dfb2d25c4193b7cce0b109a9a5c7868ecb75e05aa9b6a` |
+| `petec-resume-production-390x844.jpg` | Live production mobile reflow | `38590b3586f22fde215f167ad316aeffb512b8d1593749c77f2e558e5c6bba1b` |
 
 ## Compare-refine record
 
@@ -82,3 +84,26 @@ action, and this order:
 `overview → resume-start → impact → skills → experience → credentials → constellation`
 
 Browser console errors and warnings: none.
+
+## Production release evidence
+
+- Source commit: `65a5886625cc0c4937b1c6afa44ba3e721c97e1a`
+- Azure PR: 187, required squash completion
+- Authoritative merge: `2f03a514b3329d27c49dcd1e7515a181827c2597`
+- Automatic Azure pipeline: 254 (`20260727.7`)
+- Build: succeeded, 02:10:16–02:11:47 UTC
+- Deploy: succeeded, 02:12:06–02:15:45 UTC
+- Active App Service deployment history:
+  `2541785118534928`, commit `2f03a514b3329d27c49dcd1e7515a181827c2597`
+- The first post-deploy probes reached the pre-deploy Gunicorn process. One
+  normal App Service restart loaded the active deployment. Three subsequent
+  production probes all served the published Overview.
+- Live `https://peerslate.com/petec/resume` returned 200 with
+  `data-publication-state="published"`, one `h1`, no duplicate IDs, no Summary
+  fallback, one PDF action, stable legacy aliases, Overview → Impact → Skills
+  → Experience → Credentials order, and the Constellation after Credentials.
+- Live 1440 × 900: 963.2 px normal-scale Overview, sticky AI rail, 1440 px
+  Constellation at its unchanged wide-screen `zoom: 0.9`, and no horizontal
+  overflow.
+- Live 390 × 844: 366 px Overview, horizontal local navigation, hidden desktop
+  rails, one `h1`, no duplicate IDs, and no horizontal overflow.

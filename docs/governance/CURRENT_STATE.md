@@ -30,6 +30,21 @@ feature flag, deployment, or live member capability._
 
 - `origin` is Azure DevOps and the only source of truth. `github` is a public
   backup mirror whose pushes remain on hold pending explicit owner approval.
+- PS-OVERVIEW-PUBLIC-INTEGRATION-001 is complete, released, and verified live.
+  Source `65a5886625cc0c4937b1c6afa44ba3e721c97e1a` squash-merged through
+  Azure PR 187 at `2f03a514b3329d27c49dcd1e7515a181827c2597`;
+  automatic pipeline 254 (`20260727.7`) passed Build and Deploy for that exact
+  commit. After a normal App Service restart loaded the active deployment,
+  repeated production probes and desktop/mobile browser checks proved the
+  published Story & Career Overview at `/petec/resume`, the complete
+  normal-scale résumé below it in Impact → Skills → Experience → Credentials
+  order, stable aliases, the approved-public Ask Pete AI rail, no horizontal
+  overflow, and the existing large/full-width Career Constellation after
+  Credentials. The member composer, draft/publish history, unpublish, and AI
+  proposal workflows remain deferred. A fresh independent reviewer was not
+  available, so the package self-certification remains truthfully Conditional;
+  homepage visual parity is tracked as
+  `PS-OVERVIEW-HOMEPAGE-PARITY-001` and is not yet implemented.
 - PS-RESUME-PUBLIC-REFINE-001 squash-merged through Azure PR 62 at `d88ca480a2cfcdc697d3bfffd219268c20368520`; pipeline 83 (`20260718.6`) succeeded for that exact commit.
 - PS-CAPTURE-002 squash-merged through Azure PR 63 at `65c4d5a350bcaf3ea36fac55a49d14de3a7fc2fd`; pipeline 85 (`20260718.8`) succeeded for that exact commit.
 - PS-MOMENT-001 squash-merged through Azure PR 66 at `43afd9353af1a0693aafab0c918f3dff92802376`; pipeline 91 (`20260718.14`) succeeded for that exact commit after both Build and Deploy passed.
@@ -287,7 +302,13 @@ feature flag, deployment, or live member capability._
   destinations and attachments remain disabled `Coming later` scaffolding.
 - **Canonical Moment (PS-MOMENT-001):** protected owner review of one pinned Capture source version, editable private proposal versions, explicit confirmation into one source-linked canonical Moment, and deterministic deleted-source tombstones. Confirmation does not publish or place content.
 - **Private Placement reference (PS-PLACEMENT-001):** an explicit, owner-scoped, lifecycle-aware pointer from one exact confirmed Moment version to one existing eligible private/unpublished Slate destination. The reference copies no authoritative text and changes no audience, access grant, publication record, destination content, or downstream room.
-- **Public resume:** canonical `/petec/resume`, existing redirects, download path, Ask Pete AI hooks, shared resume dataset, and the refined progressive default scan.
+- **Public resume:** canonical `/petec/resume`, existing redirects, download
+  path, shared resume dataset, and the published Story & Career Overview. The
+  complete résumé continues below at normal scale in Impact, Skills,
+  Experience, and Credentials order; the existing large/full-width Career
+  Constellation follows it. One contextual Ask Pete AI rail uses approved
+  public evidence. The member composer and publication-history workflows are
+  not live.
 - **Public Ask Pete AI:** a real typed visitor assistant at `POST /api/chat`
   grounded in approved public Markdown knowledge. It currently has a
   1,000-character text boundary and no voice, attachment, OCR, private

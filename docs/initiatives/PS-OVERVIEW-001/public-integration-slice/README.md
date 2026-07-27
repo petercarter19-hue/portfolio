@@ -2,8 +2,9 @@
 
 ## Status and authority
 
-**Status:** Source and local validation complete; Azure production release in
-progress.
+**Status:** Complete, released, and verified live on 2026-07-26 through Azure
+PR 187, squash merge `2f03a514b3329d27c49dcd1e7515a181827c2597`,
+and automatic pipeline 254.
 
 **Owner / deployment authority:** Pete.
 

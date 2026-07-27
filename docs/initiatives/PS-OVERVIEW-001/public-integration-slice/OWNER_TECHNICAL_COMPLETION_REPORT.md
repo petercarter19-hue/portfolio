@@ -3,11 +3,14 @@
 ## A. Status
 
 - Package: `PS-OVERVIEW-PUBLIC-INTEGRATION-001`
-- Status: In Progress — source and local validation complete; Azure release pending
+- Status: Complete, released, and verified live
 - Branch and commit:
-  `work/2026-07-26-overview-public-integration-001`; source commit pending
-- PR / pipeline / environment: pending
-- Production state: not yet deployed
+  `work/2026-07-26-overview-public-integration-001` at source
+  `65a5886625cc0c4937b1c6afa44ba3e721c97e1a`; Azure squash merge
+  `2f03a514b3329d27c49dcd1e7515a181827c2597`
+- PR / pipeline / environment: Azure PR 187; automatic pipeline 254
+  (`20260727.7`); `peerslate-pete` production
+- Production state: live and verified at `https://peerslate.com/petec/resume`
 - Visual authority and status: Accepted Story & Career authority implemented
 - Visual inspector: assigned writer/agent
 - Approved-mockup fidelity evidence: agent-run exact parity for the activated
@@ -24,11 +27,11 @@
 - Pete / designated session manager visual acceptance: Pete-authorized locked
   direction and final layout correction
 - Designated session manager: current Pete-authorized Codex task
-- Manager handoff status and next receiver: self-managed through Azure release
+- Manager handoff status and next receiver: release lane closed; no receiver
 - Lane owner and self-managed authority: current task, bounded to the public
   integration package
-- Self-certification: Conditional until Azure pipeline, production, and
-  independent-review status are closed
+- Self-certification: Conditional only because no fresh independent reviewer
+  was available; all source, pipeline, deployment, and production checks passed
 - Complete-diff review: issues corrected; final staged-diff review passed
 - Acceptance requested: technical report, visual-product, and release
 
@@ -61,6 +64,22 @@ The Career Constellation include, content, and interaction implementation were
 not changed. It remains after Credentials and outside the normal-scale center
 grid so its existing large/full-width behavior is preserved.
 
+### Changed files
+
+| File(s) | Reason |
+|---|---|
+| `app.py` | Build the profile-owned public projection and fail closed to Summary. |
+| `overview_projection_service.py` | Add the generic, validated same-profile publication adapter and safe public destinations. |
+| `static/data/resume_data.json` | Record Pete's explicit published Story & Career selection using existing public truth. |
+| `templates/partials/member_overview.html` | Support semantic public embedding, stable aliases, and distinct detailed-section links. |
+| `templates/resume2.html` | Replace Summary when published, retain the full résumé below, and install final left/right rails. |
+| `static/css/member-overview.css` | Scope renderer resets so embedding cannot affect the shared page shell. |
+| `static/css/resume2.css` | Add normal-scale center fitting, responsive rails, contrast, focus/reflow support, and preserve the full-width Constellation. |
+| `static/js/living-resume-v2.js` | Synchronize local section navigation and contextual Ask Pete AI state. |
+| `tests/test_living_resume_preview.py`, `tests/test_member_overview_projection.py`, `tests/test_member_overview_renderer.py`, `tests/test_resume2.py`, `tests/test_member_overview_public_integration.py` | Prove projection validation, public semantics, fallback, action counts, order, generic behavior, and layout contracts. |
+| `artifacts/ps-overview-public-integration-001/**` | Preserve local and production visual/geometry evidence. |
+| `docs/initiatives/PS-OVERVIEW-001/public-integration-slice/**` | Record scope, homepage follow-up, exact release evidence, capability truth, and closeout. |
+
 No schema migration, database dependency, identity change, authorization
 change, feature flag, external service, or infrastructure change was added.
 Rollback is the Azure squash commit revert; the Summary fallback remains
@@ -76,7 +95,7 @@ the résumé exactly as before.
 
 ## D. What the website or member can do now
 
-After production release, a visitor can:
+A visitor can now:
 
 - open Pete's published Story & Career Overview at `/petec/resume`;
 - use stable section links to move from Overview into Impact, Skills,
@@ -138,9 +157,22 @@ tracked in `HOMEPAGE_PARITY_FOLLOWUP.md`.
 
 ### Production validation
 
-Pending Azure pull request, required squash merge, exact pipeline success,
-deployment-stage success, and live-route verification. This report must be
-updated with exact SHAs, run IDs, and production evidence before closeout.
+Azure PR 187 squash-merged the source at
+`2f03a514b3329d27c49dcd1e7515a181827c2597`. Automatic pipeline 254
+(`20260727.7`) ran for that exact commit:
+
+- Build succeeded from 02:10:16 to 02:11:47 UTC.
+- Deploy succeeded from 02:12:06 to 02:15:45 UTC.
+- App Service deployment history identifies active deployment
+  `2541785118534928` and the exact merge commit.
+
+The active package initially sat behind the pre-deploy Gunicorn process. A
+normal App Service restart loaded it. Three later public probes all served the
+Overview. Live desktop and mobile browser checks then confirmed HTTP 200,
+published state, correct section order, one `h1`, no duplicate IDs, no Summary
+fallback, stable aliases, one PDF action, normal-scale center content, no
+horizontal overflow, responsive rail collapse, and the unchanged full-width
+Constellation. Production captures and hashes are in the evidence README.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -154,13 +186,13 @@ updated with exact SHAs, run IDs, and production evidence before closeout.
   anchor activation, so keyboard activation is also supported by native-anchor
   semantics and server-rendered destinations rather than claimed as a separate
   tool-level activation pass.
-- Production evidence is pending.
 
 ## H. Clear next step
 
-Commit the reviewed source, push the task branch, complete the Azure squash
-pull request, and verify the exact production pipeline and canonical live
-route. That closes the owner-authorized public release.
+Create and obtain Pete's exact visual lock for the tracked homepage projection,
+then implement it in a separately reserved package. The public résumé release
+is closed; that follow-up brings the logged-out homepage demonstration into the
+same accepted Story & Career visual language.
 
 ## I. What Pete needs to do or decide
 

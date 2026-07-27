@@ -29,6 +29,14 @@ _Released 2026-07-24 through Azure PR 173 at squash merge
 shared-file reservation is released. Both page-purpose inventories are
 Pete-approved; ChatGPT visual creation is the active Studio gate._
 
+_Updated 2026-07-26 after PS-OVERVIEW-PUBLIC-INTEGRATION-001 released through
+Azure PR 187 at squash merge
+`2f03a514b3329d27c49dcd1e7515a181827c2597`; automatic pipeline 254 passed
+Build and Deploy and the public résumé was verified live after an App Service
+restart. The implementation lane is closed and its file reservation is
+released. `PS-OVERVIEW-HOMEPAGE-PARITY-001` is tracked but unassigned pending a
+new Pete-locked homepage visual authority._
+
 ## Operating model
 
 The manager is a package-designated role. A ChatGPT Work/Codex manager session
@@ -57,6 +65,28 @@ only for high-risk or expressly required packages.
 | Workshop / Build Your Future visual definition | Current ChatGPT Work/Codex task as visual-governance manager; no runtime writer assigned | PS-SLATE-STUDIO-IA-001 owner correction plus Pete-approved Workshop and Build page-purpose inventories | ChatGPT creates the Workshop and two Goal Board concept sets; Pete scrutinizes and locks exact authority | runtime implementation, rejected Slice 2 reuse, Slice 1 enablement, Goal persistence/editing, AI/publishing, Projects implementation, `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio or its separate audio lane, public Slate, homepage, shared services, schema, migrations, or deployment configuration |
 
 ## Current active gate
+
+### PS-OVERVIEW-PUBLIC-INTEGRATION-001 - complete, released, and verified live
+
+- Source `65a5886625cc0c4937b1c6afa44ba3e721c97e1a` squash-merged through
+  Azure PR 187 at
+  `2f03a514b3329d27c49dcd1e7515a181827c2597`.
+- Automatic pipeline 254 (`20260727.7`) passed Build and Deploy for the exact
+  merge. Active App Service deployment history identifies that commit.
+- Live `/petec/resume` serves the published Story & Career Overview, then the
+  complete normal-scale résumé in Impact, Skills, Experience, and Credentials
+  order, followed by the existing large/full-width Career Constellation.
+- Desktop and 390 px browser verification passed publication state, semantic
+  order, stable aliases, one `h1`, duplicate-ID, action-count, responsive rail,
+  scale, and horizontal-overflow checks.
+- The lane is closed and its reservations are released. Member composer,
+  persistence/history, unpublish, and AI-proposal work remain deferred.
+- Fresh independent review was unavailable and is not represented as
+  completed. Self-certification is Conditional despite green source, pipeline,
+  deployment, and production checks.
+- `PS-OVERVIEW-HOMEPAGE-PARITY-001` is an unassigned downstream design package.
+  It requires a new ChatGPT-created, Pete-locked homepage authority before any
+  runtime writer is assigned.
 
 ### PS-GOV-PAGE-PURPOSE-AI-EVAL-001 - complete, released, and lane closed
 
