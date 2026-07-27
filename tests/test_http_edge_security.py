@@ -418,6 +418,37 @@ class PrivateResponseCacheTests(unittest.TestCase):
         )
 
 
+class FeatureFlagConsistencyTests(unittest.TestCase):
+    """Two blueprints read the Owner Home flag through their own helper.
+
+    auth_routes gates the /app render and owner_routes gates the
+    /api/v1/owner/home contract. The helpers are separate but must agree:
+    changing the semantics in one and not the other would split the page
+    from its data source, showing a shell with no API behind it or the
+    reverse. Assert they stay in lockstep rather than coupling the modules.
+    """
+
+    def setUp(self):
+        self.original = app.config.get("PEERSLATE_OWNER_HOME_ENABLED")
+
+    def tearDown(self):
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = self.original
+
+    def test_both_owner_home_flag_readers_agree(self):
+        import auth_routes
+        import owner_routes
+
+        for value in (True, False, None, "true", 1):
+            with self.subTest(value=value):
+                app.config["PEERSLATE_OWNER_HOME_ENABLED"] = value
+                with app.test_request_context("/app"):
+                    self.assertEqual(
+                        auth_routes._owner_home_enabled(),
+                        owner_routes._owner_home_enabled(),
+                        f"the two Owner Home flag readers disagree for {value!r}",
+                    )
+
+
 class StaticVersioningTests(unittest.TestCase):
     """CSS/JS are content-hash versioned so only current bytes are cached."""
 

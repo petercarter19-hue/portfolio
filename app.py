@@ -148,6 +148,27 @@ def _address_without_port(value):
     return value
 
 
+def _cross_site_refusal(subject):
+    """Refuse an off-site call to a public AI endpoint, or return None.
+
+    These four routes are public and anonymous, so this is abuse control
+    rather than CSRF defence: it rejects a caller that identifies itself as
+    cross-site, or whose Origin is a different host. A request carrying
+    neither header is allowed through, because these routes must stay usable
+    by non-browser clients — the authenticated owner writes in
+    owner_routes.py take the stricter fail-closed stance instead.
+
+    The wording is per-subject so each endpoint keeps the exact message it
+    already returned.
+    """
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': f'Cross-site {subject} requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': f'Cross-site {subject} requests are not allowed.'}), 403
+    return None
+
+
 def _client_rate_limit_key():
     """Identify the calling client so the AI limits apply per visitor.
 
@@ -2076,11 +2097,9 @@ def chat():
     # Reject an off-site caller before spending any Claude budget. The three
     # interview endpoints already do this; /api/chat is the one AI route that
     # was missed, which left the paid model reachable from any other origin.
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site chat requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site chat requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('chat')
+    if refusal:
+        return refusal
 
     # Read the JSON body sent by the browser
     data = request.get_json()
@@ -2481,11 +2500,9 @@ def interview_review():
         return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -2593,11 +2610,9 @@ def interview_improve():
         return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -2685,11 +2700,9 @@ def interview_model_answer():
         return jsonify({'error': 'Interview AI is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
