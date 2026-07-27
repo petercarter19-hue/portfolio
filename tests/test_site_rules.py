@@ -33,6 +33,51 @@ class DeploymentPolicyTests(unittest.TestCase):
                     ' — GitHub Actions must not deploy PeerSlate')
 
 
+class DeploymentPackageTests(unittest.TestCase):
+    """The deployment package must keep everything the running site reads.
+
+    The disabled GitHub workflow shows how this goes wrong: it excludes
+    static/images/Mockups/ and static/images/background-templates/ wholesale,
+    but resume2.css references Mockups/resume2/ and three stylesheets
+    reference background-templates. Because that workflow never runs, the
+    mistake was never caught. Pin the live pipeline against the same error.
+    """
+
+    REQUIRED_AT_RUNTIME = (
+        'docs',                              # Control Room + chatbot knowledge
+        'docs/knowledge',
+        'docs/governance',
+        'docs/initiatives',
+        'static/data',                       # resume/story/feed JSON
+        'static/css',
+        'static/js',
+        'static/images/Mockups',             # resume2.css uses Mockups/resume2/
+        'static/images/background-templates',
+        'templates',
+        'services',
+        'SQL FIles',
+    )
+
+    def test_pipeline_never_excludes_a_runtime_required_path(self):
+        pipeline = _read(os.path.join(ROOT, 'azure-pipelines.yml'))
+        excluded = re.findall(r'^\s*!(\S+)', pipeline, re.MULTILINE)
+        for pattern in excluded:
+            base = pattern.split('/*')[0].rstrip('/')
+            for required in self.REQUIRED_AT_RUNTIME:
+                self.assertNotEqual(
+                    base, required,
+                    f'azure-pipelines.yml excludes {pattern!r}, but '
+                    f'{required!r} is read by the running site')
+
+    def test_pipeline_still_excludes_the_largest_non_runtime_folders(self):
+        pipeline = _read(os.path.join(ROOT, 'azure-pipelines.yml'))
+        for pattern in ('!artifacts/**', '!tests/**'):
+            self.assertIn(
+                pattern, pipeline,
+                f'{pattern} keeps the deployment package from carrying '
+                'evidence and test material onto the web server')
+
+
 class DependencyPinTests(unittest.TestCase):
     def test_shared_pins_match_between_requirements_files(self):
         """requirements-sql.txt re-pins packages requirements.txt also pins.
