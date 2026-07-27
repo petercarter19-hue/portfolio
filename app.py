@@ -8,6 +8,7 @@ import glob                                     # Lets us find all files matchin
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 import hashlib                                  # Creates opaque, per-member browser storage scopes
+import ipaddress                                # Validates the forwarded caller address used for rate limiting
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
@@ -130,10 +131,55 @@ app.config.update(
     PEERSLATE_ADO_READ_PAT=os.environ.get('PEERSLATE_ADO_READ_PAT', ''),
 )
 
+
+def _address_without_port(value):
+    """Return the bare address from one X-Forwarded-For entry.
+
+    Azure appends the caller as `address:port`. An IPv6 literal carrying a
+    port is bracketed (`[::1]:443`), while a bare IPv6 address contains
+    several colons and must be returned untouched.
+    """
+    if value.startswith('['):
+        closing = value.find(']')
+        return value[1:closing] if closing != -1 else value
+    if value.count(':') == 1:
+        return value.split(':', 1)[0]
+    return value
+
+
+def _client_rate_limit_key():
+    """Identify the calling client so the AI limits apply per visitor.
+
+    Azure terminates TLS at the platform edge and forwards the original
+    caller in X-Forwarded-For, so `request.remote_addr` is the edge address
+    and is the same value for every visitor. Keying the limits on it puts
+    the whole internet in one bucket: a single visitor would exhaust the
+    limit for everyone else, while an attacker spreading requests would
+    never be limited individually.
+
+    Azure appends the real caller as the last X-Forwarded-For entry, so the
+    rightmost entry is the trustworthy one — a forged header can only
+    prepend values, never replace the appended one. The ephemeral source
+    port is dropped, because keying on `address:port` would make every
+    request look like a new client and defeat the limit entirely.
+    """
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    entries = [part.strip() for part in forwarded.split(',') if part.strip()]
+    if entries:
+        address = _address_without_port(entries[-1])
+        try:
+            ipaddress.ip_address(address)
+        except ValueError:
+            pass
+        else:
+            return address
+    return get_remote_address()
+
+
 # MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
 # For production with multiple workers/instances, configure Redis-backed storage.
 limiter = Limiter(
-    get_remote_address,
+    _client_rate_limit_key,
     app=app,
     default_limits=[]
 )
@@ -1904,6 +1950,15 @@ def profile_resume_ledger(profile_slug):
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit('10 per minute')
 def chat():
+    # Reject an off-site caller before spending any Claude budget. The three
+    # interview endpoints already do this; /api/chat is the one AI route that
+    # was missed, which left the paid model reachable from any other origin.
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': 'Cross-site chat requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': 'Cross-site chat requests are not allowed.'}), 403
+
     # Read the JSON body sent by the browser
     data = request.get_json()
 

@@ -13,6 +13,12 @@ ROW_VERSION = bytes.fromhex("0000000000000007")
 ROW_VERSION_TOKEN = "0000000000000007"
 
 
+# A browser always sends at least one same-origin signal on a form post, and
+# owner writes now require one. Model that here so the tests exercise the real
+# request shape; the cross-site tests override these keys explicitly.
+SAME_ORIGIN_HEADERS = {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
+
+
 def easy_auth_header(subject="capture-member"):
     principal = {
         "auth_typ": "aad",
@@ -24,7 +30,7 @@ def easy_auth_header(subject="capture-member"):
         ],
     }
     encoded = base64.b64encode(json.dumps(principal).encode("utf-8")).decode("ascii")
-    return {"X-MS-CLIENT-PRINCIPAL": encoded}
+    return {"X-MS-CLIENT-PRINCIPAL": encoded, **SAME_ORIGIN_HEADERS}
 
 
 def identity_row():
@@ -111,6 +117,10 @@ class OwnerCaptureTests(unittest.TestCase):
         write_response = self.client.post(
             f"/app/capture/{CAPTURE_KEY}/archive",
             data={"expected_row_version": ROW_VERSION_TOKEN},
+            # An anonymous visitor still arrives from a real browser, so the
+            # same-origin signal is present and the sign-in redirect (not the
+            # cross-site refusal) is the behaviour under test.
+            headers=SAME_ORIGIN_HEADERS,
         )
         export_response = self.client.get(f"/app/capture/{CAPTURE_KEY}/export")
 

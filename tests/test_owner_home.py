@@ -370,7 +370,10 @@ class OwnerHomeRouteTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Cache-Control"], "no-cache, must-revalidate")
+        # The private workspace render is no-store: the rendered bytes below
+        # stay identical to the released baseline, only the cache policy is
+        # hardened so a shared cache cannot retain one member's workspace.
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         # Real byte-for-byte identity (not just substrings): the
         # standalone_owner_shell conditionals in base.html must contribute
         # zero bytes to the flag-off render, matching the captured
