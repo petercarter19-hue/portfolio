@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-home.css') }}?v=ps-home-frontend-001-1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-home.css') }}">
 {% endblock %}
 
 {# Server-rendered first: every state below (empty, populated, complete
@@ -38,5 +38,5 @@
 {# Progressive enhancement only (SONNET_FRONTEND_IMPLEMENTATION_BRIEF.md
    §2 build step 5). The page above is fully correct and fully functional
    without this script. #}
-<script src="{{ url_for('static', filename='js/owner-home.js') }}?v=ps-home-frontend-001-1" defer></script>
+<script src="{{ url_for('static', filename='js/owner-home.js') }}" defer></script>
 {% endblock %}

@@ -22,6 +22,12 @@ itsdangerous==2.2.0   # Signs short-lived Interview AI follow-up context tokens
 anthropic==0.112.0     # Claude API client, used by the /api/chat route
 python-dotenv==1.2.2   # Loads your ANTHROPIC_API_KEY from the .env file
 Flask-Limiter==4.1.1   # Adds basic abuse protection for the public chat endpoint
+Flask-Compress==1.24   # Compresses text responses (CSS/JS/HTML/JSON); the 373KB
+                       # stylesheet becomes ~77KB over the wire. Media routes are
+                       # untouched: images and audio are not in the compressed
+                       # MIME list.
+brotli==1.2.0          # Preferred encoding for Flask-Compress when the browser
+                       # supports it; gzip remains the fallback.
 gunicorn==23.0.0       # The production web server Azure runs the app under.
                        # Azure's build system injected this invisibly before;
                        # pinning it here makes the dependency explicit and the

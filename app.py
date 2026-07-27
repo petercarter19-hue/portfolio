@@ -8,10 +8,12 @@ import glob                                     # Lets us find all files matchin
 import json                                     # Lets us read structured resume content from JSON
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 import hashlib                                  # Creates opaque, per-member browser storage scopes
+import ipaddress                                # Validates the forwarded caller address used for rate limiting
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
 from flask import Flask, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_compress import Compress
 from itsdangerous import BadData, URLSafeTimedSerializer
 from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
@@ -130,13 +132,184 @@ app.config.update(
     PEERSLATE_ADO_READ_PAT=os.environ.get('PEERSLATE_ADO_READ_PAT', ''),
 )
 
+
+def _address_without_port(value):
+    """Return the bare address from one X-Forwarded-For entry.
+
+    Azure appends the caller as `address:port`. An IPv6 literal carrying a
+    port is bracketed (`[::1]:443`), while a bare IPv6 address contains
+    several colons and must be returned untouched.
+    """
+    if value.startswith('['):
+        closing = value.find(']')
+        return value[1:closing] if closing != -1 else value
+    if value.count(':') == 1:
+        return value.split(':', 1)[0]
+    return value
+
+
+def _cross_site_refusal(subject):
+    """Refuse an off-site call to a public AI endpoint, or return None.
+
+    These four routes are public and anonymous, so this is abuse control
+    rather than CSRF defence: it rejects a caller that identifies itself as
+    cross-site, or whose Origin is a different host. A request carrying
+    neither header is allowed through, because these routes must stay usable
+    by non-browser clients — the authenticated owner writes in
+    owner_routes.py take the stricter fail-closed stance instead.
+
+    The wording is per-subject so each endpoint keeps the exact message it
+    already returned.
+    """
+    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
+        return jsonify({'error': f'Cross-site {subject} requests are not allowed.'}), 403
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        return jsonify({'error': f'Cross-site {subject} requests are not allowed.'}), 403
+    return None
+
+
+def _client_rate_limit_key():
+    """Identify the calling client so the AI limits apply per visitor.
+
+    Azure terminates TLS at the platform edge and forwards the original
+    caller in X-Forwarded-For, so `request.remote_addr` is the edge address
+    and is the same value for every visitor. Keying the limits on it puts
+    the whole internet in one bucket: a single visitor would exhaust the
+    limit for everyone else, while an attacker spreading requests would
+    never be limited individually.
+
+    Azure appends the real caller as the last X-Forwarded-For entry, so the
+    rightmost entry is the trustworthy one — a forged header can only
+    prepend values, never replace the appended one. The ephemeral source
+    port is dropped, because keying on `address:port` would make every
+    request look like a new client and defeat the limit entirely.
+    """
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    entries = [part.strip() for part in forwarded.split(',') if part.strip()]
+    if entries:
+        address = _address_without_port(entries[-1])
+        try:
+            ipaddress.ip_address(address)
+        except ValueError:
+            pass
+        else:
+            return address
+    return get_remote_address()
+
+
 # MVP note: in-memory rate limiting is acceptable for local testing and early MVP.
 # For production with multiple workers/instances, configure Redis-backed storage.
 limiter = Limiter(
-    get_remote_address,
+    _client_rate_limit_key,
     app=app,
     default_limits=[]
 )
+
+# Compress text responses. The 373KB always-on stylesheet leaves the server
+# at ~77KB; a first-time homepage visit drops from ~459KB of CSS to ~94KB.
+# The MIME list is explicit and text-only: images and audio are already
+# compressed formats, and the private media routes (voice audio, photo
+# previews) must stream through untouched.
+app.config.update(
+    COMPRESS_MIMETYPES=[
+        'text/html',
+        'text/css',
+        'text/plain',
+        'text/xml',
+        'text/javascript',
+        'application/javascript',
+        'application/json',
+        'image/svg+xml',
+    ],
+    COMPRESS_LEVEL=6,
+    COMPRESS_BR_LEVEL=5,
+    COMPRESS_MIN_SIZE=500,
+    # Offer only Brotli and gzip. Brotli is pinned in requirements and is the
+    # best-supported modern encoding; gzip is the universal fallback. zstd is
+    # deliberately omitted so no additional runtime dependency is implied.
+    # Static files are served as streamed responses, which use the separate
+    # streaming list — set it to the same two so a gzip-only client still
+    # gets compressed CSS/JS rather than falling through to raw bytes.
+    COMPRESS_ALGORITHM=['br', 'gzip'],
+    COMPRESS_ALGORITHM_STREAMING=['br', 'gzip'],
+)
+Compress(app)
+
+
+# --- STATIC ASSET VERSIONING ---
+# Every CSS and JS URL built by a template automatically carries
+# ?v=<content hash>. Editing a file changes its hash, so the URL changes and
+# every visitor fetches the new bytes on their next page load — only the most
+# recent version of an asset is ever referenced. This replaces the hand-typed
+# ?v= tokens, which existed only on .css/.js and had already drifted (the
+# same stylesheet was requested under four different tokens, one page was
+# pinned to a stale build, and two branches once collided on the same
+# hand-bumped token). Images are intentionally out of scope: they already use
+# dated, content-specific filenames, so their URLs change by name when the
+# content changes and no query token is needed.
+_VERSIONED_STATIC_SUFFIXES = ('.css', '.js')
+_STATIC_VERSION_CACHE = {}
+
+
+def _static_file_version(filename):
+    """Return a stable 12-hex content token for one static file.
+
+    Cached per (mtime, size) so steady-state requests cost one os.stat; a
+    deployment replaces the files, changes the mtimes, and refreshes the
+    cache automatically. Returns None for a path that does not resolve to a
+    readable file, in which case the URL is left unversioned.
+    """
+    if not filename or not isinstance(filename, str):
+        return None
+    if not filename.endswith(_VERSIONED_STATIC_SUFFIXES):
+        return None
+    try:
+        path = os.path.join(app.static_folder, *filename.split('/'))
+        file_stat = os.stat(path)
+    except OSError:
+        return None
+    cache_key = (file_stat.st_mtime_ns, file_stat.st_size)
+    cached = _STATIC_VERSION_CACHE.get(filename)
+    if cached and cached[0] == cache_key:
+        return cached[1]
+    digest = hashlib.sha256()
+    try:
+        with open(path, 'rb') as handle:
+            for chunk in iter(lambda: handle.read(65536), b''):
+                digest.update(chunk)
+    except OSError:
+        return None
+    token = digest.hexdigest()[:12]
+    _STATIC_VERSION_CACHE[filename] = (cache_key, token)
+    return token
+
+
+@app.url_defaults
+def _stamp_static_asset_version(endpoint, values):
+    if endpoint == 'static' and values.get('filename') and 'v' not in values:
+        version = _static_file_version(values['filename'])
+        if version:
+            values['v'] = version
+
+
+@app.after_request
+def _cache_current_static_versions(response):
+    """Give exactly the current version of a static file a one-year cache.
+
+    The token in the URL is compared against the file's live content hash,
+    so only a URL that names the bytes actually being served is marked
+    immutable. A stale or hand-typed token, or an unversioned request (for
+    example an image referenced from inside a CSS file), keeps the default
+    revalidation policy and can never pin an old version in a cache.
+    """
+    if request.endpoint == 'static' and 200 <= response.status_code < 300:
+        filename = (request.view_args or {}).get('filename')
+        requested = request.args.get('v')
+        if filename and requested and requested == _static_file_version(filename):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return response
+
 
 # Create the Anthropic client.
 # The API key stays on the server and is never exposed to browser JavaScript.
@@ -152,8 +325,9 @@ app.register_blueprint(people_interests_api)
 def prevent_stale_html(response):
     """Always revalidate HTML pages so a design change (like the homepage
     move from peerslate.html to the Experience page) can't stick in a
-    visitor's browser cache. Versioned static assets (?v=...) are left
-    cacheable — only text/html is marked no-cache."""
+    visitor's browser cache. Static assets are versioned automatically by
+    content hash (see _stamp_static_asset_version above) and current
+    versions are cached for a year — only text/html is marked no-cache."""
     if response.mimetype == 'text/html':
         # Routes may set a stricter policy for private owner-specific HTML.
         # Preserve it; ordinary pages retain the historic default exactly.
@@ -164,6 +338,22 @@ def prevent_stale_html(response):
     response.headers.setdefault(
         'Permissions-Policy',
         'camera=(self), microphone=(self), geolocation=()',
+    )
+    # A deliberately partial Content-Security-Policy. These four directives
+    # are safe to enforce today because the site uses no <object>, <embed> or
+    # <base> tag and posts every form same-origin, so nothing legitimate is
+    # blocked. base-uri and form-action are the two directives that most
+    # directly blunt an injected-markup escalation, and no existing header
+    # covers either.
+    #
+    # script-src and style-src are intentionally absent: the pages carry
+    # inline bootstrap scripts and load Google Fonts, so enforcing those
+    # would need nonces threaded through the templates. That is a separate,
+    # visual-risk-bearing change and must not be smuggled in here.
+    response.headers.setdefault(
+        'Content-Security-Policy',
+        "base-uri 'self'; object-src 'none'; form-action 'self'; "
+        "frame-ancestors 'self'",
     )
     if request.is_secure:
         response.headers.setdefault(
@@ -1904,6 +2094,13 @@ def profile_resume_ledger(profile_slug):
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit('10 per minute')
 def chat():
+    # Reject an off-site caller before spending any Claude budget. The three
+    # interview endpoints already do this; /api/chat is the one AI route that
+    # was missed, which left the paid model reachable from any other origin.
+    refusal = _cross_site_refusal('chat')
+    if refusal:
+        return refusal
+
     # Read the JSON body sent by the browser
     data = request.get_json()
 
@@ -1962,7 +2159,10 @@ def chat():
     except Exception as e:
         # If anything goes wrong (network issue, API error, etc.),
         # return a friendly error message instead of crashing
-        print(f"Claude API error: {e}")
+        # Use the app logger, not print: under gunicorn a bare print goes to a
+        # different stream than every other diagnostic in this file, so these
+        # failures were effectively invisible in production.
+        app.logger.exception('Claude API error during chat.')
         return jsonify({'error': 'Something went wrong. Please try again.'}), 500
 
 
@@ -2300,11 +2500,9 @@ def interview_review():
         return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -2412,11 +2610,9 @@ def interview_improve():
         return jsonify({'error': 'Interview coaching is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -2504,11 +2700,9 @@ def interview_model_answer():
         return jsonify({'error': 'Interview AI is not available for this profile.'}), 403
     if not request.is_json:
         return jsonify({'error': 'Send interview requests as JSON.'}), 415
-    if request.headers.get('Sec-Fetch-Site') == 'cross-site':
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
-    origin = request.headers.get('Origin')
-    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
-        return jsonify({'error': 'Cross-site interview requests are not allowed.'}), 403
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
 
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -2697,9 +2891,15 @@ def server_error(e):
 
 @app.route('/robots.txt')
 def robots_txt():
+    # The private member surfaces and JSON APIs are already protected by
+    # server-side authorization; excluding them here simply keeps them out of
+    # crawl budget and out of search results for signed-in URLs.
     lines = [
         'User-agent: *',
         'Allow: /',
+        'Disallow: /app',
+        'Disallow: /api/',
+        'Disallow: /owner',
         f'Sitemap: {request.url_root.rstrip("/")}/sitemap.xml',
     ]
     return app.response_class('\n'.join(lines) + '\n', mimetype='text/plain')
