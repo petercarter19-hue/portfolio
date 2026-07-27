@@ -29,6 +29,57 @@ documentation-only, and unmerged work do not count.
 | Next quarterly/full-site audit due | 2026-10-24, or before a major launch/public beta if earlier |
 | Current readiness audit | None pending; required before default-off enablement or a new public, identity, data, or publication boundary |
 
+## Planned cross-site responsive audit
+
+`PS-AUDIT-WEB-001` is the planned two-gate cross-site responsive package:
+
+- Gate R1 locks the responsive architecture for a named release wave after its
+  page purposes and primary desktop directions settle.
+- Gate R2 audits the exact integrated implementation across the approved
+  route/state/viewport matrix before a major launch, public beta, or other
+  owner-designated website-wide responsive-completion claim.
+
+The package is established but not activated. It has no route manifest,
+candidate SHA, reviewer, evidence, or audit result yet and therefore does not
+increment or reset the runtime-slice count. If Gate R2 later shares the exact
+scope, reviewer, SHA, routes, states, viewports, and evidence of a checkpoint,
+phase-boundary, or full-site audit, record one combined result instead of
+duplicating the audit.
+
+## Professional readiness controls
+
+`PS-OPS-001` is established with four gates and one emergency mode:
+
+- Gate Candidate between implementation verification and production approval;
+- Gate Launch before public beta/broad exposure; and
+- Gate Operate during the first credible production window and recurring
+  monthly/quarterly operations;
+- Gate Retire before material capability, data-boundary, integration, or
+  service decommissioning; and
+- Emergency Release Mode for a bounded higher-risk-of-delay correction with
+  mandatory identity, security/privacy, approval, smoke, rollback, expiry, and
+  retrospective controls.
+
+The current candidate branch implements a minimal liveness endpoint,
+dependency compatibility and compile checks, and post-deployment public smoke.
+Pete selected and delegated the production-like Candidate path on 2026-07-26.
+The branch implements a separate branch-only Candidate Web App/Basic B1 plan,
+immutable artifact manifest/hash, pinned `pip-audit` and redacted full-history
+Gitleaks scans, candidate-host smoke/noindex verification, and a stop exercise.
+Exact Azure build 256 at
+`1ca3ea6120fc8fcbfeba30137a3bfc94d5508772` passed those controls; Pete
+separately approved Candidate `Pass` on 2026-07-27. Gate Launch, Gate Operate,
+and Gate Retire remain `Not Assessed`.
+
+The current PS-OPS shared-pipeline/runtime branch is material. It did not
+self-bootstrap: the writer collected evidence, and Pete separately approved
+the exact branch-artifact `Pass`. The required Azure PR, main deployment, and
+production smoke remain separately evidenced.
+
+These gates do not affect the four-slice checkpoint count. Gate Operate may
+reuse a checkpoint/full-site audit only when the exact release/environment,
+window, scope, reviewer, evidence, and result are the same.
+
 ## Reset and phase-boundary rules
 
 1. Increment the count only in the runtime slice's normal release closeout.

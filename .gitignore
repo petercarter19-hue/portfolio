@@ -52,3 +52,7 @@ tmp/
 # (scripts/generate_control_room_snapshot.py) before packaging. Never commit
 # the generated file itself; only the generator script is tracked.
 control_room_snapshot.json
+
+# Public-safe release identity: generated fresh by the Azure pipeline before
+# packaging. Never commit a locally generated identity.
+release_identity.json

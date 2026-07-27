@@ -1,8 +1,8 @@
 # PeerSlate Owner Visual Integrity Standard
 
-_Owner decision: 2026-07-18; continuous approved-mockup fidelity amendment and
-visual-inspection responsibility clarification: 2026-07-26. Maintained by the
-currently designated session manager lane._
+_Owner decision: 2026-07-18; continuous approved-mockup fidelity,
+visual-inspection responsibility, and cross-site responsive-audit amendments:
+2026-07-26. Maintained by the currently designated session manager lane._
 
 ## Purpose and authority
 
@@ -280,6 +280,51 @@ accepted and released in the same wave, or an exact downstream parity package
 was activated and sequenced immediately after the real product. The real
 product may release first when that dependency is necessary, but the package
 must report homepage parity as open until the public projection is current.
+
+## Cross-site responsive architecture and implementation audit
+
+Page-local V0-V4 evidence is necessary but cannot by itself prove that all
+website rooms form one coherent responsive system. The planned
+`PS-AUDIT-WEB-001` package therefore supplies two cross-site gates:
+
+1. a **Responsive Architecture Lock** after the page purposes and primary
+   desktop directions for a named release wave are settled, and before the
+   shared shell, route map, or broad page implementation is treated as
+   visually ready; and
+2. a **Responsive Implementation Audit** against the exact integrated
+   branch/deployed-candidate SHA before a major launch, public beta, or other
+   owner-designated website-wide responsive-completion claim.
+
+The first gate reviews the complete route/state/viewport manifest and locks the
+shared shell, navigation, semantic content order, component transformations,
+tablet/phone composition, touch and keyboard behavior, short-landscape
+reachability, and 200-percent reflow. ChatGPT creates any missing or materially
+revised responsive/state authority and Pete locks the exact durable files and
+hashes. A writer does not invent breakpoints or responsive interactions where
+the authority is incomplete.
+
+The second gate reviews the real browser implementation at actual CSS
+viewports, including 1440 and 1920 desktop, tablet landscape/portrait, 430,
+390, 320, short landscape, and 200-percent zoom at minimum, plus any
+package-required wide viewports. It covers every included canonical route,
+meaningful state, supported theme, shell/navigation mode, failure/recovery
+path, and protected-state truth boundary. The evidence includes full-browser
+screenshots, measured geometry where material, cross-route mismatch closure,
+keyboard/screen-reader/touch evidence, no-horizontal-overflow proof, and one
+real touch-device task walk before broad launch.
+
+This master gate does not postpone mobile design until the end, replace any
+page's exact authority, or replay every page-level implementation audit.
+Page-local packages continue to produce responsive evidence during design and
+implementation. The master gate integrates that evidence, resolves
+cross-route contradictions, and prevents a collection of individually
+acceptable pages from being called a coherent responsive website when their
+shell, navigation, hierarchy, state language, or mobile behavior conflicts.
+
+When its exact scope, reviewer, SHA, evidence, and result match a checkpoint,
+phase-boundary, or full-site audit, the same evidence may satisfy that audit's
+responsive portion. Record the reuse in
+`AI_DELIVERY_AUDIT_REGISTER.md`; do not run a duplicate ceremony.
 
 ## Cross-product homepage projection parity
 

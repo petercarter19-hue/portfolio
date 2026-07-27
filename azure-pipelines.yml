@@ -9,9 +9,17 @@ variables:
   # Created in Azure DevOps while configuring the Azure Web App connection.
   azureServiceConnectionId: '3ee022e1-c929-4693-95bd-211db6076ff0'
   webAppName: 'peerslate-pete'
+  candidateWebAppName: 'peerslate-candidate'
   vmImageName: 'ubuntu-latest'
   environmentName: 'peerslate-pete'
+  candidateEnvironmentName: 'peerslate-candidate'
+  candidateBranch: 'refs/heads/work/2026-07-26-responsive-site-audit-001'
   pythonVersion: '3.12'
+  productionBaseUrl: 'https://peerslate.com'
+  candidateBaseUrl: 'https://peerslate-candidate.azurewebsites.net'
+  pipAuditVersion: '2.10.1'
+  gitleaksVersion: '8.30.1'
+  gitleaksLinuxX64Sha256: '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb'
 
 stages:
   - stage: Build
@@ -21,6 +29,11 @@ stages:
         pool:
           vmImage: $(vmImageName)
         steps:
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: false
+            clean: true
+
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '$(pythonVersion)'
@@ -30,6 +43,48 @@ stages:
               python -m pip install --upgrade pip
               pip install -r requirements.txt
             displayName: Install requirements
+
+          - script: python -m pip check
+            displayName: Verify dependency compatibility
+
+          - script: |
+              set -euo pipefail
+              scanner="$(Agent.TempDirectory)/pip-audit"
+              python -m venv "$scanner"
+              "$scanner/bin/python" -m pip install --quiet "pip-audit==$(pipAuditVersion)"
+              mkdir -p "$(Build.ArtifactStagingDirectory)/evidence"
+              "$scanner/bin/python" -m pip_audit \
+                --requirement requirements.txt \
+                --strict \
+                --progress-spinner off \
+                --format json \
+                --output "$(Build.ArtifactStagingDirectory)/evidence/pip-audit.json"
+            displayName: Scan dependencies for known vulnerabilities
+
+          - script: |
+              set -euo pipefail
+              scanner_dir="$(Agent.TempDirectory)/gitleaks"
+              archive="$scanner_dir/gitleaks.tar.gz"
+              mkdir -p "$scanner_dir" "$(Build.ArtifactStagingDirectory)/evidence"
+              curl --fail --silent --show-error --location \
+                --output "$archive" \
+                "https://github.com/gitleaks/gitleaks/releases/download/v$(gitleaksVersion)/gitleaks_$(gitleaksVersion)_linux_x64.tar.gz"
+              printf '%s  %s\n' "$(gitleaksLinuxX64Sha256)" "$archive" \
+                | sha256sum --check -
+              tar -xzf "$archive" -C "$scanner_dir" gitleaks
+              "$scanner_dir/gitleaks" git . \
+                --config .gitleaks.toml \
+                --redact=100 \
+                --report-format json \
+                --report-path "$(Build.ArtifactStagingDirectory)/evidence/gitleaks.json" \
+                --exit-code 1
+            displayName: Scan full repository history for secrets
+
+          - script: >-
+              python -m compileall -q
+              app.py auth_routes.py owner_routes.py peerslate_api.py
+              people_interests_api.py services scripts
+            displayName: Compile runtime and operational scripts
 
           - script: python -m unittest discover -s tests -q
             displayName: Run application and security tests
@@ -42,6 +97,12 @@ stages:
               BUILD_BUILDID: $(Build.BuildId)
               BUILD_SOURCEVERSION: $(Build.SourceVersion)
               BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+
+          - script: >-
+              python scripts/release_identity.py
+              --source-version "$(Build.SourceVersion)"
+              --build-id "$(Build.BuildId)"
+            displayName: Generate immutable release identity
 
           - task: CopyFiles@2
             inputs:
@@ -58,18 +119,36 @@ stages:
               rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/app'
               includeRootFolder: false
               archiveType: zip
-              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/drop/$(Build.BuildId).zip'
               replaceExistingArchive: true
             displayName: Archive deployment package
 
-          - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+          - script: >-
+              python scripts/candidate_artifact.py
+              --archive "$(Build.ArtifactStagingDirectory)/drop/$(Build.BuildId).zip"
+              --output "$(Build.ArtifactStagingDirectory)/drop/candidate-manifest.json"
+              --source-version "$(Build.SourceVersion)"
+              --source-branch "$(Build.SourceBranch)"
+              --build-id "$(Build.BuildId)"
+              --python-version "$(pythonVersion)"
+            displayName: Record immutable candidate artifact hash
+
+          - upload: '$(Build.ArtifactStagingDirectory)/drop'
             artifact: drop
-            displayName: Upload deployment package
+            displayName: Upload immutable deployment package
+
+          - upload: '$(Build.ArtifactStagingDirectory)/evidence'
+            artifact: CandidateEvidence
+            displayName: Upload redacted scanner evidence
 
   - stage: Deploy
-    displayName: Deploy
+    displayName: Deploy production
     dependsOn: Build
-    condition: succeeded()
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
     jobs:
       - deployment: DeployWebApp
         environment: $(environmentName)
@@ -85,3 +164,131 @@ stages:
                     appName: $(webAppName)
                     package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
                   displayName: Deploy to $(webAppName)
+
+  - stage: ProductionSmoke
+    displayName: Verify production deployment
+    dependsOn: Deploy
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
+    jobs:
+      - job: PublicBoundarySmoke
+        displayName: Public boundary smoke
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: >-
+              python scripts/verify_deployment_smoke.py
+              --base-url "$(productionBaseUrl)"
+              --expected-source-version "$(Build.SourceVersion)"
+              --expected-build-id "$(Build.BuildId)"
+              --warmup-seconds 180
+              --retry-delay 10
+              --timeout 15
+            displayName: Verify liveness and canonical public routes
+
+  - stage: CandidateDeploy
+    displayName: Deploy isolated candidate
+    dependsOn: Build
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+      )
+    jobs:
+      - deployment: DeployCandidateWebApp
+        environment: $(candidateEnvironmentName)
+        pool:
+          vmImage: $(vmImageName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: $(azureServiceConnectionId)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: >-
+                      az webapp start
+                      --resource-group peerslate
+                      --name "$(candidateWebAppName)"
+                  displayName: Start isolated candidate
+
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: $(azureServiceConnectionId)
+                    appName: $(candidateWebAppName)
+                    package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+                  displayName: Deploy to $(candidateWebAppName)
+
+  - stage: CandidateSmoke
+    displayName: Verify isolated candidate
+    dependsOn: CandidateDeploy
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+      )
+    jobs:
+      - job: CandidatePublicBoundarySmoke
+        displayName: Candidate boundary smoke
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: >-
+              python scripts/verify_deployment_smoke.py
+              --base-url "$(candidateBaseUrl)"
+              --expected-source-version "$(Build.SourceVersion)"
+              --expected-build-id "$(Build.BuildId)"
+              --warmup-seconds 180
+              --retry-delay 10
+              --timeout 15
+            displayName: Verify candidate identity and public boundary
+
+  - stage: CandidateStop
+    displayName: Exercise and enforce candidate stop
+    dependsOn: CandidateSmoke
+    condition: >-
+      and(
+        always(),
+        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+      )
+    jobs:
+      - job: StopCandidateWebApp
+        displayName: Stop isolated candidate
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az webapp stop \
+                  --resource-group peerslate \
+                  --name "$(candidateWebAppName)"
+                state="$(
+                  az webapp show \
+                    --resource-group peerslate \
+                    --name "$(candidateWebAppName)" \
+                    --query state \
+                    --output tsv
+                )"
+                test "$state" = "Stopped"
+                echo "Candidate stop action passed; state=$state"
+            displayName: Stop candidate and verify Azure state

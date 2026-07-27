@@ -23,6 +23,17 @@
 # The 2026-07-24 page-purpose / AI-evaluation governance lane makes the
 # Markdown Bible v2.9 and Roadmap v2.8 controlling while retaining their exact
 # approved DOCX files as frozen source snapshots. It adds no runtime behavior.
+# Pete's 2026-07-26 responsive-audit decision establishes the Roadmap-reserved
+# PS-AUDIT-WEB-001 package as a planned two-gate cross-site review: responsive
+# architecture after selected page directions settle, then integrated browser
+# implementation evidence before a major launch/public beta. It remains
+# inactive and adds no runtime behavior.
+# Pete's same-date professional-readiness decision instantiates the
+# Roadmap-reserved PS-OPS-001 package with Gate Candidate, Gate Launch, Gate
+# Operate, Gate Retire, and Emergency Release Mode. The task branch adds an
+# exact-build liveness/post-deploy smoke floor, but every gate remains Not
+# Assessed and no staging, external scan, operational exercise, branch
+# pipeline, deployment, or live result is pre-claimed.
 # Reconciled on 2026-07-21 by PS-GOV-TRUTH-RECONCILIATION-001. The July 20
 # governance releases advanced the authority documents but did not record
 # Azure PRs 103-110 and 112-117 and 119, and they carried forward a stale
@@ -33,7 +44,7 @@
 # capability, and it makes no new live claim.
 # This is a verified snapshot, not a substitute for fetching origin before work.
 schema_version: 4
-updated_at: "2026-07-24"
+updated_at: "2026-07-26"
 
 authority:
   remote: origin
@@ -199,13 +210,45 @@ authority:
   page_purpose_ai_eval_pipeline: 236
   page_purpose_ai_eval_pipeline_build: "20260724.13"
   page_purpose_ai_eval_pipeline_trigger: "single manual run after the automatic main trigger did not materialize during the bounded observation window"
+  page_purpose_closeout_merge_commit: "fb08cc5b5725b36706cda75e33f9ce3b98ba2ae4"
+  page_purpose_closeout_pr: 174
+  page_purpose_closeout_pipeline: 237
+  page_purpose_closeout_redundant_pipeline: 238
+  interview_review_heal_merge_commit: "8dc6e2842ba33d964698849459961f72c7345689"
+  interview_review_heal_pr: 175
+  interview_review_heal_pipeline: 239
+  interview_review_duplicate_merge_commit: "be7f85766d10e8f6846d48ad507d8a55490ff566"
+  interview_review_duplicate_pr: 176
+  interview_review_duplicate_pipeline: 240
+  interview_review_duplicate_note: "PR 176 produced no tree change after PR 175 had already merged the same source correction; both pipeline runs passed."
+  entry_docs_correction_merge_commit: "598cb7d7a5f067564ce3e00540352176decd2b8b"
+  entry_docs_correction_pr: 177
+  entry_docs_correction_pipeline: 241
+  overview_direction_merge_commit: "52128a57c81969788c9dde68636d26c0ebd6a7db"
+  overview_direction_pr: 178
+  overview_direction_pipeline: 242
+  overview_width_merge_commit: "e915b173ec4a2c14ea6d499f45416335a6b93b29"
+  overview_width_pr: 179
+  overview_width_pipeline: 243
+  overview_owner_decisions_merge_commit: "9d01fa7315115599bae0b45c237b72b265ac24e8"
+  overview_owner_decisions_pr: 180
+  overview_owner_decisions_pipeline: 244
+  mockup_fidelity_merge_commit: "4db44270b524c77556b601c82d036b7af9d1c802"
+  mockup_fidelity_pr: 181
+  mockup_fidelity_pipeline: 245
+  mockup_fidelity_closeout_merge_commit: "17467d66a8dc5375effd792e980d0bbc513d0532"
+  mockup_fidelity_closeout_pr: 182
+  mockup_fidelity_closeout_pipeline: 246
+  mockup_fidelity_pipeline_closeout_merge_commit: "453662adc022b6ea0b1b38208c7100697d119a8b"
+  mockup_fidelity_pipeline_closeout_pr: 183
+  mockup_fidelity_pipeline_closeout_pipeline: 247
   interview_studio_asset_signature: "studio-5a5c-4"
   production_url: "https://peerslate.com"
-  deployed_main_commit: "3e79e2c5986e915ac3d2a17276b57f740c431f3c"
-  deployed_pipeline: 236
-  application_behavior_commit: "43d415cfb50717d94b69c07d7be648a12691f1f8"
-  application_behavior_pipeline: 233
-  application_behavior_note: "The latest deployed main is documentation-only page-purpose/AI-evaluation governance merge 3e79e2c5986e915ac3d2a17276b57f740c431f3c through PR 173 and pipeline 236 (20260724.13). It changes no application behavior. Application behavior remains the Slate Studio Slice 1 release at 43d415cfb50717d94b69c07d7be648a12691f1f8 through PR 171/pipeline 233: the protected /app/studio/build-your-future route remains intended 404, / and /interview-studio return 200, and /app retains its expected sign-in redirect. Public Interview Studio, including its audio behavior and studio-5a5c-4 assets, was unchanged."
+  deployed_main_commit: "453662adc022b6ea0b1b38208c7100697d119a8b"
+  deployed_pipeline: 247
+  application_behavior_commit: "8dc6e2842ba33d964698849459961f72c7345689"
+  application_behavior_pipeline: 239
+  application_behavior_note: "Azure pipeline 247 (20260726.6) succeeded for exact current main 453662adc022b6ea0b1b38208c7100697d119a8b after the reconciled PR 174-183 sequence. The latest tree-changing application behavior is the Interview Studio score-healing release at 8dc6e2842ba33d964698849459961f72c7345689 through PR 175/pipeline 239; PR 176 merged the same source again with no tree change and pipeline 240 also passed. PRs 177-183 changed entry documentation, Overview direction/owner decisions, and approved-mockup governance only. Read-only production checks on 2026-07-26 returned 200 for / and /interview-studio and 404 for /healthz, which is expected because PS-OPS-001 remains unmerged. No public exact-build marker exists before this branch releases, so route health is recorded separately from Azure's exact pipeline identity."
   concurrent_session_note: "PRs 121 and 122 merged on 2026-07-21 from work/2026-07-21-journal-visual-handoff and its closeout, while PS-GOV-TRUTH-RECONCILIATION-001 held the shared governance reservation. That lane is a separate active writer producing PS-JOURNAL-001 visual-handoff material for a ChatGPT first screen set. It touched only docs/initiatives/PS-JOURNAL-001/**, so it did not contend for any reserved governance record, but its existence contradicts the single-session assumption this reconciliation started from. Any manager must re-check for concurrent writers rather than assume exclusivity."
   note: "PR 95/pipeline 139 released the Capture Photo backend flag-off and PR 96/pipeline 140 closed its shared-file reservations. Owner-delegated manager acceptance then approved the Photo 1 experience for a flag-off release; PR 98/pipeline 143 released source a19a5034aa7f3b9d355f8862aa98a34eb9f3e5f6 at e5912c85d95dddbaed9c565d1e599efe2c8dd0b6. Photo remains disabled until signed-in lifecycle, two-owner, homepage-parity, and enablement gates pass. PR 99/pipeline 145 released the finite Owner Home backend from source efd19d820986a529d48e2fcf660655b9f4dfc492 at 2db2ca5c93fa221f7092b54ebc17f2068584c07d; the production SQL migration/verifier passed and PEERSLATE_OWNER_HOME_ENABLED remains false, so /app is unchanged and the API is neutral 404. This governance activation assigns the exact-authority Owner Home frontend while preserving the default-off boundary and finite owner-home.v1 contract. The exact 5A-light/5C-dark Interview Studio release source 0aaf41768a33810b089f5fea3a66a5272e8b61d8 squash-merged through PR 101 at 39002f5130a1766d2090007c16582e0dbe07226c; automatic pipeline 149 passed Build and Deploy, the live versioned assets match the released bytes, and desktop/390px browser verification passed. PR 102/pipeline 150 closed its release governance. PS-HOME-INTERVIEW-PARITY-001 then progressed from its architecture checkpoint 353a5810b18e7db22f35319fbecc9c2fa97d8b72 through manager-required corrections to implementation source 6625b52ca4620b503ec56dcc15567470b6ef2499; Azure PR 105 squash-merged it at 4deb0a07b6faf2d93d445e212207aeb84b1a71c4 and automatic pipeline 154 (20260720.25) passed Build and Deploy. PR 106/pipeline 156 closed its release governance. Live https://peerslate.com/ serves the converged assets homepage-scenes.css?v=interview-parity-1 and homepage-interview-demo.js?v=int-parity-1, matching main. The homepage Interview parity gate is therefore closed, not open. Fetch origin for the exact current tip."
 
@@ -218,9 +261,9 @@ mirror:
 manager:
   role: "package_designated_session_manager"
   eligible_tools: "ChatGPT Work/Codex manager session or Claude Co-Work"
-  owner_decision_date: "2026-07-24"
-  current_session_manager: "Current ChatGPT Work/Codex task, designated by Pete on 2026-07-24 for Slate Studio sequencing and ChatGPT visual-authority governance"
-  current_session_manager_scope: "Documentation-only PS-GOV-PAGE-PURPOSE-AI-EVAL-001 governance closeout and the next ChatGPT-created Workshop / Build Your Future visual-authority round. The separate Claude Interview Me audio lane remains read-only to this manager until its owner returns an exact branch and pushed SHA. No Journal, Owner Home, Community, Capture, public Interview Studio runtime, public Slate, homepage, shared-service, schema, migration, or deployment-configuration ownership transfers with this designation."
+  owner_decision_date: "2026-07-26"
+  current_session_manager: "Current ChatGPT Work/Codex task, designated by Pete for Slate Studio visual-authority sequencing and, on 2026-07-26, the bounded PS-AUDIT-WEB-001 and PS-OPS-001 setup/correction lane"
+  current_session_manager_scope: "The prior Workshop / Build Your Future visual-authority round remains separate. For work/2026-07-26-responsive-site-audit-001, Pete explicitly authorized the PS-AUDIT-WEB-001 governance setup and the bounded PS-OPS-001 repository floor: package/governance records, app.py member-data-free liveness, release-identity/candidate-manifest/smoke scripts, the generated-identity .gitignore exclusion, .gitleaks.toml, azure-pipelines.yml, and focused tests. On 2026-07-26 Pete selected and delegated the production-like Candidate path: a separate peerslate-candidate Web App/environment on the existing plan, separate inert configuration with no production secrets/data/provider access, pinned local vulnerability and full-history redacted secret scans, immutable branch artifact, candidate smoke, stop exercise, and exact evidence. This does not transfer Journal, Owner Home, Community, Capture, public Interview Studio product behavior, public Slate, homepage presentation, schema, migration, feature enablement, production App Service/settings/data/secrets/identity, production deployment before the Candidate decision, monitoring/analytics providers, DNS, or another lane's ownership."
   delivery_model: "portable_session_manager_with_self_managed_writers"
   responsibilities: "package sequencing, governance truth, shared-file reservations, visual authority, final manager acceptance, Azure closeout coordination, and exception escalation; assigned writers self-review and self-certify their branches"
   current_assignments: "PS-SLATE-STUDIO-SLICE-1-001 is released and production-verified default-off through PR 171, merge 43d415cfb50717d94b69c07d7be648a12691f1f8, and automatic pipeline 233. The unmerged work-history Slice 2 candidate at f6c2b52763d50d0773f20294acacd8d8165e59da is preserved/rejected/do-not-merge. The next Studio work is ChatGPT-created Workshop and Build Your Future concepts based only on Pete-approved page-purpose inventories: Workshop remains a same-page Workbench, and Build Your Future centers a private future-facing Goal Board. No runtime implementation, Slice 1 enablement, Goal persistence/editing, experiments, Ask Slate integration, publishing, or Interview Studio change is authorized by this governance package. Projects is the next major purpose discussion after Workshop and Build direction are settled. The separate Claude Interview Me audio lane owns its own files and branch. Journal remains canonical infrastructure; Studio is the private work-first experiential center; public Slate presents approved output; Community connects selected output. Existing Journal, Owner Home, Community, Capture, and return/AI/messaging packages continue independently under their own ownership and release state; bounded Return and owner-only Ask Slate may proceed after private Journal foundations without waiting for public Journal. Any Home /app/capture link is temporary default-off compatibility, not target IA. Capture Photo remains flag-off until Save Moment/derived-Journal integration or an explicit owner-approved temporary exception plus its existing enablement gates."
@@ -354,6 +397,12 @@ active_packages:
     roadmap_phase: "Post-Slice 1 Studio visual-definition gate; no Phase 4/Phase 10 runtime work authorized"
     package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
     status: "slice1_released_default_off_slice2_candidate_rejected_inventories_approved_chatgpt_visual_creation_next"
+  - id: PS-OPS-001
+    owner: "Pete owner; current ChatGPT Work/Codex setup manager and sole writer; runtime/pipeline, test-contract, and final governance rechecks passed at 5472b02cccc4e7f6dff34ab1a65b37047c568507"
+    lane: professional_candidate_launch_operate_retire_readiness
+    roadmap_phase: "Cross-phase operational floor and ongoing transition controls"
+    package_path: "docs/initiatives/PS-OPS-001/README.md"
+    status: "repository_floor_technical_handoff_complete_gate_candidate_not_assessed_blocks_merge_and_deployment_no_branch_pipeline_or_live_claim"
 
 planned_packages:
   - id: PS-SHELL-001
@@ -361,7 +410,13 @@ planned_packages:
     lane: site_shell_width_headers_ground_type
     roadmap_phase: "After Journal J1 release wave"
     package_path: "docs/initiatives/PS-SHELL-001/README.md"
-    status: "planned_setup_awaiting_visual_authority"
+    status: "planned_setup_awaiting_visual_authority_and_responsive_architecture_lock"
+  - id: PS-AUDIT-WEB-001
+    owner: "Pete owner; future package-designated audit manager, visual inspector, implementation writer, and fresh reviewer unassigned"
+    lane: cross_site_responsive_architecture_and_implementation_audit
+    roadmap_phase: "Cross-phase after selected page purposes and primary desktop directions settle; integrated audit before major launch/public beta"
+    package_path: "docs/initiatives/PS-AUDIT-WEB-001/README.md"
+    status: "planned_gate_established_not_active_no_route_manifest_or_audit_result"
   - id: PS-RESUME-STUDIO-001
     owner: "Pete product direction; future designated manager and implementation writer unassigned"
     lane: future_resume_in_place_editing_and_gap_prompts

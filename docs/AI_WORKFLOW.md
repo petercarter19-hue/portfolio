@@ -130,7 +130,7 @@ integration and evidence; they do not replay every prior implementation review.
 |---|---|---|
 | Checkpoint | Every four completed runtime implementation slices or a major phase boundary, whichever comes first | Cross-slice integration, authorization/privacy, canonical truth/provenance, accessibility/visual consistency, release truth, and governance drift |
 | Readiness | Before enabling a default-off feature or opening a new public, identity, data, or publication boundary | The exact enablement/boundary contract, rollback or stop control, and production readiness evidence |
-| Full site | Quarterly or before a major launch or public beta | The live system's critical journeys, security/privacy boundaries, visual quality, accessibility, operational evidence, and release truth |
+| Full site | Quarterly or before a major launch or public beta | The live system's critical journeys, security/privacy boundaries, visual quality, accessibility, operational evidence, release truth, and the cross-route responsive implementation scope in `PS-AUDIT-WEB-001` when that package is activated |
 | Triggered | Immediately after an incident, regression, cross-user risk, unsafe migration, conflicting evidence, or `Conditional`/`Fail` result | The affected contract plus the smallest necessary upstream/downstream integration scope |
 
 One fresh reviewer in the active ecosystem performs an audit against exact
@@ -144,6 +144,51 @@ The designated manager keeps
 `docs/governance/AI_DELIVERY_AUDIT_REGISTER.md` current during normal runtime
 slice closeout. The register counts only completed runtime implementation slices;
 documentation, architecture, audit, and activation-only work does not count.
+
+`PS-AUDIT-WEB-001` supplies a planned Responsive Architecture Lock and a later
+Responsive Implementation Audit. Its page-local evidence remains owned by the
+affected packages. When its integrated responsive audit uses the same exact
+scope, reviewer, SHA, route/state/viewport matrix, and evidence as a checkpoint,
+phase-boundary, or full-site audit, record one combined result rather than
+running two audits.
+
+### Professional transition gates
+
+`PS-OPS-001` adds four transition controls and one emergency mode to the
+existing A-F delivery route:
+
+1. **Gate Candidate** is the immutable promotion record after Gate D
+   implementation verification and before a material artifact is approved for
+   production. It consumes Gate D evidence without rerunning it and requires
+   exact source/artifact/environment identity, applicable automated and human
+   evidence, a production-like candidate path or explicit bounded exception,
+   candidate smoke, and named stop/rollback control.
+2. **Gate Launch** runs before public beta, broad registration, or materially
+   expanded public/member exposure. It combines the applicable legal,
+   security, responsive R2, independent accessibility, performance,
+   SEO/content, measurement, support, incident, and backup/restore results
+   without replaying them.
+3. **Gate Operate** begins after Gate F deployment and production verification
+   closes. It reviews the first credible production window, normally 24-72
+   hours, then monthly during active beta/production and quarterly with the
+   full-site audit when the evidence scope is identical.
+4. **Gate Retire** controls safe decommissioning of a material capability,
+   route family, data boundary, integration, credential set, or service,
+   including member notice/export, retention/legal hold, redirects/indexing,
+   dependency and credential shutdown, monitoring teardown, and final proof.
+
+Emergency Release Mode may shorten sequencing only when delay creates greater
+documented production risk. It never bypasses exact identity, security/privacy/
+authorization blockers, owner or incident-commander approval, smoke, or a
+tested stop/disable/rollback action; deferred non-blocking evidence expires and
+is completed within two business days.
+
+Use `docs/templates/PROFESSIONAL_READINESS_EVIDENCE.md`. Missing mandatory
+evidence with no accepted bounded exception is `Not Assessed` or `Fail`, never
+`Pass`. `Conditional` requires an explicit owner, expiry, compensating control,
+blast-radius limit, and stop/rollback action. A post-production smoke check is
+Gate F evidence: it improves detection but does not become production-like
+staging or progressive exposure merely because it passed.
 
 ### Audit result handling
 

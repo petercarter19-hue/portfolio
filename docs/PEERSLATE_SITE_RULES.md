@@ -177,6 +177,19 @@ These rules govern product copy, information architecture, data behavior, AI beh
     branch/SHA handoff is additionally required when a different writer
     continues the branch.
 85. Stop and report when the repository or Azure state conflicts with the approved plan. Do not silently invent a new architecture.
+85a. Follow `docs/initiatives/PS-OPS-001/README.md` for Gate Candidate,
+     Gate Launch, Gate Operate, Gate Retire, and Emergency Release Mode. A
+     successful build, deployment, homepage response, or internal checklist may
+     not substitute for missing staging, security, accessibility, legal,
+     performance, support, recovery, retirement, or production evidence.
+85b. `/healthz` is a minimal, member-data-free process-liveness endpoint for
+     deployment checks. It may return service/status and one opaque
+     build-specific release ID. It may not return member, identity,
+     configuration, dependency, secret, provider, database, storage, quota, or
+     diagnostic detail.
+85c. A post-production smoke check detects release failure but does not prove
+     production-like staging, progressive exposure, rollback readiness, or
+     public-launch readiness.
 
 ## 13. Visual integrity and demonstration parity
 

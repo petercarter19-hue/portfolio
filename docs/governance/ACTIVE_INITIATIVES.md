@@ -29,6 +29,25 @@ _Released 2026-07-24 through Azure PR 173 at squash merge
 shared-file reservation is released. Both page-purpose inventories are
 Pete-approved; ChatGPT visual creation is the active Studio gate._
 
+_Updated 2026-07-26 for Pete's cross-site responsive-audit decision.
+`PS-AUDIT-WEB-001` is a planned package with no active audit or runtime writer.
+It will lock a named release wave's responsive architecture after page
+directions settle and later audit the integrated browser implementation before
+a major launch/public beta. This planning update changes no website behavior._
+
+_Updated 2026-07-26 for Pete's explicitly authorized `PS-OPS-001` repository
+floor on `work/2026-07-26-responsive-site-audit-001`. The current ChatGPT
+Work/Codex task is manager and sole writer for the package/governance,
+member-data-free liveness, release-identity/smoke, pipeline, and focused-test
+surface named below. Its first exact-SHA infrastructure review returned
+`Conditional`; all accepted corrections and focused rechecks passed at
+`5472b02cccc4e7f6dff34ab1a65b37047c568507`; technical rechecks passed. Pete
+selected and delegated the production-like Candidate path on 2026-07-26, then
+approved Candidate `Pass` for exact Azure build 256 at
+`1ca3ea6120fc8fcbfeba30137a3bfc94d5508772` on 2026-07-27. The branch is
+approved for Azure PR and production Gate F; other professional gates remain
+`Not Assessed`._
+
 _Updated 2026-07-26 after PS-OVERVIEW-PUBLIC-INTEGRATION-001 released through
 Azure PR 187 at squash merge
 `2f03a514b3329d27c49dcd1e7515a181827c2597`; automatic pipeline 254 passed
@@ -63,6 +82,7 @@ only for high-risk or expressly required packages.
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
 | Workshop / Build Your Future visual definition | Current ChatGPT Work/Codex task as visual-governance manager; no runtime writer assigned | PS-SLATE-STUDIO-IA-001 owner correction plus Pete-approved Workshop and Build page-purpose inventories | ChatGPT creates the Workshop and two Goal Board concept sets; Pete scrutinizes and locks exact authority | runtime implementation, rejected Slice 2 reuse, Slice 1 enablement, Goal persistence/editing, AI/publishing, Projects implementation, `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio or its separate audio lane, public Slate, homepage, shared services, schema, migrations, or deployment configuration |
+| Professional readiness Candidate setup | Current ChatGPT Work/Codex task, manager and sole writer; owner-delegated staging setup active | PS-OPS-001 | package/governance records, `.gitleaks.toml`, release/candidate-identity and public-smoke scripts, `azure-pipelines.yml`, focused tests, the separate `peerslate-candidate` Web App/environment, pinned local scanners, immutable branch artifact, candidate smoke, stop exercise, and exact evidence on `work/2026-07-26-responsive-site-audit-001` | production App Service/settings/data/secrets/identity, the active Overview writer's `app.py`, production deployment before Candidate decision, monitoring/analytics providers, DNS, feature enablement, member data, product UI/visuals, schema/migrations, or another lane's files |
 
 ## Current active gate
 
@@ -101,6 +121,29 @@ only for high-risk or expressly required packages.
   capability. The shared-governance reservation is released.
 - Pete approved both page-purpose inventories. ChatGPT visual creation and
   scrutiny are next; exact visual lock remains a separate owner decision.
+
+### PS-OPS-001 - Candidate passed; production Gate F active
+
+- Pete authorized the bounded professional-readiness implementation on
+  `work/2026-07-26-responsive-site-audit-001`, then selected and explicitly
+  delegated the production-like staging path on 2026-07-26.
+- Gate Candidate is the immutable promotion record after Gate D; Gate F retains
+  deployment and immediate production smoke; Gate Operate begins after F. Gate
+  Launch controls broad exposure, Gate Retire controls decommissioning, and
+  Emergency Release Mode preserves mandatory identity/security/privacy/
+  approval/rollback controls while shortening only justified timing.
+- The first exact-SHA shared-infrastructure review returned `Conditional`.
+  Corrections add exact build identity, strong route-specific smoke predicates,
+  normalized retryable transport/protocol/read failures, structural pipeline
+  assertions, truthful result semantics, and the missing emergency/retirement
+  paths. Runtime/pipeline, test-contract, and final governance rechecks passed
+  at `5472b02cccc4e7f6dff34ab1a65b37047c568507`.
+- Gate Candidate is `Pass` for exact build 256 and the evidence in
+  `docs/initiatives/PS-OPS-001/CANDIDATE_EVIDENCE_2026-07-27.md`. Gate Launch,
+  Gate Operate, and Gate Retire remain `Not Assessed`.
+- This material branch is approved for the required Azure PR and production
+  Gate F. It is not called merged or deployed until the exact main pipeline and
+  live production smoke pass.
 
 PS-VOICE-001 is no longer an active gate. Pete and ChatGPT Work accepted the
 corrected implementation after Claude Code relinquished exact tip
@@ -439,6 +482,18 @@ No current package holds. Product-code entry gates still apply.
 
 ### Planned committed packages - no runtime writer
 
+- `PS-SHELL-001`: planned shared-shell implementation for measured fluid width
+  profiles, headers, ground, type, and approved shared context/navigation
+  components. Its older approximate 1120-1200-pixel stage is not a binding
+  universal width. It remains inactive pending exact visual authority,
+  route-map decisions, Overview-width reconciliation, and the applicable
+  `PS-AUDIT-WEB-001` Gate R1 lock.
+- `PS-AUDIT-WEB-001`: planned cross-site Responsive Architecture Lock and
+  Responsive Implementation Audit. Gate R1 starts only after a named release
+  wave's page-purpose and primary desktop directions settle. Gate R2 reviews
+  the exact integrated route/state/viewport candidate before a major launch,
+  public beta, or other website-wide responsive-completion claim. No route
+  manifest, reviewer, evidence, result, or runtime authority exists yet.
 - `PS-RETURN-VALUE-001`: replay/resurfacing, Momentum, Prompt/Ritual, What
   PeerSlate Noticed, and Slate Mirror, staged after the private Journal core.
 - `PS-ASK-SLATE-AI-001`: signed-in umbrella; **Ask My Slate** is a contextual

@@ -31,6 +31,7 @@ from overview_projection_service import (
     list_fixture_options,
     load_fixture_catalog,
 )
+from scripts.release_identity import load_release_id
 
 # Load the .env file so ANTHROPIC_API_KEY is available to this app.
 # This must happen before we create the Anthropic client below.
@@ -160,6 +161,24 @@ app.register_blueprint(owner)
 app.register_blueprint(control_room)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
+
+
+@app.get('/healthz')
+def healthz():
+    """Minimal process-liveness signal for Azure and release smoke checks.
+
+    This endpoint intentionally does not query member data, Azure SQL, Blob
+    Storage, identity providers, or AI providers. A dependency readiness check
+    belongs in a separately authorized operational package because it can wake
+    services, consume quota, or expose infrastructure state.
+    """
+    response = jsonify(
+        service='peerslate',
+        status='ok',
+        release=load_release_id(),
+    )
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @app.after_request

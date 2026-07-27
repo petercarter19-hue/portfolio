@@ -1,0 +1,11 @@
+title = "PeerSlate Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known non-secret member UUID used only as a deterministic test fixture."
+targetRules = ["generic-api-key"]
+regexes = [
+  '''^45ab728a-44bc-4f80-a79f-d010e04d5453$''',
+]

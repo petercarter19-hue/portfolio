@@ -536,6 +536,7 @@ class BaselineCoherenceTests(unittest.TestCase):
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
                 "PS-SLATE-STUDIO-IA-001",
+                "PS-OPS-001",
             ],
             active_ids,
         )
@@ -1681,13 +1682,19 @@ class PagePurposeAiAndMarkdownAuthorityTests(unittest.TestCase):
             "docs", "initiatives", "PS-GOV-PAGE-PURPOSE-AI-EVAL-001",
             "OWNER_TECHNICAL_COMPLETION_REPORT.md",
         )
-        for record in (baseline, state, initiatives, report):
+        for record in (state, initiatives, report):
             for expected in (
                 "f48ee990dfe7f19dfb6678600902076405c41433",
                 "3e79e2c5986e915ac3d2a17276b57f740c431f3c",
                 "pipeline 236",
             ):
                 self.assertIn(expected, record)
+        for expected in (
+            'page_purpose_ai_eval_source_commit: "f48ee990dfe7f19dfb6678600902076405c41433"',
+            'page_purpose_ai_eval_merge_commit: "3e79e2c5986e915ac3d2a17276b57f740c431f3c"',
+            "page_purpose_ai_eval_pipeline: 236",
+        ):
+            self.assertIn(expected, baseline)
         self.assertIn("page_purpose_ai_eval_pr: 173", baseline)
         self.assertIn("PS-GOV-PAGE-PURPOSE-AI-EVAL-001", baseline.split(
             "completed_packages:", 1
@@ -1812,6 +1819,83 @@ class PagePurposeAiAndMarkdownAuthorityTests(unittest.TestCase):
             self.assertIn(expected, sequence)
         self.assertNotIn("\n\nderived Journal retrieval", sequence)
         self.assertNotIn("\n\nidempotent Save Moment operation", sequence)
+
+
+class ResponsiveSiteAuditGateTests(unittest.TestCase):
+    """Durable controls for the planned PS-AUDIT-WEB-001 master gate."""
+
+    def test_responsive_audit_package_and_two_gates_are_durable(self):
+        package_path = os.path.join(
+            ROOT, "docs", "initiatives", "PS-AUDIT-WEB-001", "README.md"
+        )
+        self.assertTrue(os.path.isfile(package_path))
+        package = _read("docs", "initiatives", "PS-AUDIT-WEB-001", "README.md")
+        for required in (
+            "Responsive Architecture Lock",
+            "Responsive Implementation Audit",
+            "route/state/viewport manifest",
+            "390 x 844",
+            "320 x 568",
+            "Short landscape",
+            "200 percent zoom",
+            "one real touch-device task walk",
+            "Mobile is a deliberate task composition, not a shrunken desktop canvas.",
+            "This is a responsive **website** gate.",
+            "Runtime authority:** none",
+        ):
+            self.assertIn(required, package)
+
+    def test_current_pointers_record_planned_not_active_status(self):
+        baseline = _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        state = _read("docs", "governance", "CURRENT_STATE.md")
+        initiatives = _read("docs", "governance", "ACTIVE_INITIATIVES.md")
+
+        planned = baseline.split("planned_packages:", 1)[1].split("next_gate:", 1)[0]
+        self.assertIn("- id: PS-AUDIT-WEB-001", planned)
+        self.assertIn(
+            'package_path: "docs/initiatives/PS-AUDIT-WEB-001/README.md"',
+            planned,
+        )
+        self.assertIn(
+            'status: "planned_gate_established_not_active_no_route_manifest_or_audit_result"',
+            planned,
+        )
+        self.assertIn("Cross-site responsive audit planning (2026-07-26)", state)
+        self.assertIn(
+            "manifest, reviewer, evidence, result, or runtime authority exists yet.",
+            initiatives,
+        )
+        for body in (state, initiatives):
+            self.assertIn("changes no website behavior", body)
+
+    def test_shell_visual_and_audit_controls_are_connected_without_duplication(self):
+        shell = _read("docs", "initiatives", "PS-SHELL-001", "README.md")
+        visual = _read(
+            "docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"
+        )
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        audit_register = _read(
+            "docs", "governance", "AI_DELIVERY_AUDIT_REGISTER.md"
+        )
+        decisions = _read("docs", "governance", "DECISIONS.md")
+
+        self.assertIn("One coherent fluid shell-width system", shell)
+        responsive_package = _read(
+            "docs", "initiatives", "PS-AUDIT-WEB-001", "README.md"
+        )
+        self.assertIn("older approximate 1120-1200-pixel stage", responsive_package)
+        self.assertIn("universal fixed rule", responsive_package)
+        self.assertIn(
+            "Cross-site responsive architecture and implementation audit", visual
+        )
+        self.assertIn(
+            "record one combined result rather than\nrunning two audits", workflow
+        )
+        self.assertIn("The package is established but not activated.", audit_register)
+        self.assertIn(
+            "Establish a cross-site responsive architecture and implementation audit",
+            decisions,
+        )
 
 
 if __name__ == "__main__":

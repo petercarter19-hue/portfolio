@@ -26,6 +26,12 @@ Markdown while retaining their exact DOCX bytes as frozen source snapshots. It
 does not change any route, UI, visual authority, schema, provider/model,
 feature flag, deployment, or live member capability._
 
+_Updated 2026-07-26 for Pete's cross-site responsive-audit decision.
+`PS-AUDIT-WEB-001` is now a planned two-gate package: responsive architecture
+after the selected page directions settle, followed by integrated
+route/state/viewport browser evidence before a major launch or public beta.
+The package is not active and this update changes no website behavior._
+
 ## Verified production and repository baseline
 
 - `origin` is Azure DevOps and the only source of truth. `github` is a public
@@ -660,6 +666,98 @@ The completed Placement foundation does not depend on Interview Studio. Voice Ca
 - `codex/2026-07-24-slate-studio-slice-2-architecture` at
   `f6c2b52763d50d0773f20294acacd8d8165e59da` is preserved/rejected/do-not-merge
   candidate history, not implementation authority.
+
+## Reconciliation of Azure PRs 174-183 (2026-07-26)
+
+The prior current pointers stopped at PR 173/pipeline 236. This update
+reconciles every later merge through the exact `origin/main` base used by
+`PS-OPS-001`. Azure pull-request and pipeline records were read directly on
+2026-07-26:
+
+| PR | Merge commit | Pipeline | Verified result and scope |
+|---|---|---|---|
+| 174 | `fb08cc5b5725b36706cda75e33f9ce3b98ba2ae4` | 237; redundant 238 | Both succeeded; page-purpose governance closeout and visual kickoff |
+| 175 | `8dc6e2842ba33d964698849459961f72c7345689` | 239 | Succeeded; Interview Studio overall score is derived from the five validated dimensions instead of rejecting an arithmetic mismatch |
+| 176 | `be7f85766d10e8f6846d48ad507d8a55490ff566` | 240 | Succeeded; duplicate merge of the same source with no tree change after PR 175 |
+| 177 | `598cb7d7a5f067564ce3e00540352176decd2b8b` | 241 | Succeeded; corrected repository entry/deployment/remotes documentation |
+| 178 | `52128a57c81969788c9dde68636d26c0ebd6a7db` | 242 | Succeeded; Overview direction package |
+| 179 | `e915b173ec4a2c14ea6d499f45416335a6b93b29` | 243 | Succeeded; Overview wide-desktop amendment |
+| 180 | `9d01fa7315115599bae0b45c237b72b265ac24e8` | 244 | Succeeded; Overview owner decisions |
+| 181 | `4db44270b524c77556b601c82d036b7af9d1c802` | 245 | Succeeded; continuous approved-mockup fidelity rule |
+| 182 | `17467d66a8dc5375effd792e980d0bbc513d0532` | 246 | Succeeded; mockup-fidelity closeout |
+| 183 | `453662adc022b6ea0b1b38208c7100697d119a8b` | 247 | Succeeded; exact pipeline evidence closeout and current deployed `main` |
+
+The latest tree-changing application release in that sequence is PR 175.
+PRs 177-183 changed instructions, Overview/visual authority, or closeout
+evidence rather than application behavior. Read-only live checks on 2026-07-26
+returned 200 for `/` and `/interview-studio`; `/healthz` returned the expected
+404 because the PS-OPS branch is not merged or deployed. Pipeline 247 proves
+the exact deployed main source. Before this branch releases, production has no
+public exact-build marker, so those live route responses are not represented as
+independent proof of the exact deployed artifact.
+
+## Cross-site responsive audit planning (2026-07-26)
+
+- The Roadmap-reserved `PS-AUDIT-WEB-001` package now has a durable planned
+  definition. It is not an active audit and has no route manifest, candidate
+  SHA, visual lock, reviewer, evidence set, result, runtime change, deployment,
+  or live claim.
+- Gate R1, Responsive Architecture Lock, starts only for a named release wave
+  after its page-purpose inventories and primary desktop directions settle. It
+  reviews the cross-site route/state/viewport manifest, shell, navigation,
+  semantic content order, component transformations, tablet/phone composition,
+  short-landscape behavior, and 200-percent reflow.
+- Gate R2, Responsive Implementation Audit, later checks the exact integrated
+  browser candidate at desktop, tablet, 430, 390, 320, short landscape, and
+  200-percent zoom, plus package-required viewports, before a major launch,
+  public beta, or other website-wide responsive-completion claim.
+- Page-local packages still design and prove their own mobile behavior before
+  implementation and release. The master audit integrates their evidence and
+  resolves cross-route contradictions; it is not permission to defer mobile
+  work until the end.
+- `PS-SHELL-001` remains planned shared-shell implementation. Its older
+  approximate 1120-1200-pixel stage is historical direction, not a binding
+  universal width. It must reconcile the owner-locked Overview and other
+  measured authorities through Gate R1 before runtime shell implementation.
+- Gate R2 may share evidence with the next checkpoint, phase-boundary, or
+  full-site audit only when its exact scope, reviewer, SHA, routes, states,
+  viewports, evidence, and result are identical and recorded once in the audit
+  register.
+
+## Professional readiness controls (2026-07-26)
+
+- The Roadmap-reserved `PS-OPS-001` package now defines Gate Candidate, Gate
+  Launch, Gate Operate, Gate Retire, and Emergency Release Mode as
+  specializations of the existing A-F delivery route, not a competing
+  lifecycle.
+- The candidate branch adds a minimal, member-data-free `/healthz`, dependency
+  compatibility and compile checks, an opaque exact-build release identity, and
+  a deadline-based post-deployment public smoke stage. The exact candidate
+  result is recorded below; no production result is claimed until the branch
+  is accepted, merged, deployed by Azure, and verified.
+- Gate Candidate is `Pass` for exact Azure build `256` at branch source
+  `1ca3ea6120fc8fcbfeba30137a3bfc94d5508772`, artifact SHA-256
+  `b1e605e058aba208d6c88967ba7c7c0b5571fdf1d9ab80ce8e632a1d05e67698`.
+  The separate Basic B1 candidate plan/Web App had no production connections
+  or privileged role, passed pinned dependency/secret scans, 999 Azure tests,
+  exact live identity and canonical route smoke, then passed the stop exercise
+  and returned to `Stopped`. Pete separately approved the exact record on
+  2026-07-27. No bootstrap exception was used.
+- This shared-pipeline/runtime branch remains material. Its Candidate `Pass`
+  authorizes the required Azure PR and production Gate F, but does not itself
+  prove a merge, production deployment, or live production result.
+- Runtime/pipeline, test-contract, and final governance rechecks passed at
+  `5472b02cccc4e7f6dff34ab1a65b37047c568507`; this closes technical review only,
+  while the later exact evidence and Pete decision are recorded in
+  `docs/initiatives/PS-OPS-001/CANDIDATE_EVIDENCE_2026-07-27.md`.
+- Gate Launch, Gate Operate, and Gate Retire are `Not Assessed`. No broad-launch readiness,
+  independent full-site accessibility, performance budget, SEO/indexing,
+  analytics/consent, SLO/RTO/RPO, alert, incident/privacy/support, or
+  backup/restore/decommissioning result is claimed.
+- The applicable legal L-gate, responsive R2 result, page/package evidence, and
+  checkpoint/full-site audit may be linked once when their exact evidence
+  identity matches. Missing evidence cannot be converted to `Pass` by
+  documentation or a healthy public page.
 
 ## Required release evidence
 

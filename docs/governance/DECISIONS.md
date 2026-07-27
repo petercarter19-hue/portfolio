@@ -600,3 +600,102 @@ This is an append-only operational decision record. The current Bible and Roadma
   is `Conditional` or `Fail`, never `Pass`. Pete-run inspection records the
   renders he reviewed, his correction directions, returned refinements, and his
   final visual decision.
+
+## 2026-07-26 - Establish a cross-site responsive architecture and implementation audit
+
+- Owner decision: record a deliberate whole-website responsive review after the
+  purposes and intended desktop directions for a named release wave are
+  settled. Do not allow each implementation writer to invent tablet and phone
+  behavior independently.
+- Use the Roadmap-reserved `PS-AUDIT-WEB-001` package rather than creating a
+  duplicate audit program.
+- Gate R1, Responsive Architecture Lock, reviews and owner-locks the exact
+  route/state/viewport manifest, shared-shell and navigation relationships,
+  semantic content order, component transformations, tablet/phone
+  compositions, short-landscape behavior, and 200-percent reflow before the
+  selected wave is considered broadly implementation-ready.
+- Gate R2, Responsive Implementation Audit, reviews the exact integrated
+  branch or deployed-candidate SHA across the same routes, states, viewports,
+  supported themes, and failure/recovery boundaries before a major launch,
+  public beta, or other website-wide responsive-completion claim.
+- The master gate supplements rather than replaces page-local V0-V4 visual,
+  responsive, accessibility, truth, security, and release evidence. Mobile
+  work continues during page design and implementation; the later audit
+  resolves cross-route contradictions and proves the website behaves as one
+  system.
+- `PS-SHELL-001` owns accepted shared-shell implementation.
+  `PS-AUDIT-WEB-001` owns the cross-route responsive matrix and audit. The
+  older approximate 1120-1200-pixel shell estimate is not a binding universal
+  width and must be reconciled with the exact Overview and other owner-locked
+  measured authorities before shell implementation.
+- Gate R2 may satisfy the responsive portion of a checkpoint, phase-boundary,
+  or full-site audit only when the exact scope, reviewer, SHA, route/state/
+  viewport matrix, evidence, and result are the same and the reuse is recorded.
+- This decision establishes planning and review authority only. It changes no
+  route, visual asset, runtime code, feature flag, schema, deployment, or live
+  production behavior.
+
+## 2026-07-26 - Establish professional Candidate, Launch, Operate, and Retire gates
+
+- Owner decision: implement the professional controls identified by the
+  site-delivery review rather than leave them as recommendations.
+- Use the Roadmap-reserved `PS-OPS-001` package. Gate Candidate is the immutable
+  promotion record consuming completed Gate D evidence; Gate Launch governs
+  public beta/broad exposure; Gate F retains deployment and immediate live
+  verification; Gate Operate begins after F and supplies later and recurring
+  production review; Gate Retire governs safe decommissioning.
+- Reuse exact accepted package, legal, responsive, accessibility, performance,
+  SEO/content, security, support, recovery, and audit evidence. Do not create a
+  second feature lifecycle or rerun work merely to populate another checklist.
+- Add a minimal, member-data-free process-liveness endpoint with opaque exact
+  build identity, dependency compatibility and compile checks, and bounded
+  deadline-based post-deployment public smoke as the first repository
+  operational floor.
+- The existing direct production deployment cannot support a Candidate `Pass`
+  by itself. Without a production-like path or an explicit accepted bounded
+  exception, the release decision remains `Not Assessed` or `Fail`.
+  Post-deploy smoke improves detection but does not reduce blast radius, prove
+  staging, progressive exposure, rollback rehearsal, or public-launch
+  readiness.
+- Staging/App Service slot creation, Azure environment approvals/checks,
+  monitoring/alert configuration, scanning-provider selection, analytics/
+  consent, and other external configuration require exact infrastructure or
+  product authority and evidence. This repository package does not silently
+  provision or claim them.
+- Follow-up owner decision, 2026-07-26: Pete selected the recommended
+  production-like Candidate path and explicitly delegated its bounded
+  implementation to the current manager. Because the production Basic B1 plan
+  does not support deployment slots, use a separate `peerslate-candidate` Web
+  App with separate configuration and no production secrets, identity trust,
+  member data, storage, or provider access. Pete later selected the safer
+  separate temporary Basic B1 plan so Candidate load cannot consume production
+  compute; remove that plan after verified production release. The pipeline
+  limits exposure by using no custom DNS or discovery link, running only the
+  exact reserved branch, and stopping the candidate after smoke. Select pinned
+  local scanners that do not upload repository source: `pip-audit` for public
+  Python dependency advisories and checksum-verified Gitleaks for full
+  Git-history secret scanning with redacted reports.
+- Follow-up owner decision, 2026-07-27: exact Azure build `256` at
+  `1ca3ea6120fc8fcbfeba30137a3bfc94d5508772` passed the immutable artifact,
+  dependency/secret scan, full-test, isolated deployment, exact live identity,
+  canonical route smoke, and stop controls. Pete separately approved Gate
+  Candidate `Pass` after reviewing that evidence. No bootstrap exception was
+  used. The exact record is
+  `docs/initiatives/PS-OPS-001/CANDIDATE_EVIDENCE_2026-07-27.md`; PR, required
+  merge workflow, production Gate F, and immediate live verification are
+  authorized but remain separately evidenced.
+- `Conditional` requires an explicit bounded exception, owner, expiry,
+  compensating control, blast-radius limit, and stop/rollback action. Missing
+  mandatory evidence without that accepted exception remains `Not Assessed` or
+  `Fail`, never `Pass`.
+- Gate Candidate, Gate Launch, Gate Operate, and Gate Retire start `Not
+  Assessed`. Authorization to build this repository floor is not acceptance of
+  a direct-production exception.
+- Emergency Release Mode may shorten sequencing only when delay creates greater
+  documented production risk. It preserves mandatory identity, security,
+  privacy, authorization, approval, smoke, and rollback controls and requires
+  focused retrospective evidence completion within two business days.
+- Gate Retire covers member notice/export, retention/deletion/legal hold,
+  redirects/indexing, dependency and credential shutdown, monitoring/support
+  teardown, restoration window, and final proof. It does not itself authorize
+  destructive data deletion.

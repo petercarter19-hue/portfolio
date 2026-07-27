@@ -151,6 +151,18 @@ Each gate must name its actual reviewer and evidence.
   backup/restore exercises;
 - owner approval with exact remaining risk.
 
+## Relationship to professional readiness gates
+
+`PS-OPS-001` Gate Launch consumes the applicable L0-L5 result; it does not
+replace or approve it. Legal and counsel evidence remains owned by this
+standard, security assessment remains an actual reviewer result, and repository
+drafting remains neither legal advice nor approval.
+
+When the exact release, audience, reviewers, date, evidence, and result match,
+one `PROFESSIONAL_READINESS_EVIDENCE.md` record may carry both the applicable
+L-gate and Gate Launch rows. Record each result separately inside that one
+record rather than running duplicate ceremonies.
+
 ## Required release evidence
 
 Every affected package links to this standard and records: applicable gate,
