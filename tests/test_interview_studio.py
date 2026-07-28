@@ -1121,32 +1121,28 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
         # The gold finding-marker must not appear beside a statement of absence.
         self.assertIn('.is__bullets li.is__bullets-empty::before { content: none; }', css)
 
-    def test_studio_asset_version_was_bumped_for_the_changed_bytes(self):
-        """The Studio's CSS and JS must share one signature, ahead of shipped.
+    def test_studio_assets_are_versioned_by_content_hash(self):
+        """Both Studio assets must reach the browser content-hash versioned.
 
-        This originally pinned the literal `studio-5a5c-3`. That broke the
-        moment a second branch bumped to `-4`, which is the wrong failure: the
-        rule being protected is "the signature moved and both assets agree",
-        not "the signature is exactly this string".
+        This originally pinned a hand-typed `studio-5a5c-N` signature and
+        guarded two things: that the token moved when the bytes changed, and
+        that two branches could not silently ship different bytes under one
+        cached URL (which happened once when both bumped to `-3` identically).
 
-        Pinning a literal here is also actively dangerous. Two branches once
-        bumped to `studio-5a5c-3` independently; because both sides made the
-        identical textual change, Git merged it silently, and the second
-        release would have shipped different bytes under an already-cached
-        URL. `app.py` leaves versioned static assets cacheable and marks only
-        `text/html` as `no-cache`, so `?v=` is the only cache-busting
-        mechanism the Studio has.
+        Automatic content-hash versioning makes both guarantees structural
+        rather than manual: the token IS the file's hash, so it can only
+        match the exact bytes being served, and CSS and JS now carry
+        independent hashes derived from their own content. A silent merge can
+        no longer pin stale bytes. Assert the rendered page carries a real
+        content hash on each asset, and that no hand-typed token survives.
         """
-        html = self.source('templates/interview_studio.html')
-        signatures = re.findall(r'\?v=(studio-5a5c-\d+)', html)
-        self.assertEqual(2, len(signatures), 'Expected one CSS and one JS signature.')
-        self.assertEqual(
-            1,
-            len(set(signatures)),
-            f'CSS and JS must carry the same signature; found {sorted(set(signatures))}.',
-        )
-        # Must be ahead of the last signature released before this line of work.
-        self.assertGreater(int(signatures[0].rsplit('-', 1)[1]), 2)
+        with app.test_client() as client:
+            html = client.get(
+                '/interview-studio', base_url='http://localhost'
+            ).get_data(as_text=True)
+        self.assertRegex(html, r'css/interview-studio\.css\?v=[0-9a-f]{12}')
+        self.assertRegex(html, r'js/interview-studio\.js\?v=[0-9a-f]{12}')
+        self.assertNotIn('studio-5a5c-', html)
 
 
 class InterviewGroundingModeGenerationTests(unittest.TestCase):
@@ -1582,7 +1578,9 @@ class InterviewStudioDictationTests(unittest.TestCase):
         self.assertIn('.is__dictation-live', css)
         self.assertIn('function setDictationStatus', self.script)
 
-    def test_asset_signature_is_bumped_so_the_change_can_reach_production(self):
+    def test_asset_changes_reach_production_via_content_hash_versioning(self):
+        # Content-hash versioning guarantees a byte change reaches production:
+        # the URL token is the file's own hash, so it moves automatically.
         html = self.html()
-        self.assertIn('css/interview-studio.css?v=studio-5a5c-4', html)
-        self.assertIn('js/interview-studio.js?v=studio-5a5c-4', html)
+        self.assertRegex(html, r'css/interview-studio\.css\?v=[0-9a-f]{12}')
+        self.assertRegex(html, r'js/interview-studio\.js\?v=[0-9a-f]{12}')

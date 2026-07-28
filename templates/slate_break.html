@@ -35,7 +35,7 @@
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=global-header-1"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}"
 >
 {% endblock %}
 
@@ -317,7 +317,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/break-database.js') }}?v=backend-roadmap-1"></script>
+<script src="{{ url_for('static', filename='js/break-database.js') }}"></script>
 <script>
     // Mood Switch: visual selection only (its real behavior is TBD — Pete's
     // "put the mood switch there" vision). Moving the highlight makes the
