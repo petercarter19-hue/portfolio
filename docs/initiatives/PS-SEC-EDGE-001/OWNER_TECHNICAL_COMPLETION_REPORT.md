@@ -10,29 +10,37 @@
 > foundation is `16c656140d0b697eac803df5fa82b31e3feb4557`. Fresh independent
 > review failed the original pushed recovery SHA; all six findings are
 > corrected in the current candidate and the full local suite passes. The
-> isolated Candidate environment is restored. Corrected exact
+> isolated Candidate environment was restored for the release gate. Corrected exact
 > `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd` received independent `Pass`,
 > and Azure build 262 Candidate Build/Deploy/Smoke/Stop passed. Gate Candidate
-> is `Pass`. This branch is not merged, deployed to production, or live.
+> is `Pass`. Azure PR 192 squash-merged the recovery at
+> `9445d63f12067997395206a8cfb504013c247158`; automatic pipeline 263 and
+> independent live verification passed. Production release
+> `524cb04dc5b5aa82a58c8b2a` is live. The temporary Candidate resources are
+> removed.
 
 ## A. Status
 
 - **Package:** PS-SEC-EDGE-001 - HTTP edge security, deployment package, and
   static asset delivery
-- **Status:** Gate Candidate `Pass`; Azure PR / production Gate F authorized
+- **Status:** **Complete, released, and verified live**; Candidate and
+  production Gate F `Pass`
 - **Branch and commit:** `work/2026-07-28-sec-edge-reland-001`; base Azure
   `origin/main` at `89a619a560f04ec3763016939361f64516aac6bf`;
   exact assessed source
   `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`
-- **PR / pipeline / environment:** No recovery PR. Historical PR 190/pipeline
+- **PR / pipeline / environment:** Historical PR 190/pipeline
   259 failed in production; PR 191/pipeline 260 reverted it and restored
   production. Recovery pipeline 261 was diagnostic: Build and
   CandidateDeploy passed, CandidateSmoke failed on an omitted non-secret
   Candidate build flag, and CandidateStop passed. After correction, exact
   build 262 (`20260728.4`) passed Build, CandidateDeploy, CandidateSmoke, and
-  CandidateStop; both production stages skipped.
-- **Production state:** Healthy on the revert; none of the recovery branch is
-  deployed or live
+  CandidateStop; both production stages skipped. Recovery PR 192
+  squash-merged at `9445d63f12067997395206a8cfb504013c247158`; automatic
+  pipeline 263 (`20260728.5`) passed Build, production Deploy, and production
+  smoke.
+- **Production state:** Healthy and verified live at release
+  `524cb04dc5b5aa82a58c8b2a`
 - **Visual authority and status:** Not Applicable
 - **Visual inspector:** Not Applicable
 - **Approved-mockup fidelity evidence:** Not Applicable
@@ -43,16 +51,19 @@
   parity check finds nothing to update
 - **Pete / designated session manager visual acceptance:** Not Applicable
 - **Designated session manager:** current ChatGPT Work/Codex task
-- **Manager handoff status and next receiver:** Recovery implementation is
-  verified; the fresh GPT-5.6 Sol High independent review failed original SHA
+- **Manager handoff status and next receiver:** Recovery is released and the
+  lane is closed; the fresh GPT-5.6 Sol High independent review failed
+  original SHA
   `3d507e7f5f32299648153abbd00ae915825219c5`, all findings were corrected,
   and the reviewer passed exact `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`
-- **Lane owner and self-managed authority:** Codex on the recovery branch
-- **Self-certification:** Pass for the exact assessed Candidate
+- **Lane owner and self-managed authority:** Codex through recovery and
+  documentation closeout
+- **Self-certification:** Pass for Candidate, production Gate F, and live
+  verification
 - **Complete-diff review:** Writer and independent complete-diff reviews are
   complete; the original independent result was `Fail`, all accepted findings
   are corrected, and the corrected exact-SHA result is `Pass`
-- **Acceptance requested:** Azure PR / production Gate F
+- **Acceptance requested:** None; bounded release delegation is fulfilled
 
 ## B. What changed technically
 
@@ -109,18 +120,19 @@ HTML bytes are unchanged.
 `artifacts/**`, `tests/**`, `Design ideas/**`, `static/Background/**`,
 `static/Mockup/**`, `.github/**`, and the root v1.x Bible DOCX. An inline
 comment records what must *not* be excluded and why. The Candidate branch
-selector now names this exact recovery branch.
+selector named this exact recovery branch during its promotion gate.
 
 **Candidate App Service** - the separate Linux B1 plan and
-`peerslate-candidate` Web App are restored with no managed identity, connection
-string, production credential, custom domain, or private feature. Its only app
-settings are an inert import-time provider value and the non-secret
-`SCM_DO_BUILD_DURING_DEPLOYMENT=true` platform build flag.
+`peerslate-candidate` Web App were restored with no managed identity,
+connection string, production credential, custom domain, or private feature.
+Their only app settings were an inert import-time provider value and the
+non-secret `SCM_DO_BUILD_DURING_DEPLOYMENT=true` platform build flag. Both
+temporary Azure resources were removed after verified production recovery.
 
 **`docs/governance/AI_DELIVERY_AUDIT_REGISTER.md`** - records the production
-incident as an open Triggered audit with exact failed/revert SHAs, the bounded
-scope, `Not Assessed` result, reviewer gap, and next action. It does not alter
-the four-slice checkpoint count.
+incident with exact failed/revert/recovery SHAs, bounded scope, reviewer result,
+Candidate and production evidence, cleanup, and closed `Pass`. It does not
+alter the four-slice checkpoint count.
 
 **`requirements.txt`** - no response-compression dependency is added.
 
@@ -236,7 +248,17 @@ file. Three issues were found and corrected:
 Read-only production checks after the revert returned HTTP 200 for `/`,
 `/healthz`, `/petec/resume`, and `/experience`; `/healthz` reported release ID
 `5f2e58344f1457d368abfce1`. This confirms the reverted production baseline is
-healthy. It is not evidence that the recovery branch is deployed.
+healthy. The later recovery evidence is recorded below.
+
+Azure PR 192 squash-merged at
+`9445d63f12067997395206a8cfb504013c247158`. Automatic pipeline 263
+(`20260728.5`) passed Build, production Deploy, and exact-release production
+smoke for artifact SHA-256
+`c6049e44e30484a7a0e754380bf32537a382877d081f86fa8ee1781db470e63a`.
+Independent live checks matched release `524cb04dc5b5aa82a58c8b2a`, returned
+200 across the canonical route set, confirmed private/session and public/static
+cache boundaries, confirmed security headers, and refused a cross-site public
+AI request with 403. See `PRODUCTION_EVIDENCE_2026-07-28.md`.
 
 **Independent verification of claims.** A fresh GPT-5.6 Sol High reviewer
 assessed exact original recovery
@@ -276,14 +298,13 @@ The upstream branch's own figures were not taken on trust:
 **Security and privacy checks.** No secret, credential, `.env`, publish
 profile, or machine-local `launch.json` appears in the diff. No change to
 production App Service settings, identity providers, or DNS. The separate
-Candidate receives only the two documented non-production settings. The
+Candidate received only the two documented non-production settings. The
 production issuer value was read from the target environment and matched
 before merge - see the package README section 5.
 
-**Not verified, stated honestly.** The branch is not merged, deployed to
-production, or live. No responsive, accessibility, or visual evidence was
-captured, because no visual surface changed; template edits remain token
-removals only.
+**Visual evidence, stated honestly.** No responsive, accessibility, or visual
+evidence was captured, because no visual surface changed; template edits
+remain token removals only.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -299,23 +320,22 @@ removals only.
   path is absent from the recovery.
 - **CSP is deliberately partial.** Only directives that cannot break rendering
   are enforced; this is not a complete policy.
-- **The restored Candidate plan incurs temporary Basic B1 cost.** It remains
-  separate from production compute, is stopped outside automated smoke, and
-  must be removed after verified production release under `PS-OPS-001`.
+- **Candidate cost is closed.** The temporary Web App and separate Basic B1
+  plan were removed after verified production recovery under `PS-OPS-001`.
 - **The two governance records in section 7 of the README remain stale**, both
   in files other lanes own.
 
 ## H. Clear next step
 
-Create the required Azure PR, complete the squash merge after policy checks,
-monitor the exact main pipeline, verify the live production identity and
-canonical routes, and roll back immediately on a mandatory failure.
+No bounded recovery or release action remains. Preserve the evidence, keep
+response compression deferred, and route any future edge/runtime change
+through a fresh package and production-like Candidate proof.
 
 ## I. What Pete needs to do or decide
 
 Pete delegated the remaining bounded recovery and release work end to end. No
-additional Pete action is required for the authorized Azure PR, production
-Gate F, live verification, or bounded rollback.
+additional Pete action is required; the authorized Azure PR, production
+Gate F, live verification, and Candidate cleanup are complete.
 Out-of-scope owner decisions remain:
 
 1. **Decide who corrects the two stale governance records** - the orphaned

@@ -28,7 +28,7 @@ documentation-only, and unmerged work do not count.
 | Last quarterly/full-site audit | None since policy start |
 | Next quarterly/full-site audit due | 2026-10-24, or before a major launch/public beta if earlier |
 | Current readiness audit | None pending; required before default-off enablement or a new public, identity, data, or publication boundary |
-| Current triggered audit | **Open:** PS-SEC-EDGE-001 exact recovery review and Gate Candidate passed; Azure PR / production verification pending |
+| Current triggered audit | None open; PS-SEC-EDGE-001 closed `Pass` after exact review, Candidate, production pipeline, live verification, and cleanup |
 
 ## Planned cross-site responsive audit
 
@@ -151,8 +151,12 @@ window, scope, reviewer, evidence, and result are the same.
 - **Gate Candidate:** Azure build 262 (`20260728.4`) passed Build,
   CandidateDeploy, CandidateSmoke, and CandidateStop for exact assessed source;
   production stages skipped; delegated release manager recorded `Pass`
-- **Next action:** create the required Azure PR, squash merge after policy
-  checks, verify the exact main pipeline and live production, and close or
-  roll back this triggered audit from evidence
+- **Production release:** Azure PR 192 squash-merged at
+  `9445d63f12067997395206a8cfb504013c247158`; automatic pipeline 263
+  (`20260728.5`) passed Build, production Deploy, and exact-release smoke;
+  independent live checks matched release `524cb04dc5b5aa82a58c8b2a`
+- **Cleanup and result:** the temporary Candidate Web App and separate B1 plan
+  were removed after production verification; production remained healthy;
+  triggered-audit result `Pass` and closed 2026-07-28
 - **Counter effect:** triggered audit; does not increment or reset the
   completed-runtime-slice count

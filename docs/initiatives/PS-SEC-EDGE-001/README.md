@@ -3,21 +3,26 @@
 **Owner:** Pete
 **Package-designated session manager:** current ChatGPT Work/Codex task,
 continuing from the 2026-07-28 incident handoff
-**Writer:** Codex on `work/2026-07-28-sec-edge-reland-001`
+**Writer:** Codex on `work/2026-07-28-sec-edge-reland-001`; documentation
+closeout on `work/2026-07-28-sec-edge-closeout-001`
 **Base:** Azure `origin/main` at
 `89a619a560f04ec3763016939361f64516aac6bf`
 **Upstream source:** the ad-hoc cloud session branch
 `claude/website-architecture-audit-7l52z6` (GitHub mirror only), built on
 `be7f857`, reconciled onto current Azure `main` in this package
-**Status:** Safe subset reconstructed after the PR 190 outage and revert;
+**Status:** **Complete, released, and verified live.** Safe subset
+reconstructed after the PR 190 outage and revert;
 compression is removed at
 `16c656140d0b697eac803df5fa82b31e3feb4557`. A fresh independent review
 failed the original recovery SHA, and all six findings are corrected. The
 corrected exact SHA received independent `Pass`; full local verification and
 Azure build 262 Candidate Build/Deploy/Smoke/Stop pass. Gate Candidate is
 `Pass` for exact
-`a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`. The Azure PR and production
-Gate F are authorized but not yet performed.
+`a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`. Azure PR 192 squash-merged at
+`9445d63f12067997395206a8cfb504013c247158`; automatic pipeline 263
+(`20260728.5`) and independent live verification passed. Production release
+`524cb04dc5b5aa82a58c8b2a` is live, and the temporary Candidate resources
+are removed.
 **Visual authority:** Not applicable - no composition, hierarchy, typography,
 colour, or responsive interaction model changes
 **Runtime authority:** HTTP response edge, deployment packaging, and static
@@ -183,13 +188,22 @@ The fresh reviewer passed exact corrected
 `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`. Azure build 262
 (`20260728.4`) then passed Build, CandidateDeploy, CandidateSmoke, and
 CandidateStop; both production stages were skipped and the Candidate App
-Service is stopped. Gate Candidate is `Pass`. Nothing on this branch is
-merged, deployed to production, or live.
+Service was stopped. Gate Candidate is `Pass`.
+
+Azure PR 192 then squash-merged the recovery at
+`9445d63f12067997395206a8cfb504013c247158`. Automatic pipeline 263
+(`20260728.5`) passed Build, production Deploy, and exact public-boundary
+smoke. Independent live checks confirmed release
+`524cb04dc5b5aa82a58c8b2a`, canonical routes, security/cache headers,
+cross-site refusal, and immutable current assets. The temporary Candidate App
+Service and separate B1 plan were removed after production verification.
 
 ## 7. Evidence
 
 See `OWNER_TECHNICAL_COMPLETION_REPORT.md` and
-`CANDIDATE_EVIDENCE_2026-07-28.md` in this directory.
+`CANDIDATE_EVIDENCE_2026-07-28.md` in this directory for the promotion gate.
+See `PRODUCTION_EVIDENCE_2026-07-28.md` for the exact merge, production
+pipeline, live verification, and cleanup record.
 
 Recovery reference for the removed DOCX files: Azure tag
 `archive/2026-07-27/superseded-governance-docx` at
