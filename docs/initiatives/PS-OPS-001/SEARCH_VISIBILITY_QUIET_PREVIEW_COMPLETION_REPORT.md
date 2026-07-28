@@ -3,15 +3,21 @@
 ## A. Status
 
 - **Package:** PS-OPS-SEARCH-QUIET-001 under PS-OPS-001
-- **Status:** Implementation complete; release pending
+- **Status:** Quiet Preview HTML control released and verified live;
+  response-level continuation pending
 - **Branch and implementation commit:**
   `work/2026-07-28-search-quiet-preview-001` at
   `e1aa0c45f9f88d5db3f925aba4b023496881a6a2`
 - **Authoritative base:**
   `fffdb1555bd35b2191af0abdcfdc85194af6acd3`
-- **PR / pipeline / environment:** Not created or run at this checkpoint
-- **Production state:** Unchanged; the quiet-preview directive is not live until
-  the branch is merged and the exact production pipeline passes
+- **Release:** Azure PR 196 squash-merged at
+  `4f9f78fe43cf20de1734bd689894571c1992c246`
+- **Pipeline / environment:** Manual exact-main pipeline 271
+  (`20260728.13`) passed Build, Deploy production, and Verify production
+  deployment for that merge SHA. The automatic run did not appear during the
+  bounded release window.
+- **Production state:** The Quiet Preview HTML directive is live on
+  `https://peerslate.com`
 - **Visual authority and status:** Not Applicable; this is invisible metadata
 - **Approved-mockup fidelity evidence:** Not Applicable
 - **Pete / designated session manager visual acceptance:** Not Applicable
@@ -19,13 +25,14 @@
 - **Lane owner and self-managed authority:** Codex, bounded to this branch
 - **Self-certification:** Conditional
 - **Complete-diff review:** Passed for the implemented files
-- **Acceptance requested:** Technical and release
+- **Acceptance requested:** Response-level continuation after `app.py`
+  relinquishment
 
 The implementation is `Conditional` rather than a full response-level `Pass`
 because an active Overview writer owns `app.py`. This branch does not collide
 with that writer. The HTML `noindex` control is complete and tested; the global
-HTTP header, quiet sitemap behavior, Search Console action, merge, deployment,
-and live verification remain separately identifiable work.
+HTTP header, quiet sitemap behavior, and Search Console action remain
+separately identifiable work.
 
 ## B. What changed technically
 
@@ -51,7 +58,7 @@ ignore them.
 
 ## D. What the website or member can do now
 
-After release:
+In production:
 
 - direct links to the homepage, Experience, My Story, Living Resume, Interview
   Studio, and the other public routes continue to return their normal pages;
@@ -105,8 +112,20 @@ introduced by this change.
 
 ### Production verification
 
-Not run. No live behavior is claimed before merge, exact pipeline success, and
-canonical-route inspection.
+- Pipeline 271 passed Build, Deploy production, and Verify production
+  deployment for exact merge
+  `4f9f78fe43cf20de1734bd689894571c1992c246`.
+- Independent no-cache requests returned HTTP 200 and the exact quiet-preview
+  directive on `/`, `/experience`, `/petec/my-story`, `/petec/resume`,
+  `/interview-studio`, and `/peerslate`.
+- `/healthz` returned `status: ok`, `service: peerslate`, and opaque release ID
+  `0e12a25a2226c1ad9a37279f`.
+- `/app` retained the expected signed-out 302 to
+  `/auth/sign-in?return_to=/app`.
+- `/robots.txt` retained `Allow: /` plus exclusions for `/app`, `/api/`, and
+  `/owner`, allowing compliant crawlers to read the HTML noindex directive.
+- `/sitemap.xml` remained HTTP 200 with 20 URLs, which is the documented
+  response-level continuation rather than a hidden completion claim.
 
 ## G. Known gaps, risks, and exclusions
 
@@ -124,11 +143,10 @@ canonical-route inspection.
 
 ## H. Clear next step
 
-Release this collision-free HTML control, then continue the response-level slice
-after the active `app.py` writer explicitly commits, pushes, and relinquishes
-that file. The continuation should add the global response header, quiet-mode
-sitemap behavior, automated dual-mode tests, Search Console action, and exact
-live verification.
+Continue the response-level slice after the active `app.py` writer explicitly
+commits, pushes, and relinquishes that file. The continuation should add the
+global response header, quiet-mode sitemap behavior, automated dual-mode tests,
+Search Console action, and exact live verification.
 
 ## I. What Pete needs to do or decide
 
