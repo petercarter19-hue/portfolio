@@ -23,7 +23,7 @@ class LivingResumePreviewTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_public_resume_routes_render_living_resume_without_preview_labels(self):
+    def test_public_resume_routes_render_living_resume_in_quiet_preview_mode(self):
         response = self.client.get('/petec/resume', base_url='http://localhost')
         legacy_response = self.client.get(
             '/petec/resume2',
@@ -36,7 +36,11 @@ class LivingResumePreviewTests(unittest.TestCase):
         self.assertIn(b'Living R\xc3\xa9sum\xc3\xa9', response.data)
         self.assertIn(b'See how the work became the story.', response.data)
         self.assertNotIn(b'Internal preview', response.data)
-        self.assertNotIn(b'noindex,nofollow', response.data)
+        self.assertIn(
+            b'<meta name="robots" '
+            b'content="noindex, nofollow, noarchive, noimageindex">',
+            response.data,
+        )
 
     def test_preview_defines_reduced_motion_fallbacks(self):
         project_root = Path(__file__).resolve().parents[1]

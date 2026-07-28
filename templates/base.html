@@ -3,7 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">{# PS-OPS-SEARCH-QUIET-001:
+       public and authentication HTML stay directly reachable but noindex until Pete passes the
+       gate in docs/initiatives/PS-OPS-001/SEARCH_DISCOVERY_GATE.md. Keep the
+       false branch byte-empty so protected /app renders remain unchanged. #}{{ ('\n    <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">' if not (request.path == '/app' or request.path.startswith('/app/')) else '')|safe }}
     {# PS-AUTH-CALLBACK-001: load only on private account/authentication routes,
        before page-specific scripts, so an Entra fragment-only return cannot
        leave a stale pre-sign-in document visible. The script discards the
