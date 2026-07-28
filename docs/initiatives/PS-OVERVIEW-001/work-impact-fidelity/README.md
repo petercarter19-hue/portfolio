@@ -15,7 +15,8 @@
 - Azure DevOps PR: `198`, completed by squash merge
 - Authoritative merge SHA:
   `152452c94a4058daaec4c2670cdf3f64a960c05c`
-- Deployment pipeline: `portfolio-site` run `20260728.16` (`274`), succeeded
+- Deployment pipelines: automatic `portfolio-site` run `20260728.15` (`273`)
+  and manual confirmation run `20260728.16` (`274`), both succeeded
 - Merge / deployment state: merged, deployed, and independently verified live
 - Visual acceptance: approved by Pete on 2026-07-28
 - Public default: Story & Career remains the published Overview style
@@ -183,9 +184,11 @@ Pete approved the real-browser implementation and directed deployment on
 authoritative `main` as
 `152452c94a4058daaec4c2670cdf3f64a960c05c`.
 
-The automatic pipeline trigger did not create an exact-SHA run, so one manual
-`portfolio-site` run was started from verified `origin/main`. Run
-`20260728.16` (`274`) used the exact merge SHA and succeeded through:
+The automatic exact-SHA run was not visible in the Azure run list during the
+bounded post-merge observation window, so one manual `portfolio-site`
+confirmation run was started from verified `origin/main`. Azure later surfaced
+automatic run `20260728.15` (`273`); it and manual run `20260728.16` (`274`)
+used the exact merge SHA and both succeeded through:
 
 - Build;
 - Deploy production; and

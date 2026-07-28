@@ -8,7 +8,8 @@
   `work/2026-07-28-overview-work-impact-fidelity-001`; accepted implementation
   source `36241e12f70884d240f66c65c264c4fab0afafee`, reconciled to authoritative
   base `544a3db245035f1f64bfcd2cb12fb524c0615a55`
-- PR / pipeline / environment: Azure DevOps PR `198`; `portfolio-site` pipeline
+- PR / pipeline / environment: Azure DevOps PR `198`; automatic
+  `portfolio-site` pipeline `20260728.15` (`273`) and manual confirmation
   `20260728.16` (`274`); production at `https://peerslate.com`
 - Production state: squash-merged to authoritative `main` as
   `152452c94a4058daaec4c2670cdf3f64a960c05c`, deployed, and independently
@@ -213,10 +214,12 @@ Projects, Interview Studio, Slate Board, Community, or another room.
   `86bc096c5cae7a34f1b0efdf173c8f65d09176b4`
 - Authoritative merge SHA:
   `152452c94a4058daaec4c2670cdf3f64a960c05c`
-- Pipeline: `portfolio-site` run `20260728.16` (`274`)
+- Pipelines:
+  - automatic `portfolio-site` run `20260728.15` (`273`)
+  - manual confirmation run `20260728.16` (`274`)
 - Pipeline source SHA:
   `152452c94a4058daaec4c2670cdf3f64a960c05c`
-- Pipeline result: succeeded
+- Pipeline results: both succeeded
 - Successful stages: Build; Deploy production; Verify production deployment
 - Public HTTP verification:
   - `/petec/resume`: `200`, Story & Career default
@@ -242,9 +245,10 @@ Projects, Interview Studio, Slate Board, Community, or another room.
   publication controls remain outside this slice.
 - Untracked Playwright output is local evidence. Only the named final artifacts
   should be promoted into a reviewed evidence commit.
-- The manual production run was necessary because no automatic exact-SHA run
-  appeared after merge. The run was started only after re-verifying that
-  authoritative `origin/main` matched the squash merge SHA.
+- The automatic exact-SHA run was not visible during the bounded post-merge
+  observation window. The manual confirmation run was started only after
+  re-verifying authoritative `origin/main`; Azure later surfaced the automatic
+  run, and both exact-SHA runs succeeded.
 
 ## H. Clear next step
 
