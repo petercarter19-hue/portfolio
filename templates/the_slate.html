@@ -31,11 +31,11 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/feed-living-stream.css') }}?v=community-correction-4"
+    href="{{ url_for('static', filename='css/feed-living-stream.css') }}"
 >
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/community-tabs.css') }}?v=community-break-4"
+    href="{{ url_for('static', filename='css/community-tabs.css') }}"
 >
 {% endblock %}
 
@@ -321,7 +321,7 @@ The Community Feed on PeerSlate — what people are building, learning, and livi
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/community-focus-lifecycle.js') }}?v=community-correction-2" defer></script>
-<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}?v=community-correction-3" defer></script>
-<script src="{{ url_for('static', filename='js/community-tabs.js') }}?v=community-correction-2" defer></script>
+<script src="{{ url_for('static', filename='js/community-focus-lifecycle.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/feed-living-stream.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/community-tabs.js') }}" defer></script>
 {% endblock %}

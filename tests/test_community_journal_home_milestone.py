@@ -112,7 +112,9 @@ class MilestoneSharedShellTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Cache-Control"], "no-cache, must-revalidate")
+        # Private workspace renders are no-store; the released bytes asserted
+        # below are unchanged.
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         self.assertEqual(len(response.data), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
         self.assertEqual(
             hashlib.sha256(response.data).hexdigest(), FLAG_OFF_APP_RENDER_SHA256

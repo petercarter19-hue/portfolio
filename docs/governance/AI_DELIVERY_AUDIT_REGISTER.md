@@ -28,6 +28,7 @@ documentation-only, and unmerged work do not count.
 | Last quarterly/full-site audit | None since policy start |
 | Next quarterly/full-site audit due | 2026-10-24, or before a major launch/public beta if earlier |
 | Current readiness audit | None pending; required before default-off enablement or a new public, identity, data, or publication boundary |
+| Current triggered audit | **Open:** PS-SEC-EDGE-001 exact recovery review and Gate Candidate passed; Azure PR / production verification pending |
 
 ## Planned cross-site responsive audit
 
@@ -71,10 +72,12 @@ Exact Azure build 256 at
 separately approved Candidate `Pass` on 2026-07-27. Gate Launch, Gate Operate,
 and Gate Retire remain `Not Assessed`.
 
-The current PS-OPS shared-pipeline/runtime branch is material. It did not
-self-bootstrap: the writer collected evidence, and Pete separately approved
-the exact branch-artifact `Pass`. The required Azure PR, main deployment, and
-production smoke remain separately evidenced.
+The PS-OPS shared-pipeline/runtime floor released through Azure PR 189 at
+`141273fe51c0ac3c35e4ab15d96e34524b674d68`; pipeline 257 passed. Its
+post-deployment smoke then detected the separate PS-SEC-EDGE-001 startup
+failure in pipeline 259. The smoke control worked as designed, but it did not
+reduce the production blast radius and is not a substitute for the missing
+production-like Candidate environment.
 
 These gates do not affect the four-slice checkpoint count. Gate Operate may
 reuse a checkpoint/full-site audit only when the exact release/environment,
@@ -122,3 +125,34 @@ window, scope, reviewer, evidence, and result are the same.
   in `PS-SLATE-STUDIO-SLICE-1-001/OWNER_TECHNICAL_COMPLETION_REPORT.md`
 - **Counter effect:** incremented the completed-runtime-slice count from 0 to
   1 of 4; no checkpoint audit is triggered
+
+- **Triggered audit:** PS-SEC-EDGE-001 production incident, opened 2026-07-28
+- **Trigger:** Azure PR 190 at
+  `e07c6a0f4085de92b1181678ad5e30ac2c1ce971` deployed a dependency whose
+  Python 3.14 import path required unavailable `_zstd`; every Gunicorn worker
+  failed to boot and production returned 503 until the release was reverted
+- **Detection and recovery:** pipeline 259 failed its production-smoke stage;
+  Azure PR 191 reverted the package at
+  `89a619a560f04ec3763016939361f64516aac6bf`; pipeline 260 passed and
+  production recovered
+- **Smallest affected scope:** Python 3.14 startup/import compatibility;
+  PS-SEC-EDGE-001 authentication, authorization, privacy, rate-limit,
+  static-cache/CSP, and deployment-package changes; exact artifact/runtime
+  identity; production-like Candidate coverage; smoke detection; and
+  stop/rollback evidence
+- **Recovery candidate:** `work/2026-07-28-sec-edge-reland-001`, safe
+  assessed source `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd`;
+  Flask-Compress, Brotli, zstd configuration, and compression-only tests are
+  absent
+- **Reviewer and result:** fresh GPT-5.6 Sol High reviewer failed original
+  recovery `3d507e7f5f32299648153abbd00ae915825219c5`; all six findings were
+  corrected and exact `a5c13cdeb901d90ebca8c2ca1f835a6746aa19bd` received
+  `Pass`
+- **Gate Candidate:** Azure build 262 (`20260728.4`) passed Build,
+  CandidateDeploy, CandidateSmoke, and CandidateStop for exact assessed source;
+  production stages skipped; delegated release manager recorded `Pass`
+- **Next action:** create the required Azure PR, squash merge after policy
+  checks, verify the exact main pipeline and live production, and close or
+  roll back this triggered audit from evidence
+- **Counter effect:** triggered audit; does not increment or reset the
+  completed-runtime-slice count

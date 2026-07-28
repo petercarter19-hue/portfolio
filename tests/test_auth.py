@@ -61,7 +61,9 @@ class AuthenticationFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertIn(b"Sign in is not configured yet", response.data)
-        callback_script = b"/static/js/easy-auth-callback.js?v=ps-auth-callback-1"
+        # The asset is versioned automatically by content hash now, so match
+        # the stable path-plus-?v= prefix rather than a hand-typed token.
+        callback_script = b"/static/js/easy-auth-callback.js?v="
         self.assertIn(callback_script, response.data)
         self.assertLess(
             response.data.index(callback_script),
@@ -80,6 +82,31 @@ class AuthenticationFlowTests(unittest.TestCase):
             response.headers["Location"],
             "/.auth/login/aad?post_login_redirect_uri=%2Fapp",
         )
+
+    def test_signed_out_session_response_is_private_no_store(self):
+        response = self.client.get("/auth/session")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["signed_in"], False)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    @patch("identity.database_service.first_row")
+    def test_signed_in_session_response_is_private_no_store(self, first_row):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        first_row.return_value = {
+            "account_key": "45ab728a-44bc-4f80-a79f-d010e04d5453",
+            "user_key": "45ab728a-44bc-4f80-a79f-d010e04d5453",
+            "display_name": "Pete Example",
+            "email": "pete@example.com",
+        }
+
+        response = self.client.get(
+            "/auth/session", headers=easy_auth_header("pete-id")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["signed_in"], True)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
     @patch("identity.database_service.first_row")
     def test_signed_in_member_can_open_private_owner_workspace(self, first_row):

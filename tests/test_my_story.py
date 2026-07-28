@@ -72,7 +72,12 @@ class MyStoryTests(unittest.TestCase):
                     expected_ids,
                 )
                 self.assertEqual(parser.collages, 4)
-                self.assertIn(b'css/story-acts.css?v=story-acts-4', response.data)
+                # Content-hash versioned automatically; assert the stylesheet
+                # is linked with a version token, not a hand-typed one.
+                self.assertRegex(
+                    response.data.decode('utf-8'),
+                    r'css/story-acts\.css\?v=[0-9a-f]{12}',
+                )
 
     def test_story_has_one_page_heading_and_labelled_act_sections(self):
         response, parser = self.render_story()

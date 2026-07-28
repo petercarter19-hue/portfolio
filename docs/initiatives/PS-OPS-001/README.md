@@ -193,8 +193,34 @@ Gate Candidate cannot pass with:
 - an accessibility blocker on an essential flow;
 - a missing exact artifact/SHA/environment relationship;
 - no liveness/smoke path for a runtime deployment;
-- no stop/rollback operator; or
+- no stop/rollback operator;
+- a production configuration value that the release makes load-bearing
+  without its live value having been read from the target environment and
+  matched against what the code will require (see below); or
 - direct-to-production deployment represented as production-like staging.
+
+#### Newly load-bearing configuration
+
+Added by Pete's direction on 2026-07-27 after `PS-SEC-EDGE-001` found the gap.
+
+A setting that is currently unused, advisory, or only a fallback is not
+covered by ordinary testing, because nothing reads it and nothing can prove it
+wrong. A release that promotes such a setting to a required, enforced, or
+identity-affecting input must read its live value in the target environment
+and record the comparison as gate evidence.
+
+The originating case: `PEERSLATE_AUTH_ISSUER` had sat in the `peerslate-pete`
+App Service purely as a fallback used when a principal carried no issuer
+claim. A release made it an enforced equality check on every sign-in. A
+mismatch would have refused every member, and no test could have caught it,
+because the test environment supplies its own value. The live value was read
+and matched before merge; it was correct, but it had never been validated
+against reality before that check.
+
+This blocker is not satisfied by a test, a default, a code comment, or a
+belief about how the environment is configured. It is satisfied by the value
+read from the environment that will run the release, recorded with the setting
+name and the exact string it was compared against.
 
 ## 4. Gate Launch - Public Launch and Operational Readiness
 
@@ -369,11 +395,12 @@ supplies the same Linux App Service runtime and deployment mechanism without
 sharing production compute. The plan remains only through production
 verification, then is removed to bound cost.
 
-The candidate app receives only an inert startup value required by the current
-application import. It receives no production Anthropic key, SQL connection,
-Blob configuration, trusted identity headers, owner allowlist, Azure DevOps
-PAT, or enabled private feature. The exact task branch alone can enter the
-candidate stages. Those stages:
+The candidate app receives an inert value required by the current application
+import plus the non-secret `SCM_DO_BUILD_DURING_DEPLOYMENT=true` App Service
+build flag. It receives no production Anthropic key, SQL connection, Blob
+configuration, trusted identity headers, owner allowlist, Azure DevOps PAT, or
+enabled private feature. The exact task branch alone can enter the candidate
+stages. Those stages:
 
 1. run compatibility, full tests, a pinned `pip-audit` advisory scan, and a
    checksum-verified Gitleaks full-history scan with redacted output;
