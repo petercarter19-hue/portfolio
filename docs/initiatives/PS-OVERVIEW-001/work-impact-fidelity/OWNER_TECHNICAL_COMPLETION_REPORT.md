@@ -3,15 +3,16 @@
 ## A. Status
 
 - Package: PS-OVERVIEW-WORK-IMPACT-FIDELITY-001
-- Status: Owner Accepted; Release In Progress
+- Status: Released and Live
 - Branch and commit:
   `work/2026-07-28-overview-work-impact-fidelity-001`; accepted implementation
   source `36241e12f70884d240f66c65c264c4fab0afafee`, reconciled to authoritative
   base `544a3db245035f1f64bfcd2cb12fb524c0615a55`
-- PR / pipeline / environment: no PR; no pipeline; local candidate at
-  `http://127.0.0.1:5022`
-- Production state: not merged and not deployed. The currently live public
-  Overview remains the previously released Story & Career implementation.
+- PR / pipeline / environment: Azure DevOps PR `198`; `portfolio-site` pipeline
+  `20260728.16` (`274`); production at `https://peerslate.com`
+- Production state: squash-merged to authoritative `main` as
+  `152452c94a4058daaec4c2670cdf3f64a960c05c`, deployed, and independently
+  verified live
 - Visual authority and status: locked Work & Impact rich-desktop authority;
   Pete approved the real-browser implementation on 2026-07-28
 - Visual inspector: Codex performed measured browser comparison and Pete
@@ -35,14 +36,14 @@
 - Pete / designated session manager visual acceptance: approved
 - Designated session manager: Codex for the current bounded implementation and
   evidence pass; Pete retains product and visual acceptance
-- Manager handoff status and next receiver: release the accepted source through
-  Azure DevOps, then return exact pipeline and live evidence to Pete
+- Manager handoff status and next receiver: release complete; exact pipeline
+  and live evidence returned to Pete
 - Lane owner and self-managed authority: Codex, bounded to Work & Impact
   fidelity, shared Overview width, focused tests, and package evidence
 - Self-certification: Pass
 - Complete-diff review: Passed; independent review is complete with no open
   implementation or visual mismatch
-- Acceptance requested: release verification only
+- Acceptance requested: none; owner acceptance and release are complete
 
 ## B. What changed technically
 
@@ -87,7 +88,7 @@
 
 ## C. What this means in plain English
 
-PeerSlate now has a local business-first Overview candidate that presents the
+PeerSlate now has a live business-first Overview option that presents the
 same public member information in a more executive, work-and-results-focused
 format. It is not a second résumé and it does not copy the mockup into static
 HTML. The member's approved records feed a bounded presentation model, and the
@@ -99,7 +100,7 @@ desktop design.
 
 ## D. What the website or member can do now
 
-In the local candidate, a reviewer can:
+On the live public page, a visitor can:
 
 - open Story & Career and Work & Impact directly from the public on-page
   selector;
@@ -203,34 +204,55 @@ Projects, Interview Studio, Slate Board, Community, or another room.
 - Response length: `73133`
 - Canonical `/petec/resume` link: present
 - Homepage files or homepage product projections changed: none
-- Work & Impact production state: implemented in this local branch and not yet
-  merged or deployed
+- Work & Impact production state: merged, deployed, and verified live
 
 ### Production verification
 
-Not performed. There is no commit, PR, merge, pipeline, deployment, release
-identity, or live Work & Impact evidence.
+- Azure DevOps PR: `198`, completed by squash merge
+- Release source SHA:
+  `86bc096c5cae7a34f1b0efdf173c8f65d09176b4`
+- Authoritative merge SHA:
+  `152452c94a4058daaec4c2670cdf3f64a960c05c`
+- Pipeline: `portfolio-site` run `20260728.16` (`274`)
+- Pipeline source SHA:
+  `152452c94a4058daaec4c2670cdf3f64a960c05c`
+- Pipeline result: succeeded
+- Successful stages: Build; Deploy production; Verify production deployment
+- Public HTTP verification:
+  - `/petec/resume`: `200`, Story & Career default
+  - `/petec/resume?overviewStyle=story-career`: `200`
+  - `/petec/resume?overviewStyle=work-impact`: `200`
+- Live browser verification:
+  - each style reports its exact allowlisted `data-style-id`;
+  - the correct selector option is marked current;
+  - invalid style input falls back to Story & Career;
+  - all public presentation media loads;
+  - no horizontal overflow was present at the inspected live viewport;
+  - left and right rails retain sticky positioning at the applicable desktop
+    composition; and
+  - browser console errors: none.
 
 ## G. Known gaps, risks, and exclusions
 
 - The generated hero and leadership images are AI presentation derivatives of
   Pete's public portrait; they must not be mistaken for documentary
   photographs.
-- Work & Impact is selectable in the local public page candidate. Durable
+- Work & Impact is selectable on the live public page. Durable
   database-backed preference, member defaults, editor lifecycle, and
   publication controls remain outside this slice.
 - Untracked Playwright output is local evidence. Only the named final artifacts
   should be promoted into a reviewed evidence commit.
-- No merge, pipeline, deployment, or live behavior may be inferred from local
-  rendering or passing focused tests.
+- The manual production run was necessary because no automatic exact-SHA run
+  appeared after merge. The run was started only after re-verifying that
+  authoritative `origin/main` matched the squash merge SHA.
 
 ## H. Clear next step
 
-The visual gate is closed. Reconcile the accepted source to current Azure
-`main`, complete the Azure DevOps squash-merge and deployment workflow, verify
-the exact deployed commit, and run independent live checks for both styles.
+No release work remains. A future package may add a durable member preference
+or account setting for the Overview style; until then, the current allowlisted
+URL selector remains the released contract.
 
 ## I. What Pete needs to do or decide
 
-No additional visual or product decision is required for this release. Pete
-approved the candidate and directed deployment on 2026-07-28.
+No additional visual, product, or release decision is required. Pete approved
+the candidate and directed deployment on 2026-07-28; the release is live.

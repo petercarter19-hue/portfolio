@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Owner accepted; release in progress
+- State: Released and live
 - Owner: Pete Carter
 - Writer: Codex
 - Authoritative base: Azure DevOps `origin/main` at
@@ -10,7 +10,13 @@
 - Branch: `work/2026-07-28-overview-work-impact-fidelity-001`
 - Accepted implementation source:
   `36241e12f70884d240f66c65c264c4fab0afafee`
-- Merge / deployment state: not merged and not deployed
+- Release source commit:
+  `86bc096c5cae7a34f1b0efdf173c8f65d09176b4`
+- Azure DevOps PR: `198`, completed by squash merge
+- Authoritative merge SHA:
+  `152452c94a4058daaec4c2670cdf3f64a960c05c`
+- Deployment pipeline: `portfolio-site` run `20260728.16` (`274`), succeeded
+- Merge / deployment state: merged, deployed, and independently verified live
 - Visual acceptance: approved by Pete on 2026-07-28
 - Public default: Story & Career remains the published Overview style
 
@@ -23,8 +29,9 @@ both Overview styles through a temporary on-page selector and applies Pete's
 Impact and Story & Career on sufficiently wide desktops.
 
 This is a fidelity implementation, not new visual direction. It does not
-replace the detailed résumé, add a second profile truth store, publish a style
-change, or authorize a production release.
+replace the detailed résumé or add a second profile truth store. Pete approved
+the visual implementation and explicitly authorized its production release on
+2026-07-28.
 
 ## Owner-authorized architecture exception
 
@@ -62,9 +69,9 @@ pixels, an exact 15-percent increase. It applies equally to the Story & Career
 and Work & Impact center stages. It does not enlarge the rails or force a wide
 layout into smaller viewports.
 
-## Implemented local candidate
+## Released implementation
 
-The accepted release candidate provides:
+The released implementation provides:
 
 1. A Work & Impact public projection built from a finite, validated
    `work-impact-presentation.v1` profile-owned presentation.
@@ -123,7 +130,7 @@ of employment, team membership, program work, or outcomes.
 
 ## Presentation media
 
-The local candidate uses five optimized WebP assets. Package fixture copies are
+The released implementation uses five optimized WebP assets. Package fixture copies are
 retained beside the publication overlay, and the public presentation uses the
 corresponding files under `static/images/overview/`:
 
@@ -169,13 +176,34 @@ The final configured repository suite passed with
 time). The run produced 19 non-failing warnings: one existing Flask-Limiter
 in-memory-storage warning and 18 Pillow deprecation warnings.
 
-## Current gate
+## Release evidence
 
-Pete approved the real-browser candidate and directed deployment on 2026-07-28.
-That approval closes the visual mismatch register and accepts the rendered
-style-specific compact typography documented in the evidence.
+Pete approved the real-browser implementation and directed deployment on
+2026-07-28. Azure DevOps PR `198` squash-merged the accepted release source into
+authoritative `main` as
+`152452c94a4058daaec4c2670cdf3f64a960c05c`.
 
-The remaining gate is release evidence: reconcile to current Azure `main`,
-commit the accepted state, review it through an Azure DevOps pull request,
-squash merge it, verify the exact deployment pipeline, and independently verify
-both public styles live.
+The automatic pipeline trigger did not create an exact-SHA run, so one manual
+`portfolio-site` run was started from verified `origin/main`. Run
+`20260728.16` (`274`) used the exact merge SHA and succeeded through:
+
+- Build;
+- Deploy production; and
+- Verify production deployment.
+
+Independent logged-out production checks then verified:
+
+- `https://peerslate.com/petec/resume` returns `200` and defaults to
+  Story & Career;
+- `https://peerslate.com/petec/resume?overviewStyle=story-career` returns `200`
+  and marks Story & Career selected;
+- `https://peerslate.com/petec/resume?overviewStyle=work-impact` returns `200`
+  and marks Work & Impact selected;
+- an invalid style query safely renders Story & Career;
+- all Work & Impact media loads successfully;
+- the rendered page has no horizontal overflow at the inspected live viewport;
+  and
+- the live browser console contains no errors.
+
+The release gate is closed. Durable account-level style settings remain a
+separate deferred product slice.
