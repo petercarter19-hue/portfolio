@@ -3,11 +3,19 @@
 ## A. Status
 
 - Package: PS-OVERVIEW-LIVE-FIDELITY-CORRECTION-001
-- Status: Owner-accepted local implementation; release in progress
-- Branch and commit: `work/2026-07-27-overview-live-fidelity-correction-001`
-  from `f85747275b81359c0d99bd99f340e65aa58420b8`
-- PR / pipeline / environment: Pending release integration and Azure PR
-- Production state: Existing Overview remains live; correction is not deployed
+- Status: Completed, merged, deployed, and verified live
+- Source branch and commit:
+  `work/2026-07-27-overview-live-fidelity-correction-001` at
+  `e6b45818faca14b21b4b1fa4684d609d1fd9d087`
+- Release integration base:
+  `49072ef2af7c3268bc06ee5e51c9133b9b33c259`
+- Azure DevOps PR: `194`, squash-merged as
+  `a2474818b7fad8eba1d36868ef2add7efee850b9`
+- Pipeline / environment: Azure run `267` succeeded against the exact squash
+  merge; production deployment and public-boundary smoke both passed
+- Production state: correction verified live at
+  `https://peerslate.com/petec/resume`
+- Public release identity: `a79959d64a32ad5d75b65195`
 - Visual authority and status: Locked authority; corrected local build accepted
   by Pete Carter on 2026-07-28
 - Visual inspector: Codex measured compare-refine loop followed by Pete
@@ -24,11 +32,11 @@
   route, Overview partial, and Living Résumé navigation script.
 - Pete / designated session manager visual acceptance: Pass, 2026-07-28
 - Designated session manager: Pete Carter
-- Manager handoff status and next receiver: Release authorized; Azure PR next
+- Manager handoff status and next receiver: Closed; no next receiver required
 - Lane owner and self-managed authority: Codex, bounded correction scope
-- Self-certification: Conditional
-- Complete-diff review: Completed locally; final commit review remains pending
-- Acceptance requested: release verification after owner visual acceptance
+- Self-certification: Complete
+- Complete-diff review: Complete
+- Acceptance requested: Fulfilled
 
 ## B. What changed technically
 
@@ -58,7 +66,7 @@ member information, and adapts without leaving large gaps or scaling the page.
 
 ## D. What the website or member can do now
 
-Locally, visitors can scan the Overview, use the sticky section rail and
+In production, visitors can scan the Overview, use the sticky section rail and
 contextual AI rail on a wide desktop, jump to the detailed résumé sections,
 open Ask Pete AI, and use the compact section menu on smaller screens without
 horizontal scrolling.
@@ -93,11 +101,22 @@ the public AI surface separate from private Slate information.
 - Independent complete-diff review: pass after all findings were addressed.
 - Independent visual audit: pass; no high-impact center-layout mismatch remains.
 - Owner visual acceptance: pass, 2026-07-28.
+- Azure DevOps PR `194`: squash merge succeeded.
+- Azure pipeline `267`: succeeded for
+  `a2474818b7fad8eba1d36868ef2add7efee850b9`; Build, production deploy, and
+  production smoke stages all passed.
+- Exact live identity: `/healthz` returned release
+  `a79959d64a32ad5d75b65195`, the deterministic identity for merge
+  `a2474818b7fad8eba1d36868ef2add7efee850b9` and build `267`.
+- Canonical live route: `/petec/resume` returned the automatic
+  `resume2.css?v=6d5068e159a5` asset, Technical Strengths, Story Chapters, and
+  the accepted right-rail Ask Pete AI wording.
+- Live browser parity: pass at 1535x1024 and 390x844 with zero horizontal
+  overflow, no redundant left-rail Ask action, and the accepted responsive
+  rail states.
 
 ## G. Known gaps, risks, and exclusions
 
-- The existing live implementation remains deployed until this correction is
-  accepted, merged, deployed, and verified.
 - The implementation uses real public projection content, so illustrative
   mockup people, claims, and media are intentionally not copied.
 - The current shared PeerSlate brand image is preserved; changing it is outside
@@ -108,11 +127,9 @@ the public AI surface separate from private Slate information.
 
 ## H. Clear next step
 
-Integrate the accepted correction onto current Azure `origin/main`, rerun the
-pre-merge test and visual checks, then create and merge the Azure DevOps pull
-request. Verify the exact production deployment and canonical live route before
-claiming the correction live.
+No implementation or release action remains for this correction. Any future
+material visual change requires a new ChatGPT-created authority and Pete lock.
 
 ## I. What Pete needs to do or decide
 
-No additional visual decision is required for this accepted correction.
+Nothing. The accepted correction is live.

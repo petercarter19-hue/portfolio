@@ -2,7 +2,7 @@
 
 ## Status
 
-- State: Owner-accepted local correction; release in progress
+- State: Completed, deployed, and verified live
 - Owner: Pete Carter
 - Writer: Codex
 - Original implementation base: Azure DevOps `origin/main` at
@@ -104,6 +104,9 @@ Measured results and the final evidence inventory are recorded in
 ## Current gate
 
 Pete accepted the corrected real build on 2026-07-28 and authorized release.
-The correction is not yet committed, merged, deployed, or verified live. The
-next gate is release integration against current Azure `origin/main`, followed
-by the required tests, Azure pull request, deployment, and live verification.
+Azure DevOps PR `194` squash-merged the accepted source commit
+`e6b45818faca14b21b4b1fa4684d609d1fd9d087` as
+`a2474818b7fad8eba1d36868ef2add7efee850b9`. Pipeline `267` passed Build,
+production deployment, and exact-build smoke. The canonical live route and
+desktop/mobile browser states were independently rechecked against public
+release identity `a79959d64a32ad5d75b65195`. This correction is closed.

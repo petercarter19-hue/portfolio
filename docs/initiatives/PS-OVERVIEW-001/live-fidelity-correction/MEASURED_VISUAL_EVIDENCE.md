@@ -12,6 +12,10 @@
 - Browser: headless Chromium at device scale factor 1
 - Page scale: normal CSS geometry; no `zoom` or transform fitting
 - Owner acceptance: passed on 2026-07-28
+- Production route: `https://peerslate.com/petec/resume`
+- Production merge: `a2474818b7fad8eba1d36868ef2add7efee850b9`
+- Azure pipeline: `267`, succeeded
+- Public release identity: `a79959d64a32ad5d75b65195`
 
 ## Authority comparison at 1535x1024
 
@@ -111,6 +115,12 @@ rechecked at 1535x1024 and 390x844. The automatic content-hash URL for
 `resume2.css` was present, Technical Strengths and Story Chapters remained in
 the accepted composition, the redundant left-rail Ask action remained absent,
 and horizontal overflow remained 0px at both viewports.
+
+The same checks were repeated against production after Azure pipeline `267`
+completed. `/healthz` returned the exact expected release
+`a79959d64a32ad5d75b65195`; the canonical route served
+`resume2.css?v=6d5068e159a5`; and the 1535x1024 and 390x844 browser states
+matched the accepted local candidate with 0px horizontal overflow.
 
 ## Local screenshot inventory
 
