@@ -108,9 +108,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             event.preventDefault();
             setCurrentResumeSection(target.id);
-            target.scrollIntoView({
-                behavior: reducedMotion.matches ? 'auto' : 'smooth',
-                block: 'start',
+            const compactMenu = link.closest('.r2-overview-mobile-sections');
+            if (compactMenu) {
+                compactMenu.open = false;
+            }
+            window.history.replaceState(null, '', link.hash);
+            window.requestAnimationFrame(() => {
+                target.scrollIntoView({
+                    behavior: reducedMotion.matches ? 'auto' : 'smooth',
+                    block: 'start',
+                });
+                if (!target.hasAttribute('tabindex')) {
+                    target.setAttribute('tabindex', '-1');
+                }
+                target.focus({ preventScroll: true });
             });
         });
     });

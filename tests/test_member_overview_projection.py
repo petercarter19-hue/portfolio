@@ -288,6 +288,15 @@ class MemberOverviewProjectionTests(unittest.TestCase):
         self.assertEqual(projection["style"]["id"], "story-career")
         self.assertEqual(projection["profile"]["display_name"], "Pete Carter")
         self.assertEqual(
+            projection["profile"]["headline"],
+            "Systems Engineer · Technical Leader",
+        )
+        self.assertEqual(
+            projection["profile"]["intro"],
+            "I build high-performing teams and resilient systems that solve "
+            "real-world problems in demanding environments.",
+        )
+        self.assertEqual(
             [
                 claim["value"]
                 for claim in projection["block_by_definition"]["proof_band"][
@@ -356,6 +365,30 @@ class MemberOverviewProjectionTests(unittest.TestCase):
         self.assertEqual(
             raised.exception.code,
             "invalid_accomplishment_collection",
+        )
+
+        invalid_profile = copy.deepcopy(resume_data)
+        invalid_profile["overview_publication"]["profile"] = "not-an-object"
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(invalid_profile)
+        self.assertEqual(raised.exception.code, "invalid_publication_profile")
+
+        too_long_headline = copy.deepcopy(resume_data)
+        too_long_headline["overview_publication"]["profile"]["headline"] = "H" * 71
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(too_long_headline)
+        self.assertEqual(
+            raised.exception.code,
+            "publication_profile_budget_exceeded",
+        )
+
+        too_long_intro = copy.deepcopy(resume_data)
+        too_long_intro["overview_publication"]["profile"]["intro"] = "I" * 301
+        with self.assertRaises(OverviewProjectionError) as raised:
+            build_public_overview_projection(too_long_intro)
+        self.assertEqual(
+            raised.exception.code,
+            "publication_profile_budget_exceeded",
         )
 
     def test_shared_projection_service_contains_no_pete_content(self):

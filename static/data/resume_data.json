@@ -39,6 +39,10 @@
     "published_revision": 1,
     "style_id": "story-career",
     "density": "rich",
+    "profile": {
+      "headline": "Systems Engineer · Technical Leader",
+      "intro": "I build high-performing teams and resilient systems that solve real-world problems in demanding environments."
+    },
     "media": [
       {
         "id": "portrait",
@@ -50,6 +54,22 @@
       },
       {
         "id": "story",
+        "asset_path": "images/cinematic/future-path.jpg",
+        "alt": "A warm mountain path at sunrise",
+        "focal": "62% 48%",
+        "truth_label": "Illustrative story landscape",
+        "public_eligible": true
+      },
+      {
+        "id": "career-team",
+        "asset_path": "images/feed/feed-team-demo-2026-07-21.png",
+        "alt": "A team collaborating around a product demonstration",
+        "focal": "50% 48%",
+        "truth_label": "Illustrative collaboration scene",
+        "public_eligible": true
+      },
+      {
+        "id": "career-life",
         "asset_path": "images/story/pete-danielle-maui-beach.jpg",
         "alt": "Pete and Danielle standing together on lava rocks at a Maui beach",
         "focal": "50% 45%",
@@ -57,11 +77,27 @@
         "public_eligible": true
       },
       {
-        "id": "future",
-        "asset_path": "images/story/pete-garden-bridge.jpg",
-        "alt": "Pete smiling on a green garden bridge with mountains behind",
-        "focal": "50% 45%",
-        "truth_label": "Still smiling. Still climbing.",
+        "id": "chapters",
+        "asset_path": "images/story/pete-hawaii-overlook.jpg",
+        "alt": "Pete standing at a mountain overlook in Hawaii",
+        "focal": "50% 42%",
+        "truth_label": "Pete at a Hawaii overlook",
+        "public_eligible": true
+      },
+      {
+        "id": "philosophy",
+        "asset_path": "images/cinematic/story-sunset-bg.jpg",
+        "alt": "A warm sunset landscape",
+        "focal": "50% 52%",
+        "truth_label": "Illustrative sunset landscape",
+        "public_eligible": true
+      },
+      {
+        "id": "closing",
+        "asset_path": "images/feed/feed-coffee-notes-2026-07-21.png",
+        "alt": "Coffee, an open notebook, and fountain pens on a wooden table",
+        "focal": "48% 48%",
+        "truth_label": "Illustrative coffee and notebook worktable",
         "public_eligible": true
       }
     ],
@@ -111,9 +147,9 @@
         "emphasis": "feature",
         "content": {
           "kicker": "My story",
-          "heading": "The person behind the work.",
-          "body": "Built on curiosity. Driven by people. Grounded in purpose. Everything else is just details.",
-          "action": "Explore the story"
+          "heading": "Purpose. People. Impact.",
+          "body": "My journey began long before engineering—with mentors, teammates, and experiences that taught me the power of curiosity, discipline, and service.",
+          "action": "Read my full story"
         }
       },
       {
@@ -122,10 +158,48 @@
         "definition_version": 1,
         "mode": "record_linked",
         "role_ids": ["northrop", "l3harris", "dod"],
+        "media_ids": ["career-team", "career-life"],
         "order": 40,
         "visible": true,
         "emphasis": "feature",
-        "content": {}
+        "content": {
+          "quote": "Great systems start with listening well, asking better questions, and empowering the team.",
+          "attribution": "Pete"
+        }
+      },
+      {
+        "placement_id": "petec-overview-impact",
+        "definition_id": "impact",
+        "definition_version": 1,
+        "mode": "authored",
+        "order": 50,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "heading": "Key impact & achievements",
+          "items": [
+            {
+              "icon": "◇",
+              "heading": "Mission success",
+              "body": "35% faster issue-to-action across complex programs."
+            },
+            {
+              "icon": "◎",
+              "heading": "Team builder",
+              "body": "Led and mentored 30+ engineers across redesign efforts."
+            },
+            {
+              "icon": "↗",
+              "heading": "Delivery excellence",
+              "body": "Improved repair-and-test performance by 70%."
+            },
+            {
+              "icon": "$",
+              "heading": "Value driven",
+              "body": "Guided redesign efforts valued at $19.2M."
+            }
+          ]
+        }
       },
       {
         "placement_id": "petec-overview-skills",
@@ -144,11 +218,11 @@
           "data-analytics",
           "ai"
         ],
-        "order": 50,
+        "order": 60,
         "visible": true,
         "emphasis": "feature",
         "content": {
-          "heading": "Skills in practice"
+          "heading": "Technical strengths"
         }
       },
       {
@@ -156,8 +230,8 @@
         "definition_id": "education",
         "definition_version": 1,
         "mode": "record_linked",
-        "education_ids": ["education-ms", "education-bs", "education-phd"],
-        "order": 60,
+        "education_ids": ["education-ms", "education-bs"],
+        "order": 70,
         "visible": true,
         "emphasis": "standard",
         "content": {}
@@ -168,7 +242,7 @@
         "definition_version": 1,
         "mode": "record_linked",
         "education_ids": ["education-pmp"],
-        "order": 70,
+        "order": 80,
         "visible": true,
         "emphasis": "standard",
         "content": {}
@@ -179,7 +253,7 @@
         "definition_version": 1,
         "mode": "record_linked",
         "achievement_ids": ["burdick", "emerging-leader"],
-        "order": 80,
+        "order": 90,
         "visible": true,
         "emphasis": "standard",
         "content": {}
@@ -189,7 +263,8 @@
         "definition_id": "story_chapters",
         "definition_version": 1,
         "mode": "authored",
-        "order": 90,
+        "media_ids": ["chapters"],
+        "order": 100,
         "visible": true,
         "emphasis": "feature",
         "content": {
@@ -206,12 +281,22 @@
             {
               "heading": "L3Harris, then Northrop Grumman.",
               "body": "Systems effectiveness, then systems engineering, integration, and test."
-            },
-            {
-              "heading": "Ph.D. in Systems Engineering.",
-              "body": "Still learning. Still building. The next chapter is already in motion."
             }
           ]
+        }
+      },
+      {
+        "placement_id": "petec-overview-philosophy",
+        "definition_id": "philosophy",
+        "definition_version": 1,
+        "mode": "authored",
+        "media_ids": ["philosophy"],
+        "order": 110,
+        "visible": true,
+        "emphasis": "feature",
+        "content": {
+          "heading": "Lead with integrity. Serve with humility. Build systems that matter.",
+          "body": "I believe the best outcomes come when diverse, trusted teams are empowered with clarity, purpose, and the freedom to solve hard problems."
         }
       },
       {
@@ -219,13 +304,13 @@
         "definition_id": "future_direction",
         "definition_version": 1,
         "mode": "authored",
-        "media_ids": ["future"],
-        "order": 100,
+        "media_ids": ["closing"],
+        "order": 120,
         "visible": true,
         "emphasis": "feature",
         "content": {
-          "heading": "The story isn't finished.",
-          "body": "I'm still becoming who I'm meant to be."
+          "heading": "Let’s Build What’s Next",
+          "body": "I’m always open to meaningful conversations about challenging problems, high-performing teams, and opportunities to make a lasting impact."
         }
       },
       {

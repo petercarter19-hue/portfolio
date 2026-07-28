@@ -358,10 +358,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn(b'images/story/pete-headshot.jpg', response.data)
         self.assertIn(b'Professional portrait of Pete Carter', response.data)
         self.assertIn(b'Engineer at heart. Leader in practice.', response.data)
-        self.assertIn(
-            b'Systems Engineer \xc2\xb7 Technical Leader \xc2\xb7 MBSE, Sustainment, and Requirements',
-            response.data,
-        )
+        self.assertIn(b'Systems Engineer \xc2\xb7 Technical Leader', response.data)
         self.assertIn(b'r2-overview-ai-rail resume-ai-panel', response.data)
         self.assertNotIn(b'class="r2-summary', response.data)
         self.assertNotIn(b'Maya Chen', response.data)
@@ -505,7 +502,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertNotIn('>Contact</a>', overview_html)
 
         self.assertIn('Systems Engineer · Technical Leader', overview_html)
-        self.assertIn('MBSE, Sustainment, and Requirements', overview_html)
+        self.assertNotIn('MBSE, Sustainment, and Requirements', overview_html)
         self.assertIn('Ask Pete AI', ai_html)
         self.assertIn('Approved public context only', ai_html)
         self.assertIn('data-hero-ai-search', ai_html)

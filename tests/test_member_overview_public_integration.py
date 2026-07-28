@@ -105,7 +105,7 @@ class MemberOverviewPublicIntegrationTests(unittest.TestCase):
             "Systems Engineer · Technical Leader",
             "30+",
             "9 / $19.2M",
-            "The person behind the work.",
+            "Purpose. People. Impact.",
             "Northrop Grumman",
             "L3Harris",
             "Department of Defense / U.S. Air Force",
@@ -132,6 +132,7 @@ class MemberOverviewPublicIntegrationTests(unittest.TestCase):
         self.assertEqual(page_html.count("r2-overview-context-rail"), 1)
         self.assertEqual(page_html.count("r2-overview-ai-rail"), 1)
         self.assertEqual(page_html.count("data-hero-ai-search"), 1)
+        self.assertNotIn("r2-context-ask-primary", page_html)
         self.assertEqual(
             page_html.count("/static/files/pete-carter-resume.pdf"),
             1,
@@ -140,6 +141,7 @@ class MemberOverviewPublicIntegrationTests(unittest.TestCase):
         self.assertEqual(overview_html.count(">View résumé</a>"), 1)
         self.assertIn("Approved public context only", page_html)
         self.assertIn("data-r2-ai-context", page_html)
+        self.assertEqual(page_html.count('class="overview-chapter-copy"'), 3)
 
         javascript = (
             ROOT / "static/js/living-resume-v2.js"

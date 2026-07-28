@@ -193,6 +193,21 @@ def build_public_overview_projection(
         )
 
     positioning = _required_text(profile_source, "positioning", "profile")
+    publication_profile = publication.get("profile", {})
+    if not isinstance(publication_profile, dict):
+        _fail("invalid_publication_profile", "publication profile must be an object")
+    publication_headline = _optional_text(publication_profile.get("headline"))
+    publication_intro = _optional_text(publication_profile.get("intro"))
+    if publication_headline and len(publication_headline) > 70:
+        _fail(
+            "publication_profile_budget_exceeded",
+            "publication profile headline must contain at most 70 characters",
+        )
+    if publication_intro and len(publication_intro) > 300:
+        _fail(
+            "publication_profile_budget_exceeded",
+            "publication profile intro must contain at most 300 characters",
+        )
     location = _optional_text(profile_source.get("location"))
     contact_value = _optional_text(profile_source.get("contact_url"))
     if contact_value:
@@ -206,12 +221,16 @@ def build_public_overview_projection(
     fixture_profile = {
         "display_name": _required_text(profile_source, "name", "profile"),
         "first_name": _required_text(profile_source, "name", "profile").split()[0],
-        "headline": " · ".join(
+        "headline": publication_headline or " · ".join(
             part.strip()
             for part in positioning.split("|")
             if part.strip()
         ),
-        "intro": _required_text(profile_source, "summary", "profile"),
+        "intro": publication_intro or _required_text(
+            profile_source,
+            "summary",
+            "profile",
+        ),
         "location": (
             " · ".join(part.strip() for part in location.split("|") if part.strip())
             if location

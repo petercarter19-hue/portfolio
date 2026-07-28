@@ -5269,6 +5269,1078 @@ body[data-theme="dark"] .r2-context-actions > :is(a, button):hover {
     }
 }
 
+/* =====================================================================
+   PS-OVERVIEW-LIVE-FIDELITY-CORRECTION-001
+
+   The approved Overview is an editorial page, not a display poster. These
+   rules restore the locked three-region geometry and compact type/spacing
+   rhythm while keeping every section at normal browser scale.
+   ===================================================================== */
+
+.resume-v2[data-public-overview] {
+    padding-top: 0;
+    background: #f7f9fc;
+}
+
+.resume-overview-public-page .platform-nav__inner {
+    min-height: 3.45rem;
+}
+
+.resume-overview-public-page .profile-tabs__ask {
+    display: none;
+}
+
+/* The approved width contract requires true CSS geometry. The older résumé
+   used child zoom as a one-off global shrink; the Overview must not inherit
+   that behavior. */
+.resume-v2[data-public-overview] > * {
+    zoom: 1;
+}
+
+.resume-v2[data-public-overview]::before,
+.resume-v2[data-public-overview]::after {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .r2-page-grid {
+    width: min(calc(100% - 2rem), 94rem);
+    grid-template-columns: 10rem minmax(0, 1fr) 20rem;
+    gap: 2rem;
+}
+
+.resume-v2[data-public-overview] .r2-overview-context-rail {
+    top: 6.4rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+}
+
+.resume-v2[data-public-overview] .overview-context-person {
+    gap: 0.3rem;
+    padding-bottom: 0.75rem;
+}
+
+.resume-v2[data-public-overview] .overview-avatar {
+    width: 4rem;
+    height: 4rem;
+}
+
+.resume-v2[data-public-overview] .overview-context-person strong {
+    font-family: var(--r2-display);
+    font-size: 0.96rem;
+    font-weight: 600;
+}
+
+.resume-v2[data-public-overview] .overview-context-person small {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .overview-rail-label {
+    margin: 0.75rem 0 0.35rem;
+    font-size: 0.58rem;
+}
+
+.resume-v2[data-public-overview] .r2-overview-context-rail nav {
+    gap: 0.12rem;
+}
+
+.resume-v2[data-public-overview] .r2-overview-context-rail nav a,
+.resume-v2[data-public-overview] .r2-context-actions > a,
+.resume-v2[data-public-overview] .r2-context-actions > button {
+    min-height: 2.7rem;
+    grid-template-columns: 1.15rem minmax(0, 1fr);
+    gap: 0.35rem;
+    padding: 0.42rem 0.45rem;
+    font-size: 0.7rem;
+}
+
+.resume-v2[data-public-overview] .r2-context-actions {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+}
+
+.resume-v2[data-public-overview] .r2-context-ask-compact {
+    display: grid;
+    border: 1px solid rgb(0 169 157 / 42%);
+    color: #008f86;
+}
+
+.resume-v2[data-public-overview] .r2-context-ask-primary {
+    width: 100%;
+    min-height: 2.7rem;
+    grid-template-columns: 1.15rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.45rem;
+    border-radius: 0.42rem;
+    background: #fff;
+    font-size: 0.7rem;
+    font-weight: 750;
+    text-align: left;
+}
+
+.resume-v2[data-public-overview] .member-overview {
+    border-color: #e8e1d5;
+    border-radius: 0.75rem;
+    background: #fffdf9;
+    box-shadow: 0 0.85rem 2.6rem rgb(44 50 58 / 7%);
+}
+
+.resume-v2[data-public-overview] .member-overview p,
+.resume-v2[data-public-overview] .member-overview li {
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.resume-v2[data-public-overview] .overview-opening {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 28%);
+    background: linear-gradient(100deg, #f0f4f5 0 24%, #fffdf9 52%);
+}
+
+.resume-v2[data-public-overview] .overview-hero--with-media {
+    min-height: 18.5rem;
+    grid-template-columns: minmax(14.5rem, 43%) minmax(0, 57%);
+}
+
+.resume-v2[data-public-overview] .overview-hero-media {
+    min-height: 17.1rem;
+    height: 17.1rem;
+    align-self: start;
+    margin-top: 0.6rem;
+    margin-right: 0.3rem;
+    margin-left: 1.2rem;
+    overflow: hidden;
+    border-radius: 0.35rem;
+}
+
+.resume-v2[data-public-overview] .overview-hero-copy {
+    justify-content: flex-start;
+    height: 100%;
+    padding: 1rem 1.6rem 0.8rem;
+}
+
+.resume-v2[data-public-overview] .overview-hero h1,
+.resume-v2[data-public-overview] .member-overview--story .overview-hero h1 {
+    font-size: clamp(2rem, 2.5vw, 2.15rem);
+    letter-spacing: -0.02em;
+    line-height: 0.98;
+}
+
+.resume-v2[data-public-overview] .overview-kicker,
+.resume-v2[data-public-overview] .overview-section-kicker {
+    margin-bottom: 0.42rem;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.09em;
+}
+
+/* Story & Career's approved hero begins with the member name and concise
+   professional headline. Its separate eyebrow belongs to Work & Impact. */
+.resume-v2[data-public-overview] .member-overview--story .overview-kicker {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .overview-headline {
+    margin: 0.55rem 0 0.65rem;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    letter-spacing: 0.07em;
+}
+
+.resume-v2[data-public-overview] .overview-intro {
+    margin-bottom: 0.6rem;
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.resume-v2[data-public-overview] .overview-location {
+    margin-bottom: 0.35rem;
+    font-size: 0.72rem;
+}
+
+.resume-v2[data-public-overview] .overview-contact-list {
+    order: 6;
+    display: grid;
+    gap: 0.18rem;
+    margin: 0 0 0.65rem;
+}
+
+.resume-v2[data-public-overview] .overview-contact-list a {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 0.85rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.38rem;
+    color: #264664;
+    font-size: 0.6rem;
+    line-height: 1.25;
+    text-decoration: none;
+}
+
+.resume-v2[data-public-overview] .overview-contact-list svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+}
+
+.resume-v2[data-public-overview] .overview-contact-list span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resume-v2[data-public-overview] .overview-hero-actions {
+    order: 7;
+    gap: 0.55rem;
+    margin-top: auto;
+}
+
+.resume-v2[data-public-overview] .overview-button {
+    min-height: 2.1rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.64rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-proof {
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    align-content: stretch;
+    padding: 0.4rem 1rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-proof-item {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.45rem 0;
+}
+
+.resume-v2[data-public-overview] .overview-proof-item strong {
+    font-size: clamp(1.65rem, 2vw, 2rem);
+}
+
+.resume-v2[data-public-overview] .overview-proof-item span:not(.overview-proof-icon) {
+    margin-top: 0.28rem;
+    font-size: 0.6rem;
+    line-height: 1.22;
+}
+
+.resume-v2[data-public-overview] .overview-media figcaption {
+    font-size: 0.5rem;
+}
+
+.resume-v2[data-public-overview] .overview-story {
+    height: 11rem;
+    min-height: 11rem;
+    margin: 0.95rem;
+    overflow: hidden;
+}
+
+.resume-v2[data-public-overview] .overview-story--with-media {
+    grid-template-columns: minmax(17rem, 36%) minmax(0, 64%);
+}
+
+.resume-v2[data-public-overview] .overview-story-copy {
+    padding: 1.15rem 1.5rem;
+}
+
+.resume-v2[data-public-overview] .overview-story h2,
+.resume-v2[data-public-overview] .overview-philosophy h2,
+.resume-v2[data-public-overview] .overview-future h2,
+.resume-v2[data-public-overview] .overview-connect h2 {
+    font-size: clamp(1.18rem, 1.45vw, 1.35rem);
+}
+
+.resume-v2[data-public-overview] .overview-story-copy > p:not(.overview-section-kicker) {
+    margin-bottom: 0.65rem;
+}
+
+.resume-v2[data-public-overview] .overview-accent-rule {
+    width: 1.4rem;
+    margin: 0.5rem 0 0.65rem;
+}
+
+.resume-v2[data-public-overview] .overview-text-link {
+    font-size: 0.62rem;
+}
+
+.resume-v2[data-public-overview] .overview-story-media {
+    height: 100%;
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .overview-story-media img {
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .overview-career {
+    gap: 0.75rem;
+    padding: 0.9rem 1rem 1rem;
+}
+
+.resume-v2[data-public-overview] .overview-timeline {
+    gap: 0.55rem;
+    margin-top: 0.6rem;
+}
+
+.resume-v2[data-public-overview] .overview-timeline > li {
+    grid-template-columns: minmax(6rem, 22%) minmax(0, 1fr);
+    gap: 0.75rem;
+    padding-left: 1.1rem;
+}
+
+.resume-v2[data-public-overview] .overview-timeline::before {
+    left: 0.24rem;
+}
+
+.resume-v2[data-public-overview] .overview-timeline > li::before {
+    top: 0.3rem;
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-period {
+    font-size: 0.64rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-period span {
+    font-size: 0.62rem;
+}
+
+.resume-v2[data-public-overview] .overview-career h3 {
+    font-size: 0.72rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-org {
+    margin: 0.05rem 0 0.22rem;
+    font-size: 0.6rem !important;
+}
+
+.resume-v2[data-public-overview] .overview-timeline li p:last-child,
+.resume-v2[data-public-overview] .overview-career-focus > p,
+.resume-v2[data-public-overview] .overview-career-focus li {
+    margin-top: 0.18rem;
+    font-size: 0.62rem;
+    line-height: 1.3;
+}
+
+.resume-v2[data-public-overview] .overview-inline-action {
+    min-height: 1.85rem;
+    margin-top: 0.55rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.56rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact {
+    gap: 0.65rem;
+    padding: 0.9rem 1rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact-grid article {
+    padding: 0.7rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact-icon {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact-grid strong {
+    margin-top: 0.4rem;
+    font-size: 1.1rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact-grid h3 {
+    margin: 0.45rem 0 0.25rem;
+    font-size: 0.62rem;
+}
+
+.resume-v2[data-public-overview] .overview-impact-grid p {
+    font-size: 0.65rem;
+}
+
+.resume-v2[data-public-overview] .overview-story-skills {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    border-bottom: 1px solid var(--overview-warm-line);
+}
+
+.resume-v2[data-public-overview] .overview-story-skills--single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.resume-v2[data-public-overview] .overview-story-skills > section {
+    min-width: 0;
+}
+
+.resume-v2[data-public-overview] .overview-story-skills > section + section {
+    border-left: 1px solid var(--overview-warm-line);
+}
+
+.resume-v2[data-public-overview] .overview-chapters,
+.resume-v2[data-public-overview] .overview-skills {
+    padding: 0.9rem 1rem;
+}
+
+.resume-v2[data-public-overview] .overview-chapters ol {
+    gap: 0.45rem;
+}
+
+.resume-v2[data-public-overview] .overview-chapters li {
+    padding-left: 1.1rem;
+}
+
+.resume-v2[data-public-overview] .overview-chapters strong {
+    font-size: 0.6rem;
+}
+
+.resume-v2[data-public-overview] .overview-chapters span {
+    font-size: 0.65rem;
+    line-height: 1.3;
+}
+
+.resume-v2[data-public-overview] .overview-skills ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem 0.8rem;
+    margin-top: 0.55rem;
+}
+
+.resume-v2[data-public-overview] .overview-skills li {
+    padding-left: 1.15rem;
+    font-size: 0.66rem;
+}
+
+.resume-v2[data-public-overview] .overview-credentials {
+    padding: 0.85rem 1rem;
+}
+
+.resume-v2[data-public-overview] .overview-credentials > section {
+    padding-inline: 0.85rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-list {
+    gap: 0.55rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-list strong {
+    font-size: 0.72rem;
+}
+
+.resume-v2[data-public-overview] .overview-record-list span,
+.resume-v2[data-public-overview] .overview-record-list p {
+    font-size: 0.62rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .overview-record-list p {
+    margin-top: 0.2rem;
+}
+
+.resume-v2[data-public-overview] .overview-quote,
+.resume-v2[data-public-overview] .overview-philosophy {
+    padding: 1rem 1.25rem;
+}
+
+.resume-v2[data-public-overview] .overview-quote blockquote {
+    font-size: 1.2rem;
+}
+
+.resume-v2[data-public-overview] .overview-future {
+    height: 8.5rem;
+    min-height: 8.5rem;
+    overflow: hidden;
+}
+
+.resume-v2[data-public-overview] .overview-future > div {
+    padding: 1rem 1.25rem;
+}
+
+.resume-v2[data-public-overview] .overview-future-media {
+    height: 100%;
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .overview-future-media img {
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .overview-resume-transition {
+    min-height: 4.5rem;
+    gap: 0.85rem;
+    padding: 0.8rem 1rem;
+    border-top-width: 3px;
+}
+
+.resume-v2[data-public-overview] .overview-resume-transition h2 {
+    font-size: 1.25rem;
+}
+
+.resume-v2[data-public-overview] .overview-resume-transition p {
+    font-size: 0.72rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail {
+    top: 6.4rem;
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 8rem);
+    max-height: calc(100vh - 8rem);
+    flex-direction: column;
+    justify-content: flex-start;
+    justify-self: stretch;
+    padding: 0;
+    overflow: hidden auto;
+    border-color: #dde6f0;
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 98%);
+}
+
+.r2-ai-rail-header {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.8rem;
+    border-bottom: 1px solid #e3e9f0;
+}
+
+.r2-ai-rail-header img {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 42%;
+}
+
+.r2-ai-rail-header h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.r2-ai-rail-header p {
+    margin: 0.08rem 0 0;
+    color: #68788c;
+    font-size: 0.62rem;
+}
+
+.r2-ai-rail-intro {
+    display: grid;
+    justify-items: center;
+    gap: 0.55rem;
+    padding: 1rem 0.9rem 0.75rem;
+    text-align: center;
+}
+
+.r2-ai-rail-intro .overview-ai-icon {
+    width: 3rem;
+    height: 3rem;
+}
+
+.r2-ai-rail-intro h3 {
+    max-width: 15rem;
+    margin: 0;
+    font-family: var(--r2-display);
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-context {
+    margin: 0 0.8rem;
+    padding: 0.7rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-context > span {
+    color: #173c6c;
+    font-size: 0.68rem;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-context > span strong {
+    font-family: var(--r2-display);
+}
+
+.r2-ai-quick-label {
+    margin: 0.8rem 0.8rem 0 !important;
+    color: #173c6c !important;
+    font-size: 0.6rem !important;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.r2-overview-ai-rail .r2-ai-suggestions {
+    margin: 0.45rem 0.8rem 0;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-chip {
+    position: relative;
+    min-height: 4.125rem;
+    padding: 0.62rem 1.6rem 0.62rem 0.7rem;
+    border-color: #dce5ef;
+    background: #fff;
+    color: #173c6c;
+    font-size: 0.72rem;
+    line-height: 1.3;
+    text-align: left;
+}
+
+.resume-consolidated .r2-overview-ai-rail .r2-ai-chip::after {
+    position: absolute;
+    top: 50%;
+    right: 0.65rem;
+    content: "›";
+    font-size: 1rem;
+    transform: translateY(-50%);
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search {
+    margin: auto 0.8rem 0.8rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__box {
+    grid-template-columns: minmax(0, 1fr) 2.35rem;
+    gap: 0.35rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__input,
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__button {
+    min-height: 2.75rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__button {
+    width: 2.75rem;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search__button::after {
+    content: "➤";
+    font-size: 0.95rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .overview-ai-truth {
+    min-height: 7.5rem;
+    margin: 0 0.8rem 0.85rem;
+    padding: 1rem;
+    border-left: 0;
+    background: #f7f9fc;
+    font-size: 0.64rem;
+}
+
+/* A complete three-region desktop remains viable through common 1366px and
+   1440px screens. Undock the 20rem AI rail only when the center would fall
+   below the proven 49rem readable width. */
+@media (max-width: 82rem) {
+    .resume-v2[data-public-overview] .r2-page-grid {
+        width: min(calc(100% - 2rem), 94rem);
+        grid-template-columns: 10rem minmax(0, 1fr);
+        gap: 2rem;
+    }
+
+    .resume-v2[data-public-overview] .r2-content {
+        grid-column: 2;
+    }
+
+    .resume-consolidated .r2-overview-ai-rail {
+        display: none;
+    }
+}
+
+@media (min-width: 60.01rem) and (max-width: 73.75rem) {
+    .resume-overview-public-page .platform-nav__inner {
+        min-height: 3.45rem;
+        grid-template-areas: "brand links actions";
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 1rem;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .resume-overview-public-page .platform-brand {
+        grid-area: brand;
+    }
+
+    .resume-overview-public-page .platform-nav__links {
+        grid-area: links;
+        grid-column: auto;
+        justify-content: space-evenly;
+        gap: 1rem;
+        padding: 0;
+        overflow: visible;
+    }
+
+    .resume-overview-public-page .platform-actions {
+        grid-area: actions;
+    }
+}
+
+@media (min-width: 60.01rem) and (max-width: 66rem) {
+    .resume-v2[data-public-overview] .r2-overview-context-rail {
+        display: block;
+    }
+
+    .resume-v2[data-public-overview] .r2-overview-mobile-nav {
+        display: none;
+    }
+
+    .resume-v2[data-public-overview] .r2-content {
+        grid-column: 2;
+        grid-row: auto;
+        padding: 0;
+    }
+
+    /* The approved narrow-desktop authority keeps the complete opening above
+       the story band in roughly 15rem. Reduce the media and proof typography
+       instead of scaling the whole page or allowing the long metric to wrap
+       into an oversized 21rem opening. */
+    .resume-v2[data-public-overview] .overview-opening,
+    .resume-v2[data-public-overview] .overview-hero--with-media {
+        min-height: 15rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero-media {
+        height: 14rem;
+        min-height: 14rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero-copy {
+        padding: 1rem 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero h1,
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof {
+        padding: 0.35rem 0.65rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item {
+        padding: 0.45rem 0.2rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-proof-item strong {
+        font-size: 1.3rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-proof-item span:not(.overview-proof-icon) {
+        font-size: 0.52rem;
+    }
+}
+
+@media (min-width: 46.51rem) and (max-width: 66rem) {
+    .resume-v2[data-public-overview] .overview-story {
+        height: 12rem;
+        min-height: 12rem;
+    }
+}
+
+@media (max-width: 60rem) {
+    .resume-v2[data-public-overview] {
+        padding-top: 0;
+    }
+
+    .resume-overview-public-page .platform-nav__inner {
+        min-height: 3.45rem;
+        grid-template-areas: "brand actions";
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding-top: 0.35rem;
+        padding-bottom: 0.35rem;
+    }
+
+    .resume-overview-public-page .platform-nav__links,
+    .resume-overview-public-page .profile-tabs--resume {
+        display: none;
+    }
+
+    .resume-v2[data-public-overview] .r2-page-grid {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .resume-v2[data-public-overview] .r2-content {
+        grid-column: 1;
+    }
+
+    .r2-overview-mobile-nav {
+        position: sticky;
+        z-index: 45;
+        top: 3.45rem;
+        display: grid;
+        overflow: visible;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: stretch;
+        border-block: 1px solid var(--r2-line);
+        background: rgb(255 255 255 / 98%);
+        box-shadow: 0 0.35rem 1rem rgb(35 73 129 / 9%);
+    }
+
+    .r2-overview-mobile-person {
+        display: grid;
+        grid-template-columns: 2.15rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0.55rem;
+        min-width: 0;
+        padding: 0.45rem 0.7rem;
+    }
+
+    .r2-overview-mobile-person img {
+        width: 2.15rem;
+        height: 2.15rem;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: 50% 42%;
+    }
+
+    .r2-overview-mobile-person strong {
+        overflow: hidden;
+        font-family: var(--r2-display);
+        font-size: 0.88rem;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .r2-overview-mobile-nav > a,
+    .r2-overview-mobile-sections > summary {
+        display: flex;
+        min-width: 6rem;
+        min-height: 3.1rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        border: 0;
+        border-left: 1px solid var(--r2-line);
+        background: transparent;
+        color: #17345f;
+        font-size: 0.78rem;
+        font-weight: 750;
+        padding: 0.55rem 0.7rem;
+        text-decoration: none;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .r2-overview-mobile-nav > a.is-current {
+        border-bottom: 3px solid #075cf0;
+        background: #f5f9ff;
+        color: #075cf0;
+    }
+
+    .r2-overview-mobile-sections {
+        position: relative;
+    }
+
+    .r2-overview-mobile-sections > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .r2-overview-mobile-sections nav {
+        position: absolute;
+        top: calc(100% + 0.35rem);
+        right: 0.35rem;
+        display: grid;
+        width: 12rem;
+        overflow: hidden;
+        border: 1px solid #dce5ef;
+        border-radius: 0.7rem;
+        background: #fff;
+        box-shadow: 0 0.9rem 2rem rgb(20 45 78 / 17%);
+    }
+
+    .r2-overview-mobile-sections nav :is(a, button) {
+        display: grid;
+        min-height: 2.65rem;
+        grid-template-columns: 1.25rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0.45rem;
+        border: 0;
+        border-bottom: 1px solid #edf1f5;
+        background: #fff;
+        color: #17345f;
+        font: inherit;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.55rem 0.7rem;
+        text-align: left;
+        text-decoration: none;
+    }
+
+    .resume-v2[data-public-overview] .r2-content {
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview {
+        border-radius: 0.8rem;
+    }
+}
+
+@media (max-width: 46.5rem) {
+    .resume-overview-public-page .mobile-tabbar {
+        display: none !important;
+    }
+
+    .resume-overview-public-page .platform-nav__inner {
+        min-height: 3.75rem;
+        grid-template-areas: "brand actions";
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding-top: 0.4rem;
+        padding-bottom: 0.4rem;
+    }
+
+    .resume-overview-public-page .platform-nav__links {
+        display: none;
+    }
+
+    .resume-v2[data-public-overview] .r2-content {
+        padding: 0.75rem;
+    }
+
+    .r2-overview-mobile-nav {
+        top: 3.75rem;
+    }
+
+    .r2-overview-mobile-nav > a,
+    .r2-overview-mobile-sections > summary {
+        min-width: 5.8rem;
+        flex-direction: row;
+        font-size: 0.72rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-opening {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .overview-hero--with-media {
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .overview-hero-media {
+        min-height: 14.5rem;
+        height: 14.5rem;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero-copy {
+        padding: 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero h1,
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero h1 {
+        font-size: 2rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-headline {
+        font-size: 0.74rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-intro {
+        font-size: 0.9rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-contact-list a {
+        font-size: 0.7rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-hero-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .resume-v2[data-public-overview] .overview-proof {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 0.55rem;
+        border-top: 1px solid var(--overview-warm-line);
+        border-left: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item {
+        min-height: 5.8rem;
+        padding: 0.75rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-proof-item strong {
+        font-size: 1.65rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-story {
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-story-copy,
+    .resume-v2[data-public-overview] .overview-career,
+    .resume-v2[data-public-overview] .overview-impact,
+    .resume-v2[data-public-overview] .overview-chapters,
+    .resume-v2[data-public-overview] .overview-skills,
+    .resume-v2[data-public-overview] .overview-credentials {
+        padding: 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-story-media {
+        height: 10rem;
+        min-height: 10rem;
+    }
+
+    .resume-v2[data-public-overview] .overview-story-skills {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .overview-story-skills > section + section {
+        border-top: 1px solid var(--overview-warm-line);
+        border-left: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-skills ul {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .resume-v2[data-public-overview] .overview-credentials {
+        grid-auto-flow: row;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .overview-credentials > section {
+        padding: 0.85rem 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .overview-credentials > section:first-child {
+        padding-top: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-credentials > section:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-resume-transition {
+        grid-template-columns: minmax(0, 1fr);
+        text-align: center;
+    }
+
+    .resume-v2[data-public-overview] .overview-future {
+        height: auto;
+        min-height: 0;
+    }
+
+    .resume-v2[data-public-overview] .overview-future-media {
+        height: 10rem;
+        min-height: 10rem;
+    }
+}
+
 @media (forced-colors: active) {
     .r2-overview-context-rail,
     .resume-consolidated .r2-overview-ai-rail,
@@ -5277,5 +6349,935 @@ body[data-theme="dark"] .r2-context-actions > :is(a, button):hover {
         border: 2px solid CanvasText;
         background: Canvas;
         box-shadow: none;
+    }
+}
+
+/* =====================================================================
+   PS-OVERVIEW-LIVE-FIDELITY-CORRECTION-001 — complete Story & Career
+
+   The owner-locked center composition includes the full visual sequence.
+   Keep these selectors route-scoped so the retained résumé and the separate
+   Work & Impact style remain independent.
+   ===================================================================== */
+
+.resume-v2[data-public-overview] .member-overview--story .overview-media figcaption {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career {
+    height: 21.55rem;
+    grid-template-columns: minmax(0, 56%) minmax(0, 44%);
+    gap: 0.8rem;
+    overflow: hidden;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-timeline h3,
+.resume-v2[data-public-overview] .member-overview--story .overview-timeline li p:last-child {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-timeline h3 {
+    -webkit-line-clamp: 2;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-timeline li p:last-child {
+    -webkit-line-clamp: 2;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-copy,
+.resume-v2[data-public-overview] .member-overview--story .overview-career-aside {
+    min-width: 0;
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-copy {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-copy .overview-timeline {
+    flex: 1 1 auto;
+    align-content: space-between;
+    margin: 0.72rem 0 0.68rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-copy > .overview-inline-action {
+    align-self: flex-start;
+    margin-top: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-aside {
+    display: grid;
+    height: 100%;
+    grid-template-rows: 7.2rem 4.75rem 7.15rem;
+    gap: 0.35rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-media {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0.2rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-media img {
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-quote {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: center;
+    margin: 0;
+    padding: 0.65rem 1rem 0.55rem 2.2rem;
+    background: linear-gradient(90deg, #fffaf1, #fffdf9);
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-quote::before {
+    position: absolute;
+    top: 0.45rem;
+    left: 0.8rem;
+    color: var(--overview-gold);
+    content: "“";
+    font-family: var(--overview-serif);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-quote blockquote {
+    margin: 0;
+    color: var(--overview-navy);
+    font-family: var(--overview-serif);
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-career-quote figcaption {
+    margin-top: 0.3rem;
+    color: var(--overview-gold);
+    font-family: var(--overview-serif);
+    font-size: 0.64rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact {
+    gap: 0.42rem;
+    padding: 0.82rem 1rem 0.9rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact-grid article {
+    display: flex;
+    min-height: 6.65rem;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 0.68rem 0.86rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact-icon {
+    width: 1.85rem;
+    height: 1.85rem;
+    color: var(--overview-navy);
+    border: 0;
+    font-size: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact-icon svg {
+    width: 1.55rem;
+    height: 1.55rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact-grid h3 {
+    margin-top: 0.45rem;
+    font-size: 0.66rem;
+    line-height: 1.25;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-impact-grid p {
+    max-width: 22ch;
+    margin-top: 0.18rem;
+    font-size: 0.66rem;
+    line-height: 1.4;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-skills li::before {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-skill-icon {
+    position: absolute;
+    top: 0.05rem;
+    left: 0;
+    display: inline-grid;
+    width: 1.1rem;
+    height: 1.1rem;
+    place-items: center;
+    color: var(--overview-navy);
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-skill-icon svg,
+.resume-v2[data-public-overview] .member-overview--story .overview-chapter-icon svg,
+.resume-v2[data-public-overview] .member-overview--story .overview-credential-kicker svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters li::before {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters li {
+    display: grid;
+    grid-template-columns: 0.85rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0.35rem;
+    padding-left: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapter-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+    margin-top: 0.08rem;
+    color: #66758a;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapter-copy {
+    display: grid;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-credential-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-credential-kicker svg {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-story-skills {
+    min-height: 14.65rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters--with-media {
+    grid-template-columns: minmax(7rem, 46%) minmax(0, 54%);
+    gap: 0.55rem;
+    align-items: stretch;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters--with-media > div,
+.resume-v2[data-public-overview] .member-overview--story .overview-skills {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters-media {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    align-self: stretch;
+    border-radius: 0.18rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters-media img {
+    min-height: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters .overview-inline-action,
+.resume-v2[data-public-overview] .member-overview--story .overview-skills .overview-inline-action {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters-action span {
+    display: inline;
+    color: inherit;
+    font-size: inherit;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-record-list p {
+    display: none;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy {
+    display: grid;
+    height: 7rem;
+    min-height: 7rem;
+    grid-template-columns: minmax(0, 46%) minmax(0, 54%);
+    padding: 0;
+    overflow: hidden;
+    background: #fbf8f2;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.8rem 1.25rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy h2 {
+    max-width: 34ch;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy p:last-child {
+    margin: 0.35rem 0 0;
+    font-size: 0.6rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy-media {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy-media img {
+    min-height: 0;
+    filter: hue-rotate(225deg) saturate(0.55) brightness(0.82) contrast(1.05);
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-philosophy-media::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgb(6 26 51 / 42%),
+        rgb(10 38 69 / 26%) 58%,
+        rgb(180 119 44 / 18%)
+    );
+    content: "";
+    pointer-events: none;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future {
+    height: 8.25rem;
+    min-height: 8.25rem;
+    grid-template-columns: minmax(9rem, 24%) minmax(0, 76%);
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future > div {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0.75rem 1.25rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future-media {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future h2 {
+    font-size: 1.15rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future p {
+    margin: 0.3rem 0 0;
+    font-size: 0.6rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future-actions {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+    color: #274563;
+    font-size: 0.54rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future-actions > :not(.overview-button) {
+    overflow: hidden;
+    color: inherit;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future-actions .overview-button {
+    min-height: 1.7rem;
+    flex: 0 0 auto;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.52rem;
+}
+
+/* The approved story block is one panoramic image with a warm paper fade
+   behind the text, not two adjacent cards. */
+.resume-v2[data-public-overview] .member-overview--story .overview-story--with-media {
+    position: relative;
+    display: block;
+    isolation: isolate;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-story-copy {
+    position: relative;
+    z-index: 2;
+    width: min(39%, 23rem);
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        rgb(251 248 242 / 100%) 0%,
+        rgb(251 248 242 / 96%) 72%,
+        rgb(251 248 242 / 0%) 100%
+    );
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-story-media {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-story-media img {
+    width: 100%;
+    height: 100%;
+}
+
+/* Match the approved handoff marker: centered label between dashed rules,
+   with the retained-résumé explanation available to assistive technology. */
+.resume-v2[data-public-overview] .member-overview--story .overview-resume-transition {
+    display: grid;
+    min-height: 2.25rem;
+    grid-template-columns: minmax(2rem, 1fr) auto minmax(2rem, 1fr);
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 1rem;
+    border-top: 0;
+    background: transparent;
+    text-align: center;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-resume-transition::before,
+.resume-v2[data-public-overview] .member-overview--story .overview-resume-transition::after {
+    border-top: 1px dashed #66758a;
+    content: "";
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-resume-transition h2 {
+    font-family: var(--r2-sans);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-resume-transition p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@media (min-width: 60.01rem) and (max-width: 66rem) {
+    /* Keep the approved narrow-desktop composition. At this width the hero
+       still has a portrait/copy field plus the vertical four-point proof rail;
+       it does not become the mobile 2 x 2 proof grid. */
+    .resume-v2[data-public-overview] .member-overview--story .overview-opening {
+        min-height: 15.75rem;
+        grid-template-columns: minmax(0, 1fr) minmax(10.25rem, 24%);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero--with-media {
+        min-height: 15.75rem;
+        grid-template-columns: minmax(12.75rem, 41%) minmax(0, 59%);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero-media {
+        width: auto;
+        height: 14.45rem;
+        min-height: 14.45rem;
+        margin: 0.5rem 0.2rem 0.8rem 0.75rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero-copy {
+        padding: 0.82rem 1rem 0.72rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-headline {
+        margin: 0.45rem 0 0.55rem;
+        font-size: 0.61rem;
+        letter-spacing: 0.045em;
+        white-space: nowrap;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-intro {
+        margin-bottom: 0.42rem;
+        font-size: 0.69rem;
+        line-height: 1.42;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-contact-list {
+        gap: 0.12rem;
+        margin-bottom: 0.42rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-contact-list a {
+        font-size: 0.52rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof {
+        display: grid;
+        grid-template-rows: repeat(4, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
+        align-content: stretch;
+        padding: 0.4rem 0.75rem;
+        border-top: 0;
+        border-left: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item,
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:nth-child(odd),
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:nth-child(even) {
+        min-height: 0;
+        padding: 0.48rem 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:last-child {
+        border-bottom: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item strong {
+        font-size: 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item span:not(.overview-proof-icon) {
+        margin-top: 0.12rem;
+        font-size: 0.45rem;
+        line-height: 1.16;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career {
+        height: 21rem;
+        grid-template-columns: minmax(0, 55%) minmax(0, 45%);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career-aside {
+        grid-template-rows: 6.75rem 4.5rem 7rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career-quote blockquote {
+        font-size: 0.75rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-impact-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters--with-media {
+        grid-template-columns: minmax(7rem, 46%) minmax(0, 54%);
+        gap: 0.35rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters-media {
+        display: block;
+        height: 100%;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-story-skills {
+        min-height: 14.5rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters,
+    .resume-v2[data-public-overview] .member-overview--story .overview-skills {
+        padding: 0.8rem 0.85rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters ol {
+        gap: 0.24rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters li {
+        padding-left: 0.9rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters strong {
+        font-size: 0.54rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters span {
+        font-size: 0.56rem;
+        line-height: 1.2;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-skills ul {
+        gap: 0.24rem 0.55rem;
+        margin-top: 0.35rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-skills li {
+        min-height: 1.15rem;
+        padding-left: 1.45rem;
+        font-size: 0.56rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-skills .overview-inline-action {
+        margin-top: auto;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials {
+        grid-auto-flow: column;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        padding: 0.62rem 0.75rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials > section,
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials > section:first-child,
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials > section:last-child {
+        padding: 0 0.75rem;
+        border-right: 1px solid var(--overview-warm-line);
+        border-bottom: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials > section:first-child {
+        padding-left: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials > section:last-child {
+        padding-right: 0;
+        border-right: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-record-list {
+        gap: 0.34rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-record-list strong {
+        font-size: 0.64rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-record-list span {
+        font-size: 0.54rem;
+        line-height: 1.25;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-credentials .overview-inline-action {
+        min-height: 1.55rem;
+        margin-top: 0.35rem;
+        padding-block: 0.25rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future {
+        height: 6.35rem;
+        min-height: 6.35rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future > div {
+        padding: 0.5rem 0.8rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future h2 {
+        font-size: 1rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future p {
+        margin-top: 0.18rem;
+        font-size: 0.52rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-actions {
+        display: flex;
+        gap: 0.48rem;
+        margin-top: 0.3rem;
+        font-size: 0.46rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-actions .overview-button {
+        width: auto;
+        min-height: 1.45rem;
+        padding: 0.22rem 0.55rem;
+        font-size: 0.45rem;
+    }
+}
+
+@media (max-width: 46.5rem) {
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof {
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-hero-media img {
+        object-position: 50% 35% !important;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-story--with-media {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-story-copy {
+        width: 100%;
+        height: auto;
+        background: #fbf8f2;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-story-media {
+        position: relative;
+        inset: auto;
+        height: 10rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career {
+        height: auto;
+        grid-template-columns: minmax(0, 1fr);
+        overflow: visible;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career-aside {
+        height: auto;
+        grid-template-rows: 10rem auto 10rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-career-quote {
+        min-height: 7rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-impact-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-impact-grid article:nth-child(2) {
+        border-right: 0;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-impact-grid article:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters--with-media {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters-media {
+        height: 12rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-philosophy,
+    .resume-v2[data-public-overview] .member-overview--story .overview-future {
+        height: auto;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-philosophy > div,
+    .resume-v2[data-public-overview] .member-overview--story .overview-future > div {
+        grid-column: 1;
+        grid-row: auto;
+        padding: 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-philosophy-media,
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-media {
+        height: 10rem;
+        min-height: 10rem;
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-media {
+        order: -1;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.55rem;
+        font-size: 0.68rem;
+    }
+}
+
+@media (forced-colors: active) {
+    .resume-v2[data-public-overview] .member-overview--story .overview-career-quote,
+    .resume-v2[data-public-overview] .member-overview--story .overview-philosophy {
+        background: Canvas;
+    }
+}
+
+/* =====================================================================
+   PS-OVERVIEW-LIVE-FIDELITY-CORRECTION-001 — owner review closeout
+
+   These final, route-scoped adjustments preserve the locked composition while
+   correcting density, intermediate desktop reflow, and contextual-AI spacing.
+   ===================================================================== */
+
+.resume-v2[data-public-overview] .member-overview--story .overview-location {
+    margin-bottom: 0.48rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-contact-list {
+    gap: 0.28rem;
+    margin-bottom: 0.72rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-contact-list a {
+    font-size: 0.62rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters ol {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    align-content: stretch;
+    gap: 0.3rem;
+    margin: 0.45rem 0 0.55rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapters li {
+    align-items: center;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapter-icon {
+    margin-top: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-chapter-copy {
+    align-content: center;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-skills ul {
+    flex: 1 1 auto;
+    grid-template-rows: repeat(5, minmax(1.15rem, 1fr));
+    align-content: stretch;
+    gap: 0.22rem 0.8rem;
+    margin: 0.45rem 0 0.55rem;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-skills li {
+    align-items: center;
+}
+
+.resume-v2[data-public-overview] .member-overview--story .overview-future-actions {
+    gap: 0.85rem;
+    margin-top: 0.65rem;
+    font-size: 0.61rem;
+}
+
+.resume-consolidated .r2-overview-ai-rail .hero-ai-search {
+    margin: 0 0.8rem 0.8rem;
+}
+
+.resume-v2[data-public-overview] #impact.r2-section {
+    padding: clamp(1.35rem, 2vw, 2rem);
+}
+
+.resume-v2[data-public-overview] #impact .r2-section-heading {
+    margin-bottom: clamp(0.9rem, 1.25vw, 1.2rem);
+}
+
+.resume-v2[data-public-overview] #impact .r2-section-heading h2 {
+    font-size: clamp(2.35rem, 3.45vw, 3.25rem);
+}
+
+.resume-v2[data-public-overview] #impact .r2-section-heading p {
+    margin-top: 0.58rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.resume-v2[data-public-overview] #impact .r2-impact__item {
+    min-height: 8.35rem;
+    gap: 0.28rem;
+    padding: 0.85rem;
+}
+
+.resume-v2[data-public-overview] #impact .r2-impact__item strong {
+    font-size: clamp(1.45rem, 2vw, 2.1rem);
+    letter-spacing: -0.025em;
+    white-space: nowrap;
+}
+
+/* member-overview.css changes Story & Career's proof rail to four columns at
+   this breakpoint. The opening is still a two-column hero + proof composition,
+   so the rail itself must remain a vertical stack. */
+@media (min-width: 60.01rem) and (max-width: 82rem) {
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof {
+        display: grid;
+        grid-template-rows: repeat(4, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
+        align-content: stretch;
+        border-top: 0;
+        border-left: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item,
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:nth-child(odd),
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:nth-child(even) {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--overview-warm-line);
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-proof-item:last-child {
+        border-bottom: 0;
+    }
+}
+
+@media (min-width: 60.01rem) and (max-width: 66rem) {
+    .resume-v2[data-public-overview] .member-overview--story .overview-location {
+        margin-bottom: 0.34rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-contact-list {
+        gap: 0.2rem;
+        margin-bottom: 0.52rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-contact-list a {
+        font-size: 0.55rem;
+        line-height: 1.3;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-chapters ol {
+        gap: 0.18rem;
+        margin: 0.3rem 0 0.4rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-skills ul {
+        gap: 0.14rem 0.55rem;
+        margin: 0.3rem 0 0.4rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview--story .overview-future-actions {
+        gap: 0.58rem;
+        margin-top: 0.42rem;
+        font-size: 0.51rem;
+    }
+}
+
+@media (max-width: 46.5rem) {
+    .resume-v2[data-public-overview] #impact .r2-impact__item strong {
+        font-size: clamp(1.35rem, 7vw, 1.8rem);
     }
 }
