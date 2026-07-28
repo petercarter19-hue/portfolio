@@ -1,0 +1,188 @@
+{
+  "schema_version": "work-impact-publication-overlay.v1",
+  "style_id": "work-impact",
+  "presentation": {
+    "schema_version": "work-impact-presentation.v1",
+    "hero": {
+      "eyebrow": "Engineer at heart. Leader in practice.",
+      "heading": "Systems Engineer. Technical Leader.",
+      "discipline": "MBSE · Sustainment · Requirements",
+      "intro": "I build complex systems, lead through change, and turn complexity into clarity so teams can do their best work and deliver real impact.",
+      "quote": "I connect people, processes, and systems to deliver measurable results.",
+      "media_id": "work-portrait"
+    },
+    "proof_metric_ids": [
+      "engineers-led",
+      "redesigns",
+      "contract",
+      "issue-time"
+    ],
+    "summary": {
+      "executive_brief": [
+        "Systems engineer and technical leader with 20+ years delivering complex solutions across defense, aerospace, and enterprise programs.",
+        "I connect strategy to execution and drive measurable outcomes."
+      ],
+      "career_snapshot": [
+        "20+ years in systems engineering",
+        "30+ engineers led and mentored",
+        "9 redesign efforts valued at $19.2M",
+        "$36M+ in contracts under oversight",
+        "Programs across Air Force, Space, and Federal enterprise"
+      ],
+      "skill_ids": [
+        "systems-engineering",
+        "requirements-management",
+        "mbse",
+        "sysml-modeling",
+        "doors",
+        "sustainment",
+        "integrated-logistics-support",
+        "project-management",
+        "data-analytics",
+        "ai"
+      ],
+      "education_ids": [
+        "education-ms",
+        "education-bs"
+      ],
+      "certification_ids": [
+        "education-pmp"
+      ],
+      "award_ids": [
+        "burdick",
+        "engineer-of-year",
+        "emerging-leader",
+        "outstanding-team"
+      ]
+    },
+    "sections": [
+      {
+        "id": "systems-requirements",
+        "kind": "feature",
+        "heading": "Systems Engineering & Requirements",
+        "items": [
+          "Requirements decomposition",
+          "Bidirectional traceability",
+          "MBSE architecture",
+          "Integration and test"
+        ],
+        "media_id": "work-systems"
+      },
+      {
+        "id": "technical-leadership",
+        "kind": "feature",
+        "heading": "Technical Leadership & Program Execution",
+        "items": [
+          "Led 30+ engineers",
+          "Guided nine redesign efforts valued at $19.2M",
+          "Oversaw $36M+ in engineering services"
+        ],
+        "media_id": "work-leadership"
+      },
+      {
+        "id": "measurable-impact",
+        "kind": "outcomes",
+        "heading": "Measurable Impact",
+        "metric_ids": [
+          "modernization",
+          "repair-test",
+          "missing-parts",
+          "cam"
+        ]
+      },
+      {
+        "id": "sustainment-lifecycle",
+        "kind": "feature",
+        "heading": "Sustainment & Lifecycle",
+        "items": [
+          "Integrated lifecycle planning",
+          "Reliability",
+          "Supportability",
+          "Fleet readiness and modernization"
+        ],
+        "media_id": "work-sustainment"
+      },
+      {
+        "id": "data-automation-ai",
+        "kind": "feature",
+        "heading": "Data, Automation & AI",
+        "items": [
+          "Requirements",
+          "Verification",
+          "Analysis",
+          "Engineering productivity"
+        ],
+        "media_id": "work-data-ai"
+      },
+      {
+        "id": "person-behind-work",
+        "kind": "feature",
+        "heading": "The Person Behind the Work",
+        "body": "Family first. Faith. Curiosity. I believe in servant leadership, continuous learning, and building teams where people thrive. Outside of work, you’ll find me with my family, exploring the outdoors, and always learning something new.",
+        "media_id": "career-life"
+      },
+      {
+        "id": "building-toward",
+        "kind": "feature",
+        "heading": "What I’m Building Toward",
+        "items": [
+          "AI and automation for systems engineering",
+          "MBSE and digital engineering",
+          "Mentoring, research, and teaching",
+          "Creating systems that matter"
+        ],
+        "media_id": "story"
+      }
+    ],
+    "closing": {
+      "heading": "Let’s build what’s next.",
+      "body": "I’m always open to meaningful conversations about solving complex problems, leading teams, and creating lasting impact."
+    }
+  },
+  "media": [
+    {
+      "id": "work-portrait",
+      "asset_path": "images/overview/work-impact-hero-pete-ai-extended-2026-07-28.webp",
+      "alt": "Pete Carter in a navy suit at a waterfront",
+      "focal": "60% 38%",
+      "truth_label": "AI-extended presentation derivative of Pete's public profile photo",
+      "public_eligible": true
+    },
+    {
+      "id": "work-systems",
+      "asset_path": "images/overview/work-impact-systems-diagram-2026-07-28.webp",
+      "alt": "An illustrative systems-engineering workflow diagram",
+      "focal": "50% 50%",
+      "truth_label": "AI-generated illustrative systems-engineering diagram",
+      "public_eligible": true
+    },
+    {
+      "id": "work-leadership",
+      "asset_path": "images/overview/work-impact-leadership-meeting-2026-07-28.webp",
+      "alt": "Pete Carter discussing engineering work with three colleagues",
+      "focal": "58% 45%",
+      "truth_label": "AI-generated presentation derivative of Pete's public profile photo",
+      "public_eligible": true
+    },
+    {
+      "id": "work-sustainment",
+      "asset_path": "images/overview/work-impact-sustainment-aircraft-2026-07-28.webp",
+      "alt": "A transport aircraft on a maintenance apron at golden hour",
+      "focal": "50% 50%",
+      "truth_label": "AI-generated illustrative sustainment scene",
+      "public_eligible": true
+    },
+    {
+      "id": "work-data-ai",
+      "asset_path": "images/overview/work-impact-data-ai-dashboard-2026-07-28.webp",
+      "alt": "A dark engineering analytics dashboard with charts and system flows",
+      "focal": "50% 50%",
+      "truth_label": "AI-generated illustrative engineering dashboard",
+      "public_eligible": true
+    }
+  ],
+  "metric_overview_labels": {
+    "contract": "Contract oversight",
+    "modernization": "Navigation modernization"
+  }
+}

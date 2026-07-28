@@ -1,0 +1,275 @@
+{% set blocks = projection.block_by_definition %}
+{% set hero_block = blocks["identity_hero"] %}
+{% set work = projection.work_impact %}
+<article
+  class="member-overview member-overview--work member-overview-work density-{{ projection.density }}"
+  id="overview"
+  data-overview-root
+  {% if overview_public_embed %}data-resume-section data-resume-section-target="overview"{% endif %}
+  data-style-id="{{ projection.style.id }}"
+  data-style-version="{{ projection.style.version }}"
+  {% if projection.publication %}
+    data-publication-state="{{ projection.publication.state }}"
+    data-publication-revision="{{ projection.publication.revision }}"
+  {% endif %}
+>
+  {% if overview_public_embed %}
+    <span class="r2-anchor-alias" id="summary" aria-hidden="true"></span>
+    <span class="r2-anchor-alias" id="resume-overview" aria-hidden="true"></span>
+  {% endif %}
+
+  <section class="work-impact-hero" aria-labelledby="work-impact-name">
+    <div class="work-impact-hero__copy">
+      <p class="work-impact-eyebrow">{{ work.hero.eyebrow }}</p>
+      <h1 id="work-impact-name">{{ work.hero.heading }}</h1>
+      <p class="work-impact-discipline">{{ work.hero.discipline }}</p>
+      <p class="work-impact-intro">{{ work.hero.intro }}</p>
+      {% if projection.profile.location %}
+        <p class="work-impact-location">
+          <svg aria-hidden="true"><use href="#lr-icon-map"></use></svg>
+          <span>{{ projection.profile.location }}</span>
+        </p>
+      {% endif %}
+      {% if overview_public_embed and resume is defined %}
+        <div class="work-impact-contact-list" aria-label="Public contact details">
+          {% if resume.profile.email and resume.profile.email_url %}
+            <a href="{{ resume.profile.email_url }}">
+              <svg aria-hidden="true"><use href="#lr-icon-mail"></use></svg>
+              <span>{{ resume.profile.email }}</span>
+            </a>
+          {% endif %}
+          {% if resume.profile.linkedin_url %}
+            <a href="{{ resume.profile.linkedin_url }}" target="_blank" rel="noopener noreferrer">
+              <svg aria-hidden="true"><use href="#lr-icon-link"></use></svg>
+              <span>{{ resume.profile.linkedin_url|replace("https://www.", "")|replace("https://", "") }}</span>
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+      <div class="work-impact-hero__actions">
+        <a class="work-impact-button work-impact-button--primary" href="{{ projection.profile.contact_destination.value }}">
+          {{ projection.profile.contact_label }}
+        </a>
+        <a class="work-impact-button work-impact-button--secondary" href="#resume-start">View résumé</a>
+      </div>
+    </div>
+
+    {% set work_portrait = work.hero.media if work.hero.media else (hero_block.media[0] if hero_block.media else none) %}
+    {% if work_portrait %}
+      <figure class="work-impact-portrait">
+        <img
+          src="{{ work_portrait.src }}"
+          alt="{{ work_portrait.alt }}"
+          style="object-position: {{ work_portrait.focal }}"
+        >
+        <blockquote>
+          <span aria-hidden="true">“</span>
+          <p>{{ work.hero.quote }}</p>
+          <i aria-hidden="true"></i>
+        </blockquote>
+        {% set portrait_truth = work_portrait.truth_label %}
+        <figcaption{% if "AI-" in portrait_truth %} class="work-impact-ai-label"{% endif %}>
+          {% if "AI-extended" in portrait_truth %}
+            AI-assisted visual
+          {% elif "AI-" in portrait_truth %}
+            AI-generated visual
+          {% else %}
+            {{ portrait_truth }}
+          {% endif %}
+          {% if "AI-" in portrait_truth %}
+            <span class="visually-hidden">Full disclosure: {{ portrait_truth }}</span>
+          {% endif %}
+        </figcaption>
+      </figure>
+    {% endif %}
+  </section>
+
+  {% if "proof_band" in blocks and blocks["proof_band"].content.claims %}
+    <section class="work-impact-proof" aria-labelledby="work-impact-proof-heading">
+      <h2 class="visually-hidden" id="work-impact-proof-heading">Selected career proof</h2>
+      {% for claim in blocks["proof_band"].content.claims if claim.visible %}
+        <article>
+          <strong>{{ claim.value }}</strong>
+          <span>{{ claim.label }}</span>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <div class="work-impact-body">
+    <aside class="work-impact-summary" aria-label="Professional summary">
+      {% if work.summary.executive_brief %}
+        <section class="work-impact-summary-card">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-file"></use></svg>
+            Executive brief
+          </h2>
+          {% for paragraph in work.summary.executive_brief %}<p>{{ paragraph }}</p>{% endfor %}
+        </section>
+      {% endif %}
+
+      {% if work.summary.career_snapshot %}
+        <section class="work-impact-summary-card">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-briefcase"></use></svg>
+            Career snapshot
+          </h2>
+          <ul>
+            {% for item in work.summary.career_snapshot %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if work.summary.skills %}
+        <section class="work-impact-summary-card" id="overview-work-skills">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-grid"></use></svg>
+            Skills
+          </h2>
+          <ul class="work-impact-summary-list">
+            {% for skill in work.summary.skills %}<li>{{ skill }}</li>{% endfor %}
+          </ul>
+          <a href="#skills">View all skills <span aria-hidden="true">→</span></a>
+        </section>
+      {% endif %}
+
+      {% if work.summary.education %}
+        <section class="work-impact-summary-card">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-graduation"></use></svg>
+            Education
+          </h2>
+          <ul class="work-impact-record-list">
+            {% for record in work.summary.education %}
+              <li>
+                <strong>{{ record.credential }}</strong>
+                <span>{{ record.institution }}</span>
+                {% if record.period %}<small>{{ record.period }}</small>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          <a href="#credentials">View education <span aria-hidden="true">→</span></a>
+        </section>
+      {% endif %}
+
+      {% if work.summary.certifications %}
+        <section class="work-impact-summary-card">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-award"></use></svg>
+            Certification
+          </h2>
+          <ul class="work-impact-record-list">
+            {% for record in work.summary.certifications %}
+              <li>
+                <strong>{{ record.title }}</strong>
+                <span>{{ record.issuer }}</span>
+                {% if record.period %}<small>{{ record.period }}</small>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if work.summary.awards %}
+        <section class="work-impact-summary-card">
+          <h2>
+            <svg aria-hidden="true"><use href="#lr-icon-sparkles"></use></svg>
+            Awards
+          </h2>
+          <ul class="work-impact-summary-list">
+            {% for record in work.summary.awards %}
+              <li>
+                {{ record.title }}{% if record.period %} <span>· {{ record.period }}</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </aside>
+
+    <div class="work-impact-features">
+      {% for section in work.sections %}
+        {% if section.kind == "outcomes" %}
+          <section class="work-impact-outcomes" aria-labelledby="work-impact-section-{{ section.id }}">
+            <h2 id="work-impact-section-{{ section.id }}">
+              <span>{{ loop.index }}.</span>
+              {{ section.heading }}
+            </h2>
+            <div>
+              {% for metric in section.metrics %}
+                <article>
+                  <span class="work-impact-outcome-icon" aria-hidden="true">
+                    <svg>
+                      {% if loop.index == 1 %}
+                        <use href="#lr-icon-direction"></use>
+                      {% elif loop.index == 2 %}
+                        <use href="#lr-icon-chart"></use>
+                      {% elif loop.index == 3 %}
+                        <use href="#lr-icon-box"></use>
+                      {% else %}
+                        <use href="#lr-icon-shield"></use>
+                      {% endif %}
+                    </svg>
+                  </span>
+                  <strong>{{ metric.value }}</strong>
+                  <p>{{ metric.label }}</p>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% else %}
+          <section class="work-impact-feature{% if not section.media %} work-impact-feature--text-only{% endif %}" aria-labelledby="work-impact-section-{{ section.id }}">
+            <div class="work-impact-feature__copy">
+              <h2 id="work-impact-section-{{ section.id }}">
+                <span>{{ loop.index }}.</span>
+                {{ section.heading }}
+              </h2>
+              {% if section.body %}<p>{{ section.body }}</p>{% endif %}
+              {% if section["items"] %}
+                <ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+            {% if section.media %}
+              <figure>
+                <img
+                  src="{{ section.media.src }}"
+                  alt="{{ section.media.alt }}"
+                  style="object-position: {{ section.media.focal }}"
+                >
+                {% set media_truth = section.media.truth_label %}
+                <figcaption{% if "AI-" in media_truth %} class="work-impact-ai-label"{% endif %}>
+                  {% if "AI-extended" in media_truth %}
+                    AI-assisted visual
+                  {% elif "AI-" in media_truth %}
+                    AI-generated visual
+                  {% else %}
+                    {{ media_truth }}
+                  {% endif %}
+                  {% if "AI-" in media_truth %}
+                    <span class="visually-hidden">Full disclosure: {{ media_truth }}</span>
+                  {% endif %}
+                </figcaption>
+              </figure>
+            {% endif %}
+          </section>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <footer class="work-impact-closing" id="overview-work-connect">
+    <span class="work-impact-closing__icon" aria-hidden="true">
+      <svg><use href="#lr-icon-link"></use></svg>
+    </span>
+    <div>
+      <h2>{{ work.closing.heading }}</h2>
+      <p>{{ work.closing.body }}</p>
+    </div>
+    <a class="work-impact-button work-impact-button--light" href="{{ projection.profile.contact_destination.value }}">Connect</a>
+  </footer>
+
+  <section class="overview-resume-transition work-impact-resume-transition" id="resume-start" tabindex="-1" aria-labelledby="overview-resume-heading">
+    <h2 id="overview-resume-heading">Résumé begins here</h2>
+    <p>{{ blocks["resume_transition"].content.description }}</p>
+  </section>
+</article>

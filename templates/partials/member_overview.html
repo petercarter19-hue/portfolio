@@ -1,3 +1,6 @@
+{% if projection.style.id == "work-impact" and projection.work_impact %}
+  {% include "partials/member_overview_work_impact.html" %}
+{% else %}
 {% set blocks = projection.block_by_definition %}
 {% set hero = blocks["identity_hero"] %}
 <article
@@ -522,3 +525,4 @@
     <p>{{ blocks["resume_transition"].content.description }}</p>
   </section>
 </article>
+{% endif %}

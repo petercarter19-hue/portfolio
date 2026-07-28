@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 from collections import Counter
 from typing import Any
 
@@ -18,6 +19,7 @@ from typing import Any
 FIXTURE_SCHEMA_VERSION = "overview-fixtures.v1"
 PROJECTION_SCHEMA_VERSION = "member-overview-projection.v1"
 PUBLICATION_SCHEMA_VERSION = "member-overview-publication.v1"
+WORK_IMPACT_PRESENTATION_SCHEMA_VERSION = "work-impact-presentation.v1"
 
 STYLE_MANIFESTS = {
     "story-career": {
@@ -147,6 +149,8 @@ def list_fixture_options(catalog: dict[str, Any]) -> list[dict[str, str]]:
 
 def build_public_overview_projection(
     resume_data: dict[str, Any],
+    *,
+    style_override: str | None = None,
 ) -> dict[str, Any] | None:
     """Build one ready public projection from already-authorized profile data.
 
@@ -175,6 +179,17 @@ def build_public_overview_projection(
             "unsupported_publication_version",
             f"expected {PUBLICATION_SCHEMA_VERSION}",
         )
+
+    style_id = (
+        style_override
+        if style_override is not None
+        else _required_text(publication, "style_id", "publication")
+    )
+    if not isinstance(style_id, str) or not style_id.strip():
+        _fail("unsupported_style", "style override must be a non-empty string")
+    style_id = style_id.strip()
+    if style_id not in STYLE_MANIFESTS:
+        _fail("unsupported_style", f"style {style_id!r} is not supported")
 
     profile_source = resume_data.get("profile")
     if not isinstance(profile_source, dict):
@@ -251,6 +266,26 @@ def build_public_overview_projection(
         ).items()
         if item.get("public_display") is True
     }
+    work_impact = None
+    work_impact_proof_metric_ids = None
+    if style_id == "work-impact":
+        style_presentations = publication.get("style_presentations")
+        if not isinstance(style_presentations, dict):
+            _fail(
+                "missing_work_impact_presentation",
+                "work-impact requires a style_presentations object",
+            )
+        work_impact, work_impact_proof_metric_ids = (
+            _build_work_impact_presentation(
+                style_presentations.get("work-impact"),
+                metrics=metrics,
+                public_skills=public_skills,
+                records=records,
+                record_ids=record_ids,
+                media=media,
+                media_ids=media_ids,
+            )
+        )
 
     raw_blocks = publication.get("blocks")
     if not isinstance(raw_blocks, list):
@@ -271,7 +306,12 @@ def build_public_overview_projection(
         )
 
         if definition_id == "proof_band":
-            metric_ids = block.pop("metric_ids", [])
+            metric_ids = (
+                work_impact_proof_metric_ids
+                if work_impact_proof_metric_ids is not None
+                else block.pop("metric_ids", [])
+            )
+            block.pop("metric_ids", None)
             icons = block.pop("metric_icons", {})
             if not isinstance(icons, dict):
                 _fail("invalid_publication", "metric_icons must be an object")
@@ -283,10 +323,20 @@ def build_public_overview_projection(
                 metric = metrics.get(metric_id)
                 if metric is None:
                     _fail("unknown_metric", f"metric {metric_id!r} does not exist")
+                metric_label = _required_text(metric, "label", "metric")
+                if work_impact_proof_metric_ids is not None:
+                    metric_label = (
+                        _bounded_optional_text(
+                            metric.get("overview_label"),
+                            f"metric {metric_id}.overview_label",
+                            60,
+                        )
+                        or metric_label
+                    )
                 claims.append(
                     {
                         "value": _required_text(metric, "value", "metric"),
-                        "label": _required_text(metric, "label", "metric"),
+                        "label": metric_label,
                         "icon": _optional_text(icons.get(metric_id)),
                         "order": order,
                         "visible": True,
@@ -344,7 +394,7 @@ def build_public_overview_projection(
     projection = build_overview_projection(
         catalog,
         fixture_id,
-        _required_text(publication, "style_id", "publication"),
+        style_id,
     )
     projection.pop("fixture", None)
     projection["publication"] = {
@@ -353,7 +403,497 @@ def build_public_overview_projection(
         "profile_slug": profile_slug,
         "revision": publication_revision,
     }
+    if work_impact is not None:
+        projection["work_impact"] = work_impact
     return projection
+
+
+def _build_work_impact_presentation(
+    raw_presentation: Any,
+    *,
+    metrics: dict[str, dict[str, Any]],
+    public_skills: dict[str, dict[str, Any]],
+    records: list[dict[str, Any]],
+    record_ids: dict[str, dict[str, str]],
+    media: list[dict[str, Any]],
+    media_ids: dict[str, str],
+) -> tuple[dict[str, Any], list[str]]:
+    """Validate the finite Work & Impact presentation and resolve public data.
+
+    The presentation is profile-owned content. The shared renderer receives
+    only bounded text, already-public records, approved metrics, and
+    public-eligible media. It never accepts HTML or arbitrary template fields.
+    """
+
+    if not isinstance(raw_presentation, dict):
+        _fail(
+            "missing_work_impact_presentation",
+            "work-impact presentation must be an object",
+        )
+    _reject_unknown_fields(
+        raw_presentation,
+        {
+            "schema_version",
+            "hero",
+            "proof_metric_ids",
+            "summary",
+            "sections",
+            "closing",
+        },
+        "work-impact presentation",
+    )
+    if (
+        raw_presentation.get("schema_version")
+        != WORK_IMPACT_PRESENTATION_SCHEMA_VERSION
+    ):
+        _fail(
+            "unsupported_work_impact_version",
+            f"expected {WORK_IMPACT_PRESENTATION_SCHEMA_VERSION}",
+        )
+
+    hero_source = raw_presentation.get("hero")
+    if not isinstance(hero_source, dict):
+        _fail("invalid_work_impact_hero", "work-impact hero must be an object")
+    _reject_unknown_fields(
+        hero_source,
+        {"eyebrow", "heading", "discipline", "intro", "quote", "media_id"},
+        "work-impact hero",
+    )
+    hero = {
+        "eyebrow": _bounded_required_text(
+            hero_source,
+            "eyebrow",
+            "work-impact hero",
+            90,
+        ),
+        "heading": _bounded_required_text(
+            hero_source,
+            "heading",
+            "work-impact hero",
+            90,
+        ),
+        "discipline": _bounded_required_text(
+            hero_source,
+            "discipline",
+            "work-impact hero",
+            90,
+        ),
+        "intro": _bounded_required_text(
+            hero_source,
+            "intro",
+            "work-impact hero",
+            320,
+        ),
+        "quote": _bounded_required_text(
+            hero_source,
+            "quote",
+            "work-impact hero",
+            220,
+        ),
+    }
+
+    proof_metric_ids = _bounded_id_list(
+        raw_presentation.get("proof_metric_ids"),
+        "work-impact proof metric",
+        maximum=4,
+        minimum=1,
+    )
+    for metric_id in proof_metric_ids:
+        if metric_id not in metrics:
+            _fail(
+                "unknown_metric",
+                f"work-impact proof metric {metric_id!r} does not exist",
+            )
+
+    record_index = {item["id"]: item for item in records}
+
+    def resolve_records(source_ids: Any, record_kind: str, maximum: int) -> list:
+        selected_ids = _bounded_id_list(
+            source_ids,
+            f"work-impact {record_kind}",
+            maximum=maximum,
+            minimum=0,
+        )
+        resolved = []
+        for source_id in selected_ids:
+            qualified_id = record_ids[record_kind].get(source_id)
+            record = record_index.get(qualified_id)
+            if record is None:
+                _fail(
+                    f"unknown_{record_kind}",
+                    f"work-impact {record_kind} {source_id!r} does not exist",
+                )
+            resolved.append(_public_record(record))
+        return resolved
+
+    summary_source = raw_presentation.get("summary")
+    if not isinstance(summary_source, dict):
+        _fail(
+            "invalid_work_impact_summary",
+            "work-impact summary must be an object",
+        )
+    _reject_unknown_fields(
+        summary_source,
+        {
+            "executive_brief",
+            "career_snapshot",
+            "skill_ids",
+            "education_ids",
+            "certification_ids",
+            "award_ids",
+        },
+        "work-impact summary",
+    )
+    summary_skills = []
+    for skill_id in _bounded_id_list(
+        summary_source.get("skill_ids", []),
+        "work-impact skill",
+        maximum=12,
+        minimum=0,
+    ):
+        skill = public_skills.get(skill_id)
+        if skill is None:
+            _fail(
+                "unknown_public_skill",
+                f"work-impact skill {skill_id!r} does not exist",
+            )
+        summary_skills.append(_required_text(skill, "display_name", "skill"))
+    summary = {
+        "executive_brief": _bounded_text_list(
+            summary_source.get("executive_brief"),
+            "work-impact executive brief",
+            maximum_items=3,
+            maximum_chars=260,
+            minimum_items=1,
+        ),
+        "career_snapshot": _bounded_text_list(
+            summary_source.get("career_snapshot"),
+            "work-impact career snapshot",
+            maximum_items=8,
+            maximum_chars=120,
+            minimum_items=1,
+        ),
+        "skills": summary_skills,
+        "education": resolve_records(
+            summary_source.get("education_ids", []),
+            "education",
+            4,
+        ),
+        "certifications": resolve_records(
+            summary_source.get("certification_ids", []),
+            "certifications",
+            6,
+        ),
+        "awards": resolve_records(
+            summary_source.get("award_ids", []),
+            "awards",
+            6,
+        ),
+    }
+
+    qualified_media = {item["id"]: item for item in media}
+
+    def resolve_media(source_id: Any) -> dict[str, Any] | None:
+        if source_id is None:
+            return None
+        if not isinstance(source_id, str) or not source_id.strip():
+            _fail(
+                "invalid_media_reference",
+                "work-impact media IDs must be non-empty strings",
+            )
+        source_id = source_id.strip()
+        qualified_id = media_ids.get(source_id)
+        media_item = qualified_media.get(qualified_id)
+        if media_item is None:
+            _fail("unknown_media", f"work-impact media {source_id!r} does not exist")
+        if media_item.get("public_eligible") is not True:
+            _fail(
+                "ineligible_media",
+                f"work-impact media {source_id!r} is not public-eligible",
+            )
+        return _public_media(media_item)
+
+    hero_media = resolve_media(hero_source.get("media_id"))
+    if hero_media is not None:
+        hero["media"] = hero_media
+
+    raw_sections = raw_presentation.get("sections")
+    if not isinstance(raw_sections, list):
+        _fail("invalid_work_impact_sections", "work-impact sections must be a list")
+    if not 1 <= len(raw_sections) <= 8:
+        _fail(
+            "work_impact_section_budget_exceeded",
+            "work-impact supports between one and eight sections",
+        )
+    sections = []
+    section_ids = set()
+    outcome_count = 0
+    for index, raw_section in enumerate(raw_sections):
+        if not isinstance(raw_section, dict):
+            _fail(
+                "invalid_work_impact_section",
+                f"work-impact section {index} must be an object",
+            )
+        _reject_unknown_fields(
+            raw_section,
+            {
+                "id",
+                "kind",
+                "heading",
+                "body",
+                "items",
+                "media_id",
+                "metric_ids",
+            },
+            f"work-impact section {index}",
+        )
+        section_id = _bounded_required_text(
+            raw_section,
+            "id",
+            f"work-impact section {index}",
+            48,
+        )
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", section_id):
+            _fail(
+                "invalid_work_impact_section_id",
+                f"work-impact section ID {section_id!r} is not a safe slug",
+            )
+        if section_id in section_ids:
+            _fail(
+                "duplicate_work_impact_section_id",
+                f"duplicate work-impact section ID {section_id!r}",
+            )
+        section_ids.add(section_id)
+        kind = raw_section.get("kind")
+        if kind not in {"feature", "outcomes"}:
+            _fail(
+                "unsupported_work_impact_section",
+                f"work-impact section kind {kind!r} is not supported",
+            )
+        heading = _bounded_required_text(
+            raw_section,
+            "heading",
+            f"work-impact section {section_id}",
+            90,
+        )
+        if kind == "outcomes":
+            outcome_count += 1
+            if outcome_count > 1:
+                _fail(
+                    "work_impact_outcome_count",
+                    "work-impact supports at most one outcomes section",
+                )
+            if any(
+                raw_section.get(field)
+                for field in ("body", "items", "media_id")
+            ):
+                _fail(
+                    "invalid_work_impact_outcomes",
+                    "outcomes sections accept only heading and metric IDs",
+                )
+            outcome_metrics = []
+            for metric_id in _bounded_id_list(
+                raw_section.get("metric_ids"),
+                f"work-impact section {section_id} metric",
+                maximum=4,
+                minimum=1,
+            ):
+                metric = metrics.get(metric_id)
+                if metric is None:
+                    _fail(
+                        "unknown_metric",
+                        f"work-impact outcome metric {metric_id!r} does not exist",
+                    )
+                outcome_metrics.append(
+                    {
+                        "value": _required_text(metric, "value", "metric"),
+                        "label": (
+                            _bounded_optional_text(
+                                metric.get("overview_label"),
+                                f"metric {metric_id}.overview_label",
+                                60,
+                            )
+                            or _required_text(metric, "label", "metric")
+                        ),
+                    }
+                )
+            sections.append(
+                {
+                    "id": section_id,
+                    "kind": kind,
+                    "heading": heading,
+                    "metrics": outcome_metrics,
+                }
+            )
+            continue
+
+        body = _bounded_optional_text(
+            raw_section.get("body"),
+            f"work-impact section {section_id}.body",
+            360,
+        )
+        items = _bounded_text_list(
+            raw_section.get("items", []),
+            f"work-impact section {section_id} items",
+            maximum_items=6,
+            maximum_chars=130,
+            minimum_items=0,
+        )
+        if not body and not items:
+            _fail(
+                "empty_work_impact_section",
+                f"work-impact section {section_id!r} needs body text or items",
+            )
+        section = {
+            "id": section_id,
+            "kind": kind,
+            "heading": heading,
+            "body": body,
+            "items": items,
+        }
+        section_media = resolve_media(raw_section.get("media_id"))
+        if section_media is not None:
+            section["media"] = section_media
+        sections.append(section)
+
+    closing_source = raw_presentation.get("closing")
+    if not isinstance(closing_source, dict):
+        _fail(
+            "invalid_work_impact_closing",
+            "work-impact closing must be an object",
+        )
+    _reject_unknown_fields(
+        closing_source,
+        {"heading", "body"},
+        "work-impact closing",
+    )
+    closing = {
+        "heading": _bounded_required_text(
+            closing_source,
+            "heading",
+            "work-impact closing",
+            90,
+        ),
+        "body": _bounded_required_text(
+            closing_source,
+            "body",
+            "work-impact closing",
+            280,
+        ),
+    }
+
+    return (
+        {
+            "schema_version": WORK_IMPACT_PRESENTATION_SCHEMA_VERSION,
+            "hero": hero,
+            "summary": summary,
+            "sections": sections,
+            "closing": closing,
+        },
+        proof_metric_ids,
+    )
+
+
+def _reject_unknown_fields(
+    container: dict[str, Any],
+    allowed: set[str],
+    context: str,
+) -> None:
+    unknown = set(container).difference(allowed)
+    if unknown:
+        _fail(
+            "unsupported_work_impact_field",
+            f"{context} contains unsupported field {sorted(unknown)[0]!r}",
+        )
+
+
+def _bounded_required_text(
+    container: dict[str, Any],
+    key: str,
+    context: str,
+    maximum_chars: int,
+) -> str:
+    value = _required_text(container, key, context)
+    if len(value) > maximum_chars:
+        _fail(
+            "work_impact_text_budget_exceeded",
+            f"{context}.{key} must contain at most {maximum_chars} characters",
+        )
+    return value
+
+
+def _bounded_optional_text(
+    value: Any,
+    context: str,
+    maximum_chars: int,
+) -> str | None:
+    value = _optional_text(value)
+    if value and len(value) > maximum_chars:
+        _fail(
+            "work_impact_text_budget_exceeded",
+            f"{context} must contain at most {maximum_chars} characters",
+        )
+    return value
+
+
+def _bounded_text_list(
+    values: Any,
+    context: str,
+    *,
+    maximum_items: int,
+    maximum_chars: int,
+    minimum_items: int,
+) -> list[str]:
+    if not isinstance(values, list):
+        _fail("invalid_work_impact_collection", f"{context} must be a list")
+    if not minimum_items <= len(values) <= maximum_items:
+        _fail(
+            "work_impact_collection_budget_exceeded",
+            f"{context} supports between {minimum_items} and {maximum_items} items",
+        )
+    resolved = []
+    for index, value in enumerate(values):
+        if not isinstance(value, str) or not value.strip():
+            _fail(
+                "invalid_work_impact_text",
+                f"{context}[{index}] must be a non-empty string",
+            )
+        value = value.strip()
+        if len(value) > maximum_chars:
+            _fail(
+                "work_impact_text_budget_exceeded",
+                f"{context}[{index}] must contain at most {maximum_chars} characters",
+            )
+        resolved.append(value)
+    return resolved
+
+
+def _bounded_id_list(
+    values: Any,
+    context: str,
+    *,
+    maximum: int,
+    minimum: int,
+) -> list[str]:
+    if not isinstance(values, list):
+        _fail("invalid_work_impact_reference", f"{context} IDs must be a list")
+    if not minimum <= len(values) <= maximum:
+        _fail(
+            "work_impact_reference_budget_exceeded",
+            f"{context} supports between {minimum} and {maximum} IDs",
+        )
+    if not all(isinstance(value, str) and value.strip() for value in values):
+        _fail(
+            "invalid_work_impact_reference",
+            f"{context} IDs must be non-empty strings",
+        )
+    resolved = [value.strip() for value in values]
+    if len(resolved) != len(set(resolved)):
+        _fail(
+            "duplicate_work_impact_reference",
+            f"{context} IDs must be unique",
+        )
+    return resolved
 
 
 def build_overview_projection(
@@ -928,14 +1468,24 @@ def _public_profile_media(
         item_id = _required_text(item, "id", "media")
         if item_id in media_ids:
             _fail("duplicate_media_id", f"duplicate media ID {item_id!r}")
-        asset_path = _required_text(item, "asset_path", "media").lstrip("/")
+        asset_path = _optional_text(item.get("asset_path"))
+        if not asset_path:
+            _fail(
+                "invalid_media_path",
+                f"media {item_id!r} needs an asset path",
+            )
+        asset_path = asset_path.lstrip("/")
         if (
             not asset_path
             or asset_path.startswith(".")
             or ".." in asset_path.split("/")
             or "://" in asset_path
         ):
-            _fail("invalid_media_path", f"media {item_id!r} has an unsafe path")
+            _fail(
+                "invalid_media_path",
+                f"media {item_id!r} has an unsafe path",
+            )
+        media_src = f"/static/{asset_path}"
         qualified_id = f"{owner_key}:media:{item_id}"
         media_ids[item_id] = qualified_id
         media.append(
@@ -943,7 +1493,7 @@ def _public_profile_media(
                 "id": qualified_id,
                 "owner_key": owner_key,
                 "public_eligible": item.get("public_eligible") is True,
-                "src": f"/static/{asset_path}",
+                "src": media_src,
                 "alt": _optional_text(item.get("alt")),
                 "decorative": item.get("decorative", False),
                 "focal": _optional_text(item.get("focal")) or "50% 50%",

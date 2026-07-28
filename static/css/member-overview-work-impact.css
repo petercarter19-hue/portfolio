@@ -1,0 +1,882 @@
+/* Work & Impact
+   Implements the owner-approved Business Overview center composition inside
+   the final shared Resume shell. All member content comes from the validated
+   Work & Impact presentation projection. */
+
+.resume-v2[data-public-overview] .member-overview-work {
+    --work-ink: #082144;
+    --work-muted: #394d67;
+    --work-blue: #075cf0;
+    --work-gold: #c57b0d;
+    --work-line: #e7e1d7;
+    --work-paper: #fffefa;
+    overflow: hidden;
+    border: 1px solid var(--work-line);
+    border-radius: 0.75rem;
+    background: var(--work-paper);
+    color: var(--work-ink);
+    box-shadow: 0 0.85rem 2.6rem rgb(44 50 58 / 7%);
+    font-family: var(--r2-ui);
+}
+
+.resume-v2[data-public-overview] .member-overview-work :is(h1, h2, h3, p, ul, ol, figure, blockquote) {
+    margin-block-start: 0;
+}
+
+.resume-v2[data-public-overview] .member-overview-work :is(a, button):focus-visible {
+    outline: 3px solid #0f79d8;
+    outline-offset: 3px;
+}
+
+.resume-v2[data-public-overview] .member-overview-work svg {
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.resume-v2[data-public-overview] .member-overview-work figcaption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.resume-v2[data-public-overview] .member-overview-work figcaption.work-impact-ai-label {
+    z-index: 3;
+    top: 0.45rem;
+    right: 0.45rem;
+    width: auto;
+    max-width: calc(100% - 0.9rem);
+    height: auto;
+    padding: 0.24rem 0.42rem;
+    overflow: visible;
+    border: 1px solid rgb(255 255 255 / 48%);
+    border-radius: 999px;
+    background: rgb(4 27 54 / 84%);
+    box-shadow: 0 0.2rem 0.8rem rgb(0 13 33 / 18%);
+    clip: auto;
+    clip-path: none;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.work-impact-hero {
+    display: grid;
+    height: 18.75rem;
+    min-height: 0;
+    grid-template-columns: minmax(0, 54%) minmax(0, 46%);
+    border-bottom: 1px solid var(--work-line);
+    background: linear-gradient(100deg, #fff 0 50%, #edf0f1 58% 100%);
+}
+
+.work-impact-hero__copy {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1.45rem 1.55rem 1.35rem;
+    background: linear-gradient(90deg, #fff 0 88%, rgb(255 255 255 / 74%) 100%);
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-eyebrow,
+.resume-v2[data-public-overview] .member-overview-work .work-impact-discipline {
+    margin-bottom: 0.55rem;
+    color: var(--work-blue);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
+    text-transform: uppercase;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-hero h1 {
+    max-width: 18ch;
+    margin-bottom: 0.55rem;
+    color: var(--work-ink);
+    font-family: var(--r2-display);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-discipline {
+    margin-bottom: 0.7rem;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-intro {
+    max-width: 42ch;
+    margin-bottom: 0.65rem;
+    color: var(--work-muted);
+    font-size: 0.74rem;
+    line-height: 1.5;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-location {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.42rem;
+    color: #284463;
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+.work-impact-location svg {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+}
+
+.work-impact-contact-list {
+    display: none;
+    gap: 0.22rem;
+    margin-bottom: 0.8rem;
+}
+
+.work-impact-contact-list a {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 0.9rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem;
+    color: #284463;
+    font-size: 0.63rem;
+    line-height: 1.35;
+    text-decoration: none;
+}
+
+.work-impact-contact-list a:hover {
+    color: var(--work-blue);
+    text-decoration: underline;
+}
+
+.work-impact-contact-list span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.work-impact-hero__actions {
+    display: grid;
+    max-width: 18rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-top: 0.45rem;
+}
+
+.work-impact-button {
+    display: inline-flex;
+    min-height: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--work-ink);
+    border-radius: 0.22rem;
+    font-size: 0.69rem;
+    font-weight: 750;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.work-impact-button--primary {
+    background: var(--work-ink);
+    color: #fff;
+}
+
+.work-impact-button--secondary {
+    background: #fff;
+    color: var(--work-ink);
+}
+
+.work-impact-button:is(:hover, :focus-visible) {
+    border-color: var(--work-blue);
+    background: var(--work-blue);
+    color: #fff;
+}
+
+.work-impact-portrait {
+    position: relative;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.work-impact-portrait::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(255 255 255 / 38%), transparent 31%, rgb(3 21 41 / 12%));
+    content: "";
+    pointer-events: none;
+}
+
+.work-impact-portrait > img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.work-impact-portrait blockquote {
+    position: absolute;
+    z-index: 2;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: min(18rem, calc(100% - 1.5rem));
+    margin: 0;
+    padding: 0.82rem 0.95rem 0.78rem;
+    border: 1px solid rgb(255 255 255 / 45%);
+    border-radius: 0.32rem;
+    background: rgb(5 37 67 / 93%);
+    box-shadow: 0 0.8rem 2rem rgb(0 15 35 / 22%);
+    color: #fff;
+}
+
+.work-impact-portrait blockquote > span {
+    display: block;
+    height: 1.5rem;
+    color: #e9b34c;
+    font-family: var(--r2-display);
+    font-size: 2.25rem;
+    line-height: 0.8;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-portrait blockquote p {
+    margin-bottom: 0;
+    color: inherit;
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.work-impact-portrait blockquote i {
+    display: block;
+    width: 1.7rem;
+    height: 2px;
+    margin-top: 0.7rem;
+    background: #e9b34c;
+}
+
+.work-impact-proof {
+    display: grid;
+    height: 4.4rem;
+    min-height: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0.4rem 0.75rem;
+    background: linear-gradient(108deg, #06213f, #003654);
+    color: #fff;
+}
+
+.work-impact-proof article {
+    display: grid;
+    min-width: 0;
+    place-content: center;
+    padding: 0.4rem 1rem;
+    border-right: 1px solid rgb(255 255 255 / 34%);
+    text-align: center;
+}
+
+.work-impact-proof article:last-child {
+    border-right: 0;
+}
+
+.work-impact-proof strong {
+    font-family: var(--r2-display);
+    font-size: 1.55rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-proof span {
+    margin-top: 0.35rem;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.work-impact-body {
+    display: grid;
+    grid-template-columns: minmax(13.5rem, 27%) minmax(0, 73%);
+    align-items: stretch;
+    border-bottom: 1px solid var(--work-line);
+}
+
+.work-impact-summary {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.65rem;
+    border-right: 1px solid var(--work-line);
+    background: linear-gradient(90deg, #fcfcfa, #f8f8f5);
+}
+
+.work-impact-summary-card {
+    min-width: 0;
+    padding: 0.68rem;
+    border: 1px solid #e0e3e7;
+    border-radius: 0.22rem;
+    background: rgb(255 255 255 / 88%);
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+    color: var(--work-ink);
+    font-family: var(--r2-ui);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.work-impact-summary-card h2 svg {
+    flex: 0 0 auto;
+    color: #2057b4;
+    font-size: 1rem;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card :is(p, li, span, small) {
+    color: #35475f;
+    font-size: 0.66rem;
+    line-height: 1.45;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card p {
+    margin-bottom: 0.48rem;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card p:last-child {
+    margin-bottom: 0;
+}
+
+.work-impact-summary-card ul {
+    display: grid;
+    gap: 0.32rem;
+    margin: 0;
+    padding-left: 0.9rem;
+}
+
+.work-impact-summary-list {
+    list-style: none;
+    padding-left: 0 !important;
+}
+
+.work-impact-summary-list li {
+    overflow-wrap: anywhere;
+}
+
+.work-impact-record-list {
+    gap: 0.55rem !important;
+    padding-left: 0 !important;
+    list-style: none;
+}
+
+.work-impact-record-list :is(strong, span, small) {
+    display: block;
+}
+
+.work-impact-record-list strong {
+    color: var(--work-ink);
+    font-size: 0.65rem;
+    line-height: 1.35;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card > a {
+    display: inline-block;
+    margin-top: 0.65rem;
+    color: var(--work-blue);
+    font-size: 0.62rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.work-impact-summary-card > a:hover {
+    text-decoration: underline;
+}
+
+.work-impact-features {
+    min-width: 0;
+}
+
+.work-impact-feature {
+    display: grid;
+    min-height: 9.5rem;
+    grid-template-columns: minmax(0, 48%) minmax(0, 52%);
+    border-bottom: 1px solid var(--work-line);
+}
+
+.work-impact-feature:last-child {
+    border-bottom: 0;
+}
+
+.work-impact-feature--text-only {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.work-impact-feature__copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(90deg, #fff 85%, rgb(255 255 255 / 82%));
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-feature h2,
+.resume-v2[data-public-overview] .member-overview-work .work-impact-outcomes h2 {
+    margin-bottom: 0.55rem;
+    color: var(--work-ink);
+    font-family: var(--r2-display);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.12;
+}
+
+.work-impact-feature h2 > span,
+.work-impact-outcomes h2 > span {
+    margin-right: 0.32rem;
+    color: #174f9c;
+    font-family: var(--r2-ui);
+    font-size: 0.74em;
+    font-weight: 800;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-feature__copy > p,
+.resume-v2[data-public-overview] .member-overview-work .work-impact-feature__copy li {
+    color: #344861;
+    font-size: 0.7rem;
+    line-height: 1.48;
+}
+
+.work-impact-feature__copy > p {
+    margin-bottom: 0;
+}
+
+.work-impact-feature__copy ul {
+    display: grid;
+    gap: 0.38rem;
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.work-impact-feature figure {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #e7ebef;
+}
+
+.work-impact-feature figure::after {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2.75rem;
+    background: linear-gradient(90deg, #fff, transparent);
+    content: "";
+    pointer-events: none;
+}
+
+.work-impact-feature figure img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.work-impact-outcomes {
+    min-height: 11.5rem;
+    padding: 1.15rem 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--work-line);
+    background: #fafafa;
+}
+
+.work-impact-outcomes > div {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.work-impact-outcomes article {
+    min-width: 0;
+    min-height: 7.4rem;
+    padding: 0.7rem;
+    border: 1px solid #dce0e5;
+    border-radius: 0.18rem;
+    background: #fff;
+    text-align: center;
+}
+
+.work-impact-outcome-icon {
+    display: inline-grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border: 1.5px solid #174f9c;
+    border-radius: 50%;
+    color: #174f9c;
+}
+
+.work-impact-outcome-icon svg {
+    font-size: 1.05rem;
+}
+
+.work-impact-outcomes strong {
+    display: block;
+    margin-top: 0.42rem;
+    color: var(--work-ink);
+    font-family: var(--r2-display);
+    font-size: 1.18rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-outcomes p {
+    margin: 0.28rem 0 0;
+    color: #405069;
+    font-size: 0.58rem;
+    line-height: 1.32;
+}
+
+.work-impact-closing {
+    display: grid;
+    min-height: 6rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.15rem;
+    padding: 1.15rem 1.65rem;
+    background: linear-gradient(105deg, #061f3d, #003653);
+    color: #fff;
+}
+
+.work-impact-closing__icon {
+    display: grid;
+    width: 3.3rem;
+    height: 3.3rem;
+    place-items: center;
+    border: 1px solid #1e76df;
+    border-radius: 50%;
+    color: #3f98ff;
+}
+
+.work-impact-closing__icon svg {
+    font-size: 1.65rem;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-closing h2 {
+    margin-bottom: 0.25rem;
+    color: #fff;
+    font-family: var(--r2-display);
+    font-size: 1.55rem;
+    font-weight: 500;
+    line-height: 1.05;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-closing p {
+    max-width: 60ch;
+    margin-bottom: 0;
+    color: rgb(255 255 255 / 84%);
+    font-size: 0.65rem;
+    line-height: 1.4;
+}
+
+.work-impact-button--light {
+    min-width: 7.2rem;
+    border-color: #1b72e8;
+    background: #0865ef;
+    color: #fff;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-resume-transition {
+    height: 5rem;
+    min-height: 5rem;
+    border-top-color: #174f9c;
+    background: #f7f9fc;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-resume-transition h2 {
+    font-size: 0.78rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.resume-v2[data-public-overview] .member-overview-work .work-impact-resume-transition p {
+    font-size: 0.66rem;
+}
+
+@media (max-width: 73.75rem) {
+    .work-impact-hero {
+        min-height: 18.5rem;
+        grid-template-columns: minmax(0, 54%) minmax(0, 46%);
+    }
+
+    .work-impact-hero__copy {
+        padding: 1.3rem 1.35rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-hero h1 {
+        font-size: 2rem;
+    }
+
+    .work-impact-portrait {
+        min-height: 18.5rem;
+    }
+
+    .work-impact-body {
+        grid-template-columns: minmax(12rem, 29%) minmax(0, 71%);
+    }
+
+    .work-impact-feature {
+        grid-template-columns: minmax(0, 48%) minmax(0, 52%);
+    }
+
+    .work-impact-outcomes > div {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 60rem) {
+    .work-impact-hero {
+        height: auto;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .work-impact-hero__copy {
+        min-height: 21rem;
+        padding: 1.6rem;
+    }
+
+    .work-impact-portrait {
+        min-height: 18rem;
+        height: 18rem;
+    }
+
+    .work-impact-portrait blockquote {
+        right: 1rem;
+        bottom: 1rem;
+    }
+
+    .work-impact-proof {
+        height: auto;
+        min-height: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 0.6rem;
+    }
+
+    .work-impact-proof article {
+        min-height: 5rem;
+        border-right: 1px solid rgb(255 255 255 / 28%);
+        border-bottom: 1px solid rgb(255 255 255 / 28%);
+    }
+
+    .work-impact-proof article:nth-child(even) {
+        border-right: 0;
+    }
+
+    .work-impact-proof article:nth-last-child(-n + 2) {
+        border-bottom: 0;
+    }
+
+    .work-impact-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .work-impact-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-right: 0;
+        border-bottom: 1px solid var(--work-line);
+    }
+
+    .work-impact-feature {
+        min-height: 12rem;
+    }
+
+    .work-impact-feature figure {
+        min-height: 12rem;
+    }
+}
+
+@media (max-width: 46.5rem) {
+    .resume-v2[data-public-overview] .member-overview-work {
+        border-radius: 0.7rem;
+    }
+
+    .work-impact-hero__copy {
+        min-height: 0;
+        padding: 1.4rem 1.2rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-hero h1 {
+        max-width: none;
+        font-size: clamp(2rem, 8.6vw, 2.25rem);
+        line-height: 0.98;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-intro {
+        font-size: 0.86rem;
+    }
+
+    .work-impact-contact-list a,
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-location {
+        font-size: 0.72rem;
+    }
+
+    .work-impact-hero__actions {
+        max-width: none;
+    }
+
+    .work-impact-portrait {
+        height: 21rem;
+        min-height: 21rem;
+    }
+
+    .work-impact-portrait blockquote {
+        width: min(16rem, calc(100% - 2rem));
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-portrait blockquote p {
+        font-size: 0.82rem;
+    }
+
+    .work-impact-summary {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0.8rem;
+    }
+
+    .work-impact-summary-card {
+        padding: 0.95rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-summary-card :is(p, li, span, small) {
+        font-size: 0.72rem;
+    }
+
+    .work-impact-feature {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .work-impact-feature__copy {
+        min-height: 10rem;
+        padding: 1.25rem;
+    }
+
+    .work-impact-feature figure {
+        min-height: 12.5rem;
+        height: 12.5rem;
+    }
+
+    .work-impact-feature figure::after {
+        display: none;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-feature h2,
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-outcomes h2 {
+        font-size: 1.25rem;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-feature__copy > p,
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-feature__copy li {
+        font-size: 0.78rem;
+    }
+
+    .work-impact-outcomes {
+        padding: 1.2rem;
+    }
+
+    .work-impact-outcomes > div {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+    }
+
+    .work-impact-outcomes article {
+        min-height: 8rem;
+    }
+
+    .work-impact-closing {
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 1.2rem;
+    }
+
+    .work-impact-closing__icon {
+        width: 2.8rem;
+        height: 2.8rem;
+    }
+
+    .work-impact-button--light {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .resume-v2[data-public-overview] .member-overview-work .work-impact-resume-transition {
+        height: auto;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.35rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 25rem) {
+    .work-impact-hero__actions,
+    .work-impact-outcomes > div {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .work-impact-proof strong {
+        font-size: 1.35rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .member-overview-work *,
+    .member-overview-work *::before,
+    .member-overview-work *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .work-impact-hero,
+    .work-impact-proof,
+    .work-impact-summary,
+    .work-impact-summary-card,
+    .work-impact-feature,
+    .work-impact-outcomes,
+    .work-impact-outcomes article,
+    .work-impact-closing {
+        border: 1px solid CanvasText;
+        background: Canvas;
+        color: CanvasText;
+    }
+
+    .work-impact-button {
+        border: 2px solid ButtonText;
+    }
+}

@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/living-resume-v2.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/member-overview.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/member-overview-work-impact.css') }}">
 {% endblock %}
 
 {% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% if public_overview_projection %} resume-overview-public-page{% endif %}{% endblock %}
@@ -46,6 +47,16 @@
                 <strong>{{ resume.profile.name }}</strong>
                 <small>{{ resume.profile.positioning.split('|')[:2]|map('trim')|join(' · ') }}</small>
             </div>
+            <nav class="r2-overview-style-picker" aria-label="Choose Overview style">
+                <span>Overview style</span>
+                {% for style in overview_style_options %}
+                <a
+                    href="{{ overview_style_urls[style.id] }}#overview"
+                    class="{% if selected_overview_style == style.id %}is-current{% endif %}"
+                    {% if selected_overview_style == style.id %}aria-current="page"{% endif %}
+                >{{ style.label }}</a>
+                {% endfor %}
+            </nav>
             <p class="overview-rail-label">Résumé sections</p>
             <nav aria-label="Résumé sections" data-r2-ribbon>
                 <a class="is-current" href="#{% if public_overview_projection %}overview{% else %}summary{% endif %}" data-resume-nav aria-current="location">
@@ -123,6 +134,15 @@
         </div>
 
         <div class="r2-content">
+            <nav class="r2-overview-mobile-style-picker" aria-label="Choose Overview style">
+                {% for style in overview_style_options %}
+                <a
+                    href="{{ overview_style_urls[style.id] }}#overview"
+                    class="{% if selected_overview_style == style.id %}is-current{% endif %}"
+                    {% if selected_overview_style == style.id %}aria-current="page"{% endif %}
+                >{{ style.label }}</a>
+                {% endfor %}
+            </nav>
             {% if public_overview_projection %}
                 {% set projection = public_overview_projection %}
                 {% set overview_public_embed = true %}

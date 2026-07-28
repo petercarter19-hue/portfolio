@@ -6,6 +6,7 @@
 import os                                       # Lets us read file paths and environment variables
 import glob                                     # Lets us find all files matching a pattern (e.g. all .md files)
 import json                                     # Lets us read structured resume content from JSON
+import copy                                     # Keeps presentation overlays isolated from public fixture data
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 import hashlib                                  # Creates opaque, per-member browser storage scopes
 import ipaddress                                # Validates the forwarded caller address used for rate limiting
@@ -1526,6 +1527,16 @@ RESUME_PROFILE_FILES = {
     'petec': 'resume_data.json',
 }
 
+WORK_IMPACT_PUBLICATION_OVERLAY = os.path.join(
+    os.path.dirname(__file__),
+    'docs',
+    'initiatives',
+    'PS-OVERVIEW-001',
+    'work-impact-fidelity',
+    'fixtures',
+    'work-impact-publication.json',
+)
+
 
 def _load_resume_profile(profile_slug):
     """Load one allowlisted public profile without cross-tenant fallback."""
@@ -1549,14 +1560,84 @@ def _load_resume_profile(profile_slug):
     return resume_data
 
 
+def _apply_overview_style_presentation(resume_data, style_id):
+    """Add the selected profile-owned presentation to a copied public record."""
+    if style_id != 'work-impact':
+        return resume_data
+
+    with open(WORK_IMPACT_PUBLICATION_OVERLAY, 'r', encoding='utf-8') as source_file:
+        source = json.load(source_file)
+
+    if source.get('schema_version') != 'work-impact-publication-overlay.v1':
+        raise ValueError('Unsupported Work & Impact publication overlay version')
+    if source.get('style_id') != style_id:
+        raise ValueError('Work & Impact publication overlay style mismatch')
+    if not isinstance(source.get('presentation'), dict):
+        raise ValueError('Work & Impact publication overlay is missing its presentation')
+    if not isinstance(source.get('media'), list):
+        raise ValueError('Work & Impact publication overlay is missing its media list')
+
+    selected_data = copy.deepcopy(resume_data)
+    publication = selected_data.get('overview_publication')
+    if not isinstance(publication, dict):
+        raise ValueError('Public Overview publication is unavailable')
+
+    style_presentations = publication.setdefault('style_presentations', {})
+    if not isinstance(style_presentations, dict):
+        raise ValueError('Overview style presentations must be an object')
+    style_presentations[style_id] = copy.deepcopy(source['presentation'])
+
+    publication_media = publication.get('media')
+    if not isinstance(publication_media, list):
+        raise ValueError('Overview publication media must be a list')
+    existing_media_ids = {
+        item.get('id')
+        for item in publication_media
+        if isinstance(item, dict)
+    }
+    for media_item in source['media']:
+        if not isinstance(media_item, dict) or not media_item.get('id'):
+            raise ValueError('Work & Impact publication media must have stable IDs')
+        if media_item['id'] in existing_media_ids:
+            raise ValueError(
+                f"Duplicate Work & Impact publication media ID: {media_item['id']}"
+            )
+        publication_media.append(copy.deepcopy(media_item))
+        existing_media_ids.add(media_item['id'])
+
+    metric_labels = source.get('metric_overview_labels', {})
+    if not isinstance(metric_labels, dict):
+        raise ValueError('Work & Impact publication metric labels must be an object')
+    metrics = {
+        item.get('id'): item
+        for item in selected_data.get('metrics', [])
+        if isinstance(item, dict) and item.get('id')
+    }
+    for metric_id, label in metric_labels.items():
+        if metric_id not in metrics or not isinstance(label, str) or not label.strip():
+            raise ValueError(
+                f'Invalid Work & Impact publication metric label: {metric_id}'
+            )
+        metrics[metric_id]['overview_label'] = label.strip()
+
+    return selected_data
+
+
 def _render_living_resume(
     profile_slug='petec',
     template_name='resume2.html',
     resume_version=2,
     is_internal_preview=False,
+    overview_style_override=None,
+    internal_capture=False,
 ):
     """Build either résumé composition from one shared structured model."""
     resume_data = _load_resume_profile(profile_slug)
+    if overview_style_override:
+        resume_data = _apply_overview_style_presentation(
+            resume_data,
+            overview_style_override,
+        )
 
     role_by_id = {item['id']: item for item in resume_data['career_roles']}
     education_by_id = {item['id']: item for item in resume_data['education']}
@@ -2021,15 +2102,64 @@ def _render_living_resume(
 
     public_overview_projection = None
     try:
-        public_overview_projection = build_public_overview_projection(resume_data)
-    except OverviewProjectionError as exc:
-        # A malformed public selection must fail closed to the existing
-        # truthful Summary opening. Never partially render a public Overview.
-        app.logger.error(
-            'Public Overview projection failed for %s: %s',
-            profile_slug,
-            exc.code,
+        public_overview_projection = build_public_overview_projection(
+            resume_data,
+            style_override=overview_style_override,
         )
+    except OverviewProjectionError as exc:
+        if overview_style_override:
+            app.logger.error(
+                'Selected Overview projection failed for %s / %s: %s',
+                profile_slug,
+                overview_style_override,
+                exc.code,
+            )
+            if is_internal_preview:
+                abort(
+                    500,
+                    description=(
+                        'Internal Overview projection failed: '
+                        f'{overview_style_override} / {exc.code}'
+                    ),
+                )
+            try:
+                public_overview_projection = build_public_overview_projection(
+                    _load_resume_profile(profile_slug),
+                )
+            except OverviewProjectionError as fallback_exc:
+                app.logger.error(
+                    'Default public Overview projection also failed for %s: %s',
+                    profile_slug,
+                    fallback_exc.code,
+                )
+        else:
+            # A malformed published selection must fail closed to the existing
+            # truthful Summary opening. Never partially render an Overview.
+            app.logger.error(
+                'Public Overview projection failed for %s: %s',
+                profile_slug,
+                exc.code,
+            )
+
+    selected_overview_style = (
+        public_overview_projection['style']['id']
+        if public_overview_projection
+        else 'story-career'
+    )
+    if is_internal_preview:
+        overview_style_urls = {
+            style_id: url_for('living_resume_v2', overviewStyle=style_id)
+            for style_id in STYLE_MANIFESTS
+        }
+    else:
+        overview_style_urls = {
+            style_id: url_for(
+                'profile_resume',
+                profile_slug=profile_slug,
+                overviewStyle=style_id,
+            )
+            for style_id in STYLE_MANIFESTS
+        }
 
     return render_template(
         template_name,
@@ -2060,6 +2190,11 @@ def _render_living_resume(
         public_overview_projection=public_overview_projection,
         resume_version=resume_version,
         is_internal_preview=is_internal_preview,
+        overview_style_override=overview_style_override,
+        overview_style_options=list(STYLE_MANIFESTS.values()),
+        overview_style_urls=overview_style_urls,
+        selected_overview_style=selected_overview_style,
+        internal_capture=internal_capture,
     )
 
 
@@ -2071,10 +2206,14 @@ def resume():
 
 @app.route('/<profile_slug>/resume')
 def profile_resume(profile_slug):
+    overview_style = request.args.get('overviewStyle')
+    if overview_style not in STYLE_MANIFESTS:
+        overview_style = None
     return _render_living_resume(
         profile_slug,
         template_name='resume2.html',
         resume_version=2,
+        overview_style_override=overview_style,
     )
 
 
@@ -2092,11 +2231,17 @@ def living_resume_v2():
     if clean_host not in {'127.0.0.1', 'localhost', '::1'} and not preview_enabled:
         abort(404)
 
+    overview_style = request.args.get('overviewStyle', 'story-career')
+    if overview_style not in STYLE_MANIFESTS:
+        abort(404)
+
     return _render_living_resume(
         'petec',
         template_name='resume2.html',
         resume_version=2,
         is_internal_preview=True,
+        overview_style_override=overview_style,
+        internal_capture=request.args.get('capture') == '1',
     )
 
 
