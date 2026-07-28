@@ -15,12 +15,6 @@ ROW_VERSION = bytes.fromhex("0000000000000012")
 ROW_VERSION_TOKEN = "0000000000000012"
 
 
-# A browser always sends at least one same-origin signal on a form post, and
-# owner writes now require one. Model that here so the tests exercise the real
-# request shape; the cross-site tests override these keys explicitly.
-SAME_ORIGIN_HEADERS = {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
-
-
 def easy_auth_header(subject="moment-member"):
     principal = {
         "auth_typ": "aad",
@@ -34,7 +28,7 @@ def easy_auth_header(subject="moment-member"):
     encoded = base64.b64encode(json.dumps(principal).encode("utf-8")).decode(
         "ascii"
     )
-    return {"X-MS-CLIENT-PRINCIPAL": encoded, **SAME_ORIGIN_HEADERS}
+    return {"X-MS-CLIENT-PRINCIPAL": encoded}
 
 
 def identity_row():
@@ -118,19 +112,14 @@ class OwnerMomentTests(unittest.TestCase):
     def test_anonymous_create_review_and_write_redirect_before_moment_calls(
         self, first_row
     ):
-        # An anonymous visitor still arrives from a real browser, so the
-        # same-origin signal is present and the sign-in redirect (not the
-        # cross-site refusal) is the behaviour under test.
         create = self.client.post(
             f"/app/capture/{CAPTURE_KEY}/moment-proposal",
             data={"source_revision_number": "1"},
-            headers=SAME_ORIGIN_HEADERS,
         )
         review = self.client.get(f"/app/moments/{MOMENT_KEY}/review")
         save = self.client.post(
             f"/app/moments/{MOMENT_KEY}/save",
             data={"expected_row_version": ROW_VERSION_TOKEN},
-            headers=SAME_ORIGIN_HEADERS,
         )
 
         self.assertEqual(create.status_code, 302)

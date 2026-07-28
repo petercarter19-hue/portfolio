@@ -61,9 +61,7 @@ class AuthenticationFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertIn(b"Sign in is not configured yet", response.data)
-        # The asset is versioned automatically by content hash now, so match
-        # the stable path-plus-?v= prefix rather than a hand-typed token.
-        callback_script = b"/static/js/easy-auth-callback.js?v="
+        callback_script = b"/static/js/easy-auth-callback.js?v=ps-auth-callback-1"
         self.assertIn(callback_script, response.data)
         self.assertLess(
             response.data.index(callback_script),

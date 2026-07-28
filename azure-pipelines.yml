@@ -107,32 +107,10 @@ stages:
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(System.DefaultWorkingDirectory)'
-              # Ship only what the running site needs. Every exclusion below
-              # was verified to have no runtime reader before being added.
-              #
-              # KEEP, despite being large or looking inert:
-              #   docs/**       control_room_projection.py reads
-              #                 docs/governance/ and docs/initiatives/ live to
-              #                 build the Control Room, and app.py loads
-              #                 docs/knowledge/ at startup for the chatbot.
-              #   SQL FIles/**  small, and the migration tooling resolves it
-              #                 by that exact (misspelled) path.
-              #   static/images/Mockups/**, static/images/background-templates/**
-              #                 partly live: resume2.css references
-              #                 Mockups/resume2/, and three stylesheets
-              #                 reference background-templates. Do not exclude
-              #                 these wholesale.
               Contents: |
                 **/*
                 !.git/**
                 !antenv/**
-                !artifacts/**
-                !tests/**
-                !Design ideas/**
-                !static/Background/**
-                !static/Mockup/**
-                !PeerSlate_Company_and_Product_Bible_v1.*.docx
-                !.github/**
               TargetFolder: '$(Build.ArtifactStagingDirectory)/app'
             displayName: Prepare deployment package
 

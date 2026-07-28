@@ -162,22 +162,12 @@ def _easy_auth_identity(encoded_principal):
     if not AUTH_PROVIDER.fullmatch(provider):
         raise AuthenticationRequired("The authentication identity is invalid.")
 
-    configured_issuer = current_app.config.get("PEERSLATE_AUTH_ISSUER")
     issuer = _bounded_identity_value(
-        _first_claim(claims, ISSUER_CLAIMS) or configured_issuer,
+        _first_claim(claims, ISSUER_CLAIMS)
+        or current_app.config.get("PEERSLATE_AUTH_ISSUER"),
         "issuer",
         500,
     ).rstrip("/")
-    # The issuer arrives inside the principal the platform presents, and it is
-    # part of the identity key. Treating it as advisory is safe only while
-    # Azure overwrites the header at the edge; if the app ever became
-    # reachable without that boundary, any issuer could be asserted. When the
-    # expected issuer is configured, require it. Leaving it unset preserves
-    # today's behaviour exactly.
-    if configured_issuer:
-        expected_issuer = str(configured_issuer).strip().rstrip("/")
-        if issuer.casefold() != expected_issuer.casefold():
-            raise AuthenticationRequired("The authentication identity is invalid.")
     subject = _bounded_identity_value(
         _first_claim(claims, OBJECT_ID_CLAIMS), "subject", 500
     )

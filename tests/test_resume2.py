@@ -262,9 +262,10 @@ class Resume2Tests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="lr-page resume-v2 resume-consolidated"', response_text)
-        # Versioned automatically by content hash; assert the stylesheet is
-        # linked and carries a version token rather than a hand-typed value.
-        self.assertRegex(response_text, r'css/resume2\.css\?v=[0-9a-f]{12}')
+        self.assertIn(
+            'css/resume2.css?v=overview-public-1',
+            response_text,
+        )
 
         section_positions = [
             response_text.index(f'id="{section_id}"')

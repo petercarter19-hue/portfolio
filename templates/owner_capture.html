@@ -3,7 +3,7 @@
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}?v=ps-capture-photo-001">
 {% endblock %}
 
 {% block content %}
@@ -802,6 +802,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}" defer></script>
-{% if photo_enabled %}<script src="{{ url_for('static', filename='js/owner-capture-photo.js') }}" defer></script>{% endif %}
+<script src="{{ url_for('static', filename='js/owner-capture-voice.js') }}?v=ps-voice-visual-parity-002" defer></script>
+{% if photo_enabled %}<script src="{{ url_for('static', filename='js/owner-capture-photo.js') }}?v=ps-capture-photo-001" defer></script>{% endif %}
 {% endblock %}

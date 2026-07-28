@@ -46,8 +46,7 @@ class SlateBoardLivingWhiteboardTests(unittest.TestCase):
                 self.assertIn('<p>Executive Planning Wall</p>', html)
                 self.assertIn('<span>Share Board</span>', html)
                 self.assertIn('class="sb-icon-button sb-header-more"', html)
-                # Versioned automatically by content hash now.
-                self.assertRegex(html, r'slate-board\.(css|js)\?v=[0-9a-f]{12}')
+                self.assertIn('v=living-whiteboard-6', html)
 
                 self.assertNotIn('Capture ideas. Plan your future. Take action.', html)
                 self.assertNotIn('What We\'re Tracking', html)

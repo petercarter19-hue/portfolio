@@ -10,7 +10,7 @@
        fragment without parsing or storing its value, then requests the same
        route again so Easy Auth can supply trusted server-side identity
        headers. Public pages remain byte-identical. #}
-    {% if request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/') %}<script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>{% endif %}
+    {% if request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/') %}<script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}?v=ps-auth-callback-1"></script>{% endif %}
 
     <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
          2026-07-06)
@@ -100,22 +100,22 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
+        href="{{ url_for('static', filename='css/style.css') }}?v=signout-1"
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/sky-glass.css') }}"
+        href="{{ url_for('static', filename='css/sky-glass.css') }}?v=light-orbit-1"
     >
     {# Editorial-glass visual pass (background + card finish). Scoped
        entirely under body.ps-editorial-surface; must load after
        sky-glass.css so its equal-specificity card rules win. #}
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/editorial-glass.css') }}"
+        href="{{ url_for('static', filename='css/editorial-glass.css') }}?v=light-orbit-1"
     >
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/chatbot.css') }}"
+        href="{{ url_for('static', filename='css/chatbot.css') }}?v=scroll-toggle-1"
     >
 
     {% block extra_head %}{% endblock %}
@@ -410,10 +410,10 @@
        Hidden on desktop via CSS. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/site-search.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/mobile-nav.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>{% endif %}
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}?v=resume-consolidated-1"></script>
+    <script src="{{ url_for('static', filename='js/site-search.js') }}?v=resume-consolidated-1"></script>
+    <script src="{{ url_for('static', filename='js/mobile-nav.js') }}?v=mobile-nav-2"></script>
+    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"></script>{% endif %}
     {% block extra_scripts %}{% endblock %}
 
 </body>

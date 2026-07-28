@@ -27,7 +27,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/cinematic.css') }}"
+    href="{{ url_for('static', filename='css/cinematic.css') }}?v=standard-header-2"
 >
 {# The hero backdrop is the largest thing on screen — start fetching it
    before the CSS asks for it so the first paint feels instant. #}
@@ -710,5 +710,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/cinematic-home.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cinematic-home.js') }}?v=health-check-1"></script>
 {% endblock %}

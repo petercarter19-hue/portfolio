@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow, noarchive">
     <title>{{ page_title }} | PeerSlate</title>
-    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}?v=ps-auth-callback-1"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400..800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-studio.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-studio.css') }}?v=ps-slate-studio-s1-2">
 </head>
 <body class="owner-studio-shell" data-theme="modern-blue">
     <script>
@@ -43,7 +43,7 @@
         <p class="ss-noscript">Build Your Future works without JavaScript. The page remains in its default light theme.</p>
     </noscript>
     <script
-        src="{{ url_for('static', filename='js/theme-toggle.js') }}"
+        src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=ps-theme-001-2"
         onload="document.getElementById('theme-toggle').hidden = false"
     ></script>
 </body>

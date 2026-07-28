@@ -32,7 +32,7 @@
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/homepage-scenes.css') }}"
+    href="{{ url_for('static', filename='css/homepage-scenes.css') }}?v=interview-parity-1"
 >
 {% endblock %}
 
@@ -47,5 +47,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/homepage-interview-demo.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/homepage-interview-demo.js') }}?v=int-parity-1" defer></script>
 {% endblock %}

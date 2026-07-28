@@ -125,41 +125,13 @@ def _render_journal_unavailable():
 
 
 def _is_same_origin_write():
-    """Allow a state-changing owner request only when it proves same origin.
-
-    These routes include real no-JS HTML form posts, so this cannot demand a
-    custom header the way the JSON APIs do without breaking the documented
-    no-JavaScript path. Browsers do send Origin and/or Sec-Fetch-Site on a
-    form post, so a request carrying neither signal is now treated as
-    untrusted instead of allowed. Accepting the no-signal case failed open:
-    a cross-site form post that stripped both headers reached
-    POST /app/capture, which requires no unguessable token, and could write
-    into a signed-in member's private capture list.
-    """
     expected_origin = request.host_url.rstrip("/")
     origin = request.headers.get("Origin")
     fetch_site = request.headers.get("Sec-Fetch-Site")
-    if origin and origin.rstrip("/") != expected_origin:
-        return False
-    if fetch_site and fetch_site not in {"same-origin", "none"}:
-        return False
-    # Require at least one positive same-origin signal.
-    return bool(origin or fetch_site)
-
-
-@owner.after_request
-def _keep_private_owner_responses_out_of_caches(response):
-    """Default every owner response to a private, non-stored policy.
-
-    Every route on this blueprint returns one signed-in member's own data.
-    The app-level HTML default (`no-cache, must-revalidate`) only forces
-    revalidation — it still permits a shared cache to store the body and the
-    browser to restore it from the back/forward cache, which could redisplay
-    one member's private capture or Journal after sign-out on a shared
-    device. Routes that already set an explicit policy keep it unchanged.
-    """
-    response.headers.setdefault("Cache-Control", "private, no-store")
-    return response
+    return not (
+        (origin and origin.rstrip("/") != expected_origin)
+        or (fetch_site and fetch_site not in {"same-origin", "none"})
+    )
 
 
 @owner.before_request

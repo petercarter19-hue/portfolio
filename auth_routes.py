@@ -229,15 +229,11 @@ def owner_workspace():
     # released owner workspace fallback below (PEERSLATE_OWNER_HOME_ENABLED
     # defaults false, so this branch is never taken in current production).
     if not _owner_home_enabled():
-        # The rendered bytes stay byte-identical to the released baseline;
-        # only the response policy hardens. This page carries the member's
-        # own workspace, so it must not be stored by a shared cache or
-        # restored from the back/forward cache after sign-out.
         return render_template(
             "owner_workspace.html",
             page_title="My PeerSlate",
             member=identity,
-        ), 200, {"Cache-Control": "private, no-store"}
+        )
 
     # Flag on: render the finite Owner Home from the real owner-home.v1 view
     # model. A contract/database failure still renders the private shell with
