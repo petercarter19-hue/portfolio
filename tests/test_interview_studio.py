@@ -118,21 +118,24 @@ class InterviewStudioRouteTests(unittest.TestCase):
             'STAR recommended',
             'Submit answer',
             'New Question',
-            'Up next:',
+            'Up next ·',
         ):
             self.assertIn(value, html)
         self.assertIn('data-is-mic="answer"', html)
         self.assertIn('data-is-answer-form', html)
         self.assertIn('data-is-mic-error="answer" hidden', html)
 
-    def test_answer_submission_and_feature_workspaces_are_visible_upfront(self):
+    def test_answer_submission_uses_progressive_workspaces(self):
         html = self.html()
         self.assertIn('type="submit" data-is-review disabled', html)
         self.assertIn('Ctrl/Command + Enter to submit', html)
-        self.assertNotIn('data-is-feedback hidden', html)
-        self.assertNotIn('data-is-improve-panel hidden', html)
+        feedback_tag = html.split('data-is-feedback', 1)[1].split('>', 1)[0]
+        improve_tag = html.split('data-is-improve-panel', 1)[1].split('>', 1)[0]
+        video_result_tag = html.split('data-is-video-result ', 1)[1].split('>', 1)[0]
+        self.assertIn('hidden', feedback_tag)
+        self.assertIn('hidden', improve_tag)
+        self.assertIn('hidden', video_result_tag)
         self.assertNotIn('data-is-ai-answer hidden', html)
-        self.assertNotIn('data-is-video-result hidden', html)
         self.assertIn('data-is-feedback-empty', html)
         self.assertIn('data-is-improve-empty', html)
         self.assertIn('data-is-ai-answer-empty', html)
@@ -354,24 +357,57 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('data-is-storage-note', html)
         self.assertIn('data-is-storage-ok', html)
 
-    def test_coaching_status_rows_start_pending_not_prematurely_done(self):
-        # Regression: the coaching-status card must not claim "Answer
-        # received" before any answer has been submitted (architecture
-        # section 5.3 — the three rows must reflect real request lifecycle,
-        # not a hardcoded default).
+    def test_interview_me_rail_matches_the_v3_state_specific_contract(self):
         html = self.html('/interview-studio?mode=me')
-        for row in ('1', '2', '3'):
-            block = html.split(f'data-is-coaching-row="{row}"', 1)[0].rsplit('<div', 1)[-1]
-            self.assertNotIn('is-done', block, f'row {row} must not be server-rendered as done')
-        self.assertIn('data-is-coaching-row="1"', html)
-        self.assertIn('data-is-coaching-row="2"', html)
-        self.assertIn('data-is-coaching-row="3"', html)
+        for hook in (
+            'data-is-ready-rail',
+            'data-is-session-level',
+            'data-is-session-family',
+            'data-is-session-format',
+            'data-is-queue-open',
+            'data-is-review-rail hidden',
+            'data-is-priority-improvement',
+            'data-is-review-score',
+        ):
+            self.assertIn(hook, html)
+        self.assertNotIn('data-is-coaching-status', html)
+        self.assertNotIn('aria-label="Answering aid"', html)
 
-    def test_coaching_status_wiring_present_in_js(self):
+    def test_question_progress_and_composer_share_the_authoritative_task_stage(self):
+        html = self.html('/interview-studio?mode=me')
+        task_stage = html.split('class="is__main-column is__task-stage"', 1)[1].split(
+            '<aside class="is__side-column"', 1
+        )[0]
+        self.assertIn('data-is-question', task_stage)
+        self.assertIn('data-is-progress', task_stage)
+        self.assertIn('data-is-answer-form', task_stage)
+        self.assertIn('data-is-feedback', task_stage)
+        self.assertEqual(html.count('data-is-queue aria-labelledby="is-queue-title"'), 1)
+        self.assertGreaterEqual(html.count('data-is-queue-open'), 2)
+        self.assertGreaterEqual(html.count('data-is-up-next-count'), 2)
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        self.assertIn('function setCoachingStatus', source)
-        self.assertIn('data-is-coaching-row', source)
-        self.assertIn('setCoachingStatus(stage)', source)
+        queue = source.split('/* Question queue */', 1)[1].split(
+            '/* Review, feedback, retry, and improvement */', 1
+        )[0]
+        self.assertIn("var queueTriggers = all('[data-is-queue-open]')", queue)
+        self.assertIn('queueDialog.show()', queue)
+        self.assertIn("queueDialog.addEventListener('cancel'", queue)
+        self.assertIn("event.key === 'Escape' && !queueUsesModalLayout()", queue)
+        self.assertIn("window.matchMedia('(max-width: 72rem)')", queue)
+        self.assertIn("queueLayoutQuery.addEventListener('change'", queue)
+        self.assertIn('window.requestAnimationFrame(openQueueForCurrentLayout)', queue)
+        self.assertIn('focusTarget.offsetParent === null', queue)
+        self.assertIn('window.requestAnimationFrame(function ()', queue)
+        self.assertIn('focusTarget.focus()', queue)
+
+    def test_workspace_state_switches_the_context_rail(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        stage = source.split('function setStage(stage)', 1)[1].split('function syncModeControls', 1)[0]
+        self.assertIn("setHidden(one('[data-is-ready-rail]'), reviewRailActive)", stage)
+        self.assertIn("setHidden(one('[data-is-review-rail]'), !reviewRailActive)", stage)
+        render = source.split('function renderReview(review)', 1)[1].split('function submitReview()', 1)[0]
+        self.assertIn("text(one('[data-is-review-score]'), score)", render)
+        self.assertIn("text(one('[data-is-priority-improvement]')", render)
 
     def test_mobile_history_link_can_wrap_below_mode_row(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
@@ -416,7 +452,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
 
     def test_stage_transitions_keep_aria_current_synchronized(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        stage_block = source.split('function setStage(stage)', 1)[1].split('function setCoachingStatus', 1)[0]
+        stage_block = source.split('function setStage(stage)', 1)[1].split('function syncModeControls', 1)[0]
         self.assertIn("setAttribute('aria-current', 'step')", stage_block)
         self.assertIn("removeAttribute('aria-current')", stage_block)
         self.assertIn("classList.toggle('is-current', current)", stage_block)
@@ -458,17 +494,327 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         # The full token redefinition (--is-canvas etc.) must appear exactly
         # once; a separate single-property @media (prefers-contrast: more)
         # override is legitimate and not a competing theme system.
-        self.assertEqual(css.count('--is-canvas: #03101d;'), 1)
+        self.assertEqual(css.count('--is-canvas: #071525;'), 1)
         self.assertEqual(css.count('body[data-theme="dark"] .is {'), 2)
         self.assertNotIn('background-templates', css)
         self.assertNotIn('nth-child(n+5)', css)
 
-    def test_theme_guardrail_light_gold_text_is_accessible(self):
+    def test_v3_light_palette_uses_cool_cobalt_and_teal_tokens(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('#8A5A00', css)
+        self.assertIn('--is-canvas: #f8faff', css)
+        self.assertIn('--is-gold-text: #2858c7', css)
+        self.assertIn('--is-text-muted: #5b6d89', css)
+        self.assertIn('--is-success: #08776e', css)
         light_block = css.split('body[data-theme="dark"] .is {', 1)[0]
-        self.assertNotIn('--is-gold-text: #b87900', light_block.lower())
-        self.assertNotIn('--is-gold-text: #B87900', light_block)
+        for retired in ('#fbf8f2', '#fffdfa', '#fffefa', '#f7f1e7', '#8a5a00'):
+            self.assertNotIn(retired, light_block.lower())
+
+        def luminance(value):
+            channels = [int(value[index:index + 2], 16) / 255 for index in (1, 3, 5)]
+            linear = [
+                channel / 12.92 if channel <= 0.04045
+                else ((channel + 0.055) / 1.055) ** 2.4
+                for channel in channels
+            ]
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+        def contrast(foreground, background):
+            first, second = luminance(foreground), luminance(background)
+            return (max(first, second) + 0.05) / (min(first, second) + 0.05)
+
+        for surface in ('#ffffff', '#f8faff', '#f3f6fc'):
+            self.assertGreaterEqual(contrast('#5b6d89', surface), 4.5)
+        self.assertGreaterEqual(contrast('#08776e', '#e2f3f1'), 4.5)
+
+    def test_compact_multiline_fields_share_one_autogrow_contract(self):
+        html = self.html('/interview-studio?mode=me')
+        self.assertEqual(html.count('data-is-autogrow'), 3)
+        self.assertRegex(html, r'id="is-answer"\s+rows="3"')
+        self.assertRegex(html, r'id="is-improved-draft" rows="5"')
+        self.assertRegex(html, r'id="is-video-transcript" rows="3"')
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is textarea[data-is-autogrow]', css)
+        self.assertIn('max-height: none', css)
+        self.assertIn('overflow-y: hidden', css)
+        self.assertIn('min-height: 9rem', css)
+        self.assertIn('min-height: 11rem', css)
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn('function autoGrowTextarea(element)', source)
+        self.assertIn("element.style.height = '0px'", source)
+        self.assertIn('Math.max(element.scrollHeight, minimum)', source)
+        self.assertIn("window.addEventListener('resize'", source)
+        self.assertIn('if (element.offsetParent !== null) autoGrowTextarea(element)', source)
+        self.assertIn('autoGrowTextarea(answer)', source)
+        self.assertIn('autoGrowTextarea(draft)', source)
+        self.assertIn('autoGrowTextarea(videoTranscript)', source)
+
+    def test_progressive_review_and_improve_states_reuse_existing_lifecycle(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        clear_block = source.split('function clearReviewState()', 1)[1].split('function restoreDraft', 1)[0]
+        self.assertIn('setHidden(feedbackBlock, true)', clear_block)
+        self.assertIn('setHidden(improveBlock, true)', clear_block)
+        submit_block = source.split('function submitReview()', 1)[1].split("answerForm.addEventListener", 1)[0]
+        self.assertIn('setHidden(answeringBlock, true)', submit_block)
+        self.assertIn('setHidden(feedbackBlock, false)', submit_block)
+        failure_block = submit_block.split("}).catch(function (error)", 1)[1]
+        self.assertIn('setStage(1)', failure_block)
+        self.assertIn("root.setAttribute('data-is-workspace-state'", source)
+
+    def test_interview_ai_keyboard_order_is_question_basis_then_generation(self):
+        html = self.html('/interview-studio?mode=ai')
+        form = html.split('data-is-ai-form', 1)[1].split('</form>', 1)[0]
+        self.assertLess(form.index('data-is-ai-question'), form.index('data-is-ai-mode-group'))
+        self.assertLess(form.index('data-is-ai-mode-group'), form.index('Get Answer'))
+        self.assertIn('data-is-ai-basis-label', html)
+        self.assertIn('data-is-ai-basis-guidance', html)
+        self.assertIn('data-is-follow-up-note', html)
+        self.assertIn('data-is-follow-up-error role="alert"', html)
+        self.assertIn('data-is-ai-error role="alert"', html)
+        self.assertIn('its source label here for you to verify', html)
+
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        basis_block = source.split("modeGroup.addEventListener('change'", 1)[1].split(
+            'var followUpForm', 1
+        )[0]
+        self.assertIn('basisLabel.textContent', basis_block)
+        self.assertIn('basisGuidance.textContent', basis_block)
+        self.assertIn('resetAiAnswerForContextChange()', basis_block)
+        self.assertIn('Ask a follow-up grounded in the current answer context.', source)
+        self.assertIn('Follow-up is unavailable because no approved-history example was returned.', source)
+
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('"basis"', css)
+        self.assertIn('"form form"\n        "main side"', css)
+        self.assertIn('"form"\n            "main"\n            "side"', css)
+
+    def test_failed_follow_up_preserves_question_and_existing_answer_workspace(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        follow_up_submit = source.split("followUpForm.addEventListener('submit'", 1)[1].split(
+            "one('[data-is-ai-new]')", 1
+        )[0]
+        self.assertNotIn("followUpInput.value = ''", follow_up_submit)
+
+        request_block = source.split('function requestModelAnswer(followUp)', 1)[1].split(
+            "aiForm.addEventListener('submit'", 1
+        )[0]
+        self.assertIn("followUpInput.value.trim() === followUp", request_block)
+        self.assertIn("setAiState(currentModelAnswer ? 'ready' : 'failure')", request_block)
+        self.assertIn('failureTarget = followUp && currentModelAnswer ? followUpError : aiError', request_block)
+        self.assertIn('Your first answer is preserved. Edit the follow-up and try again.', request_block)
+        self.assertIn('mode: selectedAiMode()', request_block)
+        self.assertNotIn("followUp ? 'member_history'", request_block)
+
+    def test_ai_loading_and_initial_failure_replace_the_same_answer_workspace(self):
+        html = self.html('/interview-studio?mode=ai')
+        workspace = html.index('data-is-ai-answer')
+        loading = html.index('data-is-ai-loading')
+        failure = html.index('data-is-ai-error')
+        empty = html.index('data-is-ai-answer-empty')
+        content = html.index('data-is-ai-answer-content')
+        self.assertLess(workspace, loading)
+        self.assertLess(loading, failure)
+        self.assertLess(failure, empty)
+        self.assertLess(empty, content)
+
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        request = source.split('function requestModelAnswer(followUp)', 1)[1].split(
+            "aiForm.addEventListener('submit'", 1
+        )[0]
+        initial = request.split('if (!followUp) {', 1)[1].split('}', 1)[0]
+        self.assertIn('setHidden(aiAnswerEmpty, true)', initial)
+        no_answer_failure = request.split('} else {', 1)[-1]
+        self.assertIn('setHidden(aiAnswerEmpty, true)', no_answer_failure)
+
+    def test_ai_insufficient_history_never_labels_the_empty_result_as_a_person_answer(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        render = source.split('function renderModelAnswer(payload)', 1)[1].split(
+            'function requestModelAnswer(followUp)', 1
+        )[0]
+        self.assertIn("'No grounded answer available'", render)
+        self.assertLess(
+            render.index("'No grounded answer available'"),
+            render.index("'Best-practice example'"),
+        )
+
+    def test_progressive_states_move_focus_after_the_trigger_disappears(self):
+        html = self.html('/interview-studio?mode=me')
+        feedback_tag = html.split('data-is-feedback ', 1)[1].split('>', 1)[0]
+        improve_tag = html.split('data-is-improve-panel ', 1)[1].split('>', 1)[0]
+        self.assertIn('tabindex="-1"', feedback_tag)
+        self.assertIn('tabindex="-1"', improve_tag)
+
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn('cancelReviewButton.focus()', source)
+        self.assertIn('feedbackBlock.focus({ preventScroll: true })', source)
+        self.assertIn('improveBlock.focus({ preventScroll: true })', source)
+        cancel = source.split("cancelReviewButton.addEventListener('click'", 1)[1].split(
+            'if (keepEditingButton)', 1
+        )[0]
+        self.assertIn('answer.focus()', cancel)
+        out_loud = source.split("one('[data-is-retry-out-loud]').addEventListener", 1)[1].split(
+            '/* ------------------------------------------------------------------', 1
+        )[0]
+        self.assertIn("one('[data-is-camera-enable]').focus()", out_loud)
+
+    def test_video_controls_restore_focus_to_the_next_available_action(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        enable = source.split('function enableCamera()', 1)[1].split('function supportedMimeType()', 1)[0]
+        self.assertIn('if (startRecord.disabled) videoTranscript.focus()', enable)
+        self.assertIn('else startRecord.focus()', enable)
+        self.assertIn('cameraEnable.focus()', enable)
+        recording = source.split('function startRecording()', 1)[1].split('function finishRecording()', 1)[0]
+        self.assertIn('stopRecord.focus()', recording)
+        finish = source.split('function finishRecording()', 1)[1].split('function resetVideoUi', 1)[0]
+        self.assertIn('retakeRecord.focus()', finish)
+        discard = source.split("discardRecord.addEventListener('click'", 1)[1].split(
+            "videoTranscript.addEventListener('input'", 1
+        )[0]
+        self.assertIn('cameraEnable.focus()', discard)
+
+    def test_video_stop_exposes_an_honest_local_finalizing_state(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn("stopping: 'Finalizing this recording locally. No upload is occurring.'", source)
+        stop = source.split('function stopRecording()', 1)[1].split(
+            'function finishRecording()', 1
+        )[0]
+        self.assertLess(stop.index("setVideoState('stopping')"), stop.index('media.recorder.stop()'))
+        self.assertIn("text(stopRecord, 'Finalizing locally…')", stop)
+        finish = source.split('function finishRecording()', 1)[1].split(
+            'function resetVideoUi', 1
+        )[0]
+        self.assertIn("text(stopRecord, 'Stop Recording')", finish)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is[data-is-video-state="stopping"] .is__video-content-review', css)
+
+    def test_completed_video_playback_requires_confirmation_before_context_reset(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        helper = source.split('function prepareVideoContextChange(message)', 1)[1].split(
+            'function advanceQuestion', 1
+        )[0]
+        self.assertIn(
+            'pendingRecording || hasCompletedPlayback || transcriptDraft',
+            helper,
+        )
+        device_settings = source.split(
+            "one('[data-is-device-settings]').addEventListener('click'",
+            1,
+        )[1].split('startRecord.addEventListener', 1)[0]
+        self.assertIn('current local recording or transcript draft', device_settings)
+        self.assertLess(
+            device_settings.index('prepareVideoContextChange'),
+            device_settings.index('resetVideoUi()'),
+        )
+
+    def test_mode_reveal_recomputes_hidden_autogrow_fields(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        set_mode = source.split('function setMode(mode, updateUrl)', 1)[1].split(
+            '\n    modeTabs.forEach(function (tab)', 1
+        )[0]
+        self.assertIn("refreshAutogrow(one('[data-is-panel=\"' + mode + '\"]'))", set_mode)
+
+    def test_question_changes_flush_dictation_and_save_under_the_old_question(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        helper = source.split('function prepareAnswerContextChange()', 1)[1].split(
+            'function prepareVideoContextChange', 1
+        )[0]
+        self.assertLess(helper.index("stopDictation('interrupted')"), helper.index('persistCurrentAnswerDraft()'))
+        self.assertLess(helper.index('persistCurrentAnswerDraft()'), helper.index('confirmReplace()'))
+        persist = source.split('function persistCurrentAnswerDraft()', 1)[1].split(
+            "answer.addEventListener('input'", 1
+        )[0]
+        self.assertIn('window.clearTimeout(autosaveTimer)', persist)
+        self.assertIn('saveDraft(false)', persist)
+        self.assertIn('removeStored(draftKey(currentQuestion().text))', persist)
+        self.assertIn('if (prepareAnswerContextChange()) advanceQuestion()', source)
+        queue = source.split("button.addEventListener('click', function ()", 1)[1].split(
+            'item.appendChild(button)', 1
+        )[0]
+        self.assertIn('if (!prepareAnswerContextChange()) return', queue)
+
+    def test_short_desktop_keeps_primary_answer_action_in_the_first_viewport(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        short_desktop = css.split(
+            '@media (min-width: 64.01rem) and (max-height: 50rem)', 1
+        )[1].split('/* The global dark shell', 1)[0]
+        self.assertIn('min-height: 6.5rem', short_desktop)
+        self.assertIn('.is__composer-actions', short_desktop)
+        self.assertIn('margin-top: 0.35rem', short_desktop)
+
+    def test_ai_and_video_submissions_stop_active_dictation_before_state_changes(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        ai_submit = source.split("aiForm.addEventListener('submit'", 1)[1].split(
+            "one('[data-is-follow-up-open]')", 1
+        )[0]
+        follow_up_submit = source.split("followUpForm.addEventListener('submit'", 1)[1].split(
+            "one('[data-is-ai-new]')", 1
+        )[0]
+        recording = source.split('function startRecording()', 1)[1].split(
+            'function finishRecording()', 1
+        )[0]
+        self.assertIn("stopDictation('interrupted')", ai_submit)
+        self.assertIn("stopDictation('interrupted')", follow_up_submit)
+        self.assertIn("stopDictation('interrupted')", recording)
+
+    def test_video_controls_stay_in_the_stage_and_device_state_uses_the_rail(self):
+        html = self.html('/interview-studio?mode=video')
+        camera_to_transcript = html.split('class="is__camera"', 1)[1].split(
+            'data-is-video-transcript-form', 1
+        )[0]
+        self.assertIn('class="is__camera-controls"', camera_to_transcript)
+        self.assertIn('data-is-record-start', camera_to_transcript)
+        self.assertIn('data-is-record-stop', camera_to_transcript)
+        self.assertIn('data-is-record-retake', camera_to_transcript)
+        self.assertIn('data-is-record-discard', camera_to_transcript)
+        self.assertIn('data-is-video-new-question', camera_to_transcript)
+        self.assertIn('is__video-device-card', html)
+        self.assertIn('data-is-video-state-copy', html)
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        retake = source.split("retakeRecord.addEventListener('click'", 1)[1].split(
+            "discardRecord.addEventListener('click'", 1
+        )[0]
+        self.assertIn('resetVideoUi({ preserveTranscript: true })', retake)
+        self.assertIn('removeHistoryRecord(recordId)', retake)
+        self.assertIn('enableCamera()', retake)
+
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is__camera-controls', css)
+        self.assertIn('min-height: clamp(18rem, 26vw, 20rem)', css)
+
+    def test_interview_mobile_uses_sticky_header_ai_without_a_content_overlap(self):
+        html = self.html('/interview-studio?mode=me')
+        self.assertIn('class="nav-ask-ai"', html)
+        self.assertIn('data-open-chat', html)
+        self.assertIn('data-chat-open', html)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertNotIn('body.interview-studio-page .mobile-tabbar', css)
+        chat_rule = css.rsplit('body.interview-studio-page #chat-toggle', 1)[1].split('}', 1)[0]
+        self.assertIn('display: none !important', chat_rule)
+        final_mobile = css.rsplit('@media (max-width: 48rem) {', 1)[1].split(
+            '@media (max-width: 24rem)', 1
+        )[0]
+        self.assertIn('position: fixed', final_mobile)
+        self.assertIn('minmax(0, 0.85fr)', final_mobile)
+        self.assertIn('minmax(0, 1.15fr)', final_mobile)
+        self.assertIn('.is__queue-mobile', final_mobile)
+        compact_mobile = css.rsplit('@media (max-width: 24rem) {', 1)[1].split(
+            '/* The global dark shell', 1
+        )[0]
+        self.assertIn('.is__dock-label-compact', compact_mobile)
+        self.assertIn('.is__composer-actions [data-is-mic-label]', compact_mobile)
+        self.assertNotRegex(
+            css,
+            r'body\.interview-studio-page \.platform-nav__links,[\s\S]{0,220}display:\s*none',
+        )
+
+    def test_ai_transfer_and_video_discard_preserve_member_work(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn('storedTargetDraft', source)
+        self.assertIn('Practice transfer cancelled. The existing draft is unchanged.', source)
+        self.assertIn('resetVideoUi({ preserveTranscript: true })', source)
+        self.assertIn('Any transcript text will stay in the composer.', source)
+        self.assertIn("if (!options.preserveTranscript) videoTranscript.value = ''", source)
+        pagehide = source.split("window.addEventListener('pagehide'", 1)[1].split('/* History', 1)[0]
+        self.assertIn('URL.revokeObjectURL(media.playbackUrl)', pagehide)
 
 
 class ReviewSchemaTests(unittest.TestCase):
@@ -1374,7 +1720,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
         composer on narrow viewports, so a phone visitor never saw it.
         """
         html = self.html()
-        actions = html.split('<div class="is__actions">', 1)[1].split('</div>', 1)[0]
+        actions = html.split('<div class="is__actions is__composer-actions">', 1)[1].split('</div>', 1)[0]
         self.assertIn('data-is-mic="answer"', actions)
         self.assertIn('data-is-review', actions)
         side_column = html.split('<aside class="is__side-column"', 1)[1]
@@ -1454,6 +1800,22 @@ class InterviewStudioDictationTests(unittest.TestCase):
         script = self.script
         self.assertIn('if (state.interim) {', script)
         self.assertIn('state.words += appendTranscript(state.target, state.interim);', script)
+        stop_block = script.split('function stopDictation(reason)', 1)[1].split(
+            'function startDictation', 1
+        )[0]
+        self.assertIn('finishDictation(state);', stop_block)
+        self.assertNotIn('setTimeout', stop_block)
+        self.assertNotIn('DICTATION_STOP_WATCHDOG_MS', script)
+
+    def test_video_transcript_submission_flushes_visible_dictation_before_reading(self):
+        script = self.script
+        submit_block = script.split(
+            "videoTranscriptForm.addEventListener('submit'", 1
+        )[1].split("window.addEventListener('beforeunload'", 1)[0]
+        self.assertLess(
+            submit_block.index("stopDictation('interrupted')"),
+            submit_block.index('var transcript = videoTranscript.value.trim()'),
+        )
 
     def test_nothing_captured_message_distinguishes_heard_from_never_heard(self):
         script = self.script
@@ -1462,7 +1824,13 @@ class InterviewStudioDictationTests(unittest.TestCase):
 
     def test_leaving_the_field_stops_the_microphone(self):
         script = self.script
-        self.assertIn("if (mode !== session.mode) stopDictation('interrupted');", script)
+        set_mode = script.split('function setMode(mode, updateUrl)', 1)[1].split(
+            'modeTabs.forEach', 1
+        )[0]
+        self.assertLess(
+            set_mode.index("stopDictation('interrupted')"),
+            set_mode.index("prepareVideoContextChange('Discard the active recording"),
+        )
         self.assertIn("stopDictation('interrupted');\n        var responseText", script)
         self.assertIn("if (event.key !== 'Escape' || !activeDictation) return;", script)
 
@@ -1552,7 +1920,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
         ):
             with self.subTest(label=label):
                 self.assertIn(label, html)
-        self.assertIn('<span data-is-mic-label>Start dictation</span>', html)
+        self.assertIn('<span data-is-mic-label>Dictate</span>', html)
         self.assertIn("text(labelNode, 'Stop dictation');", self.script)
 
     def test_typing_remains_first_class_when_speech_is_unavailable(self):

@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:07:54.977Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "measurements": [
+    {
+      "viewport": {
+        "label": "desktop",
+        "width": 1440,
+        "height": 900
+      },
+      "empty": {
+        "valueLength": 0,
+        "clientHeight": 144,
+        "scrollHeight": 144,
+        "minHeight": "144px",
+        "styleHeight": "144px"
+      },
+      "short": {
+        "valueLength": 17,
+        "clientHeight": 144,
+        "scrollHeight": 144,
+        "minHeight": "144px",
+        "styleHeight": "144px"
+      },
+      "medium": {
+        "valueLength": 2207,
+        "clientHeight": 401,
+        "scrollHeight": 401,
+        "minHeight": "144px",
+        "styleHeight": "401px"
+      },
+      "long": {
+        "valueLength": 5000,
+        "clientHeight": 1451,
+        "scrollHeight": 1451,
+        "minHeight": "144px",
+        "styleHeight": "1451px"
+      },
+      "reset": {
+        "valueLength": 0,
+        "clientHeight": 144,
+        "scrollHeight": 144,
+        "minHeight": "144px",
+        "styleHeight": "144px"
+      },
+      "improved": {
+        "valueLength": 414,
+        "clientHeight": 176,
+        "scrollHeight": 176,
+        "minHeight": "176px",
+        "styleHeight": "176px",
+        "disabled": false
+      }
+    },
+    {
+      "viewport": {
+        "label": "mobile",
+        "width": 390,
+        "height": 844
+      },
+      "empty": {
+        "valueLength": 0,
+        "clientHeight": 160,
+        "scrollHeight": 160,
+        "minHeight": "160px",
+        "styleHeight": "160px"
+      },
+      "short": {
+        "valueLength": 17,
+        "clientHeight": 160,
+        "scrollHeight": 160,
+        "minHeight": "160px",
+        "styleHeight": "160px"
+      },
+      "medium": {
+        "valueLength": 2207,
+        "clientHeight": 1205,
+        "scrollHeight": 1205,
+        "minHeight": "160px",
+        "styleHeight": "1205px"
+      },
+      "long": {
+        "valueLength": 5000,
+        "clientHeight": 3371,
+        "scrollHeight": 3371,
+        "minHeight": "160px",
+        "styleHeight": "3371px"
+      },
+      "reset": {
+        "valueLength": 0,
+        "clientHeight": 160,
+        "scrollHeight": 160,
+        "minHeight": "160px",
+        "styleHeight": "160px"
+      },
+      "improved": {
+        "valueLength": 414,
+        "clientHeight": 176,
+        "scrollHeight": 176,
+        "minHeight": "176px",
+        "styleHeight": "176px",
+        "disabled": false
+      }
+    }
+  ],
+  "longScreenshotMeasurements": [
+    {
+      "file": "desktop-long-answer-1440.png",
+      "png": {
+        "width": 1440,
+        "height": 2609
+      },
+      "page": {
+        "url": "http://127.0.0.1:5030/interview-studio?mode=me&capture=desktop-long-answer-1440.png-newsha",
+        "innerWidth": 1440,
+        "innerHeight": 900,
+        "clientWidth": 1440,
+        "clientHeight": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 2609,
+        "theme": "modern-blue",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "activeElement": "<textarea id=\"is-answer\" rows=\"3\" maxlength=\"5000\" placeholder=\"Write your answer in your own words…\" aria-describedby=\"is-answer-shortcut\" required=\"\" data-is-answer=\"\" data-is-autogrow=\"\" style=\"height: 1451px;\"></textarea>"
+      },
+      "textarea": {
+        "valueLength": 5000,
+        "clientHeight": 1451,
+        "scrollHeight": 1451,
+        "offsetHeight": 1451
+      }
+    },
+    {
+      "file": "mobile-long-answer-fullpage-390.png",
+      "png": {
+        "width": 390,
+        "height": 4873
+      },
+      "page": {
+        "url": "http://127.0.0.1:5030/interview-studio?mode=me&capture=mobile-long-answer-fullpage-390.png-newsha",
+        "innerWidth": 390,
+        "innerHeight": 844,
+        "clientWidth": 390,
+        "clientHeight": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 4873,
+        "theme": "modern-blue",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "activeElement": "<textarea id=\"is-answer\" rows=\"3\" maxlength=\"5000\" placeholder=\"Write your answer in your own words…\" aria-describedby=\"is-answer-shortcut\" required=\"\" data-is-answer=\"\" data-is-autogrow=\"\" style=\"height: 3371px;\"></textarea>"
+      },
+      "textarea": {
+        "valueLength": 5000,
+        "clientHeight": 3371,
+        "scrollHeight": 3371,
+        "offsetHeight": 3371
+      }
+    }
+  ],
+  "assertions": {
+    "emptyCompact": true,
+    "shortKeepsCompactStart": true,
+    "mediumGrows": true,
+    "longHasNoInternalClipping": true,
+    "resetReturnsToCompact": true,
+    "improvedDraftNaturalHeight": true,
+    "fullPageLongEvidenceNoHorizontalOverflow": true
+  }
+}

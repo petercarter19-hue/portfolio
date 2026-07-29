@@ -29,3 +29,8 @@
 *.ttf   binary
 *.eot   binary
 *.zip   binary
+
+# This owner-approved visual-authority package is retained byte-for-byte so its
+# supplied SHA-256 manifests remain reproducible. Some source prototypes use
+# intentional Markdown hard breaks or trailing indentation.
+docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/** whitespace=-trailing-space

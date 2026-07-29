@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:06:25.227Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "fixture": "deterministic browser-only MediaStream and MediaRecorder",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/interview-studio",
+      "resourceType": "document",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/css/style.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/css/sky-glass.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/css/editorial-glass.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/css/chatbot.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/css/interview-studio.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/images/peerslate-logo-header.png",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/images/story/pete-headshot.jpg",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/images/peerslate-mark.png",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/js/chatbot.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/js/site-search.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/js/mobile-nav.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/js/theme-toggle.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/js/interview-studio.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "resourceType": "font",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/s/newsreader/v26/cY9AfjOCX1hbuyalUrK4397yjA.woff2",
+      "resourceType": "font",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "path": "/static/images/peerslate-favicon.png",
+      "resourceType": "other",
+      "contentType": "",
+      "bodyBytes": 0
+    }
+  ],
+  "mediaEvents": [
+    "getUserMedia:1",
+    "media-play",
+    "recorder-create",
+    "recorder-start",
+    "recorder-stop-request",
+    "recorder-data",
+    "track-stop:video",
+    "track-stop:audio",
+    "recorder-onstop"
+  ],
+  "objectUrls": [
+    {
+      "url": "blob:peerslate-fixture-1",
+      "size": 31,
+      "type": "video/webm;codecs=vp9,opus"
+    }
+  ],
+  "assertions": {
+    "noPostPutPatchDelete": true,
+    "noApiRequest": true,
+    "noMediaRequestBody": true,
+    "oneLocalObjectUrl": true,
+    "tracksStoppedAfterRecording": true
+  }
+}

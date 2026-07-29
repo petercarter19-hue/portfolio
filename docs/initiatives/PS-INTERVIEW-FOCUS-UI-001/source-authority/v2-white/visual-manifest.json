@@ -1,0 +1,78 @@
+{
+  "authorityCount": 14,
+  "overviewIsNotAProductScreen": true,
+  "primaryAuthority": "01_interview_me_ready_light.png",
+  "screens": [
+    {
+      "id": 1,
+      "path": "visual-authority/01_interview_me_ready_light.png",
+      "role": "primary desktop geometry; type-first ready state"
+    },
+    {
+      "id": 2,
+      "path": "visual-authority/02_interview_me_answering_queue_light.png",
+      "role": "optional dictation active; queue disclosure"
+    },
+    {
+      "id": 3,
+      "path": "visual-authority/03_interview_me_processing_light.png",
+      "role": "submitted answer preserved during coaching"
+    },
+    {
+      "id": 4,
+      "path": "visual-authority/04_interview_me_coach_review_light.png",
+      "role": "bottom-line-first coaching review"
+    },
+    {
+      "id": 5,
+      "path": "visual-authority/05_interview_me_improve_light.png",
+      "role": "original versus editable improved draft"
+    },
+    {
+      "id": 6,
+      "path": "visual-authority/06_interview_ai_light.png",
+      "role": "supporting mode shared shell"
+    },
+    {
+      "id": 7,
+      "path": "visual-authority/07_video_practice_light.png",
+      "role": "local camera rehearsal truth"
+    },
+    {
+      "id": 8,
+      "path": "visual-authority/08_history_light.png",
+      "role": "browser-local history destination"
+    },
+    {
+      "id": 9,
+      "path": "visual-authority/09_interview_me_ready_dark.png",
+      "role": "dark theme twin of ready state"
+    },
+    {
+      "id": 10,
+      "path": "visual-authority/10_interview_me_coach_review_dark.png",
+      "role": "dark theme twin of review state"
+    },
+    {
+      "id": 11,
+      "path": "visual-authority/11_mobile_interview_me_ready.png",
+      "role": "mobile type-first ready state and action dock"
+    },
+    {
+      "id": 12,
+      "path": "visual-authority/12_mobile_interview_me_listening.png",
+      "role": "mobile optional dictation active"
+    },
+    {
+      "id": 13,
+      "path": "visual-authority/13_mobile_coach_review.png",
+      "role": "mobile review hierarchy"
+    },
+    {
+      "id": 14,
+      "path": "visual-authority/14_mobile_improve_answer.png",
+      "role": "mobile improve workspace"
+    }
+  ],
+  "conflictRule": "Current released functionality controls behavior; PNGs control hierarchy/composition; written contract controls responsive and inaccessible/unshown states."
+}

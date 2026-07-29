@@ -1,0 +1,97 @@
+initiative:
+  id: PS-INTERVIEW-FOCUS-UI-001
+  title: PeerSlate Interview Studio Focus Stage UI Refactor — All Modes
+  prepared_date: 2026-07-28
+  package_revision: v3-all-modes-complete
+  status: implementation_handoff
+  scope: frontend_ui_ux_only
+  merge_authorized: false
+  deploy_authorized: false
+locked_owner_decisions:
+  typing_primary: true
+  dictation_optional_same_input: true
+  light_canvas: "#FFFFFF"
+  beige_ivory_cream_prohibited: true
+  accent_system:
+    - deep_navy
+    - cobalt
+    - restrained_teal
+  authoritative_screen_count: 14
+  screens_06_07_geometry_authority: true
+  written_state_contracts_complete_ai_video: true
+product_modes:
+  interview_me:
+    implementation_depth: full_state_flow
+    visual_authorities: ["01", "02", "03", "04", "05", "09", "10", "11", "12", "13", "14"]
+  interview_ai:
+    implementation_depth: full_state_flow
+    visual_authority: "06"
+    written_contract: docs/14_INTERVIEW_AI_IMPLEMENTATION_CONTRACT.md
+  video_practice:
+    implementation_depth: full_state_flow
+    visual_authority: "07"
+    written_contract: docs/15_VIDEO_PRACTICE_IMPLEMENTATION_CONTRACT.md
+  history:
+    implementation_depth: shared_shell_and_presentation
+    visual_authority: "08"
+product_truth:
+  public_demo: true
+  browser_local_drafts: preserve
+  browser_local_history: preserve
+  coaching_only_on_explicit_submit: preserve
+  interview_ai_source_labels: preserve
+  private_history_access_in_public_demo: prohibited
+  audio_upload: prohibited
+  video_upload: prohibited
+  persistent_video_blob: prohibited_unless_current_repository_proves_otherwise
+  account_backed_history: prohibited
+  cross_device_sync: prohibited
+  unsupported_video_analytics: prohibited
+visual_authority:
+  - references/authoritative_mockups/01_interview_me_ready_light.png
+  - references/authoritative_mockups/02_interview_me_answering_queue_light.png
+  - references/authoritative_mockups/03_interview_me_processing_light.png
+  - references/authoritative_mockups/04_interview_me_coach_review_light.png
+  - references/authoritative_mockups/05_interview_me_improve_light.png
+  - references/authoritative_mockups/06_interview_ai_light.png
+  - references/authoritative_mockups/07_video_practice_light.png
+  - references/authoritative_mockups/08_history_light.png
+  - references/authoritative_mockups/09_interview_me_ready_dark.png
+  - references/authoritative_mockups/10_interview_me_coach_review_dark.png
+  - references/authoritative_mockups/11_mobile_interview_me_ready.png
+  - references/authoritative_mockups/12_mobile_interview_me_listening.png
+  - references/authoritative_mockups/13_mobile_coach_review.png
+  - references/authoritative_mockups/14_mobile_improve_answer.png
+written_authority:
+  - docs/14_INTERVIEW_AI_IMPLEMENTATION_CONTRACT.md
+  - docs/15_VIDEO_PRACTICE_IMPLEMENTATION_CONTRACT.md
+  - docs/16_SHARED_SHELL_CROSS_MODE_RESPONSIVE_CONTRACT.md
+  - docs/17_ALL_MODE_TEST_AND_ACCEPTANCE_MATRIX.md
+non_authority:
+  - REFERENCE_INDEX_NOT_A_PRODUCT_SCREEN.png
+  - "references/measurement_html_not_authority/*.html"
+  - all earlier exploratory collages not contained in this package
+required_viewports:
+  - [1536, 1024]
+  - [1440, 900]
+  - [1366, 768]
+  - [1024, 768]
+  - [834, 1194]
+  - [844, 390]
+  - [390, 844]
+  - [320, 568]
+prohibited_changes:
+  - backend_endpoints
+  - api_payloads_or_response_contracts
+  - ai_prompts_rubrics_scores_or_grounding_rules
+  - database_schema
+  - authentication_authorization
+  - azure_resources
+  - route_replacement
+  - local_storage_keys
+  - frontend_framework_migration
+  - account_persistence
+  - media_upload
+  - fabricated_analytics
+  - generic_chat_replacement_for_interview_ai
+  - beige_or_cream_light_theme

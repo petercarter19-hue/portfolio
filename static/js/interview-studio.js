@@ -8,6 +8,25 @@
     function all(selector, scope) { return Array.prototype.slice.call((scope || root).querySelectorAll(selector)); }
     function setHidden(element, hidden) { if (element) element.hidden = Boolean(hidden); }
     function text(element, value) { if (element) element.textContent = value == null ? '' : String(value); }
+    function autoGrowTextarea(element) {
+        if (!element || !element.matches('[data-is-autogrow]')) return;
+        element.style.height = '0px';
+        var minimum = parseFloat(window.getComputedStyle(element).minHeight) || 0;
+        element.style.height = Math.max(element.scrollHeight, minimum) + 'px';
+    }
+    function refreshAutogrow(scope) {
+        all('[data-is-autogrow]', scope || root).forEach(autoGrowTextarea);
+    }
+    var autogrowResizeFrame = 0;
+    window.addEventListener('resize', function () {
+        if (autogrowResizeFrame) window.cancelAnimationFrame(autogrowResizeFrame);
+        autogrowResizeFrame = window.requestAnimationFrame(function () {
+            autogrowResizeFrame = 0;
+            all('[data-is-autogrow]').forEach(function (element) {
+                if (element.offsetParent !== null) autoGrowTextarea(element);
+            });
+        });
+    });
 
     var profileSlug = root.getAttribute('data-profile-slug') || 'profile';
     var studioUrl = root.getAttribute('data-studio-url') || '/interview-studio';
@@ -212,12 +231,15 @@
     }
 
     function updateSetupSummary() {
-        var summary = one('[data-is-setup-summary]');
+        var summary = one('[data-is-setup-summary-text]');
         if (!summary) return;
         var levelOption = levelSelect.options[levelSelect.selectedIndex];
         var levelLabel = levelOption ? levelOption.text : session.level;
         var formatLabelText = session.format === 'single' ? 'Single question' : session.format === '10' ? '10-question mock' : '5-question mock';
-        summary.textContent = 'Session setup · ' + levelLabel + ' · ' + labelFamily(session.family) + ' · ' + formatLabelText;
+        summary.textContent = levelLabel + ' · ' + labelFamily(session.family) + ' · ' + formatLabelText;
+        text(one('[data-is-session-level]'), levelLabel);
+        text(one('[data-is-session-family]'), labelFamily(session.family));
+        text(one('[data-is-session-format]'), formatLabelText.replace('-question mock', ' questions').replace('Single question', '1 question'));
     }
 
     function currentQuestion() {
@@ -233,6 +255,13 @@
     var stageRailItems = all('[data-is-stage-rail] li');
 
     function setStage(stage) {
+        var stageNames = { 1: 'Drafting', 2: 'Processing', 3: 'Review ready', 4: 'Improving', 5: 'Continue' };
+        root.setAttribute('data-is-workspace-state', stage === 2 ? 'processing' : stage === 3 ? 'review' : stage === 4 ? 'improve' : stage === 5 ? 'continue' : 'draft');
+        var reviewRailActive = stage >= 3;
+        setHidden(one('[data-is-ready-rail]'), reviewRailActive);
+        setHidden(one('[data-is-review-rail]'), !reviewRailActive);
+        text(one('[data-is-review-attempt]'), session.attemptNumber);
+        text(one('[data-is-stage-label]'), stageNames[stage] || 'Drafting');
         stageRailItems.forEach(function (item) {
             var n = Number(item.getAttribute('data-is-stage'));
             var current = n === stage;
@@ -245,20 +274,6 @@
             } else {
                 item.removeAttribute('aria-current');
             }
-        });
-        setCoachingStatus(stage);
-    }
-
-    var coachingRows = all('[data-is-coaching-row]');
-    function setCoachingStatus(stage) {
-        coachingRows.forEach(function (row) {
-            var n = Number(row.getAttribute('data-is-coaching-row'));
-            var done = stage >= 3 || (stage === 2 && n === 1);
-            var current = stage === 2 && n === 2;
-            row.classList.toggle('is-done', done);
-            row.classList.toggle('is-current', current);
-            var dot = row.querySelector('.is__status-dot');
-            if (dot) dot.textContent = done ? '✓' : String(n);
         });
     }
     var formatControl = one('[data-is-format-control]');
@@ -280,6 +295,7 @@
     var improveBlock = one('[data-is-improve-panel]');
     var improveEmpty = one('[data-is-improve-empty]');
     var improveContent = one('[data-is-improve-content]');
+    var cancelReviewButton = one('[data-is-cancel-review]');
     var reviewError = one('[data-is-review-error]');
     var reviewErrorText = one('[data-is-review-error-text]');
     var errorActions = one('[data-is-error-actions]');
@@ -347,16 +363,22 @@
             announce('That Interview Studio mode is not available for this profile.');
             return false;
         }
+        /* Flush visible speech before any confirmation reads the old field,
+           and persist Interview Me under the old question key before the
+           mode/session context can change. */
+        if (mode !== session.mode) {
+            stopDictation('interrupted');
+            if (session.mode === 'me') persistCurrentAnswerDraft();
+        }
         if (session.mode === 'video' && mode !== 'video') {
             if (!prepareVideoContextChange('Discard the active recording or transcript draft and leave Video Practice?')) return false;
             releaseMedia(true);
             resetVideoUi();
         }
-        /* Leaving the field the visitor was dictating into stops the microphone. */
-        if (mode !== session.mode) stopDictation('interrupted');
         if (session.mode === 'me' && mode !== 'me') clearReviewState();
         if (session.mode === 'ai' && mode !== 'ai') cancelPendingAi(true);
         session.mode = mode;
+        root.setAttribute('data-is-active-mode', mode);
         isOrientation = false;
         if (modeNavigation) modeNavigation.setAttribute('role', 'tablist');
         modeTabs.forEach(function (tab) {
@@ -370,6 +392,7 @@
             tab.tabIndex = enabled && active ? 0 : -1;
         });
         panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== mode; });
+        refreshAutogrow(one('[data-is-panel="' + mode + '"]'));
         setHidden(controls, false);
         if (historyLink) historyLink.removeAttribute('aria-current');
         syncModeControls(mode);
@@ -404,6 +427,8 @@
                 announce('Interview History is not available for this profile.');
                 return;
             }
+            stopDictation('interrupted');
+            if (session.mode === 'me') persistCurrentAnswerDraft();
             if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and open History?')) {
                 event.preventDefault();
             }
@@ -412,6 +437,8 @@
 
     function showHistoryView() {
         if (historyCapability === 'disabled') return false;
+        stopDictation('interrupted');
+        if (session.mode === 'me') persistCurrentAnswerDraft();
         if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and return to History?')) {
             return false;
         }
@@ -422,6 +449,7 @@
             resetVideoUi();
         }
         isOrientation = false;
+        root.setAttribute('data-is-active-mode', 'history');
         panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== 'history'; });
         setHidden(controls, true);
         if (modeNavigation) modeNavigation.removeAttribute('role');
@@ -439,6 +467,11 @@
 
     function showOrientationView() {
         if (!orientationPanel) return false;
+        stopDictation('interrupted');
+        if (session.mode === 'me') persistCurrentAnswerDraft();
+        if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and return to Interview Studio?')) {
+            return false;
+        }
         clearReviewState();
         cancelPendingAi(true);
         if (session.mode === 'video') {
@@ -456,6 +489,7 @@
         });
         if (historyLink) historyLink.removeAttribute('aria-current');
         session.mode = 'orientation';
+        root.setAttribute('data-is-active-mode', 'orientation');
         isOrientation = true;
         announce('Interview Studio orientation selected.');
         return true;
@@ -518,10 +552,10 @@
         answeringBlock.removeAttribute('aria-busy');
         setHidden(reviewingBlock, true);
         setHidden(submittedBlock, true);
-        setHidden(feedbackBlock, false);
+        setHidden(feedbackBlock, true);
         setHidden(feedbackEmpty, false);
         setHidden(feedbackContent, true);
-        setHidden(improveBlock, false);
+        setHidden(improveBlock, true);
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(reviewError, true);
@@ -539,6 +573,12 @@
         text(autosave, answer.value ? 'Restored from this browser' : 'Draft ready');
     }
 
+    function updateUpNextCount(value) {
+        all('[data-is-up-next-count]').forEach(function (element) {
+            text(element, value);
+        });
+    }
+
     function renderQuestion(options) {
         options = options || {};
         var question = currentQuestion();
@@ -550,9 +590,9 @@
         text(one('[data-is-competency-chip]'), 'Competency: ' + question.competency);
         text(one('[data-is-intent]'), intentByCompetency[question.competency] || 'A clear example, your personal contribution, and an outcome.');
         text(one('[data-is-tip]'), tipByCompetency[question.competency] || 'Keep the context concise, make your action specific, and close with the result.');
-        text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total);
+        text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total + ' · ' + percent + '% complete');
         text(one('[data-is-progress-percent]'), percent + '%');
-        text(one('[data-is-up-next-count]'), Math.max(0, total - number));
+        updateUpNextCount(Math.max(0, total - number));
         setHidden(one('[data-is-est-chip]'), total < 5);
         var progress = one('[data-is-progress]');
         if (progress) { progress.value = percent; progress.textContent = percent + '%'; }
@@ -561,6 +601,8 @@
         text(one('[data-is-video-competency]'), 'Competency: ' + question.competency);
         text(one('[data-is-video-question-position]'), 'Question ' + number + ' of ' + total);
         text(one('[data-is-video-progress-percent]'), percent + '%');
+        text(one('[data-is-review-question]'), number + ' of ' + total);
+        text(one('[data-is-review-attempt]'), session.attemptNumber);
         var videoProgress = one('[data-is-video-progress]');
         if (videoProgress) { videoProgress.value = percent; videoProgress.textContent = percent + '%'; }
         var reference = one('[data-is-ai-reference]');
@@ -580,9 +622,12 @@
         text(wordCount, words);
         reviewButton.disabled = !writtenPracticeEnabled || !value || Boolean(reviewController);
         if (retryCoachingButton) retryCoachingButton.disabled = Boolean(reviewController);
+        autoGrowTextarea(answer);
     }
 
     function saveDraft(showStatus) {
+        window.clearTimeout(autosaveTimer);
+        autosaveTimer = null;
         if (showStatus) text(autosave, 'Saving…');
         var ok = writeJSON(draftKey(currentQuestion().text), {
             text: answer.value,
@@ -590,6 +635,18 @@
         });
         text(autosave, ok ? 'Saved in this browser' : 'Save failed — your text is still here');
         return ok;
+    }
+
+    function persistCurrentAnswerDraft() {
+        window.clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+        if (!answer) return;
+        if (answer.value) {
+            saveDraft(false);
+        } else {
+            removeStored(draftKey(currentQuestion().text));
+            text(autosave, 'Draft ready');
+        }
     }
 
     answer.addEventListener('input', function () {
@@ -606,12 +663,19 @@
         return !hasDraft() || !enabled || !enabled.checked || window.confirm('Move to another question? This draft will stay saved in this browser.');
     }
 
+    function prepareAnswerContextChange() {
+        stopDictation('interrupted');
+        persistCurrentAnswerDraft();
+        return confirmReplace();
+    }
+
     function prepareVideoContextChange(message) {
         if (session.mode !== 'video') return true;
+        stopDictation('interrupted');
         var transcriptDraft = videoTranscript && videoTranscript.value.trim();
         var pendingRecording = Boolean(media.recorder && !media.playbackUrl);
         var hasCompletedPlayback = Boolean(media.playbackUrl);
-        if ((pendingRecording || transcriptDraft) && !window.confirm(message || 'Discard this recording or transcript draft and change the session?')) return false;
+        if ((pendingRecording || hasCompletedPlayback || transcriptDraft) && !window.confirm(message || 'Discard this recording or transcript draft and change the session?')) return false;
         if (pendingRecording || hasCompletedPlayback || transcriptDraft) {
             releaseMedia(true);
             resetVideoUi();
@@ -636,7 +700,9 @@
         }
     }
 
-    one('[data-is-new-question]').addEventListener('click', function () { if (confirmReplace()) advanceQuestion(); });
+    one('[data-is-new-question]').addEventListener('click', function () {
+        if (prepareAnswerContextChange()) advanceQuestion();
+    });
     one('[data-is-next-question]').addEventListener('click', function () {
         var source = session.reviewSource;
         if (source === 'video') {
@@ -661,6 +727,8 @@
     formatSelect.value = session.format;
 
     levelSelect.addEventListener('change', function () {
+        stopDictation('interrupted');
+        if (session.mode === 'me') persistCurrentAnswerDraft();
         if (!prepareVideoContextChange('Discard this recording and change experience level?')) {
             levelSelect.value = session.level;
             return;
@@ -671,10 +739,11 @@
         persistSession();
     });
     familySelect.addEventListener('change', function () {
-        if (!prepareVideoContextChange('Discard this recording and change question family?') || (session.mode === 'me' && !confirmReplace())) {
+        if (!prepareVideoContextChange('Discard this recording and change question family?') || (session.mode === 'me' && !prepareAnswerContextChange())) {
             familySelect.value = session.family;
             return;
         }
+        if (session.mode === 'ai') stopDictation('interrupted');
         resetAiAnswerForContextChange();
         session.family = familySelect.value;
         session.index = 0;
@@ -683,7 +752,7 @@
     });
     formatSelect.addEventListener('change', function () {
         if (session.mode === 'ai') return;
-        if (!prepareVideoContextChange('Discard this recording and change session length?') || (session.mode === 'me' && !confirmReplace())) {
+        if (!prepareVideoContextChange('Discard this recording and change session length?') || (session.mode === 'me' && !prepareAnswerContextChange())) {
             formatSelect.value = session.format;
             return;
         }
@@ -696,6 +765,55 @@
     /* Question queue */
     var queueDialog = one('[data-is-queue]');
     var queueList = one('[data-is-queue-list]');
+    var queueTriggers = all('[data-is-queue-open]');
+    var queueTrigger = null;
+    var queueLayoutQuery = window.matchMedia ? window.matchMedia('(max-width: 72rem)') : null;
+
+    function queueUsesModalLayout() {
+        return Boolean(queueLayoutQuery && queueLayoutQuery.matches);
+    }
+
+    function setQueueOpenState(isOpen) {
+        root.setAttribute('data-is-queue-state', isOpen ? 'open' : 'closed');
+        queueTriggers.forEach(function (trigger) {
+            trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+    }
+
+    function closeQueue(options) {
+        options = options || {};
+        var focusTarget = queueTrigger;
+        if (!focusTarget || focusTarget.offsetParent === null) {
+            focusTarget = queueTriggers.filter(function (trigger) {
+                return trigger.offsetParent !== null;
+            })[0] || focusTarget;
+        }
+        if (queueDialog.open && typeof queueDialog.close === 'function') {
+            queueDialog.close();
+        } else {
+            queueDialog.removeAttribute('open');
+            setQueueOpenState(false);
+        }
+        if (options.restoreFocus !== false && focusTarget && document.contains(focusTarget)) {
+            window.requestAnimationFrame(function () {
+                if (document.contains(focusTarget) && focusTarget.offsetParent !== null) {
+                    focusTarget.focus();
+                }
+            });
+        }
+    }
+
+    function openQueueForCurrentLayout() {
+        setQueueOpenState(true);
+        if (queueDialog.open) return;
+        if (queueUsesModalLayout() && typeof queueDialog.showModal === 'function') {
+            queueDialog.showModal();
+        } else if (typeof queueDialog.show === 'function') {
+            queueDialog.show();
+        } else {
+            queueDialog.setAttribute('open', '');
+        }
+    }
 
     function renderQueue() {
         if (!queueList) return;
@@ -714,11 +832,11 @@
             competency.textContent = 'Competency: ' + question.competency;
             button.append(number, label, competency);
             button.addEventListener('click', function () {
-                if (index === session.index) { queueDialog.close(); return; }
-                if (!confirmReplace()) return;
+                if (index === session.index) { closeQueue(); return; }
+                if (!prepareAnswerContextChange()) return;
                 session.index = index;
                 renderQuestion();
-                queueDialog.close();
+                closeQueue({ restoreFocus: false });
                 answer.focus();
             });
             item.appendChild(button);
@@ -726,15 +844,44 @@
         });
     }
 
-    one('[data-is-queue-open]').addEventListener('click', function () {
-        renderQueue();
-        if (typeof queueDialog.showModal === 'function') queueDialog.showModal();
-        else queueDialog.setAttribute('open', '');
+    queueTriggers.forEach(function (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.addEventListener('click', function () {
+            queueTrigger = trigger;
+            renderQueue();
+            openQueueForCurrentLayout();
+        });
     });
-    one('[data-is-queue-close]').addEventListener('click', function () { queueDialog.close(); });
+    one('[data-is-queue-close]').addEventListener('click', function () { closeQueue(); });
+    queueDialog.addEventListener('close', function () {
+        setQueueOpenState(queueDialog.open);
+    });
+    queueDialog.addEventListener('cancel', function (event) {
+        event.preventDefault();
+        closeQueue();
+    });
+    queueDialog.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !queueUsesModalLayout()) {
+            event.preventDefault();
+            closeQueue();
+        }
+    });
     queueDialog.addEventListener('click', function (event) {
-        if (event.target === queueDialog) queueDialog.close();
+        if (event.target === queueDialog && queueUsesModalLayout()) closeQueue();
     });
+    if (queueLayoutQuery) {
+        var refreshOpenQueueLayout = function () {
+            if (!queueDialog.open) return;
+            if (typeof queueDialog.close === 'function') queueDialog.close();
+            else queueDialog.removeAttribute('open');
+            window.requestAnimationFrame(openQueueForCurrentLayout);
+        };
+        if (typeof queueLayoutQuery.addEventListener === 'function') {
+            queueLayoutQuery.addEventListener('change', refreshOpenQueueLayout);
+        } else if (typeof queueLayoutQuery.addListener === 'function') {
+            queueLayoutQuery.addListener(refreshOpenQueueLayout);
+        }
+    }
 
     one('[data-is-custom-question-form]').addEventListener('submit', function (event) {
         event.preventDefault();
@@ -745,7 +892,7 @@
         input.value = '';
         persistSession();
         renderQueue();
-        text(one('[data-is-up-next-count]'), Math.max(0, session.queue.length - session.index - 1));
+        updateUpNextCount(Math.max(0, session.queue.length - session.index - 1));
         announce('Custom question added to this session.');
     });
 
@@ -830,6 +977,8 @@
         session.currentReview = review;
         var score = Number(review.overallScore) || 0;
         text(one('[data-is-score]'), score);
+        text(one('[data-is-review-score]'), score);
+        text(one('[data-is-priority-improvement]'), (review.improvements && review.improvements[0]) || EMPTY_IMPROVEMENTS_MESSAGE);
         var ring = one('[data-is-score-ring]');
         ring.style.setProperty('--score', score);
         ring.setAttribute('aria-label', 'Overall interview score: ' + score + ' out of 100');
@@ -911,22 +1060,23 @@
         saveDraft(false);
         session.currentAnswer = responseText;
         text(one('[data-is-submitted-text]'), responseText);
-        setHidden(answeringBlock, false);
+        setHidden(answeringBlock, true);
         answer.readOnly = true;
         answeringBlock.setAttribute('aria-busy', 'true');
         reviewButton.disabled = true;
         setHidden(submittedBlock, false);
         setHidden(reviewingBlock, false);
-        setHidden(feedbackBlock, false);
+        setHidden(feedbackBlock, true);
         setHidden(feedbackEmpty, false);
         setHidden(feedbackContent, true);
-        setHidden(improveBlock, false);
+        setHidden(improveBlock, true);
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(reviewError, true);
         setHidden(errorActions, true);
         text(submittedLabel, 'Your submitted answer · preserved');
         setStage(2);
+        cancelReviewButton.focus();
         cancelPendingReview();
         reviewController = new AbortController();
         var controller = reviewController;
@@ -951,6 +1101,7 @@
             setHidden(reviewingBlock, true);
             setStage(3);
             renderReview(payload.review);
+            setHidden(feedbackBlock, false);
             setHidden(feedbackEmpty, true);
             setHidden(feedbackContent, false);
             var record = {
@@ -974,6 +1125,7 @@
             if (!reviewRecordId || !updateHistoryRecord(reviewRecordId, record)) addHistoryRecord(record);
             removeStored(draftKey(question.text));
             announce('Coach review ready. Score ' + payload.review.overallScore + ' out of 100.');
+            feedbackBlock.focus({ preventScroll: true });
             feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
         }).catch(function (error) {
             if (requestId !== reviewRequestId) return;
@@ -982,9 +1134,13 @@
             answer.readOnly = false;
             answeringBlock.removeAttribute('aria-busy');
             syncAnswerState();
+            setHidden(answeringBlock, false);
+            setHidden(submittedBlock, true);
             setHidden(reviewingBlock, true);
+            setHidden(feedbackBlock, true);
             setHidden(feedbackEmpty, false);
             setHidden(feedbackContent, true);
+            setStage(1);
             text(submittedLabel, 'Your answer · preserved and editable');
             text(reviewErrorText, error.message + ' Your answer is still here. Edit it or retry the coaching request without re-entering your work.');
             setHidden(reviewError, false);
@@ -1004,7 +1160,7 @@
         if (typeof answerForm.requestSubmit === 'function') answerForm.requestSubmit();
         else submitReview();
     });
-    one('[data-is-cancel-review]').addEventListener('click', function () {
+    cancelReviewButton.addEventListener('click', function () {
         cancelPendingReview();
         answer.readOnly = false;
         answeringBlock.removeAttribute('aria-busy');
@@ -1012,7 +1168,10 @@
         setHidden(reviewingBlock, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
+        setHidden(feedbackBlock, true);
+        setHidden(improveBlock, true);
         setStage(1);
+        answer.focus();
         announce('Review cancelled. Your draft is still editable.');
     });
 
@@ -1042,8 +1201,10 @@
         syncAnswerState();
         text(autosave, 'New attempt — original preserved in History');
         setHidden(submittedBlock, true);
+        setHidden(feedbackBlock, true);
         setHidden(feedbackEmpty, false);
         setHidden(feedbackContent, true);
+        setHidden(improveBlock, true);
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
         setHidden(answeringBlock, false);
@@ -1058,13 +1219,18 @@
         var selectedIds = all('[data-is-evidence-choice]:checked').map(function (item) { return item.value; });
         setHidden(improveEmpty, true);
         setHidden(improveContent, false);
+        setHidden(feedbackBlock, true);
+        setHidden(submittedBlock, true);
+        setHidden(improveBlock, false);
         setHidden(improveError, true);
+        improveBlock.focus({ preventScroll: true });
         text(one('[data-is-original-answer]'), session.currentAnswer);
         var draft = one('[data-is-improved-draft]');
         var useDraftButton = one('[data-is-use-draft]');
         var retryOutLoudButton = one('[data-is-retry-out-loud]');
         draft.value = 'The coach is preparing an editable draft…';
         draft.disabled = true;
+        autoGrowTextarea(draft);
         useDraftButton.disabled = true;
         retryOutLoudButton.disabled = true;
         renderList(one('[data-is-changes]'), ['Reviewing the answer against the coach priorities']);
@@ -1085,6 +1251,7 @@
             useDraftButton.disabled = false;
             retryOutLoudButton.disabled = false;
             draft.value = payload.improvement.draft;
+            autoGrowTextarea(draft);
             renderList(one('[data-is-changes]'), payload.improvement.changes);
             announce('Coach-assisted draft ready. Review and edit it before using it.');
         }).catch(function (error) {
@@ -1095,6 +1262,7 @@
             useDraftButton.disabled = false;
             retryOutLoudButton.disabled = false;
             draft.value = session.currentAnswer;
+            autoGrowTextarea(draft);
             text(improveError, error.message + ' Your original answer has not changed.');
             setHidden(improveError, false);
             announce('The improved draft could not be generated. Your original answer is unchanged.');
@@ -1103,6 +1271,11 @@
 
     one('[data-is-back-feedback]').addEventListener('click', function () {
         cancelPendingImprovement();
+        setHidden(improveBlock, true);
+        setHidden(submittedBlock, false);
+        setHidden(feedbackBlock, false);
+        setStage(3);
+        feedbackBlock.focus({ preventScroll: true });
         feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
     });
 
@@ -1117,11 +1290,17 @@
         syncAnswerState();
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
+        setHidden(improveBlock, true);
+        setHidden(feedbackBlock, true);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
         setStage(1);
         answer.focus();
         announce('AI-assisted draft copied into a new editable attempt. Nothing was published.');
+    });
+
+    one('[data-is-improved-draft]').addEventListener('input', function (event) {
+        autoGrowTextarea(event.currentTarget);
     });
 
     one('[data-is-retry-out-loud]').addEventListener('click', function () {
@@ -1133,6 +1312,7 @@
             session.aiReference = draft;
             session.aiReferenceQuestion = currentQuestion().text;
         }
+        one('[data-is-camera-enable]').focus();
         announce('Video Practice opened for a new out-loud attempt.');
     });
 
@@ -1153,7 +1333,6 @@
     var DICTATION_COUNTDOWN_MS = 4000;
     var DICTATION_RESTART_DELAY_MS = 150;
     var DICTATION_MAX_RESTARTS = 120;
-    var DICTATION_STOP_WATCHDOG_MS = 1500;
     var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];
     var activeDictation = null;
 
@@ -1238,7 +1417,6 @@
         if (state.finished) return;
         state.finished = true;
         clearDictationTimers(state);
-        if (state.watchdog) { window.clearTimeout(state.watchdog); state.watchdog = null; }
         if (activeDictation === state) activeDictation = null;
         /* Speech the visitor could see in the preview but the browser never
            finalised still belongs to them. Keep it rather than discard it. */
@@ -1278,8 +1456,11 @@
         state.stopping = true;
         state.reason = reason || 'manual';
         clearDictationTimers(state);
-        state.watchdog = window.setTimeout(function () { finishDictation(state); }, DICTATION_STOP_WATCHDOG_MS);
-        try { state.recognition.stop(); } catch (error) { finishDictation(state); }
+        /* Commit visible interim speech before the caller reads, clears, or
+           hides the field. Later recognition events are ignored by the
+           finished guard, so they cannot append into stale UI. */
+        try { state.recognition.stop(); } catch (error) { /* finish below */ }
+        finishDictation(state);
     }
     function startDictation(kind, button) {
         var Recognition = speechRecognitionCtor();
@@ -1308,8 +1489,7 @@
             silenceDeadline: 0,
             silenceTimer: null,
             tickTimer: null,
-            restartTimer: null,
-            watchdog: null
+            restartTimer: null
         };
         activeDictation = state;
         recognition.lang = document.documentElement.lang || 'en-US';
@@ -1400,10 +1580,23 @@
     var modeGroup = one('[data-is-ai-mode-group]');
     if (modeGroup) {
         var modeNote = one('[data-is-ai-mode-note]');
+        var basisLabel = one('[data-is-ai-basis-label]');
+        var basisGuidance = one('[data-is-ai-basis-guidance]');
+        var publicHistoryBasisLabel = basisLabel ? basisLabel.textContent : 'Approved public history';
         var modeNotes = {
             best_practice: 'A generic, clearly labeled example — no personal history is used.',
             member_history: 'Grounded only in the approved public history.',
             compare: 'Both answers, stacked — study the structural lessons.'
+        };
+        var modeLabels = {
+            best_practice: 'Illustrative best-practice example',
+            member_history: publicHistoryBasisLabel,
+            compare: 'Comparison of best practice and approved public history'
+        };
+        var modeGuidance = {
+            best_practice: 'No personal history is used.',
+            member_history: 'Verify the generated wording before using it.',
+            compare: 'Each answer remains separately labeled and must be verified.'
         };
         modeGroup.addEventListener('change', function (event) {
             if (event.target.name !== 'is-ai-mode') return;
@@ -1412,18 +1605,28 @@
                     label.querySelector('input').checked);
             });
             if (modeNote) modeNote.textContent = modeNotes[event.target.value] || '';
+            if (basisLabel) basisLabel.textContent = modeLabels[event.target.value] || '';
+            if (basisGuidance) basisGuidance.textContent = modeGuidance[event.target.value] || '';
+            resetAiAnswerForContextChange();
+            announce((modeLabels[event.target.value] || 'Answer basis') + ' selected. Generate a new answer for this basis.');
         });
     }
 
     var followUpForm = one('[data-is-follow-up-form]');
     var followUpInput = one('[data-is-follow-up]');
     var followUpSubmit = one('[data-is-follow-up-submit]');
+    var followUpNote = one('[data-is-follow-up-note]');
+    var followUpError = one('[data-is-follow-up-error]');
     var currentModelAnswer = null;
     var currentAiQuestion = '';
     var currentModelQuestion = '';
     var currentModelContextToken = '';
     var aiController = null;
     var aiRequestId = 0;
+
+    function setAiState(state) {
+        root.setAttribute('data-is-ai-state', state);
+    }
 
     function cancelPendingAi(resetLoading) {
         aiRequestId += 1;
@@ -1444,7 +1647,10 @@
         followUpInput.value = '';
         followUpInput.disabled = true;
         followUpSubmit.disabled = true;
+        text(followUpNote, 'Generate the first answer to unlock follow-up questions grounded in the same evidence.');
+        setHidden(followUpError, true);
         setHidden(aiError, true);
+        setAiState('empty');
     }
 
     function selectedAiMode() {
@@ -1465,9 +1671,11 @@
         if (genericFlag) setHidden(genericFlag, !generic);
         var heading = one('[data-is-ai-answer-heading]');
         if (heading) {
-            heading.textContent = generic
-                ? 'Best-practice example'
-                : (payload.profile.firstName || 'Candidate') + '\u2019s answer';
+            heading.textContent = insufficient
+                ? 'No grounded answer available'
+                : generic
+                    ? 'Best-practice example'
+                    : (payload.profile.firstName || 'Candidate') + '\u2019s answer';
         }
         var compareBlock = one('[data-is-ai-compare]');
         if (compareBlock) {
@@ -1503,11 +1711,16 @@
         }
         setHidden(aiLoading, true);
         setHidden(aiError, true);
+        setHidden(followUpError, true);
         setHidden(aiAnswerBlock, false);
         setHidden(aiAnswerEmpty, true);
         setHidden(aiAnswerContent, false);
+        setAiState(insufficient ? 'insufficient' : 'ready');
         followUpInput.disabled = insufficient;
         followUpSubmit.disabled = insufficient;
+        text(followUpNote, insufficient
+            ? 'Follow-up is unavailable because no approved-history example was returned.'
+            : 'Ask a follow-up grounded in the current answer context.');
         announce(insufficient ? 'No strong example exists in the approved history for that question yet.' : (payload.modelAnswer.generic ? 'Best-practice example ready.' : 'Draft grounded in approved history ready.'));
     }
 
@@ -1522,13 +1735,15 @@
         var requestId = aiRequestId;
         setHidden(aiAnswerBlock, false);
         if (!followUp) {
-            setHidden(aiAnswerEmpty, false);
+            setHidden(aiAnswerEmpty, true);
             setHidden(aiAnswerContent, true);
             followUpInput.disabled = true;
             followUpSubmit.disabled = true;
         }
         setHidden(aiError, true);
+        setHidden(followUpError, true);
         setHidden(aiLoading, false);
+        setAiState('generating');
         postJSON('/api/interview/model-answer', {
             profile_slug: profileSlug,
             question: currentAiQuestion,
@@ -1536,29 +1751,33 @@
             context_token: followUp ? currentModelContextToken : '',
             level: session.level,
             family: session.family,
-            mode: followUp ? 'member_history' : selectedAiMode()
+            mode: selectedAiMode()
         }, controller.signal).then(function (payload) {
             if (requestId !== aiRequestId) return;
             aiController = null;
             currentModelQuestion = practiceQuestion;
             renderModelAnswer(payload);
+            if (followUp && followUpInput.value.trim() === followUp) followUpInput.value = '';
         }).catch(function (error) {
             if (requestId !== aiRequestId) return;
             aiController = null;
             if (error.name === 'AbortError') return;
             setHidden(aiLoading, true);
-            text(aiError, error.message);
-            setHidden(aiError, false);
+            var failureTarget = followUp && currentModelAnswer ? followUpError : aiError;
+            text(failureTarget, error.message + (followUp ? ' Your first answer is preserved. Edit the follow-up and try again.' : ''));
+            setHidden(failureTarget, false);
             if (currentModelAnswer) {
                 setHidden(aiAnswerEmpty, true);
                 setHidden(aiAnswerContent, false);
                 var followUpAvailable = currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);
                 followUpInput.disabled = !followUpAvailable;
                 followUpSubmit.disabled = !followUpAvailable;
+                if (followUp) text(followUpNote, 'The first answer is still here. Revise the follow-up or try it again.');
             } else {
-                setHidden(aiAnswerEmpty, false);
+                setHidden(aiAnswerEmpty, true);
                 setHidden(aiAnswerContent, true);
             }
+            setAiState(currentModelAnswer ? 'ready' : 'failure');
             announce('Interview AI could not complete that answer.');
         });
     }
@@ -1569,6 +1788,7 @@
             announce('Interview AI is not available for this profile.');
             return;
         }
+        stopDictation('interrupted');
         resetAiAnswerForContextChange();
         requestModelAnswer('');
     });
@@ -1577,12 +1797,12 @@
         event.preventDefault();
         var followUp = followUpInput.value.trim();
         if (!followUp) return;
+        stopDictation('interrupted');
         if (!currentModelContextToken) {
             announce('Generate an answer before asking a follow-up.');
             return;
         }
         requestModelAnswer(followUp);
-        followUpInput.value = '';
     });
     one('[data-is-ai-new]').addEventListener('click', function () {
         resetAiAnswerForContextChange();
@@ -1593,6 +1813,17 @@
         if (!currentModelAnswer) return;
         var modelAnswer = currentModelAnswer;
         var modelQuestion = currentModelQuestion || currentAiQuestion || aiQuestionInput.value.trim();
+        var storedTargetDraft = readJSON(draftKey(modelQuestion), null);
+        var targetDraftText = storedTargetDraft && typeof storedTargetDraft.text === 'string'
+            ? storedTargetDraft.text.trim()
+            : '';
+        if (!targetDraftText && currentQuestion().text === modelQuestion) targetDraftText = answer.value.trim();
+        var confirmationEnabled = one('[data-is-confirm-navigation]');
+        if (targetDraftText && confirmationEnabled && confirmationEnabled.checked &&
+                !window.confirm('Start a fresh attempt for this question? The existing browser draft will be replaced, but the model answer remains optional reference only.')) {
+            announce('Practice transfer cancelled. The existing draft is unchanged.');
+            return;
+        }
         if (!setMode('me', true)) return;
         session.queue[session.index] = {
             text: modelQuestion,
@@ -1621,15 +1852,18 @@
         playbackUrl: null,
         question: null,
         historyRecordId: '',
-        permissionRequestId: 0
+        permissionRequestId: 0,
+        returnFocusAfterStop: false
     };
     var cameraPreview = one('[data-is-camera-preview]');
     var cameraEmpty = one('[data-is-camera-empty]');
     var cameraStatus = one('[data-is-camera-status]');
     var microphoneStatus = one('[data-is-mic-status]');
     var videoError = one('[data-is-video-error]');
+    var cameraEnable = one('[data-is-camera-enable]');
     var startRecord = one('[data-is-record-start]');
     var stopRecord = one('[data-is-record-stop]');
+    var retakeRecord = one('[data-is-record-retake]');
     var discardRecord = one('[data-is-record-discard]');
     var videoResult = one('[data-is-video-result]');
     var videoResultEmpty = one('[data-is-video-result-empty]');
@@ -1637,6 +1871,21 @@
     var videoTranscript = one('[data-is-video-transcript]');
     var videoTranscriptForm = one('[data-is-video-transcript-form]');
     var videoReviewContent = one('[data-is-video-review-content]');
+
+    function setVideoState(state) {
+        root.setAttribute('data-is-video-state', state);
+        var messages = {
+            'camera-off': 'Camera and microphone have not been requested.',
+            requesting: 'Your browser is requesting local camera and microphone access.',
+            unavailable: 'A camera or microphone is unavailable. Transcript coaching still works.',
+            denied: 'Permission was not granted. Review browser settings or use the transcript.',
+            preview: 'Local preview is ready. Recording has not started.',
+            recording: 'Recording is in progress on this device only.',
+            stopping: 'Finalizing this recording locally. No upload is occurring.',
+            playback: 'Local playback is ready until you leave or discard it.'
+        };
+        text(one('[data-is-video-state-copy]'), messages[state] || messages['camera-off']);
+    }
 
     function setDeviceStatus(element, message, status) {
         element.classList.remove('is-ready', 'is-error');
@@ -1660,6 +1909,7 @@
             return;
         }
         setHidden(videoError, true);
+        setVideoState('requesting');
         setDeviceStatus(cameraStatus, 'Requesting camera…');
         setDeviceStatus(microphoneStatus, 'Requesting microphone…');
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1667,6 +1917,8 @@
             setHidden(videoError, false);
             setDeviceStatus(cameraStatus, 'Camera unavailable', 'is-error');
             setDeviceStatus(microphoneStatus, 'Microphone unavailable', 'is-error');
+            setVideoState('unavailable');
+            videoTranscript.focus();
             return;
         }
         var permissionRequestId = ++media.permissionRequestId;
@@ -1685,11 +1937,14 @@
             setHidden(cameraEmpty, true);
             setDeviceStatus(cameraStatus, 'Camera ready', 'is-ready');
             setDeviceStatus(microphoneStatus, 'Microphone ready', 'is-ready');
+            setVideoState('preview');
             startRecord.disabled = !window.MediaRecorder;
             if (!window.MediaRecorder) {
                 text(videoError, 'Live preview is ready, but recording is not supported in this browser.');
                 setHidden(videoError, false);
             }
+            if (startRecord.disabled) videoTranscript.focus();
+            else startRecord.focus();
             announce('Camera and microphone ready. Recording has not started.');
         }).catch(function (error) {
             if (permissionRequestId !== media.permissionRequestId || session.mode !== 'video') return;
@@ -1698,6 +1953,8 @@
             setHidden(videoError, false);
             setDeviceStatus(cameraStatus, 'Camera unavailable', 'is-error');
             setDeviceStatus(microphoneStatus, 'Microphone unavailable', 'is-error');
+            setVideoState('denied');
+            cameraEnable.focus();
             announce(message);
         });
     }
@@ -1715,6 +1972,7 @@
 
     function startRecording() {
         if (!media.stream || !window.MediaRecorder) return;
+        stopDictation('interrupted');
         media.chunks = [];
         media.historyRecordId = '';
         var mimeType = supportedMimeType();
@@ -1730,23 +1988,39 @@
         media.startedAt = Date.now();
         media.question = cloneQuestion(currentQuestion());
         media.recorder.start(1000);
+        setVideoState('recording');
         setHidden(one('[data-is-recording-badge]'), false);
         setHidden(startRecord, true);
         setHidden(stopRecord, false);
+        setHidden(retakeRecord, true);
         setHidden(discardRecord, false);
-        setHidden(videoResult, false);
+        setHidden(videoResult, true);
         setHidden(videoResultEmpty, false);
         setHidden(videoResultContent, true);
+        stopRecord.focus();
         media.timer = window.setInterval(function () {
             var seconds = Math.floor((Date.now() - media.startedAt) / 1000);
             text(one('[data-is-recording-time]'), formatDuration(seconds));
-            if (seconds >= 180 && media.recorder && media.recorder.state === 'recording') media.recorder.stop();
+            if (seconds >= 180) stopRecording();
         }, 250);
         announce('Recording started. Maximum duration is three minutes.');
     }
 
+    function stopRecording() {
+        if (!media.recorder || media.recorder.state !== 'recording') return;
+        media.returnFocusAfterStop = document.activeElement === stopRecord;
+        setVideoState('stopping');
+        stopRecord.disabled = true;
+        text(stopRecord, 'Finalizing locally…');
+        media.recorder.stop();
+        announce('Finalizing the local recording. Nothing is being uploaded.');
+    }
+
     function finishRecording() {
         window.clearInterval(media.timer);
+        media.timer = null;
+        var moveFocusToPlaybackActions = media.returnFocusAfterStop;
+        media.returnFocusAfterStop = false;
         var recordedQuestion = media.question || cloneQuestion(currentQuestion());
         var durationSeconds = Math.max(1, Math.round((Date.now() - media.startedAt) / 1000));
         var blob = new Blob(media.chunks, { type: media.recorder && media.recorder.mimeType ? media.recorder.mimeType : 'video/webm' });
@@ -1761,7 +2035,10 @@
         setHidden(cameraEmpty, true);
         setHidden(one('[data-is-recording-badge]'), true);
         setHidden(stopRecord, true);
+        stopRecord.disabled = false;
+        text(stopRecord, 'Stop Recording');
         setHidden(startRecord, true);
+        setHidden(retakeRecord, false);
         setHidden(discardRecord, false);
         text(one('[data-is-video-duration]'), formatDuration(durationSeconds));
         setHidden(videoResult, false);
@@ -1783,10 +2060,13 @@
         });
         media.recorder = null;
         media.chunks = [];
+        setVideoState('playback');
+        if (moveFocusToPlaybackActions) retakeRecord.focus();
         announce('Recording complete. Local playback is ready. No upload or analysis occurred.');
     }
 
-    function resetVideoUi() {
+    function resetVideoUi(options) {
+        options = options || {};
         window.clearInterval(media.timer);
         if (media.playbackUrl) { URL.revokeObjectURL(media.playbackUrl); media.playbackUrl = null; }
         cameraPreview.pause();
@@ -1799,39 +2079,58 @@
         setHidden(startRecord, false);
         startRecord.disabled = true;
         setHidden(stopRecord, true);
+        stopRecord.disabled = false;
+        text(stopRecord, 'Stop Recording');
+        setHidden(retakeRecord, true);
         setHidden(discardRecord, true);
-        setHidden(videoResult, false);
+        setHidden(videoResult, true);
         setHidden(videoResultEmpty, false);
         setHidden(videoResultContent, true);
         media.question = null;
         media.historyRecordId = '';
-        videoTranscript.value = '';
-        videoReviewContent.disabled = true;
+        media.returnFocusAfterStop = false;
+        if (!options.preserveTranscript) videoTranscript.value = '';
+        videoReviewContent.disabled = !writtenPracticeEnabled || !videoTranscript.value.trim();
+        autoGrowTextarea(videoTranscript);
         setDeviceStatus(cameraStatus, 'Camera not requested');
         setDeviceStatus(microphoneStatus, 'Microphone not requested');
+        setVideoState('camera-off');
     }
 
-    one('[data-is-camera-enable]').addEventListener('click', enableCamera);
+    cameraEnable.addEventListener('click', enableCamera);
     one('[data-is-device-settings]').addEventListener('click', function () {
-        if (!prepareVideoContextChange('Discard the active recording or transcript draft and reopen device settings?')) return;
+        if (!prepareVideoContextChange('Discard the current local recording or transcript draft and reopen device settings?')) return;
         releaseMedia(true);
         resetVideoUi();
         enableCamera();
     });
     startRecord.addEventListener('click', startRecording);
-    stopRecord.addEventListener('click', function () { if (media.recorder && media.recorder.state === 'recording') media.recorder.stop(); });
-    discardRecord.addEventListener('click', function () {
+    stopRecord.addEventListener('click', stopRecording);
+    retakeRecord.addEventListener('click', function () {
+        if (!window.confirm('Record another take? The current local recording will be deleted. Transcript text will stay.')) return;
         var recordId = media.historyRecordId;
         releaseMedia(true);
-        resetVideoUi();
+        resetVideoUi({ preserveTranscript: true });
         removeHistoryRecord(recordId);
-        announce('Local recording and its browser record discarded.');
+        cameraEnable.focus();
+        enableCamera();
+    });
+    discardRecord.addEventListener('click', function () {
+        if (!window.confirm('Delete this local recording? Any transcript text will stay in the composer.')) return;
+        var recordId = media.historyRecordId;
+        releaseMedia(true);
+        resetVideoUi({ preserveTranscript: true });
+        removeHistoryRecord(recordId);
+        cameraEnable.focus();
+        announce('Local recording and its browser record discarded. Transcript text was preserved.');
     });
     videoTranscript.addEventListener('input', function () {
         videoReviewContent.disabled = !writtenPracticeEnabled || !videoTranscript.value.trim();
+        autoGrowTextarea(videoTranscript);
     });
     videoTranscriptForm.addEventListener('submit', function (event) {
         event.preventDefault();
+        stopDictation('interrupted');
         var transcript = videoTranscript.value.trim();
         if (!writtenPracticeEnabled || !transcript) {
             videoTranscript.focus();
@@ -1841,8 +2140,10 @@
         var recordedQuestion = media.question ? cloneQuestion(media.question) : cloneQuestion(currentQuestion());
         var recordId = media.historyRecordId;
         videoTranscript.value = '';
+        autoGrowTextarea(videoTranscript);
         if (!setMode('me', true)) {
             videoTranscript.value = transcript;
+            autoGrowTextarea(videoTranscript);
             videoReviewContent.disabled = false;
             return;
         }
@@ -1864,7 +2165,13 @@
             event.returnValue = '';
         }
     });
-    window.addEventListener('pagehide', function () { releaseMedia(true); });
+    window.addEventListener('pagehide', function () {
+        releaseMedia(true);
+        if (media.playbackUrl) {
+            URL.revokeObjectURL(media.playbackUrl);
+            media.playbackUrl = null;
+        }
+    });
 
     /* History and growth from real browser records only */
     var historyMode = one('[data-is-history-mode]');
@@ -2165,6 +2472,7 @@
 
     /* Initial render */
     renderQuestion();
+    refreshAutogrow();
     syncModeControls(initialMode);
     if (initialView === 'history') {
         showHistoryView();

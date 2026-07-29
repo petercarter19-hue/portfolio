@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:15:41.911Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "automatedTests": {
+    "focused": "147 passed, 1 warning, 32 subtests passed",
+    "full": "1074 passed, 3 skipped, 19 warnings, 537 subtests passed",
+    "javascriptSyntax": "Pass",
+    "gitDiffCheck": "Pass"
+  },
+  "browserEvidence": {
+    "pngCount": 103,
+    "jsonCount": 12,
+    "manifestEntryCount": 115,
+    "compareRefineCycles": 6,
+    "allFourteenV3MockupsMapped": true,
+    "finalMismatchRegisterEmpty": true,
+    "finalBrowserCorrection": {
+      "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+      "finding": "Queue Escape focus-restoration race after desktop-mobile-desktop breakpoint transitions",
+      "result": "Fixed and proven",
+      "evidence": "queue-responsive-transition.json",
+      "assertions": {
+        "desktopStartsNonmodal": true,
+        "mobileBecomesModalWithoutClosing": true,
+        "desktopReturnsNonmodalWithoutClosing": true,
+        "escapeCloses": true,
+        "focusReturnsToVisibleOpener": true
+      }
+    },
+    "assertionMatrix": [
+      {
+        "file": "accessibility-focus-motion.json",
+        "assertionCount": 11,
+        "allPass": true,
+        "assertions": {
+          "reviewSubmitFocusesCancel": true,
+          "cancelReturnsToAnswer": true,
+          "reviewSuccessFocusesFeedback": true,
+          "improveFocusesPanel": true,
+          "backReturnsToFeedback": true,
+          "videoPreviewFocusesStart": true,
+          "recordingFocusesStop": true,
+          "playbackFocusesRetake": true,
+          "denialFocusesEnable": true,
+          "reducedMotionApplied": true,
+          "visibleFocusRing": true
+        }
+      },
+      {
+        "file": "evidence-provenance.json",
+        "assertionCount": 4,
+        "allPass": true,
+        "assertions": {
+          "allPngsHaveProvenance": true,
+          "allViewportPngsMatchRequestedDimensions": true,
+          "fullPagePngsPreserveRequestedWidth": true,
+          "noHorizontalOverflowInCapturedStudioStates": true
+        }
+      },
+      {
+        "file": "layout-overlap-metrics.json",
+        "assertionCount": 8,
+        "allPass": true,
+        "assertions": {
+          "noHorizontalOverflow": true,
+          "mobileDockClearsNav": true,
+          "globalFloatingChatHidden": true,
+          "routeAskAvailable": true,
+          "dockClearsAvailableAsk": true,
+          "desktopQueueNonmodal": true,
+          "narrowQueueModal": true,
+          "narrowButtonsFit": true
+        }
+      },
+      {
+        "file": "queue-responsive-transition.json",
+        "assertionCount": 5,
+        "allPass": true,
+        "assertions": {
+          "desktopStartsNonmodal": true,
+          "mobileBecomesModalWithoutClosing": true,
+          "desktopReturnsNonmodalWithoutClosing": true,
+          "escapeCloses": true,
+          "focusReturnsToVisibleOpener": true
+        }
+      },
+      {
+        "file": "text-growth-metrics.json",
+        "assertionCount": 7,
+        "allPass": true,
+        "assertions": {
+          "emptyCompact": true,
+          "shortKeepsCompactStart": true,
+          "mediumGrows": true,
+          "longHasNoInternalClipping": true,
+          "resetReturnsToCompact": true,
+          "improvedDraftNaturalHeight": true,
+          "fullPageLongEvidenceNoHorizontalOverflow": true
+        }
+      },
+      {
+        "file": "video-cleanup-lifecycle.json",
+        "assertionCount": 4,
+        "allPass": true,
+        "assertions": {
+          "cameraAndMicTracksStopped": true,
+          "playbackUrlCreated": true,
+          "playbackUrlRevokedOnDiscard": true,
+          "recorderStopCompleted": true
+        }
+      },
+      {
+        "file": "video-media-network-lifecycle.json",
+        "assertionCount": 5,
+        "allPass": true,
+        "assertions": {
+          "noPostPutPatchDelete": true,
+          "noApiRequest": true,
+          "noMediaRequestBody": true,
+          "oneLocalObjectUrl": true,
+          "tracksStoppedAfterRecording": true
+        }
+      },
+      {
+        "file": "video-route-load-permission-trace.json",
+        "assertionCount": 4,
+        "allPass": true,
+        "assertions": {
+          "noPermissionRequestOnRouteLoad": true,
+          "onePermissionRequestAfterExplicitClick": true,
+          "requestedAudioAndVideo": true,
+          "routeLoadUsedGetOnly": true
+        }
+      },
+      {
+        "file": "video-storage-before-after.json",
+        "assertionCount": 4,
+        "allPass": true,
+        "assertions": {
+          "oneMetadataRecordAfterPlayback": true,
+          "metadataOnlyFields": true,
+          "noMediaBytesOrBlobUrlInStorage": true,
+          "discardRemovesBrowserRecord": true
+        }
+      },
+      {
+        "file": "video-transcript-request-contract.json",
+        "assertionCount": 7,
+        "allPass": true,
+        "assertions": {
+          "noRequestBeforeSubmit": true,
+          "oneReviewRequest": true,
+          "jsonOnly": true,
+          "contractKeysExact": true,
+          "answerIsText": true,
+          "noMediaFields": true,
+          "sharedCoachReachedReview": true
+        }
+      },
+      {
+        "file": "visual-authority-comparison.json",
+        "assertionCount": 4,
+        "allPass": true,
+        "assertions": {
+          "allFourteenMapped": true,
+          "authorityAndImplementationDimensionsMatch": true,
+          "allPass": true,
+          "mismatchRegisterEmpty": true
+        }
+      }
+    ]
+  },
+  "reviewBoundary": {
+    "runtimeIndependentReview": "Pass at 0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7; focused 147 passed, full 1074 passed, and responsive queue focus verified",
+    "releaseReadinessAudit": "Pending final verdict at evidence-generation time",
+    "candidatePipeline": "Pending",
+    "production": "Unchanged"
+  },
+  "assertions": {
+    "allEvidenceAssertionGroupsPass": true,
+    "allPngsRegeneratedFromFrozenRuntime": true,
+    "noNewProductionIntentArtworkRequired": true,
+    "evidenceCountsExact": true,
+    "manifestHasExactly115Entries": true,
+    "allFourteenV3MockupsMapped": true,
+    "finalMismatchRegisterEmpty": true,
+    "homepageParityStillOpen": true
+  }
+}

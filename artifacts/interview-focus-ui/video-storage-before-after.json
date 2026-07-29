@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:06:25.227Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "beforeRecording": {
+    "entries": [
+      {
+        "key": "peerslate:interview-studio:petec:v1:session",
+        "bytes": 742
+      }
+    ],
+    "history": []
+  },
+  "afterPlayback": {
+    "entries": [
+      {
+        "key": "peerslate:interview-studio:petec:v1:history",
+        "bytes": 258
+      },
+      {
+        "key": "peerslate:interview-studio:petec:v1:session",
+        "bytes": 742
+      }
+    ],
+    "history": [
+      {
+        "id": "video-1785305185182",
+        "createdAt": "2026-07-29T06:06:25.182Z",
+        "mode": "video",
+        "question": "Tell me about a time you disagreed with a supervisor.",
+        "family": "behavioral",
+        "competency": "Conflict",
+        "score": null,
+        "durationSeconds": 1,
+        "status": "Recorded locally"
+      }
+    ]
+  },
+  "afterDiscard": {
+    "entries": [
+      {
+        "key": "peerslate:interview-studio:petec:v1:history",
+        "bytes": 2
+      },
+      {
+        "key": "peerslate:interview-studio:petec:v1:session",
+        "bytes": 742
+      }
+    ],
+    "history": []
+  },
+  "assertions": {
+    "oneMetadataRecordAfterPlayback": true,
+    "metadataOnlyFields": true,
+    "noMediaBytesOrBlobUrlInStorage": true,
+    "discardRemovesBrowserRecord": true
+  }
+}

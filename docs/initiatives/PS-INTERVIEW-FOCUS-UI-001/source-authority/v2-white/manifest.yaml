@@ -1,0 +1,103 @@
+initiative:
+  proposed_id: PS-INTERVIEW-FOCUS-UI-001
+  version: 2.0-white-authority
+  title: PeerSlate Interview Studio Focus Stage UI Refactor
+  prepared_date: 2026-07-28
+  status: implementation_handoff
+  scope: frontend_ui_ux_only
+  merge_authorized: false
+  deploy_authorized: false
+
+owner_decisions:
+  typing_is_primary_input: true
+  dictation_is_optional_secondary_input: true
+  light_canvas: pure_white
+  light_palette: white_navy_cobalt_teal
+  retired_palette: beige_ivory_gold
+  authoritative_product_screen_count: 14
+
+product_truth:
+  route_family: existing_interview_studio_routes
+  public_demo: true
+  demo_profile: Pete Carter
+  browser_local_drafts: preserve
+  browser_local_history: preserve
+  coaching_only_on_explicit_submit: preserve
+  audio_upload: prohibited
+  video_upload: prohibited
+  account_backed_history: prohibited
+  cross_device_sync: prohibited
+  video_delivery_analytics: prohibited
+
+functional_authority:
+  - current_repository_code
+  - current_passing_tests
+  - current_truthful_live_behavior
+visual_authority:
+  - visual-authority/01_interview_me_ready_light.png
+  - visual-authority/02_interview_me_answering_queue_light.png
+  - visual-authority/03_interview_me_processing_light.png
+  - visual-authority/04_interview_me_coach_review_light.png
+  - visual-authority/05_interview_me_improve_light.png
+  - visual-authority/06_interview_ai_light.png
+  - visual-authority/07_video_practice_light.png
+  - visual-authority/08_history_light.png
+  - visual-authority/09_interview_me_ready_dark.png
+  - visual-authority/10_interview_me_coach_review_dark.png
+  - visual-authority/11_mobile_interview_me_ready.png
+  - visual-authority/12_mobile_interview_me_listening.png
+  - visual-authority/13_mobile_coach_review.png
+  - visual-authority/14_mobile_improve_answer.png
+
+required_viewports:
+  - [1536, 1024]
+  - [1440, 900]
+  - [1366, 768]
+  - [1024, 768]
+  - [834, 1194]
+  - [844, 390]
+  - [390, 844]
+  - [320, 568]
+  - desktop_200_percent_zoom
+
+semantic_states:
+  - ready-empty
+  - drafting
+  - dictation-requesting
+  - dictation-listening
+  - dictation-stopped
+  - dictation-denied
+  - queue-open
+  - submitting
+  - coaching-processing
+  - coaching-success
+  - coaching-failure
+  - improve-processing
+  - improve-ready
+  - retrying
+  - advancing
+
+prohibited_changes:
+  - backend_endpoints
+  - api_payloads_or_response_contracts
+  - ai_prompts_rubrics_scores
+  - database_schema
+  - authentication_authorization
+  - azure_resources
+  - route_replacement
+  - local_storage_key_semantics
+  - frontend_framework_migration
+  - account_persistence
+  - media_upload
+  - fabricated_analytics
+  - beige_or_gold_visual_fallback
+
+required_closeout:
+  - technical_record
+  - plain_english_owner_report
+  - functional_regression_results
+  - visual_evidence
+  - accessibility_evidence
+  - network_truth_evidence
+  - rollback_plan
+  - no_merge_no_deploy_statement

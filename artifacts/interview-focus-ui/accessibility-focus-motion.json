@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:08:29.876Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "focusTransitions": {
+    "submit": {
+      "cancelFocused": true,
+      "tag": "BUTTON"
+    },
+    "cancel": {
+      "answerFocused": true,
+      "tag": "TEXTAREA"
+    },
+    "review": {
+      "feedbackFocused": true,
+      "tag": "SECTION"
+    },
+    "improve": {
+      "improveFocused": true,
+      "tag": "SECTION"
+    },
+    "backToFeedback": {
+      "feedbackFocused": true,
+      "tag": "SECTION"
+    },
+    "videoPreview": {
+      "startFocused": true
+    },
+    "videoRecording": {
+      "stopFocused": true
+    },
+    "videoPlayback": {
+      "retakeFocused": true
+    },
+    "videoDenied": {
+      "enableFocused": true
+    }
+  },
+  "reducedMotion": {
+    "matchesReduce": true,
+    "animationDuration": "1e-05s",
+    "animationIterationCount": "1",
+    "transitionDuration": "1e-05s"
+  },
+  "visibleFocusStyle": {
+    "outlineStyle": "solid",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(47, 99, 223)",
+    "boxShadow": "none"
+  },
+  "assertions": {
+    "reviewSubmitFocusesCancel": true,
+    "cancelReturnsToAnswer": true,
+    "reviewSuccessFocusesFeedback": true,
+    "improveFocusesPanel": true,
+    "backReturnsToFeedback": true,
+    "videoPreviewFocusesStart": true,
+    "recordingFocusesStop": true,
+    "playbackFocusesRetake": true,
+    "denialFocusesEnable": true,
+    "reducedMotionApplied": true,
+    "visibleFocusRing": true
+  }
+}

@@ -1,0 +1,668 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:07:16.322Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "viewports": [
+    {
+      "label": "desktop-wide",
+      "innerWidth": 1536,
+      "innerHeight": 1024,
+      "clientWidth": 1536,
+      "scrollWidth": 1536,
+      "scrollHeight": 1302,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 108.1875,
+        "y": 809.484375,
+        "width": 1014.03125,
+        "height": 49.984375,
+        "top": 809.484375,
+        "right": 1122.21875,
+        "bottom": 859.46875,
+        "left": 108.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 1320.15625,
+        "y": 80,
+        "width": 127.84375,
+        "height": 34,
+        "top": 80,
+        "right": 1448,
+        "bottom": 114,
+        "left": 1320.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 108.1875,
+          "right": 229.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 923.734375,
+          "right": 1122.21875
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": false,
+        "rect": {
+          "x": 1156,
+          "y": 356.703125,
+          "width": 292,
+          "height": 660.984375,
+          "top": 356.703125,
+          "right": 1448,
+          "bottom": 1017.6875,
+          "left": 1156
+        }
+      }
+    },
+    {
+      "label": "desktop",
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "clientWidth": 1440,
+      "scrollWidth": 1440,
+      "scrollHeight": 1302,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 68.1875,
+        "y": 809.484375,
+        "width": 998.03125,
+        "height": 49.984375,
+        "top": 809.484375,
+        "right": 1066.21875,
+        "bottom": 859.46875,
+        "left": 68.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 1264.15625,
+        "y": 80,
+        "width": 127.84375,
+        "height": 34,
+        "top": 80,
+        "right": 1392,
+        "bottom": 114,
+        "left": 1264.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 68.1875,
+          "right": 189.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 867.734375,
+          "right": 1066.21875
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": false,
+        "rect": {
+          "x": 1100,
+          "y": 356.703125,
+          "width": 292,
+          "height": 660.984375,
+          "top": 356.703125,
+          "right": 1392,
+          "bottom": 1017.6875,
+          "left": 1100
+        }
+      }
+    },
+    {
+      "label": "desktop-short",
+      "innerWidth": 1366,
+      "innerHeight": 768,
+      "clientWidth": 1366,
+      "scrollWidth": 1366,
+      "scrollHeight": 1195,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 68.1875,
+        "y": 674.6875,
+        "width": 924.03125,
+        "height": 49.984375,
+        "top": 674.6875,
+        "right": 992.21875,
+        "bottom": 724.671875,
+        "left": 68.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 1190.15625,
+        "y": 80,
+        "width": 127.84375,
+        "height": 34,
+        "top": 80,
+        "right": 1318,
+        "bottom": 114,
+        "left": 1190.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 68.1875,
+          "right": 189.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 793.734375,
+          "right": 992.21875
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": false,
+        "rect": {
+          "x": 1026,
+          "y": 300.328125,
+          "width": 292,
+          "height": 613.125,
+          "top": 300.328125,
+          "right": 1318,
+          "bottom": 913.453125,
+          "left": 1026
+        }
+      }
+    },
+    {
+      "label": "tablet-landscape",
+      "innerWidth": 1024,
+      "innerHeight": 768,
+      "clientWidth": 1024,
+      "scrollWidth": 1024,
+      "scrollHeight": 1741,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 48.1875,
+        "y": 835.84375,
+        "width": 927.625,
+        "height": 49.984375,
+        "top": 835.84375,
+        "right": 975.8125,
+        "bottom": 885.828125,
+        "left": 48.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 868.15625,
+        "y": 116.171875,
+        "width": 127.84375,
+        "height": 34,
+        "top": 116.171875,
+        "right": 996,
+        "bottom": 150.171875,
+        "left": 868.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 48.1875,
+          "right": 169.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 777.328125,
+          "right": 975.8125
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 528,
+          "y": 84.765625,
+          "width": 480,
+          "height": 598.453125,
+          "top": 84.765625,
+          "right": 1008,
+          "bottom": 683.21875,
+          "left": 528
+        }
+      }
+    },
+    {
+      "label": "tablet-portrait",
+      "innerWidth": 834,
+      "innerHeight": 1194,
+      "clientWidth": 834,
+      "scrollWidth": 834,
+      "scrollHeight": 1767,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 48.1875,
+        "y": 835.84375,
+        "width": 737.625,
+        "height": 49.984375,
+        "top": 835.84375,
+        "right": 785.8125,
+        "bottom": 885.828125,
+        "left": 48.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 678.15625,
+        "y": 106.171875,
+        "width": 127.84375,
+        "height": 54,
+        "top": 106.171875,
+        "right": 806,
+        "bottom": 160.171875,
+        "left": 678.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 48.1875,
+          "right": 169.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 587.328125,
+          "right": 785.8125
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 338,
+          "y": 297.765625,
+          "width": 480,
+          "height": 598.453125,
+          "top": 297.765625,
+          "right": 818,
+          "bottom": 896.21875,
+          "left": 338
+        }
+      }
+    },
+    {
+      "label": "short-landscape",
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "clientWidth": 844,
+      "scrollWidth": 844,
+      "scrollHeight": 1767,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 48.1875,
+        "y": 639.84375,
+        "width": 747.625,
+        "height": 49.984375,
+        "top": 639.84375,
+        "right": 795.8125,
+        "bottom": 689.828125,
+        "left": 48.1875
+      },
+      "nav": null,
+      "globalChat": null,
+      "mobileAsk": null,
+      "profileAsk": {
+        "x": 688.15625,
+        "y": 106.171875,
+        "width": 127.84375,
+        "height": 54,
+        "top": 106.171875,
+        "right": 816,
+        "bottom": 160.171875,
+        "left": 688.15625
+      },
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 121.640625,
+          "height": 49.984375,
+          "left": 48.1875,
+          "right": 169.828125
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 198.484375,
+          "height": 45.1875,
+          "left": 597.328125,
+          "right": 795.8125
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 348,
+          "y": 39,
+          "width": 480,
+          "height": 312,
+          "top": 39,
+          "right": 828,
+          "bottom": 351,
+          "left": 348
+        }
+      }
+    },
+    {
+      "label": "200-percent-reflow-width",
+      "innerWidth": 720,
+      "innerHeight": 900,
+      "clientWidth": 720,
+      "scrollWidth": 720,
+      "scrollHeight": 1493,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 0,
+        "y": 765.84375,
+        "width": 720,
+        "height": 71.765625,
+        "top": 765.84375,
+        "right": 720,
+        "bottom": 837.609375,
+        "left": 0
+      },
+      "nav": {
+        "x": 0,
+        "y": 853.5625,
+        "width": 720,
+        "height": 46.4375,
+        "top": 853.5625,
+        "right": 720,
+        "bottom": 900,
+        "left": 0
+      },
+      "globalChat": null,
+      "mobileAsk": {
+        "x": 544.328125,
+        "y": 14.234375,
+        "width": 79.171875,
+        "height": 30,
+        "top": 14.234375,
+        "right": 623.5,
+        "bottom": 44.234375,
+        "left": 544.328125
+      },
+      "profileAsk": null,
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 199.78125,
+          "height": 49.984375,
+          "left": 12,
+          "right": 211.78125
+        },
+        {
+          "label": "Up next · 4 Next · 4",
+          "width": 211.53125,
+          "height": 42.390625,
+          "left": 218.96875,
+          "right": 430.5
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 270.296875,
+          "height": 42.390625,
+          "left": 437.6875,
+          "right": 707.984375
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 0,
+          "y": 301.546875,
+          "width": 720,
+          "height": 598.453125,
+          "top": 301.546875,
+          "right": 720,
+          "bottom": 900,
+          "left": 0
+        }
+      }
+    },
+    {
+      "label": "mobile",
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "scrollHeight": 1662,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 0,
+        "y": 709.84375,
+        "width": 390,
+        "height": 71.765625,
+        "top": 709.84375,
+        "right": 390,
+        "bottom": 781.609375,
+        "left": 0
+      },
+      "nav": {
+        "x": 0,
+        "y": 797.5625,
+        "width": 390,
+        "height": 46.4375,
+        "top": 797.5625,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      },
+      "globalChat": null,
+      "mobileAsk": {
+        "x": 214.328125,
+        "y": 14.234375,
+        "width": 79.171875,
+        "height": 30,
+        "top": 14.234375,
+        "right": 293.5,
+        "bottom": 44.234375,
+        "left": 214.328125
+      },
+      "profileAsk": null,
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 103.0625,
+          "height": 49.984375,
+          "left": 12,
+          "right": 115.0625
+        },
+        {
+          "label": "Up next · 4 Next · 4",
+          "width": 109.109375,
+          "height": 42.390625,
+          "left": 122.25,
+          "right": 231.359375
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 139.4375,
+          "height": 42.390625,
+          "left": 238.546875,
+          "right": 377.984375
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 0,
+          "y": 245.546875,
+          "width": 390,
+          "height": 598.453125,
+          "top": 245.546875,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      }
+    },
+    {
+      "label": "narrow-mobile",
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "clientWidth": 320,
+      "scrollWidth": 320,
+      "scrollHeight": 1741,
+      "horizontalOverflow": 0,
+      "dock": {
+        "x": 0,
+        "y": 433.84375,
+        "width": 320,
+        "height": 71.765625,
+        "top": 433.84375,
+        "right": 320,
+        "bottom": 505.609375,
+        "left": 0
+      },
+      "nav": {
+        "x": 0,
+        "y": 521.5625,
+        "width": 320,
+        "height": 46.4375,
+        "top": 521.5625,
+        "right": 320,
+        "bottom": 568,
+        "left": 0
+      },
+      "globalChat": null,
+      "mobileAsk": {
+        "x": 144.328125,
+        "y": -43.765625,
+        "width": 79.171875,
+        "height": 30,
+        "top": -43.765625,
+        "right": 223.5,
+        "bottom": -13.765625,
+        "left": 144.328125
+      },
+      "profileAsk": null,
+      "dockNavOverlap": false,
+      "dockGlobalChatOverlap": false,
+      "dockMobileAskOverlap": false,
+      "dockProfileAskOverlap": false,
+      "globalChatDisplay": "none",
+      "buttons": [
+        {
+          "label": "Dictate",
+          "width": 76.3125,
+          "height": 49.984375,
+          "left": 8,
+          "right": 84.3125
+        },
+        {
+          "label": "Up next · 4 Next · 4",
+          "width": 109.046875,
+          "height": 42.390625,
+          "left": 89.109375,
+          "right": 198.15625
+        },
+        {
+          "label": "Review My Answer Review",
+          "width": 109.046875,
+          "height": 42.390625,
+          "left": 202.953125,
+          "right": 312
+        }
+      ],
+      "queue": {
+        "open": true,
+        "modal": true,
+        "rect": {
+          "x": 0,
+          "y": 102.25,
+          "width": 320,
+          "height": 465.75,
+          "top": 102.25,
+          "right": 320,
+          "bottom": 568,
+          "left": 0
+        }
+      }
+    }
+  ],
+  "assertions": {
+    "noHorizontalOverflow": true,
+    "mobileDockClearsNav": true,
+    "globalFloatingChatHidden": true,
+    "routeAskAvailable": true,
+    "dockClearsAvailableAsk": true,
+    "desktopQueueNonmodal": true,
+    "narrowQueueModal": true,
+    "narrowButtonsFit": true
+  }
+}

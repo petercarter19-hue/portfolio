@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:09:54.490Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "authorityRevision": "v3-all-modes-complete",
+  "authorityArchiveSha256": "7FF3187C7F7E62A29FFD15433454AA0742302308249B4AACA9ED8DBED809814F",
+  "supplementalV2ArchiveSha256": "F968CEDF57CD064B748861472658FEAB87EF7C0603C277BAAAEDA2C2649B7E4D",
+  "inspectionMethod": "State-by-state exact-viewport browser rendering compared with each owner-approved authority screen. Pixel-perfect difference scoring is intentionally not asserted where Pete compacted composers or repository truth/accessibility/reflow contracts require a documented adaptation.",
+  "sharedAdaptations": [
+    "Released shared shell remains authoritative; route-specific Ask Pete AI access is retained while the overlapping global floating launcher is hidden on this route.",
+    "Long content grows the document without clipping or fixed internal scrolling.",
+    "V3 controls over V2 when pixels differ; Pete compact-height correction controls both."
+  ],
+  "comparisons": [
+    {
+      "screen": "01_interview_me_ready_light.png",
+      "state": "Interview Me ready light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/01_interview_me_ready_light.png",
+        "sha256": "ecebc9668dbba9decd964a35c22b6abd66e6e7f7638d0d88f1bea31cb96dc9a8",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-ready-1440x900.png",
+        "sha256": "9d7ea452fc4041a09c51f5596e075814d9f11c1e1e7fe3d1760c151d76af5456",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Pete compact-height override for the empty answer composer."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "02_interview_me_answering_queue_light.png",
+      "state": "Interview Me queue light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/02_interview_me_answering_queue_light.png",
+        "sha256": "8b1878c54818d0172489baed58848e456df6262bc6e126960aeb6a218424bb74",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-answering-queue-1440x900.png",
+        "sha256": "02f8d7c0b577a2c45b9a79e6cd8703b56ed323922109a2a580ae696c4a6d1742",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Desktop queue is an integrated nonmodal rail; narrow layouts use a modal sheet.",
+        "Pete compact-height override remains visible behind the queue."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "03_interview_me_processing_light.png",
+      "state": "Interview Me processing light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/03_interview_me_processing_light.png",
+        "sha256": "a0fd23626b9b241c9863bc02965a70ea02035f2e61d866143a5d4a45dddf38a3",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-processing-1440x900.png",
+        "sha256": "1fee9667d7bf537525b9b47fe1e817e56c9a0c02c7ab634f5cc7abd010e5cf8a",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Submitted answer uses natural content height and truthful preserved-answer copy."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "04_interview_me_coach_review_light.png",
+      "state": "Interview Me coach review light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/04_interview_me_coach_review_light.png",
+        "sha256": "a54a53116bb2f133206dce346f478548181895b986181f1472d462f6f530153f",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-coach-review-1440x900.png",
+        "sha256": "df17b6d7a6854c84e4258b19b0489a70653e9b1e55e32de479ab532d84a5ff4d",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Current repository coaching truth and accessibility copy preserved."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "05_interview_me_improve_light.png",
+      "state": "Interview Me improve light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/05_interview_me_improve_light.png",
+        "sha256": "5e812c65d8f8ae3e8baac35919653a605af4d695c850b276f0fea1a86f6c18fd",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-improve-1440x900.png",
+        "sha256": "15133b3a196ac2feb318ab997ecf01f9faef3c440a11626d7a679b94dacdd7ce",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Pete compact-height override for the editable improved draft; automatic growth replaces fixed geometry."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "06_interview_ai_light.png",
+      "state": "Interview AI light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/06_interview_ai_light.png",
+        "sha256": "335e6993773a52de2d7d630e54375e6642b40ea05f99a6697684883acdb4c332",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-ai-ready-1440x900.png",
+        "sha256": "eaa12f578f0dc134662cf510c951cfdc0a58fd76e53fe36fbdec4307d6be07c6",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Current evidence-basis labels and truth boundaries override illustrative package wording."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "07_video_practice_light.png",
+      "state": "Video Practice light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/07_video_practice_light.png",
+        "sha256": "96693e9f4ad142853e5dcbe283d173cbb03f672bcfc875ed164ae8ea7de5910a",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-video-ready-1440x900.png",
+        "sha256": "d9ac5fc30777e401bec28877da39257993cd7f1043586cf90e6748b0278d20c2",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Local-only permission and media truth preserved; camera preview geometry is not halved."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "08_history_light.png",
+      "state": "History light",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/08_history_light.png",
+        "sha256": "7e25b77b97ed43488364d9684fb6ca427cb379f4bd2a29dcd1ada3068857d6a1",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-history-populated-1440x900.png",
+        "sha256": "0e7129dd4d51d688d6786462e0de90269beddf0be0b62f398312282971116d6a",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Deterministic browser-local fixture supplies the depicted populated state; no account or cross-device claim."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "09_interview_me_ready_dark.png",
+      "state": "Interview Me ready dark",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/09_interview_me_ready_dark.png",
+        "sha256": "58a23fcb083ca829c62e8fb8c9f132ad377790869298ca070f2bcf14491f09bd",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-ready-dark-1440x900.png",
+        "sha256": "b758890b1cba3efb907c9f8b8bbdb6f50e699cf00365091d2b730224eebf9a3c",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Pete compact-height override."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "10_interview_me_coach_review_dark.png",
+      "state": "Interview Me coach review dark",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/10_interview_me_coach_review_dark.png",
+        "sha256": "d6e09c4b45b3892441f90334244d8dc1cf5c95c6a8f9075a0d78991335627dec",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/desktop-coach-review-dark-1440x900.png",
+        "sha256": "2ef549e735f48bbb529a77295ba0b3ecd0e0939b4e253b59ee96756e5fd007da",
+        "dimensions": {
+          "width": 1440,
+          "height": 900
+        }
+      },
+      "permittedAdaptations": [
+        "Current repository coaching truth and accessibility copy preserved."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "11_mobile_interview_me_ready.png",
+      "state": "Mobile Interview Me ready",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/11_mobile_interview_me_ready.png",
+        "sha256": "1e95470ea25afd56d4ca20f252b9cb8a4c322b5c6b5fdffb04f2500f427b8d5c",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/mobile-ready-390x844.png",
+        "sha256": "4151124dfc4b3b3e8c4f7cc72e2544add22f5576cb7857a0a373803afeb7b3de",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "permittedAdaptations": [
+        "Fixed three-action task dock clears the inherited mobile navigation.",
+        "Pete compact-height override."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "12_mobile_interview_me_listening.png",
+      "state": "Mobile Interview Me listening",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/12_mobile_interview_me_listening.png",
+        "sha256": "afb0cdd31c01d73928855f11cf7967191cfde66e7af48f445b6a92c90345b1be",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/mobile-listening-390x844.png",
+        "sha256": "90d16bfd97fd336fbb3bf84282876bea8eaf5a667dd90b6162f967e32f6f735e",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "permittedAdaptations": [
+        "Deterministic browser speech fixture proves UI state; no physical microphone claim."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "13_mobile_coach_review.png",
+      "state": "Mobile coach review",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/13_mobile_coach_review.png",
+        "sha256": "1d52caa8c36f35c887fb649590fe071663d393e05bf5bf1cd80eefddc2181cec",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/mobile-coach-review-390x844.png",
+        "sha256": "79229667e2bae48b00b3bb909735a03b2de3fe795927c642f6a47e383a45fd36",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "permittedAdaptations": [
+        "Single-column reflow and mobile safe area."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    },
+    {
+      "screen": "14_mobile_improve_answer.png",
+      "state": "Mobile improve answer",
+      "authority": {
+        "relativePath": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/references/authoritative_mockups/14_mobile_improve_answer.png",
+        "sha256": "622d6983d41241d7814c8ac1d128c80baf42592a1f3b3d8b02a20bec7539899e",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "implementation": {
+        "relativePath": "artifacts/interview-focus-ui/mobile-improve-390x844.png",
+        "sha256": "9cf46d53c9277fde0b79c8e83bd61d2a2a42540b0b76952d1b4afd0000983037",
+        "dimensions": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "permittedAdaptations": [
+        "Pete compact-height override and natural automatic growth."
+      ],
+      "status": "Pass",
+      "openMismatch": null
+    }
+  ],
+  "finalMismatchRegister": [],
+  "assertions": {
+    "allFourteenMapped": true,
+    "authorityAndImplementationDimensionsMatch": true,
+    "allPass": true,
+    "mismatchRegisterEmpty": true
+  }
+}

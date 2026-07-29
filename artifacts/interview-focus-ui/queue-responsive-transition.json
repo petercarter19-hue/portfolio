@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:07:32.762Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "desktopOpen": {
+    "width": 1440,
+    "open": true,
+    "modal": false,
+    "expanded": [
+      "true"
+    ],
+    "activeQueueOpener": false,
+    "activeVisible": true,
+    "activeText": "Theme"
+  },
+  "mobileOpen": {
+    "width": 390,
+    "open": true,
+    "modal": true,
+    "expanded": [
+      "true",
+      "true"
+    ],
+    "activeQueueOpener": false,
+    "activeVisible": true,
+    "activeText": "Theme"
+  },
+  "desktopReturn": {
+    "width": 1440,
+    "open": true,
+    "modal": false,
+    "expanded": [
+      "true"
+    ],
+    "activeQueueOpener": false,
+    "activeVisible": true,
+    "activeText": "Theme"
+  },
+  "afterEscape": {
+    "width": 1440,
+    "open": false,
+    "modal": false,
+    "expanded": [
+      "false"
+    ],
+    "activeQueueOpener": true,
+    "activeVisible": true,
+    "activeText": "Up next · 4 questions"
+  },
+  "assertions": {
+    "desktopStartsNonmodal": true,
+    "mobileBecomesModalWithoutClosing": true,
+    "desktopReturnsNonmodalWithoutClosing": true,
+    "escapeCloses": true,
+    "focusReturnsToVisibleOpener": true
+  }
+}

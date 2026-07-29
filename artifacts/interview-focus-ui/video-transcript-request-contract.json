@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:06:42.862Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "fixture": "deterministic text transcript; no audio or video bytes",
+  "beforeExplicitSubmit": {
+    "mode": "video",
+    "reviewRequests": 0,
+    "transcriptLength": 224
+  },
+  "reviewRequests": [
+    {
+      "method": "POST",
+      "path": "/api/interview/review",
+      "contentType": "application/json",
+      "keys": [
+        "answer",
+        "competency",
+        "family",
+        "level",
+        "profile_slug",
+        "question"
+      ],
+      "fieldTypes": {
+        "profile_slug": "string",
+        "question": "string",
+        "answer": "string",
+        "level": "string",
+        "family": "string",
+        "competency": "string"
+      },
+      "answerBytes": 224,
+      "answerSha256": "394ac419e8d129462e8bae0e881dc3b0440e694e39a487a50101eef651dff37c",
+      "questionBytes": 53
+    }
+  ],
+  "afterExplicitSubmit": {
+    "mode": "me",
+    "workspaceState": "review",
+    "transcriptComposerLength": 0,
+    "answerLength": 224
+  },
+  "assertions": {
+    "noRequestBeforeSubmit": true,
+    "oneReviewRequest": true,
+    "jsonOnly": true,
+    "contractKeysExact": true,
+    "answerIsText": true,
+    "noMediaFields": true,
+    "sharedCoachReachedReview": true
+  }
+}

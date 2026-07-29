@@ -1,0 +1,2609 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:09:12.663Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "runtimeBase": "a85ffbc93a1def86f99db66df26702a59aff4cbc",
+  "branch": "work/2026-07-28-ps-interview-focus-ui-001",
+  "localBaseUrl": "http://127.0.0.1:5030",
+  "browser": {
+    "engine": "Chromium",
+    "version": "150.0.7871.186",
+    "playwrightVersion": "1.61.1",
+    "headless": true
+  },
+  "captureCount": 103,
+  "captures": [
+    {
+      "file": "desktop-ai-best-practice-1440x900.png",
+      "bytes": 179291,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1477
+      },
+      "capturedAt": "2026-07-29T06:03:58.769Z"
+    },
+    {
+      "file": "desktop-ai-compare-1440x900.png",
+      "bytes": 186213,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1596
+      },
+      "capturedAt": "2026-07-29T06:03:59.965Z"
+    },
+    {
+      "file": "desktop-ai-follow-up-drafting-1440x900.png",
+      "bytes": 181453,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1443
+      },
+      "capturedAt": "2026-07-29T06:04:17.693Z"
+    },
+    {
+      "file": "desktop-ai-follow-up-failure-1440x900.png",
+      "bytes": 178030,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1489
+      },
+      "capturedAt": "2026-07-29T06:04:04.615Z"
+    },
+    {
+      "file": "desktop-ai-follow-up-generating-1440x900.png",
+      "bytes": 183992,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "generating",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1355
+      },
+      "capturedAt": "2026-07-29T06:04:19.142Z"
+    },
+    {
+      "file": "desktop-ai-follow-up-result-1440x900.png",
+      "bytes": 176213,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1426
+      },
+      "capturedAt": "2026-07-29T06:04:20.584Z"
+    },
+    {
+      "file": "desktop-ai-initial-failure-1440x900.png",
+      "bytes": 154860,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "failure",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1289
+      },
+      "capturedAt": "2026-07-29T06:04:03.429Z"
+    },
+    {
+      "file": "desktop-ai-loading-1440x900.png",
+      "bytes": 155018,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "generating",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1289
+      },
+      "capturedAt": "2026-07-29T06:04:02.271Z"
+    },
+    {
+      "file": "desktop-ai-long-answer-detail-1440x900.png",
+      "bytes": 272262,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1783
+      },
+      "capturedAt": "2026-07-29T06:04:09.284Z"
+    },
+    {
+      "file": "desktop-ai-long-result-1440x900.png",
+      "bytes": 239442,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1783
+      },
+      "capturedAt": "2026-07-29T06:04:08.082Z"
+    },
+    {
+      "file": "desktop-ai-long-sources-detail-1440x900.png",
+      "bytes": 187980,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1487
+      },
+      "capturedAt": "2026-07-29T06:04:10.475Z"
+    },
+    {
+      "file": "desktop-ai-no-grounding-1440x900.png",
+      "bytes": 183006,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "insufficient",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1289
+      },
+      "capturedAt": "2026-07-29T06:04:01.122Z"
+    },
+    {
+      "file": "desktop-ai-public-result-1440x900.png",
+      "bytes": 183901,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1443
+      },
+      "capturedAt": "2026-07-29T06:03:56.471Z"
+    },
+    {
+      "file": "desktop-ai-public-result-dark-1440x900.png",
+      "bytes": 175131,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "dark",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1444
+      },
+      "capturedAt": "2026-07-29T06:04:16.257Z"
+    },
+    {
+      "file": "desktop-ai-ready-1440x900.png",
+      "bytes": 162962,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1289
+      },
+      "capturedAt": "2026-07-29T06:02:59.958Z"
+    },
+    {
+      "file": "desktop-answering-queue-1440x900.png",
+      "bytes": 174455,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1302
+      },
+      "capturedAt": "2026-07-29T06:03:20.460Z"
+    },
+    {
+      "file": "desktop-coach-review-1440x900.png",
+      "bytes": 156829,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "review",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1480
+      },
+      "capturedAt": "2026-07-29T06:03:21.675Z"
+    },
+    {
+      "file": "desktop-coach-review-dark-1440x900.png",
+      "bytes": 145973,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "review",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "dark",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1481
+      },
+      "capturedAt": "2026-07-29T06:03:24.498Z"
+    },
+    {
+      "file": "desktop-coaching-unavailable-1440x900.png",
+      "bytes": 151326,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:03:31.350Z"
+    },
+    {
+      "file": "desktop-history-attempt-detail-1440x900.png",
+      "bytes": 304356,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1479
+      },
+      "capturedAt": "2026-07-29T06:05:38.811Z"
+    },
+    {
+      "file": "desktop-history-empty-1440x900.png",
+      "bytes": 165461,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1481
+      },
+      "capturedAt": "2026-07-29T06:05:35.361Z"
+    },
+    {
+      "file": "desktop-history-populated-1440x900.png",
+      "bytes": 171104,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1479
+      },
+      "capturedAt": "2026-07-29T06:05:36.502Z"
+    },
+    {
+      "file": "desktop-history-populated-dark-1440x900.png",
+      "bytes": 160522,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "dark",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1480
+      },
+      "capturedAt": "2026-07-29T06:05:41.147Z"
+    },
+    {
+      "file": "desktop-history-storage-unavailable-1440x900.png",
+      "bytes": 165806,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1481
+      },
+      "capturedAt": "2026-07-29T06:05:37.634Z"
+    },
+    {
+      "file": "desktop-history-video-metadata-only-1440x900.png",
+      "bytes": 271340,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1479
+      },
+      "capturedAt": "2026-07-29T06:05:40.011Z"
+    },
+    {
+      "file": "desktop-improve-1440x900.png",
+      "bytes": 174612,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "improve",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1465
+      },
+      "capturedAt": "2026-07-29T06:03:23.298Z"
+    },
+    {
+      "file": "desktop-long-answer-1440.png",
+      "bytes": 512474,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 2609
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 2609
+      },
+      "capturedAt": "2026-07-29T06:03:45.921Z"
+    },
+    {
+      "file": "desktop-processing-1440x900.png",
+      "bytes": 190653,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "processing",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1141
+      },
+      "capturedAt": "2026-07-29T06:03:19.260Z"
+    },
+    {
+      "file": "desktop-ready-1366x768.png",
+      "bytes": 156148,
+      "pngDimensions": {
+        "width": 1366,
+        "height": 768
+      },
+      "requestedViewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1366,
+        "scrollWidth": 1366,
+        "scrollHeight": 1195
+      },
+      "capturedAt": "2026-07-29T06:02:48.800Z"
+    },
+    {
+      "file": "desktop-ready-1440x900.png",
+      "bytes": 166125,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1302
+      },
+      "capturedAt": "2026-07-29T06:02:47.665Z"
+    },
+    {
+      "file": "desktop-ready-1536x1024.png",
+      "bytes": 177514,
+      "pngDimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "requestedViewport": {
+        "width": 1536,
+        "height": 1024
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1536,
+        "scrollWidth": 1536,
+        "scrollHeight": 1302
+      },
+      "capturedAt": "2026-07-29T06:02:49.948Z"
+    },
+    {
+      "file": "desktop-ready-dark-1440x900.png",
+      "bytes": 162869,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "dark",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1303
+      },
+      "capturedAt": "2026-07-29T06:02:58.828Z"
+    },
+    {
+      "file": "desktop-reduced-motion-processing-1440x900.png",
+      "bytes": 190653,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "processing",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1141
+      },
+      "capturedAt": "2026-07-29T06:03:36.055Z"
+    },
+    {
+      "file": "desktop-video-after-discard-1440x900.png",
+      "bytes": 213479,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:46.960Z"
+    },
+    {
+      "file": "desktop-video-device-settings-1440x900.png",
+      "bytes": 214295,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "requesting",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:51.840Z"
+    },
+    {
+      "file": "desktop-video-device-unavailable-1440x900.png",
+      "bytes": 195325,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "unavailable",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:50.588Z"
+    },
+    {
+      "file": "desktop-video-permission-denied-1440x900.png",
+      "bytes": 224649,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "denied",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:49.372Z"
+    },
+    {
+      "file": "desktop-video-permission-requesting-1440x900.png",
+      "bytes": 214329,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "requesting",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:48.168Z"
+    },
+    {
+      "file": "desktop-video-playback-1440x900.png",
+      "bytes": 160496,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "playback",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1610
+      },
+      "capturedAt": "2026-07-29T06:04:44.177Z"
+    },
+    {
+      "file": "desktop-video-playback-dark-1440x900.png",
+      "bytes": 151711,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "playback",
+        "theme": "dark",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1611
+      },
+      "capturedAt": "2026-07-29T06:04:53.196Z"
+    },
+    {
+      "file": "desktop-video-preview-1440x900.png",
+      "bytes": 144661,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "preview",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:40.367Z"
+    },
+    {
+      "file": "desktop-video-ready-1440x900.png",
+      "bytes": 213479,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:03:02.175Z"
+    },
+    {
+      "file": "desktop-video-recording-1440x900.png",
+      "bytes": 147180,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "recording",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1190
+      },
+      "capturedAt": "2026-07-29T06:04:41.585Z"
+    },
+    {
+      "file": "desktop-video-retake-preview-1440x900.png",
+      "bytes": 144661,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "preview",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:04:45.558Z"
+    },
+    {
+      "file": "desktop-video-stopping-finalizing-1440x900.png",
+      "bytes": 147213,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "stopping",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1190
+      },
+      "capturedAt": "2026-07-29T06:04:42.834Z"
+    },
+    {
+      "file": "desktop-video-transcript-coach-review-1440x900.png",
+      "bytes": 154464,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "review",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1480
+      },
+      "capturedAt": "2026-07-29T06:05:21.350Z"
+    },
+    {
+      "file": "desktop-video-transcript-drafting-1440x900.png",
+      "bytes": 212115,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:05:18.975Z"
+    },
+    {
+      "file": "desktop-video-transcript-failure-1440x900.png",
+      "bytes": 147484,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1441
+      },
+      "capturedAt": "2026-07-29T06:05:22.520Z"
+    },
+    {
+      "file": "desktop-video-transcript-processing-1440x900.png",
+      "bytes": 162317,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "processing",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 1141
+      },
+      "capturedAt": "2026-07-29T06:05:20.168Z"
+    },
+    {
+      "file": "homepage-interview-scene-desktop-1440x900.png",
+      "bytes": 225742,
+      "pngDimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/",
+        "activeMode": null,
+        "workspaceState": null,
+        "aiState": null,
+        "videoState": null,
+        "theme": "modern-blue",
+        "clientWidth": 1440,
+        "scrollWidth": 1440,
+        "scrollHeight": 4895
+      },
+      "capturedAt": "2026-07-29T06:03:06.942Z"
+    },
+    {
+      "file": "homepage-interview-scene-mobile-390x844.png",
+      "bytes": 110423,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/",
+        "activeMode": null,
+        "workspaceState": null,
+        "aiState": null,
+        "videoState": null,
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 10472
+      },
+      "capturedAt": "2026-07-29T06:03:08.356Z"
+    },
+    {
+      "file": "landscape-ready-844x390.png",
+      "bytes": 64770,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 1767
+      },
+      "capturedAt": "2026-07-29T06:02:55.499Z"
+    },
+    {
+      "file": "landscape-video-playback-844x390.png",
+      "bytes": 46244,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "playback",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 2015
+      },
+      "capturedAt": "2026-07-29T06:05:11.516Z"
+    },
+    {
+      "file": "landscape-video-preview-844x390.png",
+      "bytes": 44989,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "preview",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 1712
+      },
+      "capturedAt": "2026-07-29T06:05:07.704Z"
+    },
+    {
+      "file": "landscape-video-ready-844x390.png",
+      "bytes": 64382,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 1712
+      },
+      "capturedAt": "2026-07-29T06:03:04.378Z"
+    },
+    {
+      "file": "landscape-video-recording-844x390.png",
+      "bytes": 43779,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "recording",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 1461
+      },
+      "capturedAt": "2026-07-29T06:05:08.923Z"
+    },
+    {
+      "file": "landscape-video-stopping-finalizing-844x390.png",
+      "bytes": 43091,
+      "pngDimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "requestedViewport": {
+        "width": 844,
+        "height": 390
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "stopping",
+        "theme": "modern-blue",
+        "clientWidth": 844,
+        "scrollWidth": 844,
+        "scrollHeight": 1461
+      },
+      "capturedAt": "2026-07-29T06:05:10.175Z"
+    },
+    {
+      "file": "mobile-ai-best-practice-390x844.png",
+      "bytes": 61129,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2338
+      },
+      "capturedAt": "2026-07-29T06:04:11.637Z"
+    },
+    {
+      "file": "mobile-ai-compare-390x844.png",
+      "bytes": 72194,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2698
+      },
+      "capturedAt": "2026-07-29T06:04:12.791Z"
+    },
+    {
+      "file": "mobile-ai-follow-up-drafting-390x844.png",
+      "bytes": 61386,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2371
+      },
+      "capturedAt": "2026-07-29T06:04:22.655Z"
+    },
+    {
+      "file": "mobile-ai-follow-up-failure-390x844.png",
+      "bytes": 64657,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2466
+      },
+      "capturedAt": "2026-07-29T06:04:28.861Z"
+    },
+    {
+      "file": "mobile-ai-follow-up-generating-390x844.png",
+      "bytes": 63039,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "generating",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2228
+      },
+      "capturedAt": "2026-07-29T06:04:24.725Z"
+    },
+    {
+      "file": "mobile-ai-follow-up-result-390x844.png",
+      "bytes": 59429,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2310
+      },
+      "capturedAt": "2026-07-29T06:04:26.777Z"
+    },
+    {
+      "file": "mobile-ai-initial-failure-390x844.png",
+      "bytes": 74184,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "failure",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1587
+      },
+      "capturedAt": "2026-07-29T06:04:06.919Z"
+    },
+    {
+      "file": "mobile-ai-loading-390x844.png",
+      "bytes": 77240,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "generating",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1597
+      },
+      "capturedAt": "2026-07-29T06:04:05.760Z"
+    },
+    {
+      "file": "mobile-ai-long-result-390x844.png",
+      "bytes": 102552,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 3441
+      },
+      "capturedAt": "2026-07-29T06:04:15.109Z"
+    },
+    {
+      "file": "mobile-ai-no-grounding-390x844.png",
+      "bytes": 64487,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "insufficient",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2058
+      },
+      "capturedAt": "2026-07-29T06:04:13.941Z"
+    },
+    {
+      "file": "mobile-ai-public-result-390x844.png",
+      "bytes": 64001,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "ready",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2371
+      },
+      "capturedAt": "2026-07-29T06:03:57.616Z"
+    },
+    {
+      "file": "mobile-ai-ready-390x844.png",
+      "bytes": 83028,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "ai",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1658
+      },
+      "capturedAt": "2026-07-29T06:03:01.031Z"
+    },
+    {
+      "file": "mobile-answering-queue-390x844.png",
+      "bytes": 91180,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1662
+      },
+      "capturedAt": "2026-07-29T06:03:32.503Z"
+    },
+    {
+      "file": "mobile-coach-review-390x844.png",
+      "bytes": 58717,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "review",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2323
+      },
+      "capturedAt": "2026-07-29T06:03:26.857Z"
+    },
+    {
+      "file": "mobile-coaching-unavailable-390x844.png",
+      "bytes": 73759,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1855
+      },
+      "capturedAt": "2026-07-29T06:03:34.851Z"
+    },
+    {
+      "file": "mobile-history-attempt-detail-390x844.png",
+      "bytes": 105455,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2122
+      },
+      "capturedAt": "2026-07-29T06:05:45.680Z"
+    },
+    {
+      "file": "mobile-history-empty-390x844.png",
+      "bytes": 90128,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2072
+      },
+      "capturedAt": "2026-07-29T06:05:42.287Z"
+    },
+    {
+      "file": "mobile-history-populated-390x844.png",
+      "bytes": 79820,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2122
+      },
+      "capturedAt": "2026-07-29T06:05:43.427Z"
+    },
+    {
+      "file": "mobile-history-storage-unavailable-390x844.png",
+      "bytes": 90560,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2072
+      },
+      "capturedAt": "2026-07-29T06:05:44.566Z"
+    },
+    {
+      "file": "mobile-history-video-metadata-only-390x844.png",
+      "bytes": 115380,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio/history",
+        "activeMode": "history",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2122
+      },
+      "capturedAt": "2026-07-29T06:05:46.811Z"
+    },
+    {
+      "file": "mobile-improve-390x844.png",
+      "bytes": 77015,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "improve",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2179
+      },
+      "capturedAt": "2026-07-29T06:03:28.979Z"
+    },
+    {
+      "file": "mobile-keyboard-focus-390x844.png",
+      "bytes": 99706,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1680
+      },
+      "capturedAt": "2026-07-29T06:03:30.131Z"
+    },
+    {
+      "file": "mobile-listening-390x844.png",
+      "bytes": 89480,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1796
+      },
+      "capturedAt": "2026-07-29T06:03:25.669Z"
+    },
+    {
+      "file": "mobile-long-answer-fullpage-390.png",
+      "bytes": 450262,
+      "pngDimensions": {
+        "width": 390,
+        "height": 4873
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 4873
+      },
+      "capturedAt": "2026-07-29T06:03:47.236Z"
+    },
+    {
+      "file": "mobile-processing-390x844.png",
+      "bytes": 102567,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "processing",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1620
+      },
+      "capturedAt": "2026-07-29T06:03:33.684Z"
+    },
+    {
+      "file": "mobile-ready-320x568.png",
+      "bytes": 62466,
+      "pngDimensions": {
+        "width": 320,
+        "height": 568
+      },
+      "requestedViewport": {
+        "width": 320,
+        "height": 568
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 320,
+        "scrollWidth": 320,
+        "scrollHeight": 1741
+      },
+      "capturedAt": "2026-07-29T06:02:54.386Z"
+    },
+    {
+      "file": "mobile-ready-390x844.png",
+      "bytes": 88076,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1662
+      },
+      "capturedAt": "2026-07-29T06:02:53.266Z"
+    },
+    {
+      "file": "mobile-video-after-discard-390x844.png",
+      "bytes": 77232,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1960
+      },
+      "capturedAt": "2026-07-29T06:05:05.327Z"
+    },
+    {
+      "file": "mobile-video-device-settings-390x844.png",
+      "bytes": 70923,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "requesting",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1977
+      },
+      "capturedAt": "2026-07-29T06:05:06.523Z"
+    },
+    {
+      "file": "mobile-video-device-unavailable-390x844.png",
+      "bytes": 66775,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "unavailable",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2037
+      },
+      "capturedAt": "2026-07-29T06:05:02.559Z"
+    },
+    {
+      "file": "mobile-video-permission-denied-390x844.png",
+      "bytes": 77232,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "denied",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2078
+      },
+      "capturedAt": "2026-07-29T06:05:00.489Z"
+    },
+    {
+      "file": "mobile-video-permission-requesting-390x844.png",
+      "bytes": 77232,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "requesting",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1977
+      },
+      "capturedAt": "2026-07-29T06:04:59.302Z"
+    },
+    {
+      "file": "mobile-video-playback-390x844.png",
+      "bytes": 66740,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "playback",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2416
+      },
+      "capturedAt": "2026-07-29T06:04:58.124Z"
+    },
+    {
+      "file": "mobile-video-preview-390x844.png",
+      "bytes": 53902,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "preview",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1960
+      },
+      "capturedAt": "2026-07-29T06:04:54.358Z"
+    },
+    {
+      "file": "mobile-video-ready-390x844.png",
+      "bytes": 95578,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1960
+      },
+      "capturedAt": "2026-07-29T06:03:03.259Z"
+    },
+    {
+      "file": "mobile-video-recording-390x844.png",
+      "bytes": 55669,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "recording",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1616
+      },
+      "capturedAt": "2026-07-29T06:04:55.551Z"
+    },
+    {
+      "file": "mobile-video-retake-preview-390x844.png",
+      "bytes": 53902,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "preview",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1960
+      },
+      "capturedAt": "2026-07-29T06:05:03.938Z"
+    },
+    {
+      "file": "mobile-video-stopping-finalizing-390x844.png",
+      "bytes": 55434,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "stopping",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1616
+      },
+      "capturedAt": "2026-07-29T06:04:56.785Z"
+    },
+    {
+      "file": "mobile-video-transcript-coach-review-390x844.png",
+      "bytes": 48559,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "review",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2304
+      },
+      "capturedAt": "2026-07-29T06:05:26.338Z"
+    },
+    {
+      "file": "mobile-video-transcript-drafting-390x844.png",
+      "bytes": 81992,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "video",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 2046
+      },
+      "capturedAt": "2026-07-29T06:05:24.008Z"
+    },
+    {
+      "file": "mobile-video-transcript-failure-390x844.png",
+      "bytes": 66368,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1855
+      },
+      "capturedAt": "2026-07-29T06:05:27.498Z"
+    },
+    {
+      "file": "mobile-video-transcript-processing-390x844.png",
+      "bytes": 75515,
+      "pngDimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "requestedViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "processing",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 1602
+      },
+      "capturedAt": "2026-07-29T06:05:25.157Z"
+    },
+    {
+      "file": "reflow-ready-720x900.png",
+      "bytes": 97584,
+      "pngDimensions": {
+        "width": 720,
+        "height": 900
+      },
+      "requestedViewport": {
+        "width": 720,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 720,
+        "scrollWidth": 720,
+        "scrollHeight": 1493
+      },
+      "capturedAt": "2026-07-29T06:02:56.610Z"
+    },
+    {
+      "file": "tablet-ready-1024x768.png",
+      "bytes": 103296,
+      "pngDimensions": {
+        "width": 1024,
+        "height": 768
+      },
+      "requestedViewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 1024,
+        "scrollWidth": 1024,
+        "scrollHeight": 1741
+      },
+      "capturedAt": "2026-07-29T06:02:51.048Z"
+    },
+    {
+      "file": "tablet-ready-834x1194.png",
+      "bytes": 141479,
+      "pngDimensions": {
+        "width": 834,
+        "height": 1194
+      },
+      "requestedViewport": {
+        "width": 834,
+        "height": 1194
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 834,
+        "scrollWidth": 834,
+        "scrollHeight": 1767
+      },
+      "capturedAt": "2026-07-29T06:02:52.174Z"
+    },
+    {
+      "file": "zoom-200-equivalent-720x450.png",
+      "bytes": 61998,
+      "pngDimensions": {
+        "width": 720,
+        "height": 450
+      },
+      "requestedViewport": {
+        "width": 720,
+        "height": 450
+      },
+      "fullPage": false,
+      "state": {
+        "urlPath": "/interview-studio",
+        "activeMode": "me",
+        "workspaceState": "draft",
+        "aiState": "empty",
+        "videoState": "camera-off",
+        "theme": "modern-blue",
+        "clientWidth": 720,
+        "scrollWidth": 720,
+        "scrollHeight": 1493
+      },
+      "capturedAt": "2026-07-29T06:02:57.693Z"
+    }
+  ],
+  "fixtureBoundary": {
+    "responses": "Deterministic, non-sensitive browser route fixtures for existing Interview JSON endpoints.",
+    "media": "Deterministic browser-only MediaStream/MediaRecorder; no physical camera or microphone.",
+    "storage": "Deterministic browser-local records and explicit storage-failure injection.",
+    "claimsExcluded": [
+      "Live Anthropic response",
+      "Physical camera capture",
+      "Physical microphone capture",
+      "Production storage failure"
+    ]
+  },
+  "assertions": {
+    "allPngsHaveProvenance": true,
+    "allViewportPngsMatchRequestedDimensions": true,
+    "fullPagePngsPreserveRequestedWidth": true,
+    "noHorizontalOverflowInCapturedStudioStates": true
+  }
+}

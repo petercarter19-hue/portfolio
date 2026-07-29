@@ -25,6 +25,10 @@
     data-model-answers="{{ 'enabled' if interview_entitlements.model_answers else 'disabled' }}"
     data-video-capability="{{ interview_entitlements.video_studio }}"
     data-history-capability="{{ interview_entitlements.progress_history }}"
+    data-is-workspace-state="draft"
+    data-is-ai-state="empty"
+    data-is-video-state="camera-off"
+    data-is-active-mode="{{ 'history' if interview_initial_view == 'history' else ('orientation' if is_orientation else interview_initial_mode) }}"
 >
     <div class="is__backdrop" aria-hidden="true"></div>
 
@@ -38,7 +42,11 @@
 
         <header class="is__bar">
             <div class="is__brand">
-                <h1>Interview Studio</h1>
+                <div>
+                    <p class="is__brand-eyebrow">Public practice · browser-local</p>
+                    <h1>Interview Studio</h1>
+                    <p class="is__brand-subtitle">Real practice. Real coaching. Real growth.</p>
+                </div>
             </div>
 
             <div class="is__navigation">
@@ -64,7 +72,7 @@
                         data-is-mode="ai"
                     >
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
-                        <span><strong>Interview AI</strong><small>You ask. AI answers with proof.</small></span>
+                        <span><strong>Interview AI</strong><small>You ask. AI answers.</small></span>
                     </a>
                     <a
                         class="is__mode"
@@ -75,7 +83,7 @@
                         data-is-mode="video"
                     >
                         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-                        <span><strong>Video Practice</strong><small>Practice on camera.</small></span>
+                        <span><strong>Video Practice</strong><small>Rehearse locally on camera.</small></span>
                     </a>
                 </nav>
 
@@ -106,7 +114,10 @@
         </header>
 
         <details class="is__disclosure" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' or is_orientation %}hidden{% endif %}>
-            <summary data-is-setup-summary>Session setup · Experienced · Behavioral · 5-question mock</summary>
+            <summary data-is-setup-summary>
+                <span data-is-setup-summary-text>Experienced · Behavioral · 5-question mock</span>
+                <span class="is__setup-edit">Edit session</span>
+            </summary>
             <div class="is__disclosure-body is__setup-body">
                 <label class="is__select">
                     <span>Experience</span>
@@ -198,6 +209,8 @@
                 {% if interview_initial_view == 'history' or interview_initial_mode != 'me' or is_orientation %}hidden{% endif %}
             >
                 <article data-is-practice-stage>
+                    <div class="is__content-grid is__content-grid--practice">
+                        <div class="is__main-column is__task-stage">
                     <div class="is__stage--compact-head">
                         <div>
                             <p class="is__section-label">Interview Me Practice</p>
@@ -207,7 +220,7 @@
                     </div>
 
                     <div class="is__progress-head">
-                        <span class="is__question-position" data-is-question-position>Question 1 of 5</span>
+                        <span class="is__question-position" data-is-question-position>Question 1 of 5 · 20% complete</span>
                         <ol class="is__stages" data-is-stage-rail aria-label="Answer progress">
                             <li data-is-stage="1" class="is-current" aria-current="step"><span class="is__sr-only">Draft</span><span aria-hidden="true">1</span></li>
                             <li data-is-stage="2"><span class="is__sr-only">Coaching request</span><span aria-hidden="true">2</span></li>
@@ -215,8 +228,8 @@
                             <li data-is-stage="4"><span class="is__sr-only">Improve</span><span aria-hidden="true">4</span></li>
                             <li data-is-stage="5"><span class="is__sr-only">Continue</span><span aria-hidden="true">5</span></li>
                         </ol>
-                        <span class="is__save-pill" data-is-progress-percent hidden>20%</span>
-                        <progress class="is__sr-only" data-is-progress max="100" value="20">20%</progress>
+                        <progress class="is__stage-progress" data-is-progress max="100" value="20">20%</progress>
+                        <span class="is__state-pill" data-is-stage-label>Drafting</span>
                     </div>
 
                     <div class="is__question-block">
@@ -236,31 +249,26 @@
                         <span><strong>What the interviewer is listening for:</strong> <span data-is-intent>Professional disagreement, sound judgment, and a constructive outcome.</span></span>
                     </p>
 
-                    <details class="is__reference" data-is-ai-reference hidden>
-                        <summary>Optional best-practice example</summary>
-                        <p data-is-ai-reference-text></p>
-                    </details>
-
                     <p class="is__compose-note">
                         <span>Write your answer in your own words.</span>
                         <span>Your answer is saved in this browser.</span>
                     </p>
 
-                    <div class="is__content-grid">
-                        <div class="is__main-column">
                             <form data-is-answering data-is-answer-form>
                                 <div class="is__composer">
                                     <label for="is-answer">Your answer</label>
                                     <div class="is__composer-input">
                                         <textarea
                                             id="is-answer"
-                                            rows="6"
+                                            rows="3"
                                             maxlength="5000"
-                                            placeholder="Type your answer here…"
+                                            placeholder="Write your answer in your own words…"
                                             aria-describedby="is-answer-shortcut"
                                             required
                                             data-is-answer
+                                            data-is-autogrow
                                         ></textarea>
+                                        <span class="is__sr-only" id="is-answer-shortcut">Ctrl/Command + Enter to submit this answer for coaching.</span>
                                     </div>
                                     <div class="is__composer-meta">
                                         <span data-is-autosave>Draft ready</span>
@@ -273,13 +281,18 @@
                                     <span>Questions and your answers are sent to PeerSlate only when you click Submit answer for coaching.</span>
                                 </p>
 
-                                <div class="is__actions">
+                                <div class="is__actions is__composer-actions">
                                     <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
                                         <span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
-                                        <span data-is-mic-label>Start dictation</span>
+                                        <span data-is-mic-label>Dictate</span>
+                                    </button>
+                                    <button class="is__button is__queue-mobile" type="button" data-is-queue-open aria-haspopup="dialog">
+                                        <span class="is__dock-label-full">Up next · <span data-is-up-next-count>4</span></span>
+                                        <span class="is__dock-label-compact">Next · <span data-is-up-next-count>4</span></span>
                                     </button>
                                     <button class="is__button is__button--primary is__composer-submit" type="submit" data-is-review disabled>
-                                        Submit answer
+                                        <span class="is__dock-label-full">Review My Answer</span>
+                                        <span class="is__dock-label-compact">Review</span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                                     </button>
                                 </div>
@@ -295,15 +308,9 @@
                                 </p>
 
                                 <div class="is__actions is__actions--spread">
-                                    <div class="is__actions-group">
-                                        <button class="is__button is__button--quiet" type="button" data-is-new-question>
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                                            New Question
-                                        </button>
-                                    </div>
-                                    <button class="is__button is__button--soft" type="button" data-is-queue-open aria-haspopup="dialog">
-                                        Up next: <span data-is-up-next-count>4</span> questions
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+                                    <button class="is__button is__button--quiet" type="button" data-is-new-question>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                        New Question
                                     </button>
                                 </div>
                             </form>
@@ -331,7 +338,7 @@
                                 <button class="is__button is__button--primary" type="button" data-is-retry-coaching>Retry coaching →</button>
                             </div>
 
-                            <section class="is__card is__bottom-line-shell" data-is-feedback aria-labelledby="is-feedback-title">
+                            <section class="is__card is__bottom-line-shell" data-is-feedback aria-labelledby="is-feedback-title" tabindex="-1" hidden>
                                 <div class="is__card-pad">
                                 <p class="is__eyebrow">Your coaching review</p>
                                 <h3 id="is-feedback-title" class="is__title is__title--section">Bottom line first.</h3>
@@ -394,7 +401,7 @@
                                 </div>
                             </section>
 
-                            <section class="is__card is__improve" data-is-improve-panel aria-labelledby="is-improve-title">
+                            <section class="is__card is__improve" data-is-improve-panel aria-labelledby="is-improve-title" tabindex="-1" hidden>
                                 <p class="is__eyebrow">Keep your voice. Strengthen the proof.</p>
                                 <h3 id="is-improve-title" class="is__title is__title--section" style="font-size:clamp(1.4rem,2.4vw,1.9rem)">Compare your answer with the coach-assisted draft.</h3>
                                 <div class="is__empty" data-is-improve-empty>
@@ -414,7 +421,7 @@
                                     <section class="is__compare-draft">
                                         <div class="is__compare-title"><h4>Improved draft</h4><span>AI-assisted draft</span></div>
                                         <label class="is__sr-only" for="is-improved-draft">Editable improved draft</label>
-                                        <textarea id="is-improved-draft" rows="10" maxlength="5000" data-is-improved-draft></textarea>
+                                        <textarea id="is-improved-draft" rows="5" maxlength="5000" data-is-improved-draft data-is-autogrow></textarea>
                                     </section>
                                 </div>
                                 <section class="is__changes">
@@ -432,43 +439,71 @@
 
                         </div>
 
-                        <aside class="is__side-column">
-                            <section class="is__card is__status-card" data-is-coaching-status>
-                                <p class="is__eyebrow">Coaching status</p>
-                                <h3 class="is__title" style="font-size:1.2rem">Your answer is safe.</h3>
-                                <div class="is__status-row" data-is-coaching-row="1">
-                                    <span class="is__status-dot">✓</span>
-                                    <div><strong>Answer received</strong><p>The submitted text is attached to this coaching request.</p></div>
-                                </div>
-                                <div class="is__status-row" data-is-coaching-row="2">
-                                    <span class="is__status-dot">2</span>
-                                    <div><strong>Checking the question rubric</strong><p>Reviewing relevance, structure, specificity, and result.</p></div>
-                                </div>
-                                <div class="is__status-row" data-is-coaching-row="3">
-                                    <span class="is__status-dot">3</span>
-                                    <div><strong>Preparing bottom-line feedback</strong><p>Feedback appears only when the complete review is ready.</p></div>
-                                </div>
-                            </section>
+                        <aside class="is__side-column" aria-label="Interview Me context">
+                            <div class="is__rail-state" data-is-ready-rail>
+                                <section class="is__card is__context-card">
+                                    <p class="is__eyebrow">Session</p>
+                                    <dl class="is__context-list">
+                                        <div><dt>Experience</dt><dd data-is-session-level>Experienced</dd></div>
+                                        <div><dt>Question family</dt><dd data-is-session-family>Behavioral</dd></div>
+                                        <div><dt>Format</dt><dd data-is-session-format>5 questions</dd></div>
+                                    </dl>
+                                </section>
 
-                            <section class="is__card is__card-pad" aria-label="Answering aid">
-                                <p class="is__eyebrow">Answering aid</p>
-                                <p style="margin-top:0.35rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.55">Start dictation sits next to Submit answer, under the answer box. Speaking and typing produce the same editable answer.</p>
-                                <div class="is__divider"></div>
-                                <p class="is__section-label" style="font-size:0.68rem">Keyboard tips</p>
-                                <p id="is-answer-shortcut" style="margin-top:0.4rem;color:var(--is-text-muted);font-size:0.76rem;line-height:1.6">Tab to navigate<br>Ctrl/Command + Enter to submit</p>
-                            </section>
+                                <section class="is__card is__context-card is__context-actions" aria-label="Question navigation and optional example">
+                                    <button class="is__context-link" type="button" data-is-queue-open aria-haspopup="dialog">
+                                        <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                    </button>
+                                    <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}">
+                                        <span><strong>Need a nudge?</strong><small>Open a source-labeled example</small></span>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                    </a>
+                                    <details class="is__reference is__reference--rail" data-is-ai-reference hidden>
+                                        <summary>Optional reference transferred from Interview AI</summary>
+                                        <p data-is-ai-reference-text></p>
+                                    </details>
+                                </section>
 
-                            <section class="is__card is__demo-card" data-is-demo-card>
-                                <p class="is__eyebrow">Public demo profile</p>
-                                <div class="is__demo-head">
-                                    <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="{{ interview_profile.name }}">
-                                    <div>
-                                        <p class="is__demo-name">{{ interview_profile.name }}</p>
-                                        <p class="is__demo-role">{{ interview_profile.role }}</p>
+                                <section class="is__card is__context-card">
+                                    <p class="is__eyebrow">Privacy</p>
+                                    <p class="is__context-copy">Drafts and History stay in this browser. Your text is sent only when you request coaching. Audio is not sent or kept.</p>
+                                </section>
+                            </div>
+
+                            <div class="is__rail-state" data-is-review-rail hidden>
+                                <section class="is__card is__context-card">
+                                    <p class="is__eyebrow">Current state</p>
+                                    <dl class="is__context-list">
+                                        <div><dt>Question</dt><dd data-is-review-question>1 of 5</dd></div>
+                                        <div><dt>Attempt</dt><dd data-is-review-attempt>1</dd></div>
+                                        <div><dt>Practice signal</dt><dd data-is-review-score>—</dd></div>
+                                    </dl>
+                                </section>
+                                <section class="is__card is__context-card">
+                                    <p class="is__eyebrow">Priority improvement</p>
+                                    <p class="is__context-copy" data-is-priority-improvement>Your coach’s clearest next improvement will appear here with the completed review.</p>
+                                </section>
+                                <section class="is__card is__context-card">
+                                    <p class="is__eyebrow">Browser-local truth</p>
+                                    <p class="is__context-copy">This review and attempt remain in this browser. AI may propose wording, but nothing is published or added to a private Slate.</p>
+                                </section>
+                            </div>
+
+                            <dialog class="is__dialog is__queue" data-is-queue aria-labelledby="is-queue-title">
+                                <div class="is__dialog-head">
+                                    <div><p class="is__section-label">Current session</p><h2 id="is-queue-title">Up next</h2></div>
+                                    <div class="is__dialog-actions">
+                                        <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                                        <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
                                     </div>
                                 </div>
-                                <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
-                            </section>
+                                <ol data-is-queue-list></ol>
+                                <form class="is__custom-question" data-is-custom-question-form>
+                                    <label for="is-custom-question">Add your own question</label>
+                                    <div><input id="is-custom-question" type="text" maxlength="300" placeholder="Type a custom question…" data-is-custom-question><button type="submit" class="is__icon-button" aria-label="Add custom question">+</button></div>
+                                </form>
+                            </dialog>
                         </aside>
                     </div>
                 </article>
@@ -487,9 +522,22 @@
                 <p class="is__sub">Best-practice guidance, {{ interview_profile.first_name }}&rsquo;s approved public-profile example, and side-by-side comparison remain clearly labeled.</p>
 
                 <div class="is__content-grid">
-                    <div class="is__main-column">
+                    <form class="is__ai-form" data-is-ai-form>
+                        <div class="is__ai-mark" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
+                        </div>
+                        <label for="is-ai-question">Ask a custom interview question</label>
+                        <div class="is__ai-input">
+                            <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
+                            <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate an interview question" data-is-mic="ai">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                            </button>
+                        </div>
+                        <p class="is__dictation-live" data-is-dictation-status="ai" hidden></p>
+                        <p class="is__dictation-interim" data-is-dictation-interim="ai" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
+                        <p class="is__error" data-is-mic-error="ai" hidden></p>
                         <fieldset class="is__ai-grounding" data-is-ai-mode-group>
-                            <legend class="is__section-label">Answer grounding</legend>
+                            <legend class="is__section-label">Answer basis</legend>
                             <div class="is__mode-options" role="radiogroup" aria-label="Answer grounding mode">
                                 <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
                                 <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s public history</span></label>
@@ -497,44 +545,31 @@
                             </div>
                             <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
                         </fieldset>
+                        <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
+                            Get Answer
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+                        </button>
+                    </form>
 
-                        <form class="is__ai-form" data-is-ai-form>
-                            <div class="is__ai-mark" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
-                            </div>
-                            <label for="is-ai-question">Ask a custom interview question</label>
-                            <div class="is__ai-input">
-                                <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
-                                <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate an interview question" data-is-mic="ai">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
-                                </button>
-                            </div>
-                            <p class="is__dictation-live" data-is-dictation-status="ai" hidden></p>
-                            <p class="is__dictation-interim" data-is-dictation-interim="ai" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
-                            <p class="is__error" data-is-mic-error="ai" hidden></p>
-                            <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
-                                Get Answer
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
-                            </button>
-                        </form>
+                    <div class="is__main-column">
 
                         <p class="is__grounding-note">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-                            <span>Draft basis: <strong>{{ interview_profile.name }}&rsquo;s approved public history</strong>. Verify the generated wording before using it.</span>
+                            <span>Draft basis: <strong data-is-ai-basis-label>{{ interview_profile.name }}&rsquo;s approved public history</strong>. <span data-is-ai-basis-guidance>Verify the generated wording before using it.</span></span>
                         </p>
-
-                        <div class="is__processing-banner" data-is-ai-loading hidden aria-live="polite">
-                            <span class="is__spinner" aria-hidden="true"></span> <div><strong>Building your draft…</strong></div>
-                        </div>
-                        <p class="is__error" data-is-ai-error hidden></p>
 
                         <section class="is__card is__ai-answer" data-is-ai-answer aria-labelledby="is-ai-answer-title">
                             <p class="is__eyebrow">AI synthesis</p>
-                            <h2 id="is-ai-answer-title" class="is__title" style="font-size:clamp(1.4rem,2.6vw,1.9rem)">Answer workspace</h2>
+                            <h2 id="is-ai-answer-title" class="is__title" tabindex="-1" style="font-size:clamp(1.4rem,2.6vw,1.9rem)">Answer workspace</h2>
+
+                            <div class="is__processing-banner" data-is-ai-loading hidden aria-live="polite">
+                                <span class="is__spinner" aria-hidden="true"></span> <div><strong>Building your draft…</strong></div>
+                            </div>
+                            <p class="is__error" data-is-ai-error role="alert" hidden></p>
 
                             <div class="is__empty" data-is-ai-answer-empty>
                                 <strong>Your answer workspace is open.</strong>
-                                <span>Ask a question above. PeerSlate will place the draft, the reasoning, and every source from the approved history here for you to verify.</span>
+                                <span>Ask a question above. PeerSlate will place the draft, the reasoning, and its source label here for you to verify.</span>
                             </div>
 
                             <div data-is-ai-answer-content hidden>
@@ -574,7 +609,8 @@
 
                             <form class="is__follow-up" data-is-follow-up-form>
                                 <label for="is-ai-follow-up">Ask a follow-up</label>
-                                <p>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
+                                <p data-is-follow-up-note>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
+                                <p class="is__error" data-is-follow-up-error role="alert" hidden></p>
                                 <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up disabled><button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button></div>
                             </form>
                         </section>
@@ -614,6 +650,8 @@
                 {% if interview_initial_view == 'history' or interview_initial_mode != 'video' or is_orientation %}hidden{% endif %}
             >
                 <article data-is-video-stage>
+                    <div class="is__content-grid is__content-grid--video">
+                        <div class="is__main-column is__task-stage is__video-task-stage">
                     <p class="is__eyebrow">Video Practice · local only</p>
                     <h2 class="is__title is__title--section">Rehearse on camera. Keep the recording here.</h2>
                     <p class="is__sub">Review your delivery locally. PeerSlate does not upload or analyze the recording.</p>
@@ -636,8 +674,6 @@
                         </div>
                     </div>
 
-                    <div class="is__content-grid">
-                        <div class="is__main-column">
                             <div class="is__camera" data-is-camera>
                                 <video data-is-camera-preview playsinline muted></video>
                                 <div class="is__camera-empty" data-is-camera-empty>
@@ -647,23 +683,16 @@
                                     <button class="is__button is__button--primary" type="button" data-is-camera-enable{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Enable Camera</button>
                                 </div>
                                 <div class="is__recording-badge" data-is-recording-badge hidden><i aria-hidden="true"></i><span data-is-recording-time>00:00</span></div>
-                            </div>
-
-                            <div class="is__device-status" aria-live="polite">
-                                <span data-is-camera-status><i aria-hidden="true"></i>Camera not requested</span>
-                                <span data-is-mic-status><i aria-hidden="true"></i>Microphone not requested</span>
-                                <button class="is__button is__button--quiet" type="button" data-is-device-settings{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Device settings</button>
-                            </div>
-                            <p class="is__error" data-is-video-error hidden></p>
-
-                            <div class="is__actions">
-                                <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-                                    Start Answer
-                                </button>
-                                <button class="is__button" type="button" data-is-record-stop hidden>Stop Recording</button>
-                                <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
-                                <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
+                                <div class="is__camera-controls" aria-label="Local recording controls">
+                                    <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                                        Start Answer
+                                    </button>
+                                    <button class="is__button is__button--primary" type="button" data-is-record-stop hidden>Stop Recording</button>
+                                    <button class="is__button" type="button" data-is-record-retake hidden>Record another take</button>
+                                    <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
+                                    <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
+                                </div>
                             </div>
 
                             <form class="is__card is__video-content-review" data-is-video-transcript-form>
@@ -671,7 +700,7 @@
                                 <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording.</p>
                                 <label for="is-video-transcript">Answer transcript</label>
                                 <div class="is__transcript-composer">
-                                    <textarea id="is-video-transcript" rows="5" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript></textarea>
+                                    <textarea id="is-video-transcript" rows="3" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript data-is-autogrow></textarea>
                                     <div class="is__transcript-actions">
                                         <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate your answer transcript" data-is-mic="video">
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
@@ -686,7 +715,18 @@
                         </div>
 
                         <aside class="is__side-column">
-                            <section class="is__card is__video-result" data-is-video-result aria-labelledby="is-video-result-title">
+                            <section class="is__card is__video-device-card" aria-labelledby="is-video-device-title">
+                                <p class="is__eyebrow">Device status</p>
+                                <h3 id="is-video-device-title">Local rehearsal state</h3>
+                                <p class="is__video-state-copy" data-is-video-state-copy>Camera and microphone have not been requested.</p>
+                                <div class="is__device-status" aria-live="polite">
+                                    <span data-is-camera-status><i aria-hidden="true"></i>Camera not requested</span>
+                                    <span data-is-mic-status><i aria-hidden="true"></i>Microphone not requested</span>
+                                    <button class="is__button is__button--quiet" type="button" data-is-device-settings{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Device settings</button>
+                                </div>
+                                <p class="is__error" data-is-video-error hidden></p>
+                            </section>
+                            <section class="is__card is__video-result" data-is-video-result aria-labelledby="is-video-result-title" hidden>
                                 <p class="is__eyebrow">Local rehearsal</p>
                                 <h3 id="is-video-result-title">Local rehearsal result</h3>
                                 <div class="is__empty" data-is-video-result-empty>
@@ -823,21 +863,6 @@
         </ul>
         <p style="margin-top:0.65rem;color:var(--is-text-muted);font-size:0.7rem;text-align:center">Public Interview Studio · browser-local practice</p>
     </div>
-
-    <dialog class="is__dialog is__queue" data-is-queue aria-labelledby="is-queue-title">
-        <div class="is__dialog-head">
-            <div><p class="is__section-label">Current session</p><h2 id="is-queue-title">Up next</h2></div>
-            <div class="is__dialog-actions">
-                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
-                <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
-            </div>
-        </div>
-        <ol data-is-queue-list></ol>
-        <form class="is__custom-question" data-is-custom-question-form>
-            <label for="is-custom-question">Add your own question</label>
-            <div><input id="is-custom-question" type="text" maxlength="300" placeholder="Type a custom question…" data-is-custom-question><button type="submit" class="is__icon-button" aria-label="Add custom question">+</button></div>
-        </form>
-    </dialog>
 
     <dialog class="is__dialog is__settings" data-is-settings aria-labelledby="is-settings-title">
         <div class="is__dialog-head">

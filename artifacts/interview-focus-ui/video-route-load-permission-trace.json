@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:06:04.009Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "route": "/interview-studio?mode=video",
+  "fixture": "deterministic browser-only MediaStream; no physical device",
+  "beforeUserGesture": {
+    "videoState": "camera-off",
+    "media": {
+      "events": [],
+      "requests": [],
+      "objectUrls": [],
+      "revoked": [],
+      "gumCalls": 0
+    },
+    "focused": false
+  },
+  "afterEnableCamera": {
+    "videoState": "preview",
+    "stateCopy": "Local preview is ready. Recording has not started.",
+    "media": {
+      "events": [
+        "getUserMedia:1",
+        "media-play"
+      ],
+      "requests": [
+        {
+          "video": true,
+          "audio": true
+        }
+      ],
+      "objectUrls": [],
+      "revoked": [],
+      "gumCalls": 1
+    },
+    "focusedControl": true
+  },
+  "networkRequests": [
+    {
+      "method": "GET",
+      "url": "/interview-studio",
+      "resourceType": "document",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/css/style.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/css/sky-glass.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/css/editorial-glass.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/css/chatbot.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/css2",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/css/interview-studio.css",
+      "resourceType": "stylesheet",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/images/peerslate-logo-header.png",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/images/story/pete-headshot.jpg",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/images/peerslate-mark.png",
+      "resourceType": "image",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/js/chatbot.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/js/site-search.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/js/mobile-nav.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/js/theme-toggle.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/js/interview-studio.js",
+      "resourceType": "script",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "resourceType": "font",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/s/newsreader/v26/cY9AfjOCX1hbuyalUrK4397yjA.woff2",
+      "resourceType": "font",
+      "contentType": "",
+      "bodyBytes": 0
+    },
+    {
+      "method": "GET",
+      "url": "/static/images/peerslate-favicon.png",
+      "resourceType": "other",
+      "contentType": "",
+      "bodyBytes": 0
+    }
+  ],
+  "assertions": {
+    "noPermissionRequestOnRouteLoad": true,
+    "onePermissionRequestAfterExplicitClick": true,
+    "requestedAudioAndVideo": true,
+    "routeLoadUsedGetOnly": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "name": "PeerSlate Interview Studio White Authority",
+    "version": "2.0",
+    "note": "Map to existing PeerSlate semantic tokens; do not introduce duplicates blindly."
+  },
+  "light": {
+    "pageCanvas": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surfaceSubtle": "#F5F8FC",
+    "ink": "#14233D",
+    "inkStrong": "#102A4A",
+    "muted": "#64748B",
+    "line": "#DBE3ED",
+    "primary": "#2563EB",
+    "primaryHover": "#1D4ED8",
+    "primarySoft": "#E8F0FF",
+    "teal": "#0F766E",
+    "tealSoft": "#E5F5F1",
+    "danger": "#B42318",
+    "dangerSoft": "#FEECEB",
+    "focusRing": "#60A5FA",
+    "shadow": "0 12px 32px rgba(15,39,71,0.08)"
+  },
+  "dark": {
+    "pageCanvas": "#07111F",
+    "surface": "#0D1B2E",
+    "surfaceSubtle": "#13243A",
+    "ink": "#F8FAFC",
+    "muted": "#A8B4C7",
+    "line": "#263B55",
+    "primary": "#6EA8FF",
+    "primaryHover": "#8AB4FF",
+    "primarySoft": "#19365C",
+    "teal": "#5EEAD4",
+    "tealSoft": "#123C3C",
+    "danger": "#FB7185",
+    "dangerSoft": "#3B1F2A"
+  },
+  "retired": {
+    "foundationalColors": [
+      "beige",
+      "cream",
+      "ivory",
+      "tan",
+      "parchment",
+      "gold",
+      "amber"
+    ],
+    "instruction": "Do not use these as page canvas, primary surface, selected-state, progress, or action colors for this initiative."
+  },
+  "geometry": {
+    "desktopContentMaxPx": 1440,
+    "desktopRailTargetPx": 292,
+    "desktopWorkspaceGapPx": "12-16",
+    "desktopStageRadiusPx": 17,
+    "desktopStagePaddingPx": "17-24",
+    "mobileWidthAuthorityPx": 390,
+    "touchTargetMinimumPx": 44
+  },
+  "typography": {
+    "questionDesktopPx": "29-34",
+    "questionMobilePx": "24-29",
+    "bodyMinimumPx": "14-16 production",
+    "serifUse": "question and key coaching headings",
+    "sansUse": "controls metadata answer and detail"
+  }
+}

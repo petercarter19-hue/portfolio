@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-29T06:06:25.227Z",
+  "runtimeCommit": "0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7",
+  "afterPlayback": {
+    "events": [
+      "getUserMedia:1",
+      "media-play",
+      "recorder-create",
+      "recorder-start",
+      "recorder-stop-request",
+      "recorder-data",
+      "track-stop:video",
+      "track-stop:audio",
+      "recorder-onstop"
+    ],
+    "requests": [
+      {
+        "video": true,
+        "audio": true
+      }
+    ],
+    "objectUrls": [
+      {
+        "url": "blob:peerslate-fixture-1",
+        "size": 31,
+        "type": "video/webm;codecs=vp9,opus"
+      }
+    ],
+    "revoked": [],
+    "gumCalls": 1
+  },
+  "afterDiscard": {
+    "events": [
+      "getUserMedia:1",
+      "media-play",
+      "recorder-create",
+      "recorder-start",
+      "recorder-stop-request",
+      "recorder-data",
+      "track-stop:video",
+      "track-stop:audio",
+      "recorder-onstop",
+      "media-pause"
+    ],
+    "requests": [
+      {
+        "video": true,
+        "audio": true
+      }
+    ],
+    "objectUrls": [
+      {
+        "url": "blob:peerslate-fixture-1",
+        "size": 31,
+        "type": "video/webm;codecs=vp9,opus"
+      }
+    ],
+    "revoked": [
+      "blob:peerslate-fixture-1"
+    ],
+    "gumCalls": 1
+  },
+  "assertions": {
+    "cameraAndMicTracksStopped": true,
+    "playbackUrlCreated": true,
+    "playbackUrlRevokedOnDiscard": true,
+    "recorderStopCompleted": true
+  }
+}
