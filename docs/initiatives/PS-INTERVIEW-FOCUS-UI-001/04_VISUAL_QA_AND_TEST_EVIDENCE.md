@@ -233,20 +233,30 @@ warning. The full-suite warnings are the same warning plus 18 existing Pillow
 
 ## 8. Review and release boundary
 
-At this evidence checkpoint:
+The immediate release boundary is complete:
 
-- the runtime independent review is Pass at
-  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`, as recorded in
-  `evidence-summary.json`;
-- the release-readiness audit final verdict remains pending in
-  `evidence-summary.json`;
-- Candidate deployment and smoke are pending;
-- Azure PR and squash merge are pending;
-- production is unchanged; and
-- no live behavior is claimed.
+- the runtime independent review is `Pass` at
+  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`;
+- the final release-readiness audit is `Pass` at reviewed source
+  `da6f93946adf4f3ba3c29d39362b71b0946501a7`;
+- Candidate pipeline 278 (`20260729.2`) passed Build, CandidateDeploy,
+  CandidateSmoke, and CandidateStop;
+- Azure PR 201 squash-merged at
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`;
+- automatic production pipeline 279 (`20260729.3`) passed Build, Deploy, and
+  ProductionSmoke for exact release `453e0bee3f0322e0e06e1481`;
+- independent live desktop/mobile layout, growth, focus, responsive-overflow,
+  route, and exact asset-byte checks passed; and
+- the temporary Candidate Web App and separate B1 plan were removed after
+  production verification.
 
-These statuses must be updated only from exact reviewer, pipeline, PR, and live
-verification evidence.
+`evidence-summary.json` is preserved unchanged as the hash-manifested
+historical-at-generation evidence snapshot. Its Candidate, release-readiness,
+and production fields truthfully record that those gates were still pending
+when the immutable visual set was finalized. The later exact evidence is in
+`CANDIDATE_EVIDENCE_2026-07-29.md` and
+`PRODUCTION_EVIDENCE_2026-07-29.md`; the 115-entry evidence manifest is not
+rewritten to manufacture a later status.
 
 ## 9. Homepage parity disposition
 

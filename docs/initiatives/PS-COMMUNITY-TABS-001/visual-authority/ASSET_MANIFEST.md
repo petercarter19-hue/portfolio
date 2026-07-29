@@ -1,8 +1,11 @@
 # PS-COMMUNITY-TABS-001 — Visual authority and production asset manifest
 
 **Recorded:** 2026-07-21
-**Status:** implementation evidence. Rejected preview variants are not product
-content, and source rasters remain preserved alongside delivery derivatives.
+**Status at generation:** implementation evidence. Rejected preview variants
+are not product content, and source rasters remain preserved alongside delivery
+derivatives. The package later released through the combined milestone record
+at
+`../../PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001/RELEASE_CLOSEOUT_2026-07-23.md`.
 
 ## Durable authorities
 

@@ -260,7 +260,8 @@ class LeanDeliveryPolicyTests(unittest.TestCase):
         for required in (
             "Register owner",
             "completed runtime implementation slice",
-            "1 of 4 since policy start",
+            "4 of 4 threshold held",
+            "seven qualifying slices reviewed",
             "2026-10-24",
             "Do not recursively create a\n   new audit",
             "Focused targeted audit",
@@ -270,6 +271,13 @@ class LeanDeliveryPolicyTests(unittest.TestCase):
             "Azure PR 171",
             "Pipeline:** automatic run 233",
             "default-off 404",
+            "PS-AI-OPS-CHECKPOINT-001",
+            "Candidate admission",
+            "Work & Impact",
+            "Interview follow-up mode",
+            "no unrelated\n  runtime slice",
+            "three separately assigned corrective packages",
+            "**Result:** `Conditional`; no reset",
         ):
             self.assertIn(required, register)
         for required in (
@@ -532,11 +540,12 @@ class BaselineCoherenceTests(unittest.TestCase):
         self.assertEqual(
             [
                 "PS-CAPTURE-MEDIA-001",
-                "PS-COMMUNITY-TABS-001",
                 "PS-HOME-FRONTEND-001",
                 "PS-JOURNAL-001",
                 "PS-SLATE-STUDIO-IA-001",
                 "PS-OPS-001",
+                "PS-HOME-INTERVIEW-FOCUS-PARITY-001",
+                "PS-AI-OPS-CHECKPOINT-001",
             ],
             active_ids,
         )
@@ -643,7 +652,12 @@ class BaselineCoherenceTests(unittest.TestCase):
         with open(source_path, "rb") as source_file:
             digest = hashlib.sha256(source_file.read()).hexdigest()
 
-        self.assertIn("holds: []", self.baseline)
+        self.assertIn(
+            "No unrelated runtime implementation slice before "
+            "PS-AI-OPS-CHECKPOINT-001 closes Pass; only its three separately "
+            "assigned corrective packages may proceed",
+            self.baseline,
+        )
         self.assertIn("journal_memory_profile_and_activation", self.baseline)
         self.assertIn(
             "architecture_current_private_core_entry_gate_unassigned",
@@ -701,7 +715,8 @@ class BaselineCoherenceTests(unittest.TestCase):
         standard = _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md")
         self.assertIn("match or exceed", standard)
         self.assertIn("Speak and Type", standard)
-        self.assertIn("Editorial Studio Ledger", standard)
+        self.assertIn("V3 all-modes package", standard)
+        self.assertIn("compact-height and automatic-growth correction", standard)
         for relative_path in (
             "START_HERE.md",
             "AGENTS.md",
@@ -782,7 +797,7 @@ class BaselineCoherenceTests(unittest.TestCase):
             re.sub(r"\s+", " ", package),
         )
 
-    def test_interview_dual_theme_authority_and_live_release_state_are_explicit(self):
+    def test_interview_visual_authority_and_release_lineage_are_explicit(self):
         brief = _read(
             "docs",
             "initiatives",
@@ -811,18 +826,42 @@ class BaselineCoherenceTests(unittest.TestCase):
         ):
             self.assertIn(expected, brief)
         for expected in (
+            "V3 all-modes package",
+            "V2 White",
+            "14 mapped screens",
+            "compact-height and automatic-growth correction",
+            "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb",
+            "production pipeline 279",
             "Editorial Studio Ledger",
             "Cinematic Studio",
             "same public Studio",
             "Changing theme must not reset",
+            "Claude/Fable feasibility review",
         ):
             self.assertIn(expected, standard)
         self.assertIn("18 primary exports", review)
-        self.assertIn("Concept A default/light and Concept C optional dark", self.state)
-        self.assertIn("released and verified live", self.state)
+        self.assertIn("PS-INTERVIEW-FOCUS-UI-001 - complete, released, and verified live", self.state)
+        self.assertIn("da6f93946adf4f3ba3c29d39362b71b0946501a7", self.state)
+        self.assertIn("b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb", self.state)
+        self.assertIn("production pipeline 279", self.state)
         self.assertIn("39002f5130a1766d2090007c16582e0dbe07226c", self.state)
         self.assertIn("pipeline 149", self.state)
         self.assertIn("5A-light/5C-dark", self.baseline)
+        self.assertIn("interview_focus_ui_production_pipeline: 279", self.baseline)
+        self.assertIn("PS-HOME-INTERVIEW-FOCUS-PARITY-001", self.baseline)
+        self.assertIn("PS-AI-OPS-CHECKPOINT-001", self.baseline)
+        self.assertIn(
+            'lean_checkpoint_result: "Conditional"',
+            self.baseline,
+        )
+        self.assertIn(
+            'community_tabs_status: "complete_released_verified_live_lane_closed"',
+            self.baseline,
+        )
+        self.assertIn(
+            "PS-COMMUNITY-TABS-001 — complete, released, verified live / lane closed",
+            self.initiatives,
+        )
         # The homepage Interview parity lane is closed, not pending. It released
         # through PR 105 at 4deb0a0 with pipeline 154 and closed out through
         # PR 106 with pipeline 156. These assertions previously required the

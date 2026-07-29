@@ -1,8 +1,10 @@
 # PS-COMMUNITY-TABS-001 — exact-SHA Community evidence recovery
 
-**Status:** Evidence recovered and hash-bound. This is not Pete acceptance,
-manager final acceptance, merge readiness, deployment, flag enablement, or a
-live-production claim.
+**Status at generation:** Evidence recovered and hash-bound. This artifact did
+not itself claim Pete acceptance, manager final acceptance, merge readiness,
+deployment, flag enablement, or live production. Those later gates were
+fulfilled by the combined milestone release; see
+`../PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001/RELEASE_CLOSEOUT_2026-07-23.md`.
 
 ## 1. Capture authority and truth boundary
 
@@ -90,13 +92,13 @@ semantic-state exception to the coarse dHash collision instead of hiding it.
 | `ANTHROPIC_API_KEY=test-key-for-ci-only python -m unittest discover -s tests -t . -q` | **Pass: 810 tests, 2 expected skips.** The placeholder is process-only and no credential was read. Existing negative-path logs/warnings remain expected. |
 | PNG signature, decode, dimensions, normalized RGBA and file hashes | **Pass: 15 / 15** against the committed manifest. |
 
-## 7. Remaining gates
+## 7. Gates as recorded at generation, later fulfilled
 
-Pete has not accepted the real Community pages. The designated manager has not
-issued a final visual/product pass, and independent final review has not begun.
-No PR, merge, deployment, production verification, or feature-flag change is
-authorized by this evidence recovery.
-
-**Next action:** manager review of the 15 actual integrated-page captures and
-the updated package, then Pete's visual/product review under the required
-workflow.
+At this evidence-recovery checkpoint, Pete acceptance, final audit, PR, merge,
+deployment, and production verification were still future gates; this artifact
+did not authorize them by itself. They were subsequently fulfilled on
+2026-07-23: Pete accepted Community, the Claude Code audit of record passed,
+Azure PR 161 squash-merged the accepted milestone, CI repair PR 162 merged,
+pipeline 221 passed Build and Deploy, and live Feed/The Break verification
+passed. The controlling release record is
+`../PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001/RELEASE_CLOSEOUT_2026-07-23.md`.

@@ -23,16 +23,20 @@
 - **Pete / designated session manager visual acceptance:** Not Applicable
 - **Designated session manager:** Current Pete-authorized Codex task
 - **Lane owner and self-managed authority:** Codex, bounded to this branch
-- **Self-certification:** Conditional
+- **Self-certification:** **Pass for the bounded released HTML-only slice.**
+  The broader response-level/search-operations continuation remains open and
+  is not included in that Pass.
 - **Complete-diff review:** Passed for the implemented files
-- **Acceptance requested:** Response-level continuation after `app.py`
-  relinquishment
+- **Acceptance requested:** None for the released HTML-only slice. The
+  response-level/search-operations continuation is separately unassigned.
 
-The implementation is `Conditional` rather than a full response-level `Pass`
-because an active Overview writer owns `app.py`. This branch does not collide
-with that writer. The HTML `noindex` control is complete and tested; the global
-HTTP header, quiet sitemap behavior, and Search Console action remain
-separately identifiable work.
+The original closeout used one broad `Conditional` result because an active
+Overview writer then owned `app.py`. The 2026-07-29 lean-delivery checkpoint
+reconciliation narrows that result to the scope actually shipped: the HTML
+`noindex` control is complete, tested, released, and verified live, so that
+bounded slice is `Pass`. The global HTTP header, quiet sitemap behavior, and
+Search Console action remain separately identifiable, unassigned work and are
+not claimed by this Pass.
 
 ## B. What changed technically
 
@@ -129,9 +133,9 @@ introduced by this change.
 
 ## G. Known gaps, risks, and exclusions
 
-- The active Overview worktree still owns uncommitted `app.py` changes. This
-  branch intentionally does not add the desired global `X-Robots-Tag` header or
-  quiet-mode sitemap behavior.
+- This released HTML-only slice intentionally does not add the desired global
+  `X-Robots-Tag` header or quiet-mode sitemap behavior. The historical
+  `app.py` collision is closed; no continuation writer is currently assigned.
 - The current sitemap continues to advertise routes until the collision-safe
   continuation lands. Tests prove every advertised HTML route currently emits
   noindex.
@@ -143,10 +147,10 @@ introduced by this change.
 
 ## H. Clear next step
 
-Continue the response-level slice after the active `app.py` writer explicitly
-commits, pushes, and relinquishes that file. The continuation should add the
-global response header, quiet-mode sitemap behavior, automated dual-mode tests,
-Search Console action, and exact live verification.
+Assign a new bounded response-level/search-operations continuation before
+changing `app.py`. That separate slice should add the global response header,
+quiet-mode sitemap behavior, automated dual-mode tests, Search Console action,
+and exact live verification.
 
 ## I. What Pete needs to do or decide
 

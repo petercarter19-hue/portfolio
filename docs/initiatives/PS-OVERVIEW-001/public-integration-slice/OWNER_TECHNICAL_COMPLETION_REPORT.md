@@ -30,8 +30,15 @@
 - Manager handoff status and next receiver: release lane closed; no receiver
 - Lane owner and self-managed authority: current task, bounded to the public
   integration package
-- Self-certification: Conditional only because no fresh independent reviewer
-  was available; all source, pipeline, deployment, and production checks passed
+- Release-time self-certification: historical `Conditional` only because no
+  fresh independent reviewer was then available; all source, pipeline,
+  deployment, and production checks passed
+- Retrospective targeted review: **Pass, 2026-07-29.** The fresh read-only
+  checkpoint reviewer assessed this slice's source/release/live evidence in
+  exact current integration
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb` and found no open
+  slice-specific defect. This closes the release-time review gap without
+  changing runtime.
 - Complete-diff review: issues corrected; final staged-diff review passed
 - Acceptance requested: technical report, visual-product, and release
 
@@ -176,9 +183,12 @@ Constellation. Production captures and hashes are in the evidence README.
 
 ## G. Known gaps, risks, and exclusions
 
-- A fresh independent reviewer was not available inside this single-writer
-  task. This report does not represent that review as completed. Azure policy
-  results and Pete's explicit release direction will be recorded truthfully.
+- Historical at release: a fresh independent reviewer was not available inside
+  the single-writer task, so the release report correctly remained
+  `Conditional`. The 2026-07-29 `PS-AI-OPS-CHECKPOINT-001` fresh targeted
+  review later closed that exact gap with a slice-specific `Pass`. The overall
+  seven-slice checkpoint remains `Conditional` for three unrelated shared
+  findings.
 - Homepage visual parity is a tracked downstream visual-authority package.
 - Member authoring/persistence/publication-history behavior remains deferred.
 - Local browser automation confirmed native semantic links and a visible

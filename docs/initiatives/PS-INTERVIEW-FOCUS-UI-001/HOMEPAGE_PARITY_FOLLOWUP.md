@@ -16,13 +16,12 @@ current projection already matches the refreshed Studio.
 - Affected public surface: the logged-out `/` Interview Studio scene and its
   illustrative walkthrough.
 - Canonical product route: `/interview-studio`.
-- Upstream authority before deployment: the accepted
-  `PS-INTERVIEW-FOCUS-UI-001` V3/V2 implementation candidate and Pete's
-  compact-height correction.
-- Upstream authority after deployment: the exact accepted, merged, deployed,
-  and live `/interview-studio` release, with its source, merge, pipeline,
-  production release identity, and live evidence recorded in the parent
-  package's completion report.
+- Current upstream authority: the accepted and live
+  `PS-INTERVIEW-FOCUS-UI-001` V3/V2 implementation and Pete's compact-height
+  correction. Reviewed source
+  `da6f93946adf4f3ba3c29d39362b71b0946501a7` released through PR 201,
+  merge `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`, pipeline 279, and exact
+  product release `453e0bee3f0322e0e06e1481`.
 
 The existing homepage scene continues to link to the real public Studio and
 retains its fictional, illustrative, no-input, no-request, and no-storage

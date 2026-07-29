@@ -2,7 +2,11 @@
 
 ## Status
 
-Activated for implementation and release by Pete on 2026-07-28.
+**Complete, released, and independently verified live. Runtime lane closed.**
+
+Pete activated the implementation and release on 2026-07-28. Candidate,
+Azure squash merge, production deployment, independent live verification, and
+temporary-resource cleanup completed on 2026-07-29.
 
 ## Controlled records
 
@@ -10,6 +14,8 @@ Activated for implementation and release by Pete on 2026-07-28.
 - `02_PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md`
 - `03_REPOSITORY_DISCOVERY_AND_PRESERVATION_MAP.md`
 - `04_VISUAL_QA_AND_TEST_EVIDENCE.md`
+- `CANDIDATE_EVIDENCE_2026-07-29.md`
+- `PRODUCTION_EVIDENCE_2026-07-29.md`
 - `HOMEPAGE_PARITY_FOLLOWUP.md`
 - `OWNER_TECHNICAL_COMPLETION_REPORT.md`
 - `source-authority/v3/`
@@ -19,8 +25,9 @@ Activated for implementation and release by Pete on 2026-07-28.
 
 - Product owner and final visual authority: Pete.
 - Design authority creator: ChatGPT, through the owner-approved V3 and V2 handoff packages.
-- Designated manager and sole active writer: the current ChatGPT Work/Codex task on
-  `work/2026-07-28-ps-interview-focus-ui-001`.
+- Release manager and implementation writer: the ChatGPT Work/Codex task on
+  `work/2026-07-28-ps-interview-focus-ui-001`; that runtime lane is closed and
+  its remote branch is deleted.
 - Independent review remains a separate read-only responsibility.
 - Existing Claude branches, architecture/review attribution, model-routing records,
   handoffs, and exact SHAs are preserved. This initiative does not rename, delete,
@@ -38,6 +45,21 @@ Activated for implementation and release by Pete on 2026-07-28.
 - Verified Azure-hosted pre-change rollback pointer:
   `backup/2026-07-28-pre-interview-focus-ui-001-a85ffbc9` at exact SHA
   `a85ffbc93a1def86f99db66df26702a59aff4cbc`.
+- Reviewed source:
+  `da6f93946adf4f3ba3c29d39362b71b0946501a7`.
+- Frozen runtime:
+  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`.
+- Candidate: pipeline 278 (`20260729.2`), all four Candidate stages `Pass`.
+- Azure PR 201 squash merge:
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`.
+- Production: automatic pipeline 279 (`20260729.3`), Build, Deploy, and
+  ProductionSmoke `Pass`; exact release
+  `453e0bee3f0322e0e06e1481`.
+- Independent live desktop/mobile verification and exact CSS/JavaScript byte
+  matching: `Pass`.
+- Duplicate fallback build 280: canceled before start; not a release failure.
+- Temporary Candidate Web App and separate B1 plan: removed after production
+  verification.
 
 ## Binding visual authority
 
@@ -140,3 +162,8 @@ written V3 states are not new visual direction.
 - exact base/final/merge/deployed SHAs;
 - Azure pipeline and independent production smoke evidence;
 - exact rollback pointer and retained source-authority packages.
+
+All required immediate-release evidence passed. Pete's direct post-live
+inspection, the 24-72-hour Gate Operate follow-up, and current homepage visual
+parity are follow-up gates. Homepage parity remains open under
+`PS-HOME-INTERVIEW-FOCUS-PARITY-001`; its runtime writer is unassigned.

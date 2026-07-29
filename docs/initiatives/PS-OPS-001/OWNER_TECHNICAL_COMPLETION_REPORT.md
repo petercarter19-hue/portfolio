@@ -3,10 +3,10 @@
 ## A. Status
 
 - **Package:** `PS-OPS-001` Professional Delivery and Operational Readiness
-- **Status:** Technical Handoff Complete - runtime/pipeline, test-contract, and
-  governance rechecks passed; Gate Candidate `Pass` recorded for exact Azure
-  build `256`; approved for Azure PR and production Gate F; Gate Launch, Gate
-  Operate, and Gate Retire remain `Not Assessed`
+- **Status:** Repository floor released and production-verified. Gate Candidate
+  `Pass` is recorded for exact Azure build `256`; Azure PR 189 and production
+  pipeline 257 passed. Gate Launch, Gate Operate, and Gate Retire remain
+  `Not Assessed`.
 - **Branch and commit:**
   `work/2026-07-26-responsive-site-audit-001`; initial implementation
   `34528a01b9fde2f88024b163a982ef253df85765`; initial reviewed closeout
@@ -20,8 +20,14 @@
   `f05171a2e808e419becf1b2bde5b870c8343b5e2`
 - **PR / pipeline / environment:** Azure Candidate build `256`
   (`20260727.9`) passed Build, CandidateDeploy, CandidateSmoke, and
-  CandidateStop; production stages skipped; PR remains pending at this record
-- **Production state:** Unchanged at Candidate decision time
+  CandidateStop; production stages skipped. Azure PR 189 later squash-merged
+  source `b04bef26c6809f78d428853da2efb1c6115f2225` at
+  `141273fe51c0ac3c35e4ab15d96e34524b674d68`; automatic pipeline 257
+  (`20260727.10`) succeeded for that exact merge.
+- **Production state:** Repository floor released. Pipeline 257 deployed the
+  member-data-free liveness and exact-release smoke controls; later
+  PS-SEC-EDGE and Interview Focus releases exercised those controls in
+  Candidate and production.
 - **Visual authority and status:** Not Applicable; no visual presentation
   changed
 - **Visual inspector:** Not Applicable
@@ -31,18 +37,19 @@
 - **Homepage product projection:** Current; no homepage content or behavior
   changed
 - **Pete / designated session manager visual acceptance:** Not Applicable
-- **Designated session manager:** current ChatGPT Work/Codex task
-- **Manager handoff status and next receiver:** same-writer corrections complete
-  after a `Conditional` exact-SHA review; runtime/pipeline, test-contract, and
-  final governance rechecks passed; Pete owns the Candidate decision
-- **Lane owner and self-managed authority:** Codex, bounded to the
-  owner-authorized professional-readiness follow-on
+- **Designated session manager:** the original ChatGPT Work/Codex release task;
+  later package managers apply the released floor
+- **Manager handoff status and next receiver:** release closed; no active
+  PS-OPS implementation writer. A future writer is required for the separate
+  Candidate admission-control correction.
+- **Lane owner and self-managed authority:** no current implementation writer;
+  ongoing Launch, Operate, Retire, and Emergency gates remain package-managed
 - **Self-certification:** Pass for the repository floor at reviewed correction
   `5472b02cccc4e7f6dff34ab1a65b37047c568507`
 - **Complete-diff review:** Pass; accepted findings corrected and the final diff
   matches the bounded reservation
-- **Acceptance requested:** technical report; external operational controls and
-  release acceptance remain separate decisions
+- **Acceptance requested:** none for the released repository floor. External
+  operational controls and the unassessed gates remain separate decisions.
 
 ## B. What changed technically
 
@@ -224,7 +231,10 @@ exclusion.
 - **Scanners/tests:** `pip-audit` found no known vulnerabilities; Gitleaks
   scanned 480 commits and found no leaks; Azure ran 999 tests successfully
   with 18 environment-dependent skips.
-- **Production:** Not deployed or verified at Candidate decision time.
+- **Production:** Azure PR 189 squash-merged at
+  `141273fe51c0ac3c35e4ab15d96e34524b674d68`; pipeline 257
+  (`20260727.10`) passed. Later exact-release production smokes prove the floor
+  remains active.
 - **Real-member validation:** Not applicable to the member-data-free liveness route;
   no member behavior changed.
 - **Visual/responsive/accessibility evidence:** Not applicable to this
@@ -241,25 +251,30 @@ exclusion.
   backup/restore evidence are not yet established.
 - Gate Candidate passed for exact build 256. Gate Launch, Gate Operate, and
   Gate Retire remain separately `Not Assessed`.
-- Production deployment and live verification remain pending until the Azure
-  PR completes.
-- The temporary separate Candidate B1 plan must be removed after verified
-  production release to bound cost.
-- No technical-review finding remains open in the repository floor.
+- The floor's production release is complete. A later PS-SEC-EDGE recovery
+  removed the temporary Candidate resources after production verification.
+- The YAML still hard-codes one historical Candidate branch name. Interview
+  Focus used a verified exact-SHA temporary alias at that name, then deleted it.
+  Before another package uses Candidate, a separate reviewed correction must
+  provide auditable package-specific admission. Repeating the alias requires
+  new explicit owner approval.
+- No original build-256 technical-review finding remains open. The later
+  checkpoint Candidate-admission finding above remains open and requires a
+  separate reviewed correction before Candidate reuse.
 
 These remaining gaps do not alter the exact Candidate `Pass`. They prevent
 claims about Launch, ongoing Operate maturity, or Retire readiness.
 
 ## H. Clear next step
 
-Create the Azure PR, complete the required merge workflow, then require the
-exact main Build, Deploy, ProductionSmoke, live `/healthz`, and canonical route
-evidence before calling the repository floor released. Remove the temporary
-Candidate plan only after that verification.
+Preserve the released floor. Assign a separate PS-OPS writer only when a package
+is authorized to correct Candidate admission or implement an unassessed
+Launch, Operate, or Retire control. The next Candidate admission correction
+must eliminate the single historical hard-coded branch dependency without
+weakening exact source, artifact, environment, approval, smoke, or stop checks.
 
 ## I. What Pete needs to do or decide
 
-Pete has no remaining pre-merge decision for this exact Candidate. Pete
-approved `Pass` for build 256 in the current Codex task on 2026-07-27 and had
-already authorized PR, merge, and production deployment after the gate passed.
-Any material source change after this record requires a new exact assessment.
+Pete has no remaining decision for the released repository floor. A future
+Candidate admission-control implementation, Gate Launch, Gate Operate, or Gate
+Retire decision requires its own explicit assignment and exact assessment.

@@ -387,45 +387,61 @@ My Story, Slate Board, and any later experience added to `/`:
 
 ### Interview Studio
 
-- The exact source image
-  `C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`
-  is the current public Studio visual authority. Image 5 Concept A,
-  **Editorial Studio Ledger**, controls default/light; Image 5 Concept C,
-  **Cinematic Studio**, controls optional dark. Image 1A and Image 2A are not
-  co-authorities.
-- The current `/interview-studio` remains one real interactive, light-first
-  Approach A public experience. Dark is an optional theme of that same public Studio and route,
-  semantic DOM, information architecture, state machine, behavior, and truth
-  boundary; it is not an authenticated product or separate feature set.
-- Both themes must keep honest public-profile grounding, browser-local history,
-  real coaching requests, local camera behavior, and the current primary
-  written-practice flow. Changing theme must not reset or alter product state.
-- Implementation is not authorized until the complete nine-screen current-public
-  design set in both themes, responsive and accessibility states, editable
-  source, component inventory, truth review, Claude/Fable feasibility review,
-  manager review, and Pete's visual approval are complete.
-- Pete later authorized a separately scoped homepage Interview Studio
-  walkthrough. That decision supersedes the earlier worked-example exclusion
-  only for a future homepage demonstration package; it does not replace the
-  interactive public Studio or authorize a homepage edit in the current package.
-- The real public Studio is the upstream authority for that walkthrough. The
-  walkthrough is a later static, no-side-effect projection of the accepted and
-  live Studio, not a parallel design authority. It must use the real Studio's
-  5A-light/5C-dark composition, written-practice-first hierarchy, product names,
-  and truth labels when final projection parity closes.
-- Pete explicitly accepted the completed fixed pre-convergence walkthrough for
-  an interim live illustrative release on 2026-07-19. That narrow exception
-  allows the truthful, fictional, no-side-effect walkthrough to remain live
-  while the real Studio gate proceeds. It does not make the walkthrough a
-  co-authority or close homepage parity. Its Voice-default framing and
-  paper-light dark modal remain required downstream convergence work after the
-  exact 5A/5C real Studio is accepted and live.
-- Real Studio implementation and homepage-demo implementation require separate
-  visual acceptance, Azure release, and live verification evidence. A demo may
-  never be used to claim that the real Studio is implemented or deployed.
+- Current production authority is the Pete-approved
+  `PS-INTERVIEW-FOCUS-UI-001` V3 all-modes package with 14 mapped screens,
+  supplemented by V2 White only where it does not conflict with V3, plus
+  Pete's binding compact-height and automatic-growth correction.
+- The V3 source archive SHA-256 is
+  `7FF3187C7F7E62A29FFD15433454AA0742302308249B4AACA9ED8DBED809814F`;
+  the V2 White archive SHA-256 is
+  `F968CEDF57CD064B748861472658FEAB87EF7C0603C277BAAAEDA2C2649B7E4D`.
+  Both declared manifests verified 52 of 52 entries with zero failures.
+- Answer, transcript, and improved-draft composers begin at approximately half
+  the pictured empty height and grow automatically for typed, pasted,
+  dictated, restored, transferred, or generated text. Read-only results use
+  natural content height. Empty/reset fields return to the compact height;
+  long content may grow the document but may not clip text or cover actions.
+  Camera previews, coaching cards, and History are not mechanically halved.
+- The source comparison completed six compare-refine cycles. All 14 V3 screens
+  map to final implementation states, and the final mismatch register is empty.
+  No materially new art was required, so ChatGPT image generation was not
+  invoked for this release.
+- Reviewed source `da6f93946adf4f3ba3c29d39362b71b0946501a7`,
+  containing frozen runtime
+  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`, released through Candidate
+  pipeline 278, Azure PR 201, merge
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`, and production pipeline 279.
+  Independent desktop/mobile live verification and exact CSS/JavaScript byte
+  matching passed.
+- Image 5 Concept A/Concept C 5A-light/5C-dark remains preserved as superseded
+  historical authority. Its labels, **Editorial Studio Ledger** and
+  **Cinematic Studio**, described two themes of the same public Studio, and its
+  completed gate included the recorded Claude/Fable feasibility review.
+  Changing theme must not reset product state. This historical authority does
+  not control current production and is not a co-authority for a material
+  revision.
+- Its exact historical source reference remains
+  `C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`.
+  The Focus release supersedes its controlling status; it does not erase the
+  source, review, or attribution record.
+- `/interview-studio` remains one real interactive public experience with a
+  shared semantic DOM, information architecture, state machine, behavior, and
+  truth boundary. Theme and responsive transitions may not reset product state.
+- Public-profile grounding, browser-local History, real written coaching
+  requests, AI-proposal labels, and local camera behavior remain explicit.
+  The public Studio does not imply account-backed history, cloud media storage,
+  media upload, private Slate retrieval, or fabricated analysis.
+- The real public Studio remains the upstream authority for that walkthrough.
+  The homepage walkthrough remains a separate static, fictional,
+  no-input/no-request/no-storage projection. It may never be used to claim that
+  the real Studio is implemented or deployed. Historical
+  `PS-HOME-INTERVIEW-PARITY-001` remains closed for 5A/5C; current Focus parity
+  is open under `PS-HOME-INTERVIEW-FOCUS-PARITY-001`, which requires
+  ChatGPT-created production-intent authority and Pete's exact lock before any
+  runtime writer is assigned.
 - The future authenticated owner Studio remains a separate package after
   authenticated routes, identity, persistence, and authorization exist. The
-  current public dark theme does not simulate or pre-authorize it.
+  current public product does not simulate or pre-authorize it.
 
 ### Homepage boundary
 

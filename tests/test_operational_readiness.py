@@ -597,15 +597,15 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             ),
             'docs/governance/CURRENT_BASELINE.yaml': (
                 '- id: PS-OPS-001',
-                'repository_floor_technical_handoff_complete_gate_candidate_not_assessed',
+                'repository_floor_released_pipeline257_candidate_pass',
             ),
             'docs/governance/CURRENT_STATE.md': (
                 'Professional readiness controls (2026-07-26)',
                 'Gate Candidate is `Pass` for exact Azure build `256`',
             ),
             'docs/governance/ACTIVE_INITIATIVES.md': (
-                'PS-OPS-001 - Candidate passed; production Gate F active',
-                'technical rechecks passed',
+                'PS-OPS-001 - repository floor released; ongoing gates remain',
+                'final governance rechecks passed',
             ),
         }
         for relative_path, phrases in paths_and_phrases.items():
@@ -630,14 +630,18 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
                 rf'(?m)^\| {pr} \|',
             )
         self.assertIn(
-            'deployed_main_commit: "453662adc022b6ea0b1b38208c7100697d119a8b"',
+            'deployed_main_commit: "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 247', baseline)
-        self.assertIn('PS-OPS-001 setup/correction lane', baseline)
-        self.assertIn('Professional readiness Candidate setup', initiatives)
+        self.assertIn('deployed_pipeline: 279', baseline)
+        self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)
+        self.assertIn('Professional readiness ongoing gates', initiatives)
         self.assertIn(
-            'PS-OPS-001 | **Candidate `Pass`; production Gate F authorized.**',
+            'PS-OPS-001 | **Repository floor released.**',
+            handoff,
+        )
+        self.assertIn(
+            'PS-AI-OPS-CHECKPOINT-001 | **Conditional/open.**',
             handoff,
         )
 

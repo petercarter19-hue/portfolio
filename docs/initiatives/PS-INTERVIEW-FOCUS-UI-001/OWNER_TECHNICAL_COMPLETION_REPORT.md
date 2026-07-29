@@ -5,14 +5,15 @@ Date: 2026-07-29
 ## A. Status
 
 - Package: `PS-INTERVIEW-FOCUS-UI-001`
-- Status: In Progress. Implementation, local validation, final browser
-  evidence, and independent runtime review are complete. Candidate, Azure PR,
-  production pipeline, and live verification remain pending.
+- Status: **Complete, released, and independently verified live. Runtime lane
+  closed.**
 - Branch: `work/2026-07-28-ps-interview-focus-ui-001`
 - Exact base:
   `a85ffbc93a1def86f99db66df26702a59aff4cbc`
 - Frozen runtime SHA:
   `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`
+- Reviewed source/evidence SHA:
+  `da6f93946adf4f3ba3c29d39362b71b0946501a7`
 - Verified pre-change Azure backup:
   `backup/2026-07-28-pre-interview-focus-ui-001-a85ffbc9` at
   `a85ffbc93a1def86f99db66df26702a59aff4cbc`
@@ -22,18 +23,30 @@ Date: 2026-07-29
   frozen implementation; final mismatch register empty.
 - Independent runtime review: Pass at
   `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`.
-- Release-readiness audit: Pending final verdict.
-- Candidate pipeline: Pending.
-- Azure PR and squash merge: Pending.
-- Production: Unchanged.
-- Live verification: Not started.
+- Release-readiness audit: Pass at
+  `da6f93946adf4f3ba3c29d39362b71b0946501a7`.
+- Candidate pipeline: 278 (`20260729.2`), Build, CandidateDeploy,
+  CandidateSmoke, and CandidateStop all Pass; artifact SHA-256
+  `d784562d4b1349c3ade69fddc4340382c5f745f8428f71356560223c32a70724`;
+  exact Candidate release `15c44c8f758582dfffc61a98`.
+- Azure PR and squash merge: PR 201 at
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`.
+- Production: automatic pipeline 279 (`20260729.3`) passed Build, Deploy, and
+  ProductionSmoke; artifact SHA-256
+  `5494b661511095adf6b7ea3060c16e3faa967db88dfc846a7e6e230a5c27b54a`;
+  exact release `453e0bee3f0322e0e06e1481`.
+- Live verification: Pass at desktop 1440 x 900 and mobile 390 x 844,
+  including compact sizing, 5,000-character growth, queue modality/focus,
+  overflow, route health, and exact CSS/JavaScript byte matching.
+- Candidate cleanup: Pass. The temporary Candidate Web App and separate B1
+  plan were removed after production verification.
+- Rollback disposition: the Azure backup branch remains retained at the exact
+  pre-change SHA; the remote runtime task branch was deleted after verification.
 - Homepage product projection: Open downstream work under
   `PS-HOME-INTERVIEW-FOCUS-PARITY-001`.
 - Owner live inspection: Pending post-release. Pete approved the source visual
   direction and compact-height correction and authorized release after the
   required gates.
-
-No production or live claim is made at this checkpoint.
 
 ## B. What changed technically
 
@@ -89,9 +102,9 @@ The four destinations remain distinct:
 
 Supporting detail is quieter and secondary to the current task.
 
-## D. What a visitor can do after release
+## D. What a visitor can do now
 
-After verified release, a visitor can:
+On the verified live Studio, a visitor can:
 
 - practice in a compact answer field that grows naturally;
 - dictate into the same field when browser speech recognition is available;
@@ -125,8 +138,12 @@ This package does not add:
 
 - Focused suite:
   `147 passed, 1 warning, 32 subtests passed`
-- Full repository suite:
+- Full repository suite at the reviewed runtime source:
   `1074 passed, 3 skipped, 19 warnings, 537 subtests passed`
+- Governance closeout suite:
+  `61 passed, 1 warning, 88 subtests passed`
+- Full repository suite after the governance closeout updates:
+  `1074 passed, 3 skipped, 19 warnings, 538 subtests passed`
 - JavaScript syntax: Pass
 - `git diff --check`: Pass
 - Independent runtime review: Pass at the frozen runtime SHA
@@ -134,6 +151,22 @@ This package does not add:
 The focused warning is the expected local Flask-Limiter in-memory-storage
 warning. The full-suite warnings are the same warning plus 18 existing Pillow
 `Image.getdata` deprecation warnings.
+
+### Candidate and production checks
+
+- Candidate pipeline 278: Build, CandidateDeploy, CandidateSmoke, and
+  CandidateStop Pass.
+- Candidate smoke: `/healthz`, `/`, `/interview-studio`, `/robots.txt`, and
+  `/sitemap.xml` Pass at exact release `15c44c8f758582dfffc61a98`.
+- Azure PR 201: completed by squash at
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`.
+- Production pipeline 279: Build, Deploy, and ProductionSmoke Pass at exact
+  release `453e0bee3f0322e0e06e1481`.
+- Duplicate fallback pipeline 280: canceled before start; no release work.
+- Temporary Candidate resources: removed after production verification.
+- Exact evidence:
+  `CANDIDATE_EVIDENCE_2026-07-29.md` and
+  `PRODUCTION_EVIDENCE_2026-07-29.md`.
 
 ### Browser, visual, and privacy evidence
 
@@ -214,32 +247,54 @@ no-storage illustration that links to the real Studio.
 
 ## H. Known gaps, risks, and exclusions
 
-- Production is unchanged.
-- Candidate deployment, identity smoke, mandatory stop, and cleanup are
-  pending.
-- The Azure PR, squash merge, main pipeline, and production smoke are pending.
-- The release-readiness audit final verdict is pending.
 - Pete has not yet inspected the live implementation.
 - Homepage visual parity remains open under
   `PS-HOME-INTERVIEW-FOCUS-PARITY-001`.
 - The later 24-72 hour operate-evidence window cannot be completed during the
-  immediate release.
-- No branch, stash, unrelated file, source-authority file, or Claude-owned lane
-  is deleted by this package.
+  immediate release and remains pending.
+- Gate Launch was not expanded or separately assessed for this bounded public
+  refinement.
+- The overdue lean-delivery checkpoint discovered during closeout is
+  `Conditional` and held at `4 of 4`. It does not invalidate this released
+  Interview visual/runtime release. The checkpoint reproduced a pre-existing
+  Interview AI follow-up provenance defect: the signed context omits mode, and
+  Compare can send a grounded prior answer into the branch visibly labeled
+  generic. Approved public profile material is involved, not private
+  retrieval. A separate correction must bind mode, reject mismatch, isolate
+  generic provider context, and add regression coverage. Together with the
+  separately scoped Candidate-admission and Work & Impact profile-provenance
+  findings, it blocks unrelated runtime slices until focused recheck passes.
+  Only the three separately assigned corrective packages may proceed while the
+  hold is open.
+- The deterministic browser evidence does not claim a live provider response
+  or a physical camera/microphone session.
+- The remote runtime task branch was deleted after verified release. No stash,
+  unrelated file, source-authority file, Claude-owned branch, Claude reference,
+  attribution, or handoff was deleted by this package.
 
-## I. Release gate and next step
+## I. Release disposition and next step
 
-The next authorized step is to obtain the exact final release-readiness verdict.
-If it is Pass, push the exact frozen branch and run the isolated Candidate
-pipeline. Candidate must pass Build, CandidateDeploy, CandidateSmoke, and
-CandidateStop before an Azure squash PR can proceed.
+The immediate release sequence is closed: independent review, Candidate, Azure
+PR/squash merge, automatic production pipeline, independent live verification,
+exact asset-byte comparison, branch cleanup, and Candidate-resource removal all
+passed.
 
-After merge, the exact main pipeline and production identity must be verified.
-Only then may the work be described as deployed or live. Temporary Candidate
-resources must be removed after verified production.
+The runtime product release is merge
+`b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`, pipeline 279, exact release
+`453e0bee3f0322e0e06e1481`. The exact pre-change Azure rollback branch remains
+retained. A later documentation-only closeout deployment may advance main's
+release identity without changing these Interview runtime bytes.
+
+Next gates are Pete's direct live inspection, the bounded 24-72-hour Gate
+Operate follow-up, and separate ChatGPT-created/Pete-locked homepage Focus
+parity authority before any homepage runtime assignment. Across the repository,
+no unrelated runtime slice should begin before
+`PS-AI-OPS-CHECKPOINT-001` closes `Pass`; only its three separately assigned
+corrective packages may proceed while the hold is open.
 
 ## J. What Pete needs to do
 
-Nothing for the already authorized overnight sequence. After verified
-production, Pete may inspect the live Studio and request a bounded visual
-touch-up.
+Nothing is required to complete the already authorized overnight release.
+Pete may inspect the live Studio and request a bounded visual touch-up. The
+separate homepage Focus projection will return to Pete after ChatGPT creates
+the exact visual authority; no homepage runtime work begins before that lock.

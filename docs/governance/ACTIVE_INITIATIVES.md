@@ -35,18 +35,14 @@ It will lock a named release wave's responsive architecture after page
 directions settle and later audit the integrated browser implementation before
 a major launch/public beta. This planning update changes no website behavior._
 
-_Updated 2026-07-26 for Pete's explicitly authorized `PS-OPS-001` repository
-floor on `work/2026-07-26-responsive-site-audit-001`. The current ChatGPT
-Work/Codex task is manager and sole writer for the package/governance,
-member-data-free liveness, release-identity/smoke, pipeline, and focused-test
-surface named below. Its first exact-SHA infrastructure review returned
-`Conditional`; all accepted corrections and focused rechecks passed at
-`5472b02cccc4e7f6dff34ab1a65b37047c568507`; technical rechecks passed. Pete
-selected and delegated the production-like Candidate path on 2026-07-26, then
-approved Candidate `Pass` for exact Azure build 256 at
-`1ca3ea6120fc8fcbfeba30137a3bfc94d5508772` on 2026-07-27. The branch is
-approved for Azure PR and production Gate F; other professional gates remain
-`Not Assessed`._
+_Updated 2026-07-29 to reconcile the released `PS-OPS-001` repository floor.
+Pete approved Candidate build 256, Azure PR 189 squash-merged at
+`141273fe51c0ac3c35e4ab15d96e34524b674d68`, and pipeline 257
+(`20260727.10`) passed. The floor is released and in use; no PS-OPS
+implementation writer remains assigned. Gate Launch, Gate Operate, and Gate
+Retire remain `Not Assessed`. The Focus release exposed a hard-coded Candidate
+branch-name limitation, so a separate admission-control correction is required
+before another package uses Candidate._
 
 _Updated 2026-07-26 after PS-OVERVIEW-PUBLIC-INTEGRATION-001 released through
 Azure PR 187 at squash merge
@@ -55,6 +51,29 @@ Build and Deploy and the public résumé was verified live after an App Service
 restart. The implementation lane is closed and its file reservation is
 released. `PS-OVERVIEW-HOMEPAGE-PARITY-001` is tracked but unassigned pending a
 new Pete-locked homepage visual authority._
+
+_Updated 2026-07-29 after `PS-INTERVIEW-FOCUS-UI-001` released through Azure
+PR 201 at squash merge `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`.
+Candidate pipeline 278 and production pipeline 279 passed, independent live
+desktop/mobile verification passed, and the runtime lane is closed. Historical
+5A/5C homepage parity remains closed; current Focus homepage parity is open
+under `PS-HOME-INTERVIEW-FOCUS-PARITY-001` at the ChatGPT visual-authority
+gate, with no runtime writer assigned._
+
+_Reconciled 2026-07-29 for `PS-AI-OPS-CHECKPOINT-001`. Seven qualifying
+runtime slices had completed since the 2026-07-24 policy start, although the
+four-slice checkpoint had not been recorded. The retrospective checkpoint is
+`Conditional`; the counter is held at `4 of 4` and does not reset. Candidate
+package-specific admission, Work & Impact profile provenance, and Interview
+follow-up mode provenance are the three open runtime corrections. No unrelated
+runtime slice may proceed before focused recheck closes `Pass`; only the three
+separately assigned corrective packages may proceed under the hold._
+
+_The same reconciliation corrects an older Community pointer: Pete accepted
+Community, the audit of record passed, PR 161 plus CI repair PR 162 released
+Feed and The Break, and pipeline 221/live verification passed on 2026-07-23.
+`PS-COMMUNITY-TABS-001` is complete and closed, not an active writer lane.
+Saved and People & Interests are redirect-only compatibility URLs, not tabs._
 
 ## Operating model
 
@@ -77,12 +96,14 @@ only for high-risk or expressly required packages.
 
 | Lane | Writer | Active package | Reserved domain | Must not touch |
 |---|---|---|---|---|
-| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement and Owner Home sequencing (Interview homepage parity closed 2026-07-20) | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
+| Governance and orchestration | ChatGPT Work/Codex owner-delegated manager | Capture Media enablement and Owner Home sequencing; historical Interview 5A/5C parity closed, current Focus parity open | Current authority/state, lane sequencing, final acceptance, Azure closeout | combining product lanes or writing directly to main |
 | Capture Media enablement | Unassigned | PS-CAPTURE-MEDIA-001 | later universal-composer/Save Moment integration or explicit temporary exception, plus signed-in Photo lifecycle, two-owner, homepage-parity, and enablement gates | enabling the current source-only Photo path; rebuilding Voice; blending Owner Home work |
 | Owner Home frontend | Separate Codex frontend task, sole writer after activation release | PS-HOME-FRONTEND-001 | exact accepted dark cinematic shell and finite `owner-home.v1` frontend; temporary default-off legacy Capture link only under the current transition record | locking `/app/capture` or fixed mobile nav as target IA; broader viewer modes, Photo enablement, backend-contract expansion, fabricated states |
 | Journal private core | Unassigned after authority activation | PS-JOURNAL-001 | Capture action, Save Moment, derived owner Journal, private chronology, and exact entry-gate evidence | separate Capture destination; Add to Journal gate; copied Journal body; public projection or return services before the private core |
 | Workshop / Build Your Future visual definition | Current ChatGPT Work/Codex task as visual-governance manager; no runtime writer assigned | PS-SLATE-STUDIO-IA-001 owner correction plus Pete-approved Workshop and Build page-purpose inventories | ChatGPT creates the Workshop and two Goal Board concept sets; Pete scrutinizes and locks exact authority | runtime implementation, rejected Slice 2 reuse, Slice 1 enablement, Goal persistence/editing, AI/publishing, Projects implementation, `/app` selection, Owner Home, Journal, Community, Capture, public Interview Studio or its separate audio lane, public Slate, homepage, shared services, schema, migrations, or deployment configuration |
-| Professional readiness Candidate setup | Current ChatGPT Work/Codex task, manager and sole writer; owner-delegated staging setup active | PS-OPS-001 | package/governance records, `.gitleaks.toml`, release/candidate-identity and public-smoke scripts, `azure-pipelines.yml`, focused tests, the separate `peerslate-candidate` Web App/environment, pinned local scanners, immutable branch artifact, candidate smoke, stop exercise, and exact evidence on `work/2026-07-26-responsive-site-audit-001` | production App Service/settings/data/secrets/identity, the active Overview writer's `app.py`, production deployment before Candidate decision, monitoring/analytics providers, DNS, feature enablement, member data, product UI/visuals, schema/migrations, or another lane's files |
+| Professional readiness ongoing gates | No active PS-OPS implementation writer; package managers apply the released floor; admission-control correction unassigned | PS-OPS-001 | released liveness, exact identity, smoke, Candidate, Launch, Operate, Retire, and Emergency controls; correct hard-coded Candidate admission before reuse | silently repointing an old branch alias for another Candidate; changing production settings/data/secrets/identity; treating unassessed gates as Pass |
+| Interview Focus homepage parity | Runtime writer unassigned; ChatGPT visual-creation lane; Pete final visual authority | PS-HOME-INTERVIEW-FOCUS-PARITY-001 | page-purpose inventory and new desktop/mobile production-intent homepage authority before implementation | editing homepage runtime before Pete's exact lock; reopening the released Studio lane; treating historical 5A/5C parity as current |
+| Lean-delivery checkpoint | Current manager records audit; all three correction writers unassigned | PS-AI-OPS-CHECKPOINT-001 | exact seven-slice reconciliation, Candidate-admission correction, Work & Impact profile-provenance correction, Interview follow-up mode-provenance correction, focused recheck | starting or releasing an unrelated runtime slice; treating `Conditional` as reset; implementing a runtime correction in this docs-only closeout |
 
 ## Current active gate
 
@@ -101,9 +122,11 @@ only for high-risk or expressly required packages.
   scale, and horizontal-overflow checks.
 - The lane is closed and its reservations are released. Member composer,
   persistence/history, unpublish, and AI-proposal work remain deferred.
-- Fresh independent review was unavailable and is not represented as
-  completed. Self-certification is Conditional despite green source, pipeline,
-  deployment, and production checks.
+- Fresh independent review was unavailable at release, so the original
+  self-certification was truthfully `Conditional`. The 2026-07-29
+  `PS-AI-OPS-CHECKPOINT-001` fresh targeted review assessed the slice in exact
+  current integration and returned a slice-specific `Pass`, closing that
+  historical review gap without changing runtime.
 - `PS-OVERVIEW-HOMEPAGE-PARITY-001` is an unassigned downstream design package.
   It requires a new ChatGPT-created, Pete-locked homepage authority before any
   runtime writer is assigned.
@@ -122,7 +145,7 @@ only for high-risk or expressly required packages.
 - Pete approved both page-purpose inventories. ChatGPT visual creation and
   scrutiny are next; exact visual lock remains a separate owner decision.
 
-### PS-OPS-001 - Candidate passed; production Gate F active
+### PS-OPS-001 - repository floor released; ongoing gates remain
 
 - Pete authorized the bounded professional-readiness implementation on
   `work/2026-07-26-responsive-site-audit-001`, then selected and explicitly
@@ -141,9 +164,79 @@ only for high-risk or expressly required packages.
 - Gate Candidate is `Pass` for exact build 256 and the evidence in
   `docs/initiatives/PS-OPS-001/CANDIDATE_EVIDENCE_2026-07-27.md`. Gate Launch,
   Gate Operate, and Gate Retire remain `Not Assessed`.
-- This material branch is approved for the required Azure PR and production
-  Gate F. It is not called merged or deployed until the exact main pipeline and
-  live production smoke pass.
+- Azure PR 189 squash-merged the floor at
+  `141273fe51c0ac3c35e4ab15d96e34524b674d68`; pipeline 257
+  (`20260727.10`) passed for that exact merge. The repository floor is released,
+  and later PS-SEC-EDGE and Interview Focus releases exercised its exact
+  identity, Candidate, stop, and production-smoke controls.
+- No PS-OPS implementation writer remains assigned. Each later package applies
+  the released controls under its own manager.
+- The Focus Candidate used a bounded, exact-SHA old-branch alias because the
+  YAML still hard-codes the former SEC-edge branch name. The alias was verified
+  exact and deleted, so runtime evidence remains valid, but this is a recorded
+  admission-control deviation. Before any next Candidate, a separately
+  reviewed PS-OPS correction must provide auditable package-specific admission;
+  the alias workaround may not be repeated without new explicit owner approval.
+
+### PS-INTERVIEW-FOCUS-UI-001 - complete, released, and verified live / lane closed
+
+- Pete approved the V3 all-modes direction, V2 White supplemental authority,
+  and compact-height/automatic-growth correction, then explicitly authorized
+  the overnight Candidate, merge, and production sequence with a retained
+  exact pre-change backup.
+- Reviewed source `da6f93946adf4f3ba3c29d39362b71b0946501a7`
+  contains frozen runtime
+  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`. Independent runtime and final
+  release-readiness reviews both returned `Pass`.
+- Candidate pipeline 278 (`20260729.2`) passed Build, CandidateDeploy,
+  CandidateSmoke, and CandidateStop. The temporary Candidate Web App and
+  separate B1 plan were removed after production verification.
+- Azure PR 201 squash-merged at
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`; automatic pipeline 279
+  (`20260729.3`) passed Build, Deploy, and ProductionSmoke for exact release
+  `453e0bee3f0322e0e06e1481`. Independent desktop/mobile live verification and
+  exact CSS/JavaScript byte matching passed.
+- Duplicate fallback build 280 was canceled before start and is not a release
+  failure. The remote runtime branch was deleted; the Azure rollback branch
+  `backup/2026-07-28-pre-interview-focus-ui-001-a85ffbc9` remains at exact
+  pre-change SHA `a85ffbc93a1def86f99db66df26702a59aff4cbc`.
+- No runtime writer remains. Pete's post-live inspection and the 24-72-hour
+  Gate Operate evidence window remain follow-up steps, not release blockers.
+
+### PS-HOME-INTERVIEW-FOCUS-PARITY-001 - active visual-authority gate
+
+- The material Focus release makes the historical 5A/5C homepage projection
+  visually stale, while it remains truthful, illustrative, no-input,
+  no-request, no-storage, and linked to `/interview-studio`.
+- ChatGPT must create the new production-intent desktop/mobile authority and
+  Pete must lock it before a runtime writer or branch is assigned.
+- Runtime writer: unassigned. Runtime branch and homepage file reservation:
+  none. Current Focus homepage parity remains open.
+- The controlling record is
+  `docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/HOMEPAGE_PARITY_FOLLOWUP.md`.
+
+### PS-AI-OPS-CHECKPOINT-001 - active, Conditional, counter held
+
+- The 2026-07-29 reconciliation reviewed all seven qualifying runtime slices
+  at exact assessed main
+  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`.
+- The four-slice threshold was crossed by Overview Live Fidelity. Search
+  Quiet, Work & Impact, and Interview Focus then shipped before the missing
+  checkpoint was recorded.
+- Current result: `Conditional`. The cadence is held at `4 of 4`; it is not
+  reset.
+- Governance drift in the counter, PS-OPS floor, Community status, and Search
+  Quiet scope is corrected by the current documentation-only closeout.
+- Three runtime corrections remain unassigned: auditable package-specific
+  Candidate admission; profile-owned Work & Impact overlay/eligibility with a
+  second-profile regression; and Interview follow-up mode binding plus generic
+  context isolation with a provider-message regression.
+- No unrelated runtime slice may start or release before all three corrections
+  receive an independent focused recheck and the checkpoint closes `Pass`.
+  Only the three separately assigned corrective packages may proceed while the
+  hold is open.
+- Controlling record:
+  `docs/initiatives/PS-AI-OPS-CHECKPOINT-001/README.md`.
 
 PS-VOICE-001 is no longer an active gate. Pete and ChatGPT Work accepted the
 corrected implementation after Claude Code relinquished exact tip
@@ -153,7 +246,7 @@ and Deploy. Preserve the original and visual-correction worktrees as historical
 references; do not reuse them for later work. A future Voice change requires a
 new package and branch.
 
-### PS-INTERVIEW-PUBLIC-GATE-001 - released and verified live / lane closed
+### PS-INTERVIEW-PUBLIC-GATE-001 - superseded historical release / lane closed
 
 - Source package: `docs/initiatives/PS-INTERVIEW-PUBLIC-GATE-001/README.md`.
 - Gate A decision: owner-approved on 2026-07-18. Preserve interactive public practice under Approach A.
@@ -169,16 +262,15 @@ new package and branch.
 - Azure PR 101 squash-merged the release at
   `39002f5130a1766d2090007c16582e0dbe07226c`; automatic pipeline 149
   (`20260720.20`) passed both Build and Deploy. Azure deleted the source branch.
-- Live `/interview-studio` and `/interview-studio/history` serve the new
-  `studio-5a5c-2` / `ps-theme-001-2` signatures. Their JavaScript and CSS
-  hashes match the released bytes. Desktop and 390px browser verification
-  passed the orientation, truth boundary, stage-current, modal-theme,
-  focus/state-retention, overflow, and console checks.
-- The real Studio remains upstream of the homepage walkthrough. Its release is
-  now green and live, so a fresh homepage-parity convergence package may be
-  separately assigned. That package, `PS-HOME-INTERVIEW-PARITY-001`, was
-  assigned, implemented, released through PR 105/pipeline 154, and closed out
-  through PR 106/pipeline 156. Interview homepage parity is closed.
+- At that release, `/interview-studio` and `/interview-studio/history` served
+  the then-new `studio-5a5c-2` / `ps-theme-001-2` signatures. Their JavaScript
+  and CSS hashes matched the released bytes. Desktop and 390px browser
+  verification passed the orientation, truth boundary, stage-current,
+  modal-theme, focus/state-retention, overflow, and console checks.
+- The real Studio remains upstream of the homepage walkthrough. The historical
+  `PS-HOME-INTERVIEW-PARITY-001` package was assigned, implemented, released
+  through PR 105/pipeline 154, and closed out through PR 106/pipeline 156.
+  That 5A/5C parity record remains closed; it is not current Focus parity.
 - Pete accepted the current fixed illustrative walkthrough for its present
   purpose. Claude's exact source tip
   `90d035a25344c850e6ed732c1efb6e4d0a240787` squash-merged through Azure PR 86
@@ -218,9 +310,10 @@ was wrong. The lane is closed:
 - Live verification 2026-07-21: `https://peerslate.com/` serves
   `homepage-scenes.css?v=interview-parity-1` and
   `homepage-interview-demo.js?v=int-parity-1`, matching `main`.
-- No writer remains assigned. Homepage Interview parity is closed. A further
-  Interview change requires a new package and a fresh homepage-impact
-  assessment.
+- No writer remains assigned to this historical package. Its 5A/5C parity is
+  closed. The later Focus change completed the required fresh homepage-impact
+  assessment and activated `PS-HOME-INTERVIEW-FOCUS-PARITY-001`, which remains
+  open.
 
 The pre-release lineage is retained below as history:
 
@@ -557,19 +650,26 @@ work must check this register so the same work is not assigned twice.
   private/public behavior the backend does not enforce.
 
 
-## PS-COMMUNITY-TABS-001 — Community tab model (active, owner-started early)
+## PS-COMMUNITY-TABS-001 — complete, released, verified live / lane closed
 
-Owner decision 2026-07-21: started ahead of the Journal J1 release wave ("do
-we really need to wait?" — no file overlap with the Journal lane). Feed is
-Community's landing with the seamless Studio-style transition to The Break;
-People & Interests is removed with its Saved value folded into a Saved tab;
-existing `/the-slate/*` URLs keep working via redirects. Visual authority:
-the owner-supplied Feed example
-(`docs/initiatives/PS-COMMUNITY-TABS-001/visual-authority/community-feed-owner-example.png`,
-pixel rule applies), the live Interview Studio tab implementation as the
-interaction reference, and the existing accepted Break design. Roles: Fable
-architect/manager, Sonnet (xhigh) sole implementation writer, Opus (xhigh)
-reviewer with the identical bar; Pete visual acceptance before merge.
+- Pete accepted Community on 2026-07-23. The Claude Code audit of record
+  passed; Pete waived the originally planned Opus stage in the combined
+  milestone role-routing record.
+- Accepted Community source
+  `a8c04964a5a363d47a56829da01c9a5bfefe3653` entered milestone evidence
+  commit `e3107ce72627a0b5960b7de9f9a8cee86fe3aa50`.
+- Azure PR 161 squash-merged at
+  `88d6f8fa0a993c15d4e86046b3b84cb0f68fcdad`; CI repair PR 162 merged at
+  `b426aea8c0e0f0c54914ad342f625c22bea8f46e`; pipeline 221
+  (`20260723.4`) passed Build and Deploy.
+- Live `/the-slate` and `/the-slate/break` verification passed. Feed and The
+  Break are the only first-class views. `/the-slate/saved` and
+  `/the-slate/people-interests` redirect to Feed and are not views, tabs, or
+  destinations.
+- The sample-community honesty boundary remains: local fixture interactions
+  do not claim persistence, publication, or member truth.
+- No Community writer, branch, or file reservation remains. A future Community
+  change requires a new bounded package.
 
 
 ## PS-HOME-FRONTEND-001 — owner reassignment (2026-07-21)

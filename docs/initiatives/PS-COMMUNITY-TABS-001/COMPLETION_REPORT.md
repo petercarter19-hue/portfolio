@@ -1,10 +1,21 @@
-# PeerSlate Completion & Handoff Report — PS-COMMUNITY-TABS-001 evidence recovery
+# PeerSlate Completion & Handoff Report — PS-COMMUNITY-TABS-001
+
+> **Release reconciliation, 2026-07-29:** The evidence-recovery checkpoint
+> below later entered the combined
+> `PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001` release. Pete accepted Community on
+> 2026-07-23 and the Claude Code audit of record passed. Azure PR 161
+> squash-merged the accepted milestone at
+> `88d6f8fa0a993c15d4e86046b3b84cb0f68fcdad`; CI repair PR 162 merged at
+> `b426aea8c0e0f0c54914ad342f625c22bea8f46e`; pipeline 221
+> (`20260723.4`) passed Build and Deploy; and live `/the-slate` and
+> `/the-slate/break` verification passed. The authoritative release record is
+> `../PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001/RELEASE_CLOSEOUT_2026-07-23.md`.
 
 ## A. Status
 
 - Package: `PS-COMMUNITY-TABS-001` — Community Feed and The Break.
-- Status: evidence recovery complete; visual/product acceptance remains
-  pending.
+- Status: **Complete, released, and verified live.** The evidence recovery
+  described below was accepted and released through the combined milestone.
 - Product branch and capture-source commit:
   `work/2026-07-21-community-tabs-impl` at
   `8326f2c3aff483f44822ae100d3dc1aedf42d437`.
@@ -12,14 +23,15 @@
   is the evidence-record commit; the manifest deliberately avoids an impossible
   self-reference and instead pins this rendered product SHA plus every raster
   file/RGBA hash.
-- Production state: unchanged. No PR, merge, deployment, feature enablement,
-  or live verification is claimed.
+- Production state: Community Feed and The Break are live. PR 161, repair PR
+  162, pipeline 221, and exact live verification are recorded by the combined
+  milestone closeout.
 - Visual authority: `visual-authority/owner-approved-dark-break.png` and
   `visual-authority/owner-approved-light-break-2026-07-21.png`; current Feed
   integration is shown only through the fresh actual-page captures.
-- Owner and manager acceptance: **not claimed**.
-- Self-certification: **Pass for the evidence-recovery scope only**; it does
-  not certify the separate manager/Pete visual-product gate.
+- Owner and manager acceptance: **Pass, fulfilled 2026-07-23.**
+- Self-certification: **Pass.** The evidence-recovery scope passed here; Pete
+  acceptance and the audit of record passed in the combined milestone.
 
 ## B. What changed
 
@@ -53,7 +65,7 @@ changed pixels, and visibly captures the focused Break tab after ArrowRight.
 
 ## D. What the member can do
 
-Community still has exactly two first-class views: Feed and The Break. The
+Community has exactly two live first-class views: Feed and The Break. The
 sample Feed remains illustrative and truthful; nothing on it is persisted,
 shared, published, added to Journal, or connected. The legacy Saved address
 redirects to Feed and is not a Community view.
@@ -76,7 +88,8 @@ redirects to Feed and is not a Community view.
 
 ## F. Limitations and next action
 
-This is an evidence correction, not visual acceptance. Pete must still review
-the actual Feed/Break pages, and the manager plus fresh independent reviewer
-must then evaluate the exact final recovery commit. No merge or deployment is
-authorized.
+This report's original next gate is historical and fulfilled. Pete accepted
+the actual Feed/Break pages; the combined milestone audit passed; PR 161 plus
+repair PR 162 released the package; and pipeline 221/live verification passed.
+No Community runtime writer remains. A future Community change requires a new
+bounded package and fresh authority.

@@ -419,8 +419,29 @@ those controls; Pete made the separate gate decision recorded in
 
 The new post-production smoke stage improves detection and proves which build
 answered. It does not reduce the blast radius of a bad deployment. The exact
-production-like path earned Candidate `Pass`; no exception was requested or
-inferred.
+build-256 production-like path earned Candidate `Pass`; no production,
+security, privacy, identity, or environment-bootstrap exception was requested
+or inferred.
+
+### Candidate admission-control correction required before reuse
+
+The released pipeline still selects Candidate eligibility through one
+hard-coded historical branch name. During the separately authorized
+`PS-INTERVIEW-FOCUS-UI-001` overnight release, the delegated release manager
+verified that a temporary remote alias at that name pointed byte-for-byte to
+the already reviewed source
+`da6f93946adf4f3ba3c29d39362b71b0946501a7`, ran Candidate pipeline 278, and
+deleted the alias afterward. No pipeline source, runtime file, production
+setting, production identity, secret, data boundary, or Candidate environment
+boundary changed.
+
+That one-time alias was a bounded procedural admission-control deviation, not
+the intended reusable control. Its exact Candidate evidence remains valid, but
+the workaround may not be repeated without new explicit owner approval.
+Before another package uses Candidate, a separate PS-OPS correction must make
+package-specific exact-SHA admission auditable without repointing a historical
+branch name, receive complete-diff review, and pass focused admission-control
+tests.
 
 ## 10. Evidence reuse and relationship to existing controls
 

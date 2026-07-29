@@ -7,7 +7,7 @@ continuing from the 2026-07-28 incident handoff
 closeout on `work/2026-07-28-sec-edge-closeout-001`
 **Base:** Azure `origin/main` at
 `89a619a560f04ec3763016939361f64516aac6bf`
-**Upstream source:** the ad-hoc cloud session branch
+**Upstream source:** the ad-hoc Claude session branch
 `claude/website-architecture-audit-7l52z6` (GitHub mirror only), built on
 `be7f857`, reconciled onto current Azure `main` in this package
 **Status:** **Complete, released, and verified live.** Safe subset
@@ -30,7 +30,7 @@ asset delivery only
 
 ## 1. Why this package exists
 
-The work was produced by a cloud agent session as a website architecture
+The work was produced by a Claude agent session as a website architecture
 audit, with no initiative package and no roadmap slot. It reached Pete as a
 branch on the GitHub mirror with an open pull request that could not deploy,
 because GitHub is a mirror and an inbox, never a merge target or a deploy

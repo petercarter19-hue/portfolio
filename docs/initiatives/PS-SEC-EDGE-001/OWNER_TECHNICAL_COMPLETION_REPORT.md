@@ -67,10 +67,10 @@
 
 ## B. What changed technically
 
-Reconciliation, not a fresh implementation. Seven commits produced by a cloud
+Reconciliation, not a fresh implementation. Seven commits produced by a Claude
 agent session on `claude/website-architecture-audit-7l52z6`, built on
 `be7f857`, were merged onto Azure `main` at `141273f` - thirteen commits and
-194 changed files later. The cloud session could not reach Azure at all, so
+194 changed files later. The Claude session could not reach Azure at all, so
 its test results described a base that was no longer current. Everything below
 was re-run on the reconciled base.
 
