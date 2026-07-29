@@ -555,9 +555,18 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             stage_bodies['CandidateDeploy'],
             r'(?m)^    dependsOn: Build$',
         )
-        self.assertIn("candidatePackage: ''", pipeline)
-        self.assertIn("candidateSourceBranch: ''", pipeline)
-        self.assertIn("candidateSourceVersion: ''", pipeline)
+        self.assertNotIn("candidatePackage: ''", pipeline)
+        self.assertNotIn("candidateSourceBranch: ''", pipeline)
+        self.assertNotIn("candidateSourceVersion: ''", pipeline)
+        self.assertIn(
+            'Azure pipeline metadata',
+            pipeline,
+        )
+        self.assertIn('candidatePackage, candidateSourceBranch, and', pipeline)
+        self.assertIn(
+            'a YAML value would shadow the reviewed queue values',
+            pipeline,
+        )
         self.assertNotIn(
             'refs/heads/work/2026-07-28-sec-edge-reland-001',
             pipeline,

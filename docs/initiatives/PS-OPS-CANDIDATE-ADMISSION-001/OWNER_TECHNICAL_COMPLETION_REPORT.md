@@ -3,24 +3,27 @@
 ## A. Status
 
 - Package: `PS-OPS-CANDIDATE-ADMISSION-001`
-- Status: Complete for correction merge; production pipeline and live
-  verification remain Gate F work
-- Branch: `work/2026-07-29-candidate-admission-001`
-- Exact implementation commit:
+- Status: Reopened for correction 2 after the real queue-time exercise failed
+  closed; implementation and verification are in progress
+- Branch: `work/2026-07-29-candidate-admission-002`
+- Correction 1 implementation commit:
   `0052f23b0f75d1ed46b99514b0ae2eb911de00a5`
 - Base: Azure `origin/main`
-  `3da1f747609b6529542be2416649a8fba75abd49`
-- Azure CI: pipeline 285 (`20260729.9`) Build passed for exact implementation
-  commit; Candidate and production stages correctly skipped
-- Production state: unchanged
+  `887303792184c5e15aff238f6ee2f59e1576cdbd`
+- Azure CI: main pipeline 287 (`20260729.11`) passed exact correction 1 merge;
+  real Candidate run 288 accepted the exact queue tuple and built, but all
+  Candidate stages skipped because YAML defaults shadowed the queue values
+- Production state: healthy on correction 1 release
 - Visual authority and status: Not Applicable
 - Designated session manager and sole writer: current Codex task
 - Fresh independent reviewer: read-only
   `performance_independent_review`
-- Independent review: Pass for exact implementation commit
-- Self-certification: Pass
-- Complete-diff review: Issues corrected
-- Acceptance requested: correction merge and production pipeline
+- Independent review: correction 1 passed; correction 2 exact-SHA recheck
+  remains required
+- Self-certification: Conditional
+- Complete-diff review: correction 2 in progress
+- Acceptance requested: correction 2 review, merge, and real Candidate
+  re-exercise
 
 ## B. What changed technically
 
@@ -35,6 +38,12 @@ package-specific exact-SHA admission in schema version 2.
 
 Candidate deploy, smoke, and always-run stop stages independently require the
 same non-empty package plus exact branch/SHA equality.
+
+Correction 2 removes the three empty declarations from YAML. Their
+empty-by-default, queue-overridable definitions live in Azure pipeline
+metadata with `allowOverride=true`. This prevents YAML precedence from
+replacing a reviewed queue tuple with empty values while preserving disabled
+ordinary runs.
 
 Queue values enter the build process through the task environment map. The
 reviewer found that the first implementation inserted values into Bash source,
@@ -98,17 +107,18 @@ The independent reviewer confirmed:
 ## G. Known gaps, risks, and exclusions
 
 - The real queue-time override, manifest, Candidate deploy, smoke, and stop
-  evidence must still be exercised after this correction is on `main`.
+  evidence failed at stage admission in run 288 and must be re-exercised after
+  correction 2 is on `main`.
 - The other two checkpoint findings remain open and are outside this package.
 - A successful correction merge does not itself approve the separate
   performance release.
 
 ## H. Clear next step
 
-Squash-merge this correction through Azure DevOps. Verify its automatic main
-pipeline and unchanged live application identity/boundary. Then update the
-performance branch onto corrected `main`, obtain final exact-SHA review, and
-run Candidate with the new package/branch/SHA admission contract.
+Independently review and squash-merge correction 2 through Azure DevOps.
+Verify its main pipeline and unchanged live application boundary. Then update
+the performance branch onto corrected `main`, obtain final exact-SHA review,
+and rerun Candidate with the package/branch/SHA admission contract.
 
 ## I. What Pete needs to do or decide
 

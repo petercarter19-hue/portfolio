@@ -6,13 +6,14 @@
 - Owner decision: on 2026-07-29 Pete directed, “Assign a fresh independent
   reviewer, correct Candidate admission for this package, then deploy after
   both pass.”
-- State: implementation and verification in progress
+- State: correction 2 implementation and verification in progress after the
+  first real queue-time exercise failed closed
 - Designated manager and sole writer: current Codex task
 - Fresh independent reviewer: current task's read-only
   `performance_independent_review` lane
 - Authoritative base: Azure `origin/main`
-  `3da1f747609b6529542be2416649a8fba75abd49`
-- Branch: `work/2026-07-29-candidate-admission-001`
+  `887303792184c5e15aff238f6ee2f59e1576cdbd`
+- Branch: `work/2026-07-29-candidate-admission-002`
 - Checkpoint authority: this is bounded correction 1 from
   `PS-AI-OPS-CHECKPOINT-001`
 - Release relationship: this correction must merge before
@@ -31,6 +32,12 @@ Candidate admission must identify the package, the real source branch, and the
 exact full Git SHA supplied by the release operator. Azure must independently
 prove that those values equal the branch and commit it actually checked out.
 The immutable artifact manifest must retain that proof.
+
+Correction 1 merged the package/branch/SHA contract, but real Candidate run
+288 proved that the YAML's empty variable declarations shadowed the
+queue-settable values held in Azure pipeline metadata. Azure accepted and
+recorded the exact requested values, the build passed, and every Candidate
+stage then skipped. That is a failed Candidate, not a release pass.
 
 ## Requirements
 
@@ -54,13 +61,20 @@ The immutable artifact manifest must retain that proof.
 
 ## Design
 
-The YAML defines three queue-overridable variables with empty defaults:
+Azure pipeline metadata defines three queue-overridable variables with empty
+defaults:
 
 ```text
 candidatePackage
 candidateSourceBranch
 candidateSourceVersion
 ```
+
+The YAML deliberately does not redeclare those names. Azure YAML declarations
+take precedence and would replace the reviewed queue values with empty strings.
+The pipeline-level variables are configured with `allowOverride=true` and an
+empty stored value, so ordinary runs remain disabled while an explicit
+operator can supply the exact admission tuple.
 
 The artifact-manifest step receives those values in every build. With all
 three empty, it records `mode=disabled`. If any value is present, all three are
@@ -121,8 +135,11 @@ Required before merge:
 
 - manifest unit coverage for disabled, exact admitted, partial, malformed,
   branch-mismatch, SHA-mismatch, and `main` rejection;
-- structural YAML coverage for empty defaults and exact package/branch/SHA
-  conditions on deploy, smoke, and stop;
+- structural YAML coverage proving no YAML default shadows the external
+  empty-by-default queue variables and exact package/branch/SHA conditions
+  remain on deploy, smoke, and stop;
+- Azure pipeline-variable evidence showing all three stored values are empty
+  and `allowOverride=true`;
 - existing operational and full repository suites;
 - clean complete-diff review; and
 - fresh independent review of the exact correction SHA.
@@ -130,5 +147,5 @@ Required before merge:
 After merge, the normal production pipeline will redeploy an application
 artifact whose runtime code is unchanged by this correction. Exact pipeline
 and `/healthz` evidence must still be recorded. Only then may the performance
-branch incorporate the corrected `main`, receive its final exact-SHA review,
-and queue Candidate through the new operator contract.
+branch incorporate correction 2, receive its final exact-SHA review, and queue
+Candidate through the same package/branch/SHA operator contract.

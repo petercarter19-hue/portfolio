@@ -13,12 +13,12 @@ variables:
   vmImageName: 'ubuntu-latest'
   environmentName: 'peerslate-pete'
   candidateEnvironmentName: 'peerslate-candidate'
-  # Queue-time Candidate admission is fail-closed. A release operator must
-  # supply all three values, and the build manifest verifies that the package,
-  # branch, and full SHA exactly match the source Azure actually checked out.
-  candidatePackage: ''
-  candidateSourceBranch: ''
-  candidateSourceVersion: ''
+  # Queue-time Candidate admission is fail-closed. Azure pipeline metadata
+  # defines candidatePackage, candidateSourceBranch, and
+  # candidateSourceVersion as empty-by-default and queue-overridable. Do not
+  # redeclare them here: a YAML value would shadow the reviewed queue values.
+  # The build manifest verifies that all three exactly match the source Azure
+  # actually checked out.
   pythonVersion: '3.12'
   productionBaseUrl: 'https://peerslate.com'
   candidateBaseUrl: 'https://peerslate-candidate.azurewebsites.net'
