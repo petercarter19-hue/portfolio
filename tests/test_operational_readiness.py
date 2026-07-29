@@ -99,6 +99,11 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
 
             self.assertEqual(archive.name, manifest['artifact_name'])
             self.assertRegex(manifest['artifact_sha256'], r'^[0-9a-f]{64}$')
+            self.assertEqual(2, manifest['schema_version'])
+            self.assertEqual(
+                {'mode': 'disabled'},
+                manifest['candidate_admission'],
+            )
             self.assertEqual(
                 manifest,
                 json.loads(output.read_text(encoding='utf-8')),
@@ -123,6 +128,91 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 manifest['artifact_sha256'],
                 changed['artifact_sha256'],
             )
+
+    def test_candidate_manifest_records_package_exact_sha_admission(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / '283.zip'
+            archive.write_bytes(b'package exact candidate bytes')
+
+            manifest = build_manifest(
+                archive,
+                source_version='a' * 40,
+                source_branch='refs/heads/work/performance-foundation',
+                build_id='283',
+                python_version='3.12',
+                candidate_package='PS-PERFORMANCE-FOUNDATION-001',
+                candidate_source_branch=(
+                    'refs/heads/work/performance-foundation'
+                ),
+                candidate_source_version='a' * 40,
+            )
+
+        self.assertEqual(
+            {
+                'mode': 'package_exact_sha',
+                'package_id': 'PS-PERFORMANCE-FOUNDATION-001',
+                'source_branch': (
+                    'refs/heads/work/performance-foundation'
+                ),
+                'source_version': 'a' * 40,
+            },
+            manifest['candidate_admission'],
+        )
+
+    def test_candidate_manifest_rejects_incomplete_or_mismatched_admission(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / '283.zip'
+            archive.write_bytes(b'candidate bytes')
+            valid = {
+                'source_version': 'a' * 40,
+                'source_branch': 'refs/heads/work/performance-foundation',
+                'build_id': '283',
+                'python_version': '3.12',
+                'candidate_package': 'PS-PERFORMANCE-FOUNDATION-001',
+                'candidate_source_branch': (
+                    'refs/heads/work/performance-foundation'
+                ),
+                'candidate_source_version': 'a' * 40,
+            }
+            cases = (
+                (
+                    {'candidate_source_branch': ''},
+                    'requires package, branch, and source version',
+                ),
+                (
+                    {'candidate_package': 'performance-foundation'},
+                    'must be a PS-\\* package ID',
+                ),
+                (
+                    {
+                        'candidate_package': (
+                            '$(printf PS-PERFORMANCE-FOUNDATION-001)'
+                        )
+                    },
+                    'must be a PS-\\* package ID',
+                ),
+                (
+                    {'candidate_source_branch': 'refs/heads/work/other'},
+                    'branch does not match',
+                ),
+                (
+                    {'candidate_source_version': 'b' * 40},
+                    'version does not match',
+                ),
+                (
+                    {
+                        'source_branch': 'refs/heads/main',
+                        'candidate_source_branch': 'refs/heads/main',
+                    },
+                    'cannot target main',
+                ),
+            )
+
+            for overrides, message in cases:
+                with self.subTest(overrides=overrides):
+                    values = {**valid, **overrides}
+                    with self.assertRaisesRegex(ValueError, message):
+                        build_manifest(archive, **values)
 
     def test_fetch_does_not_follow_redirects(self):
         class RedirectHandler(BaseHTTPRequestHandler):
@@ -465,10 +555,33 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             stage_bodies['CandidateDeploy'],
             r'(?m)^    dependsOn: Build$',
         )
-        self.assertIn(
-            "eq(variables['Build.SourceBranch'], variables['candidateBranch'])",
-            stage_bodies['CandidateDeploy'],
+        self.assertIn("candidatePackage: ''", pipeline)
+        self.assertIn("candidateSourceBranch: ''", pipeline)
+        self.assertIn("candidateSourceVersion: ''", pipeline)
+        self.assertNotIn(
+            'refs/heads/work/2026-07-28-sec-edge-reland-001',
+            pipeline,
         )
+        for stage_name in (
+            'CandidateDeploy',
+            'CandidateSmoke',
+            'CandidateStop',
+        ):
+            normalized = ' '.join(stage_bodies[stage_name].split())
+            self.assertIn(
+                "ne(variables['candidatePackage'], '')",
+                normalized,
+            )
+            self.assertIn(
+                "eq( variables['Build.SourceBranch'], "
+                "variables['candidateSourceBranch'] )",
+                normalized,
+            )
+            self.assertIn(
+                "eq( variables['Build.SourceVersion'], "
+                "variables['candidateSourceVersion'] )",
+                normalized,
+            )
         self.assertNotIn('az webapp start', stage_bodies['Deploy'])
         self.assertIn('az webapp start', stage_bodies['CandidateDeploy'])
         self.assertLess(
@@ -493,6 +606,12 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             'python -m compileall -q',
             'python scripts/release_identity.py',
             'python scripts/candidate_artifact.py',
+            '--candidate-package "$CANDIDATE_PACKAGE"',
+            '--candidate-source-branch "$CANDIDATE_SOURCE_BRANCH"',
+            '--candidate-source-version "$CANDIDATE_SOURCE_VERSION"',
+            'CANDIDATE_PACKAGE: $(candidatePackage)',
+            'CANDIDATE_SOURCE_BRANCH: $(candidateSourceBranch)',
+            'CANDIDATE_SOURCE_VERSION: $(candidateSourceVersion)',
             'scripts/verify_deployment_smoke.py',
             '--expected-source-version "$(Build.SourceVersion)"',
             '--expected-build-id "$(Build.BuildId)"',
@@ -502,6 +621,12 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             'test "$state" = "Stopped"',
         ):
             self.assertIn(expected, pipeline)
+        for unsafe_macro in (
+            '--candidate-package "$(candidatePackage)"',
+            '--candidate-source-branch "$(candidateSourceBranch)"',
+            '--candidate-source-version "$(candidateSourceVersion)"',
+        ):
+            self.assertNotIn(unsafe_macro, pipeline)
         self.assertLess(
             pipeline.index('python scripts/release_identity.py'),
             pipeline.index('displayName: Prepare deployment package'),

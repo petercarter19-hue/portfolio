@@ -13,7 +13,12 @@ variables:
   vmImageName: 'ubuntu-latest'
   environmentName: 'peerslate-pete'
   candidateEnvironmentName: 'peerslate-candidate'
-  candidateBranch: 'refs/heads/work/2026-07-28-sec-edge-reland-001'
+  # Queue-time Candidate admission is fail-closed. A release operator must
+  # supply all three values, and the build manifest verifies that the package,
+  # branch, and full SHA exactly match the source Azure actually checked out.
+  candidatePackage: ''
+  candidateSourceBranch: ''
+  candidateSourceVersion: ''
   pythonVersion: '3.12'
   productionBaseUrl: 'https://peerslate.com'
   candidateBaseUrl: 'https://peerslate-candidate.azurewebsites.net'
@@ -153,7 +158,17 @@ stages:
               --source-branch "$(Build.SourceBranch)"
               --build-id "$(Build.BuildId)"
               --python-version "$(pythonVersion)"
+              --candidate-package "$CANDIDATE_PACKAGE"
+              --candidate-source-branch "$CANDIDATE_SOURCE_BRANCH"
+              --candidate-source-version "$CANDIDATE_SOURCE_VERSION"
             displayName: Record immutable candidate artifact hash
+            env:
+              # Queue values enter the process as data, never as Bash source.
+              # candidate_artifact.py performs the format and exact-match
+              # validation before any Candidate stage may run.
+              CANDIDATE_PACKAGE: $(candidatePackage)
+              CANDIDATE_SOURCE_BRANCH: $(candidateSourceBranch)
+              CANDIDATE_SOURCE_VERSION: $(candidateSourceVersion)
 
           - upload: '$(Build.ArtifactStagingDirectory)/drop'
             artifact: drop
@@ -222,7 +237,15 @@ stages:
     condition: >-
       and(
         succeeded(),
-        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+        ne(variables['candidatePackage'], ''),
+        eq(
+          variables['Build.SourceBranch'],
+          variables['candidateSourceBranch']
+        ),
+        eq(
+          variables['Build.SourceVersion'],
+          variables['candidateSourceVersion']
+        )
       )
     jobs:
       - deployment: DeployCandidateWebApp
@@ -257,7 +280,15 @@ stages:
     condition: >-
       and(
         succeeded(),
-        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+        ne(variables['candidatePackage'], ''),
+        eq(
+          variables['Build.SourceBranch'],
+          variables['candidateSourceBranch']
+        ),
+        eq(
+          variables['Build.SourceVersion'],
+          variables['candidateSourceVersion']
+        )
       )
     jobs:
       - job: CandidatePublicBoundarySmoke
@@ -286,7 +317,15 @@ stages:
     condition: >-
       and(
         always(),
-        eq(variables['Build.SourceBranch'], variables['candidateBranch'])
+        ne(variables['candidatePackage'], ''),
+        eq(
+          variables['Build.SourceBranch'],
+          variables['candidateSourceBranch']
+        ),
+        eq(
+          variables['Build.SourceVersion'],
+          variables['candidateSourceVersion']
+        )
       )
     jobs:
       - job: StopCandidateWebApp
