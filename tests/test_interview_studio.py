@@ -16,6 +16,7 @@ from app import (
     _sign_interview_model_context,
     validate_interview_improvement,
     validate_interview_model_answer,
+    validate_interview_nudge,
     validate_interview_review,
     _extract_json_object,
 )
@@ -116,8 +117,9 @@ class InterviewStudioRouteTests(unittest.TestCase):
             'Behavioral',
             'Competency: Conflict',
             'STAR recommended',
-            'Submit answer',
-            'New Question',
+            'Review My Answer',
+            'Different question',
+            'Create question',
             'Up next ·',
         ):
             self.assertIn(value, html)
@@ -143,8 +145,10 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn('data-is-video-transcript-form', html)
         self.assertIn('data-is-mic="video"', html)
         self.assertIn('data-is-mic-error="video" hidden', html)
-        self.assertIn('data-is-mic="ai"', html)
-        self.assertIn('data-is-mic-error="ai" hidden', html)
+        self.assertIn('data-is-mic="custom"', html)
+        self.assertIn('data-is-mic-error="custom" hidden', html)
+        self.assertIn('data-is-mic="followup"', html)
+        self.assertIn('data-is-mic-error="followup" hidden', html)
 
     def test_client_submission_accepts_any_nonempty_answer_and_uses_a_real_form(self):
         script = (Path(__file__).parents[1] / 'static' / 'js' / 'interview-studio.js').read_text(encoding='utf-8')
@@ -321,7 +325,8 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
                 html = self.html(path)
                 self.assertEqual(html.count('data-is-truth-strip'), 1)
                 for value in (
-                    'sent to PeerSlate only when you submit for coaching',
+                    'Question text is sent only when you request coaching, a nudge, or an example',
+                    'Answer text is sent only for coaching',
                     'saved only in this browser',
                     'Video Practice remains local',
                     'practice signals, not employer predictions',
@@ -351,6 +356,138 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         video_html = self.html('/interview-studio?mode=video')
         self.assertIn('data-is-camera-enable', video_html)
         self.assertIn('not uploaded, analyzed, or retained', video_html)
+
+    def test_owner_question_controls_use_one_modal_and_no_legacy_new_question_row(self):
+        html = self.html('/interview-studio?mode=me')
+        self.assertEqual(html.count('data-is-custom-question-dialog'), 1)
+        self.assertEqual(html.count('data-is-custom-question-form'), 1)
+        self.assertEqual(html.count('data-is-custom-question data-is-autogrow'), 1)
+        self.assertEqual(html.count('data-is-different-question'), 3)
+        self.assertGreaterEqual(html.count('data-is-create-question'), 3)
+        self.assertNotIn('data-is-video-new-question', html)
+        self.assertNotRegex(html, r'>\s*New Question\s*<')
+
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        custom_keydown = source.split(
+            "customQuestionInput.addEventListener('keydown'", 1
+        )[1].split("customQuestionForm.addEventListener('submit'", 1)[0]
+        self.assertIn("event.key !== 'Enter'", custom_keydown)
+        self.assertIn('event.shiftKey', custom_keydown)
+        self.assertIn('event.preventDefault()', custom_keydown)
+        self.assertIn('customQuestionForm.requestSubmit()', custom_keydown)
+
+    def test_first_coaching_failure_retries_once_without_clearing_the_answer(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        retry = source.split('function postReviewWithOneRetry', 1)[1].split(
+            'function addHistoryRecord', 1
+        )[0]
+        self.assertEqual(retry.count("postJSON('/api/interview/review'"), 2)
+        self.assertIn('[500, 502, 503]', retry)
+        self.assertIn('Retrying once', retry)
+        submit = source.split('function submitReview()', 1)[1].split(
+            "answerForm.addEventListener('submit'", 1
+        )[0]
+        self.assertIn('postReviewWithOneRetry', submit)
+        self.assertIn('Your answer is still here.', submit)
+
+    def test_question_changes_clear_stale_ai_context_and_preserve_sparse_progress(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        render = source.split('function renderQuestion(options)', 1)[1].split(
+            'function syncAnswerState', 1
+        )[0]
+        self.assertIn('questionContextChanged', render)
+        self.assertIn('resetAiAnswerForContextChange()', render)
+        self.assertIn('question.text, session.level, question.family', render)
+
+        advance = source.split('function advanceQuestion(mode)', 1)[1].split(
+            "one('[data-is-next-question]')", 1
+        )[0]
+        self.assertIn('candidateIndex = (session.index + offset) % session.queue.length', advance)
+        self.assertIn('session.completedSlots.indexOf(candidateIndex) === -1', advance)
+        self.assertNotIn('buildQueue(', advance)
+        self.assertNotIn('session.completedSlots = []', advance)
+        controls = source.split('function syncQuestionChangeControls()', 1)[1].split(
+            'function setStage', 1
+        )[0]
+        self.assertIn('[data-is-different-question], [data-is-create-question]', controls)
+        self.assertIn('currentQuestionIsCompleted()', controls)
+        replacement = source.split('function replaceCurrentQuestion', 1)[1].split(
+            "all('[data-is-different-question]')", 1
+        )[0]
+        self.assertIn('if (currentQuestionIsCompleted())', replacement)
+
+    def test_pending_and_interim_dictation_are_cleared_before_context_or_submit(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        close_custom = source.split('function closeCustomQuestion(options)', 1)[1].split(
+            "all('[data-is-create-question]')", 1
+        )[0]
+        self.assertIn("stopDictation('interrupted')", close_custom)
+
+        follow_up_submit = source.split("followUpForm.addEventListener('submit'", 1)[1].split(
+            "followUpInput.addEventListener('keydown'", 1
+        )[0]
+        self.assertLess(
+            follow_up_submit.index("stopDictation('interrupted')"),
+            follow_up_submit.index('followUpInput.value.trim()'),
+        )
+        ai_mode_change = source.split("modeGroup.addEventListener('change'", 1)[1].split(
+            'var followUpForm', 1
+        )[0]
+        self.assertIn("stopDictation('interrupted')", ai_mode_change)
+        clear_local = source.split('function clearLocalData()', 1)[1].split(
+            "all('[data-is-clear-local]", 1
+        )[0]
+        for cleanup in (
+            "stopDictation('interrupted')",
+            'cancelPendingReview()',
+            'cancelPendingImprovement()',
+            'cancelPendingAi(true)',
+            'releaseMedia(true)',
+            'resetVideoUi()',
+        ):
+            self.assertIn(cleanup, clear_local)
+
+    def test_failed_improvement_and_discarded_media_do_not_create_phantom_state(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        improvement = source.split('function requestImprovement', 1)[1].split(
+            "one('[data-is-improve]')", 1
+        )[0]
+        self.assertIn('var previousEditableDraft = draft.value.trim() || session.currentAnswer', improvement)
+        self.assertIn('setHidden(improveError, true)', improvement)
+        self.assertIn('draft.value = previousEditableDraft', improvement)
+        self.assertIn("improvedDraft.value = ''", source)
+        self.assertIn("answerContext.value = ''", source)
+
+        release = source.split('function releaseMedia', 1)[1].split(
+            'function setMode', 1
+        )[0]
+        self.assertIn('recorder.ondataavailable = null', release)
+        self.assertIn('recorder.onstop = null', release)
+        self.assertIn('media.recorder = null', release)
+        self.assertIn('media.chunks = []', release)
+        self.assertIn(
+            "event.target.matches('[data-is-autogrow]')",
+            source,
+        )
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is__question-action:disabled', css)
+        self.assertIn('cursor: not-allowed', css)
+
+    def test_transmission_copy_names_every_explicit_question_request(self):
+        html = self.html('/interview-studio?mode=me')
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn(
+            'Question text is sent only when you request coaching, a nudge, or an example.',
+            html,
+        )
+        self.assertIn('Get 2–3 AI-generated hints', html)
+        self.assertIn('AI-generated hints — use what helps', source)
+        self.assertIn('answer text is sent only for coaching', html)
+        self.assertIn('does not add it to PeerSlate’s question bank', html)
+        self.assertIn(
+            'If you later request a nudge, example, or coaching, the question text is sent',
+            html,
+        )
 
     def test_history_storage_unavailable_hook_present(self):
         html = self.html('/interview-studio/history')
@@ -463,7 +600,11 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
         self.assertNotIn('My History', source)
         self.assertNotIn('my-history', source)
-        self.assertIn('Approved public résumé history', source)
+        self.assertIn('second Answer basis select was redundant', source)
+        self.assertIn('setHidden(formatControl, true)', source)
+        html = self.html('/interview-studio?mode=ai')
+        self.assertIn('Answer source', html)
+        self.assertIn('Use Pete&rsquo;s public history', html)
         for forbidden in ('your private history', 'saved to your account', 'account history'):
             self.assertNotIn(forbidden.lower(), source.lower())
 
@@ -528,10 +669,13 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
 
     def test_compact_multiline_fields_share_one_autogrow_contract(self):
         html = self.html('/interview-studio?mode=me')
-        self.assertEqual(html.count('data-is-autogrow'), 3)
+        self.assertEqual(html.count('data-is-autogrow'), 6)
         self.assertRegex(html, r'id="is-answer"\s+rows="3"')
         self.assertRegex(html, r'id="is-improved-draft" rows="5"')
         self.assertRegex(html, r'id="is-video-transcript" rows="3"')
+        self.assertRegex(html, r'id="is-ai-follow-up" rows="2"')
+        self.assertRegex(html, r'id="is-custom-question" rows="4"')
+        self.assertRegex(html, r'id="is-answer-context" rows="3"')
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
         self.assertIn('.is textarea[data-is-autogrow]', css)
         self.assertIn('max-height: none', css)
@@ -564,7 +708,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         html = self.html('/interview-studio?mode=ai')
         form = html.split('data-is-ai-form', 1)[1].split('</form>', 1)[0]
         self.assertLess(form.index('data-is-ai-question'), form.index('data-is-ai-mode-group'))
-        self.assertLess(form.index('data-is-ai-mode-group'), form.index('Get Answer'))
+        self.assertLess(form.index('data-is-ai-mode-group'), form.index('Get example'))
         self.assertIn('data-is-ai-basis-label', html)
         self.assertIn('data-is-ai-basis-guidance', html)
         self.assertIn('data-is-follow-up-note', html)
@@ -581,6 +725,8 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('resetAiAnswerForContextChange()', basis_block)
         self.assertIn('Ask a follow-up grounded in the current answer context.', source)
         self.assertIn('Follow-up is unavailable because no approved-history example was returned.', source)
+        self.assertIn('followUpOpen.disabled = !followUpAvailable', source)
+        self.assertIn("announce('Follow-up is unavailable for this answer.')", source)
 
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
         self.assertIn('"basis"', css)
@@ -725,11 +871,16 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('window.clearTimeout(autosaveTimer)', persist)
         self.assertIn('saveDraft(false)', persist)
         self.assertIn('removeStored(draftKey(currentQuestion().text))', persist)
-        self.assertIn('if (prepareAnswerContextChange()) advanceQuestion()', source)
+        different = source.split("all('[data-is-different-question]')", 1)[1].split(
+            "var customQuestionDialog", 1
+        )[0]
+        self.assertIn('prepareCurrentQuestionChange', different)
+        self.assertIn('pickDifferentQuestion()', different)
+        self.assertIn('Session progress did not change.', different)
         queue = source.split("button.addEventListener('click', function ()", 1)[1].split(
             'item.appendChild(button)', 1
         )[0]
-        self.assertIn('if (!prepareAnswerContextChange()) return', queue)
+        self.assertIn('if (!prepareCurrentQuestionChange', queue)
 
     def test_short_desktop_keeps_primary_answer_action_in_the_first_viewport(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
@@ -743,7 +894,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
     def test_ai_and_video_submissions_stop_active_dictation_before_state_changes(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
         ai_submit = source.split("aiForm.addEventListener('submit'", 1)[1].split(
-            "one('[data-is-follow-up-open]')", 1
+            "followUpOpen.addEventListener('click'", 1
         )[0]
         follow_up_submit = source.split("followUpForm.addEventListener('submit'", 1)[1].split(
             "one('[data-is-ai-new]')", 1
@@ -765,7 +916,10 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('data-is-record-stop', camera_to_transcript)
         self.assertIn('data-is-record-retake', camera_to_transcript)
         self.assertIn('data-is-record-discard', camera_to_transcript)
-        self.assertIn('data-is-video-new-question', camera_to_transcript)
+        self.assertNotIn('data-is-video-new-question', camera_to_transcript)
+        video_question = html.split('data-is-video-question', 1)[1].split('class="is__camera"', 1)[0]
+        self.assertIn('data-is-different-question', video_question)
+        self.assertIn('data-is-create-question', video_question)
         self.assertIn('is__video-device-card', html)
         self.assertIn('data-is-video-state-copy', html)
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
@@ -789,13 +943,10 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertNotIn('body.interview-studio-page .mobile-tabbar', css)
         chat_rule = css.rsplit('body.interview-studio-page #chat-toggle', 1)[1].split('}', 1)[0]
         self.assertIn('display: none !important', chat_rule)
-        final_mobile = css.rsplit('@media (max-width: 48rem) {', 1)[1].split(
-            '@media (max-width: 24rem)', 1
-        )[0]
-        self.assertIn('position: fixed', final_mobile)
-        self.assertIn('minmax(0, 0.85fr)', final_mobile)
-        self.assertIn('minmax(0, 1.15fr)', final_mobile)
-        self.assertIn('.is__queue-mobile', final_mobile)
+        self.assertIn('position: fixed', css)
+        self.assertIn('minmax(0, 0.85fr)', css)
+        self.assertIn('minmax(0, 1.15fr)', css)
+        self.assertIn('.is__queue-mobile', css)
         compact_mobile = css.rsplit('@media (max-width: 24rem) {', 1)[1].split(
             '/* The global dark shell', 1
         )[0]
@@ -956,6 +1107,7 @@ class ReviewSchemaTests(unittest.TestCase):
             'Tell me about a project.',
             'experienced',
             'behavioral',
+            'member_history',
             {
                 'answer': 'I delivered the approved result.',
                 'evidenceUsed': [{'id': 'approved'}],
@@ -965,6 +1117,22 @@ class ReviewSchemaTests(unittest.TestCase):
         self.assertEqual(context['question'], 'Tell me about a project.')
         self.assertEqual(context['answer'], 'I delivered the approved result.')
         self.assertEqual(context['evidence_ids'], ['approved'])
+        self.assertEqual(context['mode'], 'member_history')
+
+    def test_compare_context_requires_a_signed_illustrative_branch(self):
+        token = _sign_interview_model_context(
+            'petec',
+            'Tell me about a project.',
+            'experienced',
+            'behavioral',
+            'compare',
+            {
+                'answer': 'I delivered the approved result.',
+                'evidenceUsed': [{'id': 'approved'}],
+            },
+        )
+        with self.assertRaisesRegex(ValueError, 'illustrative context is incomplete'):
+            _load_interview_model_context(token)
 
     def test_improved_draft_uses_selected_evidence_only(self):
         evidence = {'selected': {'id': 'selected', 'metric': '20%', 'label': 'Approved'}}
@@ -973,6 +1141,14 @@ class ReviewSchemaTests(unittest.TestCase):
             evidence,
         )
         self.assertEqual(improvement['evidenceUsed'][0]['id'], 'selected')
+
+    def test_nudge_requires_two_or_three_real_hints(self):
+        self.assertEqual(
+            validate_interview_nudge({'hints': ['Frame the tradeoff.', 'Name the decision rule.']}),
+            {'hints': ['Frame the tradeoff.', 'Name the decision rule.']},
+        )
+        with self.assertRaisesRegex(ValueError, 'nudge is incomplete'):
+            validate_interview_nudge({'hints': ['Only one hint.']})
 
     def test_extract_json_tolerates_code_fences(self):
         wrapped = '```json\n' + json.dumps({'a': 1}) + '\n```'
@@ -1029,10 +1205,35 @@ class InterviewEndpointGuardTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('invalid or expired', response.get_json()['error'])
 
+    def test_follow_up_rejects_a_client_source_mode_change(self):
+        token = _sign_interview_model_context(
+            'petec',
+            'Tell me about a project.',
+            'experienced',
+            'behavioral',
+            'best_practice',
+            {
+                'answer': 'A generic, illustrative answer.',
+                'evidenceUsed': [],
+            },
+        )
+        response = self.client.post(
+            '/api/interview/model-answer',
+            json={
+                'follow_up': 'What happened next?',
+                'context_token': token,
+                'mode': 'member_history',
+            },
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('source no longer matches', response.get_json()['error'])
+
     def test_interview_endpoints_reject_scalar_and_wrong_shaped_json(self):
         for path in (
             '/api/interview/review',
             '/api/interview/improve',
+            '/api/interview/nudge',
             '/api/interview/model-answer',
         ):
             with self.subTest(path=path):
@@ -1624,6 +1825,74 @@ class InterviewGroundingModeGenerationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 502)
         self.assertNotIn('modelAnswer', response.get_json())
 
+    def test_compare_follow_up_keeps_grounded_history_out_of_generic_prompt(self):
+        prior = 'I led the approved modernization and it shipped.'
+        prior_illustrative = 'The illustrative candidate ranked the work and explained the tradeoff.'
+        token = _sign_interview_model_context(
+            'petec',
+            self.QUESTION,
+            'experienced',
+            'behavioral',
+            'compare',
+            {
+                'answer': prior,
+                'evidenceUsed': [{'id': 'modernization'}],
+            },
+            {
+                'answer': prior_illustrative,
+                'evidenceUsed': [],
+            },
+        )
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.side_effect = [
+                _FakeProviderResponse(self.grounded_reply()),
+                _FakeProviderResponse(self.illustrative_reply()),
+            ]
+            response = self.client.post(
+                '/api/interview/model-answer',
+                json={
+                    'follow_up': 'What did you learn?',
+                    'context_token': token,
+                    'mode': 'compare',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+        calls = fake_client.messages.create.call_args_list
+        grounded_prompt = calls[0].kwargs['messages'][0]['content']
+        generic_prompt = calls[1].kwargs['messages'][0]['content']
+        self.assertIn(prior, grounded_prompt)
+        self.assertNotIn(prior, generic_prompt)
+        self.assertIn(prior_illustrative, generic_prompt)
+        self.assertIn('What did you learn?', generic_prompt)
+
+    def test_nudge_endpoint_returns_only_validated_hints(self):
+        reply = json.dumps({
+            'hints': [
+                'Choose one decision rule for sorting the urgent work.',
+                'Explain how you communicate tradeoffs before priorities collide.',
+                'Close with how you verify the highest-risk work moved first.',
+            ],
+        })
+        with patch('app.client') as fake_client:
+            fake_client.messages.create.return_value = _FakeProviderResponse(reply)
+            response = self.client.post(
+                '/api/interview/nudge',
+                json={
+                    'profile_slug': 'petec',
+                    'question': 'How do you prioritize when everything feels urgent?',
+                    'level': 'leadership',
+                    'family': 'situational',
+                    'competency': 'Pressure',
+                    'practice_mode': 'video',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.get_json()['hints']), 3)
+        provider_call = fake_client.messages.create.call_args
+        self.assertNotIn('Approved evidence', provider_call.kwargs['system'])
+
 
 class InterviewFailureReasonTests(unittest.TestCase):
     """Unit-level guarantees for the cause classifier."""
@@ -1658,6 +1927,7 @@ class InterviewFailureReasonTests(unittest.TestCase):
             'validate_interview_review',
             'validate_interview_model_answer',
             'validate_interview_improvement',
+            'validate_interview_nudge',
         }
         messages = []
         for node in ast.walk(tree):
@@ -1729,7 +1999,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
     def test_exactly_one_dictation_control_exists_per_field(self):
         """Two controls bound to one field would desynchronise the toggle."""
         html = self.html()
-        for kind in ('answer', 'ai', 'video'):
+        for kind in ('answer', 'custom', 'followup', 'video'):
             with self.subTest(kind=kind):
                 self.assertEqual(html.count('data-is-mic="%s"' % kind), 1)
 
@@ -1746,7 +2016,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
         # endpoints this route calls are the text coaching ones.
         self.assertEqual(
             sorted(set(re.findall(r"'(/api/[a-z0-9/_-]+)'", script))),
-            ['/api/interview/improve', '/api/interview/model-answer', '/api/interview/review'],
+            ['/api/interview/improve', '/api/interview/model-answer', '/api/interview/nudge', '/api/interview/review'],
         )
         self.assertNotIn('uploadUrl', script)
         self.assertNotIn('owner-capture-voice', script)
@@ -1774,7 +2044,10 @@ class InterviewStudioDictationTests(unittest.TestCase):
     def test_second_click_stops_dictation(self):
         script = self.script
         self.assertIn('function toggleDictation', script)
-        self.assertIn("if (activeDictation) { stopDictation('manual'); return; }", script)
+        self.assertIn('if (pendingDictationPermission) {', script)
+        self.assertIn('cancelPendingDictationPermission();', script)
+        self.assertIn("var sameButton = activeDictation.button === button;", script)
+        self.assertIn("stopDictation('manual');", script)
         self.assertIn("button.addEventListener('click', function () { toggleDictation(", script)
 
     def test_a_spontaneous_browser_end_restarts_instead_of_ending_the_session(self):
@@ -1801,7 +2074,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
         self.assertIn('if (state.interim) {', script)
         self.assertIn('state.words += appendTranscript(state.target, state.interim);', script)
         stop_block = script.split('function stopDictation(reason)', 1)[1].split(
-            'function startDictation', 1
+            'function beginDictation', 1
         )[0]
         self.assertIn('finishDictation(state);', stop_block)
         self.assertNotIn('setTimeout', stop_block)
@@ -1891,7 +2164,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
 
     def test_toggle_state_is_exposed_to_assistive_technology(self):
         html = self.html()
-        self.assertEqual(html.count('aria-pressed="false"'), 3)
+        self.assertEqual(html.count('aria-pressed="false"'), 4)
         script = self.script
         self.assertIn("button.setAttribute('aria-pressed', 'true');", script)
         self.assertIn("state.button.setAttribute('aria-pressed', 'false');", script)
@@ -1915,7 +2188,8 @@ class InterviewStudioDictationTests(unittest.TestCase):
         html = self.html()
         for label in (
             'aria-label="Dictate your answer"',
-            'aria-label="Dictate an interview question"',
+            'aria-label="Dictate a custom interview question"',
+            'aria-label="Dictate a follow-up question"',
             'aria-label="Dictate your answer transcript"',
         ):
             with self.subTest(label=label):

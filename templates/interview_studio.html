@@ -36,7 +36,7 @@
         <noscript>
             <div class="is__band is__noscript-band">
                 <strong>Interactive practice needs JavaScript.</strong>
-                Everything shown on this page stays truthful: nothing is stored in this browser or sent to PeerSlate until you submit an answer for coaching. Every mode below is a real link you can open now.
+                Without JavaScript, Interview Studio does not save a browser-local draft or make coaching, nudge, or example requests. Every mode below is still a real link you can open.
             </div>
         </noscript>
 
@@ -220,7 +220,7 @@
                     </div>
 
                     <div class="is__progress-head">
-                        <span class="is__question-position" data-is-question-position>Question 1 of 5 · 20% complete</span>
+                        <span class="is__question-position" data-is-question-position>Question 1 of 5 · 0% complete</span>
                         <ol class="is__stages" data-is-stage-rail aria-label="Answer progress">
                             <li data-is-stage="1" class="is-current" aria-current="step"><span class="is__sr-only">Draft</span><span aria-hidden="true">1</span></li>
                             <li data-is-stage="2"><span class="is__sr-only">Coaching request</span><span aria-hidden="true">2</span></li>
@@ -228,19 +228,29 @@
                             <li data-is-stage="4"><span class="is__sr-only">Improve</span><span aria-hidden="true">4</span></li>
                             <li data-is-stage="5"><span class="is__sr-only">Continue</span><span aria-hidden="true">5</span></li>
                         </ol>
-                        <progress class="is__stage-progress" data-is-progress max="100" value="20">20%</progress>
+                        <progress class="is__stage-progress" data-is-progress max="100" value="0">0%</progress>
                         <span class="is__state-pill" data-is-stage-label>Drafting</span>
                     </div>
 
-                    <div class="is__question-block">
+                    <div class="is__question-block is__question-controls-row">
                         <div class="is__question-icon" aria-hidden="true">?</div>
-                        <div>
+                        <div class="is__question-meta">
                             <ul class="is__chips" aria-label="Question details">
                                 <li class="is__chip is__chip--family" data-is-family-chip>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-competency-chip>Competency: Conflict</li>
-                                <li class="is__chip is__chip--framework">STAR recommended</li>
-                                <li class="is__chip is__chip--time">Approximately 2 minutes</li>
+                                <li class="is__chip is__chip--framework" data-is-framework-chip>STAR recommended</li>
+                                <li class="is__chip is__chip--time" data-is-time-chip>Approximately 2 minutes</li>
                             </ul>
+                            <div class="is__question-actions" aria-label="Change the current question">
+                                <button class="is__question-action" type="button" data-is-different-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                    Different question
+                                </button>
+                                <button class="is__question-action" type="button" data-is-create-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                    Create question
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -278,7 +288,7 @@
 
                                 <p class="is__transmit-line">
                                     <span class="is__truth-icon" aria-hidden="true">⇧</span>
-                                    <span>Questions and your answers are sent to PeerSlate only when you click Submit answer for coaching.</span>
+                                    <span>This question and your answer are sent to PeerSlate only when you click Review My Answer.</span>
                                 </p>
 
                                 <div class="is__actions is__composer-actions">
@@ -307,12 +317,6 @@
                                     <span data-is-tip>For conflict questions, explain the disagreement, how you handled it professionally, and the outcome.</span>
                                 </p>
 
-                                <div class="is__actions is__actions--spread">
-                                    <button class="is__button is__button--quiet" type="button" data-is-new-question>
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                                        New Question
-                                    </button>
-                                </div>
                             </form>
 
                             <div class="is__processing-banner" data-is-reviewing hidden aria-live="polite">
@@ -387,11 +391,13 @@
                                         </div>
                                     </details>
 
-                                    <div class="is__actions is__actions--spread">
+                                    <div class="is__actions is__review-actions">
                                         <div class="is__actions-group">
                                             <button class="is__button" type="button" data-is-retry>Try again</button>
                                             <button class="is__button is__button--primary" type="button" data-is-improve>Improve answer →</button>
                                         </div>
+                                    </div>
+                                    <div class="is__next-step">
                                         <button class="is__button is__button--primary" type="button" data-is-next-question>
                                             Next Question
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
@@ -409,6 +415,30 @@
                                     <span>After your coach review, choose “Improve answer” to compare your original answer with an editable, evidence-grounded draft.</span>
                                 </div>
                                 <div data-is-improve-content hidden>
+                                <section class="is__make-yours" aria-labelledby="is-make-yours-title">
+                                    <div>
+                                        <p class="is__eyebrow">Make it more yours</p>
+                                        <h4 id="is-make-yours-title">Add the context only you can confirm.</h4>
+                                        <p>Keep the coach-assisted draft, use relevant approved public history, or add a real detail from your experience.</p>
+                                    </div>
+                                    <div class="is__make-yours-actions">
+                                        <button class="is__button is__button--soft" type="button" data-is-use-history-context>
+                                            Use relevant public history
+                                        </button>
+                                        <button class="is__button" type="button" data-is-add-answer-context aria-expanded="false">
+                                            Add more answer context
+                                        </button>
+                                    </div>
+                                    <form class="is__answer-context-form" data-is-answer-context-form hidden>
+                                        <label for="is-answer-context">A real detail to include</label>
+                                        <textarea id="is-answer-context" rows="3" maxlength="1200" data-is-answer-context data-is-autogrow placeholder="Add a responsibility, action, result, or detail that is true for you…"></textarea>
+                                        <div class="is__actions">
+                                            <button class="is__button is__button--primary" type="submit">Update the draft</button>
+                                            <button class="is__button is__button--quiet" type="button" data-is-answer-context-cancel>Cancel</button>
+                                        </div>
+                                    </form>
+                                    <p class="is__context-copy" data-is-make-yours-status></p>
+                                </section>
                                 <section class="is__evidence-suggestions" data-is-evidence-suggestions hidden>
                                     <h4>Relevant history you may have missed <span>Confirmed history that may strengthen your next draft</span></h4>
                                     <div data-is-evidence-options></div>
@@ -455,8 +485,17 @@
                                         <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                     </button>
-                                    <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}">
-                                        <span><strong>Need a nudge?</strong><small>Open a source-labeled example</small></span>
+                                    <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
+                                        <span><strong>Need a nudge?</strong><small>Get 2–3 AI-generated hints</small></span>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                    </button>
+                                    <div class="is__nudge-panel" data-is-nudge-panel hidden>
+                                        <p data-is-nudge-status>Hints will stay focused on this question.</p>
+                                        <ol data-is-nudge-list></ol>
+                                        <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
+                                    </div>
+                                    <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
+                                        <span><strong>Need an example?</strong><small>Open Interview AI with this question</small></span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                     </a>
                                     <details class="is__reference is__reference--rail" data-is-ai-reference hidden>
@@ -467,7 +506,7 @@
 
                                 <section class="is__card is__context-card">
                                     <p class="is__eyebrow">Privacy</p>
-                                    <p class="is__context-copy">Drafts and History stay in this browser. Your text is sent only when you request coaching. Audio is not sent or kept.</p>
+                                    <p class="is__context-copy">Drafts and History stay in this browser. Question text is sent only for an explicit nudge, example, or coaching request; answer text is sent only for coaching. Audio is not sent or kept.</p>
                                 </section>
                             </div>
 
@@ -499,10 +538,6 @@
                                     </div>
                                 </div>
                                 <ol data-is-queue-list></ol>
-                                <form class="is__custom-question" data-is-custom-question-form>
-                                    <label for="is-custom-question">Add your own question</label>
-                                    <div><input id="is-custom-question" type="text" maxlength="300" placeholder="Type a custom question…" data-is-custom-question><button type="submit" class="is__icon-button" aria-label="Add custom question">+</button></div>
-                                </form>
                             </dialog>
                         </aside>
                     </div>
@@ -523,30 +558,40 @@
 
                 <div class="is__content-grid">
                     <form class="is__ai-form" data-is-ai-form>
-                        <div class="is__ai-mark" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
+                        <div class="is__ai-question-frame">
+                            <p class="is__section-label">Current question</p>
+                            <h2 class="is__title is__title--stage" data-is-ai-question-display>Tell me about a time you disagreed with a supervisor.</h2>
+                            <input id="is-ai-question" type="hidden" value="Tell me about a time you disagreed with a supervisor." data-is-ai-question>
+                            <div class="is__question-controls-row is__question-controls-row--ai">
+                                <ul class="is__chips" aria-label="Question details">
+                                    <li class="is__chip is__chip--family" data-is-ai-family-chip>Behavioral</li>
+                                    <li class="is__chip is__chip--competency" data-is-ai-competency-chip>Competency: Conflict</li>
+                                    <li class="is__chip is__chip--framework" data-is-ai-framework-chip>STAR recommended</li>
+                                    <li class="is__chip is__chip--time" data-is-ai-time-chip>Approximately 2 minutes</li>
+                                </ul>
+                                <div class="is__question-actions" aria-label="Change the current question">
+                                    <button class="is__question-action" type="button" data-is-different-question>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                        Different question
+                                    </button>
+                                    <button class="is__question-action" type="button" data-is-create-question>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                        Create question
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <label for="is-ai-question">Ask a custom interview question</label>
-                        <div class="is__ai-input">
-                            <input id="is-ai-question" type="text" maxlength="300" value="Tell me about a time you persuaded someone to see things your way." data-is-ai-question>
-                            <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate an interview question" data-is-mic="ai">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
-                            </button>
-                        </div>
-                        <p class="is__dictation-live" data-is-dictation-status="ai" hidden></p>
-                        <p class="is__dictation-interim" data-is-dictation-interim="ai" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
-                        <p class="is__error" data-is-mic-error="ai" hidden></p>
                         <fieldset class="is__ai-grounding" data-is-ai-mode-group>
-                            <legend class="is__section-label">Answer basis</legend>
-                            <div class="is__mode-options" role="radiogroup" aria-label="Answer grounding mode">
+                            <legend class="is__section-label">Answer source</legend>
+                            <div class="is__mode-options" role="radiogroup" aria-label="Answer source">
                                 <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
                                 <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s public history</span></label>
                                 <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="compare"><span>Compare</span></label>
                             </div>
                             <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
                         </fieldset>
-                        <button class="is__button is__button--primary" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
-                            Get Answer
+                        <button class="is__button is__button--primary is__ai-get-answer" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
+                            Get example
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                         </button>
                     </form>
@@ -603,7 +648,7 @@
                                 <div class="is__actions is__actions--three" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
                                     <button class="is__button" type="button" data-is-follow-up-open>Go to Follow-up</button>
                                     <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
-                                    <button class="is__button" type="button" data-is-ai-new>New Question</button>
+                                    <button class="is__button" type="button" data-is-create-question>Create Question</button>
                                 </div>
                             </div>
 
@@ -611,7 +656,16 @@
                                 <label for="is-ai-follow-up">Ask a follow-up</label>
                                 <p data-is-follow-up-note>Generate the first answer to unlock follow-up questions grounded in the same evidence.</p>
                                 <p class="is__error" data-is-follow-up-error role="alert" hidden></p>
-                                <div><input id="is-ai-follow-up" type="text" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up disabled><button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button></div>
+                                <div class="is__follow-up-composer">
+                                    <textarea id="is-ai-follow-up" rows="2" maxlength="300" placeholder="What would the interviewer ask next?" data-is-follow-up data-is-autogrow disabled></textarea>
+                                    <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate a follow-up question" data-is-mic="followup" disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                    </button>
+                                    <button class="is__button is__button--primary" type="submit" data-is-follow-up-submit disabled>Ask</button>
+                                </div>
+                                <p class="is__dictation-live" data-is-dictation-status="followup" hidden></p>
+                                <p class="is__dictation-interim" data-is-dictation-interim="followup" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
+                                <p class="is__error" data-is-mic-error="followup" hidden></p>
                             </form>
                         </section>
                     </div>
@@ -658,19 +712,29 @@
 
                     <div class="is__progress-head" style="margin-top:1rem">
                         <span class="is__question-position"><span data-is-video-question-position>Question 1 of 5</span> · Local rehearsal</span>
-                        <span class="is__save-pill" data-is-video-progress-percent hidden>20%</span>
-                        <progress class="is__sr-only" data-is-video-progress max="100" value="20">20%</progress>
+                        <span class="is__save-pill" data-is-video-progress-percent hidden>0%</span>
+                        <progress class="is__sr-only" data-is-video-progress max="100" value="0">0%</progress>
                     </div>
-                    <div class="is__question-block is__question-block--compact">
+                    <div class="is__question-block is__question-block--compact is__question-controls-row">
                         <div class="is__question-icon" aria-hidden="true">?</div>
-                        <div>
+                        <div class="is__question-meta">
                             <h3 class="is__title" style="font-size:clamp(1.3rem,2.4vw,1.7rem)" data-is-video-question>Tell me about a time you disagreed with a supervisor.</h3>
                             <ul class="is__chips">
                                 <li class="is__chip is__chip--family" data-is-video-family>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-video-competency>Competency: Conflict</li>
-                                <li class="is__chip is__chip--framework">STAR recommended</li>
-                                <li class="is__chip is__chip--time">Approximately 2 minutes</li>
+                                <li class="is__chip is__chip--framework" data-is-video-framework-chip>STAR recommended</li>
+                                <li class="is__chip is__chip--time" data-is-video-time-chip>Approximately 2 minutes</li>
                             </ul>
+                            <div class="is__question-actions" aria-label="Change the current question">
+                                <button class="is__question-action" type="button" data-is-different-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                    Different question
+                                </button>
+                                <button class="is__question-action" type="button" data-is-create-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                    Create question
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -691,7 +755,6 @@
                                     <button class="is__button is__button--primary" type="button" data-is-record-stop hidden>Stop Recording</button>
                                     <button class="is__button" type="button" data-is-record-retake hidden>Record another take</button>
                                     <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
-                                    <button class="is__button is__button--quiet" type="button" data-is-video-new-question>New Question</button>
                                 </div>
                             </div>
 
@@ -725,6 +788,21 @@
                                     <button class="is__button is__button--quiet" type="button" data-is-device-settings{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Device settings</button>
                                 </div>
                                 <p class="is__error" data-is-video-error hidden></p>
+                            </section>
+                            <section class="is__card is__context-card is__context-actions" aria-label="Video question help">
+                                <button class="is__context-link" type="button" data-is-queue-open aria-haspopup="dialog">
+                                    <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                </button>
+                                <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
+                                    <span><strong>Need a nudge?</strong><small>Get AI-generated delivery hints</small></span>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                </button>
+                                <div class="is__nudge-panel" data-is-nudge-panel hidden>
+                                    <p data-is-nudge-status>Hints will stay focused on this question.</p>
+                                    <ol data-is-nudge-list></ol>
+                                    <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
+                                </div>
                             </section>
                             <section class="is__card is__video-result" data-is-video-result aria-labelledby="is-video-result-title" hidden>
                                 <p class="is__eyebrow">Local rehearsal</p>
@@ -856,13 +934,43 @@
         </main>
 
         <ul class="is__truth" data-is-truth-strip aria-label="Studio truth and privacy summary">
-            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">⇧</span><p>Questions and your answers are sent to PeerSlate only when you submit for coaching.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">⇧</span><p>Question text is sent only when you request coaching, a nudge, or an example. Answer text is sent only for coaching.</p></li>
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▤</span><p>Drafts, goals, attempts, and History are saved only in this browser.</p></li>
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▣</span><p>Video Practice remains local. Media is not uploaded or analyzed.</p></li>
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">◇</span><p>Scores are practice signals, not employer predictions.</p></li>
         </ul>
         <p style="margin-top:0.65rem;color:var(--is-text-muted);font-size:0.7rem;text-align:center">Public Interview Studio · browser-local practice</p>
     </div>
+
+    <dialog class="is__dialog is__custom-question-dialog" data-is-custom-question-dialog aria-labelledby="is-custom-question-title">
+        <div class="is__dialog-head">
+            <div>
+                <p class="is__section-label">Your practice</p>
+                <h2 id="is-custom-question-title">Create your own question</h2>
+            </div>
+            <div class="is__dialog-actions">
+                <button type="button" class="is__icon-button" aria-label="Close custom question" data-is-custom-question-close>&times;</button>
+            </div>
+        </div>
+        <form class="is__custom-question-form" data-is-custom-question-form>
+            <p>Creating this question stays browser-local and does not add it to PeerSlate’s question bank. If you later request a nudge, example, or coaching, the question text is sent for that request.</p>
+            <label for="is-custom-question">Interview question</label>
+            <div class="is__custom-question-composer">
+                <textarea id="is-custom-question" rows="4" maxlength="300" placeholder="Type your custom interview question…" data-is-custom-question data-is-autogrow required></textarea>
+                <button class="is__mic" type="button" aria-pressed="false" aria-label="Dictate a custom interview question" data-is-mic="custom">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                </button>
+            </div>
+            <p class="is__keyboard-hint">Enter uses the question. Shift + Enter adds a new line.</p>
+            <p class="is__dictation-live" data-is-dictation-status="custom" hidden></p>
+            <p class="is__dictation-interim" data-is-dictation-interim="custom" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
+            <p class="is__error" data-is-mic-error="custom" hidden></p>
+            <div class="is__actions is__actions--dialog">
+                <button class="is__button is__button--quiet" type="button" data-is-custom-question-cancel>Cancel</button>
+                <button class="is__button is__button--primary" type="submit">Use this question</button>
+            </div>
+        </form>
+    </dialog>
 
     <dialog class="is__dialog is__settings" data-is-settings aria-labelledby="is-settings-title">
         <div class="is__dialog-head">

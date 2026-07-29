@@ -2581,15 +2581,27 @@ def validate_interview_model_answer(raw, evidence_by_id, require_evidence=True):
     }
 
 
-def _sign_interview_model_context(profile_slug, question, level, family, model_answer):
-    return interview_context_serializer.dumps({
+def _sign_interview_model_context(
+    profile_slug,
+    question,
+    level,
+    family,
+    mode,
+    model_answer,
+    illustrative_answer=None,
+):
+    context = {
         'profile_slug': profile_slug,
         'question': question,
         'level': level,
         'family': family,
+        'mode': mode,
         'answer': model_answer['answer'],
         'evidence_ids': [item['id'] for item in model_answer['evidenceUsed']],
-    })
+    }
+    if illustrative_answer:
+        context['illustrative_answer'] = illustrative_answer['answer']
+    return interview_context_serializer.dumps(context)
 
 
 def _load_interview_model_context(token):
@@ -2604,7 +2616,7 @@ def _load_interview_model_context(token):
         raise ValueError('model-answer context token is invalid or expired') from error
     if not isinstance(context, dict):
         raise ValueError('model-answer context is invalid')
-    required_text = ('profile_slug', 'question', 'level', 'family', 'answer')
+    required_text = ('profile_slug', 'question', 'level', 'family', 'mode', 'answer')
     if any(not isinstance(context.get(key), str) or not context[key] for key in required_text):
         raise ValueError('model-answer context is incomplete')
     evidence_ids = context.get('evidence_ids')
@@ -2612,7 +2624,27 @@ def _load_interview_model_context(token):
         raise ValueError('model-answer context evidence is invalid')
     if len(context['question']) > MAX_INTERVIEW_QUESTION_LENGTH or len(context['answer']) > MAX_INTERVIEW_ANSWER_LENGTH:
         raise ValueError('model-answer context is too long')
+    if context['mode'] not in ('member_history', 'best_practice', 'compare'):
+        raise ValueError('model-answer context mode is invalid')
+    illustrative_answer = context.get('illustrative_answer', '')
+    if not isinstance(illustrative_answer, str):
+        raise ValueError('model-answer illustrative context is invalid')
+    if len(illustrative_answer) > MAX_INTERVIEW_ANSWER_LENGTH:
+        raise ValueError('model-answer illustrative context is too long')
+    if context['mode'] == 'compare' and not illustrative_answer:
+        raise ValueError('model-answer illustrative context is incomplete')
     return context
+
+
+def validate_interview_nudge(raw):
+    """Validate two or three short, question-specific hints."""
+    if not isinstance(raw, dict):
+        raise ValueError('nudge is not an object')
+    hints = _string_list(raw.get('hints', []), 3)
+    hints = [hint[:240] for hint in hints]
+    if len(hints) < 2:
+        raise ValueError('nudge is incomplete')
+    return {'hints': hints}
 
 
 def validate_interview_improvement(raw, evidence_by_id):
@@ -2669,12 +2701,14 @@ INTERVIEW_FAILURE_REASONS = {
     'review is not an object': 'not_an_object',
     'model answer is not an object': 'not_an_object',
     'improvement is not an object': 'not_an_object',
+    'nudge is not an object': 'not_an_object',
     'expected a list': 'wrong_field_type',
     'model answer evidence is not a list': 'wrong_field_type',
     'improvement evidence is not a list': 'wrong_field_type',
     'review summary is incomplete': 'empty_required_field',
     'model answer is incomplete': 'empty_required_field',
     'improvement is incomplete': 'empty_required_field',
+    'nudge is incomplete': 'empty_required_field',
     'dimensions missing': 'incomplete_dimensions',
     'incomplete dimensions': 'incomplete_dimensions',
     'dimension explanation is incomplete': 'incomplete_dimensions',
@@ -2854,13 +2888,18 @@ def interview_improve():
         return jsonify({'error': 'Improvements and evidence IDs must be JSON lists of text values.'}), 400
     question = str(data.get('question') or '').strip()
     answer = str(data.get('answer') or '').strip()
+    additional_context = str(data.get('additional_context') or '').strip()
     profile_slug = str(data.get('profile_slug') or 'petec').strip()
     improvements = _string_list(raw_improvements, 4)
     selected_ids = raw_evidence_ids[:2]
 
     if not question or not answer:
         return jsonify({'error': 'The question and submitted answer are required.'}), 400
-    if len(question) > MAX_INTERVIEW_QUESTION_LENGTH or len(answer) > MAX_INTERVIEW_ANSWER_LENGTH:
+    if (
+        len(question) > MAX_INTERVIEW_QUESTION_LENGTH
+        or len(answer) > MAX_INTERVIEW_ANSWER_LENGTH
+        or len(additional_context) > 1200
+    ):
         return jsonify({'error': 'That interview content is too long.'}), 400
     if profile_slug not in RESUME_PROFILE_FILES:
         return jsonify({'error': 'That interview profile is unavailable.'}), 404
@@ -2879,7 +2918,8 @@ def interview_improve():
 
     system_prompt = (
         'You are the PeerSlate Interview Coach. Rewrite a submitted answer as an editable draft while preserving '
-        'the candidate\'s first-person voice. You may use ONLY facts already in the answer and the explicitly selected '
+        'the candidate\'s first-person voice. You may use ONLY facts already in the answer, the candidate-confirmed '
+        'additional context, and the explicitly selected '
         'approved evidence below. Never invent metrics, roles, employers, actions, dates, technologies, conversations, '
         'or outcomes. If a needed fact is absent, omit it or add a short bracketed prompt for the candidate to confirm. '
         'Respond with JSON only: {"draft":"<60-120 second spoken answer>", '
@@ -2887,6 +2927,7 @@ def interview_improve():
         'Selected evidence:\n%s'
     ) % evidence_lines
     improvement_notes = '\n'.join('- ' + item for item in improvements) or '- Make the answer clearer and more specific.'
+    confirmed_context = additional_context or 'No additional candidate-confirmed context was supplied.'
 
     raw_reply = ''
     stop_reason = ''
@@ -2898,8 +2939,9 @@ def interview_improve():
             messages=[{
                 'role': 'user',
                 'content': (
-                    'Question: %s\n\nSubmitted answer:\n%s\n\nCoach priorities:\n%s'
-                ) % (question, answer, improvement_notes),
+                    'Question: %s\n\nSubmitted answer:\n%s\n\nCandidate-confirmed additional context:\n%s'
+                    '\n\nCoach priorities:\n%s'
+                ) % (question, answer, confirmed_context, improvement_notes),
             }],
         )
         stop_reason = getattr(response, 'stop_reason', '') or ''
@@ -2917,6 +2959,77 @@ def interview_improve():
     except Exception as error:
         app.logger.error('Interview improvement API error: %s', error)
         return jsonify({'error': 'The coach is unavailable right now. Please try again.'}), 500
+
+
+@app.route('/api/interview/nudge', methods=['POST'])
+@limiter.limit('8 per minute')
+def interview_nudge():
+    entitlements = get_interview_entitlements()
+    if not (entitlements.get('written_practice') or entitlements.get('model_answers')):
+        return jsonify({'error': 'Interview hints are not available for this profile.'}), 403
+    if not request.is_json:
+        return jsonify({'error': 'Send interview requests as JSON.'}), 415
+    refusal = _cross_site_refusal('interview')
+    if refusal:
+        return refusal
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Send one JSON object for the interview request.'}), 400
+    question = str(data.get('question') or '').strip()
+    level = str(data.get('level') or 'experienced').strip()
+    family = str(data.get('family') or 'behavioral').strip()
+    competency = str(data.get('competency') or 'Communication').strip()[:80]
+    practice_mode = str(data.get('practice_mode') or 'me').strip()
+    profile_slug = str(data.get('profile_slug') or 'petec').strip()
+
+    if not question:
+        return jsonify({'error': 'Choose an interview question first.'}), 400
+    if len(question) > MAX_INTERVIEW_QUESTION_LENGTH:
+        return jsonify({'error': 'That interview question is too long.'}), 400
+    if profile_slug not in RESUME_PROFILE_FILES:
+        return jsonify({'error': 'That interview profile is unavailable.'}), 404
+    if level not in ('entry', 'experienced', 'management', 'leadership', 'mixed'):
+        level = 'experienced'
+    if family not in ('situational', 'behavioral', 'mixed'):
+        family = 'behavioral'
+    if practice_mode not in ('me', 'ai', 'video'):
+        practice_mode = 'me'
+
+    system_prompt = (
+        'You are the PeerSlate Interview Coach. Give two or three concise hints that help a candidate plan their '
+        'own answer to one interview question. Do not write an example answer, invent a candidate story, claim a '
+        'specific outcome, or use profile history. Make each hint distinct and directly useful for the exact '
+        'question, calibrated to the stated experience level and competency. For Video Practice, one hint may '
+        'also help the candidate deliver the answer clearly out loud. Respond with JSON only: '
+        '{"hints":["<hint 1>","<hint 2>","<optional hint 3>"]}. Each hint must be under 35 words.'
+    )
+    raw_reply = ''
+    stop_reason = ''
+    try:
+        response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=500,
+            system=system_prompt,
+            messages=[{
+                'role': 'user',
+                'content': (
+                    'Question: %s\nExperience level: %s\nQuestion family: %s\n'
+                    'Competency: %s\nPractice mode: %s'
+                ) % (question, level, family, competency, practice_mode),
+            }],
+        )
+        stop_reason = getattr(response, 'stop_reason', '') or ''
+        raw_reply = response.content[0].text
+        return jsonify(validate_interview_nudge(_extract_json_object(raw_reply)))
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        _log_interview_failure(
+            'Interview nudge validation error', error, stop_reason, len(raw_reply),
+        )
+        return jsonify({'error': 'The coach returned unreadable hints. Please try again.'}), 502
+    except Exception as error:
+        app.logger.error('Interview nudge API error: %s', error)
+        return jsonify({'error': 'Interview hints are unavailable right now. Please try again.'}), 500
 
 
 @app.route('/api/interview/model-answer', methods=['POST'])
@@ -2938,7 +3051,11 @@ def interview_model_answer():
     level = str(data.get('level') or 'experienced').strip()
     family = str(data.get('family') or 'behavioral').strip()
     follow_up = str(data.get('follow_up') or '').strip()
+    requested_mode = str(data.get('mode') or 'member_history').strip()
+    if requested_mode not in ('member_history', 'best_practice', 'compare'):
+        requested_mode = 'member_history'
     prior_answer = ''
+    prior_illustrative_answer = ''
 
     if follow_up:
         try:
@@ -2950,6 +3067,12 @@ def interview_model_answer():
         level = context['level']
         family = context['family']
         prior_answer = context['answer']
+        prior_illustrative_answer = context.get('illustrative_answer', '')
+        if requested_mode != context['mode']:
+            return jsonify({'error': 'The follow-up answer source no longer matches the original answer.'}), 400
+        mode = context['mode']
+    else:
+        mode = requested_mode
 
     if not question:
         return jsonify({'error': 'Ask an interview question first.'}), 400
@@ -2964,10 +3087,6 @@ def interview_model_answer():
     # PS-INTERVIEW-002 (v1.2): explicit grounding modes. member_history is
     # the original behavior; best_practice is a clearly generic example;
     # compare returns both so the member can study the structural lessons.
-    mode = str(data.get('mode') or 'member_history').strip()
-    if mode not in ('member_history', 'best_practice', 'compare'):
-        mode = 'member_history'
-
     profile, evidence = _interview_page_context(profile_slug)
     evidence_by_id = {item['id']: item for item in evidence}
     evidence_lines = '\n'.join(
@@ -3003,7 +3122,7 @@ def interview_model_answer():
     # cause. Only the stop reason and a character count are ever logged.
     last_reply = {'text': '', 'stop_reason': ''}
 
-    def _generate(system_text, illustrative=False):
+    def _generate(system_text, user_text, illustrative=False):
         # An illustrative best-practice example is not grounded in this member's
         # approved evidence, so it is validated against an empty evidence map
         # and is not required to cite anything. It is still rejected if it cites
@@ -3012,7 +3131,7 @@ def interview_model_answer():
             model='claude-haiku-4-5-20251001',
             max_tokens=1300,
             system=system_text,
-            messages=[{'role': 'user', 'content': user_content}],
+            messages=[{'role': 'user', 'content': user_text}],
         )
         last_reply['stop_reason'] = getattr(api_response, 'stop_reason', '') or ''
         last_reply['text'] = api_response.content[0].text
@@ -3022,30 +3141,48 @@ def interview_model_answer():
             require_evidence=not illustrative,
         )
 
-    user_content = 'Interview question: %s' % question
+    grounded_user_content = 'Interview question: %s' % question
+    illustrative_user_content = 'Interview question: %s' % question
     if follow_up:
-        user_content += '\n\nPrior server-validated model answer:\n%s\n\nInterviewer follow-up: %s' % (
+        grounded_user_content += '\n\nPrior server-validated model answer:\n%s\n\nInterviewer follow-up: %s' % (
             prior_answer,
             follow_up,
         )
+        # In compare mode the signed primary answer is profile-grounded. The
+        # illustrative branch must not receive that history, even as conversational
+        # context, or the generic example can leak or imitate profile facts.
+        illustrative_user_content += '\n\nInterviewer follow-up: %s' % follow_up
+        if mode == 'best_practice':
+            illustrative_user_content += '\n\nPrior server-validated illustrative answer:\n%s' % prior_answer
+        elif mode == 'compare':
+            illustrative_user_content += (
+                '\n\nPrior server-validated illustrative comparison:\n%s'
+                % prior_illustrative_answer
+            )
 
     try:
         best_practice_answer = None
         if mode == 'best_practice':
-            model_answer = _generate(best_practice_system, illustrative=True)
+            model_answer = _generate(
+                best_practice_system, illustrative_user_content, illustrative=True,
+            )
             model_answer['generic'] = True
         elif mode == 'compare':
-            model_answer = _generate(system_prompt)
-            best_practice_answer = _generate(best_practice_system, illustrative=True)
+            model_answer = _generate(system_prompt, grounded_user_content)
+            best_practice_answer = _generate(
+                best_practice_system, illustrative_user_content, illustrative=True,
+            )
             best_practice_answer['generic'] = True
         else:
-            model_answer = _generate(system_prompt)
+            model_answer = _generate(system_prompt, grounded_user_content)
         context_token = _sign_interview_model_context(
             profile_slug,
             question,
             level,
             family,
+            mode,
             model_answer,
+            best_practice_answer if mode == 'compare' else None,
         )
         payload = {
             'mode': mode,

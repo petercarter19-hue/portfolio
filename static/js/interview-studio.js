@@ -17,6 +17,11 @@
     function refreshAutogrow(scope) {
         all('[data-is-autogrow]', scope || root).forEach(autoGrowTextarea);
     }
+    root.addEventListener('input', function (event) {
+        if (event.target && event.target.matches('[data-is-autogrow]')) {
+            autoGrowTextarea(event.target);
+        }
+    });
     var autogrowResizeFrame = 0;
     window.addEventListener('resize', function () {
         if (autogrowResizeFrame) window.cancelAnimationFrame(autogrowResizeFrame);
@@ -106,6 +111,7 @@
             text: item.textContent.trim(),
             family: item.getAttribute('data-family') || (legacyMode === 'behavioral' ? 'situational' : 'behavioral'),
             competency: item.getAttribute('data-competency') || item.getAttribute('data-topic') || 'Communication',
+            levels: (item.getAttribute('data-levels') || '').split(/\s+/).filter(Boolean),
             custom: false
         };
     });
@@ -155,21 +161,44 @@
             text: item.text,
             family: item.family,
             competency: item.competency,
+            levels: Array.isArray(item.levels) ? item.levels.slice() : [],
             custom: Boolean(item.custom)
         };
     }
 
-    function buildQueue(family, length) {
+    var preferredCompetenciesByLevel = {
+        entry: ['Learning', 'Teamwork', 'Communication', 'Accountability', 'Adaptability', 'Initiative'],
+        experienced: ['Initiative', 'Decisions', 'Communication', 'Pressure', 'Teamwork', 'Adaptability'],
+        management: ['Leadership', 'Decisions', 'Conflict', 'Teamwork', 'Communication', 'Accountability', 'Pressure'],
+        leadership: ['Leadership', 'Decisions', 'Communication', 'Conflict', 'Accountability', 'Pressure', 'Teamwork']
+    };
+
+    function questionsForSession(family, level) {
         var source = questions.filter(function (item) {
             return family === 'mixed' || item.family === family;
         });
         if (!source.length) source = questions.slice();
+        var preferred = preferredCompetenciesByLevel[level] || [];
+        if (!preferred.length || level === 'mixed') return source;
+        return source.slice().sort(function (left, right) {
+            var leftRank = preferred.indexOf(left.competency);
+            var rightRank = preferred.indexOf(right.competency);
+            leftRank = leftRank === -1 ? preferred.length : leftRank;
+            rightRank = rightRank === -1 ? preferred.length : rightRank;
+            return leftRank - rightRank;
+        });
+    }
+
+    function buildQueue(family, length, level) {
+        var source = questionsForSession(family, level);
 
         var ordered = [];
         if (family === 'mixed') {
             var behavioral = source.filter(function (item) { return item.family === 'behavioral'; });
             var situational = source.filter(function (item) { return item.family === 'situational'; });
-            var firstBehavioral = behavioral.filter(function (item) { return item.text === defaultQuestion.text; })[0] || behavioral[0];
+            var firstBehavioral = (level === 'experienced' || level === 'mixed')
+                ? (behavioral.filter(function (item) { return item.text === defaultQuestion.text; })[0] || behavioral[0])
+                : behavioral[0];
             if (firstBehavioral) ordered.push(cloneQuestion(firstBehavioral));
             behavioral = behavioral.filter(function (item) { return !firstBehavioral || item.text !== firstBehavioral.text; });
             var pairCount = Math.max(behavioral.length, situational.length);
@@ -179,7 +208,11 @@
             }
             return ordered.slice(0, Math.max(1, length));
         }
-        if (family !== 'situational' && source.some(function (item) { return item.text === defaultQuestion.text; })) {
+        if (
+            family !== 'situational' &&
+            (level === 'experienced' || level === 'mixed' || !level) &&
+            source.some(function (item) { return item.text === defaultQuestion.text; })
+        ) {
             ordered.push(cloneQuestion(defaultQuestion));
         }
         source.forEach(function (item) {
@@ -206,7 +239,9 @@
         reviewSource: 'me',
         reviewRecordId: '',
         aiReference: '',
-        aiReferenceQuestion: ''
+        aiReferenceQuestion: '',
+        completedSlots: [],
+        replacementSeen: []
     };
 
     if (persistedSession && Array.isArray(persistedSession.queue) && persistedSession.queue.length) {
@@ -215,8 +250,14 @@
         session.format = persistedSession.format || session.format;
         session.queue = persistedSession.queue.map(cloneQuestion);
         session.index = Math.min(Math.max(Number(persistedSession.index) || 0, 0), session.queue.length - 1);
+        session.completedSlots = Array.isArray(persistedSession.completedSlots)
+            ? persistedSession.completedSlots.filter(function (index) { return Number.isInteger(index) && index >= 0 && index < session.queue.length; })
+            : [];
+        session.replacementSeen = Array.isArray(persistedSession.replacementSeen)
+            ? persistedSession.replacementSeen.filter(function (value) { return typeof value === 'string'; })
+            : [];
     } else {
-        session.queue = buildQueue(session.family, 5);
+        session.queue = buildQueue(session.family, 5, session.level);
     }
 
     function persistSession() {
@@ -225,7 +266,9 @@
             family: session.family,
             format: session.format,
             queue: session.queue,
-            index: session.index
+            index: session.index,
+            completedSlots: session.completedSlots,
+            replacementSeen: session.replacementSeen
         });
         updateSetupSummary();
     }
@@ -254,6 +297,25 @@
     var controls = one('[data-is-controls]');
     var stageRailItems = all('[data-is-stage-rail] li');
 
+    function currentQuestionIsCompleted() {
+        return session.completedSlots.indexOf(session.index) !== -1;
+    }
+
+    function syncQuestionChangeControls() {
+        var workspaceState = root.getAttribute('data-is-workspace-state') || 'draft';
+        var videoState = root.getAttribute('data-is-video-state') || 'camera-off';
+        all('[data-is-different-question], [data-is-create-question]').forEach(function (button) {
+            var panel = button.closest('[data-is-panel]');
+            var panelMode = panel ? panel.getAttribute('data-is-panel') : '';
+            var disabled = currentQuestionIsCompleted();
+            if (panelMode === 'me') disabled = disabled || workspaceState !== 'draft';
+            if (panelMode === 'video') {
+                disabled = disabled || ['requesting', 'recording', 'stopping'].indexOf(videoState) !== -1;
+            }
+            button.disabled = disabled;
+        });
+    }
+
     function setStage(stage) {
         var stageNames = { 1: 'Drafting', 2: 'Processing', 3: 'Review ready', 4: 'Improving', 5: 'Continue' };
         root.setAttribute('data-is-workspace-state', stage === 2 ? 'processing' : stage === 3 ? 'review' : stage === 4 ? 'improve' : stage === 5 ? 'continue' : 'draft');
@@ -262,6 +324,7 @@
         setHidden(one('[data-is-review-rail]'), !reviewRailActive);
         text(one('[data-is-review-attempt]'), session.attemptNumber);
         text(one('[data-is-stage-label]'), stageNames[stage] || 'Drafting');
+        syncQuestionChangeControls();
         stageRailItems.forEach(function (item) {
             var n = Number(item.getAttribute('data-is-stage'));
             var current = n === stage;
@@ -324,12 +387,12 @@
     function syncModeControls(mode) {
         if (!formatControl || !formatSelect || !formatLabel) return;
         if (mode === 'ai') {
-            // Public demo: the basis is the named public profile's approved
-            // résumé history, never the visitor's own or any account data.
-            formatLabel.textContent = 'Answer basis';
-            formatSelect.replaceChildren(new Option('Approved public résumé history', 'public-profile-history'));
-            formatSelect.disabled = true;
+            // Interview AI already has explicit, source-labelled choices in its
+            // right rail. A second Answer basis select was redundant and its
+            // single option was misleading for visitors without profile history.
+            setHidden(formatControl, true);
         } else {
+            setHidden(formatControl, false);
             if (formatLabel.textContent !== 'Session') {
                 formatLabel.textContent = 'Session';
                 formatSelect.innerHTML = formatOptions;
@@ -343,10 +406,10 @@
         if (!preservePermissionRequest && media) media.permissionRequestId += 1;
         var recorder = media.recorder;
         if (recorder && discardRecording) {
-            recorder.onstop = function () {
-                media.chunks = [];
-                if (media.recorder === recorder) media.recorder = null;
-            };
+            recorder.ondataavailable = null;
+            recorder.onstop = null;
+            media.chunks = [];
+            if (media.recorder === recorder) media.recorder = null;
         }
         if (recorder && recorder.state !== 'inactive') {
             recorder.stop();
@@ -396,6 +459,7 @@
         setHidden(controls, false);
         if (historyLink) historyLink.removeAttribute('aria-current');
         syncModeControls(mode);
+        syncQuestionChangeControls();
         if (updateUrl) window.history.pushState({ interviewMode: mode }, '', studioUrl + '?mode=' + encodeURIComponent(mode));
         announce(mode === 'ai' ? 'Interview AI selected.' : mode === 'video' ? 'Video Practice selected.' : 'Interview Me selected.');
         return true;
@@ -562,6 +626,15 @@
         setHidden(errorActions, true);
         text(submittedLabel, 'Your submitted answer · preserved');
         setHidden(improveError, true);
+        var improvedDraft = one('[data-is-improved-draft]');
+        improvedDraft.value = '';
+        improvedDraft.disabled = false;
+        autoGrowTextarea(improvedDraft);
+        var answerContext = one('[data-is-answer-context]');
+        answerContext.value = '';
+        autoGrowTextarea(answerContext);
+        setHidden(one('[data-is-answer-context-form]'), true);
+        one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
         setStage(1);
         syncAnswerState();
     }
@@ -579,32 +652,73 @@
         });
     }
 
+    var renderedQuestionContextKey = '';
+
+    function renderSessionProgress() {
+        var total = session.queue.length || 1;
+        var number = session.index + 1;
+        var completed = session.completedSlots.length;
+        var percent = Math.round((completed / total) * 100);
+        text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total + ' · ' + percent + '% complete');
+        text(one('[data-is-progress-percent]'), percent + '%');
+        text(one('[data-is-video-question-position]'), 'Question ' + number + ' of ' + total);
+        text(one('[data-is-video-progress-percent]'), percent + '%');
+        text(one('[data-is-review-question]'), number + ' of ' + total);
+        updateUpNextCount(session.queue.filter(function (_question, index) {
+            return index !== session.index && session.completedSlots.indexOf(index) === -1;
+        }).length);
+        var progress = one('[data-is-progress]');
+        if (progress) { progress.value = percent; progress.textContent = percent + '%'; }
+        var videoProgress = one('[data-is-video-progress]');
+        if (videoProgress) { videoProgress.value = percent; videoProgress.textContent = percent + '%'; }
+        var nextButton = one('[data-is-next-question]');
+        if (nextButton) {
+            var nextLabel = completed >= total ? 'Finish Session' : 'Next Question';
+            var labelNode = nextButton.firstChild;
+            if (labelNode && labelNode.nodeType === Node.TEXT_NODE) labelNode.nodeValue = '\n                                            ' + nextLabel + '\n                                            ';
+            nextButton.setAttribute('aria-label', nextLabel);
+        }
+    }
+
+    function renderQuestionMetadata(question) {
+        var familyLabel = question.custom ? 'Custom question' : labelFamily(question.family);
+        var competencyLabel = question.custom ? 'Your question' : 'Competency: ' + question.competency;
+        text(one('[data-is-family-chip]'), familyLabel);
+        text(one('[data-is-competency-chip]'), competencyLabel);
+        text(one('[data-is-ai-family-chip]'), familyLabel);
+        text(one('[data-is-ai-competency-chip]'), competencyLabel);
+        text(one('[data-is-video-family]'), familyLabel);
+        text(one('[data-is-video-competency]'), competencyLabel);
+        all('[data-is-framework-chip], [data-is-time-chip], [data-is-ai-framework-chip], [data-is-ai-time-chip], [data-is-video-framework-chip], [data-is-video-time-chip]').forEach(function (chip) {
+            setHidden(chip, question.custom);
+        });
+    }
+
     function renderQuestion(options) {
         options = options || {};
         var question = currentQuestion();
         var total = session.queue.length || 1;
-        var number = session.index + 1;
-        var percent = Math.round((number / total) * 100);
+        var questionContextKey = [question.text, session.level, question.family].join('\u001f');
+        var questionContextChanged = Boolean(
+            renderedQuestionContextKey && renderedQuestionContextKey !== questionContextKey
+        );
+        renderedQuestionContextKey = questionContextKey;
+        if (questionContextChanged) resetAiAnswerForContextChange();
         text(one('[data-is-question]'), question.text);
-        text(one('[data-is-family-chip]'), labelFamily(question.family));
-        text(one('[data-is-competency-chip]'), 'Competency: ' + question.competency);
+        text(one('[data-is-ai-question-display]'), question.text);
+        var aiQuestion = one('[data-is-ai-question]');
+        if (aiQuestion) aiQuestion.value = question.text;
+        renderQuestionMetadata(question);
         text(one('[data-is-intent]'), intentByCompetency[question.competency] || 'A clear example, your personal contribution, and an outcome.');
         text(one('[data-is-tip]'), tipByCompetency[question.competency] || 'Keep the context concise, make your action specific, and close with the result.');
-        text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total + ' · ' + percent + '% complete');
-        text(one('[data-is-progress-percent]'), percent + '%');
-        updateUpNextCount(Math.max(0, total - number));
         setHidden(one('[data-is-est-chip]'), total < 5);
-        var progress = one('[data-is-progress]');
-        if (progress) { progress.value = percent; progress.textContent = percent + '%'; }
         text(one('[data-is-video-question]'), question.text);
-        text(one('[data-is-video-family]'), labelFamily(question.family));
-        text(one('[data-is-video-competency]'), 'Competency: ' + question.competency);
-        text(one('[data-is-video-question-position]'), 'Question ' + number + ' of ' + total);
-        text(one('[data-is-video-progress-percent]'), percent + '%');
-        text(one('[data-is-review-question]'), number + ' of ' + total);
         text(one('[data-is-review-attempt]'), session.attemptNumber);
-        var videoProgress = one('[data-is-video-progress]');
-        if (videoProgress) { videoProgress.value = percent; videoProgress.textContent = percent + '%'; }
+        renderSessionProgress();
+        syncQuestionChangeControls();
+        all('[data-is-example-link]').forEach(function (link) {
+            link.href = studioUrl + '?mode=ai&question=' + encodeURIComponent(question.text);
+        });
         var reference = one('[data-is-ai-reference]');
         var showReference = one('[data-is-show-reference]');
         var referenceMatches = Boolean(session.aiReference && session.aiReferenceQuestion === question.text);
@@ -614,6 +728,7 @@
         if (!options.keepDraft) restoreDraft();
         persistSession();
         renderQueue();
+        clearNudgeState();
     }
 
     function syncAnswerState() {
@@ -684,12 +799,20 @@
     }
 
     function advanceQuestion(mode) {
-        if (session.index < session.queue.length - 1) {
-            session.index += 1;
-        } else {
-            session.index = 0;
-            session.queue = buildQueue(session.family, Number(session.format) || 1);
+        var nextIndex = -1;
+        for (var offset = 1; offset <= session.queue.length; offset += 1) {
+            var candidateIndex = (session.index + offset) % session.queue.length;
+            if (session.completedSlots.indexOf(candidateIndex) === -1) {
+                nextIndex = candidateIndex;
+                break;
+            }
         }
+        if (nextIndex === -1) {
+            showHistoryView();
+            announce('Session complete. Your browser-local Interview History is open.');
+            return;
+        }
+        session.index = nextIndex;
         renderQuestion();
         if (mode === 'video') {
             one('[data-is-video-stage]').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
@@ -700,10 +823,12 @@
         }
     }
 
-    one('[data-is-new-question]').addEventListener('click', function () {
-        if (prepareAnswerContextChange()) advanceQuestion();
-    });
     one('[data-is-next-question]').addEventListener('click', function () {
+        if (session.completedSlots.length >= session.queue.length) {
+            showHistoryView();
+            announce('Session complete. Your browser-local Interview History is open.');
+            return;
+        }
         var source = session.reviewSource;
         if (source === 'video') {
             if (!setMode('video', true)) return;
@@ -712,12 +837,6 @@
             return;
         }
         advanceQuestion();
-    });
-    one('[data-is-video-new-question]').addEventListener('click', function () {
-        if (!prepareVideoContextChange('Discard the active recording or transcript draft and load another question?')) return;
-        releaseMedia(true);
-        resetVideoUi();
-        advanceQuestion('video');
     });
 
     var levelSelect = one('[data-is-level]');
@@ -729,14 +848,17 @@
     levelSelect.addEventListener('change', function () {
         stopDictation('interrupted');
         if (session.mode === 'me') persistCurrentAnswerDraft();
-        if (!prepareVideoContextChange('Discard this recording and change experience level?')) {
+        if (!prepareVideoContextChange('Discard this recording and change experience level?') || (session.mode === 'me' && !confirmReplace())) {
             levelSelect.value = session.level;
             return;
         }
-        clearReviewState();
-        resetAiAnswerForContextChange();
         session.level = levelSelect.value;
-        persistSession();
+        session.index = 0;
+        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
+        session.completedSlots = [];
+        session.replacementSeen = [];
+        resetAiAnswerForContextChange();
+        renderQuestion();
     });
     familySelect.addEventListener('change', function () {
         if (!prepareVideoContextChange('Discard this recording and change question family?') || (session.mode === 'me' && !prepareAnswerContextChange())) {
@@ -747,7 +869,9 @@
         resetAiAnswerForContextChange();
         session.family = familySelect.value;
         session.index = 0;
-        session.queue = buildQueue(session.family, Number(session.format) || 1);
+        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
+        session.completedSlots = [];
+        session.replacementSeen = [];
         renderQuestion();
     });
     formatSelect.addEventListener('change', function () {
@@ -758,7 +882,9 @@
         }
         session.format = formatSelect.value;
         session.index = 0;
-        session.queue = buildQueue(session.family, Number(session.format) || 1);
+        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
+        session.completedSlots = [];
+        session.replacementSeen = [];
         renderQuestion();
     });
 
@@ -806,6 +932,8 @@
     function openQueueForCurrentLayout() {
         setQueueOpenState(true);
         if (queueDialog.open) return;
+        var activeRail = queueTrigger && queueTrigger.closest('.is__side-column');
+        if (activeRail && queueDialog.parentNode !== activeRail) activeRail.appendChild(queueDialog);
         if (queueUsesModalLayout() && typeof queueDialog.showModal === 'function') {
             queueDialog.showModal();
         } else if (typeof queueDialog.show === 'function') {
@@ -833,11 +961,11 @@
             button.append(number, label, competency);
             button.addEventListener('click', function () {
                 if (index === session.index) { closeQueue(); return; }
-                if (!prepareAnswerContextChange()) return;
+                if (!prepareCurrentQuestionChange('Move to this queued question?')) return;
                 session.index = index;
                 renderQuestion();
                 closeQueue({ restoreFocus: false });
-                answer.focus();
+                focusCurrentQuestionWorkspace();
             });
             item.appendChild(button);
             queueList.appendChild(item);
@@ -883,17 +1011,231 @@
         }
     }
 
-    one('[data-is-custom-question-form]').addEventListener('submit', function (event) {
+    function focusCurrentQuestionWorkspace() {
+        if (session.mode === 'video') {
+            one('[data-is-camera-enable]').focus();
+        } else if (session.mode === 'ai') {
+            one('.is__ai-get-answer').focus();
+        } else {
+            answer.focus();
+        }
+    }
+
+    function prepareCurrentQuestionChange(message) {
+        if (session.mode === 'video') return prepareVideoContextChange(message || 'Discard the active recording or transcript draft and change questions?');
+        if (session.mode === 'me') return prepareAnswerContextChange();
+        stopDictation('interrupted');
+        resetAiAnswerForContextChange();
+        return true;
+    }
+
+    function shuffle(items) {
+        var result = items.slice();
+        for (var index = result.length - 1; index > 0; index -= 1) {
+            var swapIndex = Math.floor(Math.random() * (index + 1));
+            var value = result[index];
+            result[index] = result[swapIndex];
+            result[swapIndex] = value;
+        }
+        return result;
+    }
+
+    function pickDifferentQuestion() {
+        var currentText = currentQuestion().text;
+        var occupied = session.queue.map(function (question, index) {
+            return index === session.index ? '' : question.text;
+        });
+        var pool = questionsForSession(session.family, session.level).filter(function (question) {
+            return question.text !== currentText &&
+                occupied.indexOf(question.text) === -1 &&
+                session.replacementSeen.indexOf(question.text) === -1;
+        });
+        if (!pool.length) {
+            session.replacementSeen = [];
+            pool = questionsForSession(session.family, session.level).filter(function (question) {
+                return question.text !== currentText && occupied.indexOf(question.text) === -1;
+            });
+        }
+        if (!pool.length) return null;
+        var preferred = preferredCompetenciesByLevel[session.level] || [];
+        var preferredPool = pool.filter(function (question) {
+            return preferred.indexOf(question.competency) !== -1;
+        });
+        if (preferredPool.length) pool = preferredPool;
+        return cloneQuestion(shuffle(pool)[0]);
+    }
+
+    function replaceCurrentQuestion(question, message) {
+        if (currentQuestionIsCompleted()) {
+            announce('This answer already counts toward session progress. Move to an unanswered question before replacing it.');
+            return false;
+        }
+        session.replacementSeen.push(currentQuestion().text);
+        session.replacementSeen = session.replacementSeen.slice(-Math.max(20, questions.length));
+        session.completedSlots = session.completedSlots.filter(function (slot) { return slot !== session.index; });
+        session.queue[session.index] = question;
+        session.attemptNumber = 1;
+        if (session.mode === 'video') {
+            releaseMedia(true);
+            resetVideoUi();
+        }
+        renderQuestion();
+        focusCurrentQuestionWorkspace();
+        announce(message);
+        return true;
+    }
+
+    all('[data-is-different-question]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (currentQuestionIsCompleted()) {
+                announce('Move to an unanswered question before choosing a different one.');
+                return;
+            }
+            if (!prepareCurrentQuestionChange('Discard the active recording or transcript draft and load a different question?')) return;
+            var replacement = pickDifferentQuestion();
+            if (!replacement) {
+                announce('No other unused question matches this session yet. Change the experience or question family to widen the pool.');
+                return;
+            }
+            replaceCurrentQuestion(replacement, 'A different ' + labelFamily(replacement.family).toLowerCase() + ' question is ready. Session progress did not change.');
+        });
+    });
+
+    var customQuestionDialog = one('[data-is-custom-question-dialog]');
+    var customQuestionForm = one('[data-is-custom-question-form]');
+    var customQuestionInput = one('[data-is-custom-question]');
+    var customQuestionTrigger = null;
+
+    function closeCustomQuestion(options) {
+        options = options || {};
+        stopDictation('interrupted');
+        if (customQuestionDialog.open && typeof customQuestionDialog.close === 'function') customQuestionDialog.close();
+        else customQuestionDialog.removeAttribute('open');
+        if (options.restoreFocus !== false && customQuestionTrigger && document.contains(customQuestionTrigger)) customQuestionTrigger.focus();
+    }
+
+    all('[data-is-create-question]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (currentQuestionIsCompleted()) {
+                announce('Move to an unanswered question before creating a replacement.');
+                return;
+            }
+            stopDictation('interrupted');
+            customQuestionTrigger = button;
+            customQuestionInput.value = '';
+            if (typeof customQuestionDialog.showModal === 'function') customQuestionDialog.showModal();
+            else customQuestionDialog.setAttribute('open', '');
+            window.requestAnimationFrame(function () {
+                autoGrowTextarea(customQuestionInput);
+                customQuestionInput.focus();
+            });
+        });
+    });
+
+    one('[data-is-custom-question-close]').addEventListener('click', function () { closeCustomQuestion(); });
+    one('[data-is-custom-question-cancel]').addEventListener('click', function () { closeCustomQuestion(); });
+    customQuestionDialog.addEventListener('cancel', function (event) {
         event.preventDefault();
-        var input = one('[data-is-custom-question]');
-        var value = input.value.trim();
-        if (!value) return;
-        session.queue.push({ text: value, family: session.family === 'mixed' ? 'behavioral' : session.family, competency: 'Custom', custom: true });
-        input.value = '';
-        persistSession();
-        renderQueue();
-        updateUpNextCount(Math.max(0, session.queue.length - session.index - 1));
-        announce('Custom question added to this session.');
+        closeCustomQuestion();
+    });
+    customQuestionDialog.addEventListener('click', function (event) {
+        if (event.target === customQuestionDialog) closeCustomQuestion();
+    });
+    customQuestionInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        if (typeof customQuestionForm.requestSubmit === 'function') customQuestionForm.requestSubmit();
+    });
+    customQuestionForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        stopDictation('interrupted');
+        var value = customQuestionInput.value.trim();
+        if (!value) {
+            customQuestionInput.focus();
+            return;
+        }
+        if (!prepareCurrentQuestionChange('Replace the current question with your custom question?')) return;
+        var custom = {
+            text: value,
+            family: session.family === 'mixed' ? 'behavioral' : session.family,
+            competency: 'Custom',
+            levels: [session.level],
+            custom: true
+        };
+        closeCustomQuestion({ restoreFocus: false });
+        replaceCurrentQuestion(custom, 'Your custom question is ready in this browser session.');
+    });
+
+    var nudgeController = null;
+    var nudgeQuestion = '';
+
+    function clearNudgeState() {
+        if (nudgeController) nudgeController.abort();
+        nudgeController = null;
+        nudgeQuestion = '';
+        all('[data-is-nudge-open]').forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
+        all('[data-is-nudge-panel]').forEach(function (panel) {
+            setHidden(panel, true);
+            var list = one('[data-is-nudge-list]', panel);
+            if (list) list.replaceChildren();
+            text(one('[data-is-nudge-status]', panel), 'Hints will stay focused on this question.');
+            setHidden(one('[data-is-nudge-retry]', panel), true);
+        });
+    }
+
+    function renderNudges(panel, hints) {
+        var list = one('[data-is-nudge-list]', panel);
+        list.replaceChildren();
+        hints.forEach(function (hint) {
+            var item = document.createElement('li');
+            item.textContent = hint;
+            list.appendChild(item);
+        });
+        text(one('[data-is-nudge-status]', panel), 'AI-generated hints — use what helps; the answer still needs to be yours.');
+        setHidden(one('[data-is-nudge-retry]', panel), true);
+    }
+
+    function requestNudges(panel) {
+        if (nudgeController) nudgeController.abort();
+        nudgeController = new AbortController();
+        nudgeQuestion = currentQuestion().text;
+        text(one('[data-is-nudge-status]', panel), 'Preparing a few question-specific hints…');
+        setHidden(one('[data-is-nudge-retry]', panel), true);
+        postJSON('/api/interview/nudge', {
+            profile_slug: profileSlug,
+            question: nudgeQuestion,
+            level: session.level,
+            family: currentQuestion().family,
+            competency: currentQuestion().competency,
+            practice_mode: session.mode
+        }, nudgeController.signal).then(function (payload) {
+            nudgeController = null;
+            if (nudgeQuestion !== currentQuestion().text) return;
+            renderNudges(panel, payload.hints || []);
+            announce('Question hints ready.');
+        }).catch(function (error) {
+            nudgeController = null;
+            if (error.name === 'AbortError') return;
+            text(one('[data-is-nudge-status]', panel), error.message + ' Your question is unchanged.');
+            setHidden(one('[data-is-nudge-retry]', panel), false);
+            announce('Question hints could not be prepared. You can try again.');
+        });
+    }
+
+    all('[data-is-nudge-open]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var panel = one('[data-is-nudge-panel]', button.closest('.is__context-actions'));
+            var opening = panel.hidden;
+            all('[data-is-nudge-panel]').forEach(function (candidate) { setHidden(candidate, true); });
+            all('[data-is-nudge-open]').forEach(function (candidate) { candidate.setAttribute('aria-expanded', 'false'); });
+            if (!opening) return;
+            setHidden(panel, false);
+            button.setAttribute('aria-expanded', 'true');
+            requestNudges(panel);
+        });
+    });
+    all('[data-is-nudge-retry]').forEach(function (button) {
+        button.addEventListener('click', function () { requestNudges(button.closest('[data-is-nudge-panel]')); });
     });
 
     /* Review, feedback, retry, and improvement */
@@ -906,9 +1248,23 @@
             signal: signal
         }).then(function (response) {
             return response.json().catch(function () { return {}; }).then(function (payload) {
-                if (!response.ok) throw new Error(payload.error || 'That request did not complete.');
+                if (!response.ok) {
+                    var error = new Error(payload.error || 'That request did not complete.');
+                    error.status = response.status;
+                    throw error;
+                }
                 return payload;
             });
+        });
+    }
+
+    function postReviewWithOneRetry(body, signal) {
+        return postJSON('/api/interview/review', body, signal).catch(function (error) {
+            if (signal.aborted || [500, 502, 503].indexOf(error.status) === -1) throw error;
+            var reviewingCopy = one('[data-is-reviewing] strong');
+            text(reviewingCopy, 'The first coaching pass was incomplete. Retrying once…');
+            announce('The first coaching pass was incomplete. Retrying once while your answer stays preserved.');
+            return postJSON('/api/interview/review', body, signal);
         });
     }
 
@@ -1066,6 +1422,7 @@
         reviewButton.disabled = true;
         setHidden(submittedBlock, false);
         setHidden(reviewingBlock, false);
+        text(one('[data-is-reviewing] strong'), 'Preparing your coaching review');
         setHidden(feedbackBlock, true);
         setHidden(feedbackEmpty, false);
         setHidden(feedbackContent, true);
@@ -1085,7 +1442,7 @@
         var reviewRecordId = session.reviewRecordId || '';
 
         var question = currentQuestion();
-        postJSON('/api/interview/review', {
+        postReviewWithOneRetry({
             profile_slug: profileSlug,
             question: question.text,
             answer: responseText,
@@ -1101,6 +1458,12 @@
             setHidden(reviewingBlock, true);
             setStage(3);
             renderReview(payload.review);
+            if (session.completedSlots.indexOf(session.index) === -1) {
+                session.completedSlots.push(session.index);
+                session.completedSlots.sort(function (left, right) { return left - right; });
+                persistSession();
+                renderSessionProgress();
+            }
             setHidden(feedbackBlock, false);
             setHidden(feedbackEmpty, true);
             setHidden(feedbackContent, false);
@@ -1213,21 +1576,12 @@
         announce('New attempt started. Your original answer and score remain in History.');
     });
 
-    one('[data-is-improve]').addEventListener('click', function () {
-        if (!session.currentReview || !session.currentAnswer) return;
-        setStage(4);
-        var selectedIds = all('[data-is-evidence-choice]:checked').map(function (item) { return item.value; });
-        setHidden(improveEmpty, true);
-        setHidden(improveContent, false);
-        setHidden(feedbackBlock, true);
-        setHidden(submittedBlock, true);
-        setHidden(improveBlock, false);
-        setHidden(improveError, true);
-        improveBlock.focus({ preventScroll: true });
-        text(one('[data-is-original-answer]'), session.currentAnswer);
+    function requestImprovement(selectedIds, additionalContext, statusMessage) {
         var draft = one('[data-is-improved-draft]');
         var useDraftButton = one('[data-is-use-draft]');
         var retryOutLoudButton = one('[data-is-retry-out-loud]');
+        var previousEditableDraft = draft.value.trim() || session.currentAnswer;
+        setHidden(improveError, true);
         draft.value = 'The coach is preparing an editable draft…';
         draft.disabled = true;
         autoGrowTextarea(draft);
@@ -1243,7 +1597,8 @@
             question: currentQuestion().text,
             answer: session.currentAnswer,
             improvements: session.currentReview.improvements,
-            evidence_ids: selectedIds
+            evidence_ids: selectedIds || [],
+            additional_context: additionalContext || ''
         }, controller.signal).then(function (payload) {
             if (requestId !== improveRequestId) return;
             improveController = null;
@@ -1253,6 +1608,7 @@
             draft.value = payload.improvement.draft;
             autoGrowTextarea(draft);
             renderList(one('[data-is-changes]'), payload.improvement.changes);
+            text(one('[data-is-make-yours-status]'), statusMessage || 'The draft is ready to edit. Nothing has replaced your original answer.');
             announce('Coach-assisted draft ready. Review and edit it before using it.');
         }).catch(function (error) {
             if (requestId !== improveRequestId) return;
@@ -1261,12 +1617,66 @@
             draft.disabled = false;
             useDraftButton.disabled = false;
             retryOutLoudButton.disabled = false;
-            draft.value = session.currentAnswer;
+            draft.value = previousEditableDraft;
             autoGrowTextarea(draft);
             text(improveError, error.message + ' Your original answer has not changed.');
             setHidden(improveError, false);
+            text(one('[data-is-make-yours-status]'), 'That update did not complete. Your original answer and the last editable draft remain available.');
             announce('The improved draft could not be generated. Your original answer is unchanged.');
         });
+    }
+
+    one('[data-is-improve]').addEventListener('click', function () {
+        if (!session.currentReview || !session.currentAnswer) return;
+        setStage(4);
+        setHidden(improveEmpty, true);
+        setHidden(improveContent, false);
+        setHidden(feedbackBlock, true);
+        setHidden(submittedBlock, true);
+        setHidden(improveBlock, false);
+        setHidden(improveError, true);
+        setHidden(one('[data-is-answer-context-form]'), true);
+        one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
+        text(one('[data-is-make-yours-status]'), 'Start with the coach-assisted structure, then choose whether to add verified context.');
+        improveBlock.focus({ preventScroll: true });
+        text(one('[data-is-original-answer]'), session.currentAnswer);
+        requestImprovement([], '', 'Basic coach-assisted draft ready. Add only context you can verify.');
+    });
+
+    one('[data-is-use-history-context]').addEventListener('click', function () {
+        var choices = all('[data-is-evidence-choice]');
+        if (!choices.length) {
+            text(one('[data-is-make-yours-status]'), 'No clearly relevant approved public-history item was found for this answer. Add a real detail instead, or keep editing the draft.');
+            announce('No relevant approved public history was found for this answer.');
+            return;
+        }
+        choices.forEach(function (choice) { choice.checked = true; });
+        requestImprovement(choices.map(function (choice) { return choice.value; }), '', 'Draft updated with the selected approved public-history context. Verify every sentence before using it.');
+    });
+
+    one('[data-is-add-answer-context]').addEventListener('click', function (event) {
+        var form = one('[data-is-answer-context-form]');
+        var opening = form.hidden;
+        setHidden(form, !opening);
+        event.currentTarget.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        if (opening) one('[data-is-answer-context]').focus();
+    });
+    one('[data-is-answer-context-cancel]').addEventListener('click', function () {
+        setHidden(one('[data-is-answer-context-form]'), true);
+        one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
+        one('[data-is-add-answer-context]').focus();
+    });
+    one('[data-is-answer-context-form]').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var context = one('[data-is-answer-context]').value.trim();
+        if (!context) {
+            one('[data-is-answer-context]').focus();
+            return;
+        }
+        var selectedIds = all('[data-is-evidence-choice]:checked').map(function (item) { return item.value; });
+        requestImprovement(selectedIds, context, 'Draft updated with the context you supplied. Verify the wording before using it.');
+        setHidden(event.currentTarget, true);
+        one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
     });
 
     one('[data-is-back-feedback]').addEventListener('click', function () {
@@ -1335,6 +1745,9 @@
     var DICTATION_MAX_RESTARTS = 120;
     var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];
     var activeDictation = null;
+    var dictationPermissionRequestId = 0;
+    var pendingDictationPermission = null;
+    var microphonePermissionConfirmed = false;
 
     function speechRecognitionCtor() {
         return window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -1368,24 +1781,35 @@
         setHidden(interimTarget, !value);
     }
     function dictationLabel(kind) {
-        if (kind === 'ai') return 'Dictate an interview question';
+        if (kind === 'custom') return 'Dictate a custom interview question';
+        if (kind === 'followup') return 'Dictate a follow-up question';
         if (kind === 'video') return 'Dictate your answer transcript';
         return 'Dictate your answer';
     }
     function dictationNoun(kind) {
-        if (kind === 'ai') return 'question';
+        if (kind === 'custom') return 'question';
+        if (kind === 'followup') return 'follow-up question';
         if (kind === 'video') return 'transcript';
         return 'answer';
     }
     function dictationTarget(kind) {
-        if (kind === 'ai') return one('[data-is-ai-question]');
+        if (kind === 'custom') return one('[data-is-custom-question]');
+        if (kind === 'followup') return one('[data-is-follow-up]');
         if (kind === 'video') return one('[data-is-video-transcript]');
         return answer;
     }
     function appendTranscript(target, transcript) {
         if (!target || !transcript) return 0;
-        var existing = target.value.trim();
-        target.value = (existing ? existing + ' ' : '') + transcript;
+        var start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
+        var end = typeof target.selectionEnd === 'number' ? target.selectionEnd : start;
+        var before = target.value.slice(0, start);
+        var after = target.value.slice(end);
+        var leadingSpace = before && !/\s$/.test(before) ? ' ' : '';
+        var trailingSpace = after && !/^\s/.test(after) ? ' ' : '';
+        var inserted = leadingSpace + transcript.trim() + trailingSpace;
+        target.value = before + inserted + after;
+        var cursor = before.length + inserted.length;
+        if (typeof target.setSelectionRange === 'function') target.setSelectionRange(cursor, cursor);
         target.dispatchEvent(new Event('input', { bubbles: true }));
         return transcript.split(/\s+/).filter(Boolean).length;
     }
@@ -1427,6 +1851,7 @@
         setDictationInterim(state.kind, '');
         setDictationStatus(state.kind, '');
         state.button.classList.remove('is-listening');
+        state.button.removeAttribute('aria-busy');
         state.button.setAttribute('aria-pressed', 'false');
         state.button.setAttribute('aria-label', dictationLabel(state.kind));
         var labelNode = one('[data-is-mic-label]', state.button);
@@ -1450,7 +1875,16 @@
         else if (state.reason === 'interrupted') announce('Dictation stopped. ' + added);
         else announce('Dictation stopped. ' + added + ' You can edit it.');
     }
+    function cancelPendingDictationPermission() {
+        dictationPermissionRequestId += 1;
+        if (!pendingDictationPermission) return;
+        var pending = pendingDictationPermission;
+        pendingDictationPermission = null;
+        pending.button.removeAttribute('aria-busy');
+        setDictationStatus(pending.kind, '');
+    }
     function stopDictation(reason) {
+        cancelPendingDictationPermission();
         var state = activeDictation;
         if (!state || state.stopping || state.finished) return;
         state.stopping = true;
@@ -1462,7 +1896,7 @@
         try { state.recognition.stop(); } catch (error) { /* finish below */ }
         finishDictation(state);
     }
-    function startDictation(kind, button) {
+    function beginDictation(kind, button) {
         var Recognition = speechRecognitionCtor();
         if (!Recognition) {
             var unsupported = 'Speech input is not supported in this browser. You can keep typing.';
@@ -1516,6 +1950,10 @@
                 setDictationInterim(state.kind, state.interim);
             }
         };
+        recognition.onstart = function () {
+            button.removeAttribute('aria-busy');
+            setDictationStatus(kind, 'Listening. Stops after 10 seconds of silence, or press Escape.');
+        };
         recognition.onerror = function (event) {
             var code = event && event.error;
             /* Continuous sessions emit these while the visitor is simply pausing.
@@ -1546,10 +1984,68 @@
         if (labelNode) text(labelNode, 'Stop dictation');
         announce('Listening. Speak your ' + dictationNoun(kind) + '. Dictation keeps running until you stop it or you are silent for 10 seconds.');
         armDictationSilence(state);
-        try { recognition.start(); } catch (error) { finishDictation(state); }
+        try {
+            recognition.start();
+        } catch (error) {
+            state.reason = 'error';
+            showMicError(kind, 'The microphone could not start. Close other microphone apps and try again.');
+            finishDictation(state);
+        }
+    }
+    function startDictation(kind, button) {
+        var Recognition = speechRecognitionCtor();
+        if (!Recognition) {
+            var unsupported = 'Speech input is not supported in this browser. You can keep typing.';
+            announce(unsupported);
+            showMicError(kind, unsupported);
+            return;
+        }
+        if (button.disabled) return;
+        var target = dictationTarget(kind);
+        if (!target) return;
+        var requestId = ++dictationPermissionRequestId;
+        pendingDictationPermission = { kind: kind, button: button, requestId: requestId };
+        setHidden(one('[data-is-mic-error="' + kind + '"]'), true);
+        button.setAttribute('aria-busy', 'true');
+        setDictationStatus(kind, microphonePermissionConfirmed ? 'Starting the microphone…' : 'Requesting microphone access…');
+
+        var permission = Promise.resolve();
+        if (!microphonePermissionConfirmed && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            permission = navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+                var tracks = stream.getAudioTracks();
+                var ready = tracks.some(function (track) { return track.readyState === 'live'; });
+                stream.getTracks().forEach(function (track) { track.stop(); });
+                if (!ready) throw { name: 'NotFoundError' };
+                microphonePermissionConfirmed = true;
+            });
+        }
+        permission.then(function () {
+            if (requestId !== dictationPermissionRequestId) return;
+            pendingDictationPermission = null;
+            beginDictation(kind, button);
+        }).catch(function (error) {
+            if (requestId !== dictationPermissionRequestId) return;
+            pendingDictationPermission = null;
+            button.removeAttribute('aria-busy');
+            setDictationStatus(kind, '');
+            var message = friendlyMediaError(error);
+            showMicError(kind, message);
+            announce(message);
+        });
     }
     function toggleDictation(kind, button) {
-        if (activeDictation) { stopDictation('manual'); return; }
+        if (pendingDictationPermission) {
+            var samePendingButton = pendingDictationPermission.button === button;
+            cancelPendingDictationPermission();
+            if (!samePendingButton) window.setTimeout(function () { startDictation(kind, button); }, 0);
+            return;
+        }
+        if (activeDictation) {
+            var sameButton = activeDictation.button === button;
+            stopDictation('manual');
+            if (!sameButton) window.setTimeout(function () { startDictation(kind, button); }, 0);
+            return;
+        }
         startDictation(kind, button);
     }
 
@@ -1560,6 +2056,7 @@
     if (!speechIsSupported()) {
         all('[data-is-mic]').forEach(function (button) {
             button.setAttribute('aria-disabled', 'true');
+            button.disabled = true;
             button.classList.add('is-unavailable');
             setDictationStatus(button.getAttribute('data-is-mic'), 'Speech input is not supported in this browser. Typing works normally.');
         });
@@ -1567,6 +2064,9 @@
     document.addEventListener('keydown', function (event) {
         if (event.key !== 'Escape' || !activeDictation) return;
         stopDictation('manual');
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) stopDictation('interrupted');
     });
 
     /* Interview AI */
@@ -1600,6 +2100,7 @@
         };
         modeGroup.addEventListener('change', function (event) {
             if (event.target.name !== 'is-ai-mode') return;
+            stopDictation('interrupted');
             modeGroup.querySelectorAll('.is__mode-option').forEach(function (label) {
                 label.classList.toggle('is__mode-option--selected',
                     label.querySelector('input').checked);
@@ -1615,6 +2116,8 @@
     var followUpForm = one('[data-is-follow-up-form]');
     var followUpInput = one('[data-is-follow-up]');
     var followUpSubmit = one('[data-is-follow-up-submit]');
+    var followUpMic = one('[data-is-mic="followup"]');
+    var followUpOpen = one('[data-is-follow-up-open]');
     var followUpNote = one('[data-is-follow-up-note]');
     var followUpError = one('[data-is-follow-up-error]');
     var currentModelAnswer = null;
@@ -1647,6 +2150,8 @@
         followUpInput.value = '';
         followUpInput.disabled = true;
         followUpSubmit.disabled = true;
+        if (followUpMic) followUpMic.disabled = true;
+        followUpOpen.disabled = true;
         text(followUpNote, 'Generate the first answer to unlock follow-up questions grounded in the same evidence.');
         setHidden(followUpError, true);
         setHidden(aiError, true);
@@ -1716,8 +2221,11 @@
         setHidden(aiAnswerEmpty, true);
         setHidden(aiAnswerContent, false);
         setAiState(insufficient ? 'insufficient' : 'ready');
-        followUpInput.disabled = insufficient;
-        followUpSubmit.disabled = insufficient;
+        var followUpAvailable = !insufficient && Boolean(currentModelContextToken);
+        followUpInput.disabled = !followUpAvailable;
+        followUpSubmit.disabled = !followUpAvailable;
+        if (followUpMic) followUpMic.disabled = !followUpAvailable || !speechIsSupported();
+        followUpOpen.disabled = !followUpAvailable;
         text(followUpNote, insufficient
             ? 'Follow-up is unavailable because no approved-history example was returned.'
             : 'Ask a follow-up grounded in the current answer context.');
@@ -1772,6 +2280,8 @@
                 var followUpAvailable = currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);
                 followUpInput.disabled = !followUpAvailable;
                 followUpSubmit.disabled = !followUpAvailable;
+                if (followUpMic) followUpMic.disabled = !followUpAvailable || !speechIsSupported();
+                followUpOpen.disabled = !followUpAvailable;
                 if (followUp) text(followUpNote, 'The first answer is still here. Revise the follow-up or try it again.');
             } else {
                 setHidden(aiAnswerEmpty, true);
@@ -1792,22 +2302,35 @@
         resetAiAnswerForContextChange();
         requestModelAnswer('');
     });
-    one('[data-is-follow-up-open]').addEventListener('click', function () { followUpInput.focus(); });
+    followUpOpen.addEventListener('click', function () {
+        if (followUpOpen.disabled || followUpInput.disabled) {
+            announce('Follow-up is unavailable for this answer.');
+            return;
+        }
+        var followUp = followUpForm;
+        followUp.classList.add('is-emphasized');
+        followUp.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+        window.setTimeout(function () {
+            followUpInput.focus();
+            followUp.classList.remove('is-emphasized');
+        }, reduceMotion ? 0 : 350);
+        announce('Follow-up question field ready. It will keep the same answer source.');
+    });
     followUpForm.addEventListener('submit', function (event) {
         event.preventDefault();
+        stopDictation('interrupted');
         var followUp = followUpInput.value.trim();
         if (!followUp) return;
-        stopDictation('interrupted');
         if (!currentModelContextToken) {
             announce('Generate an answer before asking a follow-up.');
             return;
         }
         requestModelAnswer(followUp);
     });
-    one('[data-is-ai-new]').addEventListener('click', function () {
-        resetAiAnswerForContextChange();
-        aiQuestionInput.value = '';
-        aiQuestionInput.focus();
+    followUpInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        if (typeof followUpForm.requestSubmit === 'function') followUpForm.requestSubmit();
     });
     one('[data-is-practice-answer]').addEventListener('click', function () {
         if (!currentModelAnswer) return;
@@ -1885,6 +2408,7 @@
             playback: 'Local playback is ready until you leave or discard it.'
         };
         text(one('[data-is-video-state-copy]'), messages[state] || messages['camera-off']);
+        syncQuestionChangeControls();
     }
 
     function setDeviceStatus(element, message, status) {
@@ -1922,12 +2446,23 @@
             return;
         }
         var permissionRequestId = ++media.permissionRequestId;
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(function (stream) {
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        }).then(function (stream) {
             if (permissionRequestId !== media.permissionRequestId || session.mode !== 'video' || videoCapability === 'disabled') {
                 stream.getTracks().forEach(function (track) { track.stop(); });
                 return;
             }
             releaseMedia(false, true);
+            if (!stream.getAudioTracks().some(function (track) { return track.readyState === 'live'; })) {
+                stream.getTracks().forEach(function (track) { track.stop(); });
+                throw { name: 'NotFoundError' };
+            }
             media.stream = stream;
             cameraPreview.controls = false;
             cameraPreview.muted = true;
@@ -1977,7 +2512,9 @@
         media.historyRecordId = '';
         var mimeType = supportedMimeType();
         try {
-            media.recorder = mimeType ? new MediaRecorder(media.stream, { mimeType: mimeType }) : new MediaRecorder(media.stream);
+            media.recorder = mimeType
+                ? new MediaRecorder(media.stream, { mimeType: mimeType, audioBitsPerSecond: 128000, videoBitsPerSecond: 1800000 })
+                : new MediaRecorder(media.stream, { audioBitsPerSecond: 128000, videoBitsPerSecond: 1800000 });
         } catch (error) {
             text(videoError, 'This browser could not create a compatible local recording.');
             setHidden(videoError, false);
@@ -2024,6 +2561,14 @@
         var recordedQuestion = media.question || cloneQuestion(currentQuestion());
         var durationSeconds = Math.max(1, Math.round((Date.now() - media.startedAt) / 1000));
         var blob = new Blob(media.chunks, { type: media.recorder && media.recorder.mimeType ? media.recorder.mimeType : 'video/webm' });
+        if (!blob.size) {
+            text(videoError, 'The browser created an empty recording. Your camera and microphone are released; enable them and try again.');
+            setHidden(videoError, false);
+            releaseMedia(true);
+            resetVideoUi({ preserveTranscript: true });
+            announce('The local recording was empty. No media was retained.');
+            return;
+        }
         if (media.playbackUrl) URL.revokeObjectURL(media.playbackUrl);
         media.playbackUrl = URL.createObjectURL(blob);
         if (media.stream) media.stream.getTracks().forEach(function (track) { track.stop(); });
@@ -2031,7 +2576,14 @@
         cameraPreview.srcObject = null;
         cameraPreview.src = media.playbackUrl;
         cameraPreview.muted = false;
+        cameraPreview.defaultMuted = false;
+        cameraPreview.volume = 1;
         cameraPreview.controls = true;
+        cameraPreview.addEventListener('error', function playbackError() {
+            cameraPreview.removeEventListener('error', playbackError);
+            text(videoError, 'This browser recorded the take but could not play that local format. Record another take in a supported browser.');
+            setHidden(videoError, false);
+        });
         setHidden(cameraEmpty, true);
         setHidden(one('[data-is-recording-badge]'), true);
         setHidden(stopRecord, true);
@@ -2446,17 +2998,25 @@
     one('[data-is-settings-close]').addEventListener('click', function () { settingsDialog.close(); });
     settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
     function clearLocalData() {
-        if (!window.confirm('Clear Interview Studio drafts, sessions, and goals stored in this browser?')) return;
+        if (!window.confirm('Clear Interview Studio drafts, sessions, and goals stored in this browser, and discard any active local recording?')) return;
+        stopDictation('interrupted');
+        cancelPendingReview();
+        cancelPendingImprovement();
+        cancelPendingAi(true);
+        releaseMedia(true);
+        resetVideoUi();
         try {
             Object.keys(window.localStorage).forEach(function (key) { if (key.indexOf(storagePrefix) === 0) window.localStorage.removeItem(key); });
         } catch (error) { /* storage unavailable */ }
-        session.queue = buildQueue('behavioral', 5);
+        session.queue = buildQueue('behavioral', 5, 'experienced');
         session.index = 0;
         session.level = 'experienced';
         session.family = 'behavioral';
         session.format = '5';
         session.aiReference = '';
         session.aiReferenceQuestion = '';
+        session.completedSlots = [];
+        session.replacementSeen = [];
         levelSelect.value = session.level;
         familySelect.value = session.family;
         formatSelect.value = session.format;
@@ -2469,6 +3029,22 @@
     all('[data-is-clear-local], [data-is-history-clear-local]').forEach(function (button) {
         button.addEventListener('click', clearLocalData);
     });
+
+    /* A Need an example link may open Interview AI in a new tab. Carry the
+       exact current question through the URL without exposing any answer text. */
+    var incomingQuestion = new URLSearchParams(window.location.search).get('question');
+    if (initialMode === 'ai' && incomingQuestion && incomingQuestion.trim() && incomingQuestion.length <= 300) {
+        var incomingMatch = questions.filter(function (item) { return item.text === incomingQuestion.trim(); })[0];
+        session.queue[session.index] = incomingMatch
+            ? cloneQuestion(incomingMatch)
+            : {
+                text: incomingQuestion.trim(),
+                family: session.family === 'mixed' ? 'behavioral' : session.family,
+                competency: 'Custom',
+                levels: [session.level],
+                custom: true
+            };
+    }
 
     /* Initial render */
     renderQuestion();

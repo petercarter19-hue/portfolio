@@ -3083,3 +3083,361 @@ body[data-theme="dark"].interview-studio-page .profile-tabs__ask-btn:focus-visib
     background: rgb(31 172 159 / 16%);
     border-color: rgb(117 216 203 / 55%);
 }
+
+/* =====================================================================
+   18. PS-INTERVIEW-LOCAL-REVIEW-001 owner review corrections.
+   ===================================================================== */
+
+/* The native select owns the entire visible control, including the chevron.
+   This keeps mouse, touch, and keyboard hit areas identical. */
+.is__select {
+    grid-template-rows: auto 1fr;
+    min-width: 11rem;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.is__select > span {
+    position: relative;
+    z-index: 1;
+    padding: 0.42rem 2.15rem 0 0.85rem;
+    pointer-events: none;
+}
+
+.is__select select {
+    min-height: 1.65rem;
+    padding: 0 2.15rem 0.38rem 0.85rem;
+    cursor: pointer;
+}
+
+.is__select::after {
+    z-index: 2;
+    pointer-events: none;
+}
+
+.is__select select:focus-visible {
+    outline: 3px solid var(--is-focus);
+    outline-offset: -3px;
+}
+
+.is__select select option {
+    color: #102340;
+    background: #ffffff;
+}
+
+body[data-theme="dark"] .is__select select option {
+    color: #edf4ff;
+    background: #13233d;
+}
+
+.is__question-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.is__question-meta > .is__chips {
+    flex: 1 1 auto;
+}
+
+.is__question-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.is__question-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.34rem 0.65rem;
+    color: var(--is-ink);
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.62rem;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.is__question-action:hover:not(:disabled) {
+    border-color: var(--is-action-primary);
+}
+
+.is__question-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.is__question-action svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.is__question-action:focus-visible {
+    outline: 3px solid var(--is-focus);
+    outline-offset: 2px;
+}
+
+.is__review-actions,
+.is__next-step {
+    justify-content: center;
+}
+
+.is__next-step {
+    display: flex;
+    margin-top: 0.7rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--is-line);
+}
+
+.is__next-step .is__button {
+    min-width: min(100%, 13rem);
+    justify-content: center;
+}
+
+.is__make-yours {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.8rem;
+    padding: 0.85rem;
+    background: var(--is-surface-2);
+    border: 1px solid var(--is-line);
+    border-radius: 0.8rem;
+}
+
+.is__make-yours h4,
+.is__make-yours p {
+    margin: 0;
+}
+
+.is__make-yours h4 {
+    margin-top: 0.2rem;
+    color: var(--is-ink);
+    font-size: 0.92rem;
+}
+
+.is__make-yours > div > p:last-child {
+    margin-top: 0.3rem;
+    color: var(--is-text-muted);
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+.is__make-yours-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.is__answer-context-form {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.is__answer-context-form label,
+.is__custom-question-form label {
+    color: var(--is-ink);
+    font-size: 0.74rem;
+    font-weight: 750;
+}
+
+.is__answer-context-form textarea,
+.is__custom-question-form textarea,
+.is__follow-up textarea {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    color: var(--is-ink);
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: 0.7rem;
+    font: inherit;
+    line-height: 1.5;
+    resize: none;
+}
+
+.is__nudge-panel {
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--is-line);
+}
+
+.is__nudge-panel > p {
+    margin: 0;
+    color: var(--is-text-muted);
+    font-size: 0.66rem;
+    line-height: 1.45;
+}
+
+.is__nudge-panel ol {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0;
+    padding-left: 1.25rem;
+    color: var(--is-ink);
+    font-size: 0.7rem;
+    line-height: 1.5;
+}
+
+.is__custom-question-dialog {
+    width: min(calc(100% - 2rem), 36rem);
+    margin: auto;
+}
+
+.is__custom-question-form {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem;
+}
+
+.is__custom-question-form > p {
+    margin: 0;
+    color: var(--is-text-muted);
+    font-size: 0.74rem;
+    line-height: 1.5;
+}
+
+.is__custom-question-composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.is__custom-question-composer .is__mic {
+    margin-bottom: 0.1rem;
+}
+
+.is__keyboard-hint {
+    font-size: 0.64rem !important;
+}
+
+.is__actions--dialog {
+    justify-content: flex-end;
+}
+
+.is__ai-question-frame {
+    grid-area: question;
+    min-width: 0;
+    padding: 1rem 1.2rem 0.8rem;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: 1rem;
+    box-shadow: var(--is-shadow-soft);
+}
+
+.is__ai-question-frame .is__title--stage {
+    margin-top: 0.3rem;
+}
+
+.is__question-controls-row--ai {
+    margin-top: 0.75rem;
+}
+
+.is__ai-get-answer {
+    grid-area: button;
+    justify-self: start;
+}
+
+.is__follow-up-composer {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: end;
+}
+
+.is__follow-up textarea {
+    min-height: 2.85rem;
+}
+
+.is__follow-up.is-emphasized {
+    outline: 3px solid var(--is-focus);
+    outline-offset: 3px;
+}
+
+@media (min-width: 72.01rem) {
+    .is__disclosure[data-is-session-setup] {
+        width: calc(100% - 19.1rem);
+    }
+
+    .is__content-grid--practice > .is__side-column {
+        margin-top: -2.9rem;
+    }
+
+    .is__content-grid--video > .is__side-column {
+        margin-top: -3.6rem;
+    }
+
+    .is__panel[data-is-panel="ai"] .is__content-grid {
+        grid-template-areas:
+            "form form"
+            "main side";
+        align-items: start;
+    }
+
+    .is__panel[data-is-panel="ai"] .is__ai-form {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "question"
+            "button";
+        gap: 0.65rem;
+        padding-right: 19.1rem;
+    }
+
+    .is__panel[data-is-panel="ai"] .is__ai-grounding {
+        position: absolute;
+        top: -3.9rem;
+        right: 0;
+        width: 18.25rem;
+    }
+
+    .is__panel[data-is-panel="ai"] .is__side-column {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 72rem) {
+    .is__ai-form {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "question"
+            "basis"
+            "button";
+    }
+}
+
+@media (max-width: 48rem) {
+    .is__question-meta {
+        display: grid;
+    }
+
+    .is__question-actions {
+        justify-content: flex-start;
+    }
+
+    .is__question-action {
+        flex: 1 1 8.5rem;
+        justify-content: center;
+    }
+
+    .is__follow-up-composer {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .is__follow-up-composer [data-is-follow-up-submit] {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+}
