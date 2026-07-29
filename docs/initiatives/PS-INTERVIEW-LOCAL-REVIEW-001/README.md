@@ -1,6 +1,6 @@
 # PS-INTERVIEW-LOCAL-REVIEW-001
 
-Status: Active production release
+Status: Complete and released
 Owner/acceptance authority: Pete
 Manager/writer: Codex
 Base: `origin/main` at `3da1f747609b6529542be2416649a8fba75abd49`
@@ -63,3 +63,6 @@ Candidate deploy/smoke/stop, merge only through an Azure pull request, then
 verify the exact production pipeline and live public routes/assets. Microphone
 hardware permission and audible playback require a real-browser/manual check
 where automation cannot grant or hear the device.
+
+The completed technical, Candidate, production, and live-verification record is
+in `OWNER_TECHNICAL_COMPLETION_REPORT.md`.
