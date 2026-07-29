@@ -194,9 +194,19 @@ warning about in-memory test storage remained unchanged.
 
 ## Evidence boundary
 
-The Azure configuration slice is currently live and verified. The gzip,
-content-versioning, cache-policy, and media changes are implemented and
-verified only on the task branch. They are not merged, deployed, or live. The
-Candidate admission correction is merged to Azure `main`; the corrected
-performance source still requires an exact-SHA independent pass and a
-package/branch/SHA-bound Candidate pass before it can be released.
+The Azure configuration, gzip, content-versioning, cache-policy, and media
+changes are live and verified. Exact source
+`39bd6d031132375394eb2168c45d47f166efc991` passed fresh independent review
+and package/branch/full-SHA Candidate run 297 before Azure PR 203
+squash-merged it as `0eed47e7201a40fcd7858ca3040712ed2f2dd8f2`.
+Production pipeline 299 passed for that merge.
+
+At closeout, later authorized Azure `main`
+`24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d` retained the performance merge
+as an ancestor and production pipeline 300 passed. Live `/healthz` reported
+release `108922ac4dc8abbabe8916ea`. The homepage transferred 72,500 bytes as
+identity HTML or 13,797 bytes with gzip (81.0% smaller); the exact current
+stylesheet transferred 382,386 bytes or 81,119 bytes with gzip (78.8%
+smaller) and retained immutable caching. Live desktop and mobile résumé checks
+found no broken images or horizontal overflow. The temporary Candidate app and
+plan were deleted only after production and live verification.

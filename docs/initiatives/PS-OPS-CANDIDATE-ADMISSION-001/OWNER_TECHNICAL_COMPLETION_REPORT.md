@@ -3,124 +3,136 @@
 ## A. Status
 
 - Package: `PS-OPS-CANDIDATE-ADMISSION-001`
-- Status: Reopened for correction 2 after the real queue-time exercise failed
-  closed; implementation and verification are in progress
-- Branch: `work/2026-07-29-candidate-admission-002`
-- Correction 1 implementation commit:
+- Status: Complete, independently reviewed, squash-merged, exercised by a real
+  Candidate release, and verified in production
+- Correction 1 exact implementation:
   `0052f23b0f75d1ed46b99514b0ae2eb911de00a5`
-- Base: Azure `origin/main`
+- Correction 1 Azure PR / merge: 204 /
   `887303792184c5e15aff238f6ee2f59e1576cdbd`
-- Azure CI: main pipeline 287 (`20260729.11`) passed exact correction 1 merge;
-  real Candidate run 288 accepted the exact queue tuple and built, but all
-  Candidate stages skipped because YAML defaults shadowed the queue values
-- Production state: healthy on correction 1 release
-- Visual authority and status: Not Applicable
-- Designated session manager and sole writer: current Codex task
-- Fresh independent reviewer: read-only
-  `performance_independent_review`
-- Independent review: correction 1 passed; correction 2 exact-SHA recheck
-  remains required
-- Self-certification: Conditional
-- Complete-diff review: correction 2 in progress
-- Acceptance requested: correction 2 review, merge, and real Candidate
-  re-exercise
+- Correction 2 exact implementation:
+  `70444648a6285f47050b8fb9ca1b1657bc740a53`
+- Correction 2 Azure PR / merge: 205 /
+  `b0b5ea780918089f24ba2304c0aab4d2e6f643b1`
+- Fresh independent review: passed with no remaining findings
+- Real exact-SHA Candidate proof: run 297, passed
+- Independently verified runtime descendant before this docs-only closeout:
+  `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`
+- Live release observed after its pipeline: `108922ac4dc8abbabe8916ea`
+- Visual authority: Not Applicable
+- Self-certification and complete-diff review: passed
+- Owner decision required: none
 
 ## B. What changed technically
 
-The Azure pipeline no longer hard-codes one historical Candidate branch.
-Candidate admission now defaults disabled and requires three queue values:
-package ID, real source branch, and full source SHA.
+Candidate admission now defaults disabled and requires three explicit,
+queue-overridable values:
 
-The immutable manifest generator validates that the values are complete,
-well-formed, do not target `main`, and exactly equal Azure's actual
-`Build.SourceBranch` and `Build.SourceVersion`. It records disabled or
-package-specific exact-SHA admission in schema version 2.
+- package ID;
+- the real `refs/heads/...` source branch; and
+- the exact full 40-character source SHA.
 
-Candidate deploy, smoke, and always-run stop stages independently require the
-same non-empty package plus exact branch/SHA equality.
+The manifest generator fails closed when those values are partial, malformed,
+target `main`, or differ from Azure's actual `Build.SourceBranch` and
+`Build.SourceVersion`. Candidate deploy, smoke, and always-run stop repeat the
+same package plus exact branch/SHA checks.
 
-Correction 2 removes the three empty declarations from YAML. Their
-empty-by-default, queue-overridable definitions live in Azure pipeline
-metadata with `allowOverride=true`. This prevents YAML precedence from
-replacing a reviewed queue tuple with empty values while preserving disabled
-ordinary runs.
-
-Queue values enter the build process through the task environment map. The
-reviewer found that the first implementation inserted values into Bash source,
-which could execute shell metacharacters before validation. That implementation
-was superseded. Exact commit `0052f23` treats queue values only as environment
-data, and tests reject direct macro insertion into command text.
+The queue values enter the build through the task environment map, never as
+Bash source. Azure pipeline metadata, rather than YAML, owns their empty
+defaults with `allowOverride=true`; this avoids YAML precedence shadowing an
+explicit reviewed queue tuple.
 
 Changed files:
 
 - `azure-pipelines.yml`
 - `scripts/candidate_artifact.py`
 - `tests/test_operational_readiness.py`
-- `docs/initiatives/PS-OPS-CANDIDATE-ADMISSION-001/**`
+- this package's README and completion report
 
 No application runtime, route, UI, identity, authorization, database, member
-data, secret, feature flag, production setting, or environment boundary
-changed.
+data, secret, production setting, or product behavior changed.
 
 ## C. What this means in plain English
 
-Candidate runs no longer require pretending a new release is an old branch.
-The release operator names the real package, real branch, and exact reviewed
-commit. Azure checks those values against what it actually downloaded. If any
-part is missing, malformed, or different, Candidate cannot deploy.
+Candidate no longer depends on pretending that new work belongs to an old
+branch. Azure now proves that the named package, real branch, and exact reviewed
+commit are the same source it actually built and deployed.
 
 ## D. What the website or member can do now
 
-Nothing member-facing changes. After this correction merges, a reviewed
-package can use the real Candidate path without a branch alias.
+Nothing member-facing changed. The deployment process now has exact,
+package-specific Candidate provenance and fails closed on missing or mismatched
+admission data.
 
 ## E. How this connects to PeerSlate
 
 This closes Candidate-admission finding 1 from
 `PS-AI-OPS-CHECKPOINT-001`. It improves release provenance without changing
-PeerSlate product truth, private/public boundaries, Capture-to-Moment,
-Journal, Studio, Community, or AI behavior.
+PeerSlate product truth, privacy boundaries, Capture-to-Moment, Journal,
+Studio, Community, or AI behavior.
 
 ## F. Verification and validation
 
-- Focused operational suite: 21 passed.
-- Full repository suite: 1,079 passed, 0 failures, 0 errors, 3 skipped.
-- Python compile: passed.
-- Dependency compatibility: passed.
-- `git diff --check`: passed.
-- Azure pipeline 285 Build: passed on exact `0052f23`.
-- Azure pipeline 285 Candidate/production stages: skipped as expected because
-  no admission variables were supplied.
-- Independent review initially found unsafe Bash macro substitution in
-  superseded commit `8d269a2`.
-- Correction recheck: Pass, no remaining finding, exact `0052f23`.
+### Writer and independent checks
 
-The independent reviewer confirmed:
+- Focused operational suite: 21 passed
+- Full repository suite at correction 2: 1,079 passed, 0 failures, 0 errors,
+  3 skipped
+- Python compile, dependency compatibility, and `git diff --check`: passed
+- Azure pipeline variables `candidatePackage`, `candidateSourceBranch`, and
+  `candidateSourceVersion`: empty stored values, non-secret, and
+  `allowOverride=true`
+- Fresh independent review: passed exact correction 2 source with no findings
 
-- environment mapping prevents queue values from becoming Bash source;
-- malformed, partial, `main`, branch-mismatch, and SHA-mismatch inputs fail;
-- admission defaults disabled;
-- the historical alias is absent;
-- production conditions remain unchanged; and
-- exact `0052f23` is acceptable to merge as checkpoint correction 1.
+The first review found unsafe direct Bash macro substitution in superseded
+commit `8d269a2`. Correction 1 moved queue values to environment data. Real run
+288 then proved that YAML empty defaults shadowed the accepted queue values:
+Build passed, every Candidate stage skipped, and the run was correctly treated
+as a failed Candidate exercise. Correction 2 removed those YAML declarations.
+
+### Merge and pipeline evidence
+
+- Correction 1 PR 204 squash-merged and main run 287 passed.
+- Correction 2 branch build 289 passed.
+- Correction 2 PR 205 squash-merged.
+- Main run 291 passed Build, production deploy, and production smoke for the
+  correction 2 merge. An automatically queued duplicate run 290 was superseded
+  by run 291 and is not represented as release evidence.
+
+### Real Candidate proof
+
+Performance Candidate run 297 supplied:
+
+- `candidatePackage=PS-PERFORMANCE-FOUNDATION-001`
+- `candidateSourceBranch=refs/heads/work/2026-07-29-performance-foundation-001`
+- `candidateSourceVersion=39bd6d031132375394eb2168c45d47f166efc991`
+
+Azure built that exact source. Candidate deploy, smoke, and stop all passed.
+The immutable manifest recorded `admission=package_exact_sha`, the exact
+package/branch/SHA tuple, and artifact SHA-256
+`67f9344fb247305e7834ed9126a8ab0f813e18b7d8e74d0b0fac87f3a66f3dee`.
+
+The temporary Candidate app ended stopped. After the performance merge and
+live verification, the temporary app and its B1 plan were deleted. Production
+remained healthy.
 
 ## G. Known gaps, risks, and exclusions
 
-- The real queue-time override, manifest, Candidate deploy, smoke, and stop
-  evidence failed at stage admission in run 288 and must be re-exercised after
-  correction 2 is on `main`.
-- The other two checkpoint findings remain open and are outside this package.
-- A successful correction merge does not itself approve the separate
-  performance release.
+- Queue-time admission is intentionally disabled unless all three exact values
+  are supplied.
+- Branch movement after review invalidates the old SHA and requires a new
+  review and Candidate run.
+- Operators must prevent overlapping Candidate use of the same temporary
+  environment and confirm no Candidate run is active before cleanup.
+- The other checkpoint findings remain outside this package.
 
-## H. Clear next step
+## H. Rollback
 
-Independently review and squash-merge correction 2 through Azure DevOps.
-Verify its main pipeline and unchanged live application boundary. Then update
-the performance branch onto corrected `main`, obtain final exact-SHA review,
-and rerun Candidate with the package/branch/SHA admission contract.
+The correction is pipeline-only. If a regression is found, revert it through a
+reviewed Azure PR. Until a replacement passes, leave Candidate admission
+disabled; do not restore the historical branch alias.
 
 ## I. What Pete needs to do or decide
 
-None. Pete already authorized this correction and the subsequent deployment
-sequence on 2026-07-29.
+Nothing. Pete authorized the correction and ordered deployment only after the
+fresh independent review and real Candidate pass. Both gates passed before the
+performance merge and production deployment.

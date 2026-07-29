@@ -6,18 +6,19 @@
 - Owner decision: on 2026-07-29 Pete directed, “Assign a fresh independent
   reviewer, correct Candidate admission for this package, then deploy after
   both pass.”
-- State: correction 2 implementation and verification in progress after the
-  first real queue-time exercise failed closed
+- State: complete, independently reviewed, squash-merged, and proven by a real
+  exact-SHA Candidate run
 - Designated manager and sole writer: current Codex task
-- Fresh independent reviewer: current task's read-only
-  `performance_independent_review` lane
-- Authoritative base: Azure `origin/main`
-  `887303792184c5e15aff238f6ee2f59e1576cdbd`
-- Branch: `work/2026-07-29-candidate-admission-002`
+- Fresh independent reviewer: read-only
+  `performance_independent_review` lane; passed
+- Correction 2 exact source:
+  `70444648a6285f47050b8fb9ca1b1657bc740a53`
+- Azure PR / squash merge: 205 /
+  `b0b5ea780918089f24ba2304c0aab4d2e6f643b1`
 - Checkpoint authority: this is bounded correction 1 from
   `PS-AI-OPS-CHECKPOINT-001`
-- Release relationship: this correction must merge before
-  `PS-PERFORMANCE-FOUNDATION-001` may queue its Candidate
+- Release relationship: `PS-PERFORMANCE-FOUNDATION-001` Candidate run 297
+  passed this exact admission contract before its production merge
 
 ## Problem
 

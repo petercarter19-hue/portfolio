@@ -3,291 +3,195 @@
 ## A. Status
 
 - Package: `PS-PERFORMANCE-FOUNDATION-001`
-- Status: In Progress — corrected implementation and writer verification
-  complete; exact-SHA independent re-review, Candidate, merge, deployment, and
-  live code verification remain open
-- Branch and corrected runtime commit:
-  `work/2026-07-29-performance-foundation-001` at
-  `93b1ec8e90c51e0e0a9fc0991a956959d49f7efd`
-- Authoritative base: Azure `origin/main`
+- Status: Complete, squash-merged, deployed, and independently verified live
+- Authoritative implementation base:
   `06559478e2f9429e47bca0d67858131ef9429bd0`
-- PR / pipeline / environment: draft Azure PR 203; no Candidate or production
-  code pipeline yet; App Service configuration changed directly under the
-  narrow owner-approved exception
-- Production state: Always On and HTTP/2 are enabled and live; repository code
-  remains unmerged, undeployed, and not live; production release remains
-  `4b2c46e824613c1b7c844884`
-- Visual authority and status: current released production rendering; Agent
-  Review Passed for the allowed non-material media encoding adaptations
-- Visual inspector: assigned writer
-- Approved-mockup fidelity evidence: Not Applicable — no mockup or visual
+- Exact independently reviewed and Candidate-tested source:
+  `39bd6d031132375394eb2168c45d47f166efc991`
+- Azure PR: 203
+- Squash merge on Azure `main`:
+  `0eed47e7201a40fcd7858ca3040712ed2f2dd8f2`
+- Production pipeline for the performance merge: run 299, passed
+- Later independently verified runtime descendant before this docs-only
+  closeout:
+  `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`
+- Its production pipeline: run 300, passed
+- Live release observed after that pipeline: `108922ac4dc8abbabe8916ea`
+- Visual authority: unchanged released composition; no material visual
   direction was created or revised
-- Agent-run compare-refine pass count by state/viewport and visual mismatch
-  register: desktop 2 passes; mobile 1 final pass after the desktop correction;
-  mismatch register empty
-- Pete-run inspection record: Not Applicable — Pete did not personally inspect
-  the branch renders in this task
-- Homepage product projection: Current — no function, truth label, hierarchy,
-  theme, responsive behavior, or product promise changed
-- Pete / designated session manager visual acceptance: technical comparison
-  evidence complete; Pete's release acceptance not yet requested
-- Designated session manager: current Codex task
-- Manager handoff status and next receiver: first independent review failed;
-  both findings are corrected and ready for the assigned fresh reviewer to
-  re-check on the exact final PR source
-- Lane owner and self-managed authority: current Codex task under Pete's
-  2026-07-29 “Do it” performance-only exception
-- Self-certification: Conditional — corrected writer scope is complete and
-  passes, but independent re-review and release controls remain open
-- Complete-diff review: Issues corrected — an incorrect portrait crop was
-  rejected, released workspace golden fixtures were recaptured for intentional
-  image tokens, and responsive-media assertions were made token-aware
-- Acceptance requested: exact-SHA independent re-review; Candidate only after
-  that pass
+- Independent review: passed with no remaining findings
+- Candidate: run 297 passed the exact package, branch, and full-SHA contract
+- Self-certification: passed
+- Complete-diff review: passed
+- Owner decision required: none
+
+The target advanced after the final source review only through two Interview
+Studio evidence files. The independent reviewer verified zero path overlap,
+zero merge conflicts, and approved squashing the exact reviewed source without
+rebasing, preserving Candidate provenance.
 
 ## B. What changed technically
 
-### Production configuration
-
-The production App Service `peerslate-pete` now has:
-
-- `alwaysOn=true`, preventing the Basic B1 worker from being unloaded after an
-  idle period; and
-- `http20Enabled=true`, allowing compatible clients and the Azure edge to use
-  HTTP/2.
-
-The change restarted the App Service. Immediate member-data-free health
-verification passed, and the release ID stayed unchanged. The exact rollback
-is:
-
-```text
-az webapp config set --resource-group peerslate --name peerslate-pete --always-on false --http20-enabled false
-```
-
 ### Application delivery
 
-`app.py` adds a dependency-free gzip response stage using Python's standard
-library. It compresses:
+- Public HTML of at least 1 KiB is gzip-compressed when the client accepts it.
+- Exact-current CSS and JavaScript may be gzip-compressed and cached per worker.
+- Private, `no-store`, `no-transform`, partial/range, streamed, already encoded,
+  small, non-GET, gzip-rejecting, and cookie-setting responses are not
+  compressed.
+- Static URLs use content hashes. Only a token matching current file bytes
+  receives one-year immutable caching; stale or absent tokens receive bounded
+  fallback caching.
+- Canonical-equivalent static aliases share a containment-safe cache key.
+- The response stage asks Flask whether it will write a session cookie before
+  compression.
 
-- public HTML of at least 1 KiB when the GET client accepts gzip; and
-- CSS/JavaScript only when the URL contains the exact current content token.
+### Media and infrastructure
 
-It does not compress private, `no-store`, `no-transform`, partial/range,
-streamed, already encoded, small, non-GET, gzip-rejecting, or cookie-setting
-responses. It sets `Vary: Accept-Encoding`, removes identity-representation
-validators after encoding, and caches compressed immutable static bytes once
-per worker. Canonical-equivalent static route aliases share one
-containment-safe cache key, and the response stage asks Flask's session
-interface whether it will add a cookie before allowing compression.
+- The public résumé selects smaller exact-composition WebP derivatives for the
+  circuit texture and two 16:9 landscapes.
+- Production App Service has `alwaysOn=true` and `http20Enabled=true`.
+- No runtime dependency was added; compression uses Python's standard library.
 
-The existing shared static URL versioner now covers CSS, JavaScript, images,
-icons, fonts, and public PDF documents. A token that exactly matches current
-file bytes receives one-year immutable caching. Stale, wrong, or missing
-tokens receive only one hour with `stale-while-revalidate`, preventing an old
-asset from being pinned for a year.
+### Changed files
 
-The implementation deliberately does not add `Flask-Compress` or any other
-runtime package.
+- `app.py` — compression, content tokens, cache policy, and safe cache keys
+- `static/data/resume_data.json` — smaller exact-composition media selection
+- `templates/base.html` — verified circuit WebP selection
+- `templates/the_slate_people_interests.html` — removes duplicate manual tokens
+- three WebP derivatives under `static/images/**`
+- response, cache, résumé, community, and owner-home regression tests
+- package README, performance evidence, and comparison renders
 
-### Media
-
-The released composition is preserved while the public résumé selects smaller
-existing derivatives and three verified new WebP derivatives:
-
-- the shared circuit texture;
-- the 16:9 future-path landscape; and
-- the 16:9 sunset landscape.
-
-The first future-path candidate used a portrait crop and failed visual parity.
-It was removed from the implementation and replaced with a derivative of the
-exact released landscape source.
-
-### Files
-
-- `app.py` — gzip negotiation, strict exclusions, static content tokens,
-  immutable caching, and bounded fallback caching
-- `static/data/resume_data.json` — selects smaller media derivatives without
-  changing content or truth labels
-- `templates/base.html` — selects the verified circuit WebP
-- `templates/the_slate_people_interests.html` — removes two obsolete manual
-  query tokens so the shared content hash is the only version authority
-- `static/images/circuit-banner-option-2.webp` — new verified derivative
-- `static/images/cinematic/future-path-1600.webp` — new verified landscape
-  derivative
-- `static/images/cinematic/story-sunset-bg-1600.webp` — new verified landscape
-  derivative
-- `tests/test_http_edge_security.py` — compression, cache, version, private,
-  range, and negotiation coverage
-- `tests/test_resume2.py` — selected-media and derivative-size coverage
-- `tests/test_community_tabs.py` — responsive-media contract remains exact
-  while accepting content tokens
-- `tests/test_owner_home.py` — recaptured intentional private workspace golden
-  output after image/document URL tokens
-- package README, measurement evidence, and desktop/mobile comparison renders
-
-There are no route, database, migration, data model, identity, authorization,
-secret, provider, AI, feature-flag, or external-service changes.
+There are no route, database, migration, identity, authorization, secret,
+provider, AI, feature-flag, publication, or member-data changes.
 
 ## C. What this means in plain English
 
-The production server is now less likely to “go to sleep,” and it is allowed
-to use a newer web transport protocol. The prepared code also sends public
-page text in a much smaller form, uses smaller copies of large images, and
-lets the browser safely keep unchanged files instead of checking or
-downloading them again while moving between pages.
-
-The tradeoff is small: compressing public HTML used about 1-2 additional
-milliseconds of warm local server time, each new worker compresses a large
-stylesheet once, and WebP images are lossy. The implementation contains those
-costs with a compressed-byte cache and visual comparisons.
+The server is less likely to sleep between visits, public page text travels in
+a much smaller form, unchanged files can stay cached safely, and several large
+images have smaller equivalents. Page composition and member behavior remain
+the same.
 
 ## D. What the website or member can do now
 
-Live now:
+This behavior is live:
 
-- production keeps the App Service worker warm with Always On;
-- production is configured for HTTP/2; and
-- the exact deployed application release and member behavior are unchanged.
+- the current homepage transfers 72,500 bytes as identity HTML or 13,797 bytes
+  with gzip, an 81.0% reduction;
+- the primary stylesheet transfers 382,386 bytes as identity or 81,119 bytes
+  with gzip, a 78.8% reduction;
+- the exact stylesheet token receives
+  `public, max-age=31536000, immutable`;
+- public content tokens prevent browsers from pinning stale bytes; and
+- Always On and HTTP/2 are enabled in App Service.
 
-Available only on the task branch:
-
-- browsers that accept gzip receive public HTML/CSS/JavaScript at roughly
-  one-fifth of the prior text size;
-- public static assets receive safe content-versioned cache URLs;
-- the homepage's directly referenced modeled payload is 57.9% smaller; and
-- the public résumé's directly referenced modeled payload is 87.6% smaller.
-
-Members do not receive the branch behavior until review, merge, deployment,
-and live verification are complete.
+The local direct-reference model estimated 57.9% fewer bytes for the homepage
+and 87.6% fewer bytes for the résumé. Those modeled byte reductions translate
+to about 0.66-1.64 seconds and 2.67-6.68 seconds of transfer time respectively
+at 25-10 Mbit/s, excluding server, browser, radio, and third-party work.
 
 ## E. How this connects to PeerSlate
 
-This is delivery foundation work in the Roadmap's delivery-safety,
-performance-baseline, and reliability/capacity lanes. It does not change the
-Bible's work-first product direction, the canonical Capture-to-Moment model,
-Journal, Studio, public publication, or any member workflow.
-
-The private/public boundary remains explicit. Only public HTML and exact public
-static text assets are compressed; private/no-store responses remain
-untransformed. AI still proposes and people decide. No canonical truth,
-projection, ownership, publication, or authorization contract changes.
+This is delivery-safety and performance-foundation work. It does not change
+PeerSlate product direction, canonical truth, Capture-to-Moment, Journal,
+Studio, public publication, or the rule that AI proposes and people decide.
+Private and authorization boundaries remain unchanged.
 
 ## F. Verification and validation
 
-### Automated
+### Writer and automated checks
 
-- Focused response/cache suite: 41 passed.
-- HTTP edge, operational readiness, and résumé group: 88 passed.
-- Intended-output fixture correction set: 8 passed.
-- Full repository discovery: 1,099 passed, 0 failures, 0 errors, 3 skipped.
-- Python compile check: passed.
-- Installed dependency check: passed.
-- `git diff --check`: passed before commit.
+- Focused HTTP edge, operational readiness, and résumé suite: 88 passed
+- Final integration/reviewer suite, including Interview Studio: 246 passed
+- Full repository suite: 1,099 passed, 0 failures, 0 errors, 3 skipped
+- Python compile, dependency compatibility, and `git diff --check`: passed
+- Gzip round trips: byte-exact
+- Adversarial aliases: 85 canonical-equivalent aliases produced one cache key
+- Session-cookie regression: cookie-writing responses remained uncompressed
 
 The full suite used a process-local non-secret `ANTHROPIC_API_KEY`
-placeholder. The existing Flask-Limiter warning about in-memory test storage
-was unchanged.
+placeholder. The existing Flask-Limiter in-memory test warning was unchanged.
 
-### Security and privacy
+### Independent review
 
-Tests prove:
+The first review rejected:
 
-- compressed bytes round-trip exactly to the identity representation;
-- `Vary: Accept-Encoding` is present on eligible representations;
-- private `/app` remains `private, no-store` and uncompressed;
-- helper-level private/no-store responses remain uncompressed;
-- range requests remain 206, byte-bounded, and uncompressed;
-- health, small, non-GET, and gzip-rejecting responses remain uncompressed;
-- only the exact current static token earns immutable caching;
-- canonical-equivalent static aliases share one version and gzip cache entry;
-- path traversal is rejected before a static file can become a cache key;
-- a response for which Flask will save a session cookie remains uncompressed;
-  and
-- templates do not append a second hand-written token to `url_for` output.
+1. raw route aliases that could amplify per-worker caches; and
+2. compression before Flask's later session-cookie decision.
 
-### Performance
+Both findings were corrected. The fresh reviewer rechecked the exact final
+source, adversarial aliases, session behavior, full diff, integration target,
+and target drift, then passed
+`39bd6d031132375394eb2168c45d47f166efc991` with no remaining findings.
 
-Local evidence records:
+### Candidate
 
-- `/` HTML: 73,446 bytes to 14,481 bytes under gzip;
-- `/petec/resume` HTML: 170,103 bytes to 24,493 bytes under gzip;
-- directly referenced homepage model: 3,537,327 bytes to 1,488,792 bytes;
-- directly referenced résumé model: 9,530,360 bytes to 1,178,773 bytes;
-- warm gzip overhead: 1.114 ms for `/` and 1.855 ms for the résumé; and
-- first `style.css` gzip: 39.054 ms, followed by 0.835 ms mean from the
-  per-worker cache.
+Azure run 297 used:
 
-The full method and evidence limits are in
-[`evidence/PERFORMANCE_EVIDENCE_2026-07-29.md`](evidence/PERFORMANCE_EVIDENCE_2026-07-29.md).
+- package: `PS-PERFORMANCE-FOUNDATION-001`
+- source branch:
+  `refs/heads/work/2026-07-29-performance-foundation-001`
+- source SHA: `39bd6d031132375394eb2168c45d47f166efc991`
 
-### Visual
+Build, Candidate deploy, Candidate smoke, and Candidate stop all succeeded.
+The manifest recorded `admission=package_exact_sha` and artifact SHA-256
+`67f9344fb247305e7834ed9126a8ab0f813e18b7d8e74d0b0fac87f3a66f3dee`.
+Candidate reported release `5e50fbc796035e0be5eb83e8` and ended stopped.
 
-The released base SHA and optimized branch were rendered at desktop and mobile
-sizes. Layout geometry, content, viewport width, and overflow behavior matched.
-The only remaining pixel differences are the intended WebP encoding
-differences. The final mismatch register is empty.
+Runs 293 and 294 were canceled before Candidate deployment because another
+authorized Candidate run or a newer Azure `main` invalidated the release
+window. Their always-stop controls succeeded; neither is represented as a
+Candidate pass.
 
-Evidence:
+### Production and live evidence
 
-- `evidence/resume-baseline-1440.png`
-- `evidence/resume-optimized-1440.png`
-- `evidence/resume-baseline-390.png`
-- `evidence/resume-optimized-390.png`
+- PR 203 squash-merged exact reviewed source into Azure `main`.
+- Pipeline 299 passed Build, Deploy production, and Verify production
+  deployment for merge `0eed47e7201a40fcd7858ca3040712ed2f2dd8f2`.
+- A later authorized navigation merge retained that performance commit as an
+  ancestor. Pipeline 300 passed Build, Deploy production, and public smoke for
+  exact runtime descendant
+  `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`.
+- `/healthz` returned `status=ok`, service `peerslate`, release
+  `108922ac4dc8abbabe8916ea`.
+- `/`, `/petec/resume`, `/interview-studio`, `/robots.txt`, and
+  `/sitemap.xml` returned 200 during release verification.
+- Live homepage and exact stylesheet responses returned gzip with
+  `Vary: Accept-Encoding`; neither wrote a session cookie.
+- Desktop 1440 x 1000 and mobile 390 x 844 live résumé checks showed no broken
+  images and no horizontal overflow. The released composition remained intact.
+- App Service was `Running`; `alwaysOn=true`, `http20Enabled=true`,
+  `PYTHON|3.14`, minimum TLS 1.2, and FTPS-only were verified.
 
-### Production
-
-At `2026-07-29T13:02:14.9969921Z`:
-
-- App Service state was `Running`;
-- Always On was `true`;
-- HTTP/2 was `true`;
-- `/healthz` returned `ok`; and
-- release remained `4b2c46e824613c1b7c844884`.
-
-There is no production evidence for repository compression, versioning,
-caching, or media savings because that code is not deployed.
+The temporary Candidate app and B1 plan were deleted after production and live
+verification. Production remained healthy after cleanup.
 
 ## G. Known gaps, risks, and exclusions
 
-- The fresh independent reviewer rejected the original implementation
-  `816cdc225e788a67983ff15dd3017145d73bc98a` because raw route aliases could
-  amplify the per-worker caches and Flask could add a session cookie after the
-  compression decision. Both blockers are corrected in
-  `93b1ec8e90c51e0e0a9fc0991a956959d49f7efd`; the exact final PR source still
-  requires the reviewer's re-check.
-- Candidate admission correction 1 merged through independently passed Azure
-  PR 204. Real run 288 then proved YAML defaults shadowed the accepted queue
-  tuple, so Candidate correctly did not pass. Correction 2 removed that
-  shadowing through independently passed Azure PR 205 and squash-merged to
-  `main` as `b0b5ea780918089f24ba2304c0aab4d2e6f643b1`. The real queue-time path
-  remains to be re-exercised for this package.
-- No Candidate run, merge, production code deployment, or live browser network
-  waterfall has occurred for the performance source.
-- Always On reduces idle-worker unload exposure but does not remove every
-  source of cold or dependency latency.
-- HTTP/2 is verified as App Service configuration; the local curl build did
-  not provide protocol-negotiation evidence.
-- Direct-reference payload numbers are a controlled transfer model, not a
-  promise for every browser, viewport, cache state, or network.
-- Visual comparison covers the representative public résumé desktop/mobile
-  states. There is no material product or visual authority change.
-- Pete has not personally accepted the branch render or release.
+- Gzip adds about 1-2 ms to warm local public HTML responses. The first large
+  stylesheet compression costs more, then uses the bounded per-worker cache.
+- The three WebP derivatives are lossy, but desktop/mobile comparison found no
+  material visual mismatch.
+- App Service reports HTTP/2 enabled. The Windows curl build used for closeout
+  cannot independently prove negotiated HTTP/2 on the public edge.
+- Transfer-time estimates are budgets, not promises. User-perceived time still
+  depends on network conditions, browser cache, device, third parties, and
+  server work.
+- Candidate is a temporary isolated environment. Operators must confirm no
+  other Candidate run is active before provisioning, use, or cleanup.
 
-## H. Clear next step
+## H. Rollback
 
-Have the assigned fresh independent shared-infrastructure reviewer inspect the
-exact final source commit recorded by Azure PR 203. After that exact SHA
-passes, queue Candidate with package `PS-PERFORMANCE-FOUNDATION-001`, the exact
-source branch, and the exact full source SHA. Only if Candidate passes may PR
-203 become active, squash-merge, deploy, and proceed to exact-release live
-verification.
-
-That sequence unlocks the code savings without bypassing the active
-checkpoint. The live Always On and HTTP/2 settings can remain in place while
-review proceeds.
+- Code: revert the Azure `main` performance merge through a reviewed Azure PR,
+  then verify the resulting production pipeline and live release.
+- Configuration:
+  `az webapp config set --resource-group peerslate --name peerslate-pete --always-on false --http20-enabled false`
+- Cached exact-token assets are content-addressed; a rollback or content change
+  produces its own current token.
 
 ## I. What Pete needs to do or decide
 
-No further owner decision is required for the already authorized sequence.
-Keep the verified Always On and HTTP/2 settings enabled; stop if independent
-review or Candidate does not pass.
+Nothing. Pete authorized the work, fresh review, Candidate correction,
+Candidate gate, and deployment. All required gates passed and the package is
+live.

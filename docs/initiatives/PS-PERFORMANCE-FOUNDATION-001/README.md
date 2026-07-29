@@ -6,22 +6,26 @@
 - **Owner decision:** On 2026-07-29 Pete asked for the consequences, likely
   time savings, and paid options for making the live site faster, then
   explicitly directed: **“Do it.”**
-- **State:** Implementation and writer verification complete; exact-SHA
-  independent re-review and Candidate remain release gates
+- **State:** Complete, independently reviewed, Candidate-passed, squash-merged,
+  deployed, and independently verified live
 - **Designated manager and sole writer:** current Codex task
-- **Authoritative base:** Azure `origin/main`
+- **Authoritative implementation base:** Azure `origin/main`
   `06559478e2f9429e47bca0d67858131ef9429bd0`
-- **Branch:** `work/2026-07-29-performance-foundation-001`
+- **Exact reviewed/Candidate source:**
+  `39bd6d031132375394eb2168c45d47f166efc991`
+- **Azure PR / squash merge:** 203 /
+  `0eed47e7201a40fcd7858ca3040712ed2f2dd8f2`
 - **Roadmap allocation:** Phase 2 delivery safety, Phase 3 query/performance
   baseline, and Phase 12 reliability/capacity foundation
 - **Visual authority:** current released production rendering; this package
   changes delivery bytes and cache URLs only and may not change visible
   composition, content, imagery, layout, interaction, or product behavior
-- **Independent review:** the assigned fresh reviewer rejected the first
-  implementation, and the writer corrected both findings; the exact corrected
-  PR source remains subject to the reviewer's pass before Candidate
-- **Release status:** the reversible Azure configuration slice is live; the
-  repository slice is not merged, deployed, or live
+- **Independent review:** passed after correction of both initial findings
+- **Candidate:** Azure run 297 passed the exact package/branch/full-SHA
+  admission, deploy, smoke, and always-stop sequence
+- **Release status:** live; performance merge pipeline 299 passed and the
+  independently checked runtime-descendant pipeline 300 passed with live release
+  `108922ac4dc8abbabe8916ea`
 - **Evidence:** [2026-07-29 performance evidence](evidence/PERFORMANCE_EVIDENCE_2026-07-29.md)
 
 ## Owner exception and checkpoint boundary
