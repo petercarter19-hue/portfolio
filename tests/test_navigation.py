@@ -3,6 +3,7 @@ import re
 import unittest
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
+from pathlib import Path
 
 from app import app
 
@@ -68,7 +69,7 @@ class NavigationTests(unittest.TestCase):
                 self.assertNotIn('Atrium', links_by_text)
                 self.assertEqual(
                     links_by_text["Pete's Slate"]['attributes']['href'],
-                    '/petec/resume',
+                    '/petec/resume#overview',
                 )
                 self.assertNotIn('Home', links_by_text)
 
@@ -95,9 +96,17 @@ class NavigationTests(unittest.TestCase):
 
         self.assertNotIn('Overview', titles)
         self.assertNotIn('Projects', titles)
-        self.assertIn('Resume', titles)
-        resume = next(record for record in records if record['title'] == 'Resume')
-        self.assertEqual(resume['href'], '/petec/resume')
+        self.assertIn('Résumé', titles)
+        resume = next(record for record in records if record['title'] == 'Résumé')
+        self.assertEqual(resume['href'], '/petec/resume#resume-start')
+        for retired in (
+            'Community · My Slate',
+            'Community · Daily Slate',
+            'Community · My Paths',
+            'Feed · Pulse',
+            'Feed Preview · Living Stream',
+        ):
+            self.assertNotIn(retired, titles)
 
     def test_global_product_names_and_links_use_the_new_information_architecture(self):
         links = {
@@ -119,7 +128,7 @@ class NavigationTests(unittest.TestCase):
 
         records = self.search_records('/interview-studio')
         records_by_title = {record['title']: record for record in records}
-        self.assertEqual(records_by_title['Community']['href'], '/the-slate')
+        self.assertEqual(records_by_title['Community Feed']['href'], '/the-slate')
         self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
         self.assertNotIn('The Slate', records_by_title)
 
@@ -132,7 +141,7 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn(b'data-overview-subheader-ask', resume.data)
         self.assertNotIn(b'id="overview-subheader-ai-input"', resume.data)
 
-    def test_every_canonical_slate_route_uses_the_standard_subheader_scope(self):
+    def test_community_routes_do_not_inherit_petes_profile_subheader(self):
         for path in (
             '/the-slate',
             '/the-slate/my-slate',
@@ -144,10 +153,51 @@ class NavigationTests(unittest.TestCase):
                 response = self.client.get(path, base_url='http://localhost')
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(b'the-slate-page', response.data)
-                self.assertIn(b'class="profile-tabs', response.data)
+                self.assertNotIn(b'class="profile-tabs', response.data)
+                self.assertNotIn(b'id="chat-toggle"', response.data)
 
         homepage = self.client.get('/', base_url='http://localhost')
         self.assertNotIn(b'the-slate-page', homepage.data)
+
+    def test_public_mobile_menu_has_one_complete_global_destination_set(self):
+        response = self.client.get('/interview-studio', base_url='http://localhost')
+        html = response.get_data(as_text=True)
+
+        self.assertIn('data-platform-menu-toggle', html)
+        self.assertIn('id="platform-mobile-menu"', html)
+        menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
+        for label in ("Pete's Slate", 'Community', 'Interview Studio'):
+            self.assertEqual(menu.count(f'>{label}</a>'), 1)
+        self.assertIn('id="nav-search-input-mobile"', menu)
+
+    def test_member_specific_ai_is_scoped_to_petes_public_slate(self):
+        for path in (
+            '/',
+            '/the-slate',
+            '/interview-studio',
+            '/peerslate',
+            '/experience',
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertNotIn(b'id="chat-toggle"', response.data)
+                self.assertNotIn(b'class="profile-tabs', response.data)
+
+        for path in (
+            '/petec/resume',
+            '/petec/my-story',
+            '/petec/slate-board',
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertIn(b'id="chat-toggle"', response.data)
+                self.assertIn(b'class="profile-tabs', response.data)
+
+    def test_public_search_is_navigation_only_without_an_ai_fallback(self):
+        source = Path('static/js/public-site-search.js').read_text(encoding='utf-8')
+        self.assertIn('No matching public destination', source)
+        self.assertNotIn('Ask Pete', source)
+        self.assertNotIn('data-ask-url', self.client.get('/').get_data(as_text=True))
 
     def test_sitemap_contains_only_current_canonical_public_routes(self):
         response = self.client.get(

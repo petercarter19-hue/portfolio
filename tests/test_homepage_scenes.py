@@ -27,11 +27,12 @@ class HomepageSceneTests(unittest.TestCase):
     def test_single_h1(self):
         self.assertEqual(self.html.count('<h1'), 1)
 
-    def test_shared_global_header_untouched(self):
+    def test_shared_global_header_has_public_destinations_and_menu(self):
         for expected in ('class="global-header"', "Pete's Slate", 'Community',
-                         'Interview Studio', 'Why PeerSlate', 'Ask AI',
-                         'Sign In'):
+                         'Interview Studio', 'Why PeerSlate',
+                         'data-platform-menu-toggle', 'Sign In'):
             self.assertIn(expected, self.html)
+        self.assertNotIn('Ask Pete AI', self.html)
 
     def test_no_mockup_only_navigation(self):
         for banned in ('How It Works', 'Explore a Slate', 'For Teams',

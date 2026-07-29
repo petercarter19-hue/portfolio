@@ -934,11 +934,12 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('.is__camera-controls', css)
         self.assertIn('min-height: clamp(18rem, 26vw, 20rem)', css)
 
-    def test_interview_mobile_uses_sticky_header_ai_without_a_content_overlap(self):
+    def test_interview_mobile_uses_global_menu_without_member_ai(self):
         html = self.html('/interview-studio?mode=me')
-        self.assertIn('class="nav-ask-ai"', html)
-        self.assertIn('data-open-chat', html)
-        self.assertIn('data-chat-open', html)
+        self.assertIn('data-platform-menu-toggle', html)
+        self.assertNotIn('class="nav-ask-ai"', html)
+        self.assertNotIn('data-open-chat', html)
+        self.assertNotIn('data-chat-open', html)
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
         self.assertNotIn('body.interview-studio-page .mobile-tabbar', css)
         chat_rule = css.rsplit('body.interview-studio-page #chat-toggle', 1)[1].split('}', 1)[0]

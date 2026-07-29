@@ -1,0 +1,346 @@
+/*
+ * PS-PUBLIC-NAV-001
+ * Authoritative public-shell corrections. This file loads after page-level
+ * styles so legacy route packages cannot change shared header geometry.
+ */
+
+:root {
+    --ps-public-nav-gutter: clamp(1rem, 2vw, 2.25rem);
+    --ps-public-header-height: 4rem;
+    --ps-public-subheader-height: 3rem;
+}
+
+.global-header .platform-nav {
+    position: relative;
+}
+
+.global-header .platform-nav__inner,
+body.portfolio-shell .global-header .platform-nav__inner,
+body.living-resume-v2-page .global-header .platform-nav__inner,
+body.resume-overview-public-page .global-header .platform-nav__inner {
+    width: 100%;
+    max-width: none;
+    min-height: var(--ps-public-header-height);
+    margin-inline: 0;
+    padding: 0 var(--ps-public-nav-gutter);
+    display: grid;
+    grid-template-areas: "brand links actions";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1.5rem, 2.8vw, 3.75rem);
+}
+
+.global-header .platform-brand {
+    grid-area: brand;
+}
+
+.global-header .platform-nav__links,
+body.portfolio-shell .global-header .platform-nav__links,
+body.living-resume-v2-page .global-header .platform-nav__links,
+body.resume-overview-public-page .global-header .platform-nav__links {
+    grid-area: links;
+    grid-column: auto;
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+    gap: clamp(1.15rem, 2.3vw, 3rem);
+    padding: 0;
+    overflow: visible;
+}
+
+.global-header .platform-actions {
+    grid-area: actions;
+}
+
+.platform-menu-toggle,
+.platform-menu {
+    display: none;
+}
+
+/* The profile subheader shares the primary header's exact outer edges. */
+.global-header .profile-tabs {
+    margin-top: 0;
+}
+
+.global-header .profile-tabs__inner,
+body.portfolio-shell .global-header .profile-tabs__inner,
+body.living-resume-v2-page .global-header .profile-tabs--resume .profile-tabs__inner {
+    width: 100%;
+    max-width: none;
+    min-height: var(--ps-public-subheader-height);
+    margin-inline: 0;
+    padding: 0 var(--ps-public-nav-gutter);
+}
+
+.global-header .profile-tabs__list,
+body.portfolio-shell .global-header .profile-tabs__list,
+body.living-resume-v2-page .global-header .profile-tabs--resume .profile-tabs__list {
+    justify-content: center;
+}
+
+.global-header .profile-tab,
+body.living-resume-v2-page .global-header .profile-tabs--resume .profile-tab {
+    min-height: var(--ps-public-subheader-height);
+}
+
+body.living-resume-v2-page .global-header .profile-tabs--resume .profile-tabs__ask {
+    right: var(--ps-public-nav-gutter);
+}
+
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__ask-btn {
+    right: var(--ps-public-nav-gutter);
+}
+
+.nav-search__empty {
+    margin: 0;
+    padding: 0.7rem 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 73.75rem) and (min-width: 64.01rem) {
+    .global-header .platform-nav__inner,
+    body.portfolio-shell .global-header .platform-nav__inner,
+    body.living-resume-v2-page .global-header .platform-nav__inner,
+    body.resume-overview-public-page .global-header .platform-nav__inner {
+        grid-template-areas: "brand links actions";
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: clamp(1rem, 2vw, 1.75rem);
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .global-header .nav-search {
+        display: none;
+    }
+}
+
+@media (max-width: 64rem) {
+    .global-header,
+    body.has-mobile-tabbar .global-header,
+    body.living-resume-v2-page .global-header,
+    body.living-resume-v2-page.has-mobile-tabbar .global-header {
+        position: sticky;
+        top: 0;
+    }
+
+    .global-header .platform-nav__inner,
+    body.portfolio-shell .global-header .platform-nav__inner,
+    body.living-resume-v2-page .global-header .platform-nav__inner,
+    body.resume-overview-public-page .global-header .platform-nav__inner {
+        width: 100%;
+        min-height: var(--ps-public-header-height);
+        grid-template-areas: "brand actions";
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.5rem;
+        padding: 0 var(--ps-public-nav-gutter);
+    }
+
+    .global-header .platform-brand {
+        min-width: 0;
+    }
+
+    .global-header .platform-brand__logo {
+        padding: 0.25rem 0.35rem;
+        border-radius: 0.7rem;
+    }
+
+    .global-header .platform-brand__logo img,
+    body.living-resume-v2-page .global-header .platform-brand__logo img {
+        height: 1.65rem;
+        max-width: 7.6rem;
+        object-fit: contain;
+    }
+
+    .global-header .platform-nav__links,
+    body.portfolio-shell .global-header .platform-nav__links,
+    body.living-resume-v2-page .global-header .platform-nav__links,
+    body.resume-overview-public-page .global-header .platform-nav__links {
+        display: none;
+    }
+
+    .global-header .platform-actions,
+    body.portfolio-shell .global-header .platform-actions,
+    body.living-resume-v2-page .global-header .platform-actions {
+        display: flex;
+        grid-area: actions;
+        gap: 0.45rem;
+    }
+
+    .global-header .platform-actions .nav-search,
+    .global-header .nav-ask-ai {
+        display: none;
+    }
+
+    .global-header .theme-toggle__icon {
+        display: none;
+    }
+
+    .global-header .sign-in-btn,
+    body.living-resume-v2-page .global-header .sign-in-btn {
+        min-height: 2rem;
+        padding: 0 0.65rem;
+        font-size: 0.72rem;
+    }
+
+    .platform-menu-toggle {
+        display: inline-flex;
+        min-height: 2rem;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0 0.55rem;
+        border: 1px solid var(--border);
+        border-radius: 0.6rem;
+        background: color-mix(in srgb, var(--surface) 88%, transparent);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .platform-menu-toggle svg {
+        width: 1rem;
+        height: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+    }
+
+    .platform-menu-toggle[aria-expanded="true"] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+    }
+
+    .platform-menu[hidden] {
+        display: none;
+    }
+
+    .platform-menu:not([hidden]) {
+        position: absolute;
+        top: var(--ps-public-header-height);
+        right: 0;
+        left: 0;
+        z-index: 1210;
+        display: block;
+        padding: 0 var(--ps-public-nav-gutter) var(--ps-public-nav-gutter);
+        background: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 1rem 2rem rgb(10 27 54 / 18%);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+    }
+
+    .platform-menu__inner {
+        display: grid;
+        gap: 0.75rem;
+        padding-top: 0.75rem;
+    }
+
+    .platform-menu__links {
+        display: grid;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .platform-menu__links a {
+        position: relative;
+        display: flex;
+        min-height: 2.75rem;
+        align-items: center;
+        padding: 0 0.75rem;
+        border-radius: 0.65rem;
+        color: var(--text);
+        font-size: 0.92rem;
+        font-weight: 650;
+    }
+
+    .platform-menu__links a:hover,
+    .platform-menu__links a:focus-visible {
+        background: var(--accent-soft);
+        color: var(--accent);
+    }
+
+    .platform-menu__links a[aria-current="page"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 750;
+    }
+
+    .platform-menu__links a[aria-current="page"]::before {
+        content: "";
+        width: 0.2rem;
+        height: 1.35rem;
+        margin-right: 0.6rem;
+        border-radius: 999px;
+        background: var(--accent);
+    }
+
+    .nav-search--mobile {
+        display: flex;
+        width: 100%;
+    }
+
+    .nav-search--mobile .nav-search__input,
+    .nav-search--mobile .nav-search__input:focus,
+    body.portfolio-shell .nav-search--mobile .nav-search__input,
+    body.portfolio-shell .nav-search--mobile .nav-search__input:focus,
+    body.living-resume-v2-page .nav-search--mobile .nav-search__input,
+    body.living-resume-v2-page .nav-search--mobile .nav-search__input:focus {
+        width: 100%;
+        min-height: 2.75rem;
+    }
+
+    .nav-search--mobile .nav-search__results {
+        top: calc(100% + 0.4rem);
+        right: 0;
+        left: 0;
+        min-width: 0;
+        max-height: min(22rem, 55vh);
+        overflow-y: auto;
+    }
+
+    body:not(.has-mobile-tabbar) {
+        padding-bottom: 0;
+    }
+}
+
+@media (max-width: 22rem) {
+    .global-header .theme-toggle {
+        display: none;
+    }
+
+    .platform-menu-toggle span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .platform-menu-toggle {
+        width: 2rem;
+        justify-content: center;
+        padding: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .platform-menu-toggle,
+    .platform-menu {
+        transition: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .platform-menu-toggle,
+    .platform-menu,
+    .platform-menu__links a[aria-current="page"] {
+        border: 1px solid CanvasText;
+    }
+}

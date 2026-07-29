@@ -163,10 +163,10 @@ class Resume2Tests(unittest.TestCase):
         parser = ProfileTabsParser()
         parser.feed(response_text)
 
-        self.assertEqual(len(parser.links), 4)
+        self.assertEqual(len(parser.links), 3)
         self.assertEqual(
             [link['text'] for link in parser.links],
-            ['My Story', 'Work', 'Slate Board', 'Resume'],
+            ['My Story', 'Slate Board', 'Résumé'],
         )
         current_links = [
             link
@@ -174,7 +174,10 @@ class Resume2Tests(unittest.TestCase):
             if link['attributes'].get('aria-current') == 'page'
         ]
         self.assertEqual(len(current_links), 1)
-        self.assertEqual(current_links[0]['attributes']['href'], '/petec/resume')
+        self.assertEqual(
+            current_links[0]['attributes']['href'],
+            '/petec/resume#resume-start',
+        )
         self.assertNotIn('Resume 1', response_text)
 
         header_start = response_text.index('<header class="global-header">')
@@ -493,17 +496,12 @@ class Resume2Tests(unittest.TestCase):
         self.assertIn('Admitted', credentials_html)
         self.assertNotIn('clearance', credentials_html.lower())
 
-    def test_profile_tabs_render_everywhere_except_the_root_landing_page(self):
-        root = self.client.get('/', base_url='http://localhost')
-        self.assertNotIn(b'class="profile-tabs', root.data)
-
+    def test_profile_tabs_render_only_inside_petes_public_slate(self):
         for path in (
             '/petec/resume',
             '/petec/my-story',
             '/petec/skills',
             '/petec/slate-board',
-            '/the-slate',
-            '/experience',
         ):
             with self.subTest(path=path):
                 response = self.client.get(path, base_url='http://localhost')
@@ -513,8 +511,20 @@ class Resume2Tests(unittest.TestCase):
                 parser.feed(response.get_data(as_text=True))
                 self.assertEqual(
                     [link['text'] for link in parser.links],
-                    ['My Story', 'Work', 'Slate Board', 'Resume'],
+                    ['My Story', 'Slate Board', 'Résumé'],
                 )
+
+        for path in (
+            '/',
+            '/the-slate',
+            '/interview-studio',
+            '/peerslate',
+            '/experience',
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn(b'class="profile-tabs', response.data)
 
     def test_opening_states_ask_ai_and_positioning_without_duplication(self):
         # PS-OVERVIEW-PUBLIC-INTEGRATION-001: the published Overview absorbs

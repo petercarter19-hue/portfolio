@@ -92,13 +92,13 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertIs(app.config["PEERSLATE_JOURNAL_ENABLED"], False)
         self.assertIs(app.config["PEERSLATE_OWNER_HOME_ENABLED"], False)
 
-    def test_community_uses_unchanged_normal_shell(self):
+    def test_community_uses_the_global_shell_without_profile_navigation(self):
         response = self.client.get("/the-slate")
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="global-header"', body)
-        self.assertIn('class="profile-tabs', body)
+        self.assertNotIn('class="profile-tabs', body)
         self.assertIn('class="footer"', body)
         self.assertNotIn('class="owner-home-shell"', body)
 
@@ -162,15 +162,15 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertNotIn('id="chat-toggle"', body)
         self.assertNotIn('static/js/theme-toggle.js', body)
 
-    def test_unrelated_route_retains_the_ordinary_global_shell(self):
+    def test_unrelated_route_retains_only_the_ordinary_global_shell(self):
         response = self.client.get("/peerslate")
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('class="global-header"', body)
-        self.assertIn('class="profile-tabs', body)
+        self.assertNotIn('class="profile-tabs', body)
         self.assertIn('class="footer"', body)
-        self.assertIn('id="chat-toggle"', body)
+        self.assertNotIn('id="chat-toggle"', body)
         self.assertNotIn('class="owner-home-shell"', body)
 
     def test_package_local_j1_playback_deferral_is_explicit_and_narrow(self):

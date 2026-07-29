@@ -39,9 +39,13 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # instead of hand-typed tokens (see _stamp_static_asset_version in app.py);
 # the render is otherwise byte-for-byte the released workspace. These golden
 # values include the fixed-width image and document version tokens.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18200
+# PS-PUBLIC-NAV-001 leaves the flag-off owner controls and legacy navigation
+# unchanged, but its public/owner Jinja branch adds whitespace bytes to this
+# shared-base render. The golden value was deliberately recaptured after
+# confirming the owner branch still uses the legacy assets and destinations.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18214
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "6000be8b88e41a3ce234f2a353fcdc681208c3d3a2a357d3f85becdb9f5cf7b6"
+    "bbd9139b78011b5f9d273ed2711a97a68608a766c73321247b7d75a174033a12"
 )
 
 

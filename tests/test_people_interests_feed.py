@@ -45,20 +45,18 @@ class PeopleInterestsPageTests(unittest.TestCase):
         self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
     def test_slate_board_remains_reachable_from_the_landing(self):
-        # The retired board's left-rail hub links (Slate Board / My Slate /
-        # Daily Slate) are gone with the sidebar itself — Slate Board stays
-        # one click away via the standard profile sub-header every page
-        # shares, and My Slate / Daily Slate keep working at their own URLs
-        # (asserted below and in test_existing_routes_unaffected).
+        # Pete's Slate navigation no longer leaks into Community. Slate Board
+        # remains discoverable through the public destination search.
         html = self.client.get("/the-slate").get_data(as_text=True)
         self.assertIn("Slate Board", html)
-        self.assertIn('class="profile-tabs', html)
+        self.assertIn('"href": "/petec/slate-board"', html)
+        self.assertNotIn('class="profile-tabs', html)
 
     def test_page_keeps_existing_headers_and_switcher(self):
         html = self.client.get("/the-slate").get_data(as_text=True)
-        # The untouched global header and profile sub-header render as-is.
+        # Community keeps the global header and its own Feed / Break switcher.
         self.assertIn("platform-nav", html)
-        self.assertIn("profile-tabs", html)
+        self.assertNotIn("profile-tabs", html)
         # The seamless Feed / The Break switcher (PS-COMMUNITY-TABS-001)
         # replaces the old People & Interests / Feed / The Break strip.
         self.assertNotIn("People &amp; Interests", html)

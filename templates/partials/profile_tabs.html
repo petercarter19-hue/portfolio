@@ -2,8 +2,8 @@
     Pete's profile tab strip, split out of profile_shell.html so pages can
     render content between the profile band and the tabs.
 
-    The four public destinations remain distinct from The Slate product
-    navigation. The list wrapper is what the mobile bottom nav mirrors.
+    These public-profile destinations appear only within Pete's Slate. The
+    list wrapper is what the mobile bottom nav mirrors.
 #}
 {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 <nav class="profile-tabs{% if is_resume_page %} profile-tabs--resume{% endif %}" aria-label="Pete Carter profile tabs">
@@ -12,18 +12,16 @@
             <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
                 My Story
             </a>
-            {# v1.2 (PS-BRAND-NAV-001): Evidence is no longer a navigation
-               destination. The tab now opens Work (projects); the skills
-               page remains reachable from Work and Resume as
-               "Skills in practice". #}
-            <a class="profile-tab" href="{{ portfolio_url('projects') }}" {% if request.path in ['/work', '/projects', '/petec/work', '/petec/projects', '/skills', '/petec/skills'] %}aria-current="page"{% endif %}>
+            {% if is_owner_app_path %}
+            <a class="profile-tab" href="{{ portfolio_url('projects') }}">
                 Work
             </a>
+            {% endif %}
             <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
                 Slate Board
             </a>
-            <a class="profile-tab" href="{{ portfolio_resume_url }}" {% if is_resume_page %}aria-current="page"{% endif %}>
-                Resume
+            <a class="profile-tab" href="{{ portfolio_resume_url }}{% if not is_owner_app_path %}#resume-start{% endif %}" {% if is_resume_page %}aria-current="page"{% endif %}>
+                {% if is_owner_app_path %}Resume{% else %}Résumé{% endif %}
             </a>
         </div>
         {% if is_resume_page %}

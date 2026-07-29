@@ -109,22 +109,29 @@ class FeedPrototypeContentTests(unittest.TestCase):
 
 
 class FeedPrototypeDiscoverabilityTests(unittest.TestCase):
-    """The prototype must be reachable by browsing the real site, not only
-    by a direct link — per Pete's explicit request on 2026-07-16."""
+    """The retained comparison route is no longer a public navigation item.
+
+    PS-PUBLIC-NAV-001 removes preview and fixture destinations from the
+    authoritative public shell while leaving the direct rollback route intact.
+    """
 
     def setUp(self):
         app.config['TESTING'] = True
         self.client = app.test_client()
 
-    def test_linked_from_header_search_index(self):
+    def test_header_search_does_not_publish_the_preview(self):
         home_html = self.client.get('/').get_data(as_text=True)
-        self.assertIn('/feed-living-stream', home_html)
-        self.assertIn('Feed Preview', home_html)
+        search_data = home_html.split(
+            '<script id="nav-search-data"', 1)[1].split('</script>', 1)[0]
+        self.assertNotIn('/feed-living-stream', search_data)
+        self.assertNotIn('Feed Preview', search_data)
 
-    def test_linked_from_community_feed_hub(self):
+    def test_community_feed_does_not_publish_the_preview(self):
         community_html = self.client.get('/the-slate').get_data(as_text=True)
-        self.assertIn('/feed-living-stream', community_html)
-        self.assertIn('Feed Preview', community_html)
+        search_data = community_html.split(
+            '<script id="nav-search-data"', 1)[1].split('</script>', 1)[0]
+        self.assertNotIn('/feed-living-stream', search_data)
+        self.assertNotIn('Feed Preview', search_data)
 
 
 class FeedPrototypeAssetTests(unittest.TestCase):

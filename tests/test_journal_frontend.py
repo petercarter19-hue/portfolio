@@ -176,9 +176,10 @@ class OwnerJournalFlagAndAuthTests(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('class="profile-tabs', body)
-        self.assertIn('data-open-chat', body)
-        self.assertIn('id="chat-toggle"', body)
+        self.assertIn('class="global-header"', body)
+        self.assertNotIn('class="profile-tabs', body)
+        self.assertNotIn('data-open-chat', body)
+        self.assertNotIn('id="chat-toggle"', body)
 
 
 class OwnerJournalPageRenderTests(unittest.TestCase):
