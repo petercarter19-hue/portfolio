@@ -239,6 +239,43 @@ class Resume2Tests(unittest.TestCase):
             self.assertTrue(asset.is_file())
             self.assertLess(asset.stat().st_size, source.stat().st_size)
 
+    def test_public_resume_uses_smaller_media_derivatives(self):
+        response = self.client.get('/petec/resume', base_url='http://localhost')
+        body = response.get_data(as_text=True)
+
+        for filename in (
+            'images/story/pete-headshot-m.jpg',
+            'images/cinematic/future-path-1600.webp',
+            'images/feed/feed-team-demo-2026-07-21-1280.webp',
+            'images/story/pete-danielle-maui-beach-m.jpg',
+            'images/story/pete-hawaii-overlook-m.jpg',
+            'images/cinematic/story-sunset-bg-1600.webp',
+            'images/feed/feed-coffee-notes-2026-07-21-1280.webp',
+        ):
+            with self.subTest(filename=filename):
+                self.assertIn(filename, body)
+
+        for filename in (
+            'images/story/pete-headshot.jpg',
+            'images/feed/feed-team-demo-2026-07-21.png',
+            'images/feed/feed-coffee-notes-2026-07-21.png',
+        ):
+            with self.subTest(filename=filename):
+                self.assertNotIn(filename, body)
+
+    def test_shared_circuit_art_uses_the_verified_webp_derivative(self):
+        project_root = Path(__file__).resolve().parents[1]
+        original = project_root / 'static/images/circuit-banner-option-2.png'
+        derivative = project_root / 'static/images/circuit-banner-option-2.webp'
+        base_template = (
+            project_root / 'templates/base.html'
+        ).read_text(encoding='utf-8')
+
+        self.assertTrue(derivative.is_file())
+        self.assertLess(derivative.stat().st_size, original.stat().st_size * 0.10)
+        self.assertIn('images/circuit-banner-option-2.webp', base_template)
+        self.assertNotIn('images/circuit-banner-option-2.png', base_template)
+
     def test_constellation_is_full_width_without_scroll_triggered_expansion(self):
         project_root = Path(__file__).resolve().parents[1]
         resume_css = (project_root / 'static' / 'css' / 'resume2.css').read_text(
@@ -355,7 +392,7 @@ class Resume2Tests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'id="overview"', response.data)
         self.assertIn(b'id="summary"', response.data)
-        self.assertIn(b'images/story/pete-headshot.jpg', response.data)
+        self.assertIn(b'images/story/pete-headshot-m.jpg', response.data)
         self.assertIn(b'Professional portrait of Pete Carter', response.data)
         self.assertIn(b'Engineer at heart. Leader in practice.', response.data)
         self.assertIn(b'Systems Engineer \xc2\xb7 Technical Leader', response.data)

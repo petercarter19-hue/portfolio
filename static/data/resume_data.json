@@ -7,7 +7,7 @@
     "location": "Athens, Alabama | Huntsville Area",
     "email": "petercarter19@gmail.com",
     "email_url": "mailto:petercarter19@gmail.com",
-    "image_path": "images/story/pete-headshot.jpg",
+    "image_path": "images/story/pete-headshot-m.jpg",
     "image_alt": "Professional portrait of Pete Carter",
     "opening_eyebrow": "Engineer at heart. Leader in practice.",
     "summary": "I build complex systems, lead through change, and turn complexity into clarity so teams can do their best work and deliver real impact.",
@@ -46,7 +46,7 @@
     "media": [
       {
         "id": "portrait",
-        "asset_path": "images/story/pete-headshot.jpg",
+        "asset_path": "images/story/pete-headshot-m.jpg",
         "alt": "Professional portrait of Pete Carter",
         "focal": "50% 42%",
         "truth_label": "Public profile photo",
@@ -54,7 +54,7 @@
       },
       {
         "id": "story",
-        "asset_path": "images/cinematic/future-path.jpg",
+        "asset_path": "images/cinematic/future-path-1600.webp",
         "alt": "A warm mountain path at sunrise",
         "focal": "62% 48%",
         "truth_label": "Illustrative story landscape",
@@ -62,7 +62,7 @@
       },
       {
         "id": "career-team",
-        "asset_path": "images/feed/feed-team-demo-2026-07-21.png",
+        "asset_path": "images/feed/feed-team-demo-2026-07-21-1280.webp",
         "alt": "A team collaborating around a product demonstration",
         "focal": "50% 48%",
         "truth_label": "Illustrative collaboration scene",
@@ -70,7 +70,7 @@
       },
       {
         "id": "career-life",
-        "asset_path": "images/story/pete-danielle-maui-beach.jpg",
+        "asset_path": "images/story/pete-danielle-maui-beach-m.jpg",
         "alt": "Pete and Danielle standing together on lava rocks at a Maui beach",
         "focal": "50% 45%",
         "truth_label": "Pete and Danielle in Maui",
@@ -78,7 +78,7 @@
       },
       {
         "id": "chapters",
-        "asset_path": "images/story/pete-hawaii-overlook.jpg",
+        "asset_path": "images/story/pete-hawaii-overlook-m.jpg",
         "alt": "Pete standing at a mountain overlook in Hawaii",
         "focal": "50% 42%",
         "truth_label": "Pete at a Hawaii overlook",
@@ -86,7 +86,7 @@
       },
       {
         "id": "philosophy",
-        "asset_path": "images/cinematic/story-sunset-bg.jpg",
+        "asset_path": "images/cinematic/story-sunset-bg-1600.webp",
         "alt": "A warm sunset landscape",
         "focal": "50% 52%",
         "truth_label": "Illustrative sunset landscape",
@@ -94,7 +94,7 @@
       },
       {
         "id": "closing",
-        "asset_path": "images/feed/feed-coffee-notes-2026-07-21.png",
+        "asset_path": "images/feed/feed-coffee-notes-2026-07-21-1280.webp",
         "alt": "Coffee, an open notebook, and fountain pens on a wooden table",
         "focal": "48% 48%",
         "truth_label": "Illustrative coffee and notebook worktable",

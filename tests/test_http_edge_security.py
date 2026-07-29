@@ -8,12 +8,25 @@ allowlist and isolation tests; this file is only about the edge.
 """
 
 import base64
+import gzip
 import json
+from pathlib import Path
 import re
 import unittest
 from unittest.mock import patch
 
-from app import app, _address_without_port, _client_rate_limit_key, _static_file_version
+from flask import Response, session
+
+from app import (
+    _STATIC_GZIP_CACHE,
+    _STATIC_VERSION_CACHE,
+    app,
+    _address_without_port,
+    _canonical_static_file,
+    _client_rate_limit_key,
+    _compress_public_text_response,
+    _static_file_version,
+)
 
 
 CAPTURE_KEY = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -412,10 +425,14 @@ class PrivateResponseCacheTests(unittest.TestCase):
         app.config.update(**self.original_config)
 
     def test_flag_off_workspace_is_private_and_not_stored(self):
-        response = self.client.get("/app")
+        response = self.client.get(
+            "/app",
+            headers={"Accept-Encoding": "gzip"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertIsNone(response.headers.get("Content-Encoding"))
 
     @patch("owner_routes.database_service.first_result")
     @patch("identity.database_service.first_row")
@@ -518,7 +535,7 @@ class FeatureFlagConsistencyTests(unittest.TestCase):
 
 
 class StaticVersioningTests(unittest.TestCase):
-    """CSS/JS are content-hash versioned so only current bytes are cached."""
+    """Public static assets use exact content URLs and bounded fallback caching."""
 
     def setUp(self):
         self.original_testing = app.config.get("TESTING")
@@ -530,8 +547,17 @@ class StaticVersioningTests(unittest.TestCase):
 
     def test_templates_carry_no_hand_typed_version_tokens(self):
         # The whole point is to remove the manual scheme that had drifted.
+        template_root = Path(app.root_path, app.template_folder)
+        for path in template_root.rglob("*.html"):
+            with self.subTest(template=path.relative_to(template_root)):
+                self.assertNotRegex(
+                    path.read_text(encoding="utf-8"),
+                    r"\}\}\s*\?v=",
+                    "url_for static output must not receive a second manual token",
+                )
+
         html = self.client.get("/").get_data(as_text=True)
-        for token in re.findall(r"\?v=([^\"'&]+)", html):
+        for token in re.findall(r"\?v=([^\"'&,\s]+)", html):
             with self.subTest(token=token):
                 self.assertRegex(
                     token, r"^[0-9a-f]{12}$",
@@ -545,6 +571,7 @@ class StaticVersioningTests(unittest.TestCase):
             response.headers["Cache-Control"],
             "public, max-age=31536000, immutable",
         )
+        response.close()
 
     def test_a_stale_or_wrong_token_is_never_cached_long(self):
         # A visitor must never be pinned to old bytes: only a token that
@@ -557,10 +584,21 @@ class StaticVersioningTests(unittest.TestCase):
                 response = self.client.get(url)
                 self.assertNotIn(
                     "immutable", response.headers.get("Cache-Control", ""))
+                self.assertEqual(
+                    response.headers.get("Cache-Control"),
+                    "public, max-age=3600, stale-while-revalidate=86400",
+                )
+                response.close()
 
-    def test_images_are_not_query_versioned(self):
-        # Images use dated filenames; they are deliberately out of scope.
-        self.assertIsNone(_static_file_version("images/peerslate-mark.png"))
+    def test_template_images_are_content_versioned(self):
+        version = _static_file_version("images/peerslate-mark.png")
+        self.assertRegex(version, r"^[0-9a-f]{12}$")
+
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn(
+            f"/static/images/peerslate-mark.png?v={version}",
+            html,
+        )
 
     def test_editing_a_file_changes_its_token(self):
         # Different bytes must produce a different URL, or a cache could serve
@@ -569,6 +607,169 @@ class StaticVersioningTests(unittest.TestCase):
         b = _static_file_version("js/chatbot.js")
         self.assertNotEqual(a, b)
         self.assertRegex(a, r"^[0-9a-f]{12}$")
+
+    def test_canonical_equivalent_paths_share_one_static_cache_key(self):
+        _STATIC_VERSION_CACHE.clear()
+        _STATIC_GZIP_CACHE.clear()
+        version = _static_file_version("css/style.css")
+        expected = Path(app.static_folder, "css", "style.css").read_bytes()
+        aliases = (
+            "/static/css/style.css",
+            "/static/css/./style.css",
+            "/static/css//style.css",
+            "/static/css/sub/../style.css",
+            "/static/css/%2e/style.css",
+            "/static/css/sub/%2e%2e/style.css",
+        )
+
+        for alias in aliases:
+            with self.subTest(alias=alias):
+                response = self.client.get(
+                    alias,
+                    query_string={"v": version},
+                    headers={"Accept-Encoding": "gzip"},
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.headers.get("Content-Encoding"),
+                    "gzip",
+                )
+                self.assertEqual(gzip.decompress(response.data), expected)
+                response.close()
+
+        self.assertEqual(set(_STATIC_VERSION_CACHE), {"css/style.css"})
+        self.assertEqual(set(_STATIC_GZIP_CACHE), {"css/style.css"})
+        canonical = {
+            _canonical_static_file(alias)[0]
+            for alias in (
+                "css/style.css",
+                "css/./style.css",
+                "css//style.css",
+                "css/sub/../style.css",
+            )
+        }
+        self.assertEqual(canonical, {"css/style.css"})
+        self.assertIsNone(_canonical_static_file("../requirements.txt"))
+
+
+class PublicResponseCompressionTests(unittest.TestCase):
+    """Gzip reduces public text bytes without crossing private boundaries."""
+
+    def setUp(self):
+        self.original_testing = app.config.get("TESTING")
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.update(TESTING=self.original_testing)
+
+    def test_public_html_gzip_round_trips_and_meets_budget(self):
+        identity = self.client.get("/")
+        compressed = self.client.get(
+            "/",
+            headers={"Accept-Encoding": "gzip"},
+        )
+
+        self.assertEqual(compressed.headers.get("Content-Encoding"), "gzip")
+        self.assertIn(
+            "Accept-Encoding",
+            compressed.headers.get("Vary", ""),
+        )
+        self.assertEqual(gzip.decompress(compressed.data), identity.data)
+        self.assertLessEqual(len(compressed.data), len(identity.data) * 0.35)
+        identity.close()
+        compressed.close()
+
+    def test_exact_version_css_gzip_round_trips_and_is_immutable(self):
+        version = _static_file_version("css/style.css")
+        url = f"/static/css/style.css?v={version}"
+        identity = self.client.get(url)
+        compressed = self.client.get(
+            url,
+            headers={"Accept-Encoding": "gzip"},
+        )
+
+        self.assertEqual(compressed.headers.get("Content-Encoding"), "gzip")
+        self.assertEqual(gzip.decompress(compressed.data), identity.data)
+        self.assertLessEqual(len(compressed.data), len(identity.data) * 0.35)
+        self.assertEqual(
+            compressed.headers.get("Cache-Control"),
+            "public, max-age=31536000, immutable",
+        )
+        self.assertIsNone(compressed.headers.get("ETag"))
+        identity.close()
+        compressed.close()
+
+    def test_gzip_rejection_and_head_are_not_compressed(self):
+        rejected = self.client.get(
+            "/",
+            headers={"Accept-Encoding": "gzip;q=0, identity;q=1"},
+        )
+        head = self.client.head(
+            "/",
+            headers={"Accept-Encoding": "gzip"},
+        )
+
+        self.assertIsNone(rejected.headers.get("Content-Encoding"))
+        self.assertIn("Accept-Encoding", rejected.headers.get("Vary", ""))
+        self.assertIsNone(head.headers.get("Content-Encoding"))
+
+    def test_private_no_store_response_is_not_compressed(self):
+        with app.test_request_context(
+            "/private-test",
+            headers={"Accept-Encoding": "gzip"},
+        ):
+            response = Response(
+                "private member text " * 500,
+                mimetype="text/html",
+            )
+            response.headers["Cache-Control"] = "private, no-store"
+
+            result = _compress_public_text_response(response)
+
+        self.assertIsNone(result.headers.get("Content-Encoding"))
+        self.assertEqual(result.headers["Cache-Control"], "private, no-store")
+
+    def test_response_that_will_set_session_cookie_is_not_compressed(self):
+        original_secret = app.secret_key
+        app.secret_key = "test-cookie-key"
+        try:
+            with app.test_request_context(
+                "/cookie-test",
+                headers={"Accept-Encoding": "gzip"},
+            ):
+                session["compression_probe"] = "member-specific-value"
+                response = Response(
+                    "otherwise public text " * 500,
+                    mimetype="text/html",
+                )
+                response.headers["Cache-Control"] = "no-cache, must-revalidate"
+
+                result = _compress_public_text_response(response)
+                app.session_interface.save_session(app, session, result)
+        finally:
+            app.secret_key = original_secret
+
+        self.assertIsNone(result.headers.get("Content-Encoding"))
+        self.assertTrue(result.headers.getlist("Set-Cookie"))
+
+    def test_small_no_store_health_and_range_responses_are_not_compressed(self):
+        health = self.client.get(
+            "/healthz",
+            headers={"Accept-Encoding": "gzip"},
+        )
+        version = _static_file_version("css/style.css")
+        partial = self.client.get(
+            f"/static/css/style.css?v={version}",
+            headers={"Accept-Encoding": "gzip", "Range": "bytes=0-99"},
+        )
+
+        self.assertIsNone(health.headers.get("Content-Encoding"))
+        self.assertEqual(health.headers.get("Cache-Control"), "no-store")
+        self.assertEqual(partial.status_code, 206)
+        self.assertIsNone(partial.headers.get("Content-Encoding"))
+        self.assertEqual(len(partial.data), 100)
+        partial.close()
 
 
 if __name__ == "__main__":

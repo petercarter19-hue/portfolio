@@ -9,9 +9,10 @@ import json                                     # Lets us read structured resume
 import copy                                     # Keeps presentation overlays isolated from public fixture data
 import re                                       # Lets us clean Markdown symbols out of chatbot replies
 import hashlib                                  # Creates opaque, per-member browser storage scopes
+import gzip                                     # Compresses eligible public text responses without a runtime dependency
 import ipaddress                                # Validates the forwarded caller address used for rate limiting
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
-from flask import Flask, g, render_template, request, jsonify, url_for, redirect, abort  # Added: request (reads incoming data), jsonify (sends JSON back)
+from flask import Flask, g, render_template, request, jsonify, url_for, redirect, abort, session  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from itsdangerous import BadData, URLSafeTimedSerializer
@@ -222,18 +223,62 @@ limiter = Limiter(
 )
 
 # --- STATIC ASSET VERSIONING ---
-# Every CSS and JS URL built by a template automatically carries
+# Every cacheable public static URL built by a template automatically carries
 # ?v=<content hash>. Editing a file changes its hash, so the URL changes and
 # every visitor fetches the new bytes on their next page load — only the most
 # recent version of an asset is ever referenced. This replaces the hand-typed
 # ?v= tokens, which existed only on .css/.js and had already drifted (the
 # same stylesheet was requested under four different tokens, one page was
 # pinned to a stale build, and two branches once collided on the same
-# hand-bumped token). Images are intentionally out of scope: they already use
-# dated, content-specific filenames, so their URLs change by name when the
-# content changes and no query token is needed.
-_VERSIONED_STATIC_SUFFIXES = ('.css', '.js')
+# hand-bumped token). Images, fonts, icons, and public documents use the same
+# content-addressed contract so repeated page-to-page navigation can use the
+# browser cache without pinning stale bytes when an asset changes.
+_VERSIONED_STATIC_SUFFIXES = (
+    '.css',
+    '.js',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.gif',
+    '.svg',
+    '.ico',
+    '.woff',
+    '.woff2',
+    '.ttf',
+    '.otf',
+    '.pdf',
+)
+_COMPRESSIBLE_STATIC_SUFFIXES = ('.css', '.js')
+_GZIP_MINIMUM_BYTES = 1024
+_STATIC_FALLBACK_CACHE_CONTROL = (
+    'public, max-age=3600, stale-while-revalidate=86400'
+)
 _STATIC_VERSION_CACHE = {}
+_STATIC_GZIP_CACHE = {}
+
+
+def _canonical_static_file(filename):
+    """Return one containment-safe cache key and path for a static filename."""
+    if not filename or not isinstance(filename, str) or '\x00' in filename:
+        return None
+
+    static_root = os.path.realpath(app.static_folder)
+    normalized = filename.replace('\\', '/')
+    candidate = os.path.realpath(
+        os.path.join(static_root, *normalized.split('/'))
+    )
+    try:
+        common = os.path.commonpath((static_root, candidate))
+    except ValueError:
+        return None
+    if os.path.normcase(common) != os.path.normcase(static_root):
+        return None
+
+    canonical = os.path.relpath(candidate, static_root).replace(os.sep, '/')
+    if canonical in ('', '.') or canonical.startswith('../'):
+        return None
+    return canonical, candidate
 
 
 def _static_file_version(filename):
@@ -246,15 +291,18 @@ def _static_file_version(filename):
     """
     if not filename or not isinstance(filename, str):
         return None
-    if not filename.endswith(_VERSIONED_STATIC_SUFFIXES):
+    resolved = _canonical_static_file(filename)
+    if not resolved:
+        return None
+    canonical_filename, path = resolved
+    if not canonical_filename.lower().endswith(_VERSIONED_STATIC_SUFFIXES):
         return None
     try:
-        path = os.path.join(app.static_folder, *filename.split('/'))
         file_stat = os.stat(path)
     except OSError:
         return None
     cache_key = (file_stat.st_mtime_ns, file_stat.st_size)
-    cached = _STATIC_VERSION_CACHE.get(filename)
+    cached = _STATIC_VERSION_CACHE.get(canonical_filename)
     if cached and cached[0] == cache_key:
         return cached[1]
     digest = hashlib.sha256()
@@ -265,7 +313,7 @@ def _static_file_version(filename):
     except OSError:
         return None
     token = digest.hexdigest()[:12]
-    _STATIC_VERSION_CACHE[filename] = (cache_key, token)
+    _STATIC_VERSION_CACHE[canonical_filename] = (cache_key, token)
     return token
 
 
@@ -278,20 +326,118 @@ def _stamp_static_asset_version(endpoint, values):
 
 
 @app.after_request
+def _compress_public_text_response(response):
+    """Gzip eligible public text without transforming private responses.
+
+    This handler is registered before the cache/privacy handlers below, so
+    Flask executes it after they have established the final response policy.
+    Public HTML is compressed dynamically. CSS/JS is compressed only for an
+    exact content-versioned URL and the compressed bytes are cached per worker.
+    """
+    if response.status_code != 200:
+        return response
+    if response.headers.get('Content-Encoding'):
+        return response
+    if response.headers.get('Content-Range') or request.headers.get('Range'):
+        return response
+
+    cache_control = response.headers.get('Cache-Control', '').lower()
+    if any(
+        token in cache_control
+        for token in ('private', 'no-store', 'no-transform')
+    ):
+        return response
+    if response.headers.getlist('Set-Cookie'):
+        return response
+    # Flask serializes its session after after_request handlers run. Consult
+    # the same interface decision here so a response that will gain a session
+    # cookie cannot be encoded before that cookie becomes visible.
+    if app.session_interface.should_set_cookie(app, session):
+        return response
+
+    static_filename = None
+    if request.endpoint == 'static':
+        requested_filename = (request.view_args or {}).get('filename')
+        resolved = _canonical_static_file(requested_filename)
+        if (
+            not resolved
+            or not resolved[0].lower().endswith(
+                _COMPRESSIBLE_STATIC_SUFFIXES
+            )
+        ):
+            return response
+        static_filename = resolved[0]
+        current_version = _static_file_version(static_filename)
+        if (
+            not current_version
+            or request.args.get('v') != current_version
+        ):
+            return response
+    elif response.mimetype != 'text/html' or response.is_streamed:
+        return response
+
+    content_length = response.content_length
+    if content_length is not None and content_length < _GZIP_MINIMUM_BYTES:
+        return response
+
+    response.vary.add('Accept-Encoding')
+    if request.method != 'GET' or request.accept_encodings['gzip'] <= 0:
+        return response
+
+    response.direct_passthrough = False
+    body = response.get_data()
+    if len(body) < _GZIP_MINIMUM_BYTES:
+        return response
+
+    compressed = None
+    if static_filename:
+        current_version = _static_file_version(static_filename)
+        cached = _STATIC_GZIP_CACHE.get(static_filename)
+        if cached and cached[0] == current_version:
+            compressed = cached[1]
+
+    if compressed is None:
+        compressed = gzip.compress(body, compresslevel=6, mtime=0)
+        if static_filename:
+            _STATIC_GZIP_CACHE[static_filename] = (
+                current_version,
+                compressed,
+            )
+
+    if len(compressed) >= len(body):
+        return response
+
+    response.set_data(compressed)
+    response.headers['Content-Encoding'] = 'gzip'
+    # A strong ETag for the identity representation must not be reused for a
+    # content-encoded representation. Exact-version assets are immutable, so
+    # their content-addressed URL supplies the long-lived cache identity.
+    response.headers.pop('ETag', None)
+    response.headers.pop('Content-MD5', None)
+    response.headers.pop('Accept-Ranges', None)
+    return response
+
+
+@app.after_request
 def _cache_current_static_versions(response):
     """Give exactly the current version of a static file a one-year cache.
 
     The token in the URL is compared against the file's live content hash,
     so only a URL that names the bytes actually being served is marked
     immutable. A stale or hand-typed token, or an unversioned request (for
-    example an image referenced from inside a CSS file), keeps the default
-    revalidation policy and can never pin an old version in a cache.
+    example an image referenced from inside a CSS file), receives only the
+    bounded fallback policy and can never pin an old version for a year.
     """
     if request.endpoint == 'static' and 200 <= response.status_code < 300:
         filename = (request.view_args or {}).get('filename')
         requested = request.args.get('v')
         if filename and requested and requested == _static_file_version(filename):
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        elif (
+            filename
+            and filename.lower().endswith(_VERSIONED_STATIC_SUFFIXES)
+        ):
+            response.headers['Cache-Control'] = _STATIC_FALLBACK_CACHE_CONTROL
     return response
 
 

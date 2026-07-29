@@ -134,7 +134,7 @@
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
-       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.png') }}');">{% endif %}
+       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.webp') }}');">{% endif %}
 
     {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 

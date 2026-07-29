@@ -35,13 +35,13 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # the non-standalone branch of `templates/base.html` legitimately changes.
 # PS-AUTH-CALLBACK-001 deliberately adds one early script tag to private /app
 # and /auth routes; this authorized security behavior is the sole byte delta.
-# Static CSS/JS URLs now carry an automatic ?v=<12-hex content hash> instead
-# of hand-typed tokens (see _stamp_static_asset_version in app.py); the render
-# is otherwise byte-for-byte the released workspace. These golden values were
-# recaptured for the shorter, fixed-width hash tokens.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18109
+# Supported static URLs now carry an automatic ?v=<12-hex content hash>
+# instead of hand-typed tokens (see _stamp_static_asset_version in app.py);
+# the render is otherwise byte-for-byte the released workspace. These golden
+# values include the fixed-width image and document version tokens.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18200
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "933a51a60417a7955d3a9c69b1ba2edf8aa37f9386492ba5bb1f1da5c4ff14ab"
+    "6000be8b88e41a3ce234f2a353fcdc681208c3d3a2a357d3f85becdb9f5cf7b6"
 )
 
 

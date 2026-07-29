@@ -791,8 +791,14 @@ class CommunityResponsiveMediaTests(unittest.TestCase):
     def test_feed_defers_inactive_break_images_until_the_break_is_opened(self):
         self.assertIsNone(re.search(r'<img\b[^>]*\ssrc="/static/images/community/', self.feed_html))
         for image in ("break-chair-plant", "break-transformation", "break-bookstore"):
-            self.assertIn(f'data-deferred-src="/static/images/community/{image}-640.webp"', self.feed_html)
-            self.assertIn(f'data-deferred-srcset="/static/images/community/{image}-640.webp', self.feed_html)
+            self.assertRegex(
+                self.feed_html,
+                rf'data-deferred-src="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}}"',
+            )
+            self.assertRegex(
+                self.feed_html,
+                rf'data-deferred-srcset="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}} 640w, /static/images/community/{image}-1280\.webp\?v=[0-9a-f]{{12}} 1280w"',
+            )
         self.assertIn('loading="lazy"', self.feed_html)
         self.assertIn('decoding="async"', self.feed_html)
         self.assertIn('fetchpriority="low"', self.feed_html)
@@ -807,8 +813,14 @@ class CommunityResponsiveMediaTests(unittest.TestCase):
 
     def test_break_direct_load_has_full_responsive_attribute_contract(self):
         for image in ("break-chair-plant", "break-transformation", "break-bookstore"):
-            self.assertIn(f'src="/static/images/community/{image}-640.webp"', self.break_html)
-            self.assertIn(f'srcset="/static/images/community/{image}-640.webp 640w, /static/images/community/{image}-1280.webp 1280w"', self.break_html)
+            self.assertRegex(
+                self.break_html,
+                rf'src="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}}"',
+            )
+            self.assertRegex(
+                self.break_html,
+                rf'srcset="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}} 640w, /static/images/community/{image}-1280\.webp\?v=[0-9a-f]{{12}} 1280w"',
+            )
         hero = re.search(r'<img\s+class="bk-hero__image"[^>]*>', self.break_html).group(0)
         self.assertIn('sizes="(max-width: 700px) 100vw, 860px"', hero)
         self.assertIn('loading="eager"', hero)
