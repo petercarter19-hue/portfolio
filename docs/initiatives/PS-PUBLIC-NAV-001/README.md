@@ -2,7 +2,7 @@
 
 ## Status
 
-Active by Pete's explicit direction on 2026-07-29.
+Complete, released, and verified live on 2026-07-29.
 
 This package is a narrow owner-authorized override of the
 `PS-AI-OPS-CHECKPOINT-001` hold. It does not reopen unrelated runtime work.
@@ -28,6 +28,15 @@ identity, authorization, integration, secret, setting, migration, feature flag,
 or new audience. The already-public routes and capabilities remain the same.
 The normal Azure pull request, production pipeline, liveness/route smoke, and
 git-revert rollback controls still apply.
+
+Release evidence:
+
+- Accepted source: `d1587ddb99b3b44ba0bc4f95d587c4ecf4348fbb`
+- Azure PR: 208
+- Squash merge: `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`
+- Automatic production pipeline: 300 (`20260729.24`), succeeded
+- Exact live release identity: `108922ac4dc8abbabe8916ea`
+- Desktop/mobile live navigation and route verification: passed
 
 ## Problem statement
 

@@ -3,15 +3,22 @@
 ## A. Status
 
 - Package: `PS-PUBLIC-NAV-001`
-- Status: Complete
+- Status: Complete, released, and verified live
 - Branch and commit:
   - Authoritative base: `0eed47e7201a40fcd7858ca3040712ed2f2dd8f2`
   - Branch: `work/2026-07-29-public-nav-001`
   - Rebased implementation commit:
     `5d89a10a277bc84aeb91dfd7439a77666f5102fc`
-- PR / pipeline / environment: Release approved; Azure PR and production
-  pipeline evidence pending.
-- Production state: Release approved, not yet merged or deployed.
+  - Accepted source tip: `d1587ddb99b3b44ba0bc4f95d587c4ecf4348fbb`
+  - Azure PR 208 squash merge:
+    `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`
+- PR / pipeline / environment: Azure PR 208 completed with squash and source
+  deletion. Automatic production pipeline 300 (`20260729.24`) passed Build,
+  Deploy, and ProductionSmoke for the exact merge. A redundant manual queue,
+  pipeline 301 (`20260729.25`), was canceled before it started after the
+  automatic run became visible.
+- Production state: Deployed and independently verified live on 2026-07-29.
+  `/healthz` reported exact release `108922ac4dc8abbabe8916ea`.
 - Gate Candidate: Not Applicable. This is a presentation-only correction to
   already-public navigation and introduces no dependency, backend, route, data,
   identity, authorization, integration, secret, setting, migration, feature
@@ -48,14 +55,14 @@
 - Pete / designated session manager visual acceptance: Accepted 2026-07-29;
   Pete's exact release direction was “Perfect. Deploy.”
 - Designated session manager: Codex for this bounded session.
-- Manager handoff status and next receiver: Accepted and ready for Azure
-  release.
+- Manager handoff status and next receiver: Release complete; lane ready to
+  close.
 - Lane owner and self-managed authority: Codex, limited to the public shell
   and navigation tests named by this package.
-- Self-certification: Pass for the bounded implementation; no release claim.
+- Self-certification: Pass for implementation and release.
 - Complete-diff review: Passed; three responsive issues were corrected and the
   final mismatch register is empty.
-- Acceptance requested: Release; approved by Pete on 2026-07-29.
+- Acceptance requested: None; release completed.
 
 ## B. What changed technically
 
@@ -91,8 +98,9 @@
 - No route, database, migration, identity, authorization, infrastructure, or
   deployment change was made.
 
-Rollback is the revert of implementation commit
-`5d89a10a277bc84aeb91dfd7439a77666f5102fc`. No data rollback is required.
+Production rollback is a revert of squash merge
+`24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d` through the normal Azure release
+path. No data rollback is required.
 
 ## C. What this means in plain English
 
@@ -150,6 +158,9 @@ Automated evidence:
   and legacy assets were separately confirmed unchanged.
 - Browser-loaded JavaScript produced no console errors. A standalone Node
   syntax check was unavailable on this machine.
+- The Azure Build stage passed dependency installation, compatibility,
+  vulnerability, secret, test, and artifact checks for exact merge
+  `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`.
 
 Browser and responsive evidence:
 
@@ -173,6 +184,36 @@ Browser and responsive evidence:
 - The stylesheet includes explicit reduced-motion and forced-colors handling;
   these rules were code-inspected, not captured as separate screenshots.
 
+Production evidence:
+
+- Azure PR 208: completed, merge status succeeded, squash enabled, exact source
+  `d1587ddb99b3b44ba0bc4f95d587c4ecf4348fbb`, exact merge
+  `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`, source branch deleted.
+- Automatic pipeline 300 (`20260729.24`): completed successfully for exact
+  merge `24bfeedc9f3b2b3a5f9acddda1dc4ac285bed21d`; Build, Deploy, and
+  ProductionSmoke passed.
+- The exact production release identity was
+  `108922ac4dc8abbabe8916ea`, matching source and pipeline build 300.
+- Live route probes returned 200 for `/`, `/petec/resume`,
+  `/petec/my-story`, `/petec/slate-board`, `/the-slate`,
+  `/the-slate/break`, `/interview-studio`, and `/peerslate`.
+- Live `/app` preserved the signed-out 302 boundary to
+  `/auth/sign-in?return_to=/app`.
+- The full seven-route desktop and 390px mobile browser matrices passed live:
+  no horizontal overflow, correct three-link global navigation, profile
+  subnavigation and Ask Pete AI only on Pete routes, and no browser console
+  errors.
+- The live mobile menu exposed Pete's Slate, Community, and Interview Studio;
+  focus moved into the menu, Escape restored focus to Menu, and retired search
+  query `daily` returned no destination.
+- Production CSS and JavaScript bytes exactly matched the merged files:
+  - `public-navigation.css`:
+    `f4b56218dfbaaec5d84b56cc0cab0de61045cd1c5630922a4c02f444aa32fd12`
+  - `public-mobile-nav.js`:
+    `15e15ab11db98f7ab7abc4dd03cfe023e711810ec0f67e6ea48a677748c9fee5`
+  - `public-site-search.js`:
+    `ac0a916d43748f1d379a35b8692e2e6ba2a916674b9b6824bf4d53c3e41b438e`
+
 Security and privacy checks:
 
 - No protected data, owner route, identity source, API, or persistence behavior
@@ -184,9 +225,8 @@ Security and privacy checks:
 
 Evidence limits:
 
-- Verification is local against the implementation branch.
-- No real-member acceptance, PR validation, pipeline run, deployment, or live
-  production check has occurred.
+- No signed-in member content was opened or changed during production
+  verification.
 - Pete accepted the visual-product result and directed release on 2026-07-29.
 
 ## G. Known gaps, risks, and exclusions
@@ -201,15 +241,16 @@ Evidence limits:
 - The owner shell's shared-template byte snapshot changed because the new
   public/owner Jinja branch adds whitespace. Its behavior and legacy assets
   remain unchanged.
-- Merge, deployment, and live verification are open.
+- The public-navigation release is closed. Owner navigation and the explicitly
+  excluded local workspace architecture remain later work.
 - No deeper independent review is required for the bounded template/CSS/JS
   change unless Pete requests one or expands the scope.
 
 ## H. Clear next step
 
-Release the exact accepted branch through the Azure squash-merge and production
-pipeline, then verify the deployed public header, mobile menu, destination
-search, AI scoping, and owner-shell boundary live.
+Close the release branch and retain this report as the durable evidence. The
+next navigation package may address the owner-facing shell only after the
+public pages remain stable and Pete activates that separate lane.
 
 ## I. What Pete needs to do or decide
 
