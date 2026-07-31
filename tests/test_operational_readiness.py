@@ -664,26 +664,19 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         )
 
         for expected in (
-            'Gate Candidate - Production Candidate Readiness',
-            'Gate Launch - Public Launch and Operational Readiness',
-            'Gate Operate - Operate and Improve',
-            'Gate Retire - Safe Decommissioning',
-            'Emergency Release Mode',
-            '**Gate Candidate:** `Pass` for build `256`',
-            '**Gate Launch:** `Not Assessed`',
-            '**Gate Operate:** `Not Assessed`',
-            '**Gate Retire:** `Not Assessed`',
-            'Production-like staging path',
-            'Dependency vulnerability scan',
-            'Secret scan',
-            'Post-production public smoke',
-            'does not reduce the blast radius',
-            'immutable promotion record',
-            'Gate F owns deployment',
-            'When classification is uncertain, treat the release as material',
-            'may not classify their own material change as non-material',
-            'material shared-pipeline/runtime release',
-            'approved for the required Azure PR',
+            'Gate Candidate - Protected promotion',
+            'Gate Launch - material audience expansion',
+            'Gate Operate - meaningful operating milestone',
+            'Gate Retire - shutdown/destructive removal',
+            'Emergency release',
+            'Routine and Bounded releases use the normal PR',
+            'do not require a Candidate admission record',
+            'exact source SHA, immutable artifact',
+            'newly load-bearing production settings',
+            'stop/rollback action and operator',
+            '`Pass`, `Conditional`, `Fail`, or `Not Assessed`',
+            'does not block Routine or Bounded delivery',
+            'CANDIDATE_EVIDENCE_2026-07-27.md',
         ):
             self.assertIn(expected, package)
 
@@ -706,12 +699,12 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
     def test_existing_controls_link_ps_ops_without_duplicate_approval(self):
         paths_and_phrases = {
             'docs/AI_WORKFLOW.md': (
-                'Professional transition gates',
-                'PROFESSIONAL_READINESS_EVIDENCE.md',
+                'Protected release',
+                '`PS-OPS-001`',
             ),
             'docs/PEERSLATE_SITE_RULES.md': (
                 '/healthz',
-                'does not prove',
+                'OPS gates apply only',
             ),
             'docs/governance/EARLY_LEGAL_AND_SITE_READINESS_STANDARD.md': (
                 'Relationship to professional readiness gates',
@@ -722,24 +715,16 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
                 'approved Candidate `Pass`',
             ),
             'docs/governance/DOCUMENT_CONTROL.md': (
-                'PS-OPS-001 Professional Readiness',
-                'all gate decisions Not Assessed',
+                'A specialist standard only in its stated risk domain',
+                'smallest authoritative record',
             ),
             'docs/governance/DECISIONS.md': (
                 'Establish professional Candidate, Launch, Operate, and Retire gates',
                 'Emergency Release Mode',
             ),
             'docs/governance/CURRENT_BASELINE.yaml': (
-                '- id: PS-OPS-001',
-                'repository_floor_released_pipeline257_candidate_pass',
-            ),
-            'docs/governance/CURRENT_STATE.md': (
-                'Professional readiness controls (2026-07-26)',
-                'Gate Candidate is `Pass` for exact Azure build `256`',
-            ),
-            'docs/governance/ACTIVE_INITIATIVES.md': (
-                'PS-OPS-001 - repository floor released; ongoing gates remain',
-                'final governance rechecks passed',
+                'id: candidate_admission',
+                'Only a future Protected release that uses Candidate',
             ),
         }
         for relative_path, phrases in paths_and_phrases.items():
@@ -754,30 +739,22 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         initiatives = self.read('docs/governance/ACTIVE_INITIATIVES.md')
         handoff = self.read('docs/governance/MANAGER_SESSION_HANDOFF.md')
 
-        for pr in range(174, 184):
-            self.assertRegex(
-                baseline,
-                rf'(?m)^  .+_pr: {pr}$',
-            )
-            self.assertRegex(
-                state,
-                rf'(?m)^\| {pr} \|',
-            )
+        self.assertIn('schema_version: 5', baseline)
+        self.assertIn('version: "3.0"', baseline)
+        self.assertIn('PeerSlate_Constitution_v3.0.md', baseline)
+        self.assertIn('PeerSlate_Roadmap_v3.0.md', baseline)
+        self.assertNotIn('\nholds:', baseline)
         self.assertIn(
             'deployed_main_commit: "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb"',
             baseline,
         )
         self.assertIn('deployed_pipeline: 279', baseline)
         self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)
-        self.assertIn('Professional readiness ongoing gates', initiatives)
-        self.assertIn(
-            'PS-OPS-001 | **Repository floor released.**',
-            handoff,
-        )
-        self.assertIn(
-            'PS-AI-OPS-CHECKPOINT-001 | **Conditional/open.**',
-            handoff,
-        )
+        self.assertIn('PS-GOV-LEAN-001', baseline)
+        self.assertIn('Historical narrative snapshot', state)
+        self.assertIn('Historical lane snapshot', initiatives)
+        self.assertIn('Use this only when another person or agent will continue', handoff)
+        self.assertLess(len(handoff.split()), 300)
 
 
 if __name__ == '__main__':
