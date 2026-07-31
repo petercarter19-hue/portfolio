@@ -166,6 +166,8 @@ class GovernanceDocsTests(unittest.TestCase):
         for rel in (
                 'docs/governance/CURRENT_BASELINE.yaml',
                 'docs/governance/DOCUMENT_CONTROL.md',
+                'docs/governance/PeerSlate_Constitution_v3.0.md',
+                'docs/governance/PeerSlate_Roadmap_v3.0.md',
                 'docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md',
                 'docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.docx',
                 'docs/governance/PeerSlate_Product_Strategy_and_Architecture_Roadmap_v2.8.md',
@@ -173,16 +175,15 @@ class GovernanceDocsTests(unittest.TestCase):
                 'docs/PEERSLATE_SITE_RULES.md'):
             self.assertTrue(os.path.isfile(os.path.join(ROOT, rel)), rel)
 
-    def test_page_purpose_gate_preserves_truth_before_visual_creation(self):
+    def test_page_purpose_work_is_risk_triggered(self):
         standard = _read(os.path.join(
             ROOT, 'docs', 'governance', 'OWNER_VISUAL_INTEGRITY_STANDARD.md'))
         template = _read(os.path.join(
             ROOT, 'docs', 'templates', 'PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md'))
         for expected in (
-                'Before ChatGPT creates or materially revises a visual',
-                'meaningful visible page item, card, control, and status',
-                'Pete approves the page-purpose/non-redundancy inventory before the visual lock.',
-                'The visual lock may not introduce a meaningful item'):
+                'Before visual creation, record a short page brief',
+                'member and page purpose',
+                'Use `PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` only when'):
             self.assertIn(expected, standard)
         for expected in (
                 'Member purpose',
@@ -191,43 +192,35 @@ class GovernanceDocsTests(unittest.TestCase):
                 'Keep / Change / Combine / Remove / Defer'):
             self.assertIn(expected, template)
 
-    def test_approved_mockup_requires_continuous_exact_fidelity(self):
+    def test_approved_mockup_requires_real_comparison_without_pass_theater(self):
         standard = _read(os.path.join(
             ROOT, 'docs', 'governance', 'OWNER_VISUAL_INTEGRITY_STANDARD.md'))
         site_rules = _read(os.path.join(ROOT, 'docs', 'PEERSLATE_SITE_RULES.md'))
         normalized_standard = ' '.join(standard.split())
         normalized_site_rules = ' '.join(site_rules.split())
         for expected in (
-                'Continuous approved-mockup fidelity rule',
-                'There is no fixed maximum number of passes.',
-                'Under the agent-run path, the loop may end in `Pass` only at exact visual',
-                'When Pete is not personally performing the visual inspection',
-                'Pete-run inspection',
-                'visual mismatch register'):
+                'An approved mockup is a product promise',
+                'Side-by-side screenshots are the normal proof',
+                'There is no mandatory pass count',
+                'Pete gives the final material visual decision'):
             self.assertIn(expected, normalized_standard)
         for expected in (
-                'exact mockup remains the primary visual',
-                'continuous compare-refine loop',
-                'without a fixed',
-                'until exact parity',
-                'When Pete is not personally performing the visual inspection',
-                'When Pete personally performs the inspection'):
+                'new/materially revised page',
+                'Routine UI changes preserve locked authority',
+                'Demonstrations must identify what is illustrative'):
             self.assertIn(expected, normalized_site_rules)
 
     def test_claude_md_points_to_current_governance(self):
         content = _read(os.path.join(ROOT, 'CLAUDE.md'))
-        self.assertIn('PEERSLATE_SITE_RULES.md', content)
         self.assertIn('CURRENT_BASELINE.yaml', content)
         self.assertIn('DOCUMENT_CONTROL.md', content)
-        self.assertIn('Bible and\nRoadmap paths it names', content)
-        self.assertNotIn('currently Bible', content)
-        self.assertIn('self-manages its assigned branch', content)
-        self.assertIn('Pass` self-certification', content)
-        self.assertIn('Claude Co-Work', content)
-        self.assertIn('designated session manager', content)
+        self.assertIn('Constitution and\nRoadmap', content)
+        self.assertIn('one self-review', content)
+        self.assertIn('real ownership transfer', content)
 
     def test_site_rules_encode_one_journal_and_open_navigation(self):
         content = _read(os.path.join(ROOT, 'docs', 'PEERSLATE_SITE_RULES.md'))
+        normalized = ' '.join(content.split())
         for expected in (
                 'Save Moment',
                 'deterministic derived membership',
@@ -237,13 +230,13 @@ class GovernanceDocsTests(unittest.TestCase):
                 'Ashley AI is retired terminology',
                 'My Story',
                 'not necessarily daily'):
-            self.assertIn(expected, content)
+            self.assertIn(expected, normalized)
         for superseded_affirmative in (
                 'Every Capture initially creates a private draft',
                 'The user then explicitly chooses whether to add it to the Journal',
                 'Capture is a primary destination'):
-            self.assertNotIn(superseded_affirmative, content)
-        self.assertIn('not another user-facing destination or an Add to Journal gate', content)
+            self.assertNotIn(superseded_affirmative, normalized)
+        self.assertIn('not another user-facing destination or an Add to Journal gate', normalized)
 
     def test_interview_demo_is_downstream_of_released_studio(self):
         package = os.path.join(
@@ -277,18 +270,9 @@ class GovernanceDocsTests(unittest.TestCase):
         self.assertIn(
             '10_REAL_STUDIO_AND_HOMEPAGE_DEMO_CONVERGENCE.md', readme)
         self.assertIn(
-            'upstream authority for that walkthrough', visual_standard)
+            'homepage only when it currently presents or links the changed product',
+            visual_standard)
 
-        baseline = _read(os.path.join(
-            ROOT, 'docs', 'governance', 'CURRENT_BASELINE.yaml'))
-        self.assertIn('interview_demo_convergence_pr: 83', baseline)
-        self.assertIn('interview_demo_convergence_pipeline: 117', baseline)
-        self.assertIn('homepage_interview_demo_pr: 86', baseline)
-        self.assertIn('homepage_interview_demo_pipeline: 122', baseline)
-        self.assertIn(
-            'homepage_interview_demo_merge_commit: '
-            '"a98cced519a1f853ad9f4462fd438efa67d6f260"',
-            baseline)
         self.assertIn(
             'Current illustration live and verified; real 5A/5C Studio and '
             'converged projection not live',

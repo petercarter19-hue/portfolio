@@ -1,26 +1,21 @@
-# Mandatory Agent Startup Checklist
+# PeerSlate Agent Startup Checklist
 
-- [ ] Inspected status, branch, both remotes, and current commit before switching
-- [ ] Preserved any dirty/untracked/task-branch work in place
-- [ ] Fetched `origin` and fast-forwarded local `main` (or created a clean worktree)
-- [ ] Confirmed clean task worktree and authoritative Azure `origin`
-- [ ] Read `START_HERE.md` and `docs/AI_WORKFLOW.md`
-- [ ] Read `CURRENT_BASELINE.yaml`, `CURRENT_STATE.md`, and `ACTIVE_INITIATIVES.md`
-- [ ] Opened current Bible and Roadmap through repository pointers
-- [ ] Read `OWNER_VISUAL_INTEGRITY_STANDARD.md`
-- [ ] Read `OWNER_STORY_COMPOSITION_STANDARD.md`
-- [ ] Read `MANAGER_SESSION_HANDOFF.md` when managing or coordinating active lanes
-- [ ] Read `DOCUMENT_CONTROL.md` and the current manager/lane assignment
-- [ ] Read assigned initiative package and evidence requirements
-- [ ] Confirmed the one designated session manager for this package and whether this session is manager, manager-reviewer, or writer
-- [ ] When receiving a management handoff, recorded package ID, gate, branch/full SHA, evidence status, shared-file reservation, unresolved conflicts, and the single next action
-- [ ] Confirmed branch, package ID, file ownership, migration ownership, and shared integration zones
-- [ ] Confirmed whether the lane is self-managed, who grants final acceptance, and who owns post-acceptance PR/deploy/closeout
-- [ ] Confirmed whether shared governance files are reserved or package-local records only may change
-- [ ] Named the visual authority and current owner/manager acceptance state for user-facing work
-- [ ] For approved-mockup work, recorded the exact file/hash/frame/state/viewport and whether Pete or the assigned writer/agent is the visual inspector
-- [ ] When Pete is not personally performing the visual inspection, planned the continuous compare-refine loop through exact parity; when Pete is inspecting, planned the render/correction cycle he directs
-- [ ] Identified current roadmap position, entry gate, exit gate, and next required evidence
-- [ ] Created a new work branch from current `origin/main`
+Use this for a change, not for a read-only discussion.
 
-Stop instead of proceeding when any item cannot be confirmed.
+- [ ] Checked branch, status, remote, and current `origin/main`; preserved work
+  not owned by this task.
+- [ ] Used a clean task branch/worktree when the existing checkout is not safe
+  to touch.
+- [ ] Read `CURRENT_BASELINE.yaml` and classified the work as Routine, Bounded,
+  or Protected under `START_HERE.md`.
+- [ ] Read the package and specialist contract only when the selected path
+  requires them.
+- [ ] Confirmed the writer and editable files/domain; a manager handoff is
+  required only when work actually changes hands or crosses an owned lane.
+- [ ] For Protected work, named the specific privacy, security, data, release,
+  or material-visual evidence required before release.
+- [ ] Chosen focused verification and the proportional completion record.
+
+Stop when a real ownership, privacy, authorization, migration, or visual
+authority conflict cannot be resolved. Do not create a stop condition from
+unrelated documentation or a closed/historical package.

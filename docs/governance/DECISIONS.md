@@ -1,6 +1,7 @@
 # PeerSlate Manager Decision Log
 
-This is an append-only operational decision record. The current Bible and Roadmap remain the product authority.
+This is an append-only operational decision record. The current Constitution
+and Roadmap named in `CURRENT_BASELINE.yaml` remain the product authority.
 
 ## 2026-07-18 — Adopt Bible and Roadmap v2.3
 
@@ -699,3 +700,25 @@ This is an append-only operational decision record. The current Bible and Roadma
   redirects/indexing, dependency and credential shutdown, monitoring/support
   teardown, restoration window, and final proof. It does not itself authorize
   destructive data deletion.
+
+## 2026-07-31 - Adopt lean risk-based delivery governance
+
+- Owner direction: remove unnecessary blockers, repeated reading, duplicate
+  gates, and parallel status records without weakening architecture, privacy,
+  security, data integrity, accessibility, or truthful release evidence.
+- Constitution v3.0 replaces the v2.9 Bible as concise current constitutional
+  authority; Roadmap v3.0 replaces Roadmap v2.8 for current sequence. The older
+  documents remain historical evidence, not universal startup reading.
+- `CURRENT_BASELINE.yaml` is the single live control plane. `CURRENT_STATE.md`,
+  `ACTIVE_INITIATIVES.md`, old handoffs, and audit reports remain provenance
+  and are not updated by default.
+- Delivery uses Routine, Bounded, and Protected paths. Architecture,
+  independent review, specialist standards, Candidate, Launch, Operate,
+  Retire, and material visual gates run only when their defined trigger applies.
+- The `PS-AI-OPS-CHECKPOINT-001` findings remain open on their three affected
+  surfaces. Its global unrelated-runtime hold and automatic four-slice
+  stop-the-line cadence are retired.
+- Every slice retains one writer, complete-diff self-review, proportionate
+  testing, Azure PR/pipeline/live truth when released, and the always-on
+  multi-user, privacy, authorization, canonical-data, AI-human-control,
+  accessibility, and visual-integrity rules.

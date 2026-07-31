@@ -10,9 +10,11 @@ content and the way that content is composed for an audience. This standard is
 the operational architecture and design contract for future authenticated Story
 composition work.
 
-This standard is subordinate to the current Bible and Roadmap named in
-`CURRENT_BASELINE.yaml`. Every Story design or implementation initiative must
-cite it together with `OWNER_VISUAL_INTEGRITY_STANDARD.md`.
+This standard is subordinate to the current Constitution and Roadmap named in
+`CURRENT_BASELINE.yaml`. A Story task cites it when it changes composition,
+schema, editing, projection, or rendering behavior; it is not universal startup
+reading. Use `OWNER_VISUAL_INTEGRITY_STANDARD.md` as well only when the material
+visual trigger applies.
 
 ## Honest current boundary
 

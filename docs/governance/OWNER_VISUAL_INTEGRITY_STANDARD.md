@@ -1,499 +1,114 @@
-# PeerSlate Owner Visual Integrity Standard
+# PeerSlate Visual Integrity Standard
 
-_Owner decision: 2026-07-18; continuous approved-mockup fidelity,
-visual-inspection responsibility, and cross-site responsive-audit amendments:
-2026-07-26. Maintained by the currently designated session manager lane._
+_Owner-directed lean revision: 2026-07-31._
 
-## Purpose and authority
+## Purpose
 
-PeerSlate is expected to be a visually exceptional, professional product. A
-correct backend and passing tests are necessary, but they are not enough to call
-a user-facing package complete. This standard converts that owner expectation
-into a repeatable design, implementation, review, and release gate for every
-computer and delivery tool.
+PeerSlate should be visually exceptional, accessible, and truthful. This
+standard protects an accepted visual direction without making every UI edit a
+full design program.
 
-This standard is subordinate to the current Bible and Roadmap named in
-`CURRENT_BASELINE.yaml`, but it is the controlling operational interpretation
-of the Bible's visual-integrity requirements. Every user-facing initiative must
-cite it and name its specific visual authority before implementation.
+## When it applies
 
-## Non-negotiable product promise
+Use the **material visual path** for:
 
-When Pete approves a mockup, storyboard, walkthrough, or demonstration as the
-production-intent visual authority, it becomes a product promise. The real
-experience must be recognizably the same interaction model and must match or exceed
-its hierarchy, composition, clarity, finish, and professional quality.
-It may not silently ship as a flatter, more generic, or less polished version.
-When the authority is an approved mockup, that exact mockup remains the primary
-visual authority throughout implementation, review, correction, acceptance, and
-release. It is not first-pass inspiration, and the current implementation never
-replaces it as the comparison baseline.
+- a new production page or primary journey;
+- a new production-intent concept, mockup, or demonstration;
+- a material change to composition, hierarchy, dominant object/action,
+  typography family, color language, or responsive interaction model; or
+- work whose package explicitly requires a new visual lock.
 
-Truth and beauty are simultaneous requirements:
+Routine copy, content correction, established-component use, small styling bug,
+and non-material accessibility or reflow correction preserve the existing
+authority and need only proportionate browser checks. They do not require a
+new page inventory, concept round, pass counter, mismatch register, homepage
+package, independent visual reviewer, or separate manager audit.
 
-- A demonstration must clearly identify what is illustrative, what is live,
-  what is stored, what is transmitted, and what requires sign-in or later work.
-- A demonstration may show an approved future experience, but it may not claim
-  that the future behavior is already live.
-- The eventual product may depart from the approved visual only through a
-  narrowly documented truth, accessibility, or responsive-reflow adaptation
-  that preserves the locked direction, or through a revised ChatGPT-created,
-  Pete-locked authority. A usability or quality change that alters the locked
-  composition, hierarchy, dominant object/action, typography family, color
-  language, or responsive interaction model is material and requires the
-  revised-authority path. No change may be used as cover for visual drift or a
-  downgrade.
-- No public or member-facing package uses "function now, polish later" as its
-  release strategy unless Pete explicitly approves a clearly labeled internal
-  preview. An internal preview is not a completed production experience.
+Backend/schema/infrastructure work may close without visual evidence when it
+makes no user-facing claim and reports that the experience remains unavailable.
 
-## Definitions
+## Authority
 
-- **Visual authority:** the exact named mockup, screen set, storyboard,
-  walkthrough, or existing production state that controls the package's look
-  and interaction hierarchy.
-- **Visual-creation lane:** ChatGPT is the sole creator of new or materially
-  revised PeerSlate production-intent concepts, mockups, storyboards,
-  responsive/state sets, style exploration, and image assets. Pete locks the
-  exact durable output before implementation. Authorities Pete locked before
-  the 2026-07-24 decision remain valid until materially revised.
-- **Production-intent demonstration:** a clearly labeled, non-live walkthrough
-  that shows how an approved real experience is intended to work.
-- **Match or exceed:** preserve the recognizable composition, interaction
-  model, dominant object, hierarchy, content quality, and polish while making
-  only documented improvements. It never permits an alternate aesthetic or
-  silent reinterpretation of an approved mockup.
-- **Exact visual parity:** at the same state and comparable viewport, the real
-  implementation reproduces the authority's visible silhouette, composition,
-  placement, proportions, spacing, typography, color, borders, radii, shadows,
-  imagery, density, control treatment, and responsive relationships, except for
-  a narrowly documented truth, accessibility, or reflow adaptation allowed by
-  this standard.
-- **Visual mismatch register:** the compact per-pass record of each visible
-  difference from the authority, the correction made, and the comparison that
-  closed it.
-- **Visual inspector:** either Pete when he states that he is personally
-  performing the visual inspection, or the assigned writer/agent when Pete is
-  not personally performing it. The initiative and completion report record
-  which path applies.
-- **Visual completion:** manager and owner acceptance of the implemented result
-  against the named authority across required states and form factors.
-- **Homepage product projection:** a logged-out homepage section, product card,
-  or walkthrough that presents or links a real PeerSlate experience. It is a
-  distilled public expression of the real product, not a parallel authority.
+- ChatGPT is the sole creator of new or materially revised PeerSlate production-intent visual
+  direction. Pete locks the selected durable authority before implementation.
+- Existing Pete-locked authorities remain valid until materially revised.
+- Codex or Claude may implement a locked authority and make documented
+  non-material changes needed for semantic structure, keyboard/focus, contrast,
+  touch, reduced motion, truthful state wiring, or text reflow.
+- If such a correction would materially change the direction, return that
+  decision to ChatGPT and Pete. Do not invent a substitute visual.
 
-## Continuous approved-mockup fidelity rule
+An approved mockup is a product promise, not loose inspiration. The production
+result must preserve its recognizable purpose, composition, interaction model,
+hierarchy, and finish. Truth and accessibility are part of fidelity.
 
-Whenever an initiative is based on a Pete-approved mockup, including a selected
-frame or region within a storyboard or walkthrough, every writer and reviewer
-must keep that exact approved mockup open as the continuing visual foundation.
-Implementation screenshots, framework defaults, the current build, personal
-taste, reviewer preference, or a later polish pass do not supersede or dilute
-it.
+## Lean material-visual workflow
 
-Before implementation begins, the package records whether Pete is personally
-performing the visual inspection. The approved mockup remains the authority
-under both paths:
+### 1. Define the page
 
-- **Agent-run inspection:** when Pete is not personally performing the visual
-  inspection, the assigned writer/agent must execute and document the complete
-  compare-refine loop below. This is the mandatory default unless Pete has
-  explicitly taken the visual-inspector role.
-- **Pete-run inspection:** when Pete states that he is personally performing the
-  visual inspection, Pete compares the approved mockup with each real render,
-  directs the corrections, decides whether another refinement pass is required,
-  and gives or withholds final visual acceptance. The writer implements every
-  correction, returns the updated render, and keeps the approved mockup as the
-  authority. A second autonomous agent inspection, pass count, or mismatch
-  register is not required unless Pete asks for or delegates it.
+Before visual creation, record a short page brief:
 
-The following compare-refine loop is mandatory for the agent-run inspection
-path:
+- member and page purpose;
+- dominant object and action;
+- route/audience and live, stored, private, public, local, fixture, or future
+  truth boundary;
+- essential content/states and what the page must not become; and
+- relationship to the existing room/navigation.
 
-1. Review the exact approved mockup immediately before the first implementation
-   pass. Record its durable path, hash when available, selected frame or region,
-   depicted state, and intended viewport.
-2. Implement one bounded pass from that authority.
-3. Render the real implementation in the corresponding state and comparable
-   viewport and capture a named screenshot.
-4. Review the approved mockup again. Compare it with the real render
-   side-by-side and, when practical, by overlay, pixel sampling, or measured
-   geometry. Enter every visible mismatch in the visual mismatch register.
-5. Refine the implementation to close the recorded mismatches. Do not edit,
-   reinterpret, or replace the approved mockup to make the implementation look
-   compliant.
-6. Repeat steps 3 through 5, reopening and reviewing the approved mockup during
-   every cycle. There is no fixed maximum number of passes. Continue until the
-   mismatch register is empty at that state and viewport, except for narrow
-   adaptations explicitly permitted and recorded under this standard.
-7. Run the same loop for every required state and viewport. Any later code,
-   content, asset, or layout change that can alter the visible result reopens
-   the loop before handoff, acceptance, merge, or release.
+Use `PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` only when the page is crowded,
+purpose is disputed, or the owner/package asks for item-by-item disposition.
 
-Under the agent-run path, the loop may end in `Pass` only at exact visual
-parity. Under the Pete-run path, Pete determines when the mockup comparison and
-directed correction cycle has reached exact parity and whether to accept the
-result. Under neither path are "close enough," "recognizably similar,"
-functional completion, passing tests, a clean diff, a single comparison
-screenshot, schedule pressure, or "polish later" valid substitutes for visual
-acceptance. If the authority lacks a required state, conflicts with truth or
-accessibility, or cannot support a required responsive behavior, the writer
-reports `Conditional` or `Fail` and returns the question through the ChatGPT
-visual-creation lane and Pete. The writer does not invent an approximation.
+### 2. Lock direction
 
-Illustrative names, facts, and capability claims in a mockup remain subject to
-the package's truth contract and must be replaced with truthful product content.
-Semantic structure, focus visibility, WCAG contrast, touch targets, reduced
-motion, truthful state wiring, and text reflow remain mandatory. Those needs are
-handled through the narrow documented adaptation path or a revised Pete-locked
-authority; they are never a general license for visual drift.
+ChatGPT creates enough desktop/mobile and critical-state material for the
+implementation to be unambiguous. Pete selects the exact authority. Do not
+require exhaustive mockups for states that established components already
+define and the page does not materially change.
 
-## Required gates for user-facing work
+### 3. Implement and compare
 
-### V0 - Authority and truth boundary
+The writer implements the locked direction, then compares the real browser at
+representative desktop and mobile widths. Check the primary journey plus
+loading, empty, failure, long-content, or permission states that can actually
+occur and materially affect the page. Correct visible drift before review.
 
-Before design or implementation, the initiative records:
+Side-by-side screenshots are the normal proof. Overlay/pixel/geometry evidence
+is optional and used when a fixed reference or disputed mismatch makes it
+useful. There is no mandatory pass count or separate mismatch ledger; record
+only unresolved or intentionally adapted differences.
 
-1. the exact ChatGPT-created visual authority and Pete's lock, or the exact
-   grandfathered Pete-locked authority when no material revision is proposed,
-   plus its durable location, hash when available, selected frame or region,
-   depicted state, and intended viewport;
-2. which behavior is live, illustrative, future, local-only, private, public,
-   sent to a service, stored, or not stored;
-3. the dominant object and dominant action for every primary state;
-4. all approved first-class input alternatives, such as Speak and Type; and
-5. the files, routes, data, and capabilities the package may not change; and
-6. whether the logged-out homepage presents or links this experience, which
-   section is affected, and whether parity work is required.
-7. a completed `PAGE_PURPOSE_AND_NON_REDUNDANCY_INVENTORY.md` using the
-   controlled template. Before ChatGPT creates or materially revises a visual,
-   every meaningful visible page item, card, control, and status in the proposed
-   experience must state its member purpose, source/capability truth,
-   action/destination, privacy/audience/lifecycle, unique relationship to the
-   rest of the page, and one owner decision: **Keep, Change, Combine, Remove,
-   or Defer**. Repeated decoration may be grouped; meaningful elements may not.
+### 4. Verify quality
 
-Codex or Claude may implement the locked authority, capture real-browser
-evidence, identify parity, usability, truth, or accessibility defects, and make
-documented non-material adaptations for semantic structure, focus visibility,
-WCAG contrast, touch targets, reduced motion, truthful state wiring, or text
-reflow. Those adaptations follow the manager-approved deviation record and do
-not require a new visual-creation pass when they preserve the dominant
-object/action, composition, hierarchy, typography family, color language, and
-responsive interaction model.
+Verify relevant keyboard/focus, semantic structure, contrast, touch, 200%
+zoom/reflow, reduced motion, long content, and responsive behavior. Test the
+states and devices the page actually supports; do not manufacture irrelevant
+evidence rows.
 
-Codex and Claude may not originate or substitute the visual direction. A change
-to any preserved visual-direction control above is material: the writer stops
-that visual decision and returns the requirement to ChatGPT; Pete must lock the
-revised exact authority before implementation continues. Evidence capture and
-bounded critique are not separate visual-creation passes.
+### 5. Accept and release
 
-### V1 - Design readiness
+Pete gives the final material visual decision, or explicitly delegates it. A
+manager need not duplicate Pete's inspection or the writer's complete-diff
+review. The normal PR, pipeline, and affected-route live smoke establish release
+truth when deployment is in scope.
 
-The design set must include the complete primary journey plus loading,
-processing, empty, success, failure, permission-denied, unavailable, long-content,
-and recovery states that can occur. It must show desktop, touch mobile, 200%
-zoom/reflow, visible keyboard focus, reduced motion, and applicable landscape
-behavior. Editable source, component inventory, truth labels, and state mapping
-are required. A collage or attractive hero alone is not build authority.
+## Homepage rule
 
-Pete approves the page-purpose/non-redundancy inventory before the visual lock.
-The visual lock may not introduce a meaningful item, card, control, or status
-that is absent from that approved inventory; a newly needed meaningful item
-returns through the same inventory decision before it is locked. This gate does
-not prohibit visual refinement or grouped repeated decoration. It prevents a
-page from accumulating unexamined product claims, duplicated actions, or
-unexplained interface furniture.
+Check the homepage only when it currently presents or links the changed product
+and the change affects that public claim: purpose, name, capability truth,
+dominant action, hierarchy, theme, or recognizable interaction. Update the
+homepage in the same safe wave or name a bounded follow-up. A routine internal
+UI correction does not automatically create a homepage project.
 
-### V2 - Implementation comparison
+## Completion evidence
 
-When Pete is not personally performing the visual inspection, the writer must
-execute the continuous approved-mockup compare-refine loop, keep a compact
-pass-by-pass mismatch register, and provide named final comparison screenshots
-plus a concise parity matrix comparing the implementation with the visual
-authority. Side-by-side comparison is mandatory; overlay, pixel sampling, or
-measured-geometry evidence is required when practical for a fixed mockup and
-comparable browser viewport.
+For material visual work, record once:
 
-When Pete is personally performing the visual inspection, V2 instead requires
-the named mockup, the renders Pete reviewed, his correction directions, the
-writer's corresponding refinements, and Pete's final visual decision. The
-writer does not duplicate Pete's inspection with a separate autonomous mismatch
-register unless Pete requests it.
+- page purpose and exact locked authority;
+- representative desktop/mobile comparison;
+- relevant accessibility/responsive result;
+- unresolved or permitted narrow adaptation;
+- Pete's decision; and
+- homepage impact only when applicable.
 
-The final comparison must cover silhouette and composition, hierarchy, dominant
-action, placement and proportions, typography, spacing, color semantics,
-borders, radii, shadows, imagery, content density, interaction states, mobile
-behavior, focus, zoom, reduced motion, long content, and failure/recovery. Every
-visible mismatch is corrected and compared again. An intentional
-visual-direction deviation does not pass through a deviation note; it requires a
-revised ChatGPT-created, Pete-locked authority. A narrow non-material truth,
-accessibility, or reflow adaptation must state the reason, preserve the
-authority's visual direction, and receive designated-session-manager approval
-under V0.
-
-When a homepage product projection exists, the comparison also pairs the
-accepted real-product screens with that homepage section at desktop and mobile.
-It records whether product purpose, dominant action, terminology, truth labels,
-theme, hierarchy, recognizable visual language, canonical link, and finish are
-current. A polished but stale projection fails this gate.
-
-### V3 - Owner and manager acceptance
-
-The designated session manager reviews functional truth and accessibility. When
-the agent-run inspection path applies, the manager also reviews the visual
-parity evidence. When Pete personally performs the visual inspection, the
-manager records Pete's visual decision and does not repeat his inspection.
-Material user-facing work does not pass this gate until Pete gives final visual
-acceptance and the manager accepts scope/product readiness, or Pete explicitly
-delegates final visual acceptance in writing. A technical handoff marked ready
-does not itself authorize merge.
-
-Under the owner-approved self-managed delivery model, the assigned writer first
-performs and documents the complete visual comparison when the agent-run path
-applies, corrects its own issues, and returns a `Pass`, `Conditional`, or `Fail`
-self-certification. When Pete performs the inspection, the writer instead
-implements Pete's corrections and records Pete's visual decision. The
-designated session manager
-may rely on coherent comparison evidence and a focused review of the real
-product instead of repeating the writer's complete implementation audit. Pete
-and the designated session manager still own final product/visual acceptance;
-self-certification does not let a writer approve its own visual gate.
-For agent-run inspection, `Pass` additionally requires an empty visual mismatch
-register across every required state and viewport, except for the explicitly
-approved narrow adaptations recorded under this standard. For Pete-run
-inspection, `Pass` requires Pete's recorded acceptance of the corrected result
-against the approved mockup.
-
-### V4 - Release integrity
-
-The Azure PR, pipeline, and live verification still apply. After acceptance and
-deployment, the assigned self-managed writer verifies the canonical production
-route at representative desktop and mobile widths and confirms that deployed
-assets match the accepted build. The designated session manager records or accepts that evidence
-at closeout and may escalate contradictions. The completion report records
-functional status and visual status separately.
-
-When a product release materially changes an experience represented on the
-homepage, V4 also records one of two valid outcomes: the homepage projection was
-accepted and released in the same wave, or an exact downstream parity package
-was activated and sequenced immediately after the real product. The real
-product may release first when that dependency is necessary, but the package
-must report homepage parity as open until the public projection is current.
-
-## Cross-site responsive architecture and implementation audit
-
-Page-local V0-V4 evidence is necessary but cannot by itself prove that all
-website rooms form one coherent responsive system. The planned
-`PS-AUDIT-WEB-001` package therefore supplies two cross-site gates:
-
-1. a **Responsive Architecture Lock** after the page purposes and primary
-   desktop directions for a named release wave are settled, and before the
-   shared shell, route map, or broad page implementation is treated as
-   visually ready; and
-2. a **Responsive Implementation Audit** against the exact integrated
-   branch/deployed-candidate SHA before a major launch, public beta, or other
-   owner-designated website-wide responsive-completion claim.
-
-The first gate reviews the complete route/state/viewport manifest and locks the
-shared shell, navigation, semantic content order, component transformations,
-tablet/phone composition, touch and keyboard behavior, short-landscape
-reachability, and 200-percent reflow. ChatGPT creates any missing or materially
-revised responsive/state authority and Pete locks the exact durable files and
-hashes. A writer does not invent breakpoints or responsive interactions where
-the authority is incomplete.
-
-The second gate reviews the real browser implementation at actual CSS
-viewports, including 1440 and 1920 desktop, tablet landscape/portrait, 430,
-390, 320, short landscape, and 200-percent zoom at minimum, plus any
-package-required wide viewports. It covers every included canonical route,
-meaningful state, supported theme, shell/navigation mode, failure/recovery
-path, and protected-state truth boundary. The evidence includes full-browser
-screenshots, measured geometry where material, cross-route mismatch closure,
-keyboard/screen-reader/touch evidence, no-horizontal-overflow proof, and one
-real touch-device task walk before broad launch.
-
-This master gate does not postpone mobile design until the end, replace any
-page's exact authority, or replay every page-level implementation audit.
-Page-local packages continue to produce responsive evidence during design and
-implementation. The master gate integrates that evidence, resolves
-cross-route contradictions, and prevents a collection of individually
-acceptable pages from being called a coherent responsive website when their
-shell, navigation, hierarchy, state language, or mobile behavior conflicts.
-
-When its exact scope, reviewer, SHA, evidence, and result match a checkpoint,
-phase-boundary, or full-site audit, the same evidence may satisfy that audit's
-responsive portion. Record the reuse in
-`AI_DELIVERY_AUDIT_REGISTER.md`; do not run a duplicate ceremony.
-
-## Cross-product homepage projection parity
-
-The logged-out homepage is a sequence of product promises. Each section must be
-individually exceptional and showcase-quality, unmistakably about its product,
-and as professionally finished as the real experience it introduces. It may
-simplify a workflow for a visitor, but it may not collapse into generic cards,
-a stale screenshot, a less beautiful imitation, or a claim that no longer
-matches production.
-
-The following contract applies to every current and future homepage product
-section, including Voice Capture, Interview Studio, Ask Pete AI, Living Resume,
-My Story, Slate Board, and any later experience added to `/`:
-
-1. The accepted and live real product is upstream authority for function,
-   terminology, truth status, theme, hierarchy, and recognizable interaction.
-2. Every material product change triggers a homepage-impact assessment. A
-   change is material when it alters behavior, capability status, dominant
-   action, information architecture, product name, theme, visual authority,
-   responsive model, or professional finish.
-3. When impact exists, the homepage section is updated in the same release wave
-   when file ownership and sequencing are safe. Otherwise the real product
-   releases first and an exact downstream homepage-parity package follows; the
-   stale projection is tracked honestly until that package is live.
-4. A homepage projection has its own production-intent composition and owner/
-   manager acceptance. "Parity" does not require copying an application screen;
-   it requires a beautiful visitor-facing distillation that is recognizably the
-   same product and links to the canonical current route.
-5. Homepage work may never add, imply, or demonstrate capability that the real
-   product does not provide unless it is explicitly labeled as a future,
-   illustrative walkthrough. Once the real capability changes, those labels
-   and states must be reviewed too.
-6. Product implementation and homepage projection use separate evidence even
-   when shipped together: named desktop/mobile comparisons, truth review,
-   responsive/accessibility checks, canonical-link verification, and explicit
-   Pete/designated-manager acceptance.
-7. A homepage redesign may improve the presentation beyond the application
-   screen, but it may not become a competing product direction or silently
-   redefine the real experience.
-
-## Current owner bindings
-
-### Private Voice Capture
-
-- The accepted homepage Voice walkthrough is the minimum visual and interaction
-  authority for the real protected Voice Capture experience. The real UI must
-  look recognizably like that demonstration or better.
-- Speak and Type are first-class choices in the opening experience. Voice may be
-  emphasized, but Type may not be hidden as an error-only fallback.
-- The real product remains truthful: voice or text leads to private review and
-  explicit **Save private Capture**. It does not automatically create a Moment,
-  placement, Journal entry, share, or publication.
-- Required review evidence includes microphone permission, recording,
-  waveform/timer, stop, upload/transcription, editable transcript, playback,
-  retry, private status, explicit save, text path, failures, desktop, mobile,
-  keyboard, and 200% zoom.
-- Any later material Voice function or visual change triggers review of the
-  homepage Voice section under the cross-product parity contract. The released
-  protected product becomes the upstream reference for that public story.
-
-### Interview Studio
-
-- Current production authority is the Pete-approved
-  `PS-INTERVIEW-FOCUS-UI-001` V3 all-modes package with 14 mapped screens,
-  supplemented by V2 White only where it does not conflict with V3, plus
-  Pete's binding compact-height and automatic-growth correction.
-- The V3 source archive SHA-256 is
-  `7FF3187C7F7E62A29FFD15433454AA0742302308249B4AACA9ED8DBED809814F`;
-  the V2 White archive SHA-256 is
-  `F968CEDF57CD064B748861472658FEAB87EF7C0603C277BAAAEDA2C2649B7E4D`.
-  Both declared manifests verified 52 of 52 entries with zero failures.
-- Answer, transcript, and improved-draft composers begin at approximately half
-  the pictured empty height and grow automatically for typed, pasted,
-  dictated, restored, transferred, or generated text. Read-only results use
-  natural content height. Empty/reset fields return to the compact height;
-  long content may grow the document but may not clip text or cover actions.
-  Camera previews, coaching cards, and History are not mechanically halved.
-- The source comparison completed six compare-refine cycles. All 14 V3 screens
-  map to final implementation states, and the final mismatch register is empty.
-  No materially new art was required, so ChatGPT image generation was not
-  invoked for this release.
-- Reviewed source `da6f93946adf4f3ba3c29d39362b71b0946501a7`,
-  containing frozen runtime
-  `0b2d5ffa6aac56dbb6736bbeb5cee13c8baffeb7`, released through Candidate
-  pipeline 278, Azure PR 201, merge
-  `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`, and production pipeline 279.
-  Independent desktop/mobile live verification and exact CSS/JavaScript byte
-  matching passed.
-- Image 5 Concept A/Concept C 5A-light/5C-dark remains preserved as superseded
-  historical authority. Its labels, **Editorial Studio Ledger** and
-  **Cinematic Studio**, described two themes of the same public Studio, and its
-  completed gate included the recorded Claude/Fable feasibility review.
-  Changing theme must not reset product state. This historical authority does
-  not control current production and is not a co-authority for a material
-  revision.
-- Its exact historical source reference remains
-  `C:\Users\peter\iCloudDrive\Documents\Career\Website\Changes\Interview Studio\ChatGPT Image Jul 19, 2026, 12_09_58 PM (5).png`.
-  The Focus release supersedes its controlling status; it does not erase the
-  source, review, or attribution record.
-- `/interview-studio` remains one real interactive public experience with a
-  shared semantic DOM, information architecture, state machine, behavior, and
-  truth boundary. Theme and responsive transitions may not reset product state.
-- Public-profile grounding, browser-local History, real written coaching
-  requests, AI-proposal labels, and local camera behavior remain explicit.
-  The public Studio does not imply account-backed history, cloud media storage,
-  media upload, private Slate retrieval, or fabricated analysis.
-- The real public Studio remains the upstream authority for that walkthrough.
-  The homepage walkthrough remains a separate static, fictional,
-  no-input/no-request/no-storage projection. It may never be used to claim that
-  the real Studio is implemented or deployed. Historical
-  `PS-HOME-INTERVIEW-PARITY-001` remains closed for 5A/5C; current Focus parity
-  is open under `PS-HOME-INTERVIEW-FOCUS-PARITY-001`, which requires
-  ChatGPT-created production-intent authority and Pete's exact lock before any
-  runtime writer is assigned.
-- The future authenticated owner Studio remains a separate package after
-  authenticated routes, identity, persistence, and authorization exist. The
-  current public product does not simulate or pre-authorize it.
-
-### Homepage boundary
-
-The current homepage as a whole is not an approved quality baseline. Every
-section must ultimately reach the owner's showcase-quality bar; improving one
-section does not certify the rest of the page. The specifically accepted Voice
-walkthrough remains the original minimum for Voice Capture, but later accepted
-product improvements flow back to the homepage under the cross-product parity
-contract. The future Interview walkthrough is governed by the accepted real
-Studio and receives its own focused acceptance only after that Studio is
-released. A broader homepage redesign remains a separate later initiative and
-must preserve these product-specific authority links across the entire page.
-
-### Member-directed My Story composition
-
-- Story polish does not authorize AI or a fixed template to control the
-  member's final arrangement. Follow
-  `OWNER_STORY_COMPOSITION_STANDARD.md` for the full interaction, accessibility,
-  responsive, data, draft, and publication contract.
-- The member shall be able to move and resize supported Story items and control
-  overlap/layering while preserving accessible semantic order and mobile flow.
-- Any AI arrangement is a reviewable proposal. Member-controlled composition,
-  exact responsive/audience preview, and explicit publication are part of
-  visual acceptance for the future Story Composer.
-- The current public Pete Story is fixed fixture evidence, not proof that the
-  authenticated multi-user composer is live.
-
-## Backend-only and infrastructure packages
-
-A backend, schema, or infrastructure foundation may merge without a visible UI
-only when it makes no user-facing claim and its report states that the member
-experience remains unavailable. It may be technically complete for its bounded
-scope, but it cannot be represented as a visually complete product experience.
-
-## Required completion-report language
-
-Every material user-facing completion report must state:
-
-- the named visual authority;
-- the visual inspector: Pete personally or the assigned writer/agent;
-- whether visual parity is Not Started, In Design, In Review, Accepted, or
-  Blocked;
-- for agent-run inspection, the number of compare-refine passes by state and
-  viewport, the compact visual mismatch register, and the evidence that every
-  mismatch was rechecked and closed;
-- for Pete-run inspection, the renders Pete reviewed, his correction
-  directions, the refinements returned to him, and his final visual decision;
-- the screenshot and responsive/accessibility evidence reviewed;
-- every approved narrow truth, accessibility, or reflow adaptation and why it
-  preserves the authority rather than creating a substitute direction;
-- the homepage-impact assessment, affected section and canonical link, parity
-  status, comparison evidence, and exact downstream package when still open;
-- Pete's and the designated session manager's acceptance status; and
-- the honest distinction between demonstration, implementation, deployment,
-  and live production behavior.
+Keep function, visual acceptance, merge, deployment, and live verification as
+separate truthful states.

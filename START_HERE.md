@@ -1,106 +1,56 @@
-# PeerSlate — START HERE
+# PeerSlate - START HERE
 
-This is the mandatory first file for every Cowork, Claude Code, Codex, human developer, and reviewer session. Do not write code, change documents, run a migration, or make a product decision until this checklist is complete.
+This is the required first check for work that may change repository files,
+product behavior, data, or a release. Its job is to prevent unsafe or wasted
+work, not to turn every task into a governance exercise.
 
-## 1. Identify this checkout, then synchronize the authority
+## 1. Establish a safe starting point
 
-Run this first, in one block, before anything else. It answers "where am I, what
-is `origin` here, am I current, and is anything unsaved" — the questions that
-cause the most wasted work when they are assumed instead of checked.
+Before editing, inspect the checkout, fetch the authority, and preserve work
+that is not yours:
 
 ```bash
 git status --short --branch
-pwd
 git remote -v
 git branch --show-current
 git log -1 --format='%H %s'
-git ls-files -v .claude/launch.json
 git fetch origin --prune
 git status --short --branch
 ```
 
-Read the result before continuing:
+- Confirm what `origin` means in this checkout. Azure DevOps `origin/main` is
+  authoritative where it is reachable; GitHub is a backup mirror.
+- Do not switch, reset, clean, or edit a dirty checkout that belongs to another
+  task. Use a clean worktree when needed.
+- Start a task branch from current `origin/main`. Do not push directly to
+  `main`.
 
-- **`git remote -v`** — `origin` is not the same everywhere. In a local clone on
-  Pete's computers `origin` is Azure DevOps and `github` is the mirror. In a
-  hosted agent session the only remote is GitHub, named `origin`, and Azure is
-  unreachable. Both are valid. Record which one you are in; never assume.
-- **The second `git status --short --branch`** — after fetching, this reports
-  `behind N` when your base is stale. **A cloud session branched from GitHub can
-  be many commits behind Azure `main`.** Work built and tested on a stale base
-  produces test results that do not describe the real code. Reconcile with
-  current Azure `origin/main` and rerun the tests there before reporting
-  evidence. See "Repository map" in `docs/AI_WORKFLOW.md`.
-- **`git ls-files -v .claude/launch.json`** — `S` means skip-worktree is set and
-  the machine-local file is protected. `H` means it is not, and a routine
-  `git add -A` on this clone would commit another machine's local configuration.
-  Index flags are per-clone and do not transfer, so this must be checked on each
-  computer.
+## 2. Read only what the task needs
 
-Then move to `main` and update:
+Read `docs/governance/CURRENT_BASELINE.yaml`, then classify the work before
+reading more:
 
-```bash
-git switch main
-git pull --ff-only origin main
-git status --short
-```
+| Path | Use for | Read next |
+|---|---|---|
+| Routine | Copy, isolated bug fix, test, or internal refactor with no trust, data, public-contract, or material-visual change | The relevant code and focused test. |
+| Bounded | A feature or route change within an approved package and established architecture | The package README and the directly affected contract. |
+| Protected | Identity, authorization, privacy, canonical data, migration, deletion/publication, consequential AI, shared infrastructure, or a materially revised visual direction | The package plus the named specialist standard and risk-specific evidence. |
 
-Inspect before switching. If the checkout is dirty, contains an untracked file,
-or is already on another task branch, identify and preserve that work before any
-branch change. Uncommitted changes in a worktree are not captured by a branch
-bundle, so preserve them explicitly. Use a clean task worktree when that is
-safer. Stop if `main` does not fast-forward. Do not copy a repository folder
-between computers as a synchronization method.
-
-## 2. Read in this order
-
-1. `docs/AI_WORKFLOW.md`
-2. `docs/governance/CURRENT_BASELINE.yaml`
-3. `docs/governance/CURRENT_STATE.md`
-4. `docs/governance/ACTIVE_INITIATIVES.md`
-5. The current Bible and Roadmap paths listed in `CURRENT_BASELINE.yaml`
-6. `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`
-7. `docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md`
-8. For any designated session manager (ChatGPT Work/Codex or Claude Co-Work)
-   or cross-lane session,
-   `docs/governance/MANAGER_SESSION_HANDOFF.md`
-9. The assigned initiative `README.md`
-10. Relevant architecture decisions and evidence linked by that initiative
-
-`docs/governance/DOCUMENT_CONTROL.md` records the authority order when an older
-repository document conflicts with the current Bible or Roadmap.
+Read the current Constitution and Roadmap only when their product rule or
+sequence is relevant. Read a specialist standard only when its trigger applies.
+`docs/governance/DOCUMENT_CONTROL.md` resolves a real conflict; it is not a
+required reading assignment for ordinary work.
 
 ## 3. Confirm before writing
 
-Confirm the package ID, manager, branch owner, files/domains reserved, migration
-owner, entry gate, current production baseline, named visual authority and
-acceptance status when user-facing work is involved, and next required evidence.
-Create a work branch from current `origin/main`.
+Know the task purpose, owner/writer, files or domain, and the one verification
+that makes the result believable. Stop and ask when an ownership, identity,
+privacy, migration, or visual-authority conflict is real. Do not stop merely
+because an unrelated historical record is long or a global checkpoint is open.
 
-For work based on an approved mockup, also confirm the exact durable file, hash
-when available, selected frame or region, state, and viewport. The mockup
-remains the primary visual authority throughout delivery. Record whether Pete
-is personally performing the visual inspection. When he is not, the assigned
-writer/agent must plan, execute, and document the continuous compare-refine loop
-in `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; a one-time or end-only
-comparison is not sufficient. When Pete is performing the inspection, implement
-his correction directions, return each updated render to him, and record his
-final visual decision without creating a duplicate autonomous inspection unless
-he requests it.
+## 4. Finish proportionately
 
-Also confirm whether the package uses the self-managed delivery model, who owns
-post-acceptance PR/deploy/closeout, whether shared governance files are reserved,
-and which `Pass`, `Conditional`, or `Fail` evidence is required before final
-acceptance.
-
-Every package must name exactly one designated session manager. ChatGPT
-Work/Codex and Claude Co-Work have the same manager authority when assigned;
-Claude Code remains a separate implementation writer. Parallel managers may
-coordinate different packages, but only one manager branch may reserve shared
-governance files at a time.
-
-Stop and report when authority, ownership, identity boundary, migration ownership, or current document version is unclear. Never guess.
-
-## 4. Mandatory closeout
-
-Use `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`. Every report must preserve full technical detail and include a separate plain-English translation, product functionality, architectural connection, evidence, limitations, and the clear next step.
+Use the compact completion record in
+`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`. Record the branch/SHA,
+what changed, verification, release state when applicable, and an honest next
+step. Add protected-path evidence only when its risk trigger applied.

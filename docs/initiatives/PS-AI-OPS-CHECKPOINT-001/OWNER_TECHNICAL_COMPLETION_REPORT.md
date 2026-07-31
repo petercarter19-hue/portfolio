@@ -112,12 +112,16 @@ provider-message regression proving the generic call excludes that prior.
 
 ## D. Decision
 
-The checkpoint is `Conditional`, not `Pass`. The counter remains held at
-`4 of 4`. The result does not invalidate the released Interview Studio or the
-other live slices; it prevents any unrelated runtime slice from proceeding
-until all three bounded runtime corrections pass focused recheck. Only the
-three separately assigned corrective packages may proceed while the hold is
-open.
+> **Current scope amendment, owner direction 2026-07-31:** The original
+> `Conditional` evidence remains valid for the three findings below, but its
+> global unrelated-runtime hold is retired. Those findings block only their
+> affected Candidate, Work & Impact, and Interview follow-up surfaces.
+
+The checkpoint is `Conditional`, not `Pass`. The historical counter remains
+recorded at `4 of 4`. The result does not invalidate the released Interview
+Studio or other live slices. Each finding remains open until its bounded
+correction passes focused recheck; unrelated Routine and Bounded work may
+proceed.
 
 No runtime correction is authorized by this audit record. Separate packages,
 writers, branches, complete-diff review, focused tests, and independent recheck

@@ -1,5 +1,9 @@
 # PeerSlate - Active Initiatives and Lane Assignments
 
+> **Historical lane snapshot through 2026-07-29.** Current active ownership
+> and scoped holds now live only in `CURRENT_BASELINE.yaml`. Keep this file for
+> provenance; do not require it at startup or update it alongside every package.
+
 _Reconciled 2026-07-21 by `PS-GOV-TRUTH-RECONCILIATION-001`. Two lanes recorded
 here as active had already been implemented, released, closed out, and verified
 live: `PS-HOME-INTERVIEW-PARITY-001` (PRs 103/105/106, pipelines 151/154/156)
@@ -65,9 +69,9 @@ runtime slices had completed since the 2026-07-24 policy start, although the
 four-slice checkpoint had not been recorded. The retrospective checkpoint is
 `Conditional`; the counter is held at `4 of 4` and does not reset. Candidate
 package-specific admission, Work & Impact profile provenance, and Interview
-follow-up mode provenance are the three open runtime corrections. No unrelated
-runtime slice may proceed before focused recheck closes `Pass`; only the three
-separately assigned corrective packages may proceed under the hold._
+follow-up mode provenance are the three open runtime corrections. Owner
+direction on 2026-07-31 removed the unrelated-runtime hold; the corrections
+remain scoped to their affected surfaces._
 
 _The same reconciliation corrects an older Community pointer: Pete accepted
 Community, the audit of record passed, PR 161 plus CI repair PR 162 released
@@ -231,10 +235,9 @@ only for high-risk or expressly required packages.
   Candidate admission; profile-owned Work & Impact overlay/eligibility with a
   second-profile regression; and Interview follow-up mode binding plus generic
   context isolation with a provider-message regression.
-- No unrelated runtime slice may start or release before all three corrections
-  receive an independent focused recheck and the checkpoint closes `Pass`.
-  Only the three separately assigned corrective packages may proceed while the
-  hold is open.
+- The three findings retain their package-specific correction and focused
+  recheck. They do not block unrelated Routine or Bounded work, and the
+  historical four-slice counter no longer creates automatic delivery holds.
 - Controlling record:
   `docs/initiatives/PS-AI-OPS-CHECKPOINT-001/README.md`.
 
@@ -635,8 +638,8 @@ work must check this register so the same work is not assigned twice.
 - Follow `docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md`; material
   user-facing work requires a named visual authority, parity evidence, and Pete
   plus designated-session-manager visual acceptance.
-- Every user-facing package records a homepage-impact assessment. If `/`
-  presents, demonstrates, or links that product, material function or visual
+- Every material product change that affects a current homepage claim records
+  a homepage-impact assessment. If `/` presents, demonstrates, or links that product, material function or visual
   changes require a same-wave homepage update or an exact downstream parity
   package; the real product remains upstream authority and parity stays open
   until the public projection is current and accepted.

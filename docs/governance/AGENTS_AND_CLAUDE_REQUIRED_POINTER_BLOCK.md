@@ -1,4 +1,10 @@
 # Required pointer block for AGENTS.md and CLAUDE.md
 
 > **MANDATORY PRE-WORK GATE**
-> Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow `/START_HERE.md`. Synchronize from authoritative `origin/main`, read the current baseline, current state, active initiatives, current Bible/Roadmap, and assigned initiative package. Stop rather than guess when any pointer or ownership record is unclear. Every material closeout must use `/docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`.
+> Before a write, code change, migration, deployment, or product decision, open
+> `/START_HERE.md`, inspect the checkout, fetch authoritative `origin/main`,
+> and read `docs/governance/CURRENT_BASELINE.yaml`. Classify the work as
+> Routine, Bounded, or Protected; then read only the assigned package and
+> specialist authority that the path requires. Stop for a real ownership,
+> privacy, authorization, migration, or visual-authority conflict. Use
+> `/docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` proportionately.

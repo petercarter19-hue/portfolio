@@ -22,9 +22,9 @@ documentation-only, and unmerged work do not count.
 | Field | Current value |
 |---|---|
 | Policy start | 2026-07-24 |
-| Current completed-runtime-slice count | 4 of 4 threshold held; seven qualifying slices reviewed; no reset |
+| Current completed-runtime-slice count | Historical 4 of 4 threshold retained for evidence; automatic global counter retired 2026-07-31 |
 | Last checkpoint audit | 2026-07-29 retrospective checkpoint at `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`; `Conditional` and open |
-| Next checkpoint audit | Focused recheck of `PS-AI-OPS-CHECKPOINT-001` after all three bounded runtime corrections; no unrelated runtime slice before `Pass`; the three corrective packages may proceed |
+| Next checkpoint audit | One focused recheck when the three named corrections are ready; unrelated Routine and Bounded work may proceed |
 | Last quarterly/full-site audit | None since policy start |
 | Next quarterly/full-site audit due | 2026-10-24, or before a major launch/public beta if earlier |
 | Current readiness audit | None pending; required before default-off enablement or a new public, identity, data, or publication boundary |
@@ -82,24 +82,21 @@ released YAML still hard-codes one historical Candidate branch selector; the
 required admission-control correction is recorded in
 `PS-AI-OPS-CHECKPOINT-001`.
 
-These gates do not affect the four-slice checkpoint count. Gate Operate may
-reuse a checkpoint/full-site audit only when the exact release/environment,
-window, scope, reviewer, evidence, and result are the same.
+Gate Operate may reuse a package or full-site audit only when the exact
+release/environment, window, scope, reviewer, evidence, and result are the same.
 
-## Reset and phase-boundary rules
+## Trigger and reuse rules
 
-1. Increment the count only in the runtime slice's normal release closeout.
-2. A checkpoint audit begins at four counted slices. A major phase boundary
-   begins one even when the count is below four.
-3. A checkpoint or phase-boundary audit resets the count to `0 of 4` only after
-   it closes `Pass`.
-4. If that audit is `Conditional` or `Fail`, hold the count at its threshold;
-   correct the finding and run one focused recheck. Do not recursively create a
-   new audit from the audit's own result.
-5. Record every readiness or triggered audit in the affected package or a
-   dedicated audit package; they do not reset the checkpoint count unless the
-   manager explicitly records that the audit also fulfilled the checkpoint or
-   phase-boundary scope.
+1. The historical four-slice counter is retained below as evidence but no
+   longer schedules audits or delivery holds.
+2. Run a focused independent audit for a defined Protected risk, major phase or
+   public-launch decision, repeated failure pattern, owner request, or central
+   quarterly system review.
+3. A `Conditional` or `Fail` result blocks only the affected surface unless the
+   evidence establishes a broader shared-system risk. Correct it and run one
+   focused recheck; do not recursively create audits from audit results.
+4. Reuse one exact audit across packages/gates when scope, SHA, environment,
+   reviewer, evidence, and result truly match. Record the reuse once.
 
 ## Current audit history
 
@@ -269,8 +266,9 @@ window, scope, reviewer, evidence, and result are the same.
   profile-owned Work & Impact overlay/eligibility with a second-profile
   regression; and Interview follow-up mode binding plus isolation of the
   generic provider message from a grounded prior answer
-- **Result:** `Conditional`; no reset. Hold at `4 of 4`, start no unrelated
-  runtime slice, permit only the three separately assigned corrective packages,
-  and run one focused recheck after all three bounded corrections.
+- **Result:** `Conditional` for the three named findings. Owner direction on
+  2026-07-31 removed the unrelated-runtime hold and retired automatic
+  four-slice stop-the-line checkpoints. Run one focused recheck after the
+  corrections; independently governed Routine and Bounded work may proceed.
 - **Record:**
   `docs/initiatives/PS-AI-OPS-CHECKPOINT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md`

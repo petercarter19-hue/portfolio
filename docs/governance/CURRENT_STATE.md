@@ -1,5 +1,11 @@
 # PeerSlate - Current State
 
+> **Historical narrative snapshot through 2026-07-29.** Current operating
+> authority, ownership, scoped holds, and verified release pointers now live in
+> `CURRENT_BASELINE.yaml`. This file is retained for release provenance and is
+> no longer mandatory startup reading or a parallel record that every package
+> must update.
+
 _Reconciled 2026-07-21 by `PS-GOV-TRUTH-RECONCILIATION-001`. Azure PRs 103-110,
 112-114, 116, 117, and 119 were completed, deployed, and green but had never
 been recorded here; PR 111 and PR 118 were the only merges in the 103-119 range
@@ -67,11 +73,10 @@ remain open. Community Feed/The Break are correctly restored to their
   main `b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb`. The cadence is held at
   `4 of 4` after retrospective review of seven qualifying runtime slices and
   does not reset. Governance drift is corrected in the current docs-only
-  closeout. No unrelated runtime slice is authorized before package-specific
+  closeout. Owner direction on 2026-07-31 scopes that result to package-specific
   Candidate admission, Work & Impact profile-owned overlay/eligibility, and
-  Interview follow-up mode binding/generic-context isolation receive focused
-  independent recheck and the checkpoint closes `Pass`. Only those three
-  separately assigned corrective packages may proceed while the hold is open.
+  Interview follow-up mode binding/generic-context isolation. Those findings
+  remain open; unrelated Routine and Bounded work may proceed.
 - Community Feed and The Break are complete, released, and verified live.
   Pete accepted the combined milestone; Azure PR 161 squash-merged at
   `88d6f8fa0a993c15d4e86046b3b84cb0f68fcdad`; CI repair PR 162 merged at

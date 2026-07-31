@@ -1,87 +1,61 @@
 # PeerSlate Repository Instructions
 
 > **MANDATORY PRE-WORK GATE**
-> Before any analysis that may lead to a write, code change, migration, deployment, or product decision, open and follow [START_HERE.md](START_HERE.md). Synchronize from authoritative `origin/main`, then read [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml), [CURRENT_STATE.md](docs/governance/CURRENT_STATE.md), [ACTIVE_INITIATIVES.md](docs/governance/ACTIVE_INITIATIVES.md), the current Bible and Roadmap named by the baseline, and the assigned initiative package. Stop rather than guess when any pointer, scope, or ownership record is unclear. Every material closeout must use [OWNER_TECHNICAL_COMPLETION_REPORT.md](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
+> Before a write, code change, migration, deployment, or product decision, open
+> and follow [START_HERE.md](START_HERE.md). Fetch authoritative `origin/main`,
+> read [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml), choose a
+> Routine, Bounded, or Protected path, then read only the package and specialist
+> authority the path requires. Stop for a real ownership, privacy,
+> authorization, migration, or material-visual conflict; do not stop for an
+> unrelated historic gate. Use the proportional
+> [completion record](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
 
-This file is the always-on instruction router. Product specifications, design details, and initiative scope belong in their authoritative documents rather than being duplicated here.
+## Authority
 
-## Authority and precedence
-
-- Azure DevOps `origin/main` is the authoritative repository history. GitHub is a backup mirror only, subject to the authorization recorded in `CURRENT_BASELINE.yaml`.
-- Follow the precedence rules in [DOCUMENT_CONTROL.md](docs/governance/DOCUMENT_CONTROL.md). Do not hardcode a Bible or Roadmap version here; use the versions named in `CURRENT_BASELINE.yaml`.
-- Use `CURRENT_STATE.md` for verified present-tense truth and `ACTIVE_INITIATIVES.md` for current ownership. The assigned initiative package controls its bounded implementation scope.
-- If instructions conflict, a required document is missing, or another active lane owns the same files, stop and report the conflict. Do not invent a compromise.
-
-## Roles and ownership
-
-Read [AI_WORKFLOW.md](docs/AI_WORKFLOW.md) before material work and use [AI_MODEL_AND_ROLE_ROUTING.md](docs/AI_MODEL_AND_ROLE_ROUTING.md) to select the working surface.
-
-- One package-designated manager coordinates each initiative. The manager may run in ChatGPT Work/Codex or Claude Co-Work, as recorded in the package.
-- Only one active writer may own a file or mutable surface at a time. Do not edit files reserved by another lane.
-- Writers are self-managed for bounded implementation, testing, documentation, and handoff. Product acceptance, visual acceptance, deployment authority, and scope changes remain with the owner or designated manager.
-- Keep work on a short-lived task branch. Never push directly to `main`. Handoffs must identify the exact branch, commit, changed files, tests, and remaining decisions.
-- Follow the lean delivery policy in `docs/AI_WORKFLOW.md`: perform each distinct responsibility once, use architecture and independent review only when their defined risk triggers apply, and retain the required tests, acceptance, release, and audit evidence. Packages name stable roles; `docs/AI_MODEL_AND_ROLE_ROUTING.md` is the central model-version authority.
-- Owner decision, 2026-07-24: ChatGPT is the sole creator of new or materially revised PeerSlate production-intent visual authority. Existing Pete-locked authorities remain valid until materially revised. Codex and Claude writers may implement the exact locked authority, capture implementation evidence, and make documented non-material accessibility, truth, and reflow adaptations, but they may not originate or substitute visual designs. A material visual-direction change returns to the ChatGPT visual-creation lane and Pete for a new exact lock before implementation continues.
-- Owner decision, 2026-07-26: whenever work is based on a Pete-approved mockup, that exact mockup remains the primary visual authority throughout implementation, review, correction, acceptance, and release. Record who is performing the visual inspection. When Pete is not personally performing it, the assigned writer/agent must repeatedly review the mockup, implement or refine a bounded pass, render the real result, compare it with the mockup, and correct every mismatch until exact comparable-state and comparable-viewport parity is reached. There is no fixed iteration limit and no one-pass shortcut; any later visual-affecting change reopens the continuous compare-refine loop. When Pete personally performs the inspection, the writer implements his corrections, returns updated renders, and records his final visual decision; a duplicate autonomous agent inspection is not required unless he asks for it. Follow the evidence and escalation rules in `OWNER_VISUAL_INTEGRITY_STANDARD.md`.
+Follow [DOCUMENT_CONTROL.md](docs/governance/DOCUMENT_CONTROL.md). The current
+Constitution and Roadmap named by `CURRENT_BASELINE.yaml` control durable rules
+and sequence. Historical Bibles, roadmaps, status reports, and handoffs are
+evidence, not default reading or additional gates.
 
 ## Always-on product and trust invariants
 
-These rules apply to every feature and surface:
+- Build a reusable multi-user product; Pete is fixture content, never shared
+  product logic.
+- Content is private by default. Derive identity server-side and authorize
+  before returning or mutating protected data.
+- Keep canonical truth, source evidence, AI proposals, and projections
+  separate. AI proposes; people decide; it never silently saves, publishes,
+  sends, deletes, or makes truth canonical.
+- Preserve one authoritative source per fact, truthful demo/fixture labels,
+  useful AI-unavailable behavior, and WCAG 2.2 AA expectations.
+- Preserve unrelated work, secrets, production data, and user-authored content.
 
-- PeerSlate is a reusable multi-user product. Pete is fixture content, not product logic. Do not hardcode a single person, profile, career, tenant, or story into shared behavior.
-- User content is private by default. Identity and ownership must be server-derived, and authorization must be checked before protected data is returned or changed.
-- Canonical user truth, source evidence, AI proposals, and derived projections are different data classes. Preserve their provenance and do not silently collapse one into another.
-- AI proposes; people decide. AI output must not silently save, publish, send, delete, apply, or become canonical truth.
-- Keep one authoritative source for each fact and derive projections from it. Avoid competing truth stores and duplicated workflow state.
-- The core experience must remain understandable and useful when AI is unavailable.
-- Never represent fixture, seeded, demo, locally inferred, or flag-disabled behavior as verified live behavior.
-- Preserve unrelated work, secrets, production data, and user-authored content. Use the least destructive implementation that meets the approved scope.
+## Ownership and delivery
 
-## Task-specific document router
+- One writer owns a mutable surface. Use a clean worktree for a dirty or
+  separately owned checkout; do not reset, overwrite, or adopt another
+  writer's branch without an explicit handoff.
+- Work on a short-lived branch from current `origin/main`; never push directly
+  to `main`. Use an Azure DevOps PR for runtime changes. A merge is not a
+  deployment.
+- The writer implements, validates, and self-reviews once. Manager handoff and
+  independent review occur only for an actual transfer, cross-lane conflict,
+  Protected risk trigger, package requirement, or owner request.
+- Candidate, Launch, Operate, Retire, full-site audits, and visual acceptance
+  are event/risk-driven. They must not block unrelated Routine or Bounded work.
 
-Read only the additional authority relevant to the work:
+## Triggered authorities
 
-| Work area | Required authority |
+| Work area | Read when it applies |
 |---|---|
-| Shared implementation and site behavior | [PEERSLATE_SITE_RULES.md](docs/PEERSLATE_SITE_RULES.md) and the assigned initiative package |
-| User-facing UI or visual changes | [OWNER_VISUAL_INTEGRITY_STANDARD.md](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md), the package-named visual authority, recorded visual inspector, and required visual evidence. When Pete is not personally inspecting approved-mockup work, the assigned writer/agent must run the standard's continuous compare-refine loop until exact parity. When Pete inspects, implement and record his correction cycle and final decision. Apply the documented homepage parity check whenever a change can affect the homepage or shared shell. |
-| Story composition or presentation | [OWNER_STORY_COMPOSITION_STANDARD.md](docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md) and the assigned Story package |
-| Capture, Save Moment, or Journal | [PS-JOURNAL-001](docs/initiatives/PS-JOURNAL-001/README.md) and its linked documents |
-| Projects | [PS-PROJECTS-001](docs/initiatives/PS-PROJECTS-001/README.md) and its linked documents |
-| Living Résumé or Slate Board | The assigned package plus [PeerSlate_Design_Bible_v0.3.md](docs/peerslate/PeerSlate_Design_Bible_v0.3.md), [PS-FEAT-001_Living_Resume_Voice_Blueprint.md](docs/peerslate/PS-FEAT-001_Living_Resume_Voice_Blueprint.md), [PeerSlate_Product_Backlog.md](docs/peerslate/PeerSlate_Product_Backlog.md), and [PS-EXP-002_Slate_Focus_Stage_Experiment.md](docs/peerslate/PS-EXP-002_Slate_Focus_Stage_Experiment.md) |
-| Navigation or owner context rail | The applicable navigation rules in `PEERSLATE_SITE_RULES.md` and [OWNER_CONTEXT_RAIL_STANDARD.md](docs/governance/OWNER_CONTEXT_RAIL_STANDARD.md). Do not establish a new permanent navigation layer without approved route authority. |
+| Shared behavior | [PEERSLATE_SITE_RULES.md](docs/PEERSLATE_SITE_RULES.md) and the package. |
+| Material user-facing direction | [OWNER_VISUAL_INTEGRITY_STANDARD.md](docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md) and the locked authority. ChatGPT is the sole creator of materially revised production visual direction; writers implement it. |
+| Story | [OWNER_STORY_COMPOSITION_STANDARD.md](docs/governance/OWNER_STORY_COMPOSITION_STANDARD.md). |
+| Capture/Journal | [PS-JOURNAL-001](docs/initiatives/PS-JOURNAL-001/README.md). |
+| Projects | [PS-PROJECTS-001](docs/initiatives/PS-PROJECTS-001/README.md). |
+| Protected operations | [PS-OPS-001](docs/initiatives/PS-OPS-001/README.md). |
 
-When a package links a more specific contract, fixture, decision record, or acceptance checklist, that linked artifact is part of the task authority.
-
-## Delivery guardrails
-
-- Fetch `origin/main` before work and again before merge. Branch from the current authoritative commit and record the base SHA in the initiative evidence.
-- Do not modify a dirty checkout, unrelated user changes, generated artifacts, secrets, or environment files unless the task explicitly owns them. Use an isolated worktree when needed.
-- Do not add database dependencies, migrations, external services, feature flags, or compatibility layers without a documented product or technical reason inside scope.
-- Keep changes reviewable and proportional. Avoid speculative refactors and do not broaden an initiative because adjacent work is convenient.
-- Validate locally before handoff. Use focused tests for the changed contract and the broader repository checks required by the package or risk level.
-- Do not replace a required quality control with ceremony: preserve complete-diff self-review, pre-merge verification, risk-based independent review, final visual acceptance where applicable, and runtime pipeline/live verification. Use the central audit cadence rather than adding duplicate per-slice audits.
-- Merge through an Azure DevOps pull request using the repository's required squash workflow. Delete the remote task branch after verified merge.
-- A successful merge is not proof of deployment. When deployment is in scope, verify the exact pipeline run and collect production evidence before reporting the work as deployed.
-- Update the GitHub mirror only when `CURRENT_BASELINE.yaml` records authorization to do so.
-
-## Quality and evidence
-
-- Meet WCAG 2.2 AA expectations, including keyboard use, visible focus, semantic structure, contrast, motion preferences, and responsive behavior.
-- Test reusable behavior with generic or multiple fixture profiles where practical; a Pete-only result is not sufficient product evidence.
-- Preserve explicit loading, empty, error, unavailable, flag-off, and permission-denied states where the feature can enter them.
-- Label demo and fixture experiences truthfully and keep live or backend-connected claims tied to reproducible evidence.
-- User-facing work requires the screenshots, routes, viewports, and comparison evidence named by the visual standard and initiative package. Non-visual work does not require invented visual evidence.
-
-## Closeout and communication
-
-Use the completion-report template for every material closeout. At minimum, report:
-
-- base and final commit SHAs;
-- changed files and the reason for each;
-- tests and evidence with pass/fail results;
-- pipeline and production status when applicable;
-- remaining risks, deferred work, and owner decisions;
-- whether each claimed capability is implemented, fixture/demo only, backend-connected, flag-disabled, or deferred.
-
-Communicate plainly. Do not call code complete, a merge deployed, a fixture live, or an AI proposal approved unless the corresponding evidence exists.
+Use the lean delivery policy in [AI_WORKFLOW.md](docs/AI_WORKFLOW.md). For a
+material closeout, report base/final SHA, changed paths, verification, release
+state, honest limitations, and the next action. Do not call a fixture live, a
+merge deployed, or an AI proposal accepted without supporting evidence.
