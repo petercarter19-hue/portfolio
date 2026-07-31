@@ -736,7 +736,8 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
         self.assertIn('"form form"\n        "main side"', css)
         self.assertIn('top: -3.9rem;', css)
-        self.assertIn('.is__compare [data-is-original-answer],', css)
+        self.assertIn('.is__improve .is__compare [data-is-original-answer],', css)
+        self.assertIn('grid-area: auto;', css)
         self.assertIn('font-size: 0.848rem;', css)
 
     def test_failed_follow_up_preserves_question_and_existing_answer_workspace(self):

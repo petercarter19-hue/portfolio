@@ -2014,8 +2014,8 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     line-height: 1.55;
 }
 
-.is__compare [data-is-original-answer],
-.is__compare textarea[data-is-improved-draft] {
+.is__improve .is__compare [data-is-original-answer],
+.is__improve .is__compare textarea[data-is-improved-draft] {
     font-size: 0.848rem;
     line-height: 1.55;
 }
@@ -3404,6 +3404,9 @@ body[data-theme="dark"] .is__select select option {
     }
 
     .is__panel[data-is-panel="ai"] .is__side-column {
+        /* The rail now occupies the source card's former position beside
+           session setup, not the grid's second-row side cell. */
+        grid-area: auto;
         position: absolute;
         top: -3.9rem;
         right: 0;
