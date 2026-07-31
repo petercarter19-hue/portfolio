@@ -1817,19 +1817,19 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 .is__composer textarea[data-is-autogrow] {
     min-height: 9rem;
     padding: 0.55rem 0.85rem 0.8rem;
-    font-size: 0.9rem;
+    font-size: 1.26rem;
     line-height: 1.55;
 }
 
 .is__composer-meta {
     padding: 0.5rem 0.85rem;
-    font-size: 0.6rem;
+    font-size: 0.84rem;
 }
 
 .is__transmit-line {
     margin: 0.55rem 0 0;
     color: var(--is-text-muted);
-    font-size: 0.62rem;
+    font-size: 0.87rem;
 }
 
 .is__transmit-line .is__truth-icon {
@@ -1848,7 +1848,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     padding: 0.55rem 0.85rem;
     border-radius: 0.65rem;
     box-shadow: none;
-    font-size: 0.7rem;
+    font-size: 0.98rem;
 }
 
 .is__button--primary {
@@ -1858,7 +1858,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__dictation-note,
 .is__tip {
-    font-size: 0.62rem;
+    font-size: 0.87rem;
 }
 
 .is__tip {
@@ -1884,13 +1884,13 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 }
 
 .is__status-row strong {
-    font-size: 0.7rem;
+    font-size: 0.98rem;
 }
 
 .is__status-row p,
 .is__demo-note,
 .is__demo-role {
-    font-size: 0.62rem;
+    font-size: 0.87rem;
 }
 
 .is__demo-head img {
@@ -1918,7 +1918,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     gap: 0.75rem;
     padding: 0.55rem 0;
     border-top: 1px solid var(--is-line);
-    font-size: 0.68rem;
+    font-size: 0.95rem;
 }
 
 .is__context-list dt {
@@ -1949,7 +1949,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     border: 0;
     border-top: 1px solid var(--is-line);
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.95rem;
     text-align: left;
     text-decoration: none;
     cursor: pointer;
@@ -1966,7 +1966,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__context-link small {
     color: var(--is-text-muted);
-    font-size: 0.62rem;
+    font-size: 0.87rem;
 }
 
 .is__context-link svg {
@@ -1987,7 +1987,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 .is__context-copy {
     margin: 0.45rem 0 0;
     color: var(--is-text-muted);
-    font-size: 0.68rem;
+    font-size: 0.95rem;
     line-height: 1.55;
 }
 
@@ -2010,7 +2010,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__answer-copy {
     margin-top: 0.45rem;
-    font-size: 0.76rem;
+    font-size: 1.06rem;
     line-height: 1.55;
 }
 
@@ -2201,7 +2201,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__ai-form > label {
     color: var(--is-text-muted);
-    font-size: 0.62rem;
+    font-size: 0.87rem;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2236,7 +2236,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 }
 
 .is__ai-answer-text {
-    font-size: 0.76rem;
+    font-size: 1.06rem;
     line-height: 1.55;
 }
 
@@ -2490,7 +2490,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
     .is__mode strong {
         overflow: hidden;
-        font-size: 0.58rem;
+        font-size: 0.81rem;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
@@ -2671,7 +2671,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     }
 
     .is__mode strong {
-        font-size: 0.52rem;
+        font-size: 0.73rem;
     }
 }
 
@@ -2989,7 +2989,7 @@ body.interview-studio-page #chat-toggle {
     .is__composer-actions .is__button {
         min-width: 0;
         padding-inline: 0.55rem;
-        font-size: 0.66rem;
+        font-size: 0.92rem;
     }
 
     .is__composer-actions .is__composer-submit {
@@ -3003,7 +3003,7 @@ body.interview-studio-page #chat-toggle {
     }
 
     .is__mode strong {
-        font-size: 0.62rem;
+        font-size: 0.87rem;
     }
 
     .is__panel[data-is-panel="ai"] .is__mode-options {
@@ -3028,7 +3028,7 @@ body.interview-studio-page #chat-toggle {
 
     .is__composer-actions .is__button {
         padding-inline: 0.35rem;
-        font-size: 0.58rem;
+        font-size: 0.81rem;
     }
 
     .is__composer-actions [data-is-mic-label],
@@ -3162,7 +3162,7 @@ body[data-theme="dark"] .is__select select option {
     border: 1px solid var(--is-line);
     border-radius: 999px;
     font: inherit;
-    font-size: 0.62rem;
+    font-size: 0.87rem;
     font-weight: 750;
     cursor: pointer;
 }
