@@ -15,7 +15,7 @@ authority:
   deployed_pipeline: 321
   application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"
   application_behavior_pipeline: 315
-  note: "Pipeline 321 passed Build, Deploy, and production smoke for main 61b65325b789903fad5615244ae3fd8fcae77a3e; /healthz reported release 274ded8e60050cb2fbe57bfc and the homepage plus Interview Studio returned 200. Application behavior last changed at 4eb55585dcc017859542e0dd76267bed0f038193; later commits changed governance/tests only. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  note: "Pipeline 321 passed Build, Deploy, and production smoke for main 61b65325b789903fad5615244ae3fd8fcae77a3e; /healthz reported release 8a1184c5d4727dab00ff2cbb and the homepage plus Interview Studio returned 200. Application behavior last changed at 4eb55585dcc017859542e0dd76267bed0f038193; later commits changed governance/tests only. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"

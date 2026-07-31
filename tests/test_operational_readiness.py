@@ -749,6 +749,11 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             baseline,
         )
         self.assertIn('deployed_pipeline: 321', baseline)
+        expected_release = release_id_for_build(
+            '61b65325b789903fad5615244ae3fd8fcae77a3e',
+            '321',
+        )
+        self.assertIn(f'/healthz reported release {expected_release}', baseline)
         self.assertIn(
             'application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"',
             baseline,

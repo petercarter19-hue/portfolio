@@ -29,7 +29,7 @@
   deployment and temporarily exposed Azure's default page. The duplicate run
   320 was canceled; sole recovery run 321 then passed Build, Deploy, and
   production smoke for exact main `61b65325...`. Live `/healthz` returned
-  release `274ded8e60050cb2fbe57bfc`; `/`, `/healthz`, and
+  release `8a1184c5d4727dab00ff2cbb`; `/`, `/healthz`, and
   `/interview-studio` independently returned HTTP 200.
 
 ## Verification
