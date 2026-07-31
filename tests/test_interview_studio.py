@@ -600,7 +600,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
         self.assertNotIn('My History', source)
         self.assertNotIn('my-history', source)
-        self.assertIn('second Answer basis select was redundant', source)
+        self.assertIn("setHidden(aiModeControl, mode !== 'ai')", source)
         self.assertIn('setHidden(formatControl, true)', source)
         html = self.html('/interview-studio?mode=ai')
         self.assertIn('Answer source', html)
@@ -614,7 +614,8 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         tag = before.rsplit('<', 1)[-1].split(None, 1)[0]
         self.assertEqual(tag, 'details')
         self.assertIn('data-is-level', html)
-        self.assertIn('data-is-settings-open', html)
+        self.assertIn('data-is-ai-mode-group', html)
+        self.assertNotIn('data-is-settings-open', html)
 
     def test_theme_guardrail_js_never_observes_theme(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
@@ -704,11 +705,15 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('setStage(1)', failure_block)
         self.assertIn("root.setAttribute('data-is-workspace-state'", source)
 
-    def test_interview_ai_keyboard_order_is_question_basis_then_generation(self):
+    def test_interview_ai_source_dropdown_is_in_session_controls_before_generation(self):
         html = self.html('/interview-studio?mode=ai')
         form = html.split('data-is-ai-form', 1)[1].split('</form>', 1)[0]
-        self.assertLess(form.index('data-is-ai-question'), form.index('data-is-ai-mode-group'))
-        self.assertLess(form.index('data-is-ai-mode-group'), form.index('Get example'))
+        self.assertLess(html.index('data-is-family'), html.index('data-is-ai-mode-group'))
+        self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-format-control'))
+        self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-ai-form'))
+        self.assertLess(form.index('data-is-ai-question'), form.index('Get example'))
+        self.assertNotIn('<fieldset class="is__ai-grounding"', html)
+        self.assertNotIn('data-is-settings-open', html)
         self.assertIn('data-is-ai-basis-label', html)
         self.assertIn('data-is-ai-basis-guidance', html)
         self.assertIn('data-is-follow-up-note', html)
@@ -729,9 +734,10 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn("announce('Follow-up is unavailable for this answer.')", source)
 
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('"basis"', css)
         self.assertIn('"form form"\n        "main side"', css)
-        self.assertIn('"form"\n            "main"\n            "side"', css)
+        self.assertIn('top: -3.9rem;', css)
+        self.assertIn('.is__compare [data-is-original-answer],', css)
+        self.assertIn('font-size: 0.848rem;', css)
 
     def test_failed_follow_up_preserves_question_and_existing_answer_workspace(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
@@ -1309,6 +1315,7 @@ class InterviewV12ModeTests(unittest.TestCase):
 
     def test_mode_control_present(self):
         self.assertIn('data-is-ai-mode-group', self.html)
+        self.assertIn('<select data-is-ai-mode', self.html)
         for value in ('best_practice', 'member_history', 'compare'):
             self.assertIn(f'value="{value}"', self.html)
 

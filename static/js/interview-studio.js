@@ -343,6 +343,7 @@
     var formatSelect = one('[data-is-format]');
     var formatLabel = formatControl ? formatControl.querySelector('span') : null;
     var formatOptions = formatSelect ? formatSelect.innerHTML : '';
+    var aiModeControl = one('[data-is-ai-mode-group]');
 
     var answer = one('[data-is-answer]');
     var answerForm = one('[data-is-answer-form]');
@@ -386,10 +387,10 @@
 
     function syncModeControls(mode) {
         if (!formatControl || !formatSelect || !formatLabel) return;
+        setHidden(aiModeControl, mode !== 'ai');
         if (mode === 'ai') {
-            // Interview AI already has explicit, source-labelled choices in its
-            // right rail. A second Answer basis select was redundant and its
-            // single option was misleading for visitors without profile history.
+            // The source choice belongs with the other session controls. AI has
+            // no length setting, so keep that unrelated control out of this mode.
             setHidden(formatControl, true);
         } else {
             setHidden(formatControl, false);
@@ -2077,8 +2078,9 @@
     var aiAnswerContent = one('[data-is-ai-answer-content]');
     var aiLoading = one('[data-is-ai-loading]');
     var aiError = one('[data-is-ai-error]');
-    var modeGroup = one('[data-is-ai-mode-group]');
-    if (modeGroup) {
+    var modeGroup = aiModeControl;
+    var modeSelect = one('[data-is-ai-mode]', modeGroup);
+    if (modeSelect) {
         var modeNote = one('[data-is-ai-mode-note]');
         var basisLabel = one('[data-is-ai-basis-label]');
         var basisGuidance = one('[data-is-ai-basis-guidance]');
@@ -2099,12 +2101,8 @@
             compare: 'Each answer remains separately labeled and must be verified.'
         };
         modeGroup.addEventListener('change', function (event) {
-            if (event.target.name !== 'is-ai-mode') return;
+            if (event.target !== modeSelect) return;
             stopDictation('interrupted');
-            modeGroup.querySelectorAll('.is__mode-option').forEach(function (label) {
-                label.classList.toggle('is__mode-option--selected',
-                    label.querySelector('input').checked);
-            });
             if (modeNote) modeNote.textContent = modeNotes[event.target.value] || '';
             if (basisLabel) basisLabel.textContent = modeLabels[event.target.value] || '';
             if (basisGuidance) basisGuidance.textContent = modeGuidance[event.target.value] || '';
@@ -2159,8 +2157,7 @@
     }
 
     function selectedAiMode() {
-        var checked = document.querySelector('[data-is-ai-mode-group] input[name="is-ai-mode"]:checked');
-        return checked ? checked.value : 'member_history';
+        return modeSelect ? modeSelect.value : 'member_history';
     }
 
     function renderModelAnswer(payload) {
@@ -2991,12 +2988,16 @@
 
     /* Settings */
     var settingsDialog = one('[data-is-settings]');
-    one('[data-is-settings-open]').addEventListener('click', function () {
-        if (typeof settingsDialog.showModal === 'function') settingsDialog.showModal();
-        else settingsDialog.setAttribute('open', '');
-    });
-    one('[data-is-settings-close]').addEventListener('click', function () { settingsDialog.close(); });
-    settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
+    var settingsOpen = one('[data-is-settings-open]');
+    var settingsClose = one('[data-is-settings-close]');
+    if (settingsOpen && settingsDialog) {
+        settingsOpen.addEventListener('click', function () {
+            if (typeof settingsDialog.showModal === 'function') settingsDialog.showModal();
+            else settingsDialog.setAttribute('open', '');
+        });
+    }
+    if (settingsClose && settingsDialog) settingsClose.addEventListener('click', function () { settingsDialog.close(); });
+    if (settingsDialog) settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
     function clearLocalData() {
         if (!window.confirm('Clear Interview Studio drafts, sessions, and goals stored in this browser, and discard any active local recording?')) return;
         stopDictation('interrupted');
@@ -3023,7 +3024,7 @@
         resetAiAnswerForContextChange();
         renderQuestion();
         renderHistory();
-        settingsDialog.close();
+        if (settingsDialog) settingsDialog.close();
         announce('Interview Studio browser data cleared.');
     }
     all('[data-is-clear-local], [data-is-history-clear-local]').forEach(function (button) {

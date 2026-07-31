@@ -137,6 +137,15 @@
                         <option value="mixed">Mixed</option>
                     </select>
                 </label>
+                <label class="is__select" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
+                    <span>Answer source</span>
+                    <select data-is-ai-mode aria-describedby="is-ai-mode-note">
+                        <option value="best_practice">Best-practice example</option>
+                        <option value="member_history" selected>Use {{ interview_profile.first_name }}&rsquo;s public history</option>
+                        <option value="compare">Compare</option>
+                    </select>
+                    <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
+                </label>
                 <label class="is__select" data-is-format-control>
                     <span>Session</span>
                     <select data-is-format>
@@ -145,10 +154,6 @@
                         <option value="10">10-question mock</option>
                     </select>
                 </label>
-                <button class="is__control-button" type="button" data-is-settings-open>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
-                    Settings
-                </button>
             </div>
         </details>
 
@@ -581,15 +586,6 @@
                                 </div>
                             </div>
                         </div>
-                        <fieldset class="is__ai-grounding" data-is-ai-mode-group>
-                            <legend class="is__section-label">Answer source</legend>
-                            <div class="is__mode-options" role="radiogroup" aria-label="Answer source">
-                                <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="best_practice"><span>Best-practice example</span></label>
-                                <label class="is__mode-option is__mode-option--selected"><input type="radio" name="is-ai-mode" value="member_history" checked><span>Use {{ interview_profile.first_name }}&rsquo;s public history</span></label>
-                                <label class="is__mode-option"><input type="radio" name="is-ai-mode" value="compare"><span>Compare</span></label>
-                            </div>
-                            <p class="is__mode-note" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</p>
-                        </fieldset>
                         <button class="is__button is__button--primary is__ai-get-answer" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
                             Get example
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
