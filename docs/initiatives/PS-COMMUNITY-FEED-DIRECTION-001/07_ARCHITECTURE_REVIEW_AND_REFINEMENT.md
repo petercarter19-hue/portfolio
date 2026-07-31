@@ -12,8 +12,9 @@
   **blocked**
 - **Owner acceptance:** Pass, Pete, 2026-07-31, against
   `aa69c5ec87ddddf6a408726f8944e3daff9d4fef`
-- **Reason:** the technical shape is now explicit; the narrow constitutional
-  boundary, complete visual states, exact audience/mode decisions, and a
+- **Reason:** the technical shape is now explicit;
+  `PS-COMMUNITY-FEED-AUTHORITY-001` resolves the narrow constitutional/Journal
+  boundary, while complete visual states, exact audience/mode decisions, and a
   runtime package remain unresolved
 
 This review originally ran against the detailed v2.9/v2.8 control model. The
@@ -165,8 +166,8 @@ gates pass. It is not permission to build now.
 
 The next lawful sequence under the lean v3 control plane is:
 
-1. resolve the narrow Constitution rule 7 boundary in a separately reserved
-   Protected documentation change, without reviving obsolete shared-document
+1. merge `PS-COMMUNITY-FEED-AUTHORITY-001` to activate the narrow Constitution
+   rule 7 and Journal reuse boundary without reviving obsolete shared-document
    edits;
 2. complete and Pete-lock the missing V1 visual state set;
 3. confirm that no then-current scoped hold applies to Community;

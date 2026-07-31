@@ -182,15 +182,14 @@ feature direction:
 5. **Route/shell:** preserve the actual Community route and navigation labels
    without copying illustrative mockup chrome.
 
-Constitution v3.0 rule 7 currently says Community connects selected output. A
-separate Protected documentation change should decide whether to clarify that
-durable boundary so a member may also deliberately publish Community-native
-social speech whose source of truth remains the Community conversation. It may
-not weaken private-before-public, create a second Slate fact store, or turn
-Community speech into canonical Journal/Slate truth. Roadmap v3.0, the lean
-site rules, and the current control plane need no change for the other four
-subjects. Archived `CURRENT_STATE.md` and `ACTIVE_INITIATIVES.md` must not be
-updated.
+`PS-COMMUNITY-FEED-AUTHORITY-001` activates the narrow Constitution rule 7 and
+Journal reuse clarification so a member may deliberately publish
+Community-native social speech whose source of truth remains the Community
+conversation. It preserves private-before-public, prevents a second Slate fact
+store, and does not turn Community speech into canonical Journal/Slate truth.
+Roadmap v3.0, the lean site rules, and the current control plane need no change
+for the other four subjects. Archived `CURRENT_STATE.md` and
+`ACTIVE_INITIATIVES.md` must not be updated.
 
 ## 4. Dedicated runtime package required afterward
 
@@ -225,7 +224,7 @@ branch. It must name:
 | Owner supersession record | Passed in this package | `03_OWNER_VISUAL_LOCK_AND_SUPERSESSION.md` |
 | Logical implementation architecture | Reviewed and refined; runtime conditional | `04_IMPLEMENTATION_ARCHITECTURE.md` and `07_ARCHITECTURE_REVIEW_AND_REFINEMENT.md` |
 | Shared-authority reconciliation decision | Passed 2026-07-31 in this package | Pete approved SAR-01 through SAR-06 in document 06 |
-| Lean-v3 authority reconciliation | Direction package reconciled; constitutional clarification separate | Document 06 section 10; no Roadmap, site-rule, Context Rail, or archived-state edit required |
+| Lean-v3 authority activation | Passed through `PS-COMMUNITY-FEED-AUTHORITY-001` | Constitution rule 7 and Journal reuse wording aligned; no Roadmap, site-rule, Context Rail, or archived-state edit required |
 | Complete V1 visual state set | Blocked / not created | State boards in section 2 |
 | Runtime initiative and writer | Not started | New package required |
 | Runtime implementation | Not authorized | Depends on all prior gates |
@@ -235,12 +234,9 @@ branch. It must name:
 
 ## 6. Immediate next action
 
-Squash-merge this reconciled direction package. Then use a separately reserved
-Protected documentation change to resolve the narrow Constitution rule 7
-clarification identified above; do not revive the obsolete five-document
-activation plan. After that change lands, the authorized ChatGPT visual lane
-may create the missing state families above without redesigning the six locked
-screens, and Pete must lock the exact outputs. A separately reserved runtime
-initiative may begin only after its direct visual, identity, audience,
+After `PS-COMMUNITY-FEED-AUTHORITY-001` lands, the authorized ChatGPT visual
+lane may create the missing state families above without redesigning the six
+locked screens, and Pete must lock the exact outputs. A separately reserved
+runtime initiative may begin only after its direct visual, identity, audience,
 moderation, media, and ownership gates pass. No application, SQL, migration,
 test, flag, or deployment file should be touched in this direction package.

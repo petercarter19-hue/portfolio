@@ -42,8 +42,11 @@ downstream.
    resolved before private SQL, search, media, cache, or AI context is returned.
 7. **Focused rooms, one connected Slate.** Journal preserves canonical history;
    Studio activates private work; the public Slate presents approved output;
-   Community connects selected output. A room has one clear purpose and one
-   safe next action, not a new navigation forest.
+   Community connects deliberately published Community-native social speech
+   and selected Slate output. Community-native speech remains authoritative
+   only for its own social conversation and does not become canonical Journal
+   or Slate fact automatically. A room has one clear purpose and one safe next
+   action, not a new navigation forest.
 8. **Truthful, accessible craft.** Live, demo, fixture, queued, unavailable,
    and failed states are not confused. Essential paths support text, keyboard,
    assistive technology, zoom, reduced motion, mobile, and recovery.

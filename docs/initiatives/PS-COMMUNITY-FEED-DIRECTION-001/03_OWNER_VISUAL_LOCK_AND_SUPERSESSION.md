@@ -66,11 +66,12 @@ The visual lock does not clear implementation because:
 
 1. the Community-local rails must preserve their locked, package-local purpose
    and must not be misrepresented as global navigation or popularity furniture;
-2. a first-class Community Post needs the narrow Constitution rule 7
-   reconciliation identified by this package;
-3. the current visual set does not cover every V1 state; and
-4. no dedicated runtime initiative, manager, writer reservation, schema/API
+2. the current visual set does not cover every V1 state; and
+3. no dedicated runtime initiative, manager, writer reservation, schema/API
    contract, or release authority exists.
+
+The first-class Community Post truth boundary was subsequently activated by
+`PS-COMMUNITY-FEED-AUTHORITY-001`.
 
 Those gates are enumerated in
 `05_VISUAL_STATE_GAP_AND_IMPLEMENTATION_GATE.md`.

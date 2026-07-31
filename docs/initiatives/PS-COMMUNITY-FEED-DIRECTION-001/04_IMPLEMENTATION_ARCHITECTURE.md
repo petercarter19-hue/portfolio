@@ -25,9 +25,9 @@ approved physical schema, or an approved public API.
   `/the-slate/break` as the separate second view.
 - **Authority truth:** Pete approved SAR-01 through SAR-06 inside this package.
   Constitution v3.0, Roadmap v3.0, the lean site rules, and
-  `CURRENT_BASELINE.yaml` now control. Only a narrow clarification of
-  Constitution rule 7 remains a possible shared-authority change; the prior
-  multi-document activation map is superseded.
+  `CURRENT_BASELINE.yaml` now control. `PS-COMMUNITY-FEED-AUTHORITY-001`
+  activates the narrow Constitution rule 7 and Journal reuse clarification;
+  the prior multi-document activation map is superseded.
 - **Implementation gate:** closed until section 18 and
   `05_VISUAL_STATE_GAP_AND_IMPLEMENTATION_GATE.md` are satisfied.
 
@@ -1306,10 +1306,10 @@ those release gates as passed merely because code or architecture exists.
 
 ## 17. Implementation sequence after every gate passes
 
-1. **Resolve the narrow constitutional boundary**
-   - use a separately reserved Protected documentation initiative to decide
-     whether Constitution rule 7 must explicitly recognize deliberate
-     Community-native social speech beside selected-output projections;
+1. **Preserve the activated constitutional boundary**
+   - follow `PS-COMMUNITY-FEED-AUTHORITY-001`: Community-native social speech
+     is Community conversation truth and selected-output reuse remains an
+     exact governed Slate projection;
    - preserve private-before-public, one canonical fact body, and current
      live/sample truth; and
    - do not edit the current Roadmap, lean site rules, Context Rail standard,
@@ -1361,8 +1361,7 @@ those release gates as passed merely because code or architecture exists.
 
 Runtime work may begin only when all are true:
 
-- the Constitution rule 7 decision is resolved on authoritative `origin/main`
-  if the Protected documentation review confirms a clarification is required;
+- `PS-COMMUNITY-FEED-AUTHORITY-001` is merged on authoritative `origin/main`;
 - ChatGPT creates and Pete locks the complete missing V1 state set;
 - Search, Feed modes/default, mobile Pulse/Questions, theme, signed-out shell,
   and pre-messaging treatment have exact owner/visual disposition;
@@ -1403,7 +1402,7 @@ Implementation is not complete until:
 
 | ID | Decision or blocker | Required resolution before runtime |
 | --- | --- | --- |
-| AR-01 | Constitution v3.0 rule 7 says Community connects selected output, while this package also permits deliberate Community-native social truth. | Resolve the narrow durable-boundary wording in a separate Protected documentation change without weakening private-before-public or duplicating Slate truth. |
+| AR-01 | Resolved by `PS-COMMUNITY-FEED-AUTHORITY-001`: Constitution rule 7 and the Journal reuse contract distinguish Community-native social truth from Slate-derived projection reuse. | Preserve the activated contract; do not create competing canonical Slate truth or weaken private-before-public. |
 | AR-02 | The current `PS-AI-OPS-CHECKPOINT-001` findings do not apply to Community and create no global hold. | Recheck scoped holds at runtime-package start; act only if a then-current finding actually overlaps the slice. |
 | AR-03 | Missing V1 state boards are not created or Pete-locked. | ChatGPT visual-completion round plus exact Pete lock. |
 | AR-04 | Community scope and audience vocabulary are undefined. | Adopt one exact server-derived membership/audience contract and revocation rules. |

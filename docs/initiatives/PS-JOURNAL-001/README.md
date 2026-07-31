@@ -26,9 +26,12 @@ Journal, and return-value services are not live.
 > use the same Moment anywhere now or later by governed reference.
 
 The Journal is everything in the sense that it is the complete member-owned
-record and longitudinal home. It is not everything in the sense of replacing
-every focused room. Story, Work, résumé, Studio, Board, Projects, Feed, and
-messaging remain purpose-specific uses of the same governed Moments.
+canonical record and longitudinal home. It is not everything in the sense of
+replacing every focused room. Story, Work, résumé, Studio, Board, Projects,
+Feed projections, and messaging remain purpose-specific uses of the same
+governed Moments. Separately authorized Community-native social speech is
+Community conversation truth, not a reuse or replacement of canonical member
+history.
 
 ## Locked architecture
 
@@ -52,8 +55,12 @@ messaging remain purpose-specific uses of the same governed Moments.
   searchable, editable, and lifecycle-oriented. My Story is finite, authored,
   visually composed, and purpose/audience-oriented.
 - **Reuse follows save.** The origin room may suggest a relevant next use, but
-  destination choice is optional. Feed, résumé, Story, Work, Projects, Board,
-  Studio, and messaging never bypass canonical Moment creation.
+  destination choice is optional. A Feed projection, résumé, Story, Work,
+  Project, Board, Studio use, or message that reuses member fact must reference
+  a saved canonical Moment rather than bypass its creation. A separately
+  authorized Community-native Post is original social speech, not downstream
+  reuse; it remains Community truth and does not create or alter a Moment,
+  Journal entry, or another canonical Slate fact automatically.
 - **Navigation remains open.** Capture-as-action and Journal-as-core are locked;
   exact routes, tabs, and desktop/mobile composition require the route-map gate.
 

@@ -6,8 +6,9 @@
 - **Status:** Owner-approved Community direction, page-purpose inventory, and
   Pete-locked six-screen primary-journey visual authority; logical
   implementation architecture and shared-authority reconciliation proposal
-  approved; direction-package merge authorized; narrow constitutional
-  activation, visual completion, and runtime remain separate gates
+  approved and merged; Community-native truth activated through
+  `PS-COMMUNITY-FEED-AUTHORITY-001`; visual completion and runtime remain
+  separate gates
 - **Owner:** Pete
 - **Designated session manager:** current ChatGPT Work/Codex task
 - **Direction-package writer:** current Codex task
@@ -128,8 +129,8 @@ separate owner-approved package.
 8. `06_SHARED_AUTHORITY_RECONCILIATION_PROPOSAL.md`
    - preserves the historical v2 conflict analysis and reconciles it to the
      lean v3 control plane;
-   - identifies one possible durable Constitution clarification as the only
-     remaining shared-authority question, with no Roadmap, site-rule, Context
+   - identifies the durable Constitution and Journal alignment activated by
+     `PS-COMMUNITY-FEED-AUTHORITY-001`, with no Roadmap, site-rule, Context
      Rail, or archived-state edit required;
    - presents six explicit owner decisions covering content origin, both
      desktop rails, The Break, routes, and the missing-state visual round; and
@@ -215,8 +216,8 @@ It may not write:
 **Primary-journey visual gate: Passed on 2026-07-31.**
 
 **Shared-authority reconciliation proposal: Approved by Pete on 2026-07-31;
-reconciled to the lean v3 control plane; one narrow constitutional
-clarification remains a separate Protected documentation change.**
+reconciled to the lean v3 control plane and activated through
+`PS-COMMUNITY-FEED-AUTHORITY-001`.**
 
 **Architecture review/refinement: Owner-accepted by Pete on 2026-07-31 against
 `aa69c5ec87ddddf6a408726f8944e3daff9d4fef`; runtime entry remains blocked.**
@@ -234,14 +235,11 @@ Feed media, and the finite ending. He removed distributed Break placements from
 this first locked Feed while preserving The Break as its own destination.
 
 Pete approved SAR-01 through SAR-06 in
-`06_SHARED_AUTHORITY_RECONCILIATION_PROPOSAL.md`. After this direction package
-lands, the next Protected documentation change is limited to deciding and, if
-confirmed, clarifying Constitution rule 7 so Community-native social truth and
-explicit Slate projections can coexist without competing canonical fact
-stores. The current Roadmap and site rules already carry the required
-sequencing and Community boundaries. ChatGPT must then create the missing V1
-state set within the approved boundary and Pete must lock it. A new runtime
-initiative may be created only after those gates pass and must name the exact
-manager, sole writer, files, data/trust contracts, tests, visual evidence, and
-release gates. This direction branch must not become the runtime
-implementation branch.
+`06_SHARED_AUTHORITY_RECONCILIATION_PROPOSAL.md`.
+`PS-COMMUNITY-FEED-AUTHORITY-001` activates the Community-native truth boundary
+in Constitution v3.0 and aligns the Journal reuse contract without changing the
+Roadmap or site rules. ChatGPT must next create the missing V1 state set within
+the approved boundary and Pete must lock it. A new runtime initiative may be
+created only after that gate passes and must name the exact manager, sole
+writer, files, data/trust contracts, tests, visual evidence, and release gates.
+This direction branch must not become the runtime implementation branch.

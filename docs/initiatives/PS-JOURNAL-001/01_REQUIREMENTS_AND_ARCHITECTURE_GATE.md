@@ -185,11 +185,15 @@ requirement or silently defer a safety boundary needed by that slice.
 - **PS-JRN-USE-002:** A downstream use shall reference an exact governed Moment
   version or create a separately governed purpose-specific projection that
   remains traceable to it.
-- **PS-JRN-USE-003:** Feed, Story, Work, résumé, Project, Board, Studio, public
-  Journal, and messaging shall not create independent canonical copies of the
-  same facts.
-- **PS-JRN-USE-004:** Direct Feed and direct résumé fact creation that bypasses
-  Save Moment is not part of the target architecture.
+- **PS-JRN-USE-003:** Feed projections, Story, Work, résumé, Project, Board,
+  Studio, public Journal, and messaging shall not create independent canonical
+  copies of the same facts. A Community-native Post is social conversation
+  truth, not a canonical copy of a Slate fact.
+- **PS-JRN-USE-004:** Direct Slate-derived Feed projection and direct résumé
+  fact creation that bypass Save Moment are not part of the target
+  architecture. A separately authorized Community-native Post may be created
+  directly under Community authority; it does not create a Moment, enter
+  Journal, or become canonical Slate fact automatically.
 - **PS-JRN-USE-005:** The origin room may rank suggestions using deterministic
   context and permitted intelligence, but the member chooses whether and where
   to continue.

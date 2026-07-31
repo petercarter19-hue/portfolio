@@ -51,6 +51,11 @@ governing_documents:
 theme: deep_navy_gold
 
 active_packages:
+  - id: PS-COMMUNITY-FEED-AUTHORITY-001
+    owner: "Pete; current Codex task is the documentation writer"
+    lane: community_native_truth_activation
+    package_path: "docs/initiatives/PS-COMMUNITY-FEED-AUTHORITY-001/README.md"
+    status: "authority_activated_visual_completion_next"
   - id: PS-CAPTURE-MEDIA-001
     owner: "Enablement writer unassigned"
     lane: capture_media_photo_enablement

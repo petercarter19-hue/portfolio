@@ -73,9 +73,11 @@ make an owner route look complete.
 
 ## Slice J4 — Downstream projections
 
-Story, Work, résumé, Projects, Board, Studio, Feed, and messaging consume the
-governed Moment/Journal architecture through their own active packages. My
-Story Composer and public Journal remain different release gates.
+Story, Work, résumé, Projects, Board, Studio, Feed projections, and messaging
+consume the governed Moment/Journal architecture through their own active
+packages. Separately authorized Community-native social speech remains under
+Community authority and does not consume or create a Moment merely by being
+posted. My Story Composer and public Journal remain different release gates.
 
 ## Slice J5 — Return value
 
@@ -110,7 +112,9 @@ accessibility, and visual release gate.
 - no fact-bearing Journal body is written;
 - removing a projection keeps the Moment in Journal;
 - exact-version downstream references remain traceable;
-- direct Feed/résumé bypass paths are absent or explicitly transitional.
+- direct Slate-derived Feed/résumé bypass paths are absent or explicitly
+  transitional; Community-native posts are verified not to create or mutate
+  Moment/Journal truth automatically.
 
 ### Authorization and privacy
 

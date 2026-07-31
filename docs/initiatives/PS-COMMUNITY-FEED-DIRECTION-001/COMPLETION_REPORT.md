@@ -1,5 +1,11 @@
 # PeerSlate owner technical completion and handoff report
 
+> **Successor authority:** `PS-COMMUNITY-FEED-AUTHORITY-001` subsequently
+> activates the Constitution rule 7 and Journal reuse boundary described here.
+> Statements below that identify that activation as the next action preserve
+> this direction package's dated closeout state; they are no longer a current
+> blocker after the successor package merges.
+
 ## A. Status
 
 - **Package:** `PS-COMMUNITY-FEED-DIRECTION-001`

@@ -8,7 +8,7 @@
   writer
 - **Date:** 2026-07-31
 - **Status:** Approved by Pete on 2026-07-31; reconciled to the later lean v3
-  control plane; one narrow constitutional question remains separate
+  control plane and activated through `PS-COMMUNITY-FEED-AUTHORITY-001`
 - **Authority effect today:** owner decision recorded in this package only
 - **Runtime effect today:** none
 - **Writable scope used:** this initiative package only
@@ -517,7 +517,8 @@ The smallest current authority surface is therefore substantially narrower:
 
 | Current record | Current disposition | What must not change |
 | --- | --- | --- |
-| Constitution v3.0 | Separately decide whether rule 7 must clarify that Community connects deliberately published Community-native social speech as well as selected Slate output. If amended, state that native social content remains Community truth and does not become canonical Journal/Slate fact. | Member benefit, private-before-public, create-once/use-by-reference, member authority, deterministic trust, authorization-before-retrieval, focused rooms, accessibility, and all locked boundaries. |
+| Constitution v3.0 | Activated through `PS-COMMUNITY-FEED-AUTHORITY-001`: rule 7 recognizes deliberately published Community-native social speech as well as selected Slate output and keeps native social content outside canonical Journal/Slate fact. | Member benefit, private-before-public, create-once/use-by-reference, member authority, deterministic trust, authorization-before-retrieval, focused rooms, accessibility, and all locked boundaries. |
+| `PS-JOURNAL-001` | Aligns only the reuse contract: Slate-derived Feed projections still follow Save Moment; separately authorized Community-native Posts are original social speech and do not create or mutate Moment/Journal truth automatically. | One Moment, derived Journal membership, exact-version projection reuse, explicit publication, and no-copy rules. |
 | Roadmap v3.0 | No change. It already puts broad community after relevant private, authorization, and member-value evidence while permitting an independent package when its direct controls are ready. | Current sequence and no-global-phase-gate rule. |
 | Lean site rules | No change. They already define Community purpose, forbid job-market/popularity/poll behavior, separate canonical truth from projections, and require truthful accessible delivery. | All shared trust, product, navigation, brand, and delivery invariants. |
 | Context Rail standard | No change. The package-local left return rail is not declared to adopt or revise the shared Context Rail. | Shared rail laws and every other surface disposition. |
@@ -527,12 +528,10 @@ The smallest current authority surface is therefore substantially narrower:
 | This direction package | Record Pete's decision, v3 reconciliation, and visual-completion handoff. | Historical FD record, six locked images/hashes, Home/profile boundary, and runtime prohibition. |
 | Future runtime initiative | Created only after the constitutional decision and complete visual lock; names one manager/writer and exact technical/evidence scope. | This direction branch does not become the runtime branch. |
 
-Because Constitution rule 7 currently says Community connects selected output,
-the Community-native origin requires a focused Protected review of that durable
-boundary. The likely smallest amendment is one sentence in the Constitution;
-the separate change must confirm the exact wording and validation. No Roadmap,
-site-rule, Context Rail, route/navigation, or archived-state amendment is
-currently necessary.
+`PS-COMMUNITY-FEED-AUTHORITY-001` performs the focused Protected activation in
+the Constitution and the directly conflicting Journal reuse wording. No
+Roadmap, site-rule, Context Rail, route/navigation, or archived-state amendment
+is necessary.
 
 ## 11. Pete decision card
 
@@ -553,8 +552,8 @@ approval.
 
 Because Pete approved this proposal and the package is now reconciled to v3:
 
-1. a separately reserved Protected documentation change resolves only the
-   Constitution rule 7 question in section 10;
+1. `PS-COMMUNITY-FEED-AUTHORITY-001` activates the Constitution rule 7 and
+   Journal reuse alignment in section 10;
 2. no Roadmap, site-rule, Context Rail, or archived-state update is made without
    a new current conflict;
 3. ChatGPT completes the missing V1 state boards within SAR-06 and Pete locks
@@ -608,10 +607,9 @@ This proposal and its approval do not authorize:
 ## 14. Approval effect and next gate
 
 Pete approved SAR-01 through SAR-06 on 2026-07-31. The decision is final within
-this package. The only remaining shared-authority question under v3 is the
-narrow Constitution rule 7 clarification described in section 10.
+this package, and `PS-COMMUNITY-FEED-AUTHORITY-001` activates the exact
+lean-v3 authority boundary described in section 10.
 
-The next Protected action is that focused constitutional change. The
-missing-state visual round may then proceed under SAR-06, but runtime remains
-blocked until both the constitutional boundary and Pete-locked complete V1
-visual set exist.
+After that docs-only activation lands, the missing-state visual round may
+proceed under SAR-06. Runtime remains blocked until the Pete-locked complete V1
+visual set and its other direct Protected contracts exist.
