@@ -3408,7 +3408,9 @@ body[data-theme="dark"] .is__select select option {
            session setup, not the grid's second-row side cell. */
         grid-area: auto;
         position: absolute;
-        top: -3.9rem;
+        /* Align the top of Source boundaries with the session disclosure
+           above the panel at the wide-desktop layout. */
+        top: -8rem;
         right: 0;
         width: 18.25rem;
         margin-top: 0;
