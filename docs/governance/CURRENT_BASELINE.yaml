@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb"
-  deployed_pipeline: 279
-  application_behavior_commit: "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb"
-  application_behavior_pipeline: 279
-  note: "This is the last recorded verified production build, not a substitute for current Git, pipeline, or live checks. Azure origin/main is authoritative; GitHub is a backup mirror only."
+  deployed_main_commit: "61b65325b789903fad5615244ae3fd8fcae77a3e"
+  deployed_pipeline: 321
+  application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"
+  application_behavior_pipeline: 315
+  note: "Pipeline 321 passed Build, Deploy, and production smoke for main 61b65325b789903fad5615244ae3fd8fcae77a3e; /healthz reported release 274ded8e60050cb2fbe57bfc and the homepage plus Interview Studio returned 200. Application behavior last changed at 4eb55585dcc017859542e0dd76267bed0f038193; later commits changed governance/tests only. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"

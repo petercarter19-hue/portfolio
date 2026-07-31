@@ -18,8 +18,19 @@
   Roadmap v3; control plane/document control; visual/OPS/audit/checkpoint
   applicability; historical state labels; compact handoff/completion templates;
   and focused governance tests. No application runtime file changed.
-- **Release state:** local task branch only at this record; not yet Azure PR,
-  merged, pipelined, deployed, or live.
+- **Release state:** Azure PR 216 squash-merged the migration at
+  `0f23123c750d10fa0ebee91aff16690666681d02`. Pipeline 317 found one missed
+  legacy operational-readiness guardrail before deployment. The focused
+  correction passed branch validation 318 and PR 217 squash-merged it at
+  `61b65325b789903fad5615244ae3fd8fcae77a3e`.
+- **Production evidence:** automatic pipeline 319 built and deployed but its
+  smoke overlapped an inadvertently queued manual duplicate. Canceling that
+  duplicate after its Kudu operation had begun interrupted the active ZIP
+  deployment and temporarily exposed Azure's default page. The duplicate run
+  320 was canceled; sole recovery run 321 then passed Build, Deploy, and
+  production smoke for exact main `61b65325...`. Live `/healthz` returned
+  release `274ded8e60050cb2fbe57bfc`; `/`, `/healthz`, and
+  `/interview-studio` independently returned HTTP 200.
 
 ## Verification
 
@@ -27,10 +38,11 @@
 - Lean governance plus unaffected site guardrails: 32 tests pass.
 - Control Room governance projection: parses schema v5, resolves Constitution
   and Roadmap v3, lists active packages, and reports zero global holds.
-- Full `tests.test_site_rules` and Control Room route suites could not import
-  the Flask app in this local interpreter because installed dependency
-  `flask_limiter` is absent. The dependency remains pinned in
-  `requirements.txt`; no runtime code or dependency changed in this package.
+- The local interpreter lacked `flask_limiter`, which remains pinned and
+  unchanged. Azure branch run 318 and recovery run 321 installed the full
+  requirements and passed all 1,078 application/security tests (18 environment
+  skips), dependency compatibility/advisory scan, full-history secret scan,
+  compilation, Control Room snapshot generation, and packaging.
 
 ## Measured reduction
 
@@ -47,6 +59,9 @@ the historical authority corpus.
 - Identity, privacy, authorization, canonical-data, migration/deletion,
   consequential-AI, material visual, broad-launch, and release-truth controls
   remain intact and triggered by risk.
-- **Next action:** push this exact branch, open the Azure DevOps PR, run the
-  required pipeline, and merge through the normal squash path. No production
-  behavior or live claim changes until that release completes.
+- The workflow now explicitly prevents documentation-only closeout from
+  restarting App Service: validate the branch, merge with `[skip ci]`, state
+  that the deployed copy is unchanged, and let it ship with the next normal
+  runtime release unless immediate runtime-consumed documentation is required.
+- **Next action:** none for this migration after this closeout reaches
+  `origin/main`; the three scoped product defects keep their own owners.

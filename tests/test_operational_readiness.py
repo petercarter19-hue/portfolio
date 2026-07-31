@@ -745,10 +745,14 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         self.assertIn('PeerSlate_Roadmap_v3.0.md', baseline)
         self.assertNotIn('\nholds:', baseline)
         self.assertIn(
-            'deployed_main_commit: "b8e9e26ba0e8cb2bc93fa936c4ddd7985e9f72fb"',
+            'deployed_main_commit: "61b65325b789903fad5615244ae3fd8fcae77a3e"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 279', baseline)
+        self.assertIn('deployed_pipeline: 321', baseline)
+        self.assertIn(
+            'application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"',
+            baseline,
+        )
         self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)
         self.assertIn('PS-GOV-LEAN-001', baseline)
         self.assertIn('Historical narrative snapshot', state)

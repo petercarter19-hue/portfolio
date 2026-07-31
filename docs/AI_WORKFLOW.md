@@ -89,6 +89,18 @@ triggered it. Update `CURRENT_BASELINE.yaml` only for current authority,
 ownership, scoped hold, or verified release fact; do not duplicate it in every
 historical status document.
 
+### Documentation-only closeout
+
+When a change affects only governance/evidence/tests and does not need to alter
+the deployed artifact immediately, validate the exact branch, merge it through
+an Azure PR with `[skip ci]`, and let the files enter production with the next
+normal runtime release. Record that source authority is merged but the deployed
+copy is unchanged. Do not restart App Service merely to publish bookkeeping.
+
+Run the normal pipeline when documentation is itself runtime-consumed and must
+become live immediately, or when the change also affects application code,
+configuration, dependencies, packaging, or deployment behavior.
+
 ## Stop conditions
 
 Stop and seek a decision only for an unclear owner, active file collision,

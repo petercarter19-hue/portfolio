@@ -51,6 +51,9 @@ class LeanStartupTests(unittest.TestCase):
             self.assertIn(term, body)
         self.assertIn("unless its delivery path or package specifically triggers it", body)
         self.assertIn("None blocks unrelated Routine or Bounded work", body)
+        self.assertIn("Documentation-only closeout", body)
+        self.assertIn("[skip ci]", body)
+        self.assertIn("Do not restart App Service merely to publish bookkeeping", body)
         self.assertLess(len(body.split()), 1100)
 
 
