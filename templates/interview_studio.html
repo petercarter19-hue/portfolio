@@ -40,12 +40,30 @@
             </div>
         </noscript>
 
+        <header class="is__route-header" data-is-studio-local-header>
+            <nav class="is__route-links" aria-label="{{ interview_profile.name }} public page navigation">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ portfolio_story_url }}">My Story</a>
+                <a href="{{ portfolio_resume_url }}">Living R&eacute;sum&eacute;</a>
+                <a href="{{ url_for('interview_studio') }}" aria-current="page">Interview Studio</a>
+                <a href="{{ portfolio_resume_url }}#impact">Career Impact</a>
+            </nav>
+            <a class="is__route-profile" href="{{ portfolio_resume_url }}" aria-label="View {{ interview_profile.name }} public page">
+                <img src="{{ url_for('static', filename=interview_profile.image_path) }}" alt="">
+                <span>
+                    <strong>{{ interview_profile.name }}</strong>
+                    <small>View public page <span aria-hidden="true">&#8599;</span></small>
+                </span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+            </a>
+        </header>
+
         <header class="is__bar">
             <div class="is__brand">
                 <div>
                     <p class="is__brand-eyebrow">Public practice · browser-local</p>
                     <h1>Interview Studio</h1>
-                    <p class="is__brand-subtitle">Real practice. Real coaching. Real growth.</p>
+                    <p class="is__brand-subtitle">Practice with clarity. Speak with confidence.</p>
                 </div>
             </div>
 
@@ -137,15 +155,6 @@
                         <option value="mixed">Mixed</option>
                     </select>
                 </label>
-                <label class="is__select" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
-                    <span>Answer source</span>
-                    <select data-is-ai-mode aria-describedby="is-ai-mode-note">
-                        <option value="best_practice">Best-practice example</option>
-                        <option value="member_history" selected>Use {{ interview_profile.first_name }}&rsquo;s public history</option>
-                        <option value="compare">Compare</option>
-                    </select>
-                    <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
-                </label>
                 <label class="is__select" data-is-format-control>
                     <span>Session</span>
                     <select data-is-format>
@@ -215,6 +224,30 @@
             >
                 <article data-is-practice-stage>
                     <div class="is__content-grid is__content-grid--practice">
+                        <aside class="is__practice-tools" aria-label="Interview Me practice tools">
+                            <p class="is__eyebrow">Practice tools</p>
+                            <button class="is__practice-tool" type="button" data-is-different-question>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                <span>Different question</span>
+                            </button>
+                            <button class="is__practice-tool" type="button" data-is-create-question>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                <span>Create question</span>
+                            </button>
+                            <button class="is__practice-tool" type="button" data-is-nudge-open aria-expanded="false">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
+                                <span><strong>Get a nudge</strong><small>Get 2–3 AI-generated hints</small></span>
+                            </button>
+                            <div class="is__nudge-panel" data-is-nudge-panel hidden>
+                                <p data-is-nudge-status>Hints will stay focused on this question.</p>
+                                <ol data-is-nudge-list></ol>
+                                <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
+                            </div>
+                            <a class="is__practice-tool" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M3 12s3-5 9-5 9 5 9 5-3 5-9 5-9-5-9-5Z"/><circle cx="12" cy="12" r="2"/></svg>
+                                <span><strong>See an example</strong><small>Open Interview AI with this question</small></span>
+                            </a>
+                        </aside>
                         <div class="is__main-column is__task-stage">
                     <div class="is__stage--compact-head">
                         <div>
@@ -246,16 +279,6 @@
                                 <li class="is__chip is__chip--framework" data-is-framework-chip>STAR recommended</li>
                                 <li class="is__chip is__chip--time" data-is-time-chip>Approximately 2 minutes</li>
                             </ul>
-                            <div class="is__question-actions" aria-label="Change the current question">
-                                <button class="is__question-action" type="button" data-is-different-question>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                                    Different question
-                                </button>
-                                <button class="is__question-action" type="button" data-is-create-question>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                                    Create question
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -270,8 +293,8 @@
                     </p>
 
                             <form data-is-answering data-is-answer-form>
-                                <div class="is__composer">
-                                    <label for="is-answer">Your answer</label>
+                                 <div class="is__composer">
+                                     <label for="is-answer">Your answer</label>
                                     <div class="is__composer-input">
                                         <textarea
                                             id="is-answer"
@@ -288,10 +311,12 @@
                                     <div class="is__composer-meta">
                                         <span data-is-autosave>Draft ready</span>
                                         <span><span data-is-word-count>0</span> words</span>
-                                    </div>
-                                </div>
+                                     </div>
+                                 </div>
 
-                                <p class="is__transmit-line">
+                                 <p class="is__type-or-talk"><strong>TYPE OR TALK</strong> &mdash; Both build the same answer.</p>
+
+                                 <p class="is__transmit-line">
                                     <span class="is__truth-icon" aria-hidden="true">⇧</span>
                                     <span>This question and your answer are sent to PeerSlate only when you click Review My Answer.</span>
                                 </p>
@@ -490,19 +515,6 @@
                                         <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                     </button>
-                                    <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
-                                        <span><strong>Need a nudge?</strong><small>Get 2–3 AI-generated hints</small></span>
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                                    </button>
-                                    <div class="is__nudge-panel" data-is-nudge-panel hidden>
-                                        <p data-is-nudge-status>Hints will stay focused on this question.</p>
-                                        <ol data-is-nudge-list></ol>
-                                        <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
-                                    </div>
-                                    <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
-                                        <span><strong>Need an example?</strong><small>Open Interview AI with this question</small></span>
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                                    </a>
                                     <details class="is__reference is__reference--rail" data-is-ai-reference hidden>
                                         <summary>Optional reference transferred from Interview AI</summary>
                                         <p data-is-ai-reference-text></p>
@@ -667,6 +679,20 @@
                     </div>
 
                     <aside class="is__side-column">
+                        <fieldset class="is__card is__ai-basis" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
+                            <legend>Answer basis</legend>
+                            <label><input type="radio" value="best_practice" name="is-ai-basis" data-is-ai-basis-option>Best-practice example</label>
+                            <label><input type="radio" value="member_history" name="is-ai-basis" data-is-ai-basis-option checked>Use {{ interview_profile.first_name }}&rsquo;s public history</label>
+                            <label><input type="radio" value="compare" name="is-ai-basis" data-is-ai-basis-option>Compare</label>
+                            <label class="is__sr-only">Answer source
+                                <select data-is-ai-mode aria-describedby="is-ai-mode-note">
+                                    <option value="best_practice">Best-practice example</option>
+                                    <option value="member_history" selected>Use {{ interview_profile.first_name }}&rsquo;s public history</option>
+                                    <option value="compare">Compare</option>
+                                </select>
+                            </label>
+                            <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
+                        </fieldset>
                         <section class="is__card is__card-pad">
                             <p class="is__eyebrow">Source boundaries</p>
                             <h3 class="is__title" style="font-size:1.2rem">Three views. No private history.</h3>

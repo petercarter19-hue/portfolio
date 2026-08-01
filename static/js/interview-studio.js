@@ -2100,14 +2100,25 @@
             member_history: 'Verify the generated wording before using it.',
             compare: 'Each answer remains separately labeled and must be verified.'
         };
-        modeGroup.addEventListener('change', function (event) {
-            if (event.target !== modeSelect) return;
-            stopDictation('interrupted');
-            if (modeNote) modeNote.textContent = modeNotes[event.target.value] || '';
-            if (basisLabel) basisLabel.textContent = modeLabels[event.target.value] || '';
-            if (basisGuidance) basisGuidance.textContent = modeGuidance[event.target.value] || '';
+        var modeOptions = all('[data-is-ai-basis-option]', modeGroup);
+        function updateAiBasis(value) {
+            if (modeNote) modeNote.textContent = modeNotes[value] || '';
+            if (basisLabel) basisLabel.textContent = modeLabels[value] || '';
+            if (basisGuidance) basisGuidance.textContent = modeGuidance[value] || '';
             resetAiAnswerForContextChange();
-            announce((modeLabels[event.target.value] || 'Answer basis') + ' selected. Generate a new answer for this basis.');
+            announce((modeLabels[value] || 'Answer basis') + ' selected. Generate a new answer for this basis.');
+        }
+        modeGroup.addEventListener('change', function (event) {
+            stopDictation('interrupted');
+            if (event.target === modeSelect) {
+                modeOptions.forEach(function (option) { option.checked = option.value === modeSelect.value; });
+                updateAiBasis(modeSelect.value);
+                return;
+            }
+            if (event.target.matches('[data-is-ai-basis-option]')) {
+                modeSelect.value = event.target.value;
+                updateAiBasis(event.target.value);
+            }
         });
     }
 

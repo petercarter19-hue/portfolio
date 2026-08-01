@@ -319,6 +319,42 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('<noscript>', html)
         self.assertIn('Interactive practice needs JavaScript.', html)
 
+    def test_facelift_uses_a_route_local_header_and_the_existing_me_hooks(self):
+        html = self.html('/interview-studio?mode=me')
+        local_header = html.split('data-is-studio-local-header', 1)[1].split(
+            '</header>', 1
+        )[0]
+        self.assertEqual(html.count('data-is-studio-local-header'), 1)
+        self.assertIn('aria-label="Pete Carter public page navigation"', local_header)
+        for destination in (
+            'href="/"',
+            'href="/petec/my-story"',
+            'href="/petec/resume"',
+            'href="/interview-studio"',
+            'href="/petec/resume#impact"',
+        ):
+            self.assertIn(destination, local_header)
+
+        me_panel = html.split('data-is-panel="me"', 1)[1].split(
+            'data-is-panel="ai"', 1
+        )[0]
+        practice_tools = me_panel.split('class="is__practice-tools"', 1)[1].split(
+            '</aside>', 1
+        )[0]
+        for hook in (
+            'data-is-different-question',
+            'data-is-create-question',
+            'data-is-nudge-open',
+            'data-is-nudge-retry',
+            'data-is-example-link',
+        ):
+            self.assertIn(hook, practice_tools)
+        self.assertIn('TYPE OR TALK', me_panel)
+        self.assertEqual(html.count('data-is-example-link'), 1)
+
+        base = Path('templates/base.html').read_text(encoding='utf-8')
+        self.assertNotIn('data-is-studio-local-header', base)
+
     def test_truth_strip_present_on_every_view(self):
         for path in ('/interview-studio', '/interview-studio?mode=video', '/interview-studio/history'):
             with self.subTest(path=path):
@@ -636,19 +672,19 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         # The full token redefinition (--is-canvas etc.) must appear exactly
         # once; a separate single-property @media (prefers-contrast: more)
         # override is legitimate and not a competing theme system.
-        self.assertEqual(css.count('--is-canvas: #071525;'), 1)
+        self.assertEqual(css.count('--is-canvas: #061a1f;'), 1)
         self.assertEqual(css.count('body[data-theme="dark"] .is {'), 2)
         self.assertNotIn('background-templates', css)
         self.assertNotIn('nth-child(n+5)', css)
 
-    def test_v3_light_palette_uses_cool_cobalt_and_teal_tokens(self):
+    def test_facelift_light_palette_uses_pearl_and_forest_tokens(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('--is-canvas: #f8faff', css)
-        self.assertIn('--is-gold-text: #2858c7', css)
-        self.assertIn('--is-text-muted: #5b6d89', css)
-        self.assertIn('--is-success: #08776e', css)
+        self.assertIn('--is-canvas: #f4f6f2', css)
+        self.assertIn('--is-gold-text: #075d3b', css)
+        self.assertIn('--is-text-muted: #52645b', css)
+        self.assertIn('--is-success: #006b43', css)
         light_block = css.split('body[data-theme="dark"] .is {', 1)[0]
-        for retired in ('#fbf8f2', '#fffdfa', '#fffefa', '#f7f1e7', '#8a5a00'):
+        for retired in ('#f8faff', '#2858c7', '#5b6d89', '#08776e'):
             self.assertNotIn(retired, light_block.lower())
 
         def luminance(value):
@@ -664,9 +700,9 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
             first, second = luminance(foreground), luminance(background)
             return (max(first, second) + 0.05) / (min(first, second) + 0.05)
 
-        for surface in ('#ffffff', '#f8faff', '#f3f6fc'):
-            self.assertGreaterEqual(contrast('#5b6d89', surface), 4.5)
-        self.assertGreaterEqual(contrast('#08776e', '#e2f3f1'), 4.5)
+        for surface in ('#ffffff', '#f4f6f2', '#eef2ed'):
+            self.assertGreaterEqual(contrast('#52645b', surface), 4.5)
+        self.assertGreaterEqual(contrast('#006b43', '#e0f1e6'), 4.5)
 
     def test_compact_multiline_fields_share_one_autogrow_contract(self):
         html = self.html('/interview-studio?mode=me')
@@ -705,12 +741,15 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('setStage(1)', failure_block)
         self.assertIn("root.setAttribute('data-is-workspace-state'", source)
 
-    def test_interview_ai_source_dropdown_is_in_session_controls_before_generation(self):
+    def test_interview_ai_source_picker_is_in_its_right_rail_before_generation(self):
         html = self.html('/interview-studio?mode=ai')
         form = html.split('data-is-ai-form', 1)[1].split('</form>', 1)[0]
-        self.assertLess(html.index('data-is-family'), html.index('data-is-ai-mode-group'))
-        self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-format-control'))
-        self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-ai-form'))
+        ai_panel = html.split('data-is-panel="ai"', 1)[1].split('data-is-panel="video"', 1)[0]
+        ai_rail = ai_panel.split('<aside class="is__side-column">', 1)[1]
+        self.assertIn('data-is-ai-mode-group', ai_rail)
+        self.assertIn('data-is-ai-basis-option', ai_rail)
+        self.assertIn('data-is-ai-mode', ai_rail)
+        self.assertGreater(html.index('data-is-ai-mode-group'), html.index('data-is-ai-form'))
         self.assertLess(form.index('data-is-ai-question'), form.index('Get example'))
         self.assertNotIn('<fieldset class="is__ai-grounding"', html)
         self.assertNotIn('data-is-settings-open', html)
@@ -722,12 +761,14 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('its source label here for you to verify', html)
 
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        basis_block = source.split("modeGroup.addEventListener('change'", 1)[1].split(
+        basis_block = source.split('function updateAiBasis(value)', 1)[1].split(
             'var followUpForm', 1
         )[0]
         self.assertIn('basisLabel.textContent', basis_block)
         self.assertIn('basisGuidance.textContent', basis_block)
         self.assertIn('resetAiAnswerForContextChange()', basis_block)
+        self.assertIn("event.target.matches('[data-is-ai-basis-option]')", basis_block)
+        self.assertIn('modeSelect.value = event.target.value', basis_block)
         self.assertIn('Ask a follow-up grounded in the current answer context.', source)
         self.assertIn('Follow-up is unavailable because no approved-history example was returned.', source)
         self.assertIn('followUpOpen.disabled = !followUpAvailable', source)
@@ -955,7 +996,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('minmax(0, 0.85fr)', css)
         self.assertIn('minmax(0, 1.15fr)', css)
         self.assertIn('.is__queue-mobile', css)
-        compact_mobile = css.rsplit('@media (max-width: 24rem) {', 1)[1].split(
+        compact_mobile = css.split('@media (max-width: 24rem) {', 1)[1].split(
             '/* The global dark shell', 1
         )[0]
         self.assertIn('.is__dock-label-compact', compact_mobile)
