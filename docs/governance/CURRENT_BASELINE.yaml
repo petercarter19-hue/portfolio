@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-07-31"
+updated_at: "2026-08-01"
 
 authority:
   remote: origin
@@ -51,6 +51,11 @@ governing_documents:
 theme: deep_navy_gold
 
 active_packages:
+  - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
+    owner: "Pete visual lock; current Codex manager; sole runtime writer assigned"
+    lane: interview_studio_visual_facelift
+    package_path: "docs/initiatives/PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001/README.md"
+    status: "owner_visual_lock_passed_implementation_authorized_merge_deploy_not_authorized"
   - id: PS-CAPTURE-MEDIA-001
     owner: "Enablement writer unassigned"
     lane: capture_media_photo_enablement
