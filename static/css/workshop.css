@@ -42,10 +42,10 @@
 body.workshop-page {
     color-scheme: light;
 
-    --wk-canvas: #eef2fb;
+    --wk-canvas: #cfd9ee;
     --wk-surface: #fdfeff;
     --wk-surface-muted: #f4f7fc;
-    --wk-line: #e3e8f4;
+    --wk-line: #cbd5ec;
     --wk-line-soft: #eef1f9;
     --wk-ink: #071233;
     --wk-muted: #4a5578;
@@ -108,40 +108,17 @@ body.workshop-page {
        card visibly floating — tight contact line plus a wide matte pool.
        Soft-edged, never faint. */
     --wk-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 92%),
-        0 2px 4px rgb(31 45 89 / 12%),
-        0 14px 32px rgb(31 45 89 / 13%),
-        0 38px 84px rgb(31 45 89 / 12%);
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 4px 8px rgb(24 36 76 / 22%),
+        0 26px 56px rgb(24 36 76 / 22%),
+        0 72px 150px rgb(24 36 76 / 20%);
     --wk-shadow-sm:
-        inset 0 1px 0 rgb(255 255 255 / 85%),
-        0 1px 3px rgb(31 45 89 / 10%),
-        0 9px 24px rgb(31 45 89 / 11%);
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 3px 6px rgb(24 36 76 / 18%),
+        0 16px 40px rgb(24 36 76 / 20%);
     /* The matte sheen the mockup cards carry: top-lit, cooling toward the
        base — material catching light, not flat fill. */
-    --wk-sheen: linear-gradient(180deg, #ffffff 0%, #fcfdff 55%, #f5f8fd 100%);
-    --wk-radius: 16px;
-    --wk-radius-sm: 10px;
-    --wk-radius-pill: 999px;
-    /* Approved authority 06 draws every chip/badge (Area, Status, the
-       detail-card status badge, the mobile chip row) as a slightly-rounded
-       square, never a full capsule — this is the shared radius for all of
-       them. --wk-radius-pill above is kept only so nothing else regresses
-       if some other page-local selector still reads it. */
-    --wk-radius-chip: 12px;
-
-    /* Facelift canvas texture (2026-08-02): replaces the round-2/3
-       washes+grain recipe (history in the git blame of this file) with the
-       mockups' subtle concentric-ring / dot-grid decoration — one soft
-       corner bloom of a masked dot-grid plus a few faint concentric arcs,
-       both inline SVG, both intentionally low-contrast. One gentle wash
-       gradient remains underneath for the soft depth the mockups still show
-       (their canvas is not perfectly flat); the second/third washes and the
-       feTurbulence grain are dropped. All decorative; content cards sit on
-       clean surfaces above it. */
-    background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='760'%3E%3Cdefs%3E%3CradialGradient id='dotfade' cx='18%25' cy='22%25' r='42%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='1'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cmask id='dotmask'%3E%3Crect width='1600' height='760' fill='url(%23dotfade)'/%3E%3C/mask%3E%3Cpattern id='dotpattern' width='22' height='22' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%2317408f'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='1600' height='760' fill='url(%23dotpattern)' mask='url(%23dotmask)' opacity='0.6'/%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.9' stroke-width='1.25'%3E%3Ccircle cx='120' cy='900' r='260'/%3E%3Ccircle cx='120' cy='900' r='430'/%3E%3Ccircle cx='120' cy='900' r='610'/%3E%3C/g%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.7' stroke-width='1.25'%3E%3Ccircle cx='1520' cy='-80' r='300'/%3E%3Ccircle cx='1520' cy='-80' r='480'/%3E%3C/g%3E%3C/svg%3E") center top / 112rem 54rem no-repeat,
-        radial-gradient(70rem 46rem at 20% 0%, rgb(255 255 255 / 62%), transparent 65%),
-        var(--wk-canvas);
+    --wk-sheen: linear-gradient(180deg, #ffffff 0%, #fbfdff 48%, #eef3fb 100%);
 }
 
 body.workshop-page[data-theme="dark"] {
@@ -1172,7 +1149,7 @@ body.workshop-page .site-sky {
        max-height is never reached, so nothing about the rendered page
        changes. Below 1101px the existing single-column stack is untouched. */
     .wk-list__items {
-        max-height: 44rem;
+        max-height: 43.6rem;
         overflow-y: auto;
         overscroll-behavior: contain;
         /* Reserve the scrollbar's width even before it's needed so a short
@@ -1376,6 +1353,9 @@ body.workshop-page .site-sky {
     border: 1px solid var(--wk-success);
     font-size: 0.92rem;
     font-weight: 600;
+    background: var(--wk-sheen, var(--wk-surface));
+    border: 1px solid var(--wk-line);
+    box-shadow: var(--wk-shadow-sm);
 }
 
 .wk-status-banner--error {
@@ -1977,10 +1957,7 @@ body.workshop-page[data-theme="dark"] {
        dark canvas (pale dot fill, soft blue-gray arcs) — replaces the old
        grain + deep-water washes recipe. One gentle dark wash remains
        underneath for the same reason light theme keeps one. */
-    background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='760'%3E%3Cdefs%3E%3CradialGradient id='dotfade' cx='18%25' cy='22%25' r='42%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='1'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cmask id='dotmask'%3E%3Crect width='1600' height='760' fill='url(%23dotfade)'/%3E%3C/mask%3E%3Cpattern id='dotpattern' width='22' height='22' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%239db6e6'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='1600' height='760' fill='url(%23dotpattern)' mask='url(%23dotmask)' opacity='0.3'/%3E%3Cg fill='none' stroke='%233f5994' stroke-opacity='0.9' stroke-width='1.25'%3E%3Ccircle cx='120' cy='900' r='260'/%3E%3Ccircle cx='120' cy='900' r='430'/%3E%3Ccircle cx='120' cy='900' r='610'/%3E%3C/g%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.7' stroke-width='1.25'%3E%3Ccircle cx='1520' cy='-80' r='300'/%3E%3Ccircle cx='1520' cy='-80' r='480'/%3E%3C/g%3E%3C/svg%3E") center top / 112rem 54rem no-repeat,
-        radial-gradient(70rem 46rem at 20% 0%, rgb(63 89 148 / 20%), transparent 65%),
-        var(--wk-canvas);
+    background: var(--wk-canvas);
 }
 
 /* =========================================================
@@ -2505,4 +2482,57 @@ body.workshop-page[data-theme="dark"] .wk [class*="__label--eyebrow"],
 body.workshop-page[data-theme="dark"] .wk-filter-group__label,
 body.workshop-page[data-theme="dark"] .wk-list__count {
     color: #aab9e8;
+}
+
+
+/* Owner pass-4 (2026-08-02): tighter, denser list rows — one type level
+   down, trimmed padding — so the capped list sits even with the detail
+   card. The downstream-use line left the rows entirely (redundant beside
+   "Private"); it remains in the detail card. */
+@media (min-width: 1101px) {
+    .wk-list__item-link { padding: 0.7rem 0.9rem; }
+    .wk-list__item-title { font-size: 0.94rem; line-height: 1.3; }
+    .wk-list__item-meta { font-size: 0.76rem; }
+    .wk-status-pill { font-size: 0.72rem; }
+    .wk-list__count { font-size: 0.72rem; }
+}
+
+
+/* =========================================================
+   Depth pass 7 (owner loop, 2026-08-02): the environment lives on its
+   own fixed underlay so a bad texture can never invalidate card
+   surfaces again. Grand centered arcs + page grain here; matte grain
+   on each card via a pointer-transparent overlay.
+   ========================================================= */
+body.workshop-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E") repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='4'%3E%3Ccircle cx='800' cy='380' r='300' stroke-opacity='1'/%3E%3Ccircle cx='800' cy='380' r='480' stroke-opacity='0.85'/%3E%3Ccircle cx='800' cy='380' r='670' stroke-opacity='0.65'/%3E%3Ccircle cx='800' cy='380' r='880' stroke-opacity='0.45'/%3E%3C/g%3E%3Cg fill='none' stroke='%233f5994' stroke-width='2'%3E%3Ccircle cx='1540' cy='60' r='360' stroke-opacity='0.25'/%3E%3Ccircle cx='60' cy='940' r='320' stroke-opacity='0.25'/%3E%3C/g%3E%3C/svg%3E") center -6rem / 120rem 74rem no-repeat,
+        linear-gradient(118deg, rgb(255 255 255 / 45%) 0%, transparent 42%),
+        linear-gradient(298deg, rgb(24 36 76 / 10%) 0%, transparent 36%);
+}
+body.workshop-page[data-theme="dark"]::before {
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E") repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='1000'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='4'%3E%3Ccircle cx='800' cy='380' r='300' stroke-opacity='1'/%3E%3Ccircle cx='800' cy='380' r='480' stroke-opacity='0.85'/%3E%3Ccircle cx='800' cy='380' r='670' stroke-opacity='0.65'/%3E%3Ccircle cx='800' cy='380' r='880' stroke-opacity='0.45'/%3E%3C/g%3E%3Cg fill='none' stroke='%233f5994' stroke-width='2'%3E%3Ccircle cx='1540' cy='60' r='360' stroke-opacity='0.25'/%3E%3Ccircle cx='60' cy='940' r='320' stroke-opacity='0.25'/%3E%3C/g%3E%3C/svg%3E") center -6rem / 120rem 74rem no-repeat,
+        linear-gradient(118deg, rgb(63 89 148 / 20%) 0%, transparent 42%),
+        linear-gradient(298deg, rgb(0 0 0 / 42%) 0%, transparent 36%);
+}
+.wk-rail, .wk-suggestion, .wk-info, .wk-list, .wk-detail, .wk-status-banner {
+    position: relative;
+}
+.wk-rail::after, .wk-suggestion::after, .wk-info::after,
+.wk-list::after, .wk-detail::after, .wk-status-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E") repeat;
+    opacity: 0.85;
 }
