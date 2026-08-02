@@ -1,0 +1,81 @@
+{# Small line-icon set for Workshop, following the same macro pattern as
+   templates/partials/owner_studio/_icons.html: one shared <svg> shell,
+   stroke-based paths, decorative (aria-hidden) since every icon here sits
+   beside its own visible text label. #}
+{% macro workshop_icon(name) -%}
+<svg class="wk-icon wk-icon--{{ name }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    {% if name == "search" %}
+    <circle cx="11" cy="11" r="7"></circle>
+    <path d="M20 20l-3.8-3.8"></path>
+    {% elif name == "mic" %}
+    <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+    <path d="M5 11a7 7 0 0 0 14 0"></path>
+    <path d="M12 18v3"></path>
+    {% elif name == "arrow-right" %}
+    <path d="M5 12h14"></path>
+    <path d="M13 6l6 6-6 6"></path>
+    {% elif name == "arrow-left" %}
+    <path d="M19 12H5"></path>
+    <path d="M11 18l-6-6 6-6"></path>
+    {% elif name == "plus" %}
+    <path d="M12 5v14"></path>
+    <path d="M5 12h14"></path>
+    {% elif name == "shield" %}
+    <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
+    <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
+    {% elif name == "lightbulb" %}
+    <path d="M9 18h6"></path>
+    <path d="M10 21h4"></path>
+    <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.45 1.1 1.15 1.2 1.95V16h4.8v-.25c.1-.8.6-1.5 1.2-1.95A6 6 0 0 0 12 3Z"></path>
+    {% elif name == "person" %}
+    <circle cx="12" cy="8" r="4"></circle>
+    <path d="M4 21c1.6-4 5-6 8-6s6.4 2 8 6"></path>
+    {% elif name == "chevron-right" %}
+    <path d="M9 6l6 6-6 6"></path>
+    {% elif name == "chevron-down" %}
+    <path d="M6 9l6 6 6-6"></path>
+    {% elif name == "chevron-up" %}
+    <path d="M6 15l6-6 6 6"></path>
+    {% elif name == "kebab" %}
+    <circle cx="12" cy="5" r="1.4"></circle>
+    <circle cx="12" cy="12" r="1.4"></circle>
+    <circle cx="12" cy="19" r="1.4"></circle>
+    {% elif name == "pencil" %}
+    <path d="M4 20l.9-4L16 4.9 19.1 8 8 19.1z"></path>
+    <path d="M14 6.9L17.1 10"></path>
+    {% elif name == "archive" %}
+    <rect x="3.5" y="6" width="17" height="4" rx="1"></rect>
+    <path d="M4.5 10v8a1.5 1.5 0 0 0 1.5 1.5h12A1.5 1.5 0 0 0 19.5 18v-8"></path>
+    <path d="M10 14h4"></path>
+    {% elif name == "check" %}
+    <path d="M5 12.5l4.5 4.5L19 7"></path>
+    {% elif name == "trash" %}
+    <path d="M4.5 7h15"></path>
+    <path d="M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2"></path>
+    <path d="M6.5 7l1 12.5A1.5 1.5 0 0 0 9 21h6a1.5 1.5 0 0 0 1.5-1.5L17.5 7"></path>
+    <path d="M10.3 11v6"></path>
+    <path d="M13.7 11v6"></path>
+    {% elif name == "lock" %}
+    <rect x="5" y="11" width="14" height="9" rx="2"></rect>
+    <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+    {% elif name == "group" %}
+    <circle cx="9" cy="8.5" r="3"></circle>
+    <circle cx="16" cy="9.5" r="2.4"></circle>
+    <path d="M4 19c1-3.2 3.4-5 5-5s4 1.8 5 5"></path>
+    <path d="M14.3 14.4c1.5.2 3.2 1.4 4.2 3.3"></path>
+    {% elif name == "info-circle" %}
+    <circle cx="12" cy="12" r="8"></circle>
+    <path d="M12 11.2v5"></path>
+    <path d="M12 8.3v.01"></path>
+    {% elif name == "briefcase" %}
+    <rect x="4" y="8" width="16" height="10.5" rx="2"></rect>
+    <path d="M9 8V6.5A2.5 2.5 0 0 1 11.5 4h1A2.5 2.5 0 0 1 15 6.5V8"></path>
+    <path d="M12 12.2v2"></path>
+    {% elif name == "circle-arrow" %}
+    <circle cx="12" cy="12" r="8"></circle>
+    <path d="M14 9.2l-3 2.8 3 2.8"></path>
+    {% else %}
+    <circle cx="12" cy="12" r="9"></circle>
+    {% endif %}
+</svg>
+{%- endmacro %}

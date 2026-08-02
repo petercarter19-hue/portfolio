@@ -50,6 +50,12 @@ PHOTO_VERIFY_PATH = (
     / "Verification"
     / "PS-CAPTURE-MEDIA-001_owner_isolation_verify.sql"
 )
+WORKSHOP_VERIFY_PATH = (
+    ROOT
+    / "SQL FIles"
+    / "Verification"
+    / "PS-WORKSHOP-001_owner_isolation_verify.sql"
+)
 
 MIGRATION_FILENAMES = (
     "PS-PLAT-001_platform_governance.sql",
@@ -82,6 +88,9 @@ APPROVED_OPTIONAL_MIGRATIONS = {
         MIGRATION_DIR
         / "proposed"
         / "PS-CAPTURE-MEDIA-001_photo_sources.sql"
+    ),
+    "PS-WORKSHOP-001": (
+        MIGRATION_DIR / "proposed" / "PS-WORKSHOP-001_knowledge_items.sql"
     ),
 }
 EXPECTED_TABLES = {
@@ -368,6 +377,24 @@ def verify_photo(env_path: Path | None = None) -> None:
     )
 
 
+def verify_workshop(env_path: Path | None = None) -> None:
+    if not WORKSHOP_VERIFY_PATH.exists():
+        raise RuntimeError(f"Verification script is missing: {WORKSHOP_VERIFY_PATH}")
+    with get_connection(env_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute(WORKSHOP_VERIFY_PATH.read_text(encoding="utf-8"))
+        result_sets = fetch_result_sets(cursor)
+    final_rows = next((rows for rows in reversed(result_sets) if rows), [])
+    if not final_rows or not bool(final_rows[0].get("verified")):
+        raise RuntimeError("PS-WORKSHOP-001 owner-isolation verification failed.")
+    print(
+        "Verified PS-WORKSHOP-001 owner isolation across all seven knowledge "
+        "item procedures, per-owner idempotent Save, version-fenced "
+        "Update/Archive/Restore/Delete, forged-owner canaries, and full "
+        "synthetic rollback."
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -431,6 +458,8 @@ def main() -> None:
             verify_voice(args.env_file)
         if "PS-CAPTURE-MEDIA-001" in args.migration:
             verify_photo(args.env_file)
+        if "PS-WORKSHOP-001" in args.migration:
+            verify_workshop(args.env_file)
 
 
 if __name__ == "__main__":

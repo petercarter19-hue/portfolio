@@ -154,6 +154,19 @@ def _studio_slice1_enabled():
     return current_app.config.get("PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED", False) is True
 
 
+def _workshop_nav_enabled():
+    """Mirrors ``workshop_routes._workshop_enabled()`` exactly.
+
+    Duplicated locally rather than imported for the same file-ownership-
+    boundary reason workshop_routes.py's own docstring documents for its
+    ``_safe_return_path``/``_is_same_origin_write`` duplicates: this module
+    has no edit-time dependency on the other lane's file. MINOR 9
+    correction: the studio shell's ``navigation.workshop_url`` must not
+    point at a route that 404s in a flag-off deployment.
+    """
+    return current_app.config.get("PEERSLATE_WORKSHOP_ENABLED", False) is True
+
+
 def _studio_frame_view_model(identity=None, *, access_state="ready"):
     """Return the deliberately finite, server-owned Slice 1 frame.
 
@@ -175,7 +188,18 @@ def _studio_frame_view_model(identity=None, *, access_state="ready"):
         "navigation": {
             "my_slate_url": None,
             "community_url": url_for("the_slate"),
-            "workshop_url": url_for("auth.owner_workspace"),
+            # PS-WORKSHOP-001: Workshop ships at its own protected route,
+            # /app/workshop, not /app (architecture doc 17 section A1,
+            # resolved 2026-08-01; doc 18 slice W1's "integration
+            # consequence" note calls out this exact stale reference).
+            # MINOR 9 correction: fall back to the owner workspace when the
+            # flag is off so the studio shell never links to a route that
+            # 404s in a flag-off deployment.
+            "workshop_url": (
+                url_for("workshop.my_information")
+                if _workshop_nav_enabled()
+                else url_for("auth.owner_workspace")
+            ),
             "build_your_future_url": url_for("auth.studio_build_your_future"),
             "public_interview_studio_url": url_for("interview_studio"),
             "sign_out_url": url_for("auth.sign_out"),

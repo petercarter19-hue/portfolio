@@ -26,6 +26,7 @@ from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
+from workshop_routes import workshop
 from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
@@ -121,6 +122,23 @@ app.config.update(
     # Moment. Keep off until the visual gate and the proposed migration pass.
     PEERSLATE_JOURNAL_ENABLED=(
         os.environ.get('PEERSLATE_JOURNAL_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-WORKSHOP-001: default-off protected private knowledge base
+    # (Workshop / My Information). Slice W1 now renders the real,
+    # owner-scoped My Information library from the database and supports
+    # direct entry (add/edit/archive/restore/delete) — no AI call or
+    # "Work on Something" session flow exists yet (later slices). Keep off
+    # through merge and deployment; enablement is a separate owner decision.
+    PEERSLATE_WORKSHOP_ENABLED=(
+        os.environ.get('PEERSLATE_WORKSHOP_ENABLED', 'false').lower() == 'true'
+    ),
+    # Dev-preview-only seam (PS-WORKSHOP-001). When true, GET /app/workshop
+    # renders services/knowledge_service.py's fixed checkpoint fixture instead
+    # of the real owner-scoped store, so a local preview can show a populated
+    # library without a database. Production-path code must never consult this
+    # when it is false (the default); never enable it outside local preview.
+    PEERSLATE_WORKSHOP_DEV_FIXTURE=(
+        os.environ.get('PEERSLATE_WORKSHOP_DEV_FIXTURE', 'false').lower() == 'true'
     ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
@@ -449,6 +467,29 @@ app.register_blueprint(owner)
 app.register_blueprint(control_room)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
+app.register_blueprint(workshop)
+
+# MAJOR 5 correction (independent review): rate limit Workshop's five
+# state-changing routes the same way the AI-cost routes above are limited.
+# workshop_routes.py is imported (line ~29) before `limiter` exists (it is
+# constructed further down this file, after `app` itself), so
+# @limiter.limit cannot decorate those view functions at definition time
+# without a circular import. Instead, once both the blueprint is
+# registered and `limiter` exists, each already-registered view function is
+# replaced in-place with limiter.limit(...)'s wrapper — the same mechanism
+# @limiter.limit uses when applied inline, just applied here after the
+# fact. Rates match the existing 6-10/minute range used elsewhere in this
+# file for other state-changing/AI-cost routes.
+for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
+    ('workshop.save_item', '6 per minute'),
+    ('workshop.update_item', '6 per minute'),
+    ('workshop.archive_item', '8 per minute'),
+    ('workshop.restore_item', '8 per minute'),
+    ('workshop.delete_item', '6 per minute'),
+):
+    app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
+        _workshop_rate_limit
+    )(app.view_functions[_workshop_rate_limited_endpoint])
 
 
 @app.get('/healthz')
@@ -481,6 +522,7 @@ def prevent_stale_html(response):
         'peerslate_api',
         'people_interests_api',
         'control_room',
+        'workshop',
     }:
         # These blueprints and identity-resolved app routes return private or
         # viewer-personalized responses. Preserve a route's stricter explicit

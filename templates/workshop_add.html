@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Add or edit information in your private Workshop library.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001, Slice W1 direct entry — composer step.
+  Assembled from approved components per doc 18's direct-entry visual
+  dependency note and Pete's "finish this off" acceptance (doc 20 section
+  6b): the 04 final-review layout (minus AI panels and minus the AI-use
+  permission block, which doc 20 section 6a removed product-wide), and the
+  10 long-form composer pattern (inline mic, no Type/Speak tabs; "long-form
+  editors use the screen's existing Save or Review action" — so this screen
+  has no separate submit arrow, only Continue).
+
+  Deviations from the assembled components, disclosed:
+  - A Title field is added above the wording box. The 04 mockup shows only
+    "FINAL WORDING" because that screen follows an AI session that already
+    collected a title upstream; direct entry has no such upstream step, so
+    the task scope explicitly calls for a title field here.
+  - The left "Start another way" rail (04's four W2 session-opening doors)
+    is omitted. Those doors describe entry points into a session (doc 20
+    section 4's opening screen, which has no approved visual and no session
+    flow exists yet); none of them represent "add information directly," so
+    showing them here would misrepresent the member's current action.
+  - The mic in the wording box is rendered inert (aria-disabled, honest
+    aria-label) — voice capture is slice W2.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    <div class="wk-flow-layout">
+        <div class="wk-flow-main">
+            <a class="wk-breadcrumb" href="{{ url_for('workshop.my_information') }}">
+                {{ workshop_icon("arrow-left") }}
+                <span>Back to Workshop</span>
+            </a>
+
+            <div class="wk-card wk-composer">
+                <h2 class="wk-flow-title">{{ "Edit information" if mode == "edit" else "Add information" }}</h2>
+                <p class="wk-flow-sub">
+                    {% if mode == "edit" %}
+                    Make any changes, then continue to review before saving.
+                    {% else %}
+                    Add an experience, skill, interest, or accomplishment in your own words.
+                    {% endif %}
+                </p>
+
+                {% if error_message %}
+                <div class="wk-form-error" role="alert">{{ error_message }}</div>
+                {% endif %}
+
+                <form method="post" action="{{ form_action }}">
+                    {% if idempotency_key %}<input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">{% endif %}
+                    {% if expected_version_token %}<input type="hidden" name="expected_row_version" value="{{ expected_version_token }}">{% endif %}
+
+                    <div class="wk-field">
+                        <label class="wk-field__label" for="wk-title">Title</label>
+                        <input
+                            id="wk-title"
+                            class="wk-field__input"
+                            name="title"
+                            type="text"
+                            maxlength="{{ max_title_units }}"
+                            value="{{ values.title }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="wk-field">
+                        <label class="wk-field__label" for="wk-wording">Wording</label>
+                        <div class="wk-field__textarea-wrap">
+                            <textarea
+                                id="wk-wording"
+                                class="wk-field__textarea"
+                                name="wording"
+                                maxlength="{{ max_wording_units }}"
+                                rows="6"
+                                required
+                            >{{ values.wording }}</textarea>
+                            <button
+                                type="button"
+                                class="wk-mic-btn"
+                                aria-label="Voice input is not available yet"
+                                aria-disabled="true"
+                                disabled
+                            >{{ workshop_icon("mic") }}</button>
+                        </div>
+                        <p class="wk-field__hint">Text entry is available. Voice input is not available yet.</p>
+                    </div>
+
+                    <div class="wk-field">
+                        <span class="wk-field__label" id="wk-classification-label">Classification</span>
+                        <div class="wk-choice-row" role="radiogroup" aria-labelledby="wk-classification-label">
+                            {% for key, label in classification_choices %}
+                            <label class="wk-choice">
+                                <input
+                                    type="radio"
+                                    name="classification"
+                                    value="{{ key }}"
+                                    {% if values.classification == key %}checked{% endif %}
+                                >
+                                <span>{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <p class="wk-field__hint">Choose "Not set" if this doesn't fit a single area yet.</p>
+                    </div>
+
+                    <div class="wk-composer__actions">
+                        <button type="submit" class="wk-btn wk-btn--primary">Continue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="wk-aside">
+            {% include "partials/workshop/_private_save_card.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

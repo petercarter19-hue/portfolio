@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Confirmation that your information was saved privately.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001, Slice W1 direct entry — saved confirmation. Approved
+  authority 05, exactly as approved except: per doc 20 section 6a the
+  AI-use permission row is removed, and per the task's explicit mapping the
+  mockup's session-only "Continue in Workshop" action is replaced with
+  "Add something else" — direct entry has no session to continue.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    {% if dev_preview %}
+    <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
+    {% endif %}
+
+    <div class="wk-flow-layout">
+        <div class="wk-flow-main">
+            <div class="wk-card wk-saved" role="status">
+                <div class="wk-saved__check" aria-hidden="true">{{ workshop_icon("check") }}</div>
+                <h2 class="wk-saved__title">Saved privately</h2>
+                <p class="wk-saved__sub">
+                    This exact wording is now confirmed in My Information.
+                    Nothing was published, shared, or changed elsewhere.
+                </p>
+
+                <div class="wk-saved__section">
+                    <p class="wk-saved__section-label">Your saved information</p>
+
+                    <div class="wk-field">
+                        <span class="wk-field__label wk-field__label--eyebrow">Final wording</span>
+                        <div class="wk-detail__body-box">
+                            <p class="wk-detail__body">{{ item.body }}</p>
+                        </div>
+                    </div>
+
+                    <dl class="wk-saved__meta">
+                        <div class="wk-saved__meta-row">
+                            <dt>Work / Personal / Both</dt>
+                            <dd><span class="wk-badge wk-badge--accent">{{ item.classification_label }}</span></dd>
+                        </div>
+                        <div class="wk-saved__meta-row">
+                            <dt>Source</dt>
+                            <dd>{{ item.source_label }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="wk-actions-row">
+                    <a class="wk-btn wk-btn--outline" href="{{ add_something_else_url }}">Add something else</a>
+                    <a class="wk-btn wk-btn--secondary" href="{{ view_in_my_information_url }}">View in My Information</a>
+                    <a class="wk-btn wk-btn--primary" href="{{ close_for_now_url }}">Close for now</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="wk-aside">
+            {% include "partials/workshop/_private_save_card.html" %}
+            {% include "partials/workshop/_use_elsewhere_card.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{# Expanded item detail card — approved authority 06/09, for whichever item
+   is currently selected (workshop.detail; None when nothing is selected —
+   e.g. an empty library, or a foreign/unknown ?item= key).
+
+   Per doc 20 section 6a (owner decision, 2026-08-01): the mockups' "AI use"
+   metadata row and the "Use as context — Unavailable — AI use is off /
+   Change permission" block are both REMOVED — that per-item AI-use
+   permission concept no longer exists in the product at all. Everything
+   else in this card matches the approved authority.
+
+   Badge row: the approved desktop authority (06) draws one status badge;
+   the approved mobile authority (09) draws four — Confirmed, Private, the
+   classification, and downstream use. Rather than branch the template,
+   every badge renders here and workshop.css hides the three extra ones at
+   desktop widths (min-width: 1101px), matching 06 exactly while giving 09
+   the full row unmodified.
+
+   The head's trailing control also differs by authority: 06 draws a kebab
+   "More actions" affordance; 09 draws a chevron-up collapse affordance in
+   the same corner. Both render (both aria-disabled — no additional actions
+   exist beyond Edit/Archive/Restore/Delete at this slice) and workshop.css
+   shows one or the other per breakpoint.
+
+   Edit / Archive / Restore / Delete are real, wired actions for a real
+   item (workshop.detail.edit_url etc. are set); a dev-fixture item has no
+   backing record to act on, so its actions render inert (href="#",
+   aria-disabled="true") exactly as the checkpoint did. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{% set item = workshop.detail %}
+{% if item %}
+<article class="wk-detail" aria-labelledby="wk-detail-title">
+    <div class="wk-detail__head">
+        <h3 id="wk-detail-title" class="wk-detail__title">{{ item.title }}</h3>
+        <button type="button" class="wk-icon-btn wk-icon-btn--more" aria-label="More actions" aria-disabled="true">
+            {{ workshop_icon("kebab") }}
+        </button>
+        <button type="button" class="wk-icon-btn wk-icon-btn--collapse" aria-label="Collapse" aria-disabled="true">
+            {{ workshop_icon("chevron-up") }}
+        </button>
+    </div>
+
+    <div class="wk-detail__badges">
+        <span class="wk-badge wk-badge--{{ item.status }}">
+            <span class="wk-dot" aria-hidden="true"></span>{{ item.status_label }}
+        </span>
+        <span class="wk-badge wk-badge--neutral wk-badge--mobile-only">
+            {{ workshop_icon("lock") }}<span>Private</span>
+        </span>
+        <span class="wk-badge wk-badge--accent wk-badge--mobile-only">{{ item.classification_label }}</span>
+        <span class="wk-badge wk-badge--neutral wk-badge--mobile-only">{{ item.downstream_use_label }}</span>
+    </div>
+
+    <div class="wk-detail__body-box">
+        <p class="wk-detail__body">{{ item.body }}</p>
+    </div>
+
+    <dl class="wk-detail__meta">
+        <div class="wk-detail__meta-row">
+            <dt>{{ workshop_icon("group") }}<span>Status</span></dt>
+            <dd class="wk-status-pill--{{ item.status }}">{{ item.status_label }}</dd>
+        </div>
+        <div class="wk-detail__meta-row">
+            <dt>{{ workshop_icon("info-circle") }}<span>Audience</span></dt>
+            <dd>Private</dd>
+        </div>
+        <div class="wk-detail__meta-row">
+            <dt>{{ workshop_icon("briefcase") }}<span>Classification</span></dt>
+            <dd>{{ item.classification_label }}</dd>
+        </div>
+        <div class="wk-detail__meta-row">
+            <dt>{{ workshop_icon("circle-arrow") }}<span>Downstream use</span></dt>
+            <dd>{{ item.downstream_use_label }}</dd>
+        </div>
+        <div class="wk-detail__meta-row">
+            <dt>{{ workshop_icon("circle-arrow") }}<span>Source</span></dt>
+            <dd>{{ item.source_label }}</dd>
+        </div>
+    </dl>
+
+    <div class="wk-detail__actions">
+        {% if item.edit_url %}
+        <a class="wk-btn wk-btn--outline" href="{{ item.edit_url }}">
+            {{ workshop_icon("pencil") }}<span>Edit</span>
+        </a>
+        {% else %}
+        <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+            {{ workshop_icon("pencil") }}<span>Edit</span>
+        </a>
+        {% endif %}
+
+        {% if item.status == "archived" %}
+            {% if item.restore_url %}
+            <form method="post" action="{{ item.restore_url }}">
+                <input type="hidden" name="expected_row_version" value="{{ item.version_token }}">
+                <button type="submit" class="wk-btn wk-btn--outline">
+                    {{ workshop_icon("archive") }}<span>Restore</span>
+                </button>
+            </form>
+            {% else %}
+            <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+                {{ workshop_icon("archive") }}<span>Restore</span>
+            </a>
+            {% endif %}
+        {% else %}
+            {% if item.archive_url %}
+            <form method="post" action="{{ item.archive_url }}">
+                <input type="hidden" name="expected_row_version" value="{{ item.version_token }}">
+                <button type="submit" class="wk-btn wk-btn--outline">
+                    {{ workshop_icon("archive") }}<span>Archive</span>
+                </button>
+            </form>
+            {% else %}
+            <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+                {{ workshop_icon("archive") }}<span>Archive</span>
+            </a>
+            {% endif %}
+        {% endif %}
+
+        {% if item.delete_url %}
+        <a class="wk-btn wk-btn--danger" href="{{ item.delete_url }}">
+            {{ workshop_icon("trash") }}<span>Delete</span>
+        </a>
+        {% else %}
+        <a class="wk-btn wk-btn--danger" href="#" aria-disabled="true" role="link">
+            {{ workshop_icon("trash") }}<span>Delete</span>
+        </a>
+        {% endif %}
+    </div>
+</article>
+{% endif %}

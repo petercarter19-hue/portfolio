@@ -20,6 +20,20 @@ is the selected working ecosystem. See
 (`20260724.6`) passed Build and Deploy. The bounded runtime entry gate opens
 after the governance closeout merges.
 
+## Current Workshop direction (2026-08-01)
+
+The controlling Workshop direction is now the owner-supplied ChatGPT handoff of
+2026-07-31 plus Pete's decisions of 2026-08-01. Workshop is one private,
+authenticated, two-mode surface — **Work on Something** and **My Information** —
+whose primary purpose is building up the member's knowledge areas. PeerSlate
+does **not** create résumés; confirmed information may later update existing
+site surfaces by explicit member choice. Read 16, then 17 and 18. Documents 12
+and 13 remain the approved correction record and page-purpose inventory; the
+newer decisions in 16 control where they differ.
+
+Nothing in this direction is implemented, deployed, or live, and the candidate
+visual set is not owner-locked.
+
 ## Current-direction supersession and limited-scope warning
 
 Earlier locked material in documents 04, 05, and 06 remains historical
@@ -62,6 +76,14 @@ The authoritative statement of the direction is
 | Owner correction | Goal Board, Workshop, Projects, and rejected Slice 2 candidate record | current in 12; documentation only |
 | Page-purpose inventories | Workshop and Build Your Future non-redundancy decisions | Pete approved 13 and 14 on 2026-07-24; ChatGPT visual creation is next, but no visual is locked |
 | Visual-session kickoff | ChatGPT concept creation, scrutiny, Claude lane boundary, and separate bounded implementation-information packages | current in 15; no runtime authority |
+| Workshop candidate visual set | ChatGPT five-screen set of 2026-07-31, package-copied and hash-pinned | `visual-authority/workshop-candidate-2026-07-31/`; **CANDIDATE — NOT OWNER-LOCKED** |
+| Claude independent audit | Product, interaction, trust, and consistency audit of the candidate set | `CLAUDE_AUDIT_2026-08-01.md`; two Critical findings; two recommendations superseded by 16 |
+| Owner decision record | Pete's 2026-08-01 answers D1–D6, including canonical wording and the no-résumé-creation correction | current in 16; documentation only |
+| Workshop architecture | Product and technical architecture: truth model, schema, authorization, AI boundaries, state machine | proposed in 17; **two open decisions A1/A2 need the manager or Pete** |
+| Workshop implementation sequence | Slices W0–W4 with evidence and release controls | proposed in 18; no slice activated |
+| ChatGPT visual-correction handoff | Round-2 corrections, the required new save-consent screen, and the missing state/responsive set | delivered; superseded by the approved round-2 set |
+| Approved Workshop visual authority | Pete-approved round-2 set: review, final-review/save, saved, My Information, mobile, voice states | `visual-authority/workshop-approved-2026-08-01/` files 03–10, hash-pinned; opening/direct-entry remain reference-only |
+| Round-2 acceptance and reconciliation | Resolution map, AI-use default conflict, opening-authority gap, first-page checkpoint, effort correction | current in 20; **AI-use default and route are the open decisions** |
 
 ## Inputs
 

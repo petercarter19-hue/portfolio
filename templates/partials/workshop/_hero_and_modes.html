@@ -1,0 +1,26 @@
+{# Shared Workshop hero + mode tabs — approved authority 06/09, reused by
+   every page on the workshop blueprint (My Information, Add/Edit
+   information, Review, Saved confirmation, Delete confirmation) so the page
+   identity stays constant across the whole direct-entry flow.
+
+   "Work on Something" has no approved visual yet (doc 20 section 4) and no
+   session flow exists at this slice, so it stays inert everywhere — MINOR 6
+   correction: a plain <span> with a visible "Coming later" pill (matching
+   the use-elsewhere card's badge style) rather than an inert-but-still-a-
+   link <a href="#" aria-disabled role="link">, which a screen reader can
+   still announce as a link. "My Information" is the active tab throughout
+   direct entry: Add/Edit/Review/Saved are all reached from — and return
+   to — the My Information library, not a separate top-level mode. #}
+<header class="wk-hero">
+    <h1 class="wk-hero__title">Workshop</h1>
+    <p class="wk-hero__lede">Review, update, and control the information you have chosen to give PeerSlate.</p>
+    <p class="wk-hero__sub">Nothing here becomes public unless you deliberately use it elsewhere.</p>
+</header>
+
+<nav class="wk-modes" aria-label="Workshop mode">
+    <span class="wk-modes__tab wk-modes__tab--disabled">
+        <span>Work on Something</span>
+        <span class="wk-pill wk-pill--coming-later">Coming later</span>
+    </span>
+    <a class="wk-modes__tab wk-modes__tab--active" href="{{ url_for('workshop.my_information') }}" aria-current="page">My Information</a>
+</nav>

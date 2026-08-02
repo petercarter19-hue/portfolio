@@ -67,10 +67,10 @@ active_packages:
     package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
     status: "architecture_ready_direct_entry_gate_only"
   - id: PS-SLATE-STUDIO-IA-001
-    owner: "Pete and ChatGPT visual-creation lane"
+    owner: "Pete; Fable architecture, Sonnet implementation, Opus review (doc 16 §5)"
     lane: workshop_and_future_builder_direction
     package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
-    status: "visual_direction_only_no_runtime_authority"
+    status: "w1_knowledge_library_implemented_reviewed_release_in_progress_w2_gated_on_round3_visual_lock"
   - id: PS-HOME-INTERVIEW-FOCUS-PARITY-001
     owner: "Pete and ChatGPT visual-creation lane; runtime writer unassigned"
     lane: homepage_interview_focus_parity

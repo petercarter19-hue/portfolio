@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Confirm permanent deletion of one private Workshop item.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    <div class="wk-state-panel wk-delete-confirm">
+        {{ workshop_icon("trash") }}
+        <p class="wk-state-panel__eyebrow">Permanent deletion</p>
+        <h2>Delete &ldquo;{{ item_title }}&rdquo;?</h2>
+        <p>
+            This permanently deletes this item and its version history. This
+            cannot be undone. Nothing else in your private library is
+            affected.
+        </p>
+
+        {% if error_message %}
+        <div class="wk-form-error" role="alert">{{ error_message }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ delete_url }}" class="wk-delete-confirm__form">
+            <input type="hidden" name="expected_row_version" value="{{ expected_version_token }}">
+            <label class="wk-delete-confirm__checkbox">
+                <input type="checkbox" name="confirm_delete" value="delete" required>
+                <span>I understand this permanently deletes this item.</span>
+            </label>
+            <div class="wk-actions-row">
+                <a class="wk-btn wk-btn--outline" href="{{ cancel_url }}">Cancel</a>
+                <button type="submit" class="wk-btn wk-btn--danger">Delete permanently</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

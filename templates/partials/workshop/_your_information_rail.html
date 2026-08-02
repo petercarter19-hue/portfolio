@@ -1,0 +1,29 @@
+{# Left rail: "Your information" — approved authority 06/09.
+   Add information is wired for real: it opens the direct-entry composer
+   assembled from approved components (04 layout minus AI panels, the 10
+   composer pattern, the 05 confirmation), per doc 18's direct-entry visual
+   dependency note and Pete's "finish this off" acceptance in doc 20
+   section 6b. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-rail" aria-labelledby="wk-rail-title">
+    <h2 id="wk-rail-title" class="wk-rail__title">Your information</h2>
+
+    <a
+        class="wk-btn wk-btn--primary wk-btn--block"
+        href="{{ workshop.add_information_url }}"
+    >
+        {{ workshop_icon("plus") }}
+        <span>Add information</span>
+    </a>
+
+    <p class="wk-rail__copy">
+        Add an experience, skill, interest, accomplishment, or anything else
+        that matters to you. You control what is saved and where you choose
+        to use it.
+    </p>
+
+    <p class="wk-rail__note">
+        {{ workshop_icon("shield") }}
+        <span>This is your private library. Nothing here is public unless you choose to use it.</span>
+    </p>
+</section>

@@ -129,5 +129,35 @@ class StudioSliceOneRouteTests(unittest.TestCase):
         self.assertNotIn("owner-avery", html)
 
 
+class StudioFrameWorkshopUrlFallbackTests(unittest.TestCase):
+    """MINOR 9 correction: the studio shell's navigation.workshop_url must
+    not 404 in a flag-off deployment."""
+
+    def setUp(self):
+        self.original_workshop_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+
+    def tearDown(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_workshop_flag
+
+    def test_workshop_url_points_at_workshop_when_flag_is_on(self):
+        from auth_routes import _studio_frame_view_model
+
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        with app.test_request_context("/app/studio/build-your-future"):
+            frame = _studio_frame_view_model(member("Avery Member", "owner-avery"))
+
+        self.assertEqual(frame["navigation"]["workshop_url"], "/app/workshop")
+
+    def test_workshop_url_falls_back_to_owner_workspace_when_flag_is_off(self):
+        from auth_routes import _studio_frame_view_model
+
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = False
+        with app.test_request_context("/app/studio/build-your-future"):
+            frame = _studio_frame_view_model(member("Avery Member", "owner-avery"))
+
+        self.assertEqual(frame["navigation"]["workshop_url"], "/app")
+        self.assertNotEqual(frame["navigation"]["workshop_url"], "/app/workshop")
+
+
 if __name__ == "__main__":
     unittest.main()

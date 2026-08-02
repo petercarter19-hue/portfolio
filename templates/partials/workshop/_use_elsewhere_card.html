@@ -1,0 +1,30 @@
+{# "Use this elsewhere" right-rail card on the saved confirmation — approved
+   authority 05, exactly as approved: every destination is badged "Coming
+   later" with no live control. D6's three destinations (résumé page content,
+   My Story, Feed) match architecture doc 17 section 5.4's target_kind
+   enumeration; nothing here writes anywhere. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-card wk-side-card" aria-labelledby="wk-use-elsewhere-title">
+    <div class="wk-side-card__head">
+        {{ workshop_icon("circle-arrow") }}
+        <span id="wk-use-elsewhere-title">Use this elsewhere</span>
+    </div>
+    <p class="wk-side-card__note">
+        Coming later. Your private save is complete. Preparing updates for
+        other PeerSlate destinations is not available yet.
+    </p>
+    <ul class="wk-use-elsewhere__list">
+        <li>
+            <span class="wk-use-elsewhere__label">{{ workshop_icon("briefcase") }}<span>Résumé-page content</span></span>
+            <span class="wk-pill wk-pill--coming-later">Coming later</span>
+        </li>
+        <li>
+            <span class="wk-use-elsewhere__label">{{ workshop_icon("person") }}<span>My Story</span></span>
+            <span class="wk-pill wk-pill--coming-later">Coming later</span>
+        </li>
+        <li>
+            <span class="wk-use-elsewhere__label">{{ workshop_icon("group") }}<span>Feed</span></span>
+            <span class="wk-pill wk-pill--coming-later">Coming later</span>
+        </li>
+    </ul>
+</section>

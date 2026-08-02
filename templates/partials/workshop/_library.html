@@ -1,0 +1,170 @@
+{# My Information library: search, Area/Status filters, item list, and the
+   expanded detail card for the selected item — approved authority 06/09.
+
+   Slice W1: list rows navigate for real (?item=<key>), and the expanded
+   detail comes from workshop.detail (a separate fetch — the list read never
+   carries body text). Search and the Area/Status filter chips are real,
+   server-side controls: the chips are links to ?area=&status=(&q=), each
+   preserving the other parameters; the selected chip carries
+   aria-current="true" instead of aria-pressed. Submitting the search form
+   reloads this same page with ?q= applied. "All statuses" means all active
+   statuses — archived items only appear once the Archived chip itself is
+   selected, the same hidden-unless-asked-for convention a private archive
+   uses elsewhere. When a filter or search matches nothing, an honest "No
+   items match" state (with a Clear filters link) renders instead of the
+   list — distinct from the true first-run empty state below, which only
+   ever appears when the member has never saved anything at all.
+
+   First-run empty state (a member with zero saved items, unfiltered): the
+   filter/search controls are hidden entirely — there is nothing to search
+   or filter — and the column instead shows an honest empty message leading
+   to Add information. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{% set has_items = workshop.total_item_count > 0 %}
+{% macro list_header(extra_class='') %}
+<div class="wk-list__header{% if extra_class %} {{ extra_class }}{% endif %}">
+    <span class="wk-list__count">{{ workshop.total_item_count }} item{{ 's' if workshop.total_item_count != 1 else '' }}</span>
+    <button type="button" class="wk-sort" aria-disabled="true">
+        <span>Last updated</span>{{ workshop_icon("chevron-down") }}
+    </button>
+</div>
+{% endmacro %}
+<div class="wk-library">
+    {% if has_items %}
+    <form class="wk-search" role="search" method="get" action="{{ url_for('workshop.my_information') }}">
+        <label class="wk-sr-only" for="wk-search-input">Search your information</label>
+        {% if workshop.selected_area != "all" %}<input type="hidden" name="area" value="{{ workshop.selected_area }}">{% endif %}
+        {% if workshop.selected_status != "all" %}<input type="hidden" name="status" value="{{ workshop.selected_status }}">{% endif %}
+        <div class="wk-search__field">
+            {{ workshop_icon("search") }}
+            <input
+                id="wk-search-input"
+                name="q"
+                type="search"
+                placeholder="Search your information"
+                autocomplete="off"
+                value="{{ workshop.search_query }}"
+            >
+            <button type="button" class="wk-search__mic" aria-label="Search by voice — not available yet" aria-disabled="true">
+                {{ workshop_icon("mic") }}
+            </button>
+            <button type="submit" class="wk-search__submit" aria-label="Search your information">
+                {{ workshop_icon("arrow-right") }}
+            </button>
+        </div>
+    </form>
+
+    <div class="wk-filters">
+        <div class="wk-filter-group">
+            <span class="wk-filter-group__label" id="wk-area-label">Area</span>
+            <div class="wk-chip-row" role="group" aria-labelledby="wk-area-label">
+                {% for f in workshop.area_filters %}
+                <a
+                    class="wk-chip wk-chip--area{% if f.key == workshop.selected_area %} wk-chip--selected{% endif %}"
+                    href="{{ url_for('workshop.my_information', area=f.key, status=workshop.selected_status, q=workshop.search_query or none) }}"
+                    {% if f.key == workshop.selected_area %}aria-current="true"{% endif %}
+                >{{ f.label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="wk-filter-group">
+            <span class="wk-filter-group__label" id="wk-status-label">Status</span>
+            <div class="wk-chip-row" role="group" aria-labelledby="wk-status-label">
+                {% for f in workshop.status_filters %}
+                <a
+                    class="wk-chip wk-chip--status wk-chip--{{ f.key }}{% if f.key == workshop.selected_status %} wk-chip--selected{% endif %}"
+                    href="{{ url_for('workshop.my_information', area=workshop.selected_area, status=f.key, q=workshop.search_query or none) }}"
+                    {% if f.key == workshop.selected_status %}aria-current="true"{% endif %}
+                >
+                    <span>{{ f.label }}</span>
+                    {% if f.key == workshop.selected_status %}{{ workshop_icon("check") }}{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% if workshop.library_items %}
+    <div class="wk-list-panel">
+        {{ list_header(extra_class='wk-list__header--mobile') }}
+        <div class="wk-list">
+            {{ list_header() }}
+            <ul class="wk-list__items">
+                {% for item in workshop.library_items %}
+                <li class="wk-list__item{% if item.selected %} wk-list__item--selected{% endif %}">
+                    {% if item.select_url %}
+                    <a
+                        class="wk-list__item-link"
+                        href="{{ item.select_url }}"
+                        {% if item.selected %}aria-current="true"{% endif %}
+                    >
+                    {% else %}
+                    {# Dev-fixture rows have no backing item to open into. #}
+                    <a class="wk-list__item-link" href="#" aria-disabled="true" role="link"
+                        {% if item.selected %}aria-current="true"{% endif %}
+                    >
+                    {% endif %}
+                        <span class="wk-list__item-text">
+                            <span class="wk-list__item-title">{{ item.title }}</span>
+                            <span class="wk-status-pill wk-status-pill--{{ item.status }}">
+                                <span class="wk-dot" aria-hidden="true"></span>{{ item.status_label }}
+                            </span>
+                            <span class="wk-list__item-meta">Private &middot; {{ item.classification_label }}</span>
+                            <span class="wk-list__item-meta">{{ item.downstream_use_label }}</span>
+                        </span>
+                        {{ workshop_icon("chevron-right") }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if workshop.list_truncated %}
+            {# Recheck finding: never hardcode the shown count, and be honest
+               that filters/search only cover the most-recent window. #}
+            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} items. Filters and search cover your 200 most recently updated items.</p>
+            {% else %}
+            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} item{{ 's' if workshop.total_item_count != 1 else '' }}</p>
+            {% endif %}
+        </div>
+
+        {% include "partials/workshop/_item_detail.html" %}
+    </div>
+    {% else %}
+    <div class="wk-empty wk-empty--no-match">
+        {{ workshop_icon("search") }}
+        {% if workshop.list_truncated %}
+        {# Recheck finding: when the library exceeds the 200-item window we
+           cannot know that nothing matches — only that nothing in the
+           window does. Never assert a negative the code cannot prove. #}
+        <h2 class="wk-empty__title">No matches in your recent items</h2>
+        <p class="wk-empty__copy">
+            Nothing matched among your 200 most recently updated items.
+            Older items are not searched yet, so a match may exist further
+            back in your library.
+        </p>
+        {% else %}
+        <h2 class="wk-empty__title">No items match</h2>
+        <p class="wk-empty__copy">
+            Try a different search, or clear your filters to see everything
+            in your library.
+        </p>
+        {% endif %}
+        <a class="wk-btn wk-btn--secondary" href="{{ workshop.clear_filters_url }}">Clear filters</a>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="wk-empty">
+        {{ workshop_icon("shield") }}
+        <h2 class="wk-empty__title">Nothing saved here yet</h2>
+        <p class="wk-empty__copy">
+            Add an experience, skill, interest, or accomplishment to start your
+            private library. You control what is saved and where you choose
+            to use it.
+        </p>
+        <a class="wk-btn wk-btn--primary" href="{{ workshop.add_information_url }}">
+            {{ workshop_icon("plus") }}
+            <span>Add information</span>
+        </a>
+    </div>
+    {% endif %}
+</div>

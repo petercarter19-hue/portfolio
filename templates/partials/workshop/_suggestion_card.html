@@ -1,0 +1,41 @@
+{# "Suggested by PeerSlate — not confirmed" card — approved authority 06/09.
+   Review/Dismiss/"Do not suggest this again" are not wired yet (checkpoint
+   scope: main page render only, no interaction states) — href="#",
+   aria-disabled="true", matching the mode-tab treatment used elsewhere on
+   this page. The intro copy is reworded from the mockup's "information you
+   previously allowed it to use": see services/knowledge_service.py's
+   module docstring for why (doc 20 section 6a removed the AI-use
+   permission concept this phrase referred to).
+
+   MAJOR 3 correction: this card only ever renders from the dev-fixture
+   checkpoint seam (W1 has no real suggestion generation — that is slice
+   W3), so it also carries a "Preview example" tag so the dev-preview
+   banner covering the rest of the room doesn't leave this one fabricated
+   card looking like a live W3 capability. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-suggestion" aria-labelledby="wk-suggestion-title">
+    <div class="wk-suggestion__head">
+        <span class="wk-suggestion__badge" aria-hidden="true">{{ workshop_icon("lightbulb") }}</span>
+        <p class="wk-suggestion__eyebrow" id="wk-suggestion-title">Suggested by PeerSlate — not confirmed</p>
+        <span class="wk-pill wk-pill--coming-later">Preview example</span>
+    </div>
+    <p class="wk-suggestion__intro">{{ workshop.suggestion.intro }}</p>
+
+    <div class="wk-suggestion__evidence">
+        <p>
+            <strong>{{ workshop.suggestion.evidence_lead }}</strong>
+            based on your confirmed item
+            &ldquo;{{ workshop.suggestion.evidence_quote }}&rdquo;
+        </p>
+    </div>
+
+    <a class="wk-btn wk-btn--primary wk-btn--block" href="#" aria-disabled="true" role="link">
+        {{ workshop.suggestion.review_label }}
+    </a>
+    <a class="wk-btn wk-btn--secondary wk-btn--block" href="#" aria-disabled="true" role="link">
+        {{ workshop.suggestion.dismiss_label }}
+    </a>
+    <a class="wk-suggestion__dismiss-link" href="#" aria-disabled="true" role="link">
+        {{ workshop.suggestion.do_not_suggest_label }}
+    </a>
+</section>

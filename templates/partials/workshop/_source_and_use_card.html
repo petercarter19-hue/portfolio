@@ -1,0 +1,16 @@
+{# "Source & use" right-rail card on the review screen — adapted from
+   approved authority 04's "SOURCE & USE" card. Per doc 20 section 6a (owner
+   decision, 2026-08-01), the mockup's third bullet ("AI-use permission can
+   be changed") is dropped entirely — there is no AI-use permission control
+   left to describe. The remaining two bullets are unaffected. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-card wk-side-card" aria-labelledby="wk-source-use-title">
+    <div class="wk-side-card__head">
+        {{ workshop_icon("lightbulb") }}
+        <span id="wk-source-use-title">Source &amp; use</span>
+    </div>
+    <ul class="wk-side-card__list">
+        <li>{{ workshop_icon("check") }}<span>Your original wording is preserved even if you edit this later.</span></li>
+        <li>{{ workshop_icon("check") }}<span>Work / Personal / Both is for your own organization only.</span></li>
+    </ul>
+</section>

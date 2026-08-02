@@ -1,0 +1,10 @@
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{# Payload-free recovery state: identity storage (or the checkpoint fixture
+   build) failed. Never falls back to fixture identity or invented data. #}
+<section class="wk-state-panel" aria-labelledby="wk-state-title">
+    {{ workshop_icon("shield") }}
+    <p class="wk-state-panel__eyebrow">Temporary connection</p>
+    <h2 id="wk-state-title">Workshop is temporarily unavailable.</h2>
+    <p>We couldn't load your private library right now. Nothing has been created, changed, or lost. Try again shortly.</p>
+    <a class="wk-btn wk-btn--primary" href="{{ url_for('workshop.my_information') }}">Try again</a>
+</section>

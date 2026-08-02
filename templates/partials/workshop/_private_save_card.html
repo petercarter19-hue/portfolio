@@ -1,0 +1,17 @@
+{# "Private save" right-rail card — approved authorities 04/05/08, unchanged
+   by the doc 20 section 6a AI-use-permission removal (none of these bullets
+   referenced that control). Reused on the composer, review, and saved
+   confirmation pages. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-card wk-side-card" aria-labelledby="wk-private-save-title">
+    <div class="wk-side-card__head">
+        {{ workshop_icon("shield") }}
+        <span id="wk-private-save-title">Private save</span>
+    </div>
+    <ul class="wk-side-card__list">
+        <li>{{ workshop_icon("check") }}<span>Saves this exact wording privately.</span></li>
+        <li>{{ workshop_icon("check") }}<span>Does not publish or share it.</span></li>
+        <li>{{ workshop_icon("check") }}<span>Does not change another PeerSlate destination.</span></li>
+    </ul>
+    <p class="wk-side-card__note">Private by default. You control what stays private, what to share, and where.</p>
+</section>

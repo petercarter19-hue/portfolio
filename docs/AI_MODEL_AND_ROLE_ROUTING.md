@@ -88,7 +88,7 @@ when the specified role is unavailable.
 |---|---|---|
 | Architect | **Claude Fable 5** | New or materially changed product, data, privacy, or technical architecture |
 | Implementer | **Claude Sonnet 5** | Bounded Claude Code implementation, tests, documentation, corrections, and closeout |
-| Independent reviewer | **Claude Opus 4.8** | Exact-SHA, risk-triggered review and audit findings |
+| Independent reviewer | **Claude Opus 5** | Exact-SHA, risk-triggered review and audit findings; version set by the owner decision recorded in PS-SLATE-STUDIO-IA-001 doc 16 §5 (2026-08-01) |
 
 In Claude Code, confirm the resolved model with `/model` and `/status` before a
 major package or audit. Do not treat a remembered marketing nickname or an

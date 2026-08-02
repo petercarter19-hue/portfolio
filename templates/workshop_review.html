@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Review the exact wording, classification, and source before saving privately.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001, Slice W1 direct entry — "Review what will be saved."
+  Assembled from approved authority 04 (desktop) / 08 (mobile) minus the AI
+  panels and minus the AI-use permission block (doc 20 section 6a: AI use of
+  confirmed information is always on, no member-facing toggle, anywhere).
+
+  Deviation, disclosed: the mockup's "View original" link is omitted. In W1
+  there is no AI-assisted divergence between original and approved wording —
+  direct entry writes the identical text to both — so the link would only
+  ever show text identical to "Final wording" above it. It returns once W2
+  introduces AI-assisted refinement that can actually differ from the
+  original.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    <div class="wk-flow-layout">
+        <div class="wk-flow-main">
+            <form method="post" action="{{ save_url }}">
+                {% if idempotency_key %}<input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">{% endif %}
+                {% if expected_version_token %}<input type="hidden" name="expected_row_version" value="{{ expected_version_token }}">{% endif %}
+
+                <button type="submit" formaction="{{ keep_working_url }}" formnovalidate class="wk-breadcrumb wk-breadcrumb--button">
+                    {{ workshop_icon("arrow-left") }}
+                    <span>Back to editing</span>
+                </button>
+
+                <div class="wk-card wk-review">
+                    <h2 class="wk-flow-title">Review what will be saved</h2>
+                    <p class="wk-flow-sub">Make any final edits below before saving privately.</p>
+
+                    {% if error_message %}
+                    <div class="wk-form-error" role="alert">{{ error_message }}</div>
+                    {% endif %}
+
+                    <div class="wk-field">
+                        <label class="wk-field__label wk-field__label--eyebrow" for="wk-review-title">Title</label>
+                        <input
+                            id="wk-review-title"
+                            class="wk-field__input"
+                            name="title"
+                            type="text"
+                            maxlength="{{ max_title_units }}"
+                            value="{{ values.title }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="wk-field">
+                        <label class="wk-field__label wk-field__label--eyebrow" for="wk-review-wording">Final wording</label>
+                        <div class="wk-field__textarea-wrap">
+                            <textarea
+                                id="wk-review-wording"
+                                class="wk-field__textarea"
+                                name="wording"
+                                maxlength="{{ max_wording_units }}"
+                                rows="6"
+                                required
+                            >{{ values.wording }}</textarea>
+                            <button
+                                type="button"
+                                class="wk-mic-btn"
+                                aria-label="Voice input is not available yet"
+                                aria-disabled="true"
+                                disabled
+                            >{{ workshop_icon("mic") }}</button>
+                        </div>
+                    </div>
+
+                    <div class="wk-field">
+                        <span class="wk-field__label" id="wk-review-classification-label">Classification</span>
+                        <div class="wk-choice-row" role="radiogroup" aria-labelledby="wk-review-classification-label">
+                            {% for key, label in classification_choices %}
+                            <label class="wk-choice">
+                                <input
+                                    type="radio"
+                                    name="classification"
+                                    value="{{ key }}"
+                                    {% if values.classification == key %}checked{% endif %}
+                                >
+                                <span>{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="wk-review__source-row">
+                        <span class="wk-field__label">Source</span>
+                        <span class="wk-review__source-value">{{ source_label }}</span>
+                    </div>
+
+                    <div class="wk-actions-row">
+                        <button type="submit" name="save_action" value="unfinished" class="wk-btn wk-btn--outline">
+                            {{ workshop_icon("archive") }}
+                            <span>Save unfinished</span>
+                        </button>
+                        <button type="submit" formaction="{{ keep_working_url }}" formnovalidate class="wk-btn-link">Keep working</button>
+                        <button type="submit" name="save_action" value="confirm" class="wk-btn wk-btn--primary">Save privately</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="wk-aside">
+            {% include "partials/workshop/_private_save_card.html" %}
+            {% include "partials/workshop/_source_and_use_card.html" %}
+        </div>
+    </div>
+</div>
+{% endblock %}

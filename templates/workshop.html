@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Workshop | PeerSlate{% endblock %}
+
+{% block meta_description %}Review, update, and control the private information you have chosen to give PeerSlate.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{#
+  PS-WORKSHOP-001, Slice W1. My Information wired to the real owner-scoped
+  knowledge store, plus direct entry (Add/Edit/Archive/Restore/Delete) on
+  the same blueprint. Visual authority:
+  docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
+  workshop-approved-2026-08-01/06_APPROVED_desktop-my-information.png and
+  09_APPROVED_mobile-my-information.png.
+
+  Per doc 20 section 6a, AI use of confirmed information is always on with
+  no member-facing permission control, so this page carries no AI-use
+  toggle, row, or copy anywhere — see the module docstrings in
+  services/knowledge_service.py and the workshop partials for the specific
+  mockup omissions and wording adaptations that follow from that owner
+  decision.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    {% if dev_preview %}
+    <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
+    {% endif %}
+
+    {% if checkpoint_unavailable %}
+    {% include "partials/workshop/_unavailable.html" %}
+    {% else %}
+    {% if success_message or validation_message %}
+    <div class="wk-status-banner{% if validation_message %} wk-status-banner--error{% endif %}" role="status">
+        {{ validation_message or success_message }}
+    </div>
+    {% endif %}
+    <div class="wk-layout">
+        {% include "partials/workshop/_your_information_rail.html" %}
+        {% include "partials/workshop/_library.html" %}
+        <div class="wk-aside">
+            {% if workshop.suggestion %}{% include "partials/workshop/_suggestion_card.html" %}{% endif %}
+            {% include "partials/workshop/_info_card.html" %}
+        </div>
+    </div>
+    {% endif %}
+
+    <p class="wk-footnote">
+        <svg class="wk-footnote__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
+            <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
+        </svg>
+        Private unless you deliberately choose to use it elsewhere.
+    </p>
+</div>
+{% endblock %}

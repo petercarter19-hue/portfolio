@@ -1,0 +1,35 @@
+{# "How PeerSlate uses your information" — approved authority 06/09, with
+   two required omissions per doc 20 section 6a (owner decision,
+   2026-08-01: AI use of confirmed information is always on, with no
+   member-facing permission control anywhere):
+
+   - the mockups' second bullet ("Only information allowed for AI use may
+     support private suggestions") is dropped entirely — there is no
+     per-item AI-use allowance left to describe;
+   - the third bullet's mockup wording ("You can edit, archive, delete, or
+     change AI-use permission") is trimmed to "edit, archive, or delete" —
+     there is no AI-use permission control left to change. This is the
+     "truthful state wiring" adaptation category
+     (docs/AI_WORKFLOW.md, Visual integrity for user-facing work).
+
+   Rendered as a native <details> so it needs no JavaScript to expand on
+   narrow screens; workshop.css keeps it visually always-open at desktop
+   widths to match the approved always-expanded right rail. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<details class="wk-info" open>
+    <summary class="wk-info__summary">
+        {{ workshop_icon("shield") }}
+        <span>How PeerSlate uses your information</span>
+        {{ workshop_icon("chevron-down") }}
+    </summary>
+    <ul class="wk-info__list">
+        <li>
+            {{ workshop_icon("shield") }}
+            <span>Confirmed information stays private unless you deliberately use it elsewhere.</span>
+        </li>
+        <li>
+            {{ workshop_icon("person") }}
+            <span>You can edit, archive, or delete.</span>
+        </li>
+    </ul>
+</details>

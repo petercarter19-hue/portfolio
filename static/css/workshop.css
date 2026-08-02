@@ -1,0 +1,1818 @@
+/* =========================================================
+   WORKSHOP — My Information (PS-WORKSHOP-001, Slice W1 checkpoint)
+
+   Visual authority:
+     docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
+     workshop-approved-2026-08-01/06_APPROVED_desktop-my-information.png
+     workshop-approved-2026-08-01/09_APPROVED_mobile-my-information.png
+
+   Scoped entirely under body.workshop-page so it cannot leak into any
+   other room. Follows the precedent set by owner-studio.css (--ss-*) and
+   journal.css (--jbook-*): a page-scoped custom-property palette seeded
+   from the site's existing Deep Navy Gold (light) / Layered Ink & Signal
+   Gold (dark) brand values — see static/css/style.css's ":root" Foundation
+   C tokens (--ps-ink-950, --ps-product-indigo(-strong), --ps-connection-
+   azure, --ps-evidence-amber, --ps-success/--ps-warning/--ps-danger) and
+   its "body[data-theme=dark]" override of the same tokens — rather than
+   binding directly to that global cascade. --ps-ink-950 specifically stays
+   true ink in BOTH themes (it colors text on white inputs and gold
+   buttons), so a page that bound its general body-text color straight to
+   it would read as dark-on-dark once the dark theme flips the canvas
+   itself dark. A local, theme-flipped --wk-ink avoids that trap while
+   still using the same brand hex values. Fonts are shared directly via
+   var(--ps-font-display) / var(--ps-font-ui) since those are theme-
+   invariant. Nothing here invents a new brand palette.
+   ========================================================= */
+
+body.workshop-page {
+    color-scheme: light;
+
+    --wk-canvas: #eef1f8;
+    --wk-surface: #ffffff;
+    --wk-surface-muted: #f6f8fc;
+    --wk-line: #dee3ef;
+    --wk-line-soft: #ecf0f8;
+    --wk-ink: #0a1b36;
+    --wk-muted: #56607a;
+
+    --wk-action: #17408f;
+    --wk-action-strong: #0b2f70;
+    --wk-action-tint: #e4eafb;
+    --wk-on-action: #ffffff;
+
+    --wk-success: #24a36a;
+    --wk-success-ink: #256b3f;
+    --wk-success-tint: #e7f2e9;
+
+    --wk-warning: #b87900;
+    --wk-warning-tint: #fbefe0;
+    /* #b87900 (--wk-warning) reads at ~3.2–3.6:1 on white and on
+       --wk-warning-tint — enough for a border or an icon (3:1, non-text)
+       but short of the 4.5:1 small-text minimum. --wk-warning-ink is the
+       text-safe amber, mirroring the existing --wk-success/--wk-success-ink
+       split; every amber TEXT use (suggested status, the suggestion card
+       eyebrow) reads this token instead. */
+    --wk-warning-ink: #805300;
+
+    --wk-danger: #b23a2f;
+    --wk-danger-tint: #fbeae8;
+
+    --wk-focus: #1257d6;
+    /* Owner direction 2026-08-01 ("make it alive, not flat, not 3D"):
+       layered depth — a hairline top highlight for surface separation, a
+       tight contact shadow, and a soft ambient falloff — replacing the
+       original single-layer shadows. Finish-level tuning only; composition,
+       hierarchy, and color language are unchanged from the locked set. */
+    /* Depth round 2 (owner, 2026-08-01): "more layers, more shadows,
+       texture — tastefully, not bubble wrap." Selective hierarchy: the
+       primary content cards (--wk-shadow) get a real lift; small elements
+       (--wk-shadow-sm) rise only slightly so the page doesn't balloon. */
+    /* Round 3 ("we definitely need more depth"): stronger still. */
+    --wk-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 90%),
+        0 1px 3px rgb(19 36 71 / 13%),
+        0 16px 36px rgb(19 36 71 / 18%),
+        0 44px 100px rgb(19 36 71 / 17%);
+    --wk-shadow-sm:
+        inset 0 1px 0 rgb(255 255 255 / 78%),
+        0 2px 4px rgb(19 36 71 / 12%),
+        0 10px 26px rgb(19 36 71 / 15%);
+    --wk-radius: 14px;
+    --wk-radius-sm: 10px;
+    --wk-radius-pill: 999px;
+    /* Approved authority 06 draws every chip/badge (Area, Status, the
+       detail-card status badge, the mobile chip row) as a slightly-rounded
+       square, never a full capsule — this is the shared radius for all of
+       them. --wk-radius-pill above is kept only so nothing else regresses
+       if some other page-local selector still reads it. */
+    --wk-radius-chip: 12px;
+
+    /* Depth round 2 — environment texture (owner: "texture all around,
+       tastefully"): two soft light washes echoing the approved mockups'
+       abstract environment, plus a whisper of photographic grain
+       (inline SVG turbulence, ~3% alpha). All decorative; content cards
+       sit on clean surfaces above it. */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.03'/%3E%3C/svg%3E"),
+        radial-gradient(58rem 34rem at 12% 8%, rgb(255 255 255 / 70%), transparent 60%),
+        radial-gradient(64rem 40rem at 88% 78%, rgb(184 197 229 / 50%), transparent 62%),
+        radial-gradient(40rem 26rem at 55% 110%, rgb(255 255 255 / 40%), transparent 65%),
+        var(--wk-canvas);
+}
+
+body.workshop-page[data-theme="dark"] {
+    color-scheme: dark;
+
+    --wk-canvas: #0b1626;
+    --wk-surface: #101d31;
+    --wk-surface-muted: #16233a;
+    --wk-line: #2a3a56;
+    --wk-line-soft: #223250;
+    --wk-ink: #eef2fa;
+    --wk-muted: #aab6cc;
+
+    --wk-action: #e3b83a;
+    --wk-action-strong: #f0c95a;
+    --wk-action-tint: rgb(227 184 58 / 16%);
+    --wk-on-action: #0a1730;
+
+    --wk-success: #4fbf8a;
+    --wk-success-ink: #bfe8d2;
+    --wk-success-tint: rgb(79 191 138 / 14%);
+
+    --wk-warning: #e0a458;
+    --wk-warning-tint: rgb(224 164 88 / 16%);
+    /* Already text-safe (~7–8:1) against the dark surfaces it appears on,
+       so the dark theme's ink token is the same color. */
+    --wk-warning-ink: #e0a458;
+
+    --wk-danger: #e2776b;
+    --wk-danger-tint: rgb(226 119 107 / 16%);
+
+    --wk-focus: #f0c95a;
+    /* Dark-theme depth round 3: same selective recipe, deeper wells. */
+    --wk-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 10%),
+        0 1px 3px rgb(0 0 0 / 50%),
+        0 16px 36px rgb(0 0 0 / 52%),
+        0 44px 100px rgb(0 0 0 / 44%);
+    --wk-shadow-sm:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 2px 4px rgb(0 0 0 / 44%),
+        0 10px 26px rgb(0 0 0 / 40%);
+}
+
+.wk-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.wk {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 3.5rem;
+    font-family: var(--ps-font-ui, "Inter", system-ui, sans-serif);
+    color: var(--wk-ink);
+}
+
+.wk *,
+.wk *::before,
+.wk *::after {
+    box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------
+   Focus — visible everywhere inside Workshop, including on
+   aria-disabled links/buttons (they stay in the tab order).
+   --------------------------------------------------------- */
+.wk a:focus-visible,
+.wk button:focus-visible,
+.wk input:focus-visible,
+.wk summary:focus-visible {
+    outline: 3px solid var(--wk-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ---------------------------------------------------------
+   Hero
+   --------------------------------------------------------- */
+.wk-hero {
+    text-align: center;
+    max-width: 46rem;
+    margin: 0 auto 1.75rem;
+}
+
+.wk-hero__title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: clamp(2.4rem, 4vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    margin: 0 0 0.9rem;
+    color: var(--wk-ink);
+}
+
+.wk-hero__lede,
+.wk-hero__sub {
+    margin: 0.3rem 0 0;
+    color: var(--wk-muted);
+    font-size: 1.02rem;
+    line-height: 1.5;
+}
+
+/* ---------------------------------------------------------
+   Mode tabs
+   --------------------------------------------------------- */
+.wk-modes {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    border-bottom: 1px solid var(--wk-line);
+    margin: 0 auto 2rem;
+    max-width: 46rem;
+}
+
+.wk-modes__tab {
+    display: inline-block;
+    padding: 0 0.15rem 0.85rem;
+    color: var(--wk-muted);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+}
+
+.wk-modes__tab[aria-disabled="true"] {
+    cursor: default;
+}
+
+/* MINOR 6 correction: "Work on Something" is now a plain <span>, not an
+   inert <a>, so it needs its own layout for the trailing "Coming later"
+   pill rather than relying on the [aria-disabled] selector above. */
+.wk-modes__tab--disabled {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: default;
+}
+
+.wk-modes__tab--active {
+    color: var(--wk-action);
+    border-bottom-color: var(--wk-action);
+}
+
+/* ---------------------------------------------------------
+   Layout grid: rail | library | aside
+   --------------------------------------------------------- */
+.wk-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.wk-rail,
+.wk-library,
+.wk-aside {
+    min-width: 0;
+}
+
+.wk-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Desktop shows the info card above the suggestion card; the DOM keeps
+   suggestion-before-info (the order screen readers get, and the order the
+   mobile layout in file 09 uses unmodified — mobile shows the suggestion
+   card first and the collapsed "How PeerSlate uses..." accordion last), so
+   only the visual order flips, and only at desktop widths. See the
+   min-width: 1101px block in the Responsive section. */
+
+/* ---------------------------------------------------------
+   Shared card surface
+   --------------------------------------------------------- */
+.wk-rail,
+.wk-suggestion,
+.wk-info,
+.wk-list,
+.wk-detail {
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius);
+    box-shadow: var(--wk-shadow-sm);
+}
+
+.wk-rail {
+    padding: 1.5rem;
+}
+
+.wk-rail__title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: 1.3rem;
+    margin: 0 0 1rem;
+}
+
+.wk-rail__copy {
+    color: var(--wk-muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin: 1rem 0 0;
+}
+
+.wk-rail__note {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 1.25rem 0 0;
+    padding: 0.85rem;
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line-soft);
+    border-radius: var(--wk-radius-sm);
+    color: var(--wk-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.wk-rail__note .wk-icon {
+    flex: none;
+    color: var(--wk-action);
+    margin-top: 0.15rem;
+}
+
+/* ---------------------------------------------------------
+   Buttons
+   --------------------------------------------------------- */
+.wk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--wk-radius-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.wk-btn .wk-icon { width: 18px; height: 18px; }
+
+.wk-btn--block { width: 100%; }
+
+.wk-btn--primary {
+    background: var(--wk-action);
+    color: var(--wk-on-action);
+    border-color: var(--wk-action);
+}
+
+.wk-btn--secondary {
+    background: var(--wk-surface);
+    color: var(--wk-action);
+    border-color: var(--wk-action);
+}
+
+.wk-btn--outline {
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    border-color: var(--wk-line);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+.wk-btn--danger {
+    background: var(--wk-surface);
+    color: var(--wk-danger);
+    border-color: var(--wk-danger-tint);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+.wk-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--wk-radius-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--wk-muted);
+    cursor: pointer;
+}
+
+/* ---------------------------------------------------------
+   Search
+   --------------------------------------------------------- */
+.wk-search {
+    margin-bottom: 1rem;
+}
+
+.wk-search__field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 0.55rem 0.7rem;
+    box-shadow: var(--wk-shadow-sm);
+}
+
+.wk-search__field .wk-icon--search {
+    color: var(--wk-muted);
+    flex: none;
+}
+
+.wk-search__field input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--wk-ink);
+    font-size: 0.98rem;
+    font-family: inherit;
+    min-width: 0;
+}
+
+.wk-search__field input:focus { outline: none; }
+
+.wk-search__field input::placeholder { color: var(--wk-muted); }
+
+.wk-search__mic,
+.wk-search__submit {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--wk-line);
+    background: var(--wk-surface-muted);
+    color: var(--wk-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.wk-search__submit {
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+    border-color: transparent;
+}
+
+/* ---------------------------------------------------------
+   Filters
+   --------------------------------------------------------- */
+.wk-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.wk-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.wk-filter-group__label {
+    flex: none;
+    width: 4.2rem;
+    font-weight: 600;
+    color: var(--wk-ink);
+    font-size: 0.92rem;
+}
+
+.wk-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.wk-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: var(--wk-radius-chip);
+    border: 1.5px solid var(--wk-line);
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.wk-chip .wk-icon { width: 15px; height: 15px; }
+
+.wk-chip--area.wk-chip--selected {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+}
+
+/* Status chips carry their status's color family even when not selected
+   (approved authority 06: "Suggested" reads amber though "Confirmed" is
+   the active filter) — selection is additionally shown by a heavier
+   border plus a checkmark, never by color alone. */
+.wk-chip--status.wk-chip--suggested {
+    border-color: var(--wk-warning);
+    color: var(--wk-warning-ink);
+    background: var(--wk-warning-tint);
+}
+
+.wk-chip--status.wk-chip--confirmed.wk-chip--selected {
+    border-color: var(--wk-success);
+    color: var(--wk-success-ink);
+    background: var(--wk-success-tint);
+}
+
+.wk-chip--status.wk-chip--selected:not(.wk-chip--confirmed):not(.wk-chip--suggested) {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+}
+
+/* ---------------------------------------------------------
+   List + detail panel
+   --------------------------------------------------------- */
+.wk-list-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.wk-list {
+    padding: 1.1rem 0 0.4rem;
+}
+
+.wk-list__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.1rem 0.75rem;
+    border-bottom: 1px solid var(--wk-line-soft);
+}
+
+/* The panel-level copy of the header exists only for the mobile stacking
+   order (authority 09); desktop and tablet render the in-card copy. */
+.wk-list__header--mobile { display: none; }
+
+.wk-list__count {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-muted);
+}
+
+.wk-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    color: var(--wk-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.wk-sort .wk-icon { width: 15px; height: 15px; }
+
+.wk-list__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.wk-list__item {
+    border-bottom: 1px solid var(--wk-line-soft);
+}
+
+.wk-list__item:last-child { border-bottom: none; }
+
+.wk-list__item-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.95rem 1.1rem;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+    color: inherit;
+}
+
+.wk-list__item-link .wk-icon--chevron-right {
+    flex: none;
+    color: var(--wk-muted);
+}
+
+.wk-list__item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+    padding: 0.05rem 0;
+}
+
+/* Approved authority 06: every row — selected or not — shows the same four
+   lines (title, status, "Private · classification", downstream use); only
+   the selected row's left accent and tinted background differ. */
+.wk-list__item--selected .wk-list__item-link {
+    border-left-color: var(--wk-action);
+    background: var(--wk-action-tint);
+}
+
+.wk-list__item-title {
+    font-weight: 700;
+    margin: 0;
+    color: var(--wk-ink);
+    font-size: 1rem;
+}
+
+.wk-list__item-meta {
+    margin: 0;
+    color: var(--wk-muted);
+    font-size: 0.82rem;
+}
+
+.wk-list__footer {
+    margin: 0.85rem 0 0;
+    padding: 0 1.1rem;
+    color: var(--wk-muted);
+    font-size: 0.82rem;
+}
+
+/* ---------------------------------------------------------
+   Status pill
+   --------------------------------------------------------- */
+.wk-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--wk-success-ink);
+}
+
+.wk-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+}
+
+.wk-status-pill--confirmed { color: var(--wk-success-ink); }
+.wk-status-pill--suggested { color: var(--wk-warning-ink); }
+.wk-status-pill--unfinished,
+.wk-status-pill--archived { color: var(--wk-muted); }
+
+/* ---------------------------------------------------------
+   Item detail card
+   --------------------------------------------------------- */
+.wk-detail {
+    padding: 1.4rem 1.5rem 1.6rem;
+}
+
+.wk-detail__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.wk-detail__title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: 1.3rem;
+    margin: 0;
+    line-height: 1.25;
+}
+
+/* "More actions" (kebab, authority 06) and "Collapse" (chevron-up,
+   authority 09) are both rendered — never both shown; see the mobile
+   override in the Responsive section. Both are inert at this checkpoint. */
+.wk-icon-btn--collapse {
+    display: none;
+}
+
+/* ---------------------------------------------------------
+   Detail-card badge row
+   Authority 06 draws one status badge at desktop; authority 09 adds
+   Private / classification / downstream-use badges at mobile. All four
+   render; the mobile-only three are hidden above the mobile breakpoint
+   (Responsive section). Distinct from .wk-status-pill (the plain dot+text
+   treatment the item-list rows use) — these are boxed, per finding 4.
+   --------------------------------------------------------- */
+.wk-detail__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0 1.15rem;
+}
+
+.wk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--wk-radius-chip);
+    border: 1.5px solid var(--wk-line);
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.wk-badge .wk-icon { width: 15px; height: 15px; }
+
+.wk-badge--confirmed {
+    border-color: var(--wk-success);
+    background: var(--wk-success-tint);
+    color: var(--wk-success-ink);
+}
+
+.wk-badge--suggested {
+    border-color: var(--wk-warning);
+    background: var(--wk-warning-tint);
+    color: var(--wk-warning-ink);
+}
+
+.wk-badge--unfinished,
+.wk-badge--archived,
+.wk-badge--neutral {
+    color: var(--wk-muted);
+}
+
+.wk-badge--accent {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+}
+
+.wk-badge--mobile-only {
+    display: none;
+}
+
+/* ---------------------------------------------------------
+   Body wording — authority 06 draws the confirmed wording inside its own
+   bordered, rounded box (distinct from the card's own border); finding 5
+   flagged the implementation as borderless.
+   --------------------------------------------------------- */
+.wk-detail__body-box {
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 1rem 1.15rem;
+    margin: 0 0 1.15rem;
+    background: var(--wk-surface);
+}
+
+.wk-detail__body {
+    color: var(--wk-ink);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.wk-detail__meta {
+    margin: 0 0 1.1rem;
+    border-top: 1px solid var(--wk-line-soft);
+    padding-top: 0.6rem;
+}
+
+.wk-detail__meta-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 0;
+}
+
+.wk-detail__meta-row dt {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--wk-ink);
+    font-size: 0.92rem;
+    font-weight: 600;
+    flex: none;
+}
+
+.wk-detail__meta-row dt .wk-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--wk-action);
+    flex: none;
+}
+
+.wk-detail__meta-row dd {
+    margin: 0;
+    color: var(--wk-ink);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-align: right;
+}
+
+/* Only the Status row's value takes on the status color (green for
+   Confirmed, etc.) — every other label/value pair reads in plain ink,
+   matching authority 06. Reuses the same status-color classes as
+   .wk-status-pill (re-declared at matching specificity so the general
+   ink-colored dd rule above cannot win over it). */
+.wk-detail__meta-row dd.wk-status-pill--confirmed { color: var(--wk-success-ink); }
+.wk-detail__meta-row dd.wk-status-pill--suggested { color: var(--wk-warning-ink); }
+.wk-detail__meta-row dd.wk-status-pill--unfinished,
+.wk-detail__meta-row dd.wk-status-pill--archived { color: var(--wk-muted); }
+
+.wk-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    border-top: 1px solid var(--wk-line-soft);
+    padding-top: 1.1rem;
+}
+
+/* ---------------------------------------------------------
+   Suggestion card
+   --------------------------------------------------------- */
+.wk-suggestion {
+    /* Authority 06/09 draw this card with a warm amber tint (it is an
+       AI-suggested, not-yet-confirmed state) rather than the neutral
+       surface tint the info card and rail note use. */
+    padding: 1.5rem;
+    background: var(--wk-warning-tint);
+}
+
+.wk-suggestion__head {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin: 0 0 0.8rem;
+}
+
+.wk-suggestion__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--wk-surface);
+}
+
+.wk-suggestion__badge .wk-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--wk-warning);
+}
+
+.wk-suggestion__eyebrow {
+    /* Authority 06/09: only the lightbulb badge is amber — the eyebrow
+       label itself reads in the same dark ink as every other heading on
+       the page, not the status color. */
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--wk-ink);
+}
+
+.wk-suggestion__intro {
+    margin: 0 0 1.2rem;
+    color: var(--wk-ink);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.wk-suggestion__evidence {
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.2rem;
+}
+
+.wk-suggestion__evidence p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--wk-ink);
+}
+
+.wk-suggestion .wk-btn { margin-bottom: 0.7rem; }
+
+.wk-suggestion__dismiss-link {
+    display: block;
+    text-align: center;
+    color: var(--wk-action);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* ---------------------------------------------------------
+   Info card ("How PeerSlate uses your information")
+   --------------------------------------------------------- */
+.wk-info {
+    padding: 1.75rem 1.75rem 2rem;
+}
+
+.wk-info__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.wk-info__summary::-webkit-details-marker { display: none; }
+
+.wk-info__summary .wk-icon--shield { color: var(--wk-action); flex: none; }
+
+.wk-info__summary .wk-icon--chevron-down {
+    margin-left: auto;
+    flex: none;
+    color: var(--wk-muted);
+    transition: transform var(--ps-motion-micro, 160ms) ease;
+}
+
+.wk-info[open] .wk-info__summary .wk-icon--chevron-down { transform: rotate(180deg); }
+
+.wk-info__list {
+    list-style: none;
+    margin: 1.6rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.wk-info__list li {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    color: var(--wk-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.wk-info__list .wk-icon {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    margin-top: 0.1rem;
+    color: var(--wk-action);
+}
+
+/* ---------------------------------------------------------
+   Icons
+   --------------------------------------------------------- */
+.wk-icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+}
+
+/* ---------------------------------------------------------
+   Footnote
+   --------------------------------------------------------- */
+.wk-footnote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 2.5rem 0 0;
+    color: var(--wk-muted);
+    font-size: 0.88rem;
+}
+
+.wk-footnote__icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------
+   Recovery / unavailable state
+   --------------------------------------------------------- */
+.wk-state-panel {
+    max-width: 32rem;
+    margin: 2rem auto;
+    padding: 2rem;
+    text-align: center;
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius);
+    box-shadow: var(--wk-shadow-sm);
+}
+
+.wk-state-panel .wk-icon {
+    width: 32px;
+    height: 32px;
+    color: var(--wk-action);
+    margin: 0 auto 0.75rem;
+}
+
+.wk-state-panel__eyebrow {
+    margin: 0 0 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-muted);
+}
+
+.wk-state-panel h2 {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    margin: 0 0 0.6rem;
+    font-size: 1.4rem;
+}
+
+.wk-state-panel p { color: var(--wk-muted); line-height: 1.55; }
+
+.wk-state-panel .wk-btn { margin-top: 1rem; }
+
+/* ---------------------------------------------------------
+   Responsive — desktop-only (authority 06)
+   --------------------------------------------------------- */
+@media (min-width: 1101px) {
+    /* Desktop shows the info card above the suggestion card; the DOM order
+       (suggestion, then info) is what mobile uses unmodified below, and
+       what a screen reader always gets regardless of viewport. */
+    .wk-aside > .wk-info { order: 1; }
+    .wk-aside > .wk-suggestion { order: 2; }
+
+    /* Authority 06 draws this card's heading as a plain uppercase label —
+       no icon, no chevron, not a disclosure widget — because at desktop
+       width the card is always fully expanded. The <details>/<summary>
+       markup stays (it is what makes file 09's collapsed mobile accordion
+       possible without JavaScript); desktop only changes how it looks and
+       neutralizes the toggle so it cannot visually collapse. */
+    .wk-info__summary {
+        cursor: default;
+        pointer-events: none;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-size: 0.82rem;
+    }
+
+    .wk-info__summary .wk-icon--shield,
+    .wk-info__summary .wk-icon--chevron-down {
+        display: none;
+    }
+
+    /* Defensive: if a keyboard user still toggles the native <details> via
+       Enter on the focused (but pointer-events:none) summary, the list
+       stays visually expanded at desktop regardless of the open attribute. */
+    .wk-info__list {
+        display: flex !important;
+    }
+}
+
+/* ---------------------------------------------------------
+   Responsive — tablet/mobile stacking
+   --------------------------------------------------------- */
+@media (max-width: 1100px) {
+    .wk-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .wk-aside { flex-direction: column; }
+
+    .wk-list-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .wk {
+        padding: 1.75rem 1rem 2.5rem;
+    }
+
+    /* Approved mobile authority (file 09) drops the descriptive paragraph
+       and the private-library note from the rail to keep the page dense
+       on a phone; both stay in the desktop rail unchanged. */
+    .wk-rail__copy,
+    .wk-rail__note {
+        display: none;
+    }
+
+    .wk-filter-group {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .wk-filter-group__label { width: auto; }
+
+    /* Authority 09 stacking order: the "4 items / Last updated" bar first,
+       then the expanded card as the first list entry, then the remaining
+       collapsed rows. The panel-level header copy (order -2) and the detail
+       card (order -1) sit above .wk-list, whose own in-card header copy is
+       hidden at this width. The expanded item is drawn in place of its
+       list row, never repeated as a second compact row. */
+    .wk-list__header--mobile {
+        display: flex;
+        order: -2;
+        padding: 0 0.15rem 0;
+        border-bottom: none;
+    }
+    .wk-list > .wk-list__header { display: none; }
+    .wk-detail { order: -1; }
+
+    .wk-list__item--selected {
+        display: none;
+    }
+
+    /* Authority 09 draws every remaining row as its own separated,
+       rounded, bordered card — not one continuous card with divider
+       lines (finding 6). */
+    .wk-list {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    .wk-list__header {
+        padding: 0 0.15rem 0.6rem;
+        border-bottom: none;
+    }
+
+    .wk-list__items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .wk-list__item,
+    .wk-list__item:last-child {
+        border: 1px solid var(--wk-line);
+        border-radius: var(--wk-radius);
+        background: var(--wk-surface);
+        box-shadow: var(--wk-shadow-sm);
+        overflow: hidden;
+    }
+
+    .wk-list__item-link {
+        padding: 1rem 1.05rem;
+    }
+
+    /* Authority 09 has no "Showing 4 of 4 items" footer line. */
+    .wk-list__footer {
+        display: none;
+    }
+
+    /* Authority 09's expanded card carries the same blue left accent the
+       desktop list uses for its selected row, plus the chip row (finding
+       6) instead of the desktop-only kebab menu. */
+    .wk-detail {
+        border-left: 3px solid var(--wk-action);
+    }
+
+    .wk-icon-btn--more { display: none; }
+    .wk-icon-btn--collapse { display: inline-flex; }
+
+    .wk-badge--mobile-only {
+        display: inline-flex;
+    }
+
+    /* Authority 09 keeps label and value on one row (e.g. "Status
+       Confirmed"); it never stacks them, so the column layout tried here
+       previously is removed rather than kept as a mobile override. */
+    .wk-detail__meta-row {
+        gap: 0.75rem;
+    }
+
+    /* Authority 09 keeps Edit / Archive / Delete on ONE row on a phone.
+       Compact the buttons so all three fit at 390px without clipping. */
+    .wk-detail__actions {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+    .wk-detail__actions .wk-btn {
+        flex: 1 1 0;
+        padding: 0.65rem 0.6rem;
+        font-size: 0.85rem;
+    }
+    .wk-detail__actions .wk-btn .wk-icon { width: 15px; height: 15px; }
+
+    /* Authority 09 draws the four status chips on one row. At 390px the
+       four labels do not fit on one row above the readable size floor, so
+       the chips keep their size and wrap — a documented text-reflow
+       adaptation rather than a shrink below legibility. */
+    .wk-detail .wk-badge {
+        font-size: 0.72rem;
+        padding: 0.28rem 0.55rem;
+        white-space: nowrap;
+    }
+}
+
+/* Below ~360px the one-row action requirement would clip; the authority
+   frame is a ~390px phone, so narrower viewports may wrap. */
+@media (max-width: 359px) {
+    .wk-detail__actions { flex-wrap: wrap; }
+}
+
+/* ---------------------------------------------------------
+   Status banner (My Information — success/validation messages after a
+   redirect from archive/restore/delete/save-unfinished)
+   --------------------------------------------------------- */
+.wk-status-banner {
+    max-width: 1360px;
+    margin: 0 auto 1.25rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-success-tint);
+    color: var(--wk-success-ink);
+    border: 1px solid var(--wk-success);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.wk-status-banner--error {
+    background: var(--wk-warning-tint);
+    color: var(--wk-warning-ink);
+    border-color: var(--wk-warning);
+}
+
+/* Dev-preview-only seam banner (PEERSLATE_WORKSHOP_DEV_FIXTURE + explicit
+   PEERSLATE_ALLOW_DEV_IDENTITY). Deliberately styled unlike the success/
+   error status banners above — solid dark bar, uppercase — so it reads as
+   an environment marker rather than a normal page message. */
+.wk-status-banner--dev-preview {
+    background: var(--wk-ink);
+    color: var(--wk-canvas);
+    border: 1px dashed var(--wk-warning);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.78rem;
+}
+
+.wk-suggestion__head .wk-pill {
+    margin-left: auto;
+}
+
+/* ---------------------------------------------------------
+   First-run empty state (My Information, zero saved items)
+   --------------------------------------------------------- */
+.wk-empty {
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius);
+    box-shadow: var(--wk-shadow-sm);
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 32rem;
+    margin: 0 auto;
+}
+
+.wk-empty .wk-icon {
+    width: 32px;
+    height: 32px;
+    color: var(--wk-action);
+    margin: 0 auto 0.9rem;
+}
+
+.wk-empty__title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: 1.4rem;
+    margin: 0 0 0.6rem;
+}
+
+.wk-empty__copy {
+    color: var(--wk-muted);
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+}
+
+/* ---------------------------------------------------------
+   Generic card surface, shared by the direct-entry flow pages
+   --------------------------------------------------------- */
+.wk-card {
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius);
+    box-shadow: var(--wk-shadow-sm);
+    padding: 1.75rem 2rem 2rem;
+}
+
+/* Two-column flow layout (content + one right rail) for Add/Edit/Review/
+   Saved — the same aside width as the three-column My Information grid,
+   but with no left rail (see workshop_add.html's disclosed deviation). */
+.wk-flow-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: start;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.wk-flow-main { min-width: 0; }
+
+.wk-breadcrumb,
+.wk-breadcrumb--button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 1.1rem;
+    color: var(--wk-action);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.wk-breadcrumb .wk-icon,
+.wk-breadcrumb--button .wk-icon { width: 16px; height: 16px; }
+
+.wk-flow-title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: 1.6rem;
+    margin: 0 0 0.4rem;
+}
+
+.wk-flow-sub {
+    color: var(--wk-muted);
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+}
+
+.wk-form-error {
+    background: var(--wk-danger-tint);
+    color: var(--wk-danger);
+    border: 1px solid var(--wk-danger);
+    border-radius: var(--wk-radius-sm);
+    padding: 0.85rem 1rem;
+    margin: 0 0 1.25rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------
+   Composer / review fields
+   --------------------------------------------------------- */
+.wk-field {
+    margin: 0 0 1.5rem;
+}
+
+.wk-field__label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--wk-ink);
+    margin: 0 0 0.5rem;
+}
+
+.wk-field__label--eyebrow {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-muted);
+}
+
+.wk-field__input {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.wk-field__input:focus { outline: none; }
+
+.wk-field__textarea-wrap {
+    position: relative;
+}
+
+.wk-field__textarea {
+    width: 100%;
+    padding: 0.9rem 3rem 0.9rem 0.9rem;
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.wk-field__textarea:focus { outline: none; }
+
+.wk-mic-btn {
+    position: absolute;
+    right: 0.7rem;
+    bottom: 0.7rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--wk-line);
+    background: var(--wk-surface-muted);
+    color: var(--wk-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+.wk-mic-btn .wk-icon { width: 16px; height: 16px; }
+
+.wk-field__hint {
+    margin: 0.5rem 0 0;
+    color: var(--wk-muted);
+    font-size: 0.82rem;
+}
+
+/* Classification chips as a native, no-JS radio group: the input is visually
+   hidden but stays in the tab order and keeps a visible focus ring via
+   :focus-within on the label; selection is shown with :has(), so the chip
+   highlights immediately on click/keyboard select without JavaScript. */
+.wk-choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.wk-choice {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1.2rem;
+    border-radius: var(--wk-radius-chip);
+    border: 1.5px solid var(--wk-line);
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.wk-choice input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    padding: 0;
+}
+
+.wk-choice:has(input:checked) {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+}
+
+.wk-choice:focus-within {
+    outline: 3px solid var(--wk-focus);
+    outline-offset: 2px;
+}
+
+.wk-composer__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wk-review__source-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--wk-line-soft);
+    margin: 0.5rem 0 1.5rem;
+}
+
+.wk-review__source-value {
+    color: var(--wk-muted);
+    font-size: 0.92rem;
+}
+
+/* ---------------------------------------------------------
+   Action row: Save unfinished (outline) | Keep working (text) | Save
+   privately (primary) — same three-way pattern on the review screen.
+   --------------------------------------------------------- */
+.wk-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--wk-line-soft);
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.wk-btn-link {
+    background: none;
+    border: none;
+    color: var(--wk-action);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem;
+    font-family: inherit;
+    text-decoration: none;
+}
+
+/* ---------------------------------------------------------
+   Right-rail side cards (Private save / Source & use / Use this elsewhere)
+   --------------------------------------------------------- */
+.wk-side-card__head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 0 0 1.1rem;
+}
+
+.wk-side-card__head .wk-icon { color: var(--wk-action); flex: none; }
+
+.wk-side-card__list {
+    list-style: none;
+    margin: 0 0 1.1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.wk-side-card__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    color: var(--wk-ink);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.wk-side-card__list .wk-icon {
+    color: var(--wk-success);
+    width: 18px;
+    height: 18px;
+    margin-top: 0.1rem;
+    flex: none;
+}
+
+.wk-side-card__note {
+    margin: 0;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--wk-line-soft);
+    color: var(--wk-muted);
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+.wk-use-elsewhere__list {
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wk-use-elsewhere__list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.wk-use-elsewhere__label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--wk-ink);
+}
+
+.wk-use-elsewhere__label .wk-icon { color: var(--wk-action); width: 18px; height: 18px; }
+
+.wk-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--wk-radius-chip);
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.wk-pill--coming-later {
+    background: var(--wk-surface-muted);
+    color: var(--wk-muted);
+    border: 1px solid var(--wk-line);
+}
+
+/* ---------------------------------------------------------
+   Saved confirmation
+   --------------------------------------------------------- */
+.wk-saved {
+    text-align: center;
+}
+
+.wk-saved__check {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--wk-action-tint);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.wk-saved__check .wk-icon { width: 26px; height: 26px; color: var(--wk-action); }
+
+.wk-saved__title {
+    font-family: var(--ps-font-display, "Newsreader", Georgia, serif);
+    font-size: 2rem;
+    margin: 0 0 0.6rem;
+}
+
+.wk-saved__sub {
+    color: var(--wk-muted);
+    max-width: 32rem;
+    margin: 0 auto 1.75rem;
+    line-height: 1.6;
+}
+
+.wk-saved__section {
+    text-align: left;
+    border-top: 1px solid var(--wk-line-soft);
+    padding-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.wk-saved__section-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-muted);
+    margin: 0 0 1rem;
+}
+
+.wk-saved__meta {
+    margin: 1.25rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.wk-saved__meta-row dt {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--wk-muted);
+    margin: 0 0 0.35rem;
+}
+
+.wk-saved__meta-row dd {
+    margin: 0;
+    color: var(--wk-ink);
+    font-weight: 600;
+}
+
+.wk-saved .wk-actions-row {
+    justify-content: center;
+    border-top: none;
+    padding-top: 0.5rem;
+}
+
+/* ---------------------------------------------------------
+   Delete confirmation
+   --------------------------------------------------------- */
+.wk-delete-confirm {
+    max-width: 34rem;
+}
+
+.wk-delete-confirm .wk-icon { color: var(--wk-danger); }
+
+.wk-delete-confirm__form {
+    text-align: left;
+    margin-top: 1.25rem;
+}
+
+.wk-delete-confirm__checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--wk-ink);
+    margin-bottom: 1.25rem;
+}
+
+.wk-delete-confirm__checkbox input {
+    margin-top: 0.2rem;
+}
+
+.wk-delete-confirm .wk-actions-row {
+    border-top: none;
+    padding-top: 0;
+    justify-content: center;
+}
+
+/* ---------------------------------------------------------
+   Responsive — flow layout (Add/Edit/Review/Saved/Delete)
+   --------------------------------------------------------- */
+@media (max-width: 1100px) {
+    .wk-flow-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .wk-card {
+        padding: 1.5rem 1.25rem 1.75rem;
+    }
+
+    .wk-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wk-actions-row .wk-btn,
+    .wk-actions-row .wk-btn-link {
+        width: 100%;
+        text-align: center;
+    }
+
+    .wk-saved__meta {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* ---------------------------------------------------------
+   Reduced motion
+   --------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .wk-info__summary .wk-icon--chevron-down {
+        transition: none;
+    }
+}
+
+/* ---------------------------------------------------------
+   Depth round 2 — selective element depth (owner direction
+   2026-08-01: pop, tastefully; not every element, no bubble
+   wrap). Text fields read as gently recessed; primary actions
+   carry a small colored lift. Chips and badges deliberately
+   stay flat.
+   --------------------------------------------------------- */
+body.workshop-page .wk-search__field,
+body.workshop-page .wk input[type="text"],
+body.workshop-page .wk input[type="search"],
+body.workshop-page .wk textarea {
+    box-shadow: inset 0 1px 3px rgb(19 36 71 / 7%);
+}
+
+body.workshop-page .wk-btn--primary {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 18%),
+        0 2px 8px rgb(23 64 143 / 28%);
+}
+
+body.workshop-page[data-theme="dark"] .wk-search__field,
+body.workshop-page[data-theme="dark"] .wk input[type="text"],
+body.workshop-page[data-theme="dark"] .wk input[type="search"],
+body.workshop-page[data-theme="dark"] .wk textarea {
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 35%);
+}
+
+body.workshop-page[data-theme="dark"] .wk-btn--primary {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 12%),
+        0 2px 8px rgb(0 0 0 / 45%);
+}
+
+body.workshop-page[data-theme="dark"] {
+    /* Dark environment texture: same grain, deep-water washes. */
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E"),
+        radial-gradient(58rem 34rem at 12% 8%, rgb(63 89 148 / 22%), transparent 60%),
+        radial-gradient(64rem 40rem at 88% 78%, rgb(24 40 74 / 55%), transparent 62%),
+        var(--wk-canvas);
+}
