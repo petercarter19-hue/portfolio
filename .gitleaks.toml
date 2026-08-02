@@ -9,3 +9,16 @@ targetRules = ["generic-api-key"]
 regexes = [
   '''^45ab728a-44bc-4f80-a79f-d010e04d5453$''',
 ]
+
+[[allowlists]]
+description = "False positives in the Community lane's merged history (2026-08-02): a cursor max_age kwarg and a doc phrase pattern-matched generic-api-key. Exact fingerprints only; verified non-secret by inspection."
+targetRules = ["generic-api-key"]
+commits = [
+  "1d27142e8e2f74c94e2176801d412510e96c8d6f",
+  "791ab51b938a4c7f4ecb903f561289d88a3eaedd",
+  "3210e4030fae30bd45fb05f4ce8351b26c4ee3f1",
+]
+paths = [
+  '''docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/PRIMARY_FEED_ARCHITECTURE_AMENDMENT_2026-08-01\.md''',
+  '''services/community_cursor\.py''',
+]
