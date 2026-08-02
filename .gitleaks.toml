@@ -11,14 +11,28 @@ regexes = [
 ]
 
 [[allowlists]]
-description = "False positives in the Community lane's merged history (2026-08-02): a cursor max_age kwarg and a doc phrase pattern-matched generic-api-key. Exact fingerprints only; verified non-secret by inspection."
+description = "Known non-secret Community cursor max_age keyword in exact historical commit 791ab51."
 targetRules = ["generic-api-key"]
-commits = [
-  "1d27142e8e2f74c94e2176801d412510e96c8d6f",
-  "791ab51b938a4c7f4ecb903f561289d88a3eaedd",
-  "3210e4030fae30bd45fb05f4ce8351b26c4ee3f1",
-]
-paths = [
-  '''docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/PRIMARY_FEED_ARCHITECTURE_AMENDMENT_2026-08-01\.md''',
-  '''services/community_cursor\.py''',
-]
+condition = "AND"
+commits = ["791ab51b938a4c7f4ecb903f561289d88a3eaedd"]
+paths = ['''^services/community_cursor\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*token,\s+max_age=CURSOR_MAX_AGE_SECONDS\s*$''']
+
+[[allowlists]]
+description = "Known non-secret Community cursor max_age keyword in exact historical commit 3210e40."
+targetRules = ["generic-api-key"]
+condition = "AND"
+commits = ["3210e4030fae30bd45fb05f4ce8351b26c4ee3f1"]
+paths = ['''^services/community_cursor\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*token,\s+max_age=CURSOR_MAX_AGE_SECONDS\s*$''']
+
+[[allowlists]]
+description = "Known non-secret Community evidence prose in exact historical commit 1d27142."
+targetRules = ["generic-api-key"]
+condition = "AND"
+commits = ["1d27142e8e2f74c94e2176801d412510e96c8d6f"]
+paths = ['''^docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/PRIMARY_FEED_ARCHITECTURE_AMENDMENT_2026-08-01\.md$''']
+regexTarget = "line"
+regexes = ['''^\s*server audio, no content-bearing logs, owner-only access, size/duration and\s*$''']

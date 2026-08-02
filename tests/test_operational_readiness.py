@@ -3,6 +3,7 @@ import os
 import re
 import threading
 import tempfile
+import tomllib
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,6 +31,89 @@ from scripts.verify_deployment_smoke import (
 
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
+
+
+class GitleaksConfigurationTests(unittest.TestCase):
+    def test_community_false_positive_allowlists_stay_exact_and_conjunctive(
+        self,
+    ):
+        with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
+            allowlists = tomllib.load(config_file)['allowlists']
+
+        # Any additional suppression is a new security decision that must
+        # update this regression explicitly.
+        self.assertEqual(4, len(allowlists))
+        self.assertEqual(
+            {
+                'description': (
+                    'Known non-secret member UUID used only as a '
+                    'deterministic test fixture.'
+                ),
+                'targetRules': ['generic-api-key'],
+                'regexes': [
+                    r'^45ab728a-44bc-4f80-a79f-d010e04d5453$'
+                ],
+            },
+            allowlists[0],
+        )
+
+        community_doc_path = ''.join(
+            (
+                r'^docs/initiatives/',
+                'PS-COMMUNITY-',
+                'PUBLIC-PILOT-001/',
+                'PRIMARY_FEED_',
+                'ARCHITECTURE_',
+                'AMENDMENT_',
+                r'2026-08-01\.md$',
+            )
+        )
+        community_doc_line = ''.join(
+            (
+                r'^\s*server audio, ',
+                'no content-bearing logs, ',
+                'owner-only ',
+                'access, ',
+                r'size/duration and\s*$',
+            )
+        )
+
+        expected = {
+            '791ab51b938a4c7f4ecb903f561289d88a3eaedd': {
+                'path': r'^services/community_cursor\.py$',
+                'line': (
+                    r'^\s*token,\s+max_age='
+                    r'CURSOR_MAX_AGE_SECONDS\s*$'
+                ),
+            },
+            '3210e4030fae30bd45fb05f4ce8351b26c4ee3f1': {
+                'path': r'^services/community_cursor\.py$',
+                'line': (
+                    r'^\s*token,\s+max_age='
+                    r'CURSOR_MAX_AGE_SECONDS\s*$'
+                ),
+            },
+            '1d27142e8e2f74c94e2176801d412510e96c8d6f': {
+                'path': community_doc_path,
+                'line': community_doc_line,
+            },
+        }
+
+        entries_by_commit = {}
+        for allowlist in allowlists:
+            for commit in set(allowlist.get('commits', ())) & set(expected):
+                entries_by_commit.setdefault(commit, []).append(allowlist)
+
+        self.assertEqual(set(expected), set(entries_by_commit))
+        for commit, required in expected.items():
+            self.assertEqual(1, len(entries_by_commit[commit]))
+            allowlist = entries_by_commit[commit][0]
+            self.assertEqual(['generic-api-key'], allowlist['targetRules'])
+            self.assertEqual('AND', allowlist['condition'])
+            self.assertEqual([commit], allowlist['commits'])
+            self.assertEqual([required['path']], allowlist['paths'])
+            self.assertEqual('line', allowlist['regexTarget'])
+            self.assertEqual([required['line']], allowlist['regexes'])
 
 
 class OperationalHealthRouteTests(unittest.TestCase):
