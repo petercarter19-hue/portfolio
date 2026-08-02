@@ -1,6 +1,7 @@
 import base64
 import json
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -177,6 +178,22 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertIn(b"under a minute", body)
         self.assertIn(b"Nothing was published, shared, deleted, or changed.", body)
 
+    def _drain_prewarm(self):
+        """Reset both module-level pre-warm guards and outwait any thread.
+
+        Every pre-warm test must call this first and last. unittest orders
+        these tests alphabetically (the pipeline runs them that way), so the
+        rate-limit test's worker thread can still be marked in flight when the
+        next test starts; pipeline 330 failed exactly there, and an escaped
+        thread that outlives its patch would also hit the real connector.
+        """
+        deadline = time.monotonic() + 10
+        while auth_routes._prewarm_in_flight and time.monotonic() < deadline:
+            time.sleep(0.02)
+        with auth_routes._prewarm_lock:
+            auth_routes._prewarm_in_flight = False
+            auth_routes._prewarm_last_started = None
+
     def test_sign_in_prewarm_never_blocks_or_fails_the_redirect(self):
         """PS-SIGNIN-EXPERIENCE-001 item 2.3.
 
@@ -186,7 +203,7 @@ class AuthenticationFlowTests(unittest.TestCase):
         """
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
-        auth_routes._prewarm_last_started = None
+        self._drain_prewarm()
         finished = threading.Event()
 
         def exploding_connection():
@@ -201,9 +218,10 @@ class AuthenticationFlowTests(unittest.TestCase):
                 self.assertTrue(
                     finished.wait(timeout=10), "pre-warm thread never ran"
                 )
+                self._drain_prewarm()
         finally:
             app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
-            auth_routes._prewarm_last_started = None
+            self._drain_prewarm()
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
@@ -214,7 +232,7 @@ class AuthenticationFlowTests(unittest.TestCase):
     def test_sign_in_prewarm_is_rate_limited_and_runs_off_the_request_thread(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
-        auth_routes._prewarm_last_started = None
+        self._drain_prewarm()
         release = threading.Event()
         started = threading.Event()
         opened = []
@@ -234,10 +252,14 @@ class AuthenticationFlowTests(unittest.TestCase):
                 second = self.client.get("/auth/sign-in")
                 third = self.client.get("/auth/sign-in")
                 release.set()
+                # The worker must finish while its patched connector is still
+                # in place; leaving the context with the thread alive is how
+                # it escapes to the real connector.
+                self._drain_prewarm()
         finally:
             release.set()
             app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
-            auth_routes._prewarm_last_started = None
+            self._drain_prewarm()
 
         # A public unauthenticated endpoint may not let a caller open a
         # database connection per request.
@@ -248,7 +270,7 @@ class AuthenticationFlowTests(unittest.TestCase):
     def test_sign_in_prewarm_does_not_run_when_authentication_is_disabled(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = False
         app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
-        auth_routes._prewarm_last_started = None
+        self._drain_prewarm()
         opened = []
 
         try:
@@ -258,14 +280,14 @@ class AuthenticationFlowTests(unittest.TestCase):
                 response = self.client.get("/auth/sign-in")
         finally:
             app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
-            auth_routes._prewarm_last_started = None
+            self._drain_prewarm()
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(opened, [])
 
     def test_sign_in_prewarm_is_off_under_testing_unless_a_test_opts_in(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
-        auth_routes._prewarm_last_started = None
+        self._drain_prewarm()
         opened = []
 
         try:
@@ -274,7 +296,7 @@ class AuthenticationFlowTests(unittest.TestCase):
             ):
                 response = self.client.get("/auth/sign-in")
         finally:
-            auth_routes._prewarm_last_started = None
+            self._drain_prewarm()
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(opened, [])
