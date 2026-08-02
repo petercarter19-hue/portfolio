@@ -1,6 +1,7 @@
 # PeerSlate Visual Integrity Standard
 
-_Owner-directed lean revision: 2026-07-31._
+_Owner-directed lean revision: 2026-07-31; character and materiality
+clarification: 2026-08-01._
 
 ## Purpose
 
@@ -41,6 +42,39 @@ makes no user-facing claim and reports that the experience remains unavailable.
 An approved mockup is a product promise, not loose inspiration. The production
 result must preserve its recognizable purpose, composition, interaction model,
 hierarchy, and finish. Truth and accessibility are part of fidelity.
+
+## Character and materiality default
+
+Every new or materially revised production visual gets one **character and
+materiality pass** in the workflow. It should feel like an intentional,
+contemporary PeerSlate room, not a wireframe or uniform stack of flat rectangles.
+
+Visual prompting and inspection consider:
+
+- foreground, midground, and background relationships;
+- restrained neutral shadow on elevated elements;
+- subtle surface color, light, gradient, border, or edge shifts;
+- texture, imagery, framing, or overlap; and
+- type, scale, spacing, and negative space that establish hierarchy.
+
+This is a design default, not an effects quota. Shadows and texture are tools,
+not requirements. Quiet or trust-sensitive areas may remain flat when that
+improves clarity. Framework-default or visibly unfinished flatness is not an
+intentional choice.
+
+Keep the result tasteful:
+
+- use one depth language per room and reuse established tokens;
+- elevate the dominant object or true floating layer, not every section;
+- keep texture out of text-critical areas; avoid card soup, nested panels, and
+  gratuitous glass, glow, grain, gradients, or false-interaction shadows; and
+- preserve contrast, focus visibility, zoom/reflow, reduced motion, responsive
+  clarity, and performance.
+
+If the result still feels generic or unintentionally flat, refine it in the same
+visual round. This adds no separate gate, artifact, pass count, or retrofit
+backlog. Existing locks remain valid until revised; the default then informs
+the new ChatGPT-created authority Pete locks.
 
 ## Lean material-visual workflow
 

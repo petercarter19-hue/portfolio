@@ -136,12 +136,20 @@ class ProductTrustTests(unittest.TestCase):
 
     def test_visual_standard_is_strict_when_triggered_but_not_universal(self):
         body = _read("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md")
+        normalized = " ".join(body.split())
         self.assertIn("new production page", body)
         self.assertIn("Pete locks", body)
         self.assertIn("Side-by-side screenshots", body)
         self.assertIn("representative desktop and mobile", body)
         self.assertIn("do not require a\nnew page inventory", body)
         self.assertIn("There is no mandatory pass count", body)
+        self.assertIn("character and materiality pass", normalized)
+        self.assertIn("design default, not an effects quota", normalized)
+        self.assertIn(
+            "Framework-default or visibly unfinished flatness", normalized)
+        self.assertIn(
+            "adds no separate gate, artifact, pass count, or retrofit backlog",
+            normalized)
         self.assertLess(len(body.split()), 900)
 
     def test_chatgpt_remains_material_visual_creator(self):

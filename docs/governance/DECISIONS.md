@@ -722,3 +722,25 @@ and Roadmap named in `CURRENT_BASELINE.yaml` remain the product authority.
   testing, Azure PR/pipeline/live truth when released, and the always-on
   multi-user, privacy, authorization, canonical-data, AI-human-control,
   accessibility, and visual-integrity rules.
+
+## 2026-08-01 - Add a tasteful character and materiality default
+
+- Owner direction: every new or materially revised production-intent visual
+  receives one character and materiality pass inside the existing ChatGPT
+  creation and visual-inspection workflow. A page should feel like an
+  intentional PeerSlate room rather than a wireframe or a uniform stack of flat
+  rectangles.
+- The visual lane actively considers restrained depth, surface separation,
+  light, texture, imagery, framing, overlap, typography, spacing, and negative
+  space. Shadows and texture are available tools, not mandatory effects.
+- One coherent depth language should reinforce the dominant object and true
+  hierarchy. Card soup, gratuitous glass, glow, grain, gradients, nested
+  panels, decorative shadows, and effects that imply false interaction remain
+  rejected.
+- Purposeful flatness remains valid where it improves reading, density,
+  accessibility, performance, or trust. Framework-default or visibly
+  unfinished flatness returns for refinement in the same visual round.
+- This decision creates no separate approval gate, artifact, pass count, or
+  retroactive redesign backlog. Existing Pete-locked authorities remain valid
+  until materially revised; the new default applies when ChatGPT creates the
+  replacement authority for Pete to review and lock.
