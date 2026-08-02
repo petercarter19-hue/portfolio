@@ -336,3 +336,49 @@ additional mockups. The architecture's §11 requirements bind them.
   plus ten new methods on `WorkshopPublicPreviewTests` and two updates to
   existing methods there for the new persona content and the now-real
   unfinished-save redirect.
+
+## 6f. Visual facelift accepted — supersedes the round-3 shadow dial (owner acceptance 2026-08-02)
+
+- **Owner instruction:** Pete accepted a further visual facelift produced by
+  the ChatGPT visual-creation lane, hash-pinned at
+  `visual-authority/workshop-facelift-2026-08-02/` (README plus 17 PNGs,
+  `R01`–`R17`; see that folder's `ASSET_MANIFEST.md` and `SHA256SUMS.txt`).
+  Track 1 (this implementation slice) applies the facelift to the **live**
+  Workshop screens only: My Information/library (`R11`, `R12`), Add
+  information (`R13`), Review & save (`R14`), and Saved/private (`R15`,
+  `R16`). `R01`–`R10` and `R17` are the accepted **W2 (Work-on-Something)**
+  authority for the later session-opening slice gated in §4 above — they are
+  hash-pinned now, alongside the rest of the accepted set, but are not built
+  by Track 1.
+- **Supersession, explicit:** the facelift's softer, layered-shadow language
+  (matte white cards, soft multi-layer shadow recipe, subtle icy
+  concentric-ring/dot canvas texture, navy ink typography, royal-blue
+  primary actions) **replaces** the round-3 "more depth" heavy shadow dial
+  recorded in §6c ("more depth" → approved dial, chips flat, canvas washes +
+  grain). The round-3 dial was correct for its moment; this is a newer,
+  owner-accepted visual-direction decision and controls going forward. Chip
+  geometry (12px squares, flat fill) is unchanged by either round and stays
+  as-is.
+- **Scroll-cap adaptation:** the owner separately approved a desktop-only
+  behavioral adaptation — the My Information item-list column gets an
+  internal scroll (`max-height` bound to the detail-column region,
+  `overflow-y: auto`) once the list exceeds the space the three-column
+  layout affords, so the three content columns stay visually balanced
+  regardless of library size. This is a responsive/interaction adaptation
+  within the locked composition (doc `AI_WORKFLOW.md`'s "non-material
+  accessibility, truth, focus, or reflow adaptations are allowed when
+  documented"), not a new composition, hierarchy, or dominant-action change.
+  It applies only above the existing ≤1100px stacking breakpoint, where the
+  three-column desktop layout is in effect; below it the existing
+  single-column stack is unaffected. The "Showing X of Y" footer stays
+  outside the scrolling region so counts are never hidden.
+- **Known gap carried into Track 1:** the accepted set has no desktop
+  reference for library, add, or review (`R11`–`R14` are mobile-only). `R15`
+  (saved/private) and `R09` (AI-review canvas, token reference only) are the
+  only desktop facelift compositions. Track 1 therefore applies the
+  facelift's token system to the **existing, already-implemented** desktop
+  compositions for My Information, Add information, and Review & save as a
+  documented adaptation — layout and composition are unchanged; only
+  surface/shadow/texture/type/action-color tokens change. See the asset
+  manifest's "Known gap" section for the full statement.
+

@@ -1,10 +1,20 @@
 /* =========================================================
    WORKSHOP — My Information (PS-WORKSHOP-001, Slice W1 checkpoint)
 
-   Visual authority:
+   Visual authority (superseded 2026-08-02 — see below):
      docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
      workshop-approved-2026-08-01/06_APPROVED_desktop-my-information.png
      workshop-approved-2026-08-01/09_APPROVED_mobile-my-information.png
+
+   FACELIFT (current, 2026-08-02): the token values below (surface, shadow,
+   canvas texture, ink/action colors) implement the owner-accepted visual
+   facelift hash-pinned at docs/initiatives/PS-SLATE-STUDIO-IA-001/
+   visual-authority/workshop-facelift-2026-08-02/ (R11-R16 for these live
+   screens; see that folder's ASSET_MANIFEST.md and doc 20 SS6f). The
+   facelift's softer, layered-shadow language supersedes the round-3 heavy
+   shadow dial recorded below in the per-round comments — those comments
+   stay as history, not current direction. Chip geometry (flat, 12px
+   squares) and every layout/composition/state rule are unchanged.
 
    Scoped entirely under body.workshop-page so it cannot leak into any
    other room. Follows the precedent set by owner-studio.css (--ss-*) and
@@ -21,23 +31,33 @@
    itself dark. A local, theme-flipped --wk-ink avoids that trap while
    still using the same brand hex values. Fonts are shared directly via
    var(--ps-font-display) / var(--ps-font-ui) since those are theme-
-   invariant. Nothing here invents a new brand palette.
+   invariant. Nothing here invents a new brand palette. The facelift's dark
+   ink/royal-blue action language is LIGHT-THEME ONLY (the accepted mockups
+   never show a dark theme); dark theme keeps its existing gold action
+   identity and canvas/surface relationships, with only the shadow recipe
+   and canvas texture adapted to the same softer, lower-contrast system —
+   see the dark override below and its own comment.
    ========================================================= */
 
 body.workshop-page {
     color-scheme: light;
 
-    --wk-canvas: #eef1f8;
-    --wk-surface: #ffffff;
-    --wk-surface-muted: #f6f8fc;
-    --wk-line: #dee3ef;
-    --wk-line-soft: #ecf0f8;
-    --wk-ink: #0a1b36;
-    --wk-muted: #56607a;
+    --wk-canvas: #eef2fb;
+    --wk-surface: #fdfeff;
+    --wk-surface-muted: #f4f7fc;
+    --wk-line: #e3e8f4;
+    --wk-line-soft: #eef1f9;
+    --wk-ink: #071233;
+    --wk-muted: #4a5578;
 
-    --wk-action: #17408f;
-    --wk-action-strong: #0b2f70;
-    --wk-action-tint: #e4eafb;
+    /* Sampled directly from the accepted facelift mockups (R15 desktop
+       button fill ~#0d45c3, R09/R15 link and outline-button text
+       ~#012cc4-#0d45c3, all one royal-blue family). Verified: white-on-fill
+       and fill-as-text both read at ~7.9:1 on white — comfortably past the
+       4.5:1 text minimum with no text-safe derivation needed. */
+    --wk-action: #0d45c3;
+    --wk-action-strong: #0a3499;
+    --wk-action-tint: #e7edfc;
     --wk-on-action: #ffffff;
 
     --wk-success: #24a36a;
@@ -57,7 +77,7 @@ body.workshop-page {
     --wk-danger: #b23a2f;
     --wk-danger-tint: #fbeae8;
 
-    --wk-focus: #1257d6;
+    --wk-focus: #0d45c3;
     /* Owner direction 2026-08-01 ("make it alive, not flat, not 3D"):
        layered depth — a hairline top highlight for surface separation, a
        tight contact shadow, and a soft ambient falloff — replacing the
@@ -67,16 +87,30 @@ body.workshop-page {
        texture — tastefully, not bubble wrap." Selective hierarchy: the
        primary content cards (--wk-shadow) get a real lift; small elements
        (--wk-shadow-sm) rise only slightly so the page doesn't balloon. */
-    /* Round 3 ("we definitely need more depth"): stronger still. */
+    /* Round 3 ("we definitely need more depth"): stronger still — HISTORY,
+       superseded by the facelift below.
+       --wk-shadow:
+           inset 0 1px 0 rgb(255 255 255 / 90%),
+           0 1px 3px rgb(19 36 71 / 13%),
+           0 16px 36px rgb(19 36 71 / 18%),
+           0 44px 100px rgb(19 36 71 / 17%);
+       --wk-shadow-sm:
+           inset 0 1px 0 rgb(255 255 255 / 78%),
+           0 2px 4px rgb(19 36 71 / 12%),
+           0 10px 26px rgb(19 36 71 / 15%); */
+    /* Facelift (2026-08-02, doc 20 SS6f): the mockups read as matte and
+       soft — a hairline highlight plus one gentle, diffuse falloff, not the
+       dramatic multi-layer lift above. Opacity and blur both come down
+       sharply from round 3. */
     --wk-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 90%),
-        0 1px 3px rgb(19 36 71 / 13%),
-        0 16px 36px rgb(19 36 71 / 18%),
-        0 44px 100px rgb(19 36 71 / 17%);
+        inset 0 1px 0 rgb(255 255 255 / 75%),
+        0 1px 2px rgb(31 45 89 / 5%),
+        0 8px 20px rgb(31 45 89 / 7%),
+        0 22px 48px rgb(31 45 89 / 6%);
     --wk-shadow-sm:
-        inset 0 1px 0 rgb(255 255 255 / 78%),
-        0 2px 4px rgb(19 36 71 / 12%),
-        0 10px 26px rgb(19 36 71 / 15%);
+        inset 0 1px 0 rgb(255 255 255 / 65%),
+        0 1px 2px rgb(31 45 89 / 4%),
+        0 6px 16px rgb(31 45 89 / 5%);
     --wk-radius: 14px;
     --wk-radius-sm: 10px;
     --wk-radius-pill: 999px;
@@ -87,22 +121,30 @@ body.workshop-page {
        if some other page-local selector still reads it. */
     --wk-radius-chip: 12px;
 
-    /* Depth round 2 — environment texture (owner: "texture all around,
-       tastefully"): two soft light washes echoing the approved mockups'
-       abstract environment, plus a whisper of photographic grain
-       (inline SVG turbulence, ~3% alpha). All decorative; content cards
-       sit on clean surfaces above it. */
+    /* Facelift canvas texture (2026-08-02): replaces the round-2/3
+       washes+grain recipe (history in the git blame of this file) with the
+       mockups' subtle concentric-ring / dot-grid decoration — one soft
+       corner bloom of a masked dot-grid plus a few faint concentric arcs,
+       both inline SVG, both intentionally low-contrast. One gentle wash
+       gradient remains underneath for the soft depth the mockups still show
+       (their canvas is not perfectly flat); the second/third washes and the
+       feTurbulence grain are dropped. All decorative; content cards sit on
+       clean surfaces above it. */
     background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.03'/%3E%3C/svg%3E"),
-        radial-gradient(58rem 34rem at 12% 8%, rgb(255 255 255 / 70%), transparent 60%),
-        radial-gradient(64rem 40rem at 88% 78%, rgb(184 197 229 / 50%), transparent 62%),
-        radial-gradient(40rem 26rem at 55% 110%, rgb(255 255 255 / 40%), transparent 65%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='760'%3E%3Cdefs%3E%3CradialGradient id='dotfade' cx='18%25' cy='22%25' r='42%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='1'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cmask id='dotmask'%3E%3Crect width='1600' height='760' fill='url(%23dotfade)'/%3E%3C/mask%3E%3Cpattern id='dotpattern' width='22' height='22' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%2317408f'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='1600' height='760' fill='url(%23dotpattern)' mask='url(%23dotmask)' opacity='0.4'/%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='1.25'%3E%3Ccircle cx='120' cy='900' r='260'/%3E%3Ccircle cx='120' cy='900' r='430'/%3E%3Ccircle cx='120' cy='900' r='610'/%3E%3C/g%3E%3C/svg%3E") center top / 100rem 48rem no-repeat,
+        radial-gradient(70rem 46rem at 20% 0%, rgb(255 255 255 / 45%), transparent 65%),
         var(--wk-canvas);
 }
 
 body.workshop-page[data-theme="dark"] {
     color-scheme: dark;
 
+    /* Facelift adaptation (2026-08-02): the accepted mockups are light-only,
+       so dark theme keeps its existing canvas/surface/ink relationships and
+       its existing gold action identity (Layered Ink & Signal Gold, the
+       site-wide dark convention) unchanged — only the shadow recipe and the
+       canvas texture below are adapted to the same softer, lower-contrast
+       facelift language used in light theme. */
     --wk-canvas: #0b1626;
     --wk-surface: #101d31;
     --wk-surface-muted: #16233a;
@@ -130,16 +172,43 @@ body.workshop-page[data-theme="dark"] {
     --wk-danger-tint: rgb(226 119 107 / 16%);
 
     --wk-focus: #f0c95a;
-    /* Dark-theme depth round 3: same selective recipe, deeper wells. */
+    /* Dark-theme depth round 3: same selective recipe, deeper wells —
+       HISTORY, superseded by the facelift adaptation below.
+       --wk-shadow:
+           inset 0 1px 0 rgb(255 255 255 / 10%),
+           0 1px 3px rgb(0 0 0 / 50%),
+           0 16px 36px rgb(0 0 0 / 52%),
+           0 44px 100px rgb(0 0 0 / 44%);
+       --wk-shadow-sm:
+           inset 0 1px 0 rgb(255 255 255 / 8%),
+           0 2px 4px rgb(0 0 0 / 44%),
+           0 10px 26px rgb(0 0 0 / 40%); */
+    /* Facelift adaptation: same proportional softening as light theme's new
+       recipe (opacity/blur both come down from round 3), kept dark enough
+       to still read against the dark canvas. */
     --wk-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 10%),
-        0 1px 3px rgb(0 0 0 / 50%),
-        0 16px 36px rgb(0 0 0 / 52%),
-        0 44px 100px rgb(0 0 0 / 44%);
-    --wk-shadow-sm:
         inset 0 1px 0 rgb(255 255 255 / 8%),
-        0 2px 4px rgb(0 0 0 / 44%),
-        0 10px 26px rgb(0 0 0 / 40%);
+        0 1px 2px rgb(0 0 0 / 30%),
+        0 8px 20px rgb(0 0 0 / 32%),
+        0 22px 48px rgb(0 0 0 / 26%);
+    --wk-shadow-sm:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        0 1px 2px rgb(0 0 0 / 26%),
+        0 6px 16px rgb(0 0 0 / 24%);
+}
+
+/* The shared site chrome (templates/base.html) inserts a fixed, full-
+   viewport ".site-sky" backdrop behind every page (aria-hidden, purely
+   decorative). Because it is position:fixed with a negative z-index, it
+   still paints on TOP of body's own CSS background (a fixed/negative-
+   z-index descendant paints after its ancestor's background in the normal
+   painting order), which silently hid this page's canvas color/texture
+   the whole time — round-3's washes+grain included, not only the facelift
+   texture above. Interview Studio already disables the same backdrop for
+   the same reason (static/css/interview-studio.css); Workshop follows that
+   exact precedent so its own canvas is what members actually see. */
+body.workshop-page .site-sky {
+    display: none;
 }
 
 .wk-sr-only {
@@ -1084,6 +1153,60 @@ body.workshop-page[data-theme="dark"] {
     .wk-info__list {
         display: flex !important;
     }
+
+    /* Owner-approved scroll cap (2026-08-02, doc 20 SS6f): with a large
+       library, an uncapped .wk-list-panel lets the item-list column grow far
+       taller than the detail card beside it (and than the rail/aside either
+       side), unbalancing the three-column composition. Above this same
+       1101px breakpoint only, the row list itself — not the header, not the
+       "Showing X of Y" footer — gets an internal scroll, capped to roughly
+       the height a typical detail card occupies. At 5 items or fewer this
+       max-height is never reached, so nothing about the rendered page
+       changes. Below 1101px the existing single-column stack is untouched. */
+    .wk-list__items {
+        max-height: 44rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        /* Reserve the scrollbar's width even before it's needed so a short
+           (<=5 item) list and a long (scrolling) list render at the same
+           column width — no layout shift when items are added. */
+        scrollbar-gutter: stable;
+        /* Visible scrollbar affordance (thin, token-colored) rather than
+           relying on the platform's auto-hiding overlay scrollbar alone. */
+        scrollbar-width: thin;
+        scrollbar-color: var(--wk-line) transparent;
+    }
+
+    .wk-list__items::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .wk-list__items::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .wk-list__items::-webkit-scrollbar-thumb {
+        background-color: var(--wk-line);
+        border-radius: var(--wk-radius-pill);
+    }
+
+    .wk-list__items::-webkit-scrollbar-thumb:hover {
+        background-color: var(--wk-muted);
+    }
+
+    /* Every row's focusable link already spans the list's full width with
+       no horizontal padding on the list itself (by design, for the full-
+       bleed selected-row tint); setting overflow-y here makes overflow-x
+       compute to "auto" too (CSS overflow rule: an axis left at the default
+       "visible" becomes "auto" once its sibling axis is not "visible"),
+       which would let a keyboard focus ring bleed past the row and be
+       clipped by the new scroll container. Drawing the ring inward instead
+       keeps it fully inside the link's own box regardless of overflow —
+       still clearly visible, never clipped. Natural Tab order already
+       scrolls a focused row into view; no script needed. */
+    .wk-list__items .wk-list__item-link:focus-visible {
+        outline-offset: -3px;
+    }
 }
 
 /* ---------------------------------------------------------
@@ -1807,38 +1930,47 @@ body.workshop-page[data-theme="dark"] {
    wrap). Text fields read as gently recessed; primary actions
    carry a small colored lift. Chips and badges deliberately
    stay flat.
+
+   Facelift (2026-08-02): the recessed-field tint and the primary-button
+   lift both update their color reference to the new --wk-ink/--wk-action
+   hues (rgb(19 36 71) -> rgb(31 45 89); rgb(23 64 143) -> rgb(13 69 195)),
+   and both lighten in opacity to match the softer facelift shadow recipe
+   above instead of the old round-3 dial.
    --------------------------------------------------------- */
 body.workshop-page .wk-search__field,
 body.workshop-page .wk input[type="text"],
 body.workshop-page .wk input[type="search"],
 body.workshop-page .wk textarea {
-    box-shadow: inset 0 1px 3px rgb(19 36 71 / 7%);
+    box-shadow: inset 0 1px 3px rgb(31 45 89 / 6%);
 }
 
 body.workshop-page .wk-btn--primary {
     box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 18%),
-        0 2px 8px rgb(23 64 143 / 28%);
+        inset 0 1px 0 rgb(255 255 255 / 14%),
+        0 3px 10px rgb(13 69 195 / 20%);
 }
 
 body.workshop-page[data-theme="dark"] .wk-search__field,
 body.workshop-page[data-theme="dark"] .wk input[type="text"],
 body.workshop-page[data-theme="dark"] .wk input[type="search"],
 body.workshop-page[data-theme="dark"] .wk textarea {
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 35%);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
 }
 
 body.workshop-page[data-theme="dark"] .wk-btn--primary {
     box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 12%),
-        0 2px 8px rgb(0 0 0 / 45%);
+        inset 0 1px 0 rgb(255 255 255 / 10%),
+        0 3px 10px rgb(0 0 0 / 36%);
 }
 
 body.workshop-page[data-theme="dark"] {
-    /* Dark environment texture: same grain, deep-water washes. */
+    /* Dark environment texture (facelift adaptation, 2026-08-02): the same
+       concentric-ring / dot-grid decoration as light theme, recolored for a
+       dark canvas (pale dot fill, soft blue-gray arcs) — replaces the old
+       grain + deep-water washes recipe. One gentle dark wash remains
+       underneath for the same reason light theme keeps one. */
     background:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.04'/%3E%3C/svg%3E"),
-        radial-gradient(58rem 34rem at 12% 8%, rgb(63 89 148 / 22%), transparent 60%),
-        radial-gradient(64rem 40rem at 88% 78%, rgb(24 40 74 / 55%), transparent 62%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='760'%3E%3Cdefs%3E%3CradialGradient id='dotfade' cx='18%25' cy='22%25' r='42%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='1'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/radialGradient%3E%3Cmask id='dotmask'%3E%3Crect width='1600' height='760' fill='url(%23dotfade)'/%3E%3C/mask%3E%3Cpattern id='dotpattern' width='22' height='22' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='3' cy='3' r='1.6' fill='%239db6e6'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='1600' height='760' fill='url(%23dotpattern)' mask='url(%23dotmask)' opacity='0.3'/%3E%3Cg fill='none' stroke='%233f5994' stroke-opacity='0.55' stroke-width='1.25'%3E%3Ccircle cx='120' cy='900' r='260'/%3E%3Ccircle cx='120' cy='900' r='430'/%3E%3Ccircle cx='120' cy='900' r='610'/%3E%3C/g%3E%3C/svg%3E") center top / 100rem 48rem no-repeat,
+        radial-gradient(70rem 46rem at 20% 0%, rgb(63 89 148 / 20%), transparent 65%),
         var(--wk-canvas);
 }
