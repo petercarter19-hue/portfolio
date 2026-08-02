@@ -49,10 +49,19 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # ?v= content token. Recaptured only after proving that normalizing those two
 # 12-hex tokens back to their origin/main values reproduces the previous
 # hash exactly, and that the byte length is unchanged at 18214.
+# PS-AUTH-JOURNEY-REPAIR-001 changes only the callback script's content token
+# in this locked render. The explicit normalization assertion below proves its
+# 12 byte `?v=` delta is the sole rendered difference from the verified base;
+# no owner-home markup, layout, destination, or control semantics changed.
 FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18214
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "92adb278327ad2e2d92aa2d19d33ffb967fcaa2a18cf90b9aa1b7a0a9d105729"
+)
+FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 = (
     "37fc92609af60488923653e29435580c806482ea7513bee6b0ead44f0fe4298f"
 )
+FLAG_OFF_CALLBACK_VERSION = b"fd13bc50ca97"
+FLAG_OFF_CALLBACK_PREVIOUS_VERSION = b"9a8e38ddf7ba"
 
 
 def owner_row(profile_key=OWNER_A_PROFILE, display_name="Owner A", token="01" * 8):
@@ -396,6 +405,21 @@ class OwnerHomeRouteTests(unittest.TestCase):
         self.assertEqual(
             hashlib.sha256(response.data).hexdigest(),
             FLAG_OFF_APP_RENDER_SHA256,
+        )
+        # The callback is security code, not Owner Home markup. Its changed
+        # content fingerprint is the only allowed flag-off render delta: when
+        # normalized to the verified-base fingerprint, every byte matches the
+        # previous locked baseline. (The values are working-tree content
+        # hashes, so Windows CRLF checkout bytes are intentional.)
+        self.assertEqual(response.data.count(FLAG_OFF_CALLBACK_VERSION), 1)
+        normalized = response.data.replace(
+            FLAG_OFF_CALLBACK_VERSION,
+            FLAG_OFF_CALLBACK_PREVIOUS_VERSION,
+        )
+        self.assertEqual(len(normalized), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(normalized).hexdigest(),
+            FLAG_OFF_APP_RENDER_PREVIOUS_SHA256,
         )
         self.assertIn(b"My PeerSlate", response.data)
         self.assertNotIn(b"owner-home.v1", response.data)

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="owner-app">
+    <section class="owner-app__panel" aria-labelledby="auth-recovery-title">
+        <p class="owner-app__eyebrow">PeerSlate account</p>
+        <h1 id="auth-recovery-title">We need to check your account session.</h1>
+        <p>
+            PeerSlate could not safely continue with this browser session. No
+            private workspace content was opened or changed.
+        </p>
+        <div class="owner-app__actions">
+            <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}">
+                <button class="owner-app__secondary" type="submit">Sign out</button>
+            </form>
+            <a class="owner-app__secondary" href="{{ auth_complete_url }}">Try again</a>
+            <a class="owner-app__secondary" href="{{ url_for('home') }}">Return home</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

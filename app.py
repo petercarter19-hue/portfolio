@@ -12,7 +12,7 @@ import hashlib                                  # Creates opaque, per-member bro
 import gzip                                     # Compresses eligible public text responses without a runtime dependency
 import ipaddress                                # Validates the forwarded caller address used for rate limiting
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
-from flask import Flask, g, render_template, request, jsonify, url_for, redirect, abort, session  # Added: request (reads incoming data), jsonify (sends JSON back)
+from flask import Flask, g, make_response, render_template, request, jsonify, url_for, redirect, abort, session  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from itsdangerous import BadData, URLSafeTimedSerializer
@@ -20,7 +20,12 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import anthropic                                # The Claude AI client library
 from dotenv import load_dotenv                  # Reads our secret API key from the .env file
 from db import get_connection, fetch_all_result_sets
-from identity import AuthenticationRequired, get_current_identity
+from identity import (
+    AuthenticationPrincipalInvalid,
+    AuthenticationRequired,
+    IdentityMappingError,
+    get_current_identity,
+)
 from auth_routes import auth
 from owner_routes import owner
 from control_room_routes import control_room
@@ -48,6 +53,9 @@ from scripts.release_identity import load_release_id
 load_dotenv()
 
 
+_HOSTNAME_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$")
+
+
 def _configured_trusted_hosts():
     hosts = {
         "localhost",
@@ -59,6 +67,10 @@ def _configured_trusted_hosts():
     azure_hostname = os.environ.get("WEBSITE_HOSTNAME")
     if azure_hostname:
         hosts.add(azure_hostname.strip().lower())
+    canonical_hostname = os.environ.get("PEERSLATE_CANONICAL_HOST", "peerslate.com")
+    canonical_hostname = canonical_hostname.strip().lower()
+    if _HOSTNAME_PATTERN.fullmatch(canonical_hostname):
+        hosts.update({canonical_hostname, f"www.{canonical_hostname}"})
     configured_hosts = os.environ.get("PEERSLATE_TRUSTED_HOSTS", "")
     hosts.update(
         host.strip().lower()
@@ -66,6 +78,37 @@ def _configured_trusted_hosts():
         if host.strip()
     )
     return sorted(hosts)
+
+
+def _hostname_without_port(hostname):
+    """Return a lower-case hostname from Flask's validated Host value."""
+    if not hostname:
+        return ""
+    if hostname.startswith("["):
+        return hostname.split("]", 1)[0].lower() + "]"
+    return hostname.split(":", 1)[0].lower()
+
+
+def _configured_canonical_host():
+    candidate = str(
+        app.config.get("PEERSLATE_CANONICAL_HOST", "peerslate.com")
+    ).strip().lower()
+    # Configuration is deployment-controlled, but rejecting a malformed value
+    # still prevents a bad setting from becoming an unsafe Location header.
+    return candidate if _HOSTNAME_PATTERN.fullmatch(candidate) else "peerslate.com"
+
+
+def _canonical_location(hostname):
+    query = request.query_string.decode("latin-1")
+    location = f"https://{hostname}{request.path}"
+    return f"{location}?{query}" if query else location
+
+
+def _canonical_redirect_or_reject(hostname):
+    """Redirect only body-free requests to a fixed, trusted host."""
+    if request.method not in {"GET", "HEAD"}:
+        abort(400)
+    return redirect(_canonical_location(hostname), code=308)
 
 # Keep oversized prompts from consuming API budget or making the chat feel broken.
 MAX_CHAT_MESSAGE_LENGTH = 1000
@@ -195,6 +238,18 @@ app.config.update(
         'PEERSLATE_AUTH_PROVIDER_NAME', 'aad'
     ),
     PEERSLATE_AUTH_HEADER_MAX_LENGTH=65536,
+    # Canonical-host enforcement stays explicitly off until the deployment
+    # path is ready to direct traffic to peerslate.com.  When enabled, Flask
+    # uses the platform-supplied WEBSITE_HOSTNAME only as a known source host;
+    # it never trusts browser-provided X-Forwarded-Host.
+    PEERSLATE_ENFORCE_CANONICAL_HOST=(
+        os.environ.get('PEERSLATE_ENFORCE_CANONICAL_HOST', 'false').lower()
+        == 'true'
+    ),
+    PEERSLATE_CANONICAL_HOST=os.environ.get(
+        'PEERSLATE_CANONICAL_HOST', 'peerslate.com'
+    ),
+    PEERSLATE_AZURE_HOSTNAME=os.environ.get('WEBSITE_HOSTNAME', '').strip().lower(),
     # Site-owner allowlist for the owner-only Control Room (owner_authorization
     # .py). Comma/space separated. Values are configured per environment and are
     # never hardcoded here. Empty => the Control Room is inaccessible to everyone
@@ -570,13 +625,17 @@ def prevent_stale_html(response):
     visitor's browser cache. Static assets are versioned automatically by
     content hash (see _stamp_static_asset_version above) and current
     versions are cached for a year — only text/html is marked no-cache."""
-    if getattr(g, 'peerslate_identity', None) is not None or request.blueprint in {
+    if (
+        getattr(g, 'peerslate_identity', None) is not None
+        or getattr(g, 'peerslate_principal', None) is not None
+        or request.blueprint in {
         'owner',
         'peerslate_api',
         'people_interests_api',
         'control_room',
         'workshop',
-    }:
+        }
+    ):
         # These blueprints and identity-resolved app routes return private or
         # viewer-personalized responses. Preserve a route's stricter explicit
         # policy, but never leave its default response storable by a browser
@@ -733,7 +792,55 @@ def _legacy_interview_redirect_target():
 
 @app.before_request
 def keep_portfolio_on_canonical_path():
-    clean_host = request.host.split(':', 1)[0].lower()
+    clean_host = _hostname_without_port(request.host)
+
+    # This is intentionally an opt-in production control.  `request.host`
+    # comes from Flask/Werkzeug's trusted-host handling, not X-Forwarded-Host;
+    # ProxyFix above trusts only Azure's original scheme (`x_proto=1`).
+    if app.config.get("PEERSLATE_ENFORCE_CANONICAL_HOST", False) is True:
+        canonical_host = _configured_canonical_host()
+        azure_host = _hostname_without_port(
+            app.config.get("PEERSLATE_AZURE_HOSTNAME", "")
+        )
+        known_hosts = {
+            canonical_host,
+            f"www.{canonical_host}",
+            "pete.peerslate.com",
+            "localhost",
+            "127.0.0.1",
+            "[::1]",
+        }
+        if azure_host:
+            known_hosts.add(azure_host)
+
+        if clean_host not in known_hosts:
+            abort(400)
+
+        # App Service needs a stable direct health probe while the public
+        # hostname is canonicalized.  The response contains no member data.
+        if request.path == "/healthz" and clean_host == azure_host:
+            return None
+
+        if clean_host in {f"www.{canonical_host}", azure_host}:
+            return _canonical_redirect_or_reject(canonical_host)
+
+        if clean_host == "pete.peerslate.com" and request.method not in {
+            "GET",
+            "HEAD",
+        }:
+            abort(400)
+
+        # The portfolio hostname has a historic profile mapping below.  Its
+        # protected/authentication routes are platform routes, not Pete profile
+        # aliases, so preserve their exact path and query on the canonical
+        # host before the legacy profile logic has a chance to rewrite them.
+        if clean_host == "pete.peerslate.com" and (
+            request.path == "/app"
+            or request.path.startswith("/app/")
+            or request.path == "/auth"
+            or request.path.startswith("/auth/")
+        ):
+            return _canonical_redirect_or_reject(canonical_host)
 
     # Case 1: someone visits the old pete.peerslate.com subdomain.
     # Permanently point them at the peerslate.com/petec/... version instead.
@@ -3464,6 +3571,47 @@ def interview_coach():
 # page. These render a small branded page (templates/error.html)
 # that keeps the site header/footer and offers a way back home.
 # -------------------------------------------------------
+
+
+def _is_private_json_request():
+    return request.path.startswith("/api/")
+
+
+def _auth_recovery_response(state, status_code):
+    """Return a generic private recovery response without claim/error detail."""
+    if _is_private_json_request():
+        response = jsonify({"error": state})
+    else:
+        # base.html normally resolves the auth state for navigation. Mark the
+        # request first so a malformed header cannot recurse through that same
+        # context processor while this recovery page is being rendered.
+        g.peerslate_auth_context_guard = True
+        g.peerslate_auth_navigation_state = "account_issue"
+        response = make_response(
+            render_template(
+                "auth_recovery.html",
+                page_title="Account check needed",
+            )
+        )
+    response.status_code = status_code
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@app.errorhandler(AuthenticationPrincipalInvalid)
+def invalid_authentication_principal(_error):
+    # A present-but-invalid platform principal is not an anonymous request and
+    # must never be redirected into another provider login attempt.
+    return _auth_recovery_response("invalid_session", 401)
+
+
+@app.errorhandler(IdentityMappingError)
+def unavailable_identity_mapping(_error):
+    # The trusted principal was structurally valid but the internal account
+    # mapping did not produce a usable member. Keep that distinct from both a
+    # signed-out request and a database driver failure without exposing why.
+    return _auth_recovery_response("account_issue", 503)
+
 
 @app.errorhandler(404)
 def page_not_found(e):

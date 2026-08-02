@@ -47,6 +47,32 @@ class AuthenticationRequired(RuntimeError):
     """Raised when a request has no trusted member identity."""
 
 
+class AuthenticationPrincipalInvalid(RuntimeError):
+    """Raised when a presented trusted principal cannot be safely used."""
+
+
+class IdentityMappingError(RuntimeError):
+    """Raised when a valid principal cannot be mapped to a PeerSlate member."""
+
+
+@dataclass(frozen=True)
+class PeerSlatePrincipal:
+    """Validated Easy Auth (or explicit development) principal, without SQL.
+
+    This deliberately keeps provider claims separate from the database-backed
+    PeerSlate identity.  Public chrome and the session probe can therefore
+    answer whether an authenticated session is present without waking Azure
+    SQL or creating/updating an application account.
+    """
+
+    auth_provider: str
+    auth_issuer: str
+    auth_subject: str
+    email: str | None = None
+    display_name: str | None = None
+    is_development: bool = False
+
+
 @dataclass(frozen=True)
 class PeerSlateIdentity:
     user_key: str
@@ -63,20 +89,20 @@ def _decode_easy_auth_principal(encoded_principal):
         "PEERSLATE_AUTH_HEADER_MAX_LENGTH", 65536
     )
     if not isinstance(encoded_principal, str) or len(encoded_principal) > max_header_length:
-        raise AuthenticationRequired("The authentication identity is invalid.")
+        raise AuthenticationPrincipalInvalid("The authentication principal is invalid.")
 
     try:
         padding = "=" * (-len(encoded_principal) % 4)
         decoded = base64.b64decode(encoded_principal + padding, validate=True)
         principal = json.loads(decoded.decode("utf-8"))
     except (binascii.Error, ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise AuthenticationRequired("The authentication identity is invalid.") from error
+        raise AuthenticationPrincipalInvalid("The authentication principal is invalid.") from error
 
     if not isinstance(principal, dict):
-        raise AuthenticationRequired("The authentication identity is invalid.")
+        raise AuthenticationPrincipalInvalid("The authentication principal is invalid.")
     claims = principal.get("claims")
     if not isinstance(claims, list) or len(claims) > 250:
-        raise AuthenticationRequired("The authentication identity has no claims.")
+        raise AuthenticationPrincipalInvalid("The authentication principal has no claims.")
 
     return principal, claims
 
@@ -136,20 +162,20 @@ def _resolve_display_name(claims, email):
 def _bounded_identity_value(value, label, max_length, *, required=True):
     if value is None or not str(value).strip():
         if required:
-            raise AuthenticationRequired(
-                f"The authentication identity has no stable {label}."
+            raise AuthenticationPrincipalInvalid(
+                f"The authentication principal has no stable {label}."
             )
         return None
 
     clean_value = str(value).strip()
     if len(clean_value) > max_length or any(ord(char) < 32 for char in clean_value):
         if required:
-            raise AuthenticationRequired("The authentication identity is invalid.")
+            raise AuthenticationPrincipalInvalid("The authentication principal is invalid.")
         return None
     return clean_value
 
 
-def _easy_auth_identity(encoded_principal):
+def _easy_auth_principal(encoded_principal):
     principal, claims = _decode_easy_auth_principal(encoded_principal)
     provider = _bounded_identity_value(
         principal.get("auth_typ")
@@ -160,7 +186,7 @@ def _easy_auth_identity(encoded_principal):
     )
     provider = provider.lower()
     if not AUTH_PROVIDER.fullmatch(provider):
-        raise AuthenticationRequired("The authentication identity is invalid.")
+        raise AuthenticationPrincipalInvalid("The authentication principal is invalid.")
 
     configured_issuer = current_app.config.get("PEERSLATE_AUTH_ISSUER")
     issuer = _bounded_identity_value(
@@ -177,7 +203,7 @@ def _easy_auth_identity(encoded_principal):
     if configured_issuer:
         expected_issuer = str(configured_issuer).strip().rstrip("/")
         if issuer.casefold() != expected_issuer.casefold():
-            raise AuthenticationRequired("The authentication identity is invalid.")
+            raise AuthenticationPrincipalInvalid("The authentication principal is invalid.")
     subject = _bounded_identity_value(
         _first_claim(claims, OBJECT_ID_CLAIMS), "subject", 500
     )
@@ -191,36 +217,48 @@ def _easy_auth_identity(encoded_principal):
         150,
         required=False,
     )
+    return PeerSlatePrincipal(
+        auth_provider=provider,
+        auth_issuer=issuer,
+        auth_subject=subject,
+        email=email,
+        display_name=display_name,
+    )
+
+
+def _map_principal_to_identity(principal):
+    """Resolve one previously validated principal to the existing account row."""
     user = database_service.first_row(
         "usp_UpsertAppUserFromAuth",
         [
-            ("@AuthProvider", provider),
-            ("@AuthIssuer", issuer),
-            ("@AuthSubject", subject),
-            ("@Email", email),
-            ("@DisplayName", display_name),
+            ("@AuthProvider", principal.auth_provider),
+            ("@AuthIssuer", principal.auth_issuer),
+            ("@AuthSubject", principal.auth_subject),
+            ("@Email", principal.email),
+            ("@DisplayName", principal.display_name),
             ("@ProfileImageUrl", None),
             ("@TimezoneName", None),
         ],
     )
     if not user or not user.get("user_key"):
-        raise AuthenticationRequired("The authenticated member could not be loaded.")
+        raise IdentityMappingError("The authenticated member could not be mapped.")
 
     return PeerSlateIdentity(
         user_key=user["user_key"],
-        auth_provider=provider,
-        auth_issuer=issuer,
-        auth_subject=subject,
+        auth_provider=principal.auth_provider,
+        auth_issuer=principal.auth_issuer,
+        auth_subject=principal.auth_subject,
         email=user.get("email"),
         display_name=user.get("display_name"),
         account_key=(str(user["account_key"]) if user.get("account_key") else None),
     )
 
 
-def get_current_identity():
-    cached_identity = getattr(g, "peerslate_identity", None)
-    if cached_identity:
-        return cached_identity
+def get_current_principal():
+    """Return a cached validated principal without touching identity storage."""
+    cached_principal = getattr(g, "peerslate_principal", None)
+    if cached_principal:
+        return cached_principal
 
     encoded_principal = request.headers.get("X-MS-CLIENT-PRINCIPAL")
     # App Service hosting and Flask test mode do not prove that a request
@@ -232,7 +270,7 @@ def get_current_identity():
     )
 
     if encoded_principal and trust_easy_auth:
-        identity = _easy_auth_identity(encoded_principal)
+        principal = _easy_auth_principal(encoded_principal)
     else:
         development_user_key = current_app.config.get("PEERSLATE_DEV_USER_KEY")
         allow_development_identity = (
@@ -242,13 +280,42 @@ def get_current_identity():
         if not allow_development_identity or not development_user_key:
             raise AuthenticationRequired("Sign in is required.")
 
-        identity = PeerSlateIdentity(
-            user_key=development_user_key,
+        principal = PeerSlatePrincipal(
             auth_provider="development",
             auth_issuer="urn:peerslate:development",
             auth_subject=development_user_key,
             display_name="Local PeerSlate Test User",
+            is_development=True,
         )
+
+    g.peerslate_principal = principal
+    return principal
+
+
+def get_optional_principal():
+    """Return no principal only for a genuinely absent trusted principal."""
+    try:
+        return get_current_principal()
+    except AuthenticationRequired:
+        return None
+
+
+def get_current_identity():
+    cached_identity = getattr(g, "peerslate_identity", None)
+    if cached_identity:
+        return cached_identity
+
+    principal = get_current_principal()
+    if principal.is_development:
+        identity = PeerSlateIdentity(
+            user_key=principal.auth_subject,
+            auth_provider=principal.auth_provider,
+            auth_issuer=principal.auth_issuer,
+            auth_subject=principal.auth_subject,
+            display_name=principal.display_name,
+        )
+    else:
+        identity = _map_principal_to_identity(principal)
 
     g.peerslate_identity = identity
     return identity

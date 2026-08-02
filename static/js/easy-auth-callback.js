@@ -37,14 +37,38 @@
   }
 
   function install(windowRef) {
+    var privateBfcacheReloaded = false;
+
     function checkForCallback() {
       return clearCallbackAndReload(windowRef);
+    }
+
+    function isPrivatePath() {
+      var pathname = windowRef && windowRef.location && windowRef.location.pathname;
+      return typeof pathname === 'string'
+        && (pathname === '/app' || pathname.indexOf('/app/') === 0
+          || pathname.indexOf('/auth/') === 0);
     }
 
     checkForCallback();
     if (windowRef && typeof windowRef.addEventListener === 'function') {
       windowRef.addEventListener('hashchange', checkForCallback);
-      windowRef.addEventListener('pageshow', checkForCallback);
+      windowRef.addEventListener('pageshow', function (event) {
+        if (checkForCallback()) {
+          return;
+        }
+        // A private document restored from bfcache can otherwise show the
+        // previous server-authorized shell after sign-out. This is kept here
+        // because the guard already loads on every private route; the boolean
+        // lives only in this document, never in browser storage.
+        if (
+          event && event.persisted && isPrivatePath() && !privateBfcacheReloaded
+          && windowRef.location && typeof windowRef.location.reload === 'function'
+        ) {
+          privateBfcacheReloaded = true;
+          windowRef.location.reload();
+        }
+      });
     }
     return checkForCallback;
   }

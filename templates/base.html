@@ -7,13 +7,11 @@
        public and authentication HTML stay directly reachable but noindex until Pete passes the
        gate in docs/initiatives/PS-OPS-001/SEARCH_DISCOVERY_GATE.md. Keep the
        false branch byte-empty so protected /app renders remain unchanged. #}{{ ('\n    <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">' if not (request.path == '/app' or request.path.startswith('/app/')) else '')|safe }}
-    {# PS-AUTH-CALLBACK-001: load only on private account/authentication routes,
-       before page-specific scripts, so an Entra fragment-only return cannot
-       leave a stale pre-sign-in document visible. The script discards the
-       fragment without parsing or storing its value, then requests the same
-       route again so Easy Auth can supply trusted server-side identity
-       headers. Public pages remain byte-identical. #}
-    {% if request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/') %}<script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>{% endif %}
+    {# PS-AUTH-JOURNEY-REPAIR-001: this harmless fragment guard now loads on
+       every page. It ignores ordinary fragments and still never parses or
+       stores a callback value, so a provider return cannot retain stale
+       content on a public page or an authenticated one. #}
+    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>{% if not (request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/')) %}<script src="{{ url_for('static', filename='js/auth-state.js') }}" defer></script>{% endif %}
 
     <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
          2026-07-06)
@@ -206,7 +204,7 @@
                        "Why PeerSlate" (v1.2 rule 66 / PS-BRAND-NAV-001). #}
                 </ul>
 
-                <div class="platform-actions">
+                <div class="platform-actions"{% if not is_owner_app_path %} data-ps-auth-controls data-ps-auth-state="{{ auth_navigation_state }}"{% endif %}>
                     {# Header search uses the #nav-search-data JSON block near
                        the scripts. Public routes get destination-only search;
                        the unchanged legacy owner shell retains its prior
@@ -265,7 +263,7 @@
                     </button>
                     {% endif %}
 
-                    {% if current_member %}
+                    {% if is_owner_app_path %}{% if auth_navigation_state == 'workspace_waking' %}<a class="sign-in-btn" href="{{ owner_workspace_url }}">Workspace waking</a>{% elif current_member %}
                     <a class="sign-in-btn" href="{{ owner_workspace_url }}">My Slate</a>
                     {# Global sign-out (owner request 2026-07-21): previously the
                        only sign-out lived buried on /app and /app/settings. #}
@@ -276,6 +274,18 @@
                     <a class="sign-in-btn" href="{{ owner_workspace_url }}">Workspace waking</a>
                     {% else %}
                     <a class="sign-in-btn" href="{{ auth_sign_in_url }}">Sign In</a>
+                    {% endif %}{% else %}
+                    {# All account controls are rendered server-side. auth-state.js
+                       only changes their `hidden` attribute after a bounded,
+                       same-origin principal-only session check; it never builds
+                       HTML or reads browser auth storage. #}
+                    <a class="sign-in-btn" href="{{ owner_workspace_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>My Slate</a>
+                    <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
+                        <button class="nav-sign-out__btn" type="submit">Sign out</button>
+                    </form>
+                    <a class="sign-in-btn" href="{{ owner_workspace_url }}" data-ps-auth-control="workspace_waking"{% if auth_navigation_state != 'workspace_waking' %} hidden{% endif %}>Workspace waking</a>
+                    <a class="sign-in-btn" href="{{ auth_complete_url }}" data-ps-auth-control="account_issue"{% if auth_navigation_state != 'account_issue' %} hidden{% endif %}>Account issue</a>
+                    <a class="sign-in-btn" href="{{ auth_sign_in_url }}" data-ps-auth-control="signed_out"{% if auth_navigation_state not in ('signed_out', 'auth_unavailable') %} hidden{% endif %}>Sign In</a>
                     {% endif %}
                 </div>
             </div>

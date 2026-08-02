@@ -19,7 +19,14 @@ from flask import (
 )
 
 from db import get_connection
-from identity import AuthenticationRequired, get_current_identity, get_optional_identity
+from identity import (
+    AuthenticationPrincipalInvalid,
+    AuthenticationRequired,
+    get_current_identity,
+    get_current_principal,
+    get_optional_identity,
+    get_optional_principal,
+)
 from services.database_service import DatabaseServiceError
 from services.owner_home_service import OwnerHomeContractError, owner_home_service
 
@@ -30,6 +37,7 @@ AUTH_PROVIDER_NAME = re.compile(r"^[A-Za-z0-9._-]{1,50}$")
 # PS-SIGNIN-EXPERIENCE-001 item 2: how long a waking surface keeps checking
 # automatically before it stops and leaves the member in manual control.
 WAKING_RETRY_BUDGET_SECONDS = 90
+MAX_RETURN_PATH_LENGTH = 2048
 
 # PS-SIGNIN-EXPERIENCE-001 item 2.3 (sign-in pre-warm). /auth/sign-in is a
 # public, unauthenticated endpoint, so the pre-warm must never let a caller
@@ -49,10 +57,27 @@ def _auth_enabled():
 def _safe_return_path(candidate, default="/app"):
     if not candidate or not isinstance(candidate, str):
         return default
+    if len(candidate) > MAX_RETURN_PATH_LENGTH:
+        return default
+    if any(ord(character) < 32 or ord(character) == 127 for character in candidate):
+        return default
     parsed = urlsplit(candidate)
-    if parsed.scheme or parsed.netloc or not candidate.startswith("/"):
+    if (
+        parsed.scheme
+        or parsed.netloc
+        or parsed.fragment
+        or not candidate.startswith("/")
+    ):
         return default
     if candidate.startswith("//") or "\\" in candidate:
+        return default
+    if "//" in candidate:
+        return default
+    if parsed.path == "/auth" or parsed.path.startswith("/auth/"):
+        return default
+    if parsed.path == "/.auth" or parsed.path.startswith("/.auth/"):
+        return default
+    if parsed.path != "/app" and not parsed.path.startswith("/app/"):
         return default
     return candidate
 
@@ -79,6 +104,27 @@ def _render_auth_unavailable():
         ),
         503,
     )
+
+
+def _render_auth_recovery(status_code=401):
+    """Render a manual, non-looping account recovery surface.
+
+    This is also used by the completion checkpoint when no trusted principal
+    arrived.  It intentionally does not launch the external provider; the
+    member controls the next attempt and can sign out of a stale platform
+    session first.
+    """
+    g.peerslate_auth_context_guard = True
+    g.peerslate_auth_navigation_state = "account_issue"
+    response = make_response(
+        render_template(
+            "auth_recovery.html",
+            page_title="Account check needed",
+        ),
+        status_code,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 def _render_identity_storage_unavailable():
@@ -177,7 +223,16 @@ def sign_in():
     if not _auth_enabled():
         return _render_auth_unavailable()
 
-    login_path = _easy_auth_path("login", return_path)
+    # A valid principal is already enough to reach the checkpoint.  Do not
+    # resolve the database-backed identity here: it can wake Azure SQL and is
+    # neither needed nor safe as a condition for deciding whether to launch
+    # the external provider. Invalid principals deliberately propagate to the
+    # global recovery handler instead of being treated as signed out.
+    if get_optional_principal() is not None:
+        return redirect(url_for("auth.complete", return_to=return_path))
+
+    completion_path = url_for("auth.complete", return_to=return_path)
+    login_path = _easy_auth_path("login", completion_path)
     if login_path is None:
         return _render_auth_unavailable()
 
@@ -192,6 +247,22 @@ def sign_in():
         )
 
     return redirect(login_path)
+
+
+@auth.get("/auth/complete")
+def complete():
+    """Verify the provider return once, without doing an account lookup."""
+    return_path = _safe_return_path(request.args.get("return_to"))
+    if not _auth_enabled():
+        return _render_auth_unavailable()
+    try:
+        get_current_principal()
+    except AuthenticationRequired:
+        # A platform callback without a principal must never automatically
+        # start another provider redirect; that creates a browser loop that
+        # hides the actual recovery choice from the member.
+        return _render_auth_recovery()
+    return redirect(return_path)
 
 
 @auth.post("/auth/sign-out")
@@ -215,32 +286,25 @@ def sign_out():
 
 @auth.get("/auth/session")
 def session_status():
-    try:
-        identity = get_optional_identity()
-    except DatabaseServiceError:
-        current_app.logger.error("PeerSlate identity storage is unavailable.")
-        response = jsonify(
-            {
-                "signed_in": True,
-                "available": False,
-                "state": "workspace_unavailable",
-            }
-        )
+    # This endpoint is intentionally principal-only. It is used for harmless
+    # client-side header reconciliation and must never wake SQL, upsert an
+    # account, or expose database availability.
+    if not _auth_enabled():
+        response = jsonify({"state": "auth_unavailable"})
         response.status_code = 503
         response.headers["Cache-Control"] = "private, no-store"
-        response.headers["Retry-After"] = "5"
         return response
 
-    if identity is None:
-        response = jsonify({"signed_in": False, "available": _auth_enabled()})
+    try:
+        principal = get_optional_principal()
+    except AuthenticationPrincipalInvalid:
+        response = jsonify({"state": "invalid_session"})
+        response.status_code = 401
     else:
-        response = jsonify(
-            {
-                "signed_in": True,
-                "available": True,
-                "display_name": identity.display_name or "PeerSlate member",
-            }
-        )
+        if principal is None:
+            response = jsonify({"state": "signed_out"})
+        else:
+            response = jsonify({"state": "authenticated"})
     response.headers["Cache-Control"] = "private, no-store"
     return response
 
@@ -439,24 +503,39 @@ def studio_build_your_future():
 
 @auth.app_context_processor
 def shared_authentication_state():
-    if getattr(g, "peerslate_identity_storage_unavailable", False):
-        identity = None
+    # Error/recovery templates extend base.html. Do not ask identity.py to
+    # inspect the same bad principal again while Flask is building that page.
+    if getattr(g, "peerslate_auth_context_guard", False):
+        principal = None
+        navigation_state = getattr(
+            g, "peerslate_auth_navigation_state", "account_issue"
+        )
+        identity_storage_available = False
+    elif getattr(g, "peerslate_identity_storage_unavailable", False):
+        principal = getattr(g, "peerslate_principal", None)
+        navigation_state = "workspace_waking"
         identity_storage_available = False
     else:
-        try:
-            identity = get_optional_identity()
-            identity_storage_available = True
-        except DatabaseServiceError:
-            current_app.logger.error("PeerSlate navigation identity lookup failed.")
-            identity = None
-            identity_storage_available = False
+        # Keep global navigation out of the account-mapping path. A valid
+        # Easy Auth principal is sufficient to render session controls, and
+        # public pages must not trigger a SQL connection just to draw a header.
+        principal = get_optional_principal()
+        identity_storage_available = True
+        if principal is not None:
+            navigation_state = "authenticated"
+        elif _auth_enabled():
+            navigation_state = "signed_out"
+        else:
+            navigation_state = "auth_unavailable"
 
     return {
-        "current_member": identity,
+        "current_member": principal,
         "auth_enabled": _auth_enabled(),
         "identity_storage_available": identity_storage_available,
+        "auth_navigation_state": navigation_state,
         "auth_sign_in_url": url_for("auth.sign_in", return_to="/app"),
         "auth_sign_out_url": url_for("auth.sign_out"),
+        "auth_complete_url": url_for("auth.complete", return_to="/app"),
         "owner_workspace_url": url_for("auth.owner_workspace"),
         # Default off for every route. Only the flag-on Owner Home render
         # (PS-HOME-FRONTEND-001) passes standalone_owner_shell=True to

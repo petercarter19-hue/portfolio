@@ -157,6 +157,36 @@ class ControlRoomAuthorizationTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+    @patch("identity.database_service.first_row")
+    def test_unmapped_principal_has_the_exact_neutral_denial_contract(
+        self, first_row
+    ):
+        """A valid provider principal without an account cannot reveal either route.
+
+        Compare against the existing mapped non-owner denial so both HTML and
+        the data endpoint retain the same status, media type, and generic body.
+        """
+        headers = easy_auth_header("unmapped-id", NON_OWNER_EMAIL)
+
+        for path in (PAGE, DATA):
+            with self.subTest(path=path):
+                first_row.return_value = _db_row(NON_OWNER_EMAIL)
+                ordinary_denial = self.client.get(path, headers=headers)
+                first_row.return_value = None
+                unmapped_denial = self.client.get(path, headers=headers)
+
+                self.assertEqual(ordinary_denial.status_code, 404)
+                self.assertEqual(unmapped_denial.status_code, 404)
+                self.assertEqual(
+                    unmapped_denial.content_type, ordinary_denial.content_type
+                )
+                self.assertEqual(unmapped_denial.data, ordinary_denial.data)
+                self.assertNotEqual(unmapped_denial.mimetype, "application/json")
+                for marker in LEAK_MARKERS:
+                    self.assertNotIn(marker, unmapped_denial.data)
+
+        self.assertEqual(first_row.call_count, 4)
+
     # --- the owner --------------------------------------------------------
     @patch("identity.database_service.first_row")
     def test_owner_by_email_sees_the_dashboard(self, first_row):

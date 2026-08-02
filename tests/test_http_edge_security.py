@@ -248,7 +248,8 @@ class AuthIssuerTests(unittest.TestCase):
             headers=self._principal("https://attacker.example/v2.0"),
         )
 
-        self.assertEqual(response.get_json()["signed_in"], False)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json(), {"state": "invalid_session"})
         first_row.assert_not_called()
 
     @patch("identity.database_service.first_row")
@@ -264,7 +265,8 @@ class AuthIssuerTests(unittest.TestCase):
                     headers=self._principal(issuer),
                 )
 
-                self.assertEqual(response.get_json()["signed_in"], False)
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(response.get_json(), {"state": "invalid_session"})
                 first_row.assert_not_called()
 
     @patch("identity.database_service.first_row")
@@ -282,8 +284,9 @@ class AuthIssuerTests(unittest.TestCase):
             headers=self._principal("https://example.ciamlogin.com/example/v2.0/"),
         )
 
-        self.assertEqual(response.get_json()["signed_in"], True)
-        first_row.assert_called_once()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"state": "authenticated"})
+        first_row.assert_not_called()
 
     @patch("identity.database_service.first_row")
     def test_unset_expected_issuer_preserves_existing_behaviour(self, first_row):
@@ -310,8 +313,9 @@ class AuthIssuerTests(unittest.TestCase):
             "/auth/session", headers=self._principal("https://anything.example/v2.0")
         )
 
-        self.assertEqual(response.get_json()["signed_in"], True)
-        first_row.assert_called_once()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"state": "authenticated"})
+        first_row.assert_not_called()
 
     @staticmethod
     def _principal(issuer):

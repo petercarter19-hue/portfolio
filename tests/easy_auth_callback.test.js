@@ -65,6 +65,15 @@ function testBackForwardCacheReturnIsHandled() {
   assert.equal(h.calls.reload, 1);
 }
 
+function testPrivateBfcacheWithoutCallbackRefreshesOnlyOnce() {
+  const h = harness('');
+  callback.install(h.windowRef);
+  h.events.pageshow({ persisted: true });
+  h.events.pageshow({ persisted: true });
+
+  assert.equal(h.calls.reload, 1);
+}
+
 function testHistoryFailureUsesCleanReplacement() {
   const h = harness('#token=opaque');
   h.windowRef.history.replaceState = () => { throw new Error('unavailable'); };
@@ -78,5 +87,6 @@ testInitialCallbackIsDiscardedAndReloaded();
 testUnrelatedFragmentsRemainUntouched();
 testDelayedHashCallbackIsHandled();
 testBackForwardCacheReturnIsHandled();
+testPrivateBfcacheWithoutCallbackRefreshesOnlyOnce();
 testHistoryFailureUsesCleanReplacement();
-console.log('easy auth callback: 5 behavioral checks passed');
+console.log('easy auth callback: 6 behavioral checks passed');

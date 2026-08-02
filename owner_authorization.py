@@ -33,7 +33,7 @@ from flask import abort, current_app
 from werkzeug.exceptions import HTTPException
 from functools import wraps
 
-from identity import get_optional_identity
+from identity import IdentityMappingError, get_optional_identity
 from services.database_service import DatabaseServiceError
 
 
@@ -92,7 +92,7 @@ def resolve_owner():
     """
     try:
         identity = get_optional_identity()
-    except DatabaseServiceError:
+    except (DatabaseServiceError, IdentityMappingError):
         current_app.logger.error(
             "Control Room owner resolution failed on identity storage; "
             "failing closed."
@@ -105,17 +105,17 @@ def owner_required(view):
     """Guard a view so only the resolved site owner may reach it.
 
     Anyone else — unauthenticated, authenticated non-owner, or an identity that
-    cannot be resolved because storage is down — receives a bare 404, which is
-    indistinguishable from a route that does not exist. This must be applied to
-    every Control Room route independently, including data endpoints; protecting
-    the page alone is not sufficient.
+    cannot be resolved because storage is down or has no usable account mapping
+    — receives a bare 404, which is indistinguishable from a route that does
+    not exist. This must be applied to every Control Room route independently,
+    including data endpoints; protecting the page alone is not sufficient.
     """
 
     @wraps(view)
     def wrapped(*args, **kwargs):
         try:
             identity = get_optional_identity()
-        except DatabaseServiceError:
+        except (DatabaseServiceError, IdentityMappingError):
             current_app.logger.error(
                 "Control Room access check failed on identity storage; "
                 "failing closed."
