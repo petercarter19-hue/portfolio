@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Start a focused session to add, strengthen, or better understand your private Workshop information.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001 W2a — Work on Something opening. Visual authority:
+  docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
+  workshop-facelift-2026-08-02/R05-first-run-desktop-facelift.png (and R06
+  mobile) is the default composition per the brief: no Spark card exists in
+  this slice (that is W2c), so the "no confirmed information yet" / first-
+  run layout is used regardless of whether confirmed items actually exist,
+  with the two static "No Spark yet" / "Build your private information"
+  tiles always present. R07/R08 (AI-unavailable) is a test-seam-only
+  alternate composition — see workshop_work_routes.py's
+  _ai_unavailable_test_seam_requested — never reachable by a real request.
+
+  Only "Continue where I left off" and "Work on something" can actually
+  begin a session in this slice (services/workshop_work_session.py's
+  STARTABLE_DOORS). "I brought something" and "Give me a spark" render
+  honestly inert — no intake path and no Spark feature exist yet.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    {% if anonymous_preview %}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — this session is example information, not yours. Your own
+        changes last for this visit only, in your browser session. Sign in
+        to keep anything permanently in your own private library.
+        <a href="{{ sign_in_url }}">Sign in</a>
+        {% include "partials/workshop/_start_fresh_link.html" %}
+    </div>
+    {% endif %}
+
+    {% if success_message or error_message %}
+    <div class="wk-status-banner{% if error_message %} wk-status-banner--error{% endif %}" role="status">
+        {{ error_message or success_message }}
+    </div>
+    {% endif %}
+
+    <div class="wk-flow-layout">
+        <div class="wk-flow-main">
+            <div class="wk-card">
+                {% if ai_unavailable %}
+                <div class="wk-ai-banner" role="status">
+                    {{ workshop_icon("alert") }}
+                    <div>
+                        <p class="wk-ai-banner__title">Spark is unavailable right now.</p>
+                        <p class="wk-ai-banner__copy">You can still type or speak, continue unfinished work, and use My Information. Nothing has been lost.</p>
+                    </div>
+                </div>
+                <p class="wk-keep-working-label">{{ workshop_icon("pencil") }}<span>Keep working your way</span></p>
+                {% endif %}
+
+                <div class="wk-work-composer">
+                    <h1 class="wk-work-composer__title">Start with whatever is on your mind</h1>
+                    <p class="wk-work-composer__sub">A rough thought is enough. Type or speak in your own words.</p>
+
+                    <form method="post" action="{{ start_url }}">
+                        <input type="hidden" name="door" value="{{ door_something }}">
+                        <div class="wk-work-composer__row">
+                            <div class="wk-field__textarea-wrap">
+                                <textarea
+                                    id="wk-work-thought"
+                                    class="wk-field__textarea"
+                                    name="thought"
+                                    maxlength="{{ max_thought_units }}"
+                                    rows="2"
+                                    placeholder="What would you like to add, strengthen, or better understand?"
+                                >{{ composer_value }}</textarea>
+                                <button
+                                    type="button"
+                                    class="wk-mic-btn"
+                                    aria-label="Voice input is not available yet"
+                                    aria-disabled="true"
+                                    disabled
+                                >{{ workshop_icon("mic") }}</button>
+                            </div>
+                            <button type="submit" class="wk-work-composer__submit" aria-label="Start a session with this thought">
+                                {{ workshop_icon("arrow-right") }}
+                            </button>
+                        </div>
+                        <p class="wk-field__hint">Text entry is available. Voice input is not available yet.</p>
+                    </form>
+                </div>
+
+                <div class="wk-doors">
+                    {# Continue where I left off #}
+                    {% if doors.continue.available %}
+                    <div class="wk-door wk-door--continue-active">
+                        <div class="wk-door__head">
+                            <span class="wk-door__head-left">
+                                <span class="wk-door__icon">{{ workshop_icon("clock") }}</span>
+                                <span class="wk-door__title">Continue where I left off</span>
+                            </span>
+                        </div>
+                        <p class="wk-door__copy">Resume a private, unfinished session.</p>
+                        <ul class="wk-door__list">
+                            {% for item in doors.continue.unfinished_entries %}
+                            <li class="wk-door__list-item">
+                                <span class="wk-door__list-title">{{ item.title }}</span>
+                                <form method="post" action="{{ start_url }}">
+                                    <input type="hidden" name="door" value="{{ door_continue }}">
+                                    <input type="hidden" name="resume_item" value="{{ item.item_key }}">
+                                    <button type="submit" class="wk-door__resume-btn">Resume</button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="wk-door wk-door--inert">
+                        <div class="wk-door__head">
+                            <span class="wk-door__head-left">
+                                <span class="wk-door__icon">{{ workshop_icon("clock") }}</span>
+                                <span class="wk-door__title">Continue where I left off</span>
+                            </span>
+                        </div>
+                        <p class="wk-door__copy">Nothing to continue yet. Your unfinished work will appear here.</p>
+                        <p class="wk-door__meta">No unfinished work</p>
+                    </div>
+                    {% endif %}
+
+                    {# I brought something — honest not-available treatment #}
+                    <div class="wk-door wk-door--inert">
+                        <div class="wk-door__head">
+                            <span class="wk-door__head-left">
+                                <span class="wk-door__icon">{{ workshop_icon("document") }}</span>
+                                <span class="wk-door__title">I brought something</span>
+                            </span>
+                        </div>
+                        <p class="wk-door__copy">Add a file or photo as source material.</p>
+                        <p class="wk-door__meta">Not available yet</p>
+                    </div>
+
+                    {# Work on something #}
+                    <form method="post" action="{{ start_url }}">
+                        <input type="hidden" name="door" value="{{ door_something }}">
+                        <button type="submit" class="wk-door">
+                            <span class="wk-door__head">
+                                <span class="wk-door__head-left">
+                                    <span class="wk-door__icon">{{ workshop_icon("pencil") }}</span>
+                                    <span class="wk-door__title">Work on something</span>
+                                </span>
+                                <span class="wk-door__chevron">{{ workshop_icon("chevron-right") }}</span>
+                            </span>
+                            <p class="wk-door__copy">Start with a thought, example, skill, or question in your own words.</p>
+                            <p class="wk-door__meta">Type or speak</p>
+                        </button>
+                    </form>
+
+                    {# Give me a spark — not built until slice W2c #}
+                    <div class="wk-door wk-door--inert">
+                        <div class="wk-door__head">
+                            <span class="wk-door__head-left">
+                                <span class="wk-door__icon">{{ workshop_icon("sparkle") }}</span>
+                                <span class="wk-door__title">Give me a spark</span>
+                            </span>
+                        </div>
+                        {% if ai_unavailable %}
+                        <p class="wk-door__copy">Suggestions are temporarily unavailable.</p>
+                        <p class="wk-door__meta">Try again later</p>
+                        {% else %}
+                        <p class="wk-door__copy">Get one grounded idea from information you confirmed.</p>
+                        <p class="wk-door__meta">Not available yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if ai_unavailable %}
+                <div class="wk-spark-unavailable">
+                    <p class="wk-spark-unavailable__eyebrow">{{ workshop_icon("sparkle") }}<span>Spark unavailable</span></p>
+                    <h3>No suggestion is shown without a grounded result.</h3>
+                    <p>Try again later. Direct entry and your private information remain available.</p>
+                    <a class="wk-btn wk-btn--outline" href="{{ url_for('workshop.work_opening') }}">Try Spark again</a>
+                </div>
+                {% else %}
+                <div class="wk-tiles">
+                    <div class="wk-tile">
+                        <span class="wk-tile__icon">{{ workshop_icon("sparkle") }}</span>
+                        <div>
+                            <p class="wk-tile__title">No Spark yet — and that's okay.</p>
+                            <p class="wk-tile__copy">A Spark only appears when it can be grounded in information you have reviewed and confirmed.</p>
+                        </div>
+                    </div>
+                    <div class="wk-tile">
+                        <span class="wk-tile__icon">{{ workshop_icon("check") }}</span>
+                        <div>
+                            <p class="wk-tile__title">Build your private information one useful piece at a time.</p>
+                            <p class="wk-tile__copy">PeerSlate will show its interpretation before anything becomes confirmed.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="wk-aside">
+            <section class="wk-card wk-side-card" aria-labelledby="wk-work-info-title">
+                <div class="wk-side-card__head">
+                    {{ workshop_icon("shield") }}
+                    <span id="wk-work-info-title">Your private information</span>
+                </div>
+                {% if related_items %}
+                <ul class="wk-side-card__list">
+                    {% for item in related_items %}
+                    <li>{{ workshop_icon("check") }}<span>{{ item.title }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <ul class="wk-side-card__list">
+                    <li><span class="wk-icon"></span><span>No confirmed information yet.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>You decide what becomes confirmed.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>Nothing becomes public from this screen.</span></li>
+                </ul>
+                {% endif %}
+                <a class="wk-btn wk-btn--primary wk-btn--block" href="{{ url_for('workshop.my_information') }}">Open My Information</a>
+            </section>
+
+            <section class="wk-card wk-side-card" aria-labelledby="wk-work-private-title">
+                <div class="wk-side-card__head">
+                    {{ workshop_icon("shield") }}
+                    <span id="wk-work-private-title">Private by default</span>
+                </div>
+                <ul class="wk-side-card__list">
+                    <li>{{ workshop_icon("check") }}<span>PeerSlate may propose wording; you decide what to save.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>Saving here does not publish or change another destination.</span></li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
+    <p class="wk-footnote">
+        <svg class="wk-footnote__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
+            <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
+        </svg>
+        Private unless you deliberately choose to use it elsewhere.
+    </p>
+</div>
+{% endblock %}

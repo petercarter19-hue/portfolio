@@ -1,16 +1,26 @@
 {# Shared Workshop hero + mode tabs — approved authority 06/09, reused by
    every page on the workshop blueprint (My Information, Add/Edit
-   information, Review, Saved confirmation, Delete confirmation) so the page
-   identity stays constant across the whole direct-entry flow.
+   information, Review, Saved confirmation, Delete confirmation, and — as of
+   PS-WORKSHOP-001 W2a — the Work on Something opening and session pages) so
+   the page identity stays constant across the whole product.
 
-   "Work on Something" has no approved visual yet (doc 20 section 4) and no
-   session flow exists at this slice, so it stays inert everywhere — MINOR 6
-   correction: a plain <span> with a visible "Coming later" pill (matching
-   the use-elsewhere card's badge style) rather than an inert-but-still-a-
-   link <a href="#" aria-disabled role="link">, which a screen reader can
-   still announce as a link. "My Information" is the active tab throughout
-   direct entry: Add/Edit/Review/Saved are all reached from — and return
-   to — the My Information library, not a separate top-level mode. #}
+   "Work on Something" has no approved visual for direct entry's own pages
+   (doc 20 section 4) — MINOR 6 correction retained: on every page that is
+   NOT itself part of the Work on Something flow, it stays a plain <span>
+   with a visible "Coming later" pill (matching the use-elsewhere card's
+   badge style) rather than an inert-but-still-a-link
+   <a href="#" aria-disabled role="link">, which a screen reader can still
+   announce as a link.
+
+   W2a correction: this is now conditional on workshop_session_nav_enabled
+   (PEERSLATE_WORKSHOP_SESSION_ENABLED, injected globally by
+   workshop_routes.py's workshop_navigation_state context processor). When
+   that sub-flag is on, "Work on Something" becomes a real link to the
+   opening screen and reflects whichever mode/tab the current page belongs
+   to via active_workshop_mode ("work" or "information", set per-template;
+   defaults to "information" so every W1 page's existing behavior is
+   unchanged). When the sub-flag is off, the tab is unchanged from before
+   this slice existed. #}
 <header class="wk-hero">
     <h1 class="wk-hero__title">Workshop</h1>
     <p class="wk-hero__lede">Review, update, and control the information you have chosen to give PeerSlate.</p>
@@ -18,9 +28,21 @@
 </header>
 
 <nav class="wk-modes" aria-label="Workshop mode">
+    {% if workshop_session_nav_enabled %}
+    <a
+        class="wk-modes__tab{% if active_workshop_mode == 'work' %} wk-modes__tab--active{% endif %}"
+        href="{{ workshop_work_url }}"
+        {% if active_workshop_mode == 'work' %}aria-current="page"{% endif %}
+    >Work on Something</a>
+    {% else %}
     <span class="wk-modes__tab wk-modes__tab--disabled">
         <span>Work on Something</span>
         <span class="wk-pill wk-pill--coming-later">Coming later</span>
     </span>
-    <a class="wk-modes__tab wk-modes__tab--active" href="{{ url_for('workshop.my_information') }}" aria-current="page">My Information</a>
+    {% endif %}
+    <a
+        class="wk-modes__tab{% if active_workshop_mode != 'work' %} wk-modes__tab--active{% endif %}"
+        href="{{ url_for('workshop.my_information') }}"
+        {% if active_workshop_mode != 'work' %}aria-current="page"{% endif %}
+    >My Information</a>
 </nav>

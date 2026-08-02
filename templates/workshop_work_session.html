@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}Answer a focused question to grow your private Workshop information.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001 W2a — Work on Something focused-question session. Visual
+  authority: R03 (desktop) / R04 (mobile),
+  workshop-facelift-2026-08-02/. No AI call exists in this slice — "Review
+  what I shared" leads to workshop_work_holding.html's honest holding
+  state, not a real review. "Use as context" is a per-item checkbox INSIDE
+  the SAME <form> as the answer textarea (the form wraps both the main
+  card and the aside rail, exactly like workshop_review.html's existing
+  pattern) so the member's current answer is never lost regardless of
+  which submit button is pressed — every action (Save unfinished / Stop
+  for now / Review what I shared) carries the full form (answer +
+  selection) forward together.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    {% if anonymous_preview %}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — this session is example information, not yours. Your own
+        changes last for this visit only, in your browser session.
+        {% include "partials/workshop/_start_fresh_link.html" %}
+    </div>
+    {% endif %}
+
+    {% if error_message %}
+    <div class="wk-status-banner wk-status-banner--error" role="status">{{ error_message }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ update_url }}">
+        <div class="wk-flow-layout">
+            <div class="wk-flow-main">
+                <a class="wk-breadcrumb" href="{{ back_url }}">
+                    {{ workshop_icon("arrow-left") }}
+                    <span>Back to Workshop</span>
+                </a>
+
+                <div class="wk-card">
+                    <p class="wk-session-eyebrow">Focused question</p>
+                    <h1 class="wk-session-question">{{ question_text }}</h1>
+
+                    <label class="wk-session-answer-label" for="wk-session-answer">Your answer in progress</label>
+                    <div class="wk-field__textarea-wrap">
+                        <textarea
+                            id="wk-session-answer"
+                            class="wk-field__textarea"
+                            name="answer"
+                            maxlength="{{ max_answer_units }}"
+                            rows="7"
+                        >{{ answer_value }}</textarea>
+                        <button
+                            type="button"
+                            class="wk-mic-btn"
+                            aria-label="Voice input is not available yet"
+                            aria-disabled="true"
+                            disabled
+                        >{{ workshop_icon("mic") }}</button>
+                    </div>
+                    <p class="wk-field__hint">Text entry is available. Voice input is not available yet.</p>
+
+                    <div class="wk-actions-row" style="margin-top:1.25rem;">
+                        <button type="submit" name="wk_action" value="save_unfinished" class="wk-btn wk-btn--outline">
+                            {{ workshop_icon("archive") }}
+                            <span>Save unfinished</span>
+                        </button>
+                        <button type="submit" name="wk_action" value="stop" class="wk-btn-link">Stop for now</button>
+                        <button type="submit" name="wk_action" value="review" class="wk-btn wk-btn--primary">
+                            <span>Review what I shared</span>
+                            {{ workshop_icon("arrow-right") }}
+                        </button>
+                    </div>
+
+                    <p class="wk-field__hint" style="margin-top:1rem;">
+                        Nothing becomes confirmed information until you review the exact wording and choose Save privately. Save unfinished is a private working draft. It does not confirm the answer.
+                    </p>
+                </div>
+            </div>
+
+            <div class="wk-aside">
+                <section class="wk-card wk-side-card" aria-labelledby="wk-context-title">
+                    <div class="wk-side-card__head">
+                        {{ workshop_icon("document") }}
+                        <span id="wk-context-title">Related confirmed information</span>
+                    </div>
+                    <p class="wk-field__hint" style="margin-bottom:0.75rem;">Choose only what is relevant to this session.</p>
+
+                    {% if related_items %}
+                    <ul class="wk-context-list">
+                        {% for item in related_items %}
+                        <li class="wk-context-item">
+                            <input
+                                type="checkbox"
+                                id="wk-context-{{ loop.index }}"
+                                name="context"
+                                value="{{ item.item_key }}"
+                                {% if item.selected %}checked{% endif %}
+                            >
+                            <label for="wk-context-{{ loop.index }}" class="wk-context-item__body">
+                                <span class="wk-context-item__title">{{ item.title }}</span>
+                                <span class="wk-context-item__state">{% if item.selected %}Using as context{% else %}Use as context{% endif %}</span>
+                            </label>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="wk-context-empty">No confirmed information is available to use as context yet.</p>
+                    {% endif %}
+
+                    <p class="wk-context-note">
+                        {{ workshop_icon("info-circle") }}
+                        <span>Selection is about relevance to this session, not AI permission. The underlying items remain confirmed information whether selected or not.</span>
+                    </p>
+                </section>
+            </div>
+        </div>
+    </form>
+
+    <p class="wk-footnote">
+        <svg class="wk-footnote__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
+            <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
+        </svg>
+        Private unless you deliberately choose to use it elsewhere.
+    </p>
+</div>
+{% endblock %}

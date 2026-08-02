@@ -48,6 +48,7 @@
         here last for this visit only, in your browser session. Sign in to
         keep anything permanently in your own private library.
         <a href="{{ sign_in_url }}">Sign in</a>
+        {% include "partials/workshop/_start_fresh_link.html" %}
     </div>
     {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>

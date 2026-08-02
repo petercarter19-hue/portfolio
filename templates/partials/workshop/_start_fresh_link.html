@@ -1,0 +1,9 @@
+{# "Start fresh" — PS-WORKSHOP-001 W2a. Included inside every anonymous-
+   preview status banner across the whole Workshop blueprint (My
+   Information, Add/Edit, Review, Saved, Delete-confirm, and the new Work
+   on Something opening/session pages). Independent of the session
+   sub-flag: works whenever the outer PEERSLATE_WORKSHOP_ENABLED flag is
+   on, per the brief's explicit "this is a library-demo feature too"
+   instruction. Leads to a server-rendered confirm step before anything is
+   cleared — never a same-click destructive action. #}
+<a class="wk-status-banner__start-fresh" href="{{ url_for('workshop.reset_preview_confirm') }}">Start fresh</a>

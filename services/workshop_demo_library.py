@@ -78,9 +78,15 @@ MAX_ADDED_ITEMS = 4
 # own (much larger) 8000-unit bound.
 MAX_PREVIEW_WORDING_UNITS = 400
 # Defensive ceiling on the fully-encoded, signed session cookie value.
-# Measured worst case (4 items at both caps, near-random wording) is ~2KB;
-# this ~3KB ceiling is a belt-and-suspenders guard against an unanticipated
-# encoding regression, not a limit any caller should expect to reach.
+# Measured worst case for THIS module alone (4 items at both caps,
+# near-random wording) is ~2KB. PS-WORKSHOP-001 W2a: this is now the SHARED
+# ceiling for the whole session["workshop_preview"] value, library delta plus
+# the Work on Something session state together (services/
+# workshop_work_session.py imports this constant rather than defining its
+# own) — measured combined worst case (this module's 4-item/400-char cap
+# PLUS a full 1000-UTF-16-unit work-session answer and a full context
+# selection) is ~3.0KB, still under this ~3KB ceiling, itself comfortably
+# under the ~4KB a browser allows for one cookie.
 MAX_SESSION_BYTES = 3072
 
 CAP_ITEMS_MESSAGE = (
@@ -540,7 +546,24 @@ def read_session_delta(session):
 
 
 def write_session_delta(session, delta):
-    session[SESSION_KEY] = delta
+    """Write this visitor's library delta, preserving any sibling key already
+    present under ``SESSION_KEY``.
+
+    PS-WORKSHOP-001 W2a addition: the Work on Something session state
+    (``services/workshop_work_session.py``) lives under the SAME
+    ``session["workshop_preview"]`` value, in its own ``"w"`` key, so the two
+    features can coexist in one signed cookie within one shared byte budget
+    (see MAX_SESSION_BYTES below). A blind ``session[SESSION_KEY] = delta``
+    would silently erase an in-progress work session the moment any library
+    action (add/edit/archive/restore/delete) ran. Every existing caller here
+    passes a ``delta`` containing exactly the four library keys ("a"/"e"/
+    "s"/"d"), so this merge is a no-op change in behavior when no "w" key
+    exists yet — only additive when one does.
+    """
+    raw = session.get(SESSION_KEY)
+    merged = dict(raw) if isinstance(raw, dict) else {}
+    merged.update(delta)
+    session[SESSION_KEY] = merged
     session.modified = True
 
 
@@ -550,10 +573,17 @@ def _would_fit(session, candidate_delta):
 
     Measures the actual signed token Flask would emit (not just a raw JSON
     proxy), so this reflects the real Set-Cookie payload a visitor's browser
-    would receive.
+    would receive. Merges over any existing "w" (Work on Something session
+    state) key first, the same way write_session_delta does, so a library
+    mutation while a work session is active is measured against the TRUE
+    combined size rather than under-counting it.
     """
+    raw = session.get(SESSION_KEY)
+    existing = dict(raw) if isinstance(raw, dict) else {}
+    trial_value = dict(existing)
+    trial_value.update(candidate_delta)
     trial = dict(session)
-    trial[SESSION_KEY] = candidate_delta
+    trial[SESSION_KEY] = trial_value
     try:
         serializer = current_app.session_interface.get_signing_serializer(current_app)
         token = serializer.dumps(trial)

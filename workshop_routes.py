@@ -159,6 +159,10 @@ WORKSHOP_SUCCESS_MESSAGES = {
     "archived-preview": "Archived in this preview session. Sign in to keep your own permanent library.",
     "restored-preview": "Restored in this preview session. Sign in to keep changes permanently.",
     "deleted-preview": "Removed from this preview session.",
+    # PS-WORKSHOP-001 W2a (workshop_work_routes.py): Work on Something
+    # session outcomes, redirected here to the opening screen.
+    "session-stopped": "You stopped this session. Nothing new was saved — Save unfinished keeps your answer next time.",
+    "reset-preview": "This preview session was reset. Everything is back to the way it started.",
 }
 WORKSHOP_VALIDATION_MESSAGES = {
     "changed": "That item changed or is no longer available. Refresh and try again.",
@@ -189,6 +193,15 @@ UNAVAILABLE_FORM_MESSAGE = (
 
 def _workshop_enabled():
     return current_app.config.get("PEERSLATE_WORKSHOP_ENABLED", False) is True
+
+
+def _workshop_session_enabled():
+    """PS-WORKSHOP-001 W2a sub-flag. Only ever matters when the outermost
+    ``PEERSLATE_WORKSHOP_ENABLED`` flag above is also on — callers still
+    check that flag first. Shared with workshop_work_routes.py, which reads
+    this same config key directly rather than importing this predicate, to
+    avoid a circular import between the two route modules."""
+    return current_app.config.get("PEERSLATE_WORKSHOP_SESSION_ENABLED", False) is True
 
 
 def _workshop_dev_fixture_enabled():
@@ -1618,4 +1631,11 @@ def workshop_navigation_state():
     return {
         "workshop_nav_enabled": _workshop_enabled(),
         "workshop_url": url_for("workshop.my_information"),
+        # PS-WORKSHOP-001 W2a: the "Work on Something" mode tab is a real
+        # link only when this sub-flag is also on (see
+        # _workshop_session_enabled's docstring). workshop_work_url always
+        # resolves — the route is registered regardless of the flag's
+        # value, which is checked at request time, not registration time.
+        "workshop_session_nav_enabled": _workshop_session_enabled(),
+        "workshop_work_url": url_for("workshop.work_opening"),
     }

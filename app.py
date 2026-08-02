@@ -27,6 +27,12 @@ from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from workshop_routes import workshop
+# PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
+# `workshop` Blueprint instance above (import-time side effect only, no
+# name from this module is otherwise used here) — see
+# workshop_work_routes.py's own module docstring for why this is a
+# separate file rather than appended to workshop_routes.py directly.
+import workshop_work_routes  # noqa: F401
 from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
@@ -165,6 +171,21 @@ app.config.update(
     # when it is false (the default); never enable it outside local preview.
     PEERSLATE_WORKSHOP_DEV_FIXTURE=(
         os.environ.get('PEERSLATE_WORKSHOP_DEV_FIXTURE', 'false').lower() == 'true'
+    ),
+    # PS-WORKSHOP-001 W2a: default-off sub-flag under the main
+    # PEERSLATE_WORKSHOP_ENABLED gate. Slice W2a wires the "Work on
+    # Something" opening (four doors), the focused-question session, and
+    # honest AI-unavailable/holding states — no real AI call exists yet
+    # (that is W2b). When this sub-flag is off, every /app/workshop/work/*
+    # route 404s neutrally before any identity resolution and the "Work on
+    # Something" mode tab keeps its inert "Coming later" pill everywhere,
+    # exactly like before this slice existed. When on, the tab becomes a
+    # real link. The outermost PEERSLATE_WORKSHOP_ENABLED flag still gates
+    # everything first — this sub-flag only ever matters when that one is
+    # also on. Keep off through merge and deployment; enablement is a
+    # separate, later owner decision from the parent flag's.
+    PEERSLATE_WORKSHOP_SESSION_ENABLED=(
+        os.environ.get('PEERSLATE_WORKSHOP_SESSION_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
@@ -512,6 +533,12 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     ('workshop.archive_item', '8 per minute'),
     ('workshop.restore_item', '8 per minute'),
     ('workshop.delete_item', '6 per minute'),
+    # PS-WORKSHOP-001 W2a (workshop_work_routes.py): same rate-limiting
+    # discipline extended to the Work on Something session's state-changing
+    # routes and the "Start fresh" reset.
+    ('workshop.start_work_session', '10 per minute'),
+    ('workshop.update_work_session', '10 per minute'),
+    ('workshop.reset_preview', '6 per minute'),
 ):
     app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
         _workshop_rate_limit

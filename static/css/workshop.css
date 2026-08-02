@@ -1983,6 +1983,505 @@ body.workshop-page[data-theme="dark"] {
         var(--wk-canvas);
 }
 
+/* =========================================================
+   WORK ON SOMETHING — opening, focused-question session, holding
+   state, Start fresh (PS-WORKSHOP-001 W2a)
+
+   Visual authority: docs/initiatives/PS-SLATE-STUDIO-IA-001/
+   visual-authority/workshop-facelift-2026-08-02/ R01-R08. R05/R06
+   (first-run, no Spark) is the default opening composition for this
+   slice; R03/R04 is the focused-question session; R07/R08 is the
+   AI-unavailable composition (test-seam only — see
+   workshop_work_routes.py). Reuses the SAME --wk-* tokens, .wk-card,
+   .wk-btn, .wk-field__textarea-wrap, .wk-mic-btn, .wk-flow-layout,
+   .wk-aside, .wk-side-card, and .wk-state-panel this file already
+   defines above — no new palette, shadow, or radius is introduced.
+   ========================================================= */
+
+/* ---- Opening: composer ---- */
+
+.wk-work-composer {
+    margin-bottom: 1.5rem;
+}
+
+.wk-work-composer__title {
+    font-family: var(--ps-font-display);
+    font-size: 1.3rem;
+    color: var(--wk-ink);
+    margin: 0 0 0.3rem;
+}
+
+.wk-work-composer__sub {
+    color: var(--wk-muted);
+    margin: 0 0 0.9rem;
+    font-size: 0.95rem;
+}
+
+.wk-work-composer__row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+}
+
+.wk-work-composer__row .wk-field__textarea-wrap {
+    flex: 1 1 auto;
+}
+
+.wk-work-composer__submit {
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    border: 1px solid var(--wk-line);
+    background: var(--wk-surface-muted);
+    color: var(--wk-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wk-work-composer__submit:hover { background: var(--wk-action-tint); }
+
+.wk-work-composer__submit:focus-visible {
+    outline: 2px solid var(--wk-focus);
+    outline-offset: 2px;
+}
+
+.wk-work-composer__submit .wk-icon { width: 18px; height: 18px; }
+
+/* ---- Opening: four doors ---- */
+
+.wk-doors {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.wk-door {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 1.1rem 1.1rem 1.2rem;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+button.wk-door:hover {
+    border-color: var(--wk-action);
+    box-shadow: var(--wk-shadow-sm);
+}
+
+button.wk-door:focus-visible {
+    outline: 2px solid var(--wk-focus);
+    outline-offset: 2px;
+}
+
+.wk-door--continue-active {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+}
+
+.wk-door--inert {
+    cursor: default;
+    color: var(--wk-muted);
+}
+
+.wk-door__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.wk-door__head-left {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.wk-door__icon {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wk-door--inert .wk-door__icon {
+    background: var(--wk-line-soft);
+    color: var(--wk-muted);
+}
+
+.wk-door__icon .wk-icon { width: 18px; height: 18px; }
+
+.wk-door__title {
+    font-weight: 700;
+    color: var(--wk-ink);
+    font-size: 0.98rem;
+}
+
+.wk-door__chevron .wk-icon { width: 16px; height: 16px; color: var(--wk-muted); }
+
+.wk-door__copy {
+    font-size: 0.86rem;
+    color: var(--wk-muted);
+    margin: 0 0 0.35rem;
+    line-height: 1.4;
+}
+
+.wk-door__meta {
+    font-size: 0.82rem;
+    color: var(--wk-action);
+    font-weight: 600;
+}
+
+.wk-door--inert .wk-door__meta { color: var(--wk-muted); font-weight: 500; }
+
+.wk-door__list {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.wk-door__list-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    border-top: 1px solid var(--wk-line);
+    padding-top: 0.5rem;
+}
+
+.wk-door__list-title {
+    font-size: 0.85rem;
+    color: var(--wk-ink);
+    line-height: 1.35;
+    /* Wrap up to two lines rather than a single truncated line — this
+       card's column is narrow (one of four), so a one-line ellipsis cut
+       real resumable titles down to a handful of characters. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.wk-door__resume-btn {
+    flex: none;
+    align-self: flex-end;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--wk-action);
+    background: none;
+    border: none;
+    padding: 0.15rem 0.3rem;
+    cursor: pointer;
+}
+
+.wk-door__resume-btn:hover { text-decoration: underline; }
+
+.wk-door__resume-btn:focus-visible {
+    outline: 2px solid var(--wk-focus);
+    outline-offset: 2px;
+}
+
+/* ---- Opening: two static info tiles (No spark yet / Build your
+   private information) ---- */
+
+.wk-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.wk-tile {
+    display: flex;
+    gap: 0.7rem;
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 1rem 1.1rem;
+}
+
+.wk-tile__icon {
+    flex: none;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--wk-action-tint);
+    color: var(--wk-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wk-tile__icon .wk-icon { width: 14px; height: 14px; }
+
+.wk-tile__title {
+    font-weight: 700;
+    color: var(--wk-ink);
+    font-size: 0.9rem;
+    margin: 0 0 0.2rem;
+}
+
+.wk-tile__copy {
+    font-size: 0.84rem;
+    color: var(--wk-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ---- AI-unavailable composition (R07/R08) ---- */
+
+.wk-ai-banner {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    background: var(--wk-warning-tint);
+    border: 1px solid var(--wk-warning);
+    border-radius: var(--wk-radius-sm);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.25rem;
+}
+
+.wk-ai-banner .wk-icon { flex: none; width: 20px; height: 20px; color: var(--wk-warning-ink); margin-top: 0.1rem; }
+
+.wk-ai-banner__title {
+    font-weight: 700;
+    color: var(--wk-ink);
+    margin: 0 0 0.15rem;
+}
+
+.wk-ai-banner__copy {
+    margin: 0;
+    color: var(--wk-muted);
+    font-size: 0.9rem;
+}
+
+.wk-keep-working-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--wk-ink);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 0.9rem;
+}
+
+.wk-keep-working-label .wk-icon { width: 18px; height: 18px; color: var(--wk-action); }
+
+.wk-spark-unavailable {
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 1.25rem 1.4rem;
+    margin-top: 1.25rem;
+}
+
+.wk-spark-unavailable__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--wk-muted);
+    margin: 0 0 0.5rem;
+}
+
+.wk-spark-unavailable__eyebrow .wk-icon { width: 15px; height: 15px; }
+
+.wk-spark-unavailable h3 {
+    font-family: var(--ps-font-display);
+    font-size: 1.15rem;
+    color: var(--wk-ink);
+    margin: 0 0 0.5rem;
+}
+
+.wk-spark-unavailable p {
+    color: var(--wk-muted);
+    font-size: 0.9rem;
+    margin: 0 0 0.9rem;
+}
+
+/* ---- Focused-question session screen ---- */
+
+.wk-session-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--wk-action);
+    margin: 0 0 0.4rem;
+}
+
+.wk-session-question {
+    font-family: var(--ps-font-display);
+    font-size: 1.5rem;
+    color: var(--wk-ink);
+    margin: 0 0 1.1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--wk-line);
+}
+
+.wk-session-answer-label {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--wk-muted);
+    margin: 0 0 0.5rem;
+}
+
+/* ---- "Related confirmed information" rail (Use as context) ---- */
+
+.wk-context-list {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.wk-context-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    padding: 0.7rem 0.85rem;
+}
+
+.wk-context-item:has(input:checked) {
+    border-color: var(--wk-action);
+    background: var(--wk-action-tint);
+}
+
+.wk-context-item input {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--wk-action);
+}
+
+.wk-context-item__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.wk-context-item__title {
+    font-size: 0.92rem;
+    color: var(--wk-ink);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wk-context-item__state {
+    font-size: 0.8rem;
+    color: var(--wk-action);
+}
+
+.wk-context-item:not(:has(input:checked)) .wk-context-item__state {
+    color: var(--wk-muted);
+}
+
+.wk-context-empty {
+    font-size: 0.88rem;
+    color: var(--wk-muted);
+    margin: 0 0 1rem;
+}
+
+.wk-context-note {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--wk-muted);
+    border-top: 1px solid var(--wk-line);
+    padding-top: 0.8rem;
+    margin-top: 0.4rem;
+}
+
+.wk-context-note .wk-icon { flex: none; width: 15px; height: 15px; color: var(--wk-action); }
+
+/* ---- Holding state ("Review what I shared" -> AI review arrives next) ---- */
+
+.wk-holding .wk-icon { color: var(--wk-action); }
+
+.wk-holding p { color: var(--wk-muted); line-height: 1.55; }
+
+.wk-holding__answer {
+    margin-top: 1rem;
+    padding: 1rem 1.1rem;
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    color: var(--wk-ink);
+    white-space: pre-wrap;
+    font-size: 0.92rem;
+}
+
+/* ---- Start fresh (reset confirm) ---- */
+
+.wk-reset-confirm .wk-icon { color: var(--wk-warning-ink); }
+
+.wk-reset-confirm p { color: var(--wk-muted); line-height: 1.55; }
+
+/* Small "Start fresh" link appended inside every anonymous-preview status
+   banner across the whole Workshop blueprint (see
+   partials/workshop/_start_fresh_link.html). Independent of the session
+   sub-flag — it works on every existing W1 page as well as the new W2a
+   pages, per the brief's explicit "library-demo feature" instruction. */
+.wk-status-banner__start-fresh {
+    margin-left: 0.6rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 900px) {
+    .wk-doors {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .wk-doors,
+    .wk-tiles {
+        grid-template-columns: 1fr;
+    }
+
+    .wk-work-composer__row {
+        flex-wrap: wrap;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wk-door {
+        transition: none;
+    }
 /* ---------------------------------------------------------
    Facelift depth correction (owner, 2026-08-02, architect-applied):
    the mockups lean their section labels and rail icons toward the
