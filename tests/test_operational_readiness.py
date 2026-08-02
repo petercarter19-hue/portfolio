@@ -744,18 +744,25 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         self.assertIn('PeerSlate_Constitution_v3.0.md', baseline)
         self.assertIn('PeerSlate_Roadmap_v3.0.md', baseline)
         self.assertNotIn('\nholds:', baseline)
+        # These pointers move in lockstep with each release-evidence record in
+        # CURRENT_BASELINE.yaml. PR 228 updated the baseline for the PR 223
+        # release but not these expectations, and its [skip ci] merge meant no
+        # pipeline ran to catch that until the next runtime merge (pipeline
+        # 329) failed on it. Update both files in the same commit, and do not
+        # record release evidence with [skip ci] unless this test was run
+        # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "61b65325b789903fad5615244ae3fd8fcae77a3e"',
+            'deployed_main_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 321', baseline)
+        self.assertIn('deployed_pipeline: 328', baseline)
         expected_release = release_id_for_build(
-            '61b65325b789903fad5615244ae3fd8fcae77a3e',
-            '321',
+            '773e7c04b3664f2a854cf6a00dfadfd127578c34',
+            '328',
         )
-        self.assertIn(f'/healthz reported release {expected_release}', baseline)
+        self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"',
+            'application_behavior_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"',
             baseline,
         )
         self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)
