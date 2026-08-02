@@ -516,7 +516,13 @@ class WorkshopChromeScopeTests(unittest.TestCase):
 
 
 class WorkshopNavigationTests(unittest.TestCase):
-    """The global nav shows Workshop only when signed in AND flag-on."""
+    """The global nav shows Workshop whenever the flag is on.
+
+    Owner decision 2026-08-02: the entry is discoverable to every visitor so
+    people can find Workshop and sign in; the route itself stays protected
+    and sends a signed-out visitor to sign-in and back. Being in the nav is
+    not access.
+    """
 
     def setUp(self):
         self.client = app.test_client()
@@ -547,12 +553,15 @@ class WorkshopNavigationTests(unittest.TestCase):
 
         self.assertNotIn(">Workshop<", nav)
 
-    def test_workshop_absent_when_signed_out_even_if_flag_on(self):
+    def test_workshop_present_after_interview_studio_when_signed_out(self):
+        # Owner decision 2026-08-02: discoverable to everyone, so a visitor
+        # can find it and sign in. The route stays protected regardless.
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch("auth_routes.get_optional_identity", return_value=None):
             nav = self._nav_html()
 
-        self.assertNotIn(">Workshop<", nav)
+        self.assertIn(">Workshop<", nav)
+        self.assertLess(nav.index(">Interview Studio<"), nav.index(">Workshop<"))
 
     def test_workshop_present_after_interview_studio_when_signed_in_and_flag_on(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
@@ -565,7 +574,20 @@ class WorkshopNavigationTests(unittest.TestCase):
         self.assertIn(">Workshop<", nav)
         self.assertLess(nav.index(">Interview Studio<"), nav.index(">Workshop<"))
 
-    def test_search_data_includes_workshop_only_when_signed_in_and_flag_on(self):
+    def test_nav_entry_never_grants_access_to_a_signed_out_visitor(self):
+        # The link being visible must not weaken the route: a signed-out
+        # request still gets the sign-in redirect, never library content.
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        with patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("Sign in is required."),
+        ):
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/auth/sign-in", response.headers["Location"])
+
+    def test_search_data_includes_workshop_whenever_the_flag_is_on(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch("auth_routes.get_optional_identity", return_value=None):
             signed_out = self._search_data()
@@ -575,7 +597,7 @@ class WorkshopNavigationTests(unittest.TestCase):
         ):
             signed_in = self._search_data()
 
-        self.assertNotIn('"title": "Workshop"', signed_out)
+        self.assertIn('"title": "Workshop"', signed_out)
         self.assertIn('"title": "Workshop"', signed_in)
 
     def test_search_data_excludes_workshop_when_flag_off_even_if_signed_in(self):
