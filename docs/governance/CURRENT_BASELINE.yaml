@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "61b65325b789903fad5615244ae3fd8fcae77a3e"
-  deployed_pipeline: 321
-  application_behavior_commit: "4eb55585dcc017859542e0dd76267bed0f038193"
-  application_behavior_pipeline: 315
-  note: "Pipeline 321 passed Build, Deploy, and production smoke for main 61b65325b789903fad5615244ae3fd8fcae77a3e; /healthz reported release 8a1184c5d4727dab00ff2cbb and the homepage plus Interview Studio returned 200. Application behavior last changed at 4eb55585dcc017859542e0dd76267bed0f038193; later commits changed governance/tests only. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"
+  deployed_pipeline: 328
+  application_behavior_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"
+  application_behavior_pipeline: 328
+  note: "Pipeline 328 passed Build and Deploy for main 773e7c0 (PR 223: Interview Studio session editing moved into the rail; Interview AI desktop overlap fix). Live smoke 2026-08-02: /healthz release 5e518fb137d4a2f7e50fa494; /interview-studio mode=me, mode=ai, and /interview-studio/history returned 200; rail session selects drive the live question; AI question controls fully visible at 1536px. Workshop public preview (PRs 226-227, pipelines 326-327) deployed in the same window under its own lane's evidence. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
