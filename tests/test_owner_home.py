@@ -43,9 +43,15 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # unchanged, but its public/owner Jinja branch adds whitespace bytes to this
 # shared-base render. The golden value was deliberately recaptured after
 # confirming the owner branch still uses the legacy assets and destinations.
+# PS-SIGNIN-EXPERIENCE-001 edits static/css/style.css and static/css/owner-app.css
+# (mobile header ceiling; waking-state rules). Neither adds markup to this
+# render, but both are linked by it, so each contributes a different automatic
+# ?v= content token. Recaptured only after proving that normalizing those two
+# 12-hex tokens back to their origin/main values reproduces the previous
+# hash exactly, and that the byte length is unchanged at 18214.
 FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18214
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "bbd9139b78011b5f9d273ed2711a97a68608a766c73321247b7d75a174033a12"
+    "37fc92609af60488923653e29435580c806482ea7513bee6b0ead44f0fe4298f"
 )
 
 
@@ -496,17 +502,79 @@ class OwnerHomeHtmlRenderTests(unittest.TestCase):
         self.assertIn(b'href="/app/capture"', body)
         self.assertIn(b"data-oh-retry", body)
         self.assertNotIn(b"PRIVATE DETAIL", body)
+        # PS-SIGNIN-EXPERIENCE-001 item 2.1: a contract failure is not
+        # transient, so it must not borrow the waking treatment, claim the
+        # workspace is starting, or ask the browser to come back on its own.
+        self.assertNotIn(b"data-ps-waking", body)
+        self.assertNotIn(b"workspace-waking.js", body)
+        self.assertNotIn(b"is starting", body)
+        self.assertNotIn("Retry-After", response.headers)
 
     @patch("auth_routes.owner_home_service")
-    def test_database_failure_renders_honest_complete_failure_state(
+    def test_database_failure_renders_transient_waking_state_not_failure(
         self, home_service
     ):
+        """PS-SIGNIN-EXPERIENCE-001 item 2.1.
+
+        Azure SQL serverless auto-pauses, so this exception on the first
+        signed-in request after an idle period means the database is resuming.
+        Presenting that as "HOME DATA FAILED" was untrue.
+        """
         home_service.get_home.side_effect = DatabaseServiceError("PRIVATE SQL DETAIL")
 
         response = self.client.get("/app")
+        body = response.data
 
         self.assertEqual(response.status_code, 503)
-        self.assertNotIn(b"PRIVATE SQL DETAIL", response.data)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertEqual(response.headers["Retry-After"], "5")
+        self.assertNotIn(b"PRIVATE SQL DETAIL", body)
+        # The truthful transient state, not the contract-failure card.
+        self.assertIn(b"Your private workspace is starting", body)
+        self.assertIn(b"under a minute", body)
+        self.assertNotIn(b"Owner Home data could not load", body)
+        self.assertNotIn(b"Home data failed", body)
+        # Nothing may be claimed about the member's content.
+        self.assertIn(b"published, shared, deleted, or changed.", body)
+        self.assertIn(
+            b"Your workspace is still starting. Nothing was published, shared,"
+            b" or changed.",
+            body,
+        )
+
+    @patch("auth_routes.owner_home_service")
+    def test_waking_state_auto_retry_is_bounded_stoppable_and_polite(
+        self, home_service
+    ):
+        home_service.get_home.side_effect = DatabaseServiceError("unavailable")
+
+        body = self.client.get("/app").data
+
+        # Bounded automatic re-check, driven entirely by server-supplied data.
+        self.assertIn(b'data-ps-waking-retry-url="/app"', body)
+        self.assertIn(b'data-ps-waking-budget-seconds="90"', body)
+        self.assertIn(b"js/workspace-waking.js", body)
+        # Announced politely, never as a repeating interrupting alert.
+        self.assertIn(b'role="status" aria-live="polite"', body)
+        self.assertNotIn(b'class="oh__failure" role="alert"', body)
+        # WCAG 2.2 SC 2.2.1: the automatic re-check can be turned off, and the
+        # manual route stays server-rendered so the page works without JS.
+        self.assertIn(b"data-ps-waking-stop", body)
+        self.assertIn(b"Stop checking automatically", body)
+        self.assertIn(b'href="/app">Check now</a>', body)
+
+    @patch("auth_routes.owner_home_service")
+    def test_successful_home_render_carries_no_waking_markup_or_script(
+        self, home_service
+    ):
+        home_service.get_home.return_value = self.view_model()
+
+        response = self.client.get("/app")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Retry-After", response.headers)
+        self.assertNotIn(b"data-ps-waking", response.data)
+        self.assertNotIn(b"workspace-waking.js", response.data)
 
     def test_flag_on_anonymous_html_redirects_to_sign_in(self):
         app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = False

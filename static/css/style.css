@@ -8158,8 +8158,20 @@ a.ps-metric:hover {
         gap: 9px;
     }
 
+    /* PS-SIGNIN-EXPERIENCE-001 item 5: the wordmark was the only header
+       element with no width ceiling, so on a crowded mobile row it kept its
+       intrinsic width and the theme toggle and the control beside it drew on
+       top of it. Cap it at the grid column it was actually given; object-fit
+       keeps the lockup's aspect ratio while it scales. Desktop rendering is
+       untouched — this is inside the existing 743px mobile block. */
+    .platform-brand__logo {
+        min-width: 0;
+    }
+
     .platform-brand__logo img {
         height: 22px;
+        max-width: 100%;
+        object-fit: contain;
     }
 
     .platform-brand__profile {
@@ -14562,3 +14574,35 @@ body[data-theme="dark"].peerslate-home-page {
 .nav-sign-out__btn:hover { border-color: rgba(20, 26, 40, .5); }
 .nav-sign-out__btn:focus-visible { outline: 2px solid #b87900; outline-offset: 2px; }
 body[data-theme="dark"] .nav-sign-out__btn { border-color: rgba(234, 240, 251, .3); }
+
+/* PS-SIGNIN-EXPERIENCE-001 item 5 — the crowded phone header row.
+   Scoped to the widths where the row is genuinely too narrow, so every wider
+   viewport keeps the released header pixel for pixel. These rules have to
+   live here, at the end of the file, to win on source order over the base
+   rules above. */
+@media (max-width: 34rem) {
+    /* The sign-out pill is the widest control on the signed-in row and was
+       the only header control that never received the compact mobile sizing
+       the 743px block already gives .sign-in-btn. */
+    .nav-sign-out__btn {
+        min-height: 30px;
+        padding: 0 9px;
+        font-size: 0.72rem;
+    }
+
+    /* Give the brand column its width first and let the controls take what
+       is left. With `minmax(0, 1fr) auto` the controls claimed their whole
+       max-content width and the wordmark was squeezed to nothing — on the
+       /app waking header at 320px it disappeared entirely. Reversing the two
+       track sizes keeps the wordmark whole, and wrapping lets the controls
+       use a second line rather than push it out. This only ever takes effect
+       when the row cannot fit on one line. */
+    .platform-nav__inner {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .platform-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+}

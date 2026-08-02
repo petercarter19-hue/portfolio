@@ -832,6 +832,17 @@ body.owner-home-shell .oh__btn--primary {
     border-color: currentColor;
 }
 
+/* The author `display: inline-flex` above outranks the browser's UA
+   `[hidden] { display: none }` rule, so a control the server deliberately
+   renders hidden — the waking panel's "Stop checking automatically" button,
+   which must not appear unless its script is running — would still be
+   visible. Restate the hidden state explicitly, the same guard journal.css
+   and homepage-scenes.css already document for their own buttons.
+   (PS-SIGNIN-EXPERIENCE-001 item 2.2.) */
+.oh__btn[hidden] {
+    display: none;
+}
+
 /* Complete-failure panel replaces the whole stage grid (HFA4: the released
    contract collapses every dependency failure to one complete result). */
 .oh__failure {
@@ -873,6 +884,47 @@ body.owner-home-shell .oh__btn--primary {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+/* =====================================================================
+   Workspace waking (PS-SIGNIN-EXPERIENCE-001 item 2.1)
+
+   A paused Azure SQL serverless database resuming is not an Owner Home
+   failure, so it gets its own truthful state. It deliberately reuses the
+   failure panel's exact geometry, type scale, and marigold eyebrow — this
+   is the same panel saying a different, accurate thing, not a new visual
+   direction. Only the eyebrow's small live dot and the status line below
+   the copy are new, and both are quiet by design.
+
+   `.oh__failure--waking` deliberately has no rule of its own: it is a state
+   hook on the markup so this panel can be told apart from the contract
+   failure panel, which is assertive (role="alert") where this one is not.
+   ===================================================================== */
+.oh__waking-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--oh-marigold);
+    vertical-align: middle;
+    animation: oh-waking-pulse 2s ease-in-out infinite;
+}
+
+.oh__waking-status {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: rgb(255 253 248 / 62%);
+    max-width: 60ch;
+    overflow-wrap: anywhere;
+}
+
+/* Reduced motion and forced colors for this dot are handled inside the two
+   existing blocks further down, so this file keeps exactly one
+   @media (forced-colors: active) block and one reduced-motion block. */
+@keyframes oh-waking-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
 }
 
 /* =====================================================================
@@ -1080,6 +1132,15 @@ body.owner-home-shell .oh__btn--primary {
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
     }
+
+    /* The blanket rule above already stops the waking dot's pulse. State it
+       explicitly as well so a member who asked for less motion still gets a
+       fully visible steady dot rather than whichever keyframe the animation
+       was frozen on. (PS-SIGNIN-EXPERIENCE-001 item 2.4.) */
+    body.owner-home-shell .oh__waking-dot {
+        animation: none !important;
+        opacity: 1;
+    }
 }
 
 /* =====================================================================
@@ -1172,6 +1233,14 @@ body.owner-home-shell .oh__btn--primary {
        so it follows this same reset — meaning never depends on color alone. */
     body.owner-home-shell .oh__status-pill {
         color: CanvasText;
+    }
+
+    /* The waking dot carries no meaning on its own — the eyebrow beside it
+       already says "Workspace waking" — but it must stay visible rather than
+       disappear into Canvas. (PS-SIGNIN-EXPERIENCE-001 item 2.1.) */
+    body.owner-home-shell .oh__waking-dot {
+        forced-color-adjust: none;
+        background: CanvasText;
     }
 
     body.owner-home-shell .oh__moment-media,

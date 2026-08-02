@@ -1,7 +1,9 @@
 {# Status / footer truth line (parity row 13). Concise truthful labels only
    (D2) — no repeated fixture/QA banners. #}
 <footer class="oh__status">
-    {% if home_failed %}
+    {% if home_waking %}
+    <p class="oh__status-line">Your workspace is still starting. Nothing was published, shared, or changed.</p>
+    {% elif home_failed %}
     <p class="oh__status-line">Owner Home data could not load. Nothing was published, shared, or changed.</p>
     {% else %}
     <p class="oh__status-line">Owner Home is private to you. Categories marked Coming later are not available to anyone yet.</p>

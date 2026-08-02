@@ -1,6 +1,8 @@
 """PeerSlate sign-in entry points and the protected owner workspace."""
 
 import re
+import threading
+import time
 from urllib.parse import urlencode, urlsplit
 
 from flask import (
@@ -16,6 +18,7 @@ from flask import (
     url_for,
 )
 
+from db import get_connection
 from identity import AuthenticationRequired, get_current_identity, get_optional_identity
 from services.database_service import DatabaseServiceError
 from services.owner_home_service import OwnerHomeContractError, owner_home_service
@@ -23,6 +26,20 @@ from services.owner_home_service import OwnerHomeContractError, owner_home_servi
 
 auth = Blueprint("auth", __name__)
 AUTH_PROVIDER_NAME = re.compile(r"^[A-Za-z0-9._-]{1,50}$")
+
+# PS-SIGNIN-EXPERIENCE-001 item 2: how long a waking surface keeps checking
+# automatically before it stops and leaves the member in manual control.
+WAKING_RETRY_BUDGET_SECONDS = 90
+
+# PS-SIGNIN-EXPERIENCE-001 item 2.3 (sign-in pre-warm). /auth/sign-in is a
+# public, unauthenticated endpoint, so the pre-warm must never let a caller
+# create work on demand: at most one attempt may be in flight, and a new one
+# may not start until the interval below has passed. Everything about it is
+# best effort — it can never delay, change, or fail the Easy Auth redirect.
+_PREWARM_MIN_INTERVAL_SECONDS = 30.0
+_prewarm_lock = threading.Lock()
+_prewarm_in_flight = False
+_prewarm_last_started = None
 
 
 def _auth_enabled():
@@ -75,12 +92,83 @@ def _render_identity_storage_unavailable():
             "identity_storage_unavailable.html",
             page_title="Your workspace is waking up",
             retry_path=url_for("auth.owner_workspace"),
+            waking_budget_seconds=WAKING_RETRY_BUDGET_SECONDS,
         ),
         503,
     )
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["Retry-After"] = "5"
     return response
+
+
+def _prewarm_identity_storage():
+    """Open and immediately close one database connection. Never raises.
+
+    Runs on a daemon thread so a slow or failing connection cannot outlive the
+    process or hold anything open. Nothing here reads a request, a member, or
+    a response; the only observable effect is that Azure SQL serverless starts
+    resuming a paused database.
+    """
+    global _prewarm_in_flight
+
+    try:
+        connection = get_connection()
+        try:
+            connection.close()
+        except Exception:  # noqa: BLE001 - closing is best effort by design
+            pass
+    except Exception:  # noqa: BLE001 - a failed wake-up is not an error here
+        # Deliberately no exception detail: this path is best effort and the
+        # connection string must never reach a log.
+        pass
+    finally:
+        with _prewarm_lock:
+            _prewarm_in_flight = False
+
+
+def _prewarm_enabled():
+    # On by default in a real deployment; off under TESTING unless a test
+    # opts in, so the suite never opens a real connection as a side effect.
+    default = not current_app.config.get("TESTING", False)
+    return current_app.config.get("PEERSLATE_SIGN_IN_PREWARM_ENABLED", default) is True
+
+
+def _start_identity_storage_prewarm():
+    """Best-effort, non-blocking Azure SQL wake-up on sign-in intent.
+
+    Azure SQL serverless auto-pauses, and resuming it takes roughly 30-60
+    seconds. Starting that resume as the member leaves for the Microsoft
+    sign-in page means it usually finishes before they come back. Returns
+    whether a thread was started; the caller ignores the result.
+    """
+    global _prewarm_in_flight, _prewarm_last_started
+
+    if not _prewarm_enabled():
+        return False
+
+    now = time.monotonic()
+    with _prewarm_lock:
+        if _prewarm_in_flight:
+            return False
+        if (
+            _prewarm_last_started is not None
+            and now - _prewarm_last_started < _PREWARM_MIN_INTERVAL_SECONDS
+        ):
+            return False
+        _prewarm_in_flight = True
+        _prewarm_last_started = now
+
+    try:
+        threading.Thread(
+            target=_prewarm_identity_storage,
+            name="peerslate-signin-prewarm",
+            daemon=True,
+        ).start()
+    except Exception:  # noqa: BLE001 - never let this affect the redirect
+        with _prewarm_lock:
+            _prewarm_in_flight = False
+        return False
+    return True
 
 
 @auth.get("/auth/sign-in")
@@ -92,6 +180,17 @@ def sign_in():
     login_path = _easy_auth_path("login", return_path)
     if login_path is None:
         return _render_auth_unavailable()
+
+    # PS-SIGNIN-EXPERIENCE-001 item 2.3: start the serverless database resume
+    # while the member is on the Microsoft page. Fully guarded so the redirect
+    # below is reached with the same timing and the same result either way.
+    try:
+        _start_identity_storage_prewarm()
+    except Exception:  # noqa: BLE001 - sign-in must never depend on this
+        current_app.logger.warning(
+            "PeerSlate sign-in pre-warm could not be scheduled."
+        )
+
     return redirect(login_path)
 
 
@@ -268,27 +367,50 @@ def owner_workspace():
 
     # Flag on: render the finite Owner Home from the real owner-home.v1 view
     # model. A contract/database failure still renders the private shell with
-    # an honest complete-failure state and a real safe Capture destination —
-    # it never falls back to the legacy workspace or fabricates data.
+    # an honest state and a real safe Capture destination — it never falls
+    # back to the legacy workspace or fabricates data.
+    #
+    # PS-SIGNIN-EXPERIENCE-001 item 2.1: the two failures are not the same
+    # thing and must not read the same way. Azure SQL serverless auto-pauses,
+    # so DatabaseServiceError on the first signed-in request after an idle
+    # period usually means "the database is resuming" — a transient wake-up
+    # that resolves itself in well under a minute. OwnerHomeContractError
+    # means the data PeerSlate did receive was not a valid owner-home.v1
+    # payload, which is a real failure and keeps the existing failure card.
     try:
         home = owner_home_service.get_home(identity).to_dict()
         home_failed = False
-    except (DatabaseServiceError, OwnerHomeContractError):
+        home_waking = False
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Owner Home storage is unavailable.")
+        home = None
+        home_failed = False
+        home_waking = True
+    except OwnerHomeContractError:
         current_app.logger.error("PeerSlate Owner Home data is unavailable.")
         home = None
         home_failed = True
+        home_waking = False
 
     # This private owner-specific render must never be stored by a browser or
     # intermediary.  app.py preserves an explicit response policy while it
     # continues to provide the legacy no-cache policy for ordinary HTML.
+    response_headers = {"Cache-Control": "private, no-store"}
+    if home_waking:
+        # Same response policy the identity waking surface already returns.
+        response_headers["Retry-After"] = "5"
+
     return render_template(
         "owner_home.html",
-        page_title="Owner Home",
+        page_title=("Your workspace is waking up" if home_waking else "Owner Home"),
         member=identity,
         home=home,
         home_failed=home_failed,
+        home_waking=home_waking,
+        waking_retry_path=url_for("auth.owner_workspace"),
+        waking_budget_seconds=WAKING_RETRY_BUDGET_SECONDS,
         standalone_owner_shell=True,
-    ), (503 if home_failed else 200), {"Cache-Control": "private, no-store"}
+    ), (503 if (home_failed or home_waking) else 200), response_headers
 
 
 @auth.get("/app/studio/build-your-future")

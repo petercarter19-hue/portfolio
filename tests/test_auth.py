@@ -1,8 +1,10 @@
 import base64
 import json
+import threading
 import unittest
 from unittest.mock import patch
 
+import auth_routes
 from app import app
 from services.database_service import DatabaseServiceError
 
@@ -142,11 +144,140 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         self.assertIn(b"Your private workspace is waking up", response.data)
         self.assertIn(b"You are signed in", response.data)
-        self.assertIn(b'href="/app">Try again</a>', response.data)
+        self.assertIn(b'href="/app">Check now</a>', response.data)
         self.assertIn(b">Workspace waking</a>", response.data)
         self.assertNotIn(b"Sign in is not configured", response.data)
         self.assertNotIn(b">Sign In</a>", response.data)
         first_row.assert_called_once()
+
+    @patch("identity.database_service.first_row")
+    def test_identity_waking_page_auto_retries_within_a_bounded_window(
+        self, first_row
+    ):
+        """PS-SIGNIN-EXPERIENCE-001 item 2.2.
+
+        The copy was already honest, but recovery was manual: a member had to
+        keep pressing a link through the whole 30-60 second serverless resume.
+        """
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        first_row.side_effect = DatabaseServiceError("identity storage unavailable")
+
+        body = self.client.get("/app", headers=easy_auth_header("pete-id")).data
+
+        self.assertIn(b'data-ps-waking-retry-url="/app"', body)
+        self.assertIn(b'data-ps-waking-budget-seconds="90"', body)
+        self.assertIn(b"js/workspace-waking.js", body)
+        # Polite announcement, a real stop control, and a server-rendered
+        # manual route so the page still works with JavaScript disabled.
+        self.assertIn(b'role="status" aria-live="polite"', body)
+        self.assertIn(b"data-ps-waking-stop", body)
+        self.assertIn(b"Stop checking automatically", body)
+        self.assertIn(b'href="/">Return home</a>', body)
+        # Honest about member content and about how long this normally takes.
+        self.assertIn(b"under a minute", body)
+        self.assertIn(b"Nothing was published, shared, deleted, or changed.", body)
+
+    def test_sign_in_prewarm_never_blocks_or_fails_the_redirect(self):
+        """PS-SIGNIN-EXPERIENCE-001 item 2.3.
+
+        The pre-warm exists only to start a paused Azure SQL serverless
+        database resuming while the member is on the Microsoft page. A failure
+        inside it must be invisible to sign-in.
+        """
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
+        auth_routes._prewarm_last_started = None
+        finished = threading.Event()
+
+        def exploding_connection():
+            try:
+                raise RuntimeError("connection refused")
+            finally:
+                finished.set()
+
+        try:
+            with patch("auth_routes.get_connection", side_effect=exploding_connection):
+                response = self.client.get("/auth/sign-in")
+                self.assertTrue(
+                    finished.wait(timeout=10), "pre-warm thread never ran"
+                )
+        finally:
+            app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
+            auth_routes._prewarm_last_started = None
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.headers["Location"],
+            "/.auth/login/aad?post_login_redirect_uri=%2Fapp",
+        )
+
+    def test_sign_in_prewarm_is_rate_limited_and_runs_off_the_request_thread(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
+        auth_routes._prewarm_last_started = None
+        release = threading.Event()
+        started = threading.Event()
+        opened = []
+
+        def slow_connection():
+            opened.append(1)
+            started.set()
+            # Blocking here would hang the response if the pre-warm were
+            # running on the request thread.
+            release.wait(timeout=10)
+            raise RuntimeError("still unreachable")
+
+        try:
+            with patch("auth_routes.get_connection", side_effect=slow_connection):
+                first = self.client.get("/auth/sign-in")
+                self.assertTrue(started.wait(timeout=10))
+                second = self.client.get("/auth/sign-in")
+                third = self.client.get("/auth/sign-in")
+                release.set()
+        finally:
+            release.set()
+            app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
+            auth_routes._prewarm_last_started = None
+
+        # A public unauthenticated endpoint may not let a caller open a
+        # database connection per request.
+        self.assertEqual(len(opened), 1)
+        for response in (first, second, third):
+            self.assertEqual(response.status_code, 302)
+
+    def test_sign_in_prewarm_does_not_run_when_authentication_is_disabled(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = False
+        app.config["PEERSLATE_SIGN_IN_PREWARM_ENABLED"] = True
+        auth_routes._prewarm_last_started = None
+        opened = []
+
+        try:
+            with patch(
+                "auth_routes.get_connection", side_effect=lambda: opened.append(1)
+            ):
+                response = self.client.get("/auth/sign-in")
+        finally:
+            app.config.pop("PEERSLATE_SIGN_IN_PREWARM_ENABLED", None)
+            auth_routes._prewarm_last_started = None
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(opened, [])
+
+    def test_sign_in_prewarm_is_off_under_testing_unless_a_test_opts_in(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        auth_routes._prewarm_last_started = None
+        opened = []
+
+        try:
+            with patch(
+                "auth_routes.get_connection", side_effect=lambda: opened.append(1)
+            ):
+                response = self.client.get("/auth/sign-in")
+        finally:
+            auth_routes._prewarm_last_started = None
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(opened, [])
 
     @patch("identity.database_service.first_row")
     def test_session_reports_authenticated_workspace_unavailable(self, first_row):

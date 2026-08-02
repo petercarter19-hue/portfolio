@@ -141,14 +141,28 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
     }
 
     .global-header .platform-brand__logo {
+        min-width: 0;
+        max-width: 100%;
         padding: 0.25rem 0.35rem;
         border-radius: 0.7rem;
     }
 
+    /* PS-SIGNIN-EXPERIENCE-001 item 5: the wordmark keeps the same 7.6rem
+       mobile size, but it may no longer exceed the grid column it was given.
+       Without a percentage ceiling it held that width on a crowded row and
+       the theme toggle and Menu button drew on top of it.
+       `width` rather than `max-width: min(7.6rem, 100%)` on purpose: a
+       percentage max-width is ignored while the browser computes the pill's
+       intrinsic width, which made the pill 10.7px wider than the artwork
+       inside it at every width from 545px up. A definite width keeps the
+       intrinsic size exactly what it is today and lets `max-width: 100%`
+       take over only when the column is genuinely too narrow. object-fit
+       keeps the lockup's aspect ratio in both cases. */
     .global-header .platform-brand__logo img,
     body.living-resume-v2-page .global-header .platform-brand__logo img {
         height: 1.65rem;
-        max-width: 7.6rem;
+        width: 7.6rem;
+        max-width: 100%;
         object-fit: contain;
     }
 
@@ -306,6 +320,51 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 
     body:not(.has-mobile-tabbar) {
         padding-bottom: 0;
+    }
+}
+
+/*
+ * PS-SIGNIN-EXPERIENCE-001 item 5 — the crowded signed-in phone row.
+ *
+ * Signed in, the header carries two controls the signed-out header does not
+ * (My Slate + Sign out). Uncompacted, that row needs about 454px, so below
+ * roughly 34rem the wordmark had nowhere left to go and the theme toggle and
+ * Menu button rendered on top of it. The ceiling added in the 64rem block
+ * above already makes the overlap impossible; this block gives the width back
+ * so the wordmark stays full size instead of scaling down to fit.
+ *
+ * Deliberately narrower than the 64rem block: between 34rem and 64rem the
+ * signed-in row already fits, so those widths stay pixel-identical to the
+ * released header. The Menu treatment is the same icon-only one this file
+ * already ships at 22rem, and the sign-out pill simply gets the compact
+ * sizing .sign-in-btn beside it already has. :has() scopes all of it to the
+ * signed-in row; a browser without :has() falls back to a smaller wordmark,
+ * never to an overlap.
+ */
+@media (max-width: 34rem) {
+    .global-header .nav-sign-out__btn {
+        min-height: 2rem;
+        padding: 0 0.65rem;
+        font-size: 0.72rem;
+    }
+
+    .global-header .platform-actions:has(.nav-sign-out) {
+        gap: 0.35rem;
+    }
+
+    .global-header .platform-actions:has(.nav-sign-out) .platform-menu-toggle {
+        width: 2rem;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .global-header .platform-actions:has(.nav-sign-out) .platform-menu-toggle span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 }
 

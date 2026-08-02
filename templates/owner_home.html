@@ -39,4 +39,8 @@
    §2 build step 5). The page above is fully correct and fully functional
    without this script. #}
 <script src="{{ url_for('static', filename='js/owner-home.js') }}" defer></script>
+{# PS-SIGNIN-EXPERIENCE-001 item 2.2: loaded only for the transient waking
+   state, so every other Owner Home render is unchanged. Also enhancement
+   only — the waking panel's manual links work without it. #}
+{% if home_waking %}<script src="{{ url_for('static', filename='js/workspace-waking.js') }}" defer></script>{% endif %}
 {% endblock %}

@@ -3,10 +3,48 @@
    the whole stage grid with one honest failure panel (HFA4: the released
    owner-home.v1 contract collapses every dependency failure into one
    complete-unavailable result; there is no partial-category failure to
-   represent independently). #}
+   represent independently).
+
+   PS-SIGNIN-EXPERIENCE-001 item 2.1: storage that is still resuming is a
+   third, separate state. It reuses this panel's exact geometry and type but
+   says what is actually happening and checks again on its own, because
+   presenting a paused serverless database as "HOME DATA FAILED" at the
+   moment of first sign-in is not truthful. Everything below still renders
+   and stays usable without JavaScript; the automatic checking is the only
+   enhancement, and it can be stopped. #}
 <div class="oh__stage-wrap">
     <div class="oh__stage-inner">
-        {% if home_failed %}
+        {% if home_waking %}
+        <div class="oh__stage">
+            <div
+                class="oh__failure oh__failure--waking"
+                data-ps-waking
+                data-ps-waking-retry-url="{{ waking_retry_path }}"
+                data-ps-waking-budget-seconds="{{ waking_budget_seconds }}"
+            >
+                <p class="oh__failure-eyebrow">
+                    <span class="oh__waking-dot" aria-hidden="true"></span>
+                    Workspace waking
+                </p>
+                <h2 class="oh__failure-title">Your private workspace is starting</h2>
+                <p class="oh__failure-copy">
+                    Your secure storage pauses while it is idle and is starting
+                    again now. This usually takes under a minute. Nothing was
+                    published, shared, deleted, or changed.
+                </p>
+                <p class="oh__waking-status" data-ps-waking-status role="status" aria-live="polite">
+                    Checking again automatically.
+                </p>
+                <div class="oh__failure-actions">
+                    <a class="oh__btn oh__btn--primary" href="{{ waking_retry_path }}">Check now</a>
+                    <button class="oh__btn oh__btn--ghost" type="button" data-ps-waking-stop hidden>
+                        Stop checking automatically
+                    </button>
+                    <a class="oh__btn oh__btn--ghost" href="{{ url_for('home') }}">Safe return</a>
+                </div>
+            </div>
+        </div>
+        {% elif home_failed %}
         <div class="oh__stage">
             <div class="oh__failure" role="alert">
                 <p class="oh__failure-eyebrow">Home data failed</p>

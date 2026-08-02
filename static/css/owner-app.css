@@ -53,6 +53,35 @@
     margin-top: 2rem;
 }
 
+/* Workspace waking (PS-SIGNIN-EXPERIENCE-001 item 2.2). Reuses this file's
+   existing panel, eyebrow, and pill treatments; the only new parts are the
+   small live dot on the eyebrow and the quiet status line that reports what
+   the automatic re-check is doing. Both use the panel's existing ink. */
+.owner-app__waking-dot {
+    display: inline-block;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-right: 0.5rem;
+    border-radius: 50%;
+    background: #203767;
+    vertical-align: middle;
+    animation: owner-app-waking-pulse 2s ease-in-out infinite;
+}
+
+.owner-app__panel > p.owner-app__waking-status {
+    margin: 0.85rem 0 0;
+    color: rgba(10, 27, 54, 0.68);
+    font: 400 0.92rem/1.6 Inter, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+/* Reduced motion and forced colors for this dot live with the other
+   media-query blocks at the end of this file. */
+@keyframes owner-app-waking-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+}
+
 .owner-app__primary,
 .owner-app__secondary,
 .owner-app__sign-out {
@@ -66,6 +95,18 @@
     font: 700 0.9rem/1 Inter, sans-serif;
     text-decoration: none;
     cursor: pointer;
+}
+
+/* The author `display: inline-flex` above outranks the browser's UA
+   `[hidden] { display: none }` rule, so a control the server deliberately
+   renders hidden — the waking panel's "Stop checking automatically" button,
+   which must not appear unless its script is running — would still be
+   visible. Restate the hidden state explicitly.
+   (PS-SIGNIN-EXPERIENCE-001 item 2.2.) */
+.owner-app__primary[hidden],
+.owner-app__secondary[hidden],
+.owner-app__sign-out[hidden] {
+    display: none;
 }
 
 .owner-app__primary {
@@ -2695,5 +2736,22 @@ body[data-theme="dark"] .owner-app__voice-save:focus-visible {
         scroll-behavior: auto !important;
         animation: none !important;
         transition: none !important;
+    }
+
+    /* PS-SIGNIN-EXPERIENCE-001 item 2.4: a member who asked for less motion
+       gets a steady, fully visible dot instead of a pulse. */
+    .owner-app__waking-dot {
+        animation: none !important;
+        opacity: 1;
+    }
+}
+
+@media (forced-colors: active) {
+    /* The dot carries no meaning on its own — the eyebrow beside it already
+       reads "PeerSlate account" and the heading says the workspace is waking
+       up — but it must stay visible rather than disappear into Canvas. */
+    .owner-app__waking-dot {
+        forced-color-adjust: none;
+        background: CanvasText;
     }
 }
