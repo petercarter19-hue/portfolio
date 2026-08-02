@@ -255,3 +255,84 @@ additional mockups. The architecture's §11 requirements bind them.
   `static/css/workshop.css`. New `WorkshopPublicPreviewTests` class plus
   updates to the two tests that asserted the now-superseded signed-out
   redirect for the library/add routes.
+
+## 6e. Public demo library (owner instruction 2026-08-02)
+
+- **Owner instruction:** "Workshop's public preview is live but its sample
+  library is only four thin items... build a rich, realistic demo knowledge
+  base so anyone can open Workshop with no account and genuinely play with
+  it — add items, edit, archive — and see it behave like the real product."
+- **What changed:** the four-item checkpoint fixture (§6d, reused from
+  `get_my_information_checkpoint`) is replaced, for the anonymous path only,
+  by a new 17-item sample library: `services/workshop_demo_library.py`. The
+  persona is **Jordan Ellis**, a fictional healthcare-technology
+  professional — deliberately not Pete, in a different field, so nobody
+  reads it as a real profile. Content mirrors the real knowledge-base
+  categories in `docs/knowledge/` (accomplishments, career history, skills
+  evidence, technical skills, personal story, portfolio projects) and
+  exercises every Area (Work/Personal/Both/Not set) and Status
+  (Confirmed/Suggested/Unfinished/Archived) filter, long and short wording,
+  and one item (#1, "Rebuilt patient intake from 40 minutes to 9") with real
+  3-version edit history. All content is fixed, deterministic (stable UUID
+  keys, fixed literal timestamps) — no randomness, no wall-clock reads —
+  matching this module's own docstring.
+- **Session play:** a visitor's own Add/Edit/Archive/Restore/Delete now
+  really takes effect, but ONLY inside their own signed Flask session
+  cookie (namespaced `workshop_preview`), layered over the static base
+  library — never a database, never shared between visitors, never
+  permanent. Every route that used to sign-in-redirect a signed-out caller
+  (`edit_information`, `keep_working_edit`, `review_edit`, `update_item`,
+  `archive_item`/`restore_item` via `_run_item_state_change`,
+  `delete_confirm`, `delete_item`) now treats `AuthenticationRequired` the
+  same way `my_information`/`add_information` already did in §6d — exactly
+  mirroring that existing pattern rather than inventing a new one. Every
+  existing guard is unchanged: the flag check still runs first, same-origin
+  is still required on every POST, and the five state-changing routes keep
+  their existing per-minute rate limits (app.py wraps them by endpoint name,
+  so nothing needed to change there).
+- **Hard caps** (a signed cookie is ~4KB): at most 4 visitor-added items and
+  400 characters of wording per preview item, enforced server-side. A cap
+  violation renders an honest inline message ("Preview holds up to 4 added
+  items — sign in for an unlimited private library.", or the equivalent
+  400-character wording message) and preserves the visitor's typed text —
+  never a silent drop, never a silent truncation. Measured worst case (4
+  items at both caps, near-random-entropy wording) is well under 3KB
+  end-to-end (`tests/test_workshop_demo_library.py`).
+- **Honesty preserved:** the persistent preview banner, composer/review
+  banners, and the confirming-save screen were all reworded so nothing ever
+  claims "Saved privately" for an anonymous visitor. They instead say the
+  item is in the sample library for this browser session only, that it
+  disappears when the session ends, and that signing in is what makes it
+  permanent. `_render_anonymous_preview_saved` now also links back to the
+  library (`view_in_my_information_url`) so a visitor can see their own
+  addition in place.
+- **What did not change:** flag-off still 404s before any identity
+  resolution; a `DatabaseServiceError` still renders the truthful 503; no
+  anonymous request of any kind (library, add, edit, archive, restore,
+  delete) ever calls a `*_for_owner` service method or reaches the
+  database — session-only mutation is a parallel, self-contained code path
+  in `services/workshop_demo_library.py`, never a fork of the real
+  read/write methods in `services/knowledge_service.py`. The dev-fixture
+  seam (`PEERSLATE_WORKSHOP_DEV_FIXTURE`, `get_my_information_checkpoint`,
+  and its own tests) is completely untouched — a deliberately separate,
+  still-fixture-backed local-preview path. Signed-in behavior is
+  byte-for-byte unchanged on every route.
+- **New required config:** `app.secret_key` (Flask's session signing key,
+  previously unset anywhere in this app) is now set in `app.py`, using the
+  same deterministic-fallback idiom as the existing
+  `INTERVIEW_CONTEXT_SIGNING_KEY` — a dedicated `PEERSLATE_SESSION_SECRET_KEY`
+  env var if set, else a value derived from the already-required
+  `ANTHROPIC_API_KEY`, so no new mandatory production secret is required.
+- Implementation: `services/workshop_demo_library.py` (new module);
+  `workshop_routes.py` (`_build_demo_library_view` replaces
+  `_build_preview_view`/`_preview_rows`/`_preview_item_view`;
+  `_render_anonymous_preview_saved` reworked; every edit/archive/restore/
+  delete route gains an anonymous branch); `app.py` (`app.secret_key`);
+  `templates/workshop.html`, `workshop_add.html`, `workshop_review.html`,
+  `workshop_saved.html`, `workshop_delete_confirm.html`,
+  `partials/workshop/_preview_note_card.html` (copy updates). New
+  `tests/test_workshop_demo_library.py` (`WorkshopDemoLibraryContentTests`,
+  `WorkshopDemoLibraryMergeTests`, `WorkshopDemoLibrarySessionSizeTests`)
+  plus ten new methods on `WorkshopPublicPreviewTests` and two updates to
+  existing methods there for the new persona content and the now-real
+  unfinished-save redirect.

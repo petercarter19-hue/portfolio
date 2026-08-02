@@ -30,16 +30,24 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    {# Public preview mode (owner decision 2026-08-02, doc 20 section 6d):
+    {# Public preview mode (owner decision 2026-08-02, doc 20 sections 6d/6e):
        signed-out visitors get the real page over honestly-labeled sample
        content instead of a sign-in redirect. Deliberately its own calm,
        informational banner style (wk-status-banner--preview) — distinct
        from the harsh, environment-marker dev-preview banner below, which
-       stays a separate, untouched, local-preview-only seam. #}
+       stays a separate, untouched, local-preview-only seam.
+
+       Section 6e correction: a visitor's own add/edit/archive/restore/
+       delete now really persists to their own browser session (never a
+       database, never shared), so the banner no longer says "nothing here
+       is saved" — that stopped being true. It states the honest boundary
+       instead: example library, your own changes last for this visit
+       only, sign in to keep anything permanently. #}
     <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — this is example information, not yours. Nothing here is
-        saved. <a href="{{ sign_in_url }}">Sign in</a> to build your own
-        private library.
+        Preview — this is example information, not yours. Your own changes
+        here last for this visit only, in your browser session. Sign in to
+        keep anything permanently in your own private library.
+        <a href="{{ sign_in_url }}">Sign in</a>
     </div>
     {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>

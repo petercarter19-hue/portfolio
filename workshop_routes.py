@@ -46,9 +46,27 @@ is duplicated locally rather than imported so this module has no edit-time
 dependency on auth_routes.py, which is reserved by another lane's file
 ownership boundary for this task. ``_is_same_origin_write`` similarly
 mirrors ``owner_routes._is_same_origin_write`` for the same reason.
+
+**Public demo library and session play (owner instruction 2026-08-02, doc
+20 section 6e).** The three-route relaxation above has been extended: the
+anonymous library now renders a rich, realistic 17-item sample library
+(``services/workshop_demo_library.py``, the fictional "Jordan Ellis"
+persona) instead of the four-item checkpoint fixture, and a signed-out
+visitor's own Add/Edit/Archive/Restore/Delete actions are now real *within
+their own browser session* — stored only in the signed Flask session
+cookie (never a database, never shared between visitors, never permanent).
+Every route below that used to sign-in-redirect a signed-out caller
+(``edit_information``, ``keep_working_edit``, ``review_edit``,
+``update_item``, ``archive_item``/``restore_item`` via
+``_run_item_state_change``, ``delete_confirm``, ``delete_item``) now treats
+``AuthenticationRequired`` the same way ``my_information``/``add_information``
+already did: as a legitimate anonymous caller, handled by a session-backed
+branch that never calls a ``*_for_owner`` service method and never reaches
+the database. A signed-in member's behavior on every one of these routes is
+completely unchanged — the session-delta branch is reached only when
+identity resolution raises ``AuthenticationRequired``.
 """
 
-from types import SimpleNamespace
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
@@ -60,10 +78,12 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 
 from identity import AuthenticationRequired, get_current_identity
+from services import workshop_demo_library
 from services.database_service import DatabaseServiceError
 from services.knowledge_service import (
     AREA_FILTERS,
@@ -130,6 +150,15 @@ WORKSHOP_SUCCESS_MESSAGES = {
     "archived": "Item archived. It no longer grounds AI suggestions.",
     "restored": "Item restored to your active information.",
     "deleted": "Item and its version history were permanently deleted.",
+    # Anonymous preview session equivalents (owner instruction 2026-08-02,
+    # doc 20 section 6e): distinct keys so the signed-in messages above stay
+    # byte-for-byte unchanged. Every preview message names "this preview
+    # session" and points at sign-in — never implying a real, permanent save.
+    "unfinished-preview": "Kept as unfinished in this preview session. Sign in to save it for real.",
+    "updated-preview": "Updated in this preview session. Sign in to make this permanent.",
+    "archived-preview": "Archived in this preview session. Sign in to keep your own permanent library.",
+    "restored-preview": "Restored in this preview session. Sign in to keep changes permanently.",
+    "deleted-preview": "Removed from this preview session.",
 }
 WORKSHOP_VALIDATION_MESSAGES = {
     "changed": "That item changed or is no longer available. Refresh and try again.",
@@ -410,69 +439,26 @@ def _fixture_view(checkpoint):
 
 
 # ---------------------------------------------------------------------------
-# Public preview mode (owner decision 2026-08-02, doc 20 section 6d)
+# Public demo library and session play (owner decision 2026-08-02, doc 20
+# section 6e; supersedes the four-item checkpoint-fixture-based preview from
+# section 6d)
 #
-# A signed-out visitor to the library, add, and save routes gets the real
-# page rendered over honestly-labeled sample content instead of a sign-in
-# redirect. This is a self-contained code path: ``_PREVIEW_IDENTITY`` is never
-# a real, database-backed, or dev-fixture identity — it exists solely so
-# ``get_my_information_checkpoint`` (which never touches ``self.database``;
-# see its docstring in services/knowledge_service.py) has a ``user_key`` to
-# accept. It is never passed to any ``*_for_owner`` service method.
+# A signed-out visitor to the library, add, edit, archive, restore, and
+# delete routes gets the real page rendered over the honestly-labeled Jordan
+# Ellis sample library (services/workshop_demo_library.py) layered with the
+# visitor's own session-only changes, instead of a sign-in redirect. This
+# reuses the SAME view-model functions the real signed-in path uses
+# (_real_item_view, _real_detail_view, _filter_library_rows,
+# _resolve_selected_item_key) because workshop_demo_library's rows are
+# shaped exactly like a real owner-scoped store read — no second, forked
+# view-model exists for the anonymous path. Nothing here calls a
+# ``*_for_owner`` service method or reaches the database.
 # ---------------------------------------------------------------------------
 
-_PREVIEW_IDENTITY = SimpleNamespace(
-    user_key="workshop-anonymous-preview", display_name=None
-)
 
-
-def _preview_rows(checkpoint):
-    """Shape the sample checkpoint items as the same plain dict-row list
-    ``_filter_library_rows``/``_resolve_selected_item_key`` already expect
-    from a real owner-scoped list read, so this reuses that exact filtering
-    and selection logic verbatim rather than forking it."""
-    return [
-        {
-            "item_key": item.item_key,
-            "title": item.title,
-            "status": item.status,
-            "classification": item.classification,
-        }
-        for item in checkpoint.items
-    ]
-
-
-def _preview_item_view(fixture_item, *, selected_key):
-    """Like ``_fixture_item_view``, but with a real ``select_url`` — public
-    preview supports real item selection over the sample set (?item=),
-    unlike the inert dev-fixture rows ``_fixture_item_view`` renders."""
-    item_key = fixture_item.item_key
-    return {
-        "item_key": item_key,
-        "title": fixture_item.title,
-        "status": fixture_item.status,
-        "status_label": fixture_item.status_label,
-        "classification": fixture_item.classification,
-        "classification_label": fixture_item.classification_label,
-        "downstream_use_label": fixture_item.downstream_use_label,
-        "selected": item_key == selected_key,
-        "select_url": url_for("workshop.my_information", item=item_key),
-    }
-
-
-def _build_preview_view(checkpoint, *, area, status, search, item_param):
-    """The anonymous, signed-out My Information view-model: real Area/
-    Status/search filtering and item selection (mirroring the signed-in
-    path's own logic exactly) applied to the honestly-labeled sample
-    checkpoint fixture instead of a real owner-scoped store read.
-
-    Edit/Archive/Restore/Delete render inert for every sample item (via
-    ``_fixture_detail_view``, which already sets every action URL to
-    ``None`` for the pre-existing dev-fixture seam) rather than opening a
-    fake mutation flow for data with no real backing record.
-    """
-    by_key = {item.item_key: item for item in checkpoint.items}
-    rows = _preview_rows(checkpoint)
+def _build_demo_library_view(*, area, status, search, item_param):
+    delta = workshop_demo_library.read_session_delta(session)
+    rows = workshop_demo_library.list_rows(delta)
 
     selected_area = _selected_filter_key(area, _AREA_FILTER_KEYS)
     selected_status = _selected_filter_key(status, _STATUS_FILTER_KEYS)
@@ -483,27 +469,36 @@ def _build_preview_view(checkpoint, *, area, status, search, item_param):
 
     selected_key = _resolve_selected_item_key(item_param, filtered_rows)
     detail = None
-    if selected_key and selected_key in by_key:
-        detail = _fixture_detail_view(by_key[selected_key])
+    if selected_key:
+        detail_row = workshop_demo_library.get_row(selected_key, delta)
+        if detail_row:
+            detail = _real_detail_view(detail_row)
 
     return {
-        "schema_version": checkpoint.schema_version,
-        "owner_display_name": checkpoint.owner_display_name,
+        "schema_version": SCHEMA_VERSION,
+        "owner_display_name": workshop_demo_library.PERSONA_DISPLAY_NAME,
         "library_items": [
-            _preview_item_view(by_key[row["item_key"]], selected_key=selected_key)
-            for row in filtered_rows
+            _real_item_view(row, selected_key=selected_key) for row in filtered_rows
         ],
         "detail": detail,
-        "area_filters": checkpoint.area_filters,
-        "status_filters": checkpoint.status_filters,
+        "area_filters": AREA_FILTERS,
+        "status_filters": STATUS_FILTERS,
         "selected_area": selected_area,
         "selected_status": selected_status,
         "search_query": search_query,
         "clear_filters_url": url_for("workshop.my_information"),
-        "total_item_count": len(checkpoint.items),
+        "total_item_count": len(rows),
         "list_truncated": False,
-        "suggestion": checkpoint.suggestion,
-        "availability": checkpoint.availability,
+        # The sample library already carries real Suggested-status items
+        # (filterable via Status), so no separate fabricated suggestion
+        # nudge card is shown here — the same honest "no fabricated
+        # suggestion" principle the real signed-in path applies below.
+        "suggestion": None,
+        "availability": {
+            "direct_entry": {"state": "available"},
+            "work_on_something": {"state": "coming_later"},
+            "destination_use": {"state": "coming_later"},
+        },
         "add_information_url": url_for("workshop.add_information"),
     }
 
@@ -527,18 +522,7 @@ def my_information():
         return _render_workshop_unavailable()
 
     if identity is None:
-        try:
-            checkpoint = knowledge_service.get_my_information_checkpoint(
-                _PREVIEW_IDENTITY
-            )
-        except KnowledgeServiceError:
-            current_app.logger.error(
-                "PeerSlate Workshop preview checkpoint failed to build."
-            )
-            return _render_workshop_unavailable()
-
-        view = _build_preview_view(
-            checkpoint,
+        view = _build_demo_library_view(
             area=request.args.get("area"),
             status=request.args.get("status"),
             search=request.args.get("q"),
@@ -686,11 +670,18 @@ def _composer_response(
             error_message=error_message,
             form_action=form_action,
             max_title_units=MAX_TITLE_UNITS,
-            max_wording_units=MAX_WORDING_UNITS,
+            # Public preview mode (owner instruction 2026-08-02, doc 20
+            # section 6e): every preview surface — add AND edit alike, since
+            # Edit is now anonymous-capable too — hints the tighter 400-char
+            # preview wording cap in the browser's own maxlength attribute.
+            # The real, authoritative enforcement happens server-side in
+            # save_item/update_item regardless of this attribute.
+            max_wording_units=(
+                workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
+                if anonymous_preview
+                else MAX_WORDING_UNITS
+            ),
             classification_choices=CLASSIFICATION_CHOICES,
-            # Public preview mode (owner decision 2026-08-02): always False
-            # for edit/edit-review call sites (edit stays sign-in gated);
-            # only the add/review call sites ever pass True.
             anonymous_preview=anonymous_preview,
         ),
         status_code,
@@ -724,7 +715,11 @@ def _review_response(
             keep_working_url=keep_working_url,
             source_label="Your words, added directly",
             max_title_units=MAX_TITLE_UNITS,
-            max_wording_units=MAX_WORDING_UNITS,
+            max_wording_units=(
+                workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
+                if anonymous_preview
+                else MAX_WORDING_UNITS
+            ),
             classification_choices=CLASSIFICATION_CHOICES,
             anonymous_preview=anonymous_preview,
         ),
@@ -732,22 +727,25 @@ def _review_response(
     )
 
 
-def _render_anonymous_preview_saved(*, title, wording, classification):
+def _render_anonymous_preview_saved(*, item_key, title, wording, classification):
     """The honest confirming-save render for a signed-out visitor (owner
-    decision 2026-08-02): no ``*_for_owner`` service call, no item created,
-    no "Saved privately" heading or copy — that phrase describes a real
-    confirmed save, which never happens here. The member's own typed text
-    stays fully visible, and the page explains that saving for real needs an
-    account, with one clear sign-in action. Distinct from the
-    ``PEERSLATE_WORKSHOP_DEV_FIXTURE`` dev-preview render above (different
-    template context flag, different banner class, different copy) — this
-    path is reachable in production any time a visitor is signed out.
+    instruction 2026-08-02, doc 20 section 6e): no ``*_for_owner`` service
+    call, no database row, and no "Saved privately" heading or copy — that
+    phrase describes a real confirmed save, which never happens here. The
+    item HAS just been added to this visitor's own session-only preview
+    library (``item_key`` is the new session-scoped key), so the copy says
+    exactly that — added for this browser session, gone when it ends, sign
+    in to keep it permanently — and links back to the library to prove it.
+    Distinct from the ``PEERSLATE_WORKSHOP_DEV_FIXTURE`` dev-preview render
+    above (different template context flag, different banner class,
+    different copy) — this path is reachable in production any time a
+    visitor is signed out.
     """
     return render_template(
         "workshop_saved.html",
-        page_title="Preview — Workshop",
+        page_title="Added to this preview — Workshop",
         item={
-            "item_key": None,
+            "item_key": item_key,
             "title": title,
             "body": wording,
             "classification": classification,
@@ -758,13 +756,15 @@ def _render_anonymous_preview_saved(*, title, wording, classification):
         },
         dev_preview=False,
         anonymous_preview=True,
-        saved_title="Your preview is ready",
+        saved_title="Added to this preview session",
         saved_subtitle=(
-            "This is a preview using your own words. Nothing has been saved "
-            "— sign in to save this to your private Workshop library."
+            "This now appears in the sample library — but only for this "
+            "browser session. It disappears when the session ends. Sign in "
+            "to save it to a permanent private library."
         ),
         sign_in_url=url_for("auth.sign_in", return_to="/app/workshop/add"),
         add_something_else_url=url_for("workshop.add_information"),
+        view_in_my_information_url=url_for("workshop.my_information", item=item_key),
     )
 
 
@@ -872,6 +872,22 @@ def review_add():
             anonymous_preview=is_anonymous,
         )
 
+    # Preview-only wording cap (owner instruction 2026-08-02, doc 20 section
+    # 6e): checked here too (not only at save_item) so an anonymous visitor
+    # gets the honest, specific message before advancing to Review, with
+    # their typed text fully preserved either way.
+    if is_anonymous and len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
+        return _composer_response(
+            mode="add",
+            values=raw,
+            idempotency_key=idempotency_key,
+            item_key=None,
+            expected_version_token=None,
+            error_message=workshop_demo_library.CAP_WORDING_MESSAGE,
+            form_action=url_for("workshop.review_add"),
+            anonymous_preview=True,
+        )
+
     return _review_response(
         mode="add",
         values={"title": title, "wording": wording, "classification": classification},
@@ -937,12 +953,38 @@ def save_item():
         return _rerender(FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR))
 
     if identity is None:
-        # Neither "confirm" nor "unfinished" writes anything for a signed-out
-        # visitor — both are the same honest preview-complete state, since
-        # neither a real confirmed item nor a real unfinished item exists to
-        # send them to.
+        # Owner instruction 2026-08-02 (doc 20 section 6e): a signed-out
+        # visitor's add now really persists — but only to their own session,
+        # never the database, never via save_knowledge_item_for_owner. Caps
+        # are enforced server-side with an honest, specific message; nothing
+        # is ever silently dropped.
+        if len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
+            return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
+
+        status = "confirmed" if save_action == "confirm" else "unfinished"
+        new_item_key, error_message = workshop_demo_library.add_item(
+            session,
+            title=title,
+            wording=wording,
+            classification=classification,
+            status=status,
+        )
+        if new_item_key is None:
+            return _rerender(error_message)
+
+        if save_action == "unfinished":
+            return redirect(
+                url_for(
+                    "workshop.my_information",
+                    item=new_item_key,
+                    changed="unfinished-preview",
+                )
+            )
         return _render_anonymous_preview_saved(
-            title=title, wording=wording, classification=classification
+            item_key=new_item_key,
+            title=title,
+            wording=wording,
+            classification=classification,
         )
 
     if _workshop_dev_fixture_enabled():
@@ -1013,11 +1055,33 @@ def edit_information(item_key):
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return_path = _safe_return_path(request.full_path.rstrip("?"))
-        return redirect(url_for("auth.sign_in", return_to=return_path))
+        # Owner instruction 2026-08-02 (doc 20 section 6e): Edit is now
+        # real, session-scoped, and anonymous-capable — no sign-in redirect.
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
+
+    if identity is None:
+        delta = workshop_demo_library.read_session_delta(session)
+        row = workshop_demo_library.get_row(normalized_item_key, delta)
+        if row is None:
+            # Never confirm or deny existence for an unrecognized key.
+            return redirect(url_for("workshop.my_information"))
+        return _composer_response(
+            mode="edit",
+            values={
+                "title": row["title"],
+                "wording": row["approved_wording"],
+                "classification": row["classification"],
+            },
+            idempotency_key=None,
+            item_key=normalized_item_key,
+            expected_version_token=row["version_token"],
+            error_message=None,
+            form_action=url_for("workshop.review_edit", item_key=normalized_item_key),
+            anonymous_preview=True,
+        )
 
     try:
         item = knowledge_service.get_knowledge_item_for_owner(
@@ -1063,11 +1127,9 @@ def keep_working_edit(item_key):
         return redirect(url_for("workshop.my_information"))
 
     try:
-        get_current_identity()
+        identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(
-            url_for("auth.sign_in", return_to=f"/app/workshop/items/{normalized_item_key}/edit")
-        )
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
@@ -1084,6 +1146,7 @@ def keep_working_edit(item_key):
         expected_version_token=request.form.get("expected_row_version", ""),
         error_message=None,
         form_action=url_for("workshop.review_edit", item_key=normalized_item_key),
+        anonymous_preview=identity is None,
     )
 
 
@@ -1098,15 +1161,14 @@ def review_edit(item_key):
         return redirect(url_for("workshop.my_information"))
 
     try:
-        get_current_identity()
+        identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(
-            url_for("auth.sign_in", return_to=f"/app/workshop/items/{normalized_item_key}/edit")
-        )
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
 
+    is_anonymous = identity is None
     expected_version_token = request.form.get("expected_row_version", "")
     raw = {
         "title": request.form.get("title", ""),
@@ -1127,6 +1189,19 @@ def review_edit(item_key):
             expected_version_token=expected_version_token,
             error_message=FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR),
             form_action=url_for("workshop.review_edit", item_key=normalized_item_key),
+            anonymous_preview=is_anonymous,
+        )
+
+    if is_anonymous and len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
+        return _composer_response(
+            mode="edit",
+            values=raw,
+            idempotency_key=None,
+            item_key=normalized_item_key,
+            expected_version_token=expected_version_token,
+            error_message=workshop_demo_library.CAP_WORDING_MESSAGE,
+            form_action=url_for("workshop.review_edit", item_key=normalized_item_key),
+            anonymous_preview=True,
         )
 
     return _review_response(
@@ -1138,6 +1213,7 @@ def review_edit(item_key):
         error_message=None,
         save_url=url_for("workshop.update_item", item_key=normalized_item_key),
         keep_working_url=url_for("workshop.keep_working_edit", item_key=normalized_item_key),
+        anonymous_preview=is_anonymous,
     )
 
 
@@ -1155,13 +1231,12 @@ def update_item(item_key):
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(
-            url_for("auth.sign_in", return_to=f"/app/workshop/items/{normalized_item_key}/edit")
-        )
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
 
+    is_anonymous = identity is None
     expected_version_token = request.form.get("expected_row_version", "")
     raw = {
         "title": request.form.get("title", ""),
@@ -1182,6 +1257,7 @@ def update_item(item_key):
             keep_working_url=url_for(
                 "workshop.keep_working_edit", item_key=normalized_item_key
             ),
+            anonymous_preview=is_anonymous,
         )
 
     if save_action not in {"confirm", "unfinished"}:
@@ -1193,6 +1269,34 @@ def update_item(item_key):
         )
     except KnowledgeServiceError as error:
         return _rerender(FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR))
+
+    if is_anonymous:
+        # Owner instruction 2026-08-02 (doc 20 section 6e): edit-confirm is
+        # real within this visitor's own session — never
+        # update_knowledge_item_for_owner, never the database.
+        if len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
+            return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
+
+        status = "confirmed" if save_action == "confirm" else "unfinished"
+        ok, error_message = workshop_demo_library.edit_item(
+            session,
+            normalized_item_key,
+            title=title,
+            wording=wording,
+            classification=classification,
+            status=status,
+        )
+        if not ok:
+            if error_message:
+                return _rerender(error_message)
+            # Item no longer in this visitor's session library (e.g.
+            # deleted in another tab) — neutral fallback, never an error.
+            return redirect(url_for("workshop.my_information"))
+
+        changed = "updated-preview" if save_action == "confirm" else "unfinished-preview"
+        return redirect(
+            url_for("workshop.my_information", item=normalized_item_key, changed=changed)
+        )
 
     try:
         knowledge_service.update_knowledge_item_for_owner(
@@ -1309,10 +1413,29 @@ def _run_item_state_change(item_key, action):
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(url_for("auth.sign_in", return_to="/app/workshop"))
+        # Owner instruction 2026-08-02 (doc 20 section 6e): Archive/Restore
+        # are now real, session-scoped, and anonymous-capable.
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
+
+    if identity is None:
+        mutator = (
+            workshop_demo_library.archive_item
+            if action == "archive"
+            else workshop_demo_library.restore_item
+        )
+        ok, _error_message = mutator(session, normalized_item_key)
+        if not ok:
+            # Not part of this visitor's session library — never confirm or
+            # deny why; a size-budget failure is vanishingly unlikely for
+            # this tiny a mutation, so it gets the same neutral treatment.
+            return redirect(url_for("workshop.my_information"))
+        changed = "archived-preview" if action == "archive" else "restored-preview"
+        return redirect(
+            url_for("workshop.my_information", item=normalized_item_key, changed=changed)
+        )
 
     expected_version_token = request.form.get("expected_row_version", "")
     method = (
@@ -1360,11 +1483,29 @@ def delete_confirm(item_key):
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return_path = _safe_return_path(request.full_path.rstrip("?"))
-        return redirect(url_for("auth.sign_in", return_to=return_path))
+        # Owner instruction 2026-08-02 (doc 20 section 6e): Delete is now
+        # real, session-scoped, and anonymous-capable.
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
+
+    if identity is None:
+        delta = workshop_demo_library.read_session_delta(session)
+        row = workshop_demo_library.get_row(normalized_item_key, delta)
+        if row is None:
+            return redirect(url_for("workshop.my_information"))
+        return render_template(
+            "workshop_delete_confirm.html",
+            page_title="Delete information — Workshop",
+            item_key=normalized_item_key,
+            item_title=row["title"],
+            expected_version_token=row["version_token"],
+            cancel_url=url_for("workshop.my_information", item=normalized_item_key),
+            delete_url=url_for("workshop.delete_item", item_key=normalized_item_key),
+            error_message=WORKSHOP_VALIDATION_MESSAGES.get(request.args.get("error")),
+            anonymous_preview=True,
+        )
 
     try:
         item = knowledge_service.get_knowledge_item_for_owner(
@@ -1404,10 +1545,24 @@ def delete_item(item_key):
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(url_for("auth.sign_in", return_to="/app/workshop"))
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
+
+    if identity is None:
+        if request.form.get("confirm_delete") != "delete":
+            return redirect(
+                url_for(
+                    "workshop.delete_confirm",
+                    item_key=normalized_item_key,
+                    error="confirm-delete",
+                )
+            )
+        ok, _error_message = workshop_demo_library.delete_item(session, normalized_item_key)
+        if not ok:
+            return redirect(url_for("workshop.my_information"))
+        return redirect(url_for("workshop.my_information", changed="deleted-preview"))
 
     if request.form.get("confirm_delete") != "delete":
         return redirect(

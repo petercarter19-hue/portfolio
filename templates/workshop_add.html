@@ -39,12 +39,13 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    {# Public preview mode (owner decision 2026-08-02): openable signed-out.
-       Nothing typed here is saved until the member signs in — see the
-       confirming save's own honest preview-complete state. #}
+    {# Public preview mode (owner decision 2026-08-02, doc 20 section 6e):
+       openable signed-out. What you add here now really persists to your
+       own browser session (never a database) once you finish Review — see
+       the confirming save's own honest preview-complete state. #}
     <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — you&#39;re signed out, so nothing you write here is saved
-        yet.
+        Preview — you&#39;re signed out. What you add or edit here is kept
+        only for this browser session — sign in to save it permanently.
     </div>
     {% endif %}
 
@@ -134,7 +135,17 @@
         </div>
 
         <div class="wk-aside">
+            {# Owner instruction 2026-08-02 (doc 20 section 6e): an
+               anonymous visitor's own add/edit now really persists to
+               their session, but never "privately" in the permanent
+               sense _private_save_card.html describes — the honest
+               preview-note card replaces it here, same as the
+               confirming-save screen already does. #}
+            {% if anonymous_preview %}
+            {% include "partials/workshop/_preview_note_card.html" %}
+            {% else %}
             {% include "partials/workshop/_private_save_card.html" %}
+            {% endif %}
         </div>
     </div>
 </div>

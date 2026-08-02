@@ -84,8 +84,23 @@ interview_context_serializer = URLSafeTimedSerializer(
     salt='peerslate-interview-model-answer-v1',
 )
 
+# PS-WORKSHOP-001 public demo library (owner instruction 2026-08-02): the
+# anonymous preview's own add/edit/archive/restore/delete actions live only
+# in the visitor's signed Flask session cookie (services/
+# workshop_demo_library.py), never a database. Flask's built-in session
+# requires app.secret_key; same fallback idiom as
+# INTERVIEW_CONTEXT_SIGNING_KEY above — a dedicated env var if set, else a
+# value deterministically derived from the already-required
+# ANTHROPIC_API_KEY, so every worker/process signs and reads the same
+# cookie without requiring a new mandatory production secret. Set
+# PEERSLATE_SESSION_SECRET_KEY explicitly for stronger isolation.
+PEERSLATE_SESSION_SECRET_KEY = os.environ.get('PEERSLATE_SESSION_SECRET_KEY') or hashlib.sha256(
+    ('peerslate-session-v1:' + ANTHROPIC_API_KEY).encode('utf-8')
+).hexdigest()
+
 # Create the Flask app
 app = Flask(__name__)
+app.secret_key = PEERSLATE_SESSION_SECRET_KEY
 # Azure terminates HTTPS before forwarding the request to Gunicorn. Trust the
 # single platform proxy hop for the original scheme so external URLs, canonical
 # tags, and Open Graph metadata stay HTTPS in production while localhost keeps
@@ -95,6 +110,17 @@ app.config.update(
     MAX_CONTENT_LENGTH=2 * 1024 * 1024,
     MAX_FORM_MEMORY_SIZE=500 * 1024,
     MAX_FORM_PARTS=100,
+    # The session cookie is new surface as of the Workshop public demo
+    # library, and today it carries only fictional preview content. Pin the
+    # protective defaults now, while that is still true, rather than after
+    # something real lands in it. HTTPOnly is already Flask's default; state
+    # it explicitly so relaxing it has to be deliberate. SameSite=Lax keeps
+    # the cookie off cross-site requests while still allowing the top-level
+    # navigations these no-JS form flows depend on. Secure stays unset so the
+    # established local-preview-over-HTTP workflow keeps working; revisit
+    # when the session first carries real member data.
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
     TRUSTED_HOSTS=_configured_trusted_hosts(),
     PEERSLATE_ALLOW_DEV_IDENTITY=(
         os.environ.get('PEERSLATE_ALLOW_DEV_IDENTITY', 'false').lower() == 'true'

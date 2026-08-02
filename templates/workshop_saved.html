@@ -32,7 +32,11 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">Preview — nothing has been saved. Sign in to save this for real.</div>
+    {# Owner instruction 2026-08-02 (doc 20 section 6e): this now really is
+       in the visitor's own session library — "nothing has been saved" is
+       no longer true. Matches the honest wording used everywhere else on
+       this page (saved_title/saved_subtitle, _preview_note_card.html). #}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">Preview — this is in your own session only. Sign in to save it permanently.</div>
     {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
     {% endif %}
@@ -71,7 +75,10 @@
                 <div class="wk-actions-row">
                     {% if anonymous_preview %}
                     <a class="wk-btn wk-btn--outline" href="{{ add_something_else_url }}">Add something else</a>
-                    <a class="wk-btn wk-btn--primary" href="{{ sign_in_url }}">Sign in to save</a>
+                    {% if view_in_my_information_url %}
+                    <a class="wk-btn wk-btn--secondary" href="{{ view_in_my_information_url }}">View in Workshop</a>
+                    {% endif %}
+                    <a class="wk-btn wk-btn--primary" href="{{ sign_in_url }}">Sign in to save permanently</a>
                     {% else %}
                     <a class="wk-btn wk-btn--outline" href="{{ add_something_else_url }}">Add something else</a>
                     <a class="wk-btn wk-btn--secondary" href="{{ view_in_my_information_url }}">View in My Information</a>

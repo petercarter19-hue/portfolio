@@ -15,6 +15,16 @@
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
 
+    {% if anonymous_preview %}
+    {# Public preview mode (owner instruction 2026-08-02, doc 20 section 6e):
+       deleting a sample-library item removes it from this visitor's own
+       session copy only — the base sample library is untouched for every
+       other visitor. #}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — this only removes the item from your own preview session.
+    </div>
+    {% endif %}
+
     <div class="wk-state-panel wk-delete-confirm">
         {{ workshop_icon("trash") }}
         <p class="wk-state-panel__eyebrow">Permanent deletion</p>

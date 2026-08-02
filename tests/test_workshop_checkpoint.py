@@ -12,8 +12,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from app import app
+from app import app, limiter
 from identity import AuthenticationRequired
+from services import workshop_demo_library
 from services.database_service import DatabaseServiceError
 from services.knowledge_service import KnowledgeItemListResult, KnowledgeServiceError
 
@@ -82,6 +83,24 @@ def service_get_row(**overrides):
     }
     row.update(overrides)
     return row
+
+
+def _demo_item_key(title):
+    """The stable, deterministic item_key for one Jordan Ellis demo-library
+    base item, looked up by its exact title (owner instruction 2026-08-02,
+    doc 20 section 6e)."""
+    return next(
+        item["item_key"]
+        for item in workshop_demo_library.BASE_ITEMS
+        if item["title"] == title
+    )
+
+
+def _library_item_title_count(body):
+    """How many library rows a My Information render actually shows —
+    counts the per-row title span, not workshop.total_item_count (which
+    intentionally stays the unfiltered owner total; see _library.html)."""
+    return body.count('class="wk-list__item-title"')
 
 
 class WorkshopCheckpointRouteTests(unittest.TestCase):
@@ -1002,8 +1021,17 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
             side_effect=AuthenticationRequired("Sign in is required."),
         )
         self.identity_mock = self.identity_patch.start()
+        # Owner instruction 2026-08-02 (doc 20 section 6e) tests repeatedly
+        # POST to the rate-limited save/update/archive/restore/delete
+        # routes; the limiter's counter is process-wide and would otherwise
+        # accumulate across unrelated tests and spuriously 429 them.
+        # Disabled here — mirrors test_workshop_flows.py's own established
+        # pattern for the same reason.
+        self._limiter_enabled = limiter.enabled
+        limiter.enabled = False
 
     def tearDown(self):
+        limiter.enabled = self._limiter_enabled
         self.identity_patch.stop()
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
         app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
@@ -1069,6 +1097,12 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         self.assertIn("Sign in to save", body)
 
     def test_signed_out_unfinished_save_never_writes_or_claims_saved(self):
+        # Owner instruction 2026-08-02 (doc 20 section 6e): an anonymous
+        # "Save unfinished" now really persists to this visitor's own
+        # session (services/workshop_demo_library.py) and redirects to the
+        # library, exactly like the signed-in path's own unfinished-save
+        # redirect — never save_knowledge_item_for_owner, never "Saved
+        # privately".
         with patch(
             "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
         ) as save_mock:
@@ -1082,11 +1116,14 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
                     "save_action": "unfinished",
                 },
                 headers=SAME_ORIGIN_HEADERS,
+                follow_redirects=True,
             )
 
         self.assertEqual(response.status_code, 200)
         save_mock.assert_not_called()
-        self.assertNotIn("Saved privately", response.data.decode("utf-8"))
+        body = response.data.decode("utf-8")
+        self.assertNotIn("Saved privately", body)
+        self.assertIn("Another preview title", body)
 
     # 4. The signed-out response never contains another member's data —
     #    sample content only, even if the real store somehow held data.
@@ -1103,8 +1140,10 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         list_mock.assert_not_called()
         self.assertNotIn(b"Someone Else&#39;s Real Confidential Item", response.data)
         self.assertNotIn(b"Someone Else's Real Confidential Item", response.data)
-        # Sample content only (the checkpoint fixture's own item titles).
-        self.assertIn(b"Systems Engineering", response.data)
+        # Sample content only (the demo library's own item titles — owner
+        # instruction 2026-08-02, doc 20 section 6e: the Jordan Ellis demo
+        # library replaced the four-item checkpoint fixture here).
+        self.assertIn(b"Rebuilt patient intake from 40 minutes to 9", response.data)
 
     # 5. Signed-in behavior is completely unchanged.
     def test_signed_in_behavior_is_unchanged(self):
@@ -1158,6 +1197,395 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         self.assertEqual(
             saved_response.headers.get("Cache-Control"), "private, no-store"
         )
+
+    # ------------------------------------------------------------------
+    # Owner instruction 2026-08-02 (doc 20 section 6e): the public demo
+    # library (17-item Jordan Ellis persona) and session-backed play.
+    # ------------------------------------------------------------------
+
+    # 8. Every Area and Status filter returns the expected non-empty subset
+    #    of the demo library — real counts, not just 200s.
+    def test_anonymous_library_shows_demo_items_with_real_filter_counts(self):
+        response = self.client.get(ROUTE)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Rebuilt patient intake from 40 minutes to 9",
+            response.data.decode("utf-8"),
+        )
+
+        # Status filters: exact counts matching the content spec exactly
+        # (11 confirmed, 2 suggested, 2 unfinished, 2 archived = 17 total).
+        expected_status_counts = {
+            "confirmed": 11,
+            "suggested": 2,
+            "unfinished": 2,
+            "archived": 2,
+        }
+        for status, expected_count in expected_status_counts.items():
+            resp = self.client.get(ROUTE, query_string={"status": status})
+            self.assertEqual(resp.status_code, 200)
+            count = _library_item_title_count(resp.data.decode("utf-8"))
+            self.assertEqual(count, expected_count, f"status={status}")
+
+        # Area filters, with status=all (which excludes the 2 archived
+        # items, the same "hidden unless asked for" convention the real
+        # signed-in library also uses) — real, non-trivial counts.
+        expected_area_counts = {"work": 8, "personal": 3, "both": 4}
+        for area, expected_count in expected_area_counts.items():
+            resp = self.client.get(ROUTE, query_string={"area": area, "status": "all"})
+            self.assertEqual(resp.status_code, 200)
+            count = _library_item_title_count(resp.data.decode("utf-8"))
+            self.assertEqual(count, expected_count, f"area={area}")
+
+    # 9. Search matches a known demo title and misses a nonsense query.
+    def test_anonymous_search_matches_known_title_and_misses_nonsense(self):
+        match = self.client.get(ROUTE, query_string={"q": "patient intake"})
+        self.assertEqual(match.status_code, 200)
+        self.assertIn(
+            "Rebuilt patient intake from 40 minutes to 9", match.data.decode("utf-8")
+        )
+
+        miss = self.client.get(ROUTE, query_string={"q": "zzz-nonsense-query-xyz"})
+        self.assertEqual(miss.status_code, 200)
+        body = miss.data.decode("utf-8")
+        self.assertNotIn("Rebuilt patient intake", body)
+        self.assertIn("No items match", body)
+
+    # 10. Add -> review -> confirm as an anonymous visitor: the item appears
+    #     in the library on the NEXT request (session persistence).
+    def test_anonymous_add_review_confirm_persists_across_requests(self):
+        review = self.client.post(
+            "/app/workshop/add/review",
+            data={
+                "title": "My anonymous accomplishment",
+                "wording": "A realistic sentence about something I did.",
+                "classification": "work",
+                "idempotency_key": "anon-add-1",
+            },
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        self.assertEqual(review.status_code, 200)
+
+        with patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock:
+            saved = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "My anonymous accomplishment",
+                    "wording": "A realistic sentence about something I did.",
+                    "classification": "work",
+                    "idempotency_key": "anon-add-1",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(saved.status_code, 200)
+        save_mock.assert_not_called()
+        saved_body = saved.data.decode("utf-8")
+        self.assertNotIn("Saved privately", saved_body)
+        # This confirming-save screen only ever surfaces wording, not title
+        # (true for the real signed-in path too; see workshop_saved.html).
+        self.assertIn(
+            "A realistic sentence about something I did.", saved_body
+        )
+
+        # The NEXT request (a fresh GET) shows the TITLE in the library —
+        # proves this lives in the session, not just the immediate response.
+        library = self.client.get(ROUTE)
+        self.assertIn(
+            "My anonymous accomplishment", library.data.decode("utf-8")
+        )
+
+    # 11. Edit takes effect in the session copy on the following request.
+    def test_anonymous_edit_persists_across_requests(self):
+        item_key = _demo_item_key(
+            "Led the move from three scheduling systems to one"
+        )
+        review = self.client.post(
+            f"/app/workshop/items/{item_key}/edit/review",
+            data={
+                "title": "Edited scheduling systems title",
+                "wording": "Edited wording describing the same accomplishment.",
+                "classification": "personal",
+                "expected_row_version": "0000000000000000",
+            },
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        self.assertEqual(review.status_code, 200)
+
+        with patch(
+            "workshop_routes.knowledge_service.update_knowledge_item_for_owner"
+        ) as update_mock:
+            confirm = self.client.post(
+                f"/app/workshop/items/{item_key}",
+                data={
+                    "title": "Edited scheduling systems title",
+                    "wording": "Edited wording describing the same accomplishment.",
+                    "classification": "personal",
+                    "expected_row_version": "0000000000000000",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(confirm.status_code, 302)
+        update_mock.assert_not_called()
+
+        library = self.client.get(ROUTE, query_string={"item": item_key})
+        body = library.data.decode("utf-8")
+        self.assertIn("Edited scheduling systems title", body)
+        self.assertIn(
+            "Edited wording describing the same accomplishment.", body
+        )
+
+    # 11 (cont.). Archive then Restore take effect in the session copy on
+    #     the following request.
+    def test_anonymous_archive_and_restore_persist_across_requests(self):
+        item_key = _demo_item_key(
+            "Requirements gathering with people who hate meetings"
+        )
+
+        with patch(
+            "workshop_routes.knowledge_service.archive_knowledge_item_for_owner"
+        ) as archive_mock:
+            archived = self.client.post(
+                f"/app/workshop/items/{item_key}/archive",
+                data={"expected_row_version": "0000000000000000"},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(archived.status_code, 302)
+        archive_mock.assert_not_called()
+
+        archived_view = self.client.get(ROUTE, query_string={"status": "archived"})
+        self.assertIn(
+            "Requirements gathering with people who hate meetings",
+            archived_view.data.decode("utf-8"),
+        )
+        confirmed_view = self.client.get(ROUTE, query_string={"status": "confirmed"})
+        self.assertNotIn(
+            "Requirements gathering with people who hate meetings",
+            confirmed_view.data.decode("utf-8"),
+        )
+
+        with patch(
+            "workshop_routes.knowledge_service.restore_knowledge_item_for_owner"
+        ) as restore_mock:
+            restored = self.client.post(
+                f"/app/workshop/items/{item_key}/restore",
+                data={"expected_row_version": "0000000000000000"},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(restored.status_code, 302)
+        restore_mock.assert_not_called()
+
+        confirmed_after_restore = self.client.get(
+            ROUTE, query_string={"status": "confirmed"}
+        )
+        self.assertIn(
+            "Requirements gathering with people who hate meetings",
+            confirmed_after_restore.data.decode("utf-8"),
+        )
+
+    # 11 (cont.). Delete takes effect in the session copy on the following
+    #     request.
+    def test_anonymous_delete_persists_across_requests(self):
+        item_key = _demo_item_key("Grant reporting and outcome measurement")
+
+        confirm_page = self.client.get(f"/app/workshop/items/{item_key}/delete")
+        self.assertEqual(confirm_page.status_code, 200)
+        self.assertIn(
+            "Grant reporting and outcome measurement",
+            confirm_page.data.decode("utf-8"),
+        )
+
+        with patch(
+            "workshop_routes.knowledge_service.delete_knowledge_item_for_owner"
+        ) as delete_mock:
+            deleted = self.client.post(
+                f"/app/workshop/items/{item_key}/delete",
+                data={
+                    "confirm_delete": "delete",
+                    "expected_row_version": "0000000000000000",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(deleted.status_code, 302)
+        delete_mock.assert_not_called()
+
+        library = self.client.get(ROUTE)
+        self.assertNotIn(
+            "Grant reporting and outcome measurement", library.data.decode("utf-8")
+        )
+
+    # 12. Caps enforced: the 5th added item is refused with the honest
+    #     message, and the visitor's typed text is never silently dropped.
+    def test_anonymous_add_cap_refuses_fifth_item_with_honest_message(self):
+        with patch("workshop_routes.knowledge_service.save_knowledge_item_for_owner"):
+            for i in range(workshop_demo_library.MAX_ADDED_ITEMS):
+                resp = self.client.post(
+                    "/app/workshop/items",
+                    data={
+                        "title": f"Cap item {i}",
+                        "wording": "Some reasonable wording.",
+                        "classification": "work",
+                        "idempotency_key": f"cap-key-{i}",
+                        "save_action": "confirm",
+                    },
+                    headers=SAME_ORIGIN_HEADERS,
+                )
+                self.assertEqual(resp.status_code, 200)
+
+        with patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock:
+            fifth = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "Fifth item",
+                    "wording": "Should be refused, not silently dropped.",
+                    "classification": "work",
+                    "idempotency_key": "cap-key-5",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(fifth.status_code, 200)
+        save_mock.assert_not_called()
+        body = fifth.data.decode("utf-8")
+        self.assertIn(workshop_demo_library.CAP_ITEMS_MESSAGE, body)
+        # The visitor's own typed text is preserved on the form, not lost.
+        self.assertIn("Fifth item", body)
+
+        library = self.client.get(ROUTE)
+        self.assertNotIn("Fifth item", library.data.decode("utf-8"))
+
+    # 12 (cont.). Over-long wording is rejected with an honest message
+    #     (this implementation's chosen rule: reject, never silently
+    #     truncate, so the visitor's exact text is never altered without
+    #     telling them).
+    def test_anonymous_add_wording_cap_refuses_oversized_wording(self):
+        with patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock:
+            resp = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "Long wording item",
+                    "wording": "x" * (workshop_demo_library.MAX_PREVIEW_WORDING_UNITS + 1),
+                    "classification": "work",
+                    "idempotency_key": "long-wording-key",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(resp.status_code, 200)
+        save_mock.assert_not_called()
+        body = resp.data.decode("utf-8")
+        self.assertIn(workshop_demo_library.CAP_WORDING_MESSAGE, body)
+
+        library = self.client.get(ROUTE)
+        self.assertNotIn("Long wording item", library.data.decode("utf-8"))
+
+    # 13. No anonymous request across the FULL add/edit/archive/restore/
+    #     delete flow ever calls any *_for_owner service method or reaches
+    #     the database, and no response ever contains "Saved privately".
+    def test_anonymous_full_mutation_flow_never_touches_owner_scoped_service(self):
+        item_key = _demo_item_key("Data migration without losing history")
+        with patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner"
+        ) as list_mock, patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner"
+        ) as get_mock, patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock, patch(
+            "workshop_routes.knowledge_service.update_knowledge_item_for_owner"
+        ) as update_mock, patch(
+            "workshop_routes.knowledge_service.archive_knowledge_item_for_owner"
+        ) as archive_mock, patch(
+            "workshop_routes.knowledge_service.restore_knowledge_item_for_owner"
+        ) as restore_mock, patch(
+            "workshop_routes.knowledge_service.delete_knowledge_item_for_owner"
+        ) as delete_mock:
+            responses = [
+                self.client.get(ROUTE),
+                self.client.get(f"/app/workshop/items/{item_key}/edit"),
+                self.client.post(
+                    f"/app/workshop/items/{item_key}/edit/review",
+                    data={
+                        "title": "New title",
+                        "wording": "New wording.",
+                        "classification": "work",
+                        "expected_row_version": "0000000000000000",
+                    },
+                    headers=SAME_ORIGIN_HEADERS,
+                ),
+                self.client.post(
+                    f"/app/workshop/items/{item_key}",
+                    data={
+                        "title": "New title",
+                        "wording": "New wording.",
+                        "classification": "work",
+                        "expected_row_version": "0000000000000000",
+                        "save_action": "confirm",
+                    },
+                    headers=SAME_ORIGIN_HEADERS,
+                ),
+                self.client.post(
+                    f"/app/workshop/items/{item_key}/archive",
+                    data={"expected_row_version": "0000000000000000"},
+                    headers=SAME_ORIGIN_HEADERS,
+                ),
+                self.client.post(
+                    f"/app/workshop/items/{item_key}/restore",
+                    data={"expected_row_version": "0000000000000000"},
+                    headers=SAME_ORIGIN_HEADERS,
+                ),
+                self.client.get(f"/app/workshop/items/{item_key}/delete"),
+                self.client.post(
+                    f"/app/workshop/items/{item_key}/delete",
+                    data={
+                        "confirm_delete": "delete",
+                        "expected_row_version": "0000000000000000",
+                    },
+                    headers=SAME_ORIGIN_HEADERS,
+                ),
+            ]
+
+        list_mock.assert_not_called()
+        get_mock.assert_not_called()
+        save_mock.assert_not_called()
+        update_mock.assert_not_called()
+        archive_mock.assert_not_called()
+        restore_mock.assert_not_called()
+        delete_mock.assert_not_called()
+        for response in responses:
+            self.assertNotIn(b"Saved privately", response.data)
+
+    # 14. Two different sessions do not see each other's additions.
+    def test_two_different_sessions_do_not_share_additions(self):
+        client_a = app.test_client()
+        client_b = app.test_client()
+
+        with patch("workshop_routes.knowledge_service.save_knowledge_item_for_owner"):
+            client_a.post(
+                "/app/workshop/items",
+                data={
+                    "title": "Visitor A own distinctive item",
+                    "wording": "Only visitor A should see this.",
+                    "classification": "work",
+                    "idempotency_key": "session-a-key",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        library_b = client_b.get(ROUTE)
+        self.assertNotIn(
+            "Visitor A own distinctive item", library_b.data.decode("utf-8")
+        )
+
+        library_a = client_a.get(ROUTE)
+        self.assertIn("Visitor A own distinctive item", library_a.data.decode("utf-8"))
 
 
 if __name__ == "__main__":

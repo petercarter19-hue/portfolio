@@ -29,12 +29,14 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    {# Public preview mode (owner decision 2026-08-02): openable signed-out.
-       Saving from here renders an honest preview-complete state, never a
-       real save — see save_item's own docstring. #}
+    {# Public preview mode (owner decision 2026-08-02, doc 20 section 6e):
+       openable signed-out. Saving from here really adds/updates this
+       visitor's own session-only preview library — never the database,
+       never a real, permanent save — see save_item/update_item's own
+       docstrings. #}
     <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — you&#39;re signed out, so nothing you write here is saved
-        yet.
+        Preview — you&#39;re signed out. Saving here keeps this only for
+        your own browser session — sign in to save it permanently.
     </div>
     {% endif %}
 
@@ -126,7 +128,15 @@
         </div>
 
         <div class="wk-aside">
+            {# Owner instruction 2026-08-02 (doc 20 section 6e): same
+               honest-copy swap as workshop_add.html's aside — see that
+               template's comment. _source_and_use_card.html makes no
+               permanence claim, so it stays unconditional. #}
+            {% if anonymous_preview %}
+            {% include "partials/workshop/_preview_note_card.html" %}
+            {% else %}
             {% include "partials/workshop/_private_save_card.html" %}
+            {% endif %}
             {% include "partials/workshop/_source_and_use_card.html" %}
         </div>
     </div>
