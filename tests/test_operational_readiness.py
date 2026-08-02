@@ -752,17 +752,17 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         # record release evidence with [skip ci] unless this test was run
         # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"',
+            'deployed_main_commit: "6f9cf0aff36c89c013b882a3bd5b6aa4568fde5b"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 328', baseline)
+        self.assertIn('deployed_pipeline: 331', baseline)
         expected_release = release_id_for_build(
-            '773e7c04b3664f2a854cf6a00dfadfd127578c34',
-            '328',
+            '6f9cf0aff36c89c013b882a3bd5b6aa4568fde5b',
+            '331',
         )
         self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"',
+            'application_behavior_commit: "54f9b6a87ea05a5b9d70fe98c3e7c2953893665f"',
             baseline,
         )
         self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)

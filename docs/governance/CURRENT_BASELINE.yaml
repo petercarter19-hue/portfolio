@@ -4,18 +4,18 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-01"
+updated_at: "2026-08-02"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"
-  deployed_pipeline: 328
-  application_behavior_commit: "773e7c04b3664f2a854cf6a00dfadfd127578c34"
-  application_behavior_pipeline: 328
-  note: "Pipeline 328 passed Build and Deploy for main 773e7c0 (PR 223: Interview Studio session editing moved into the rail; Interview AI desktop overlap fix). Live smoke 2026-08-02: /healthz release 5e518fb137d4a2f7e50fa494; /interview-studio mode=me, mode=ai, and /interview-studio/history returned 200; rail session selects drive the live question; AI question controls fully visible at 1536px. Workshop public preview (PRs 226-227, pipelines 326-327) deployed in the same window under its own lane's evidence. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "6f9cf0aff36c89c013b882a3bd5b6aa4568fde5b"
+  deployed_pipeline: 331
+  application_behavior_commit: "54f9b6a87ea05a5b9d70fe98c3e7c2953893665f"
+  application_behavior_pipeline: 331
+  note: "Pipeline 331 passed Build and Deploy for main 6f9cf0a. It shipped the PS-SIGNIN-EXPERIENCE-001 behavior merge 54f9b6a (PR 229: transient database-wake state on /app distinguished from contract failure, bounded auto-recheck on both waking surfaces, rate-limited sign-in pre-warm, signed-in mobile header overlap fix) plus two test-only corrections: PR 230 re-synced this file's release pointers with tests/test_operational_readiness.py after PR 228's [skip ci] record left them mismatched, and PR 231 removed a pre-warm test thread race. Pipelines 329 and 330 failed in Build on those two defects, so nothing intermediate deployed and 328's release stayed live until 331. Live smoke 2026-08-02: /healthz release 3429389bb2353566b441f4a4; / returned 200; /app kept its signed-out 302 to /auth/sign-in; /auth/sign-in kept its 302 to Easy Auth; static/js/workspace-waking.js served 200. The same day, sign-in page branding (background, wordmark, square logos, favicon, sign-in text) was applied directly to the PeerSlate Members Entra External ID tenant by Pete via artifacts/2026-08-02-entra-branding/apply-branding.ps1 — tenant configuration, not repository code. Update this record and the pointer expectations in tests/test_operational_readiness.py in the same commit, and run that test locally before any [skip ci] record merge. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -95,6 +95,7 @@ scoped_findings:
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
 
 completed_packages:
+  - PS-SIGNIN-EXPERIENCE-001
   - PS-COMMUNITY-FEED-VISUAL-001
   - PS-COMMUNITY-FEED-AUTHORITY-001
   - PS-AUTH-001
