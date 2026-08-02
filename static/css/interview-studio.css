@@ -68,14 +68,9 @@ body.interview-studio-page .footer { position: relative; }
 }
 
 body[data-theme="dark"] .is__backdrop {
-    /* Smoky-teal stage with overhead studio lamps and a warm lit floor,
-       per locked authority 02/04/06/08/10/12. */
     background:
-        radial-gradient(28rem 15rem at 15% -4rem, rgb(232 205 143 / 11%), transparent 62%),
-        radial-gradient(28rem 15rem at 50% -5rem, rgb(232 205 143 / 8%), transparent 62%),
-        radial-gradient(28rem 15rem at 85% -4rem, rgb(232 205 143 / 11%), transparent 62%),
-        radial-gradient(80rem 34rem at 50% 112%, rgb(90 74 48 / 30%), transparent 72%),
-        linear-gradient(180deg, #0a171c 0%, #081418 52%, #100f0b 100%);
+        radial-gradient(70rem 36rem at 68% -6rem, rgb(48 99 223 / 12%), transparent 60%),
+        linear-gradient(180deg, #071525 0%, #081728 50%, #071525 100%);
 }
 
 .is__shell { max-width: 90rem; padding-top: clamp(1.25rem, 2.6vw, 2rem); }
@@ -387,7 +382,7 @@ body[data-theme="dark"] .is__history-link[aria-current="page"]::after { backgrou
     box-shadow: 0 8px 20px rgb(9 41 84 / 20%);
 }
 
-body[data-theme="dark"] .is__button--primary { box-shadow: 0 9px 24px rgb(210 171 98 / 24%); }
+body[data-theme="dark"] .is__button--primary { box-shadow: 0 9px 24px rgb(74 116 218 / 24%); }
 
 @media (hover: hover) {
     .is__button--primary:not([disabled]):hover { transform: translateY(-1px); }
@@ -579,7 +574,7 @@ body[data-theme="dark"] .is__orientation-icon { color: var(--is-gold-bright); }
 .is__stages li.is-current { color: var(--is-ink); background: var(--is-gold-bright); border-color: var(--is-gold-bright); }
 .is__stages li.is-done { color: #fff; background: var(--is-success); border-color: var(--is-success); }
 
-body[data-theme="dark"] .is__stages li.is-current { color: #171204; }
+body[data-theme="dark"] .is__stages li.is-current { color: #0b1d36; }
 
 .is__save-pill {
     display: inline-flex;
@@ -633,7 +628,7 @@ body[data-theme="dark"] .is__stages li.is-current { color: #171204; }
 }
 
 .is__composer:focus-within { border-color: var(--is-focus); box-shadow: 0 0 0 4px color-mix(in srgb, var(--is-focus) 14%, transparent); }
-body[data-theme="dark"] .is__composer:focus-within { box-shadow: 0 0 0 4px rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__composer:focus-within { box-shadow: 0 0 0 4px rgb(74 116 218 / 18%); }
 
 .is__composer > label {
     display: block;
@@ -678,7 +673,7 @@ body[data-theme="dark"] .is__composer > label { color: var(--is-gold-bright); }
     cursor: pointer;
 }
 
-body[data-theme="dark"] .is__mic { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__mic { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 
 .is__composer-controls { display: flex; align-items: center; gap: 0.55rem; padding: 0.7rem 0.75rem 0.7rem 0; }
 .is__composer-submit { white-space: nowrap; }
@@ -844,7 +839,7 @@ body[data-theme="dark"] .is__mic { color: var(--is-gold-bright); background: rgb
     font-weight: 700;
 }
 
-body[data-theme="dark"] .is__question-icon { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__question-icon { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 
 .is__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.65rem 0 0; padding: 0; list-style: none; }
 
@@ -861,7 +856,7 @@ body[data-theme="dark"] .is__question-icon { color: var(--is-gold-bright); backg
 .is__chip--family,
 .is__chip--competency { color: var(--is-gold-text); background: var(--is-gold-soft); border-color: var(--is-gold-bright); }
 body[data-theme="dark"] .is__chip--family,
-body[data-theme="dark"] .is__chip--competency { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__chip--competency { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__chip--framework { color: var(--is-success); background: var(--is-success-soft); }
 
 .is__intent,
@@ -927,7 +922,7 @@ body[data-theme="dark"] .is__intent strong { color: var(--is-gold-bright); }
     border-radius: 0.85rem;
 }
 
-body[data-theme="dark"] .is__processing-banner { background: rgb(210 171 98 / 12%); border-color: rgb(210 171 98 / 30%); }
+body[data-theme="dark"] .is__processing-banner { background: rgb(74 116 218 / 12%); border-color: rgb(74 116 218 / 30%); }
 .is__processing-banner > div { display: grid; flex: 1; }
 .is__processing-banner span { font-size: 0.78rem; color: var(--is-text-muted); }
 .is__processing-banner strong { color: var(--is-ink); }
@@ -948,7 +943,7 @@ body[data-theme="dark"] .is__processing-banner { background: rgb(210 171 98 / 12
 .is__status-dot { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; color: var(--is-text-muted); background: var(--is-surface-2); border: 1px solid var(--is-line-strong); border-radius: 50%; font-weight: 700; font-size: 0.75rem; }
 .is__status-row.is-done .is__status-dot { color: #fff; background: var(--is-success); border-color: var(--is-success); }
 .is__status-row.is-current .is__status-dot { color: var(--is-ink); background: var(--is-gold-bright); border-color: var(--is-gold-bright); box-shadow: 0 0 0 4px var(--is-gold-soft); }
-body[data-theme="dark"] .is__status-row.is-current .is__status-dot { color: #171204; box-shadow: 0 0 0 4px rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__status-row.is-current .is__status-dot { color: #0b1d36; box-shadow: 0 0 0 4px rgb(74 116 218 / 18%); }
 .is__status-row strong { display: block; color: var(--is-ink); font-size: 0.82rem; }
 .is__status-row p { margin: 0.2rem 0 0; color: var(--is-text-muted); font-size: 0.72rem; line-height: 1.45; }
 
@@ -1008,7 +1003,7 @@ body[data-theme="dark"] .is__review-card--improve .is__bullets li::before { back
 .is__star-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
 .is__star-item { padding: 0.85rem 0.6rem; text-align: center; background: var(--is-surface-2); border: 1px solid var(--is-line); border-radius: 0.65rem; }
 .is__star-letter { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; margin: 0 auto 0.4rem; background: var(--is-gold-soft); color: var(--is-gold-text); border-radius: 50%; font-weight: 700; }
-body[data-theme="dark"] .is__star-letter { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__star-letter { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__star-item[data-status="strong"] .is__star-letter,
 .is__star-item[data-status="present"] .is__star-letter { background: var(--is-success-soft); color: var(--is-success); }
 .is__star-item[data-status="partial"] .is__star-letter { background: var(--is-caution-soft); color: var(--is-caution-text); }
@@ -1035,7 +1030,7 @@ body[data-theme="dark"] .is__star-letter { color: var(--is-gold-bright); backgro
     color: var(--is-gold-text); background: var(--is-gold-soft); border: 1px solid var(--is-gold-bright);
     border-radius: 0.65rem; cursor: pointer; font-size: 0.72rem; font-weight: 650;
 }
-body[data-theme="dark"] .is__evidence-option span { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__evidence-option span { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__evidence-option input:checked + span { color: var(--is-action-primary-text); background: var(--is-action-primary); border-color: var(--is-action-primary-strong); }
 .is__evidence-option input:focus-visible + span { outline: 3px solid var(--is-focus); outline-offset: 3px; }
 
@@ -1065,7 +1060,7 @@ body[data-theme="dark"] .is__evidence-option span { color: var(--is-gold-bright)
 .is__mode-option { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.75rem; padding: 0 1rem; border-radius: 999px; border: 1px solid var(--is-line); background: var(--is-surface); font-size: 0.85rem; font-weight: 600; color: var(--is-text); cursor: pointer; }
 .is__mode-option input { position: absolute; opacity: 0; pointer-events: none; }
 .is__mode-option--selected { background: var(--is-gold-soft); border-color: var(--is-gold-bright); color: var(--is-gold-text); }
-body[data-theme="dark"] .is__mode-option--selected { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__mode-option--selected { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__mode-option:has(input:focus-visible) { outline: 3px solid var(--is-focus); outline-offset: 2px; }
 .is__mode-note { margin: 0.55rem 0 0; font-size: 0.78rem; color: var(--is-text-muted); }
 
@@ -1081,14 +1076,14 @@ body[data-theme="dark"] .is__ai-mark { color: var(--is-gold-bright); }
 
 .is__source-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.65rem; border: 1px solid var(--is-line); border-radius: 999px; font-size: 0.68rem; color: var(--is-text-muted); background: var(--is-surface-2); }
 .is__source-chip--gold { border-color: var(--is-gold-bright); color: var(--is-gold-text); background: var(--is-gold-soft); }
-body[data-theme="dark"] .is__source-chip--gold { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__source-chip--gold { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 
 .is__ai-answer { margin-top: 1.1rem; padding: clamp(1.1rem, 2.4vw, 1.6rem); }
 .is__ai-answer h2 { margin: 0.25rem 0 0; color: var(--is-ink); font-family: var(--ps-font-display, Newsreader, Georgia, serif); font-size: clamp(1.4rem, 2.6vw, 1.9rem); font-weight: 600; }
 [data-is-ai-answer-content] { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--is-line); }
 .is__ai-answer-text { margin: 0.8rem 0 0; color: var(--is-ink); font-size: 0.92rem; line-height: 1.75; white-space: pre-wrap; }
 .is__generic-flag { margin: 0 0 0.9rem; padding: 0.6rem 0.85rem; border-radius: 0.65rem; background: var(--is-gold-soft); color: var(--is-gold-text); font-size: 0.82rem; }
-body[data-theme="dark"] .is__generic-flag { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__generic-flag { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__why,
 .is__evidence-used { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--is-line); }
 .is__why h3,
@@ -1098,7 +1093,7 @@ body[data-theme="dark"] .is__generic-flag { color: var(--is-gold-bright); backgr
 .is__why li::before { content: ""; position: absolute; top: 0.4rem; left: 0; width: 0.4rem; height: 0.4rem; background: var(--is-success); border-radius: 50%; }
 .is__evidence-used > div { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.6rem; }
 .is__evidence-chip { padding: 0.45rem 0.7rem; color: var(--is-gold-text); background: var(--is-gold-soft); border: 1px solid var(--is-gold-bright); border-radius: 0.65rem; font-size: 0.72rem; font-weight: 650; }
-body[data-theme="dark"] .is__evidence-chip { color: var(--is-gold-bright); background: rgb(210 171 98 / 18%); }
+body[data-theme="dark"] .is__evidence-chip { color: var(--is-gold-bright); background: rgb(74 116 218 / 18%); }
 .is__follow-up { margin-top: 1rem; padding: 0.9rem; background: var(--is-surface-2); border: 1px solid var(--is-line); border-radius: 0.8rem; }
 .is__follow-up label { color: var(--is-ink); font-size: 0.76rem; font-weight: 700; }
 .is__follow-up > p { margin: 0.25rem 0 0; color: var(--is-text-muted); font-size: 0.7rem; line-height: 1.45; }
@@ -1135,7 +1130,7 @@ body[data-theme="dark"] .is__evidence-chip { color: var(--is-gold-bright); backg
 .is__local-list div { padding: 0.6rem 0; border-bottom: 1px solid var(--is-line); font-size: 0.76rem; color: var(--is-text); }
 .is__local-list div:last-child { border-bottom: 0; }
 .is__analysis-unavailable { display: grid; gap: 0.2rem; margin-top: 0.75rem; padding: 0.75rem; color: var(--is-text); background: var(--is-gold-soft); border: 1px solid var(--is-gold-bright); border-radius: 0.7rem; font-size: 0.74rem; }
-body[data-theme="dark"] .is__analysis-unavailable { background: rgb(210 171 98 / 12%); border-color: rgb(210 171 98 / 28%); }
+body[data-theme="dark"] .is__analysis-unavailable { background: rgb(74 116 218 / 12%); border-color: rgb(74 116 218 / 28%); }
 
 .is__video-content-review { margin-top: 0.9rem; padding: 1.15rem; background: var(--is-surface-2); }
 .is__video-content-review h3 { margin: 0; color: var(--is-ink); font-size: 0.9rem; font-weight: 700; }
@@ -1414,23 +1409,23 @@ body[data-theme="dark"] .is__history-detail-meta strong { color: var(--is-gold-b
    15. V3 dark theme. Token-value overrides only.
    ===================================================================== */
 body[data-theme="dark"] .is {
-    --is-canvas: #081418;
-    --is-canvas-2: #0c1b21;
-    --is-surface: #0d1e24;
-    --is-surface-2: #14313a;
-    --is-ink: #f3f6f4;
-    --is-text: #d8e2de;
-    --is-text-muted: #9cb4ae;
-    --is-gold-text: #e4c67f;
-    --is-gold: #d2ab62;
-    --is-gold-bright: #e8cd8f;
-    --is-gold-soft: rgb(210 171 98 / 16%);
-    --is-line: #24383c;
-    --is-line-strong: #3a5257;
-    --is-action-primary: #c9a967;
-    --is-action-primary-strong: #b7955a;
-    --is-action-primary-text: #171204;
-    --is-focus: #e2c37f;
+    --is-canvas: #071525;
+    --is-canvas-2: #0a1a2d;
+    --is-surface: #0d1d31;
+    --is-surface-2: #142740;
+    --is-ink: #f4f7fc;
+    --is-text: #d5dfed;
+    --is-text-muted: #9cafc8;
+    --is-gold-text: #a9c0ff;
+    --is-gold: #86a8ff;
+    --is-gold-bright: #86a8ff;
+    --is-gold-soft: rgb(74 116 218 / 18%);
+    --is-line: #2a405e;
+    --is-line-strong: #3b5577;
+    --is-action-primary: #e7eefc;
+    --is-action-primary-strong: #cbd8ef;
+    --is-action-primary-text: #0a2343;
+    --is-focus: #8eafff;
     --is-success: #5ac6b8;
     --is-success-soft: rgb(36 148 135 / 18%);
     --is-caution-text: #f2ae72;
@@ -3456,217 +3451,70 @@ body[data-theme="dark"] .is__select select option {
 }
 
 /* =====================================================================
-   18. Round-3 facelift correction (CORRECTION_MISMATCH_REGISTER.md).
-   Interview Me only: deduped left practice-tools rail, dominant center,
-   subordinate rail typography, and the empty-state microphone invitation.
-   Light keeps the current released tokens; the section-15 dark tokens
-   carry the smoky-teal/champagne stage. No JS hooks added or renamed.
+   18. Session editing moves into the Interview Me rail (owner decision,
+   2026-08-01). The rail card previously repeated the session summary that
+   the top bar already showed; it now carries the real controls, so the
+   redundant bar disappears wherever it no longer owns a control. The bar
+   remains in Interview AI, which still owns the answer-source select.
    ===================================================================== */
 
-.is__type-talk { display: none; }
+.is:not([data-is-active-mode="ai"]) [data-is-session-setup] { display: none; }
 
-.is__tools-rail { min-width: 0; }
-
-.is__tools-card > .is__eyebrow { margin: 0 0 0.2rem; }
-
-.is__tools-card .is__question-action {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.7rem;
-    padding: 0.45rem 0;
-    background: transparent;
-    border: 0;
-    border-top: 1px solid var(--is-line);
-    border-radius: 0;
-    font-size: 0.78rem;
-    font-weight: 650;
-    text-align: left;
+.is__session-fields {
+    display: grid;
+    gap: 0.4rem;
 }
 
-.is__tools-card > .is__eyebrow + .is__question-action { border-top: 0; }
-
-.is__tools-card .is__question-action svg {
-    width: 1rem;
-    height: 1rem;
-    flex: none;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+.is__session-card .is__select {
+    min-width: 0;
+    background: var(--is-canvas);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    padding: 0.3rem 1.9rem 0.3rem 0.6rem;
 }
 
-.is__tools-card .is__context-link { font-size: 0.78rem; min-height: 2.7rem; }
+.is__session-card .is__select > span { font-size: 0.58rem; }
+.is__session-card .is__select select { font-size: 0.78rem; }
+.is__session-card .is__select::after { right: 0.6rem; }
 
-.is__tools-card .is__nudge-panel { font-size: 0.75rem; }
-
-@media (hover: hover) {
-    .is__tools-card .is__question-action:hover { color: var(--is-gold-text); }
-}
-
-/* Desktop: three real columns for Interview Me only. Center dominant,
-   rails subordinate. Video/AI/History grids are untouched. */
+/* The rails used to be tucked up beside the session bar. With the bar gone
+   those offsets drove the rail under the History control, so each rail now
+   starts level with its task stage. */
 @media (min-width: 72.01rem) {
-    .is__panel[data-is-panel="me"] .is__content-grid--practice {
-        grid-template-columns: 10.75rem minmax(0, 1fr) 16rem;
-        gap: 0.85rem;
-    }
-
-    .is__tools-rail { align-self: start; }
-
-    .is__panel[data-is-panel="me"] .is__side-column .is__card { padding: 0.7rem 0.8rem; }
-    .is__panel[data-is-panel="me"] .is__side-column .is__eyebrow { font-size: 0.62rem; }
-    .is__panel[data-is-panel="me"] .is__side-column .is__context-copy { font-size: 0.74rem; line-height: 1.5; }
-    .is__panel[data-is-panel="me"] .is__side-column .is__context-list { font-size: 0.76rem; }
-    .is__panel[data-is-panel="me"] .is__side-column .is__context-link { font-size: 0.74rem; min-height: 2.6rem; }
-}
-
-/* Below the three-column width the tools rail becomes a compact strip in
-   the released single-column flow; the mobile action dock is untouched. */
-@media (max-width: 72rem) {
-    .is__tools-card { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; align-items: center; }
-    .is__tools-card > .is__eyebrow { width: 100%; margin: 0; }
-    .is__tools-card .is__question-action,
-    .is__tools-card .is__context-link {
-        width: auto;
-        flex: 0 1 auto;
-        min-height: 2.4rem;
-        border-top: 0;
-    }
-    .is__tools-card .is__context-link svg { display: none; }
-    .is__tools-card .is__nudge-panel { width: 100%; }
-}
-
-/* Empty Interview Me invitation: the released Dictate control is enlarged
-   and centred purely with CSS while the answer is empty; any typed or
-   dictated text returns the form to the released composer-first geometry.
-   DOM and focus order are unchanged; no second control exists. */
-@media (min-width: 48.01rem) {
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__composer-actions {
-        display: contents;
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__mic-labeled {
-        order: -2;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        align-self: center;
-        gap: 0.75rem;
-        margin: 1.15rem 0 0.5rem;
-        padding: 0;
-        background: transparent;
-        border: 0;
-        font-size: 0.8rem;
-        font-weight: 650;
-        color: var(--is-ink);
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__mic-labeled .is__mic--inline {
-        width: 6.4rem;
-        height: 6.4rem;
-        border-radius: 50%;
-        color: var(--is-gold);
-        background: var(--is-gold-soft);
-        border: 2px solid var(--is-gold);
-        box-shadow: 0 0 0 0.7rem var(--is-gold-soft);
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__mic-labeled .is__mic--inline svg {
-        width: 2.3rem;
-        height: 2.3rem;
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__type-talk {
-        display: block;
-        order: -1;
-        align-self: center;
-        margin: 0 0 0.9rem;
-        text-align: center;
-        font-size: 0.8rem;
-        letter-spacing: 0.04em;
-        color: var(--is-text-muted);
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__type-talk strong {
-        color: var(--is-gold-text);
-        letter-spacing: 0.14em;
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__composer-submit {
-        order: 10;
-        align-self: flex-end;
-    }
-
-    .is[data-is-workspace-state="draft"] [data-is-answer-form]:has([data-is-answer]:placeholder-shown) .is__queue-mobile {
-        order: 9;
-    }
-}
-
-/* Dark stage cohesion for the theme-neutral camera glow (colour only;
-   Video Practice layout is untouched). */
-body[data-theme="dark"] .is__camera-empty {
-    background: radial-gradient(circle at center, rgb(210 171 98 / 13%), transparent 45%);
+    .is__content-grid--practice > .is__side-column,
+    .is__content-grid--video > .is__side-column { margin-top: 0; }
 }
 
 /* =====================================================================
-   19. Owner amendment (2026-08-01): layered, textured, defined surfaces
-   across all Studio modes. Finish only — no layout, control, or copy
-   change outside Interview Me. Light keeps current hues; depth comes from
-   lighting, edge highlights, and layered shadows, not new colors.
+   19. Interview AI desktop overlap fix (owner-reported 2026-08-01; the
+   same defect is live in production).
+
+   A desktop rule took the AI rail out of the grid
+   (`position: absolute; top: -8rem`) while the question form still spanned
+   both columns, so the rail floated over the form and clipped "Different
+   question" and "Create question". This restores the rail to its grid
+   area and gives the form its own column. Layout and behavior are
+   otherwise the released Interview AI: no markup, control, handler,
+   request, or copy change.
    ===================================================================== */
 
-/* Soft environmental depth behind the light canvas (same navy family at
-   low alpha; the dark stage backdrop above keeps precedence). */
-.is__backdrop {
-    background:
-        radial-gradient(60rem 30rem at 12% -6rem, rgb(24 55 98 / 5%), transparent 60%),
-        radial-gradient(70rem 34rem at 88% -8rem, rgb(24 55 98 / 4%), transparent 62%),
-        radial-gradient(90rem 40rem at 50% 115%, rgb(24 55 98 / 6%), transparent 70%),
-        var(--is-canvas);
-}
+@media (min-width: 72.01rem) {
+    .is__panel[data-is-panel="ai"] .is__content-grid {
+        grid-template-areas:
+            "form side"
+            "main side";
+    }
 
-/* Every card: a top-light sheen and a crisp inset edge so surfaces read
-   as layers instead of flat outlines. */
-.is .is__card {
-    background-image: linear-gradient(180deg, rgb(255 255 255 / 55%), rgb(255 255 255 / 0%) 40%);
-    box-shadow: var(--is-shadow-soft), inset 0 1px rgb(255 255 255 / 65%);
-}
+    .is__panel[data-is-panel="ai"] .is__side-column {
+        position: static;
+        top: auto;
+        right: auto;
+        grid-area: side;
+        width: auto;
+        margin-top: 0;
+    }
 
-body[data-theme="dark"] .is .is__card {
-    background-image: linear-gradient(180deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 0%) 45%);
-    box-shadow: var(--is-shadow-soft), inset 0 1px rgb(255 255 255 / 6%);
-}
-
-/* Primary working surfaces sit one layer higher than context cards. */
-.is .is__task-stage,
-.is .is__bottom-line-shell,
-.is .is__improve,
-.is .is__ai-answer,
-.is .is__video-task-stage {
-    box-shadow: var(--is-shadow), inset 0 1px rgb(255 255 255 / 55%);
-}
-
-body[data-theme="dark"] .is .is__task-stage,
-body[data-theme="dark"] .is .is__bottom-line-shell,
-body[data-theme="dark"] .is .is__improve,
-body[data-theme="dark"] .is .is__ai-answer,
-body[data-theme="dark"] .is .is__video-task-stage {
-    box-shadow: var(--is-shadow), inset 0 1px rgb(255 255 255 / 5%);
-}
-
-/* Primary actions get a touch of lift so the dominant action pops. */
-.is .is__button--primary {
-    box-shadow: 0 8px 20px rgb(24 55 98 / 16%), inset 0 1px rgb(255 255 255 / 22%);
-}
-
-body[data-theme="dark"] .is .is__button--primary {
-    box-shadow: 0 9px 24px rgb(210 171 98 / 22%), inset 0 1px rgb(255 255 255 / 14%);
+    .is__panel[data-is-panel="ai"] .is__ai-form {
+        padding-right: 0;
+    }
 }

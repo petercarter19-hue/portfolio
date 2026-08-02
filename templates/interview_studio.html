@@ -119,24 +119,6 @@
                 <span class="is__setup-edit">Edit session</span>
             </summary>
             <div class="is__disclosure-body is__setup-body">
-                <label class="is__select">
-                    <span>Experience</span>
-                    <select data-is-level>
-                        <option value="entry">Entry level</option>
-                        <option value="experienced" selected>Experienced</option>
-                        <option value="management">Management</option>
-                        <option value="leadership">Leadership</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
-                </label>
-                <label class="is__select">
-                    <span>Question family</span>
-                    <select data-is-family>
-                        <option value="situational">Situational</option>
-                        <option value="behavioral" selected>Behavioral</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
-                </label>
                 <label class="is__select" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
                     <span>Answer source</span>
                     <select data-is-ai-mode aria-describedby="is-ai-mode-note">
@@ -145,14 +127,6 @@
                         <option value="compare">Compare</option>
                     </select>
                     <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
-                </label>
-                <label class="is__select" data-is-format-control>
-                    <span>Session</span>
-                    <select data-is-format>
-                        <option value="single">Single question</option>
-                        <option value="5" selected>5-question mock</option>
-                        <option value="10">10-question mock</option>
-                    </select>
                 </label>
             </div>
         </details>
@@ -215,32 +189,6 @@
             >
                 <article data-is-practice-stage>
                     <div class="is__content-grid is__content-grid--practice">
-                        <aside class="is__tools-rail" aria-label="Practice tools">
-                            <div class="is__card is__context-card is__context-actions is__tools-card">
-                                <p class="is__eyebrow">Practice tools</p>
-                                <button class="is__question-action" type="button" data-is-different-question>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                                    Different question
-                                </button>
-                                <button class="is__question-action" type="button" data-is-create-question>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                                    Create question
-                                </button>
-                                <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
-                                    <span><strong>Need a nudge?</strong><small>Get 2–3 AI-generated hints</small></span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                                </button>
-                                <div class="is__nudge-panel" data-is-nudge-panel hidden>
-                                    <p data-is-nudge-status>Hints will stay focused on this question.</p>
-                                    <ol data-is-nudge-list></ol>
-                                    <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
-                                </div>
-                                <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
-                                    <span><strong>Need an example?</strong><small>Open Interview AI with this question</small></span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                                </a>
-                            </div>
-                        </aside>
                         <div class="is__main-column is__task-stage">
                     <div class="is__stage--compact-head">
                         <div>
@@ -272,6 +220,16 @@
                                 <li class="is__chip is__chip--framework" data-is-framework-chip>STAR recommended</li>
                                 <li class="is__chip is__chip--time" data-is-time-chip>Approximately 2 minutes</li>
                             </ul>
+                            <div class="is__question-actions" aria-label="Change the current question">
+                                <button class="is__question-action" type="button" data-is-different-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                    Different question
+                                </button>
+                                <button class="is__question-action" type="button" data-is-create-question>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                    Create question
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -286,7 +244,6 @@
                     </p>
 
                             <form data-is-answering data-is-answer-form>
-                                <p class="is__type-talk"><strong>TYPE OR TALK</strong> — Both build the same answer.</p>
                                 <div class="is__composer">
                                     <label for="is-answer">Your answer</label>
                                     <div class="is__composer-input">
@@ -493,13 +450,36 @@
 
                         <aside class="is__side-column" aria-label="Interview Me context">
                             <div class="is__rail-state" data-is-ready-rail>
-                                <section class="is__card is__context-card">
+                                <section class="is__card is__context-card is__session-card" aria-label="Session settings">
                                     <p class="is__eyebrow">Session</p>
-                                    <dl class="is__context-list">
-                                        <div><dt>Experience</dt><dd data-is-session-level>Experienced</dd></div>
-                                        <div><dt>Question family</dt><dd data-is-session-family>Behavioral</dd></div>
-                                        <div><dt>Format</dt><dd data-is-session-format>5 questions</dd></div>
-                                    </dl>
+                                    <div class="is__session-fields">
+                                        <label class="is__select">
+                                            <span>Experience</span>
+                                            <select data-is-level>
+                                                <option value="entry">Entry level</option>
+                                                <option value="experienced" selected>Experienced</option>
+                                                <option value="management">Management</option>
+                                                <option value="leadership">Leadership</option>
+                                                <option value="mixed">Mixed</option>
+                                            </select>
+                                        </label>
+                                        <label class="is__select">
+                                            <span>Question family</span>
+                                            <select data-is-family>
+                                                <option value="situational">Situational</option>
+                                                <option value="behavioral" selected>Behavioral</option>
+                                                <option value="mixed">Mixed</option>
+                                            </select>
+                                        </label>
+                                        <label class="is__select" data-is-format-control>
+                                            <span>Session</span>
+                                            <select data-is-format>
+                                                <option value="single">Single question</option>
+                                                <option value="5" selected>5-question mock</option>
+                                                <option value="10">10-question mock</option>
+                                            </select>
+                                        </label>
+                                    </div>
                                 </section>
 
                                 <section class="is__card is__context-card is__context-actions" aria-label="Question navigation and optional example">
@@ -507,6 +487,19 @@
                                         <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                     </button>
+                                    <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
+                                        <span><strong>Need a nudge?</strong><small>Get 2–3 AI-generated hints</small></span>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                    </button>
+                                    <div class="is__nudge-panel" data-is-nudge-panel hidden>
+                                        <p data-is-nudge-status>Hints will stay focused on this question.</p>
+                                        <ol data-is-nudge-list></ol>
+                                        <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
+                                    </div>
+                                    <a class="is__context-link" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
+                                        <span><strong>Need an example?</strong><small>Open Interview AI with this question</small></span>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                    </a>
                                     <details class="is__reference is__reference--rail" data-is-ai-reference hidden>
                                         <summary>Optional reference transferred from Interview AI</summary>
                                         <p data-is-ai-reference-text></p>

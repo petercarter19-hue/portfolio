@@ -498,9 +498,13 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         html = self.html('/interview-studio?mode=me')
         for hook in (
             'data-is-ready-rail',
-            'data-is-session-level',
-            'data-is-session-family',
-            'data-is-session-format',
+            # 2026-08-01 owner decision: the rail no longer repeats a
+            # read-only session summary that the top bar already showed. It
+            # owns the live session controls instead, so the duplicate bar
+            # is gone for this mode.
+            'data-is-level',
+            'data-is-family',
+            'data-is-format-control',
             'data-is-queue-open',
             'data-is-review-rail hidden',
             'data-is-priority-improvement',
@@ -636,9 +640,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         # The full token redefinition (--is-canvas etc.) must appear exactly
         # once; a separate single-property @media (prefers-contrast: more)
         # override is legitimate and not a competing theme system.
-        # 2026-08-01 round-3 correction: dark canvas is the owner-approved
-        # smoky-teal stage (was navy #071525 before the facelift correction).
-        self.assertEqual(css.count('--is-canvas: #081418;'), 1)
+        self.assertEqual(css.count('--is-canvas: #071525;'), 1)
         self.assertEqual(css.count('body[data-theme="dark"] .is {'), 2)
         self.assertNotIn('background-templates', css)
         self.assertNotIn('nth-child(n+5)', css)
@@ -710,8 +712,13 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
     def test_interview_ai_source_dropdown_is_in_session_controls_before_generation(self):
         html = self.html('/interview-studio?mode=ai')
         form = html.split('data-is-ai-form', 1)[1].split('</form>', 1)[0]
-        self.assertLess(html.index('data-is-family'), html.index('data-is-ai-mode-group'))
-        self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-format-control'))
+        # The answer-source select still belongs to Session Setup and still
+        # precedes generation. Since 2026-08-01 the shared level/family/format
+        # controls live in the Interview Me rail, so this asserts the source
+        # select's own container rather than its old sibling order.
+        setup = html.split('data-is-session-setup', 1)[1].split('</details>', 1)[0]
+        self.assertIn('data-is-ai-mode-group', setup)
+        self.assertIn('data-is-ai-mode', setup)
         self.assertLess(html.index('data-is-ai-mode-group'), html.index('data-is-ai-form'))
         self.assertLess(form.index('data-is-ai-question'), form.index('Get example'))
         self.assertNotIn('<fieldset class="is__ai-grounding"', html)
