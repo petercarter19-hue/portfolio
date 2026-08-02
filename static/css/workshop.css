@@ -379,6 +379,16 @@ body.workshop-page[data-theme="dark"] {
     font-size: 0.9rem;
 }
 
+/* An aria-disabled .wk-btn (dev-fixture rows, and now the sample items a
+   signed-out visitor sees in public preview mode — owner decision
+   2026-08-02) reads as visibly inert, not merely semantically disabled.
+   Non-material accessibility adaptation: no composition/color-language
+   change, only a state style on an existing component. */
+.wk-btn[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .wk-icon-btn {
     display: inline-flex;
     align-items: center;
@@ -1241,6 +1251,22 @@ body.workshop-page[data-theme="dark"] {
     background: var(--wk-warning-tint);
     color: var(--wk-warning-ink);
     border-color: var(--wk-warning);
+}
+
+/* Public preview mode (owner decision 2026-08-02, doc 20 section 6d): a
+   calm, informational banner for a signed-out visitor — reuses the same
+   .wk-status-banner shape/padding/radius as the success/error banners above
+   (only color changes), deliberately NOT the harsh dev-preview treatment
+   below, which stays a separate, untouched, local-preview-only seam. */
+.wk-status-banner--preview {
+    background: var(--wk-action-tint);
+    color: var(--wk-ink);
+    border-color: var(--wk-action);
+}
+
+.wk-status-banner--preview a {
+    color: inherit;
+    text-decoration: underline;
 }
 
 /* Dev-preview-only seam banner (PEERSLATE_WORKSHOP_DEV_FIXTURE + explicit

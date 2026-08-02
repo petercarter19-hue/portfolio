@@ -108,14 +108,20 @@ class AddInformationComposerTests(WorkshopFlowTestCase):
         response = self.client.get("/app/workshop/add")
         self.assertEqual(response.status_code, 404)
 
-    def test_signed_out_is_redirected(self):
+    def test_signed_out_is_openable_in_preview_mode(self):
+        """Owner decision 2026-08-02 (doc 20 section 6d): the composer no
+        longer redirects a signed-out visitor to sign-in — it renders,
+        openable, with the public preview banner. Supersedes the prior
+        ``test_signed_out_is_redirected`` expectation."""
         with patch(
             "workshop_routes.get_current_identity",
             side_effect=AuthenticationRequired("Sign in is required."),
         ):
             response = self.client.get("/app/workshop/add")
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/app/workshop/add", response.headers["Location"])
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode("utf-8")
+        self.assertIn("wk-status-banner--preview", body)
+        self.assertIn("Add information", body)
 
     def test_review_missing_origin_fails_closed(self):
         response = self.client.post(

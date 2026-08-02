@@ -28,6 +28,16 @@
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
 
+    {% if anonymous_preview %}
+    {# Public preview mode (owner decision 2026-08-02): openable signed-out.
+       Saving from here renders an honest preview-complete state, never a
+       real save — see save_item's own docstring. #}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — you&#39;re signed out, so nothing you write here is saved
+        yet.
+    </div>
+    {% endif %}
+
     <div class="wk-flow-layout">
         <div class="wk-flow-main">
             <form method="post" action="{{ save_url }}">

@@ -18,11 +18,22 @@
   AI-use permission row is removed, and per the task's explicit mapping the
   mockup's session-only "Continue in Workshop" action is replaced with
   "Add something else" — direct entry has no session to continue.
+
+  Public preview mode (owner decision 2026-08-02, doc 20 section 6d): this
+  same template also renders the honest, signed-out preview-complete state
+  (_render_anonymous_preview_saved in workshop_routes.py). ``saved_title``/
+  ``saved_subtitle`` default to the real "Saved privately" copy below via
+  Jinja's ``default`` filter, so every existing call site is untouched; only
+  the anonymous-preview call site overrides them. ``anonymous_preview`` is a
+  distinct flag from ``dev_preview`` — the dev-fixture seam's banner/copy
+  stay completely untouched by this addition.
 #}
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
 
-    {% if dev_preview %}
+    {% if anonymous_preview %}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">Preview — nothing has been saved. Sign in to save this for real.</div>
+    {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
     {% endif %}
 
@@ -30,14 +41,13 @@
         <div class="wk-flow-main">
             <div class="wk-card wk-saved" role="status">
                 <div class="wk-saved__check" aria-hidden="true">{{ workshop_icon("check") }}</div>
-                <h2 class="wk-saved__title">Saved privately</h2>
-                <p class="wk-saved__sub">
-                    This exact wording is now confirmed in My Information.
-                    Nothing was published, shared, or changed elsewhere.
-                </p>
+                <h2 class="wk-saved__title">{{ saved_title | default("Saved privately") }}</h2>
+                <p class="wk-saved__sub">{{ saved_subtitle | default("This exact wording is now confirmed in My Information. Nothing was published, shared, or changed elsewhere.") }}</p>
 
                 <div class="wk-saved__section">
-                    <p class="wk-saved__section-label">Your saved information</p>
+                    {# The label must not say "saved" on the anonymous preview,
+                       where this same screen has just stated nothing was. #}
+                    <p class="wk-saved__section-label">{% if anonymous_preview %}What you wrote{% else %}Your saved information{% endif %}</p>
 
                     <div class="wk-field">
                         <span class="wk-field__label wk-field__label--eyebrow">Final wording</span>
@@ -59,16 +69,25 @@
                 </div>
 
                 <div class="wk-actions-row">
+                    {% if anonymous_preview %}
+                    <a class="wk-btn wk-btn--outline" href="{{ add_something_else_url }}">Add something else</a>
+                    <a class="wk-btn wk-btn--primary" href="{{ sign_in_url }}">Sign in to save</a>
+                    {% else %}
                     <a class="wk-btn wk-btn--outline" href="{{ add_something_else_url }}">Add something else</a>
                     <a class="wk-btn wk-btn--secondary" href="{{ view_in_my_information_url }}">View in My Information</a>
                     <a class="wk-btn wk-btn--primary" href="{{ close_for_now_url }}">Close for now</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <div class="wk-aside">
+            {% if anonymous_preview %}
+            {% include "partials/workshop/_preview_note_card.html" %}
+            {% else %}
             {% include "partials/workshop/_private_save_card.html" %}
             {% include "partials/workshop/_use_elsewhere_card.html" %}
+            {% endif %}
         </div>
     </div>
 </div>

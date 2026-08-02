@@ -6,14 +6,40 @@ store and adds direct entry (add / edit / archive / restore / delete). No
 "Work on Something" session, AI call, or voice capture exists yet — those are
 later slices. The route stays behind ``PEERSLATE_WORKSHOP_ENABLED``, default
 off, and fails closed to a neutral 404 before any identity resolution when the
-flag is off — signed out, flag off, and "does not exist" must all look the
-same from the outside (architecture doc 17 section 6).
+flag is off.
+
+**Public preview mode (owner decision 2026-08-02, doc 20 section 6d).** Before
+this decision, "flag off," "signed out," and "does not exist" were meant to
+look identical from the outside (architecture doc 17 section 6) — a
+signed-out visitor was redirected to sign-in exactly like flag-off resolved to
+404. The owner has now explicitly overridden that for three routes only —
+``GET /app/workshop``, ``GET /app/workshop/add`` (and its review step), and
+``POST /app/workshop/items`` — so Workshop is fully explorable before sign-in
+exists. Flag-off still 404s before any identity resolution on every route,
+unchanged. A signed-out visitor to those three routes now sees the real page
+rendered over honestly-labeled SAMPLE content (the library) or their own
+typed text (the add/review/save flow) instead of a sign-in redirect. This
+never reuses the dev-fixture seam below: it is a separate, always-available
+code path (``_build_preview_view``, ``_render_anonymous_preview_saved``, the
+module-level ``_PREVIEW_IDENTITY``) that never depends on
+``PEERSLATE_WORKSHOP_DEV_FIXTURE`` or ``PEERSLATE_ALLOW_DEV_IDENTITY``, never
+calls an ``*_for_owner`` service method, and never reaches the database. A
+signed-out POST to ``/app/workshop/items`` never writes and never claims a
+save happened — see ``_render_anonymous_preview_saved``. Edit / archive /
+restore / delete stay behind sign-in: the library's sample items simply carry
+no edit/archive/restore/delete URL (mirroring the existing dev-fixture inert-
+row treatment), so those controls render visibly inert rather than either
+pretending to mutate or opening a fake edit flow for a sample item. A
+``DatabaseServiceError`` while resolving identity is never treated as "just
+signed out" — that is a real failure and still renders the truthful 503
+(``_render_workshop_unavailable``), on every route, unchanged.
 
 ``PEERSLATE_WORKSHOP_DEV_FIXTURE`` (default off, local-preview-only) makes
 ``GET /app/workshop`` render the fixed checkpoint fixture from
 ``services/knowledge_service.py`` instead of the real store, optionally with
 ``?_dev_state=empty`` to preview the first-run empty state — neither query
-parameter nor flag is consulted anywhere on the production write path.
+parameter nor flag is consulted anywhere on the production write path, and
+neither is consulted by the public preview path above.
 
 ``_safe_return_path`` mirrors ``auth_routes._safe_return_path`` exactly. It
 is duplicated locally rather than imported so this module has no edit-time
@@ -22,6 +48,7 @@ ownership boundary for this task. ``_is_same_origin_write`` similarly
 mirrors ``owner_routes._is_same_origin_write`` for the same reason.
 """
 
+from types import SimpleNamespace
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
@@ -382,6 +409,105 @@ def _fixture_view(checkpoint):
     }
 
 
+# ---------------------------------------------------------------------------
+# Public preview mode (owner decision 2026-08-02, doc 20 section 6d)
+#
+# A signed-out visitor to the library, add, and save routes gets the real
+# page rendered over honestly-labeled sample content instead of a sign-in
+# redirect. This is a self-contained code path: ``_PREVIEW_IDENTITY`` is never
+# a real, database-backed, or dev-fixture identity — it exists solely so
+# ``get_my_information_checkpoint`` (which never touches ``self.database``;
+# see its docstring in services/knowledge_service.py) has a ``user_key`` to
+# accept. It is never passed to any ``*_for_owner`` service method.
+# ---------------------------------------------------------------------------
+
+_PREVIEW_IDENTITY = SimpleNamespace(
+    user_key="workshop-anonymous-preview", display_name=None
+)
+
+
+def _preview_rows(checkpoint):
+    """Shape the sample checkpoint items as the same plain dict-row list
+    ``_filter_library_rows``/``_resolve_selected_item_key`` already expect
+    from a real owner-scoped list read, so this reuses that exact filtering
+    and selection logic verbatim rather than forking it."""
+    return [
+        {
+            "item_key": item.item_key,
+            "title": item.title,
+            "status": item.status,
+            "classification": item.classification,
+        }
+        for item in checkpoint.items
+    ]
+
+
+def _preview_item_view(fixture_item, *, selected_key):
+    """Like ``_fixture_item_view``, but with a real ``select_url`` — public
+    preview supports real item selection over the sample set (?item=),
+    unlike the inert dev-fixture rows ``_fixture_item_view`` renders."""
+    item_key = fixture_item.item_key
+    return {
+        "item_key": item_key,
+        "title": fixture_item.title,
+        "status": fixture_item.status,
+        "status_label": fixture_item.status_label,
+        "classification": fixture_item.classification,
+        "classification_label": fixture_item.classification_label,
+        "downstream_use_label": fixture_item.downstream_use_label,
+        "selected": item_key == selected_key,
+        "select_url": url_for("workshop.my_information", item=item_key),
+    }
+
+
+def _build_preview_view(checkpoint, *, area, status, search, item_param):
+    """The anonymous, signed-out My Information view-model: real Area/
+    Status/search filtering and item selection (mirroring the signed-in
+    path's own logic exactly) applied to the honestly-labeled sample
+    checkpoint fixture instead of a real owner-scoped store read.
+
+    Edit/Archive/Restore/Delete render inert for every sample item (via
+    ``_fixture_detail_view``, which already sets every action URL to
+    ``None`` for the pre-existing dev-fixture seam) rather than opening a
+    fake mutation flow for data with no real backing record.
+    """
+    by_key = {item.item_key: item for item in checkpoint.items}
+    rows = _preview_rows(checkpoint)
+
+    selected_area = _selected_filter_key(area, _AREA_FILTER_KEYS)
+    selected_status = _selected_filter_key(status, _STATUS_FILTER_KEYS)
+    search_query = (search or "").strip()
+    filtered_rows = _filter_library_rows(
+        rows, area=selected_area, status=selected_status, search=search_query
+    )
+
+    selected_key = _resolve_selected_item_key(item_param, filtered_rows)
+    detail = None
+    if selected_key and selected_key in by_key:
+        detail = _fixture_detail_view(by_key[selected_key])
+
+    return {
+        "schema_version": checkpoint.schema_version,
+        "owner_display_name": checkpoint.owner_display_name,
+        "library_items": [
+            _preview_item_view(by_key[row["item_key"]], selected_key=selected_key)
+            for row in filtered_rows
+        ],
+        "detail": detail,
+        "area_filters": checkpoint.area_filters,
+        "status_filters": checkpoint.status_filters,
+        "selected_area": selected_area,
+        "selected_status": selected_status,
+        "search_query": search_query,
+        "clear_filters_url": url_for("workshop.my_information"),
+        "total_item_count": len(checkpoint.items),
+        "list_truncated": False,
+        "suggestion": checkpoint.suggestion,
+        "availability": checkpoint.availability,
+        "add_information_url": url_for("workshop.add_information"),
+    }
+
+
 @workshop.get("/app/workshop")
 def my_information():
     # Flag check first, before any identity resolution, so flag-off is
@@ -392,11 +518,46 @@ def my_information():
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return_path = _safe_return_path(request.full_path.rstrip("?"))
-        return redirect(url_for("auth.sign_in", return_to=return_path))
+        # Public preview mode (owner decision 2026-08-02): no redirect. A
+        # signed-out visitor is a legitimate anonymous caller now, not an
+        # error — handled entirely below, never touching the real store.
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
+
+    if identity is None:
+        try:
+            checkpoint = knowledge_service.get_my_information_checkpoint(
+                _PREVIEW_IDENTITY
+            )
+        except KnowledgeServiceError:
+            current_app.logger.error(
+                "PeerSlate Workshop preview checkpoint failed to build."
+            )
+            return _render_workshop_unavailable()
+
+        view = _build_preview_view(
+            checkpoint,
+            area=request.args.get("area"),
+            status=request.args.get("status"),
+            search=request.args.get("q"),
+            item_param=request.args.get("item"),
+        )
+        return render_template(
+            "workshop.html",
+            page_title="Workshop",
+            checkpoint_unavailable=False,
+            workshop=view,
+            success_message=WORKSHOP_SUCCESS_MESSAGES.get(request.args.get("changed")),
+            validation_message=WORKSHOP_VALIDATION_MESSAGES.get(request.args.get("error")),
+            dev_preview=False,
+            anonymous_preview=True,
+            sign_in_url=url_for(
+                "auth.sign_in",
+                return_to=_safe_return_path(request.full_path.rstrip("?")),
+            ),
+        )
 
     dev_preview = _workshop_dev_fixture_enabled()
     if dev_preview:
@@ -491,6 +652,7 @@ def my_information():
         success_message=WORKSHOP_SUCCESS_MESSAGES.get(request.args.get("changed")),
         validation_message=WORKSHOP_VALIDATION_MESSAGES.get(request.args.get("error")),
         dev_preview=dev_preview,
+        anonymous_preview=False,
     )
 
 
@@ -509,6 +671,7 @@ def _composer_response(
     error_message,
     form_action,
     status_code=200,
+    anonymous_preview=False,
 ):
     return (
         render_template(
@@ -525,6 +688,10 @@ def _composer_response(
             max_title_units=MAX_TITLE_UNITS,
             max_wording_units=MAX_WORDING_UNITS,
             classification_choices=CLASSIFICATION_CHOICES,
+            # Public preview mode (owner decision 2026-08-02): always False
+            # for edit/edit-review call sites (edit stays sign-in gated);
+            # only the add/review call sites ever pass True.
+            anonymous_preview=anonymous_preview,
         ),
         status_code,
     )
@@ -541,6 +708,7 @@ def _review_response(
     save_url,
     keep_working_url,
     status_code=200,
+    anonymous_preview=False,
 ):
     return (
         render_template(
@@ -558,8 +726,45 @@ def _review_response(
             max_title_units=MAX_TITLE_UNITS,
             max_wording_units=MAX_WORDING_UNITS,
             classification_choices=CLASSIFICATION_CHOICES,
+            anonymous_preview=anonymous_preview,
         ),
         status_code,
+    )
+
+
+def _render_anonymous_preview_saved(*, title, wording, classification):
+    """The honest confirming-save render for a signed-out visitor (owner
+    decision 2026-08-02): no ``*_for_owner`` service call, no item created,
+    no "Saved privately" heading or copy — that phrase describes a real
+    confirmed save, which never happens here. The member's own typed text
+    stays fully visible, and the page explains that saving for real needs an
+    account, with one clear sign-in action. Distinct from the
+    ``PEERSLATE_WORKSHOP_DEV_FIXTURE`` dev-preview render above (different
+    template context flag, different banner class, different copy) — this
+    path is reachable in production any time a visitor is signed out.
+    """
+    return render_template(
+        "workshop_saved.html",
+        page_title="Preview — Workshop",
+        item={
+            "item_key": None,
+            "title": title,
+            "body": wording,
+            "classification": classification,
+            "classification_label": CLASSIFICATION_LABELS.get(
+                classification, classification.title()
+            ),
+            "source_label": SOURCE_LABELS.get("typed", "Your words"),
+        },
+        dev_preview=False,
+        anonymous_preview=True,
+        saved_title="Your preview is ready",
+        saved_subtitle=(
+            "This is a preview using your own words. Nothing has been saved "
+            "— sign in to save this to your private Workshop library."
+        ),
+        sign_in_url=url_for("auth.sign_in", return_to="/app/workshop/add"),
+        add_something_else_url=url_for("workshop.add_information"),
     )
 
 
@@ -567,11 +772,14 @@ def _review_response(
 def add_information():
     if not _workshop_enabled():
         abort(404)
+    is_anonymous = False
     try:
         get_current_identity()
     except AuthenticationRequired:
-        return_path = _safe_return_path(request.full_path.rstrip("?"))
-        return redirect(url_for("auth.sign_in", return_to=return_path))
+        # Public preview mode (owner decision 2026-08-02): openable
+        # signed-out. The composer is a pure form render with no owner-scoped
+        # read, so there is nothing here that needs a real identity.
+        is_anonymous = True
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
@@ -584,6 +792,7 @@ def add_information():
         expected_version_token=None,
         error_message=None,
         form_action=url_for("workshop.review_add"),
+        anonymous_preview=is_anonymous,
     )
 
 
@@ -594,10 +803,13 @@ def keep_working_add():
         abort(404)
     if not _is_same_origin_write():
         return "Cross-site Workshop requests are not allowed.", 403
+    is_anonymous = False
     try:
         get_current_identity()
     except AuthenticationRequired:
-        return redirect(url_for("auth.sign_in", return_to="/app/workshop/add"))
+        # Public preview mode (owner decision 2026-08-02): the "Keep working"
+        # round trip is part of the same signed-out-openable add/review flow.
+        is_anonymous = True
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
@@ -614,6 +826,7 @@ def keep_working_add():
         expected_version_token=None,
         error_message=None,
         form_action=url_for("workshop.review_add"),
+        anonymous_preview=is_anonymous,
     )
 
 
@@ -623,10 +836,15 @@ def review_add():
         abort(404)
     if not _is_same_origin_write():
         return "Cross-site Workshop requests are not allowed.", 403
+    is_anonymous = False
     try:
         get_current_identity()
     except AuthenticationRequired:
-        return redirect(url_for("auth.sign_in", return_to="/app/workshop/add"))
+        # Public preview mode (owner decision 2026-08-02): reaching the
+        # review screen with the member's own typed text intact is openable
+        # signed-out. Nothing here reads or writes owner-scoped data — the
+        # write itself is gated separately, at save_item.
+        is_anonymous = True
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
@@ -651,6 +869,7 @@ def review_add():
             expected_version_token=None,
             error_message=FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR),
             form_action=url_for("workshop.review_add"),
+            anonymous_preview=is_anonymous,
         )
 
     return _review_response(
@@ -662,6 +881,7 @@ def review_add():
         error_message=None,
         save_url=url_for("workshop.save_item"),
         keep_working_url=url_for("workshop.keep_working_add"),
+        anonymous_preview=is_anonymous,
     )
 
 
@@ -675,7 +895,12 @@ def save_item():
     try:
         identity = get_current_identity()
     except AuthenticationRequired:
-        return redirect(url_for("auth.sign_in", return_to="/app/workshop/add"))
+        # Public preview mode (owner decision 2026-08-02): a signed-out
+        # confirming save never writes and never claims a save happened —
+        # handled below, once the submission is validated, by
+        # _render_anonymous_preview_saved. identity stays None as the
+        # signal that no *_for_owner service call may run for this request.
+        identity = None
     except DatabaseServiceError:
         current_app.logger.error("PeerSlate Workshop identity lookup failed.")
         return _render_workshop_unavailable()
@@ -698,6 +923,7 @@ def save_item():
             error_message=error_message,
             save_url=url_for("workshop.save_item"),
             keep_working_url=url_for("workshop.keep_working_add"),
+            anonymous_preview=identity is None,
         )
 
     if save_action not in {"confirm", "unfinished"}:
@@ -709,6 +935,15 @@ def save_item():
         )
     except KnowledgeServiceError as error:
         return _rerender(FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR))
+
+    if identity is None:
+        # Neither "confirm" nor "unfinished" writes anything for a signed-out
+        # visitor — both are the same honest preview-complete state, since
+        # neither a real confirmed item nor a real unfinished item exists to
+        # send them to.
+        return _render_anonymous_preview_saved(
+            title=title, wording=wording, classification=classification
+        )
 
     if _workshop_dev_fixture_enabled():
         # Dev-preview seam only (PEERSLATE_WORKSHOP_DEV_FIXTURE, default off,

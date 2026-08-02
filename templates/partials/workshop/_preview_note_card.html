@@ -1,0 +1,20 @@
+{# "Sign in to save" right-rail card — anonymous preview state only (owner
+   decision 2026-08-02, doc 20 section 6d). Replaces _private_save_card.html
+   and _use_elsewhere_card.html on the signed-out confirming-save render:
+   both of those assert a real save happened ("Saves this exact wording
+   privately", "Your private save is complete"), which would be false here.
+   Reuses the exact same wk-card/wk-side-card component shape and classes —
+   no new composition, only truthful copy for a state those two cards were
+   never written to describe. #}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-card wk-side-card" aria-labelledby="wk-preview-note-title">
+    <div class="wk-side-card__head">
+        {{ workshop_icon("shield") }}
+        <span id="wk-preview-note-title">Sign in to save</span>
+    </div>
+    <ul class="wk-side-card__list">
+        <li>{{ workshop_icon("check") }}<span>Nothing on this page has been saved.</span></li>
+        <li>{{ workshop_icon("check") }}<span>Sign in to save this privately to your own Workshop library.</span></li>
+    </ul>
+    <p class="wk-side-card__note">Your words above are shown only in this preview — they are not stored anywhere yet.</p>
+</section>

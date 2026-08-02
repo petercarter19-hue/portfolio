@@ -29,7 +29,19 @@
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
 
-    {% if dev_preview %}
+    {% if anonymous_preview %}
+    {# Public preview mode (owner decision 2026-08-02, doc 20 section 6d):
+       signed-out visitors get the real page over honestly-labeled sample
+       content instead of a sign-in redirect. Deliberately its own calm,
+       informational banner style (wk-status-banner--preview) — distinct
+       from the harsh, environment-marker dev-preview banner below, which
+       stays a separate, untouched, local-preview-only seam. #}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — this is example information, not yours. Nothing here is
+        saved. <a href="{{ sign_in_url }}">Sign in</a> to build your own
+        private library.
+    </div>
+    {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
     {% endif %}
 

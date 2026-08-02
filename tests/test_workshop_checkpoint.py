@@ -22,6 +22,7 @@ ROUTE = "/app/workshop"
 ITEM_KEY = "11111111-1111-1111-1111-111111111111"
 OTHER_ITEM_KEY = "22222222-2222-2222-2222-222222222222"
 FOREIGN_ITEM_KEY = "99999999-9999-9999-9999-999999999999"
+SAME_ORIGIN_HEADERS = {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
 
 
 def member(name, user_key):
@@ -104,7 +105,13 @@ class WorkshopCheckpointRouteTests(unittest.TestCase):
         self.assertNotIn(b"Workshop", response.data)
         identity.assert_not_called()
 
-    def test_signed_out_member_is_redirected_with_the_exact_return_path(self):
+    def test_signed_out_visitor_gets_the_public_preview_not_a_redirect(self):
+        """Owner decision 2026-08-02 (doc 20 section 6d): Workshop must not
+        be behind a login wall right now. A signed-out visitor gets the
+        real page rendered over honestly-labeled sample content instead of
+        the sign-in redirect this route used to return — supersedes the
+        prior ``test_signed_out_member_is_redirected_with_the_exact_return_
+        path`` expectation."""
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch(
             "workshop_routes.get_current_identity",
@@ -112,11 +119,11 @@ class WorkshopCheckpointRouteTests(unittest.TestCase):
         ):
             response = self.client.get(ROUTE)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            response.headers["Location"],
-            "/auth/sign-in?return_to=/app/workshop",
-        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        body = response.data.decode("utf-8")
+        self.assertIn("wk-status-banner--preview", body)
+        self.assertIn("example information", body)
 
     def test_identity_failure_returns_a_payload_free_recovery_state(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
@@ -519,9 +526,10 @@ class WorkshopNavigationTests(unittest.TestCase):
     """The global nav shows Workshop whenever the flag is on.
 
     Owner decision 2026-08-02: the entry is discoverable to every visitor so
-    people can find Workshop and sign in; the route itself stays protected
-    and sends a signed-out visitor to sign-in and back. Being in the nav is
-    not access.
+    people can find Workshop; that same decision also removed the sign-in
+    wall from the route itself (doc 20 section 6d) — a signed-out visitor
+    now gets the real page over honestly-labeled sample content, not a
+    sign-in redirect.
     """
 
     def setUp(self):
@@ -574,9 +582,11 @@ class WorkshopNavigationTests(unittest.TestCase):
         self.assertIn(">Workshop<", nav)
         self.assertLess(nav.index(">Interview Studio<"), nav.index(">Workshop<"))
 
-    def test_nav_entry_never_grants_access_to_a_signed_out_visitor(self):
-        # The link being visible must not weaken the route: a signed-out
-        # request still gets the sign-in redirect, never library content.
+    def test_nav_entry_signed_out_visitor_gets_preview_never_another_owners_data(self):
+        # Owner decision 2026-08-02 (doc 20 section 6d) supersedes the prior
+        # "still gets the sign-in redirect" expectation: the link being
+        # visible now matches real signed-out access to the public preview
+        # — sample content only, never a real owner's library.
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch(
             "workshop_routes.get_current_identity",
@@ -584,8 +594,8 @@ class WorkshopNavigationTests(unittest.TestCase):
         ):
             response = self.client.get(ROUTE)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/auth/sign-in", response.headers["Location"])
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("wk-status-banner--preview", response.data.decode("utf-8"))
 
     def test_search_data_includes_workshop_whenever_the_flag_is_on(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
@@ -968,6 +978,186 @@ class WorkshopFlagOffNeutralityMatrixTests(unittest.TestCase):
 
                 self.assertEqual(response.status_code, 404)
                 identity_mock.assert_not_called()
+
+
+class WorkshopPublicPreviewTests(unittest.TestCase):
+    """PS-WORKSHOP-001 public preview mode (owner decision 2026-08-02, doc 20
+    section 6d): "Workshop must not be behind a login wall right now."
+    Signed-out visitors get the full experience over honestly-labeled sample
+    content (the library) or their own typed text (add/review/save) instead
+    of the sign-in redirect these routes used to return, while every
+    real-data guarantee stays exactly as it is: no owner-scoped service
+    method is ever reachable anonymously, and no confirming save ever writes
+    or claims a save happened.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+        self.original_fixture_flag = app.config.get("PEERSLATE_WORKSHOP_DEV_FIXTURE")
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = False
+        self.identity_patch = patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("Sign in is required."),
+        )
+        self.identity_mock = self.identity_patch.start()
+
+    def tearDown(self):
+        self.identity_patch.stop()
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
+
+    # 1. Signed-out GET /app/workshop returns 200, not 302, with the
+    #    preview banner present.
+    def test_signed_out_library_returns_200_with_preview_banner(self):
+        response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode("utf-8")
+        self.assertIn("wk-status-banner--preview", body)
+        self.assertIn("example information", body)
+
+    # 2. Signed-out requests never call any owner-scoped service method.
+    def test_signed_out_library_never_calls_owner_scoped_service_methods(self):
+        with patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner"
+        ) as list_mock, patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner"
+        ) as get_mock, patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock, patch(
+            "workshop_routes.knowledge_service.update_knowledge_item_for_owner"
+        ) as update_mock:
+            response = self.client.get(ROUTE + "?area=work&status=confirmed&q=eng")
+
+        self.assertEqual(response.status_code, 200)
+        list_mock.assert_not_called()
+        get_mock.assert_not_called()
+        save_mock.assert_not_called()
+        update_mock.assert_not_called()
+
+    # 3. Signed-out POST /app/workshop/items does not call
+    #    save_knowledge_item_for_owner, and the response never contains
+    #    "Saved privately" — for either save_action value, since neither
+    #    writes anything for a signed-out visitor.
+    def test_signed_out_confirm_save_never_writes_or_claims_saved(self):
+        with patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock:
+            response = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "My real preview title",
+                    "wording": "My real preview wording that must stay visible.",
+                    "classification": "work",
+                    "idempotency_key": "anon-key-1",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        save_mock.assert_not_called()
+        body = response.data.decode("utf-8")
+        self.assertNotIn("Saved privately", body)
+        # The confirming save's own template only ever surfaces wording (not
+        # title) on this screen — true for the real path too, see
+        # test_workshop_flows.py's SavedConfirmationTests, which asserts no
+        # title either. The member's wording stays visible; nothing is lost.
+        self.assertIn("My real preview wording that must stay visible.", body)
+        self.assertIn("Sign in to save", body)
+
+    def test_signed_out_unfinished_save_never_writes_or_claims_saved(self):
+        with patch(
+            "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as save_mock:
+            response = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "Another preview title",
+                    "wording": "Another preview wording.",
+                    "classification": "",
+                    "idempotency_key": "anon-key-2",
+                    "save_action": "unfinished",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        save_mock.assert_not_called()
+        self.assertNotIn("Saved privately", response.data.decode("utf-8"))
+
+    # 4. The signed-out response never contains another member's data —
+    #    sample content only, even if the real store somehow held data.
+    def test_signed_out_response_never_contains_another_members_data(self):
+        with patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result(
+                [service_list_row(title="Someone Else's Real Confidential Item")]
+            ),
+        ) as list_mock:
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        list_mock.assert_not_called()
+        self.assertNotIn(b"Someone Else&#39;s Real Confidential Item", response.data)
+        self.assertNotIn(b"Someone Else's Real Confidential Item", response.data)
+        # Sample content only (the checkpoint fixture's own item titles).
+        self.assertIn(b"Systems Engineering", response.data)
+
+    # 5. Signed-in behavior is completely unchanged.
+    def test_signed_in_behavior_is_unchanged(self):
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([service_list_row()]),
+        ) as list_mock, patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner",
+            return_value=service_get_row(),
+        ):
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode("utf-8")
+        self.assertNotIn("wk-status-banner--preview", body)
+        self.assertIn("Systems Engineering Leadership", body)
+        list_mock.assert_called_once_with("member-checkpoint-1", include_archived=True)
+
+    # 6. Flag-off still returns a neutral 404 before anything else,
+    #    signed-out included.
+    def test_flag_off_returns_404_before_anything_else_signed_out_included(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = False
+
+        response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 404)
+        self.identity_mock.assert_not_called()
+
+    # 7. Cache-Control: private, no-store still set on preview responses.
+    def test_preview_responses_still_carry_private_no_store(self):
+        library_response = self.client.get(ROUTE)
+        self.assertEqual(
+            library_response.headers.get("Cache-Control"), "private, no-store"
+        )
+
+        with patch("workshop_routes.knowledge_service.save_knowledge_item_for_owner"):
+            saved_response = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "Cache header check",
+                    "wording": "Checking the header on the preview-complete render.",
+                    "classification": "",
+                    "idempotency_key": "anon-key-3",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(
+            saved_response.headers.get("Cache-Control"), "private, no-store"
+        )
 
 
 if __name__ == "__main__":

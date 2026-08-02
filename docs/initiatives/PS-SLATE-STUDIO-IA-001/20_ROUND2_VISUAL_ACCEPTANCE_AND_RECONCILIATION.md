@@ -209,3 +209,49 @@ additional mockups. The architecture's §11 requirements bind them.
 - Full suite at release: 1268 passed, 3 skipped.
 - Exact merge/pipeline/production-migration/enablement facts are recorded
   in the W1 completion report and its closeout addendum.
+
+## 6d. Public preview mode (owner decision 2026-08-02)
+
+- **Owner instruction:** "Workshop must not be behind a login right now."
+  Pete is showing the site to friends pre-launch; clicking Workshop
+  redirected to sign-in, and he wants the surface immediately visible and
+  explorable. Sign-in comes later.
+- **What changed:** the sign-in gate is removed, for now, from three routes —
+  `GET /app/workshop`, `GET /app/workshop/add` (and its review step), and
+  `POST /app/workshop/items`. A signed-out visitor gets the real page over
+  honestly-labeled SAMPLE content on the library (reusing the existing
+  `get_my_information_checkpoint` fixture, never a second sample source) or
+  their own typed text through add/review. The confirming save never writes
+  and never says "Saved privately" — it renders an honest preview-complete
+  state that keeps the member's text visible and explains that saving needs
+  an account, with a clear sign-in action.
+- **What did not change:** flag-off still resolves to a neutral 404 before
+  any identity resolution, on every route, signed-out included. A
+  `DatabaseServiceError` while resolving identity is never treated as "just
+  signed out" — it still renders the truthful 503 recovery state. No
+  anonymous request ever reaches `list_knowledge_items_for_owner`,
+  `get_knowledge_item_for_owner`, `save_knowledge_item_for_owner`, or any
+  other `*_for_owner` service method, and none reaches a stored procedure —
+  the public preview path is entirely separate, in-process, and
+  database-free. Edit/Archive/Restore/Delete stay behind sign-in: the
+  sample library items simply carry no action URL, the same inert-row
+  treatment the pre-existing `PEERSLATE_WORKSHOP_DEV_FIXTURE` seam already
+  used, so those controls render visibly preview-only rather than either
+  pretending to mutate or opening a fake edit flow for data with no real
+  backing record. The dev-fixture flag/banner itself is untouched — public
+  preview is a separate code path with its own banner style
+  (`wk-status-banner--preview`) and its own checkpoint identity
+  (`_PREVIEW_IDENTITY`, never the dev-identity seam).
+- **Real accounts and saving return when sign-in is added later** — this is
+  explicitly a temporary, owner-directed relaxation of the architecture's
+  general "signed out looks like flag off" posture (doc 17 §6), scoped to
+  these three routes only, for the pre-launch friends-and-family showing.
+- Implementation: `workshop_routes.py` (`_build_preview_view`,
+  `_preview_item_view`, `_render_anonymous_preview_saved`,
+  `_PREVIEW_IDENTITY`), `templates/workshop.html`,
+  `templates/workshop_add.html`, `templates/workshop_review.html`,
+  `templates/workshop_saved.html`,
+  `templates/partials/workshop/_preview_note_card.html`,
+  `static/css/workshop.css`. New `WorkshopPublicPreviewTests` class plus
+  updates to the two tests that asserted the now-superseded signed-out
+  redirect for the library/add routes.
