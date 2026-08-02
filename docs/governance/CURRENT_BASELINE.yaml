@@ -81,6 +81,11 @@ active_packages:
     lane: three_scoped_runtime_corrections
     package_path: "docs/initiatives/PS-AI-OPS-CHECKPOINT-001/README.md"
     status: "conditional_on_affected_surfaces_no_global_hold"
+  - id: PS-OPPORTUNITY-SLATE-001
+    owner: "Pete; Fable 5 Extra High architect and fresh Fable 5 Extra High reviewer, Opus 5 Extra High implementation writer (owner decision 2026-08-02)"
+    lane: opportunity_slate_alignment_workbench
+    package_path: "docs/initiatives/PS-OPPORTUNITY-SLATE-001/README.md"
+    status: "architecture_phase_chatgpt_visual_authority_locked_no_runtime_writer"
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
