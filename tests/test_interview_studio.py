@@ -636,7 +636,9 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         # The full token redefinition (--is-canvas etc.) must appear exactly
         # once; a separate single-property @media (prefers-contrast: more)
         # override is legitimate and not a competing theme system.
-        self.assertEqual(css.count('--is-canvas: #071525;'), 1)
+        # 2026-08-01 round-3 correction: dark canvas is the owner-approved
+        # smoky-teal stage (was navy #071525 before the facelift correction).
+        self.assertEqual(css.count('--is-canvas: #081418;'), 1)
         self.assertEqual(css.count('body[data-theme="dark"] .is {'), 2)
         self.assertNotIn('background-templates', css)
         self.assertNotIn('nth-child(n+5)', css)
