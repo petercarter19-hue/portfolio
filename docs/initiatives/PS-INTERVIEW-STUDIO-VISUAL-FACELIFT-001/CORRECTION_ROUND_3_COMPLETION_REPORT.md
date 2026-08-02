@@ -1,5 +1,9 @@
 # Round-3 correction completion report — Interview Me facelift
 
+> **SUPERSEDED BY ROUND 4.** Pete rejected this local-only visual direction
+> before release. It was reverted prior to PR 223 and never reached production.
+> See `CORRECTION_ROUND_4_COMPLETION_REPORT.md` for the controlling decision.
+
 - **Outcome:** Owner-corrected visual facelift of Interview Me implemented
   locally: deduped left practice-tools rail, dominant properly-sized center,
   empty-state microphone invitation with locked helper copy, current light

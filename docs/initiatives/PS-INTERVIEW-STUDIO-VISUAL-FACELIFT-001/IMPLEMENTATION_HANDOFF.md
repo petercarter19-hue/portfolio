@@ -1,5 +1,11 @@
 # Implementation handoff — sole runtime writer
 
+> **RETIRED — DO NOT EXECUTE THIS HANDOFF.** Pete withdrew this visual
+> direction on 2026-08-01 before release. The named worktree and branches were
+> removed during closeout. The rejected implementation commit is preserved
+> only under `archive/interview-studio-rejected-facelift-2026-08-01`. The
+> controlling outcome is `CORRECTION_ROUND_4_COMPLETION_REPORT.md`.
+
 ## Objective
 
 Implement `PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001` exactly on

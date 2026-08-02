@@ -1,5 +1,10 @@
 # State and functionality parity matrix
 
+> **RETIRED — DO NOT IMPLEMENT.** This matrix belongs to the withdrawn
+> 2026-08-01 facelift direction and remains only for provenance. The current
+> Studio keeps its released Deep Navy Gold composition plus the two narrow
+> Round-4 corrections.
+
 This matrix translates the visual lock into implementation constraints. It does
 not replace the released tests or the complete V3 all-mode contracts.
 

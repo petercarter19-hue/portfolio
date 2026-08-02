@@ -51,11 +51,6 @@ governing_documents:
 theme: deep_navy_gold
 
 active_packages:
-  - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
-    owner: "Pete; Claude sole runtime writer"
-    lane: interview_studio_visual_facelift
-    package_path: "docs/initiatives/PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001/README.md"
-    status: "facelift_direction_retired_by_owner_2026-08-01; released scope is session-editing-in-rail plus Interview AI overlap fix; see CORRECTION_ROUND_4_COMPLETION_REPORT.md"
   - id: PS-CAPTURE-MEDIA-001
     owner: "Enablement writer unassigned"
     lane: capture_media_photo_enablement
@@ -134,6 +129,11 @@ completed_packages:
   - PS-COMMUNITY-TABS-001
   - PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001
   - PS-GOV-LEAN-001
+
+retired_packages:
+  - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
+    package_path: "docs/initiatives/PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001/README.md"
+    status: "owner_withdrew_material_visual_direction_before_release; PR_223 released only session-editing-in-rail plus Interview AI overlap fix; historical evidence retained for provenance"
 
 public_safe_slices:
   - PS-BRAND-NAV-001

@@ -1,5 +1,10 @@
 # Visual authority manifest
 
+> **WITHDRAWN AUTHORITY — HISTORICAL EVIDENCE ONLY.** Pete retired this visual
+> direction on 2026-08-01 before release. These hashes preserve provenance;
+> the files must not be used as current implementation authority. See
+> `CORRECTION_ROUND_4_COMPLETION_REPORT.md`.
+
 ## Lock
 
 - **Owner:** Pete

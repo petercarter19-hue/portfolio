@@ -1,23 +1,30 @@
 # PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
 
+> **RETIRED — HISTORICAL RECORD ONLY.** Pete withdrew this material visual
+> direction on 2026-08-01 before release. Do not implement the twelve
+> pearl/forest-green and smoky-teal/champagne screens. PR 223 released only
+> session editing in the Interview Me right rail and the Interview AI desktop
+> overlap fix. The current runtime remains the released Deep Navy Gold Studio.
+> See `CORRECTION_ROUND_4_COMPLETION_REPORT.md` for the controlling decision.
+
 ## Assignment and status
 
 - **Owner and final visual authority:** Pete
 - **Production-intent visual creator:** ChatGPT visual-creation lane
-- **Implementation manager:** current Codex task
-- **Implementation writer:** one assigned bounded runtime writer on the branch
-  named below; the active task resolves the model through the central routing
-  standard and Pete's explicit instruction
+- **Implementation manager:** none; lane closed
+- **Implementation writer:** none; the retired implementation branch was
+  removed after its rejected commit was preserved under the archival tag
+  `archive/interview-studio-rejected-facelift-2026-08-01`
 - **Delivery path:** Protected, because this is a materially revised visual direction
-- **Authoritative repository base:** Azure DevOps `origin/main` at
+- **Historical repository base:** Azure DevOps `origin/main` at
   `2494aa73ed95bfbe97d8cf42f712b9929759e0b2`
-- **Package branch:**
+- **Package branch (deleted at closeout):**
   `codex/2026-08-01-interview-studio-visual-facelift-package`
-- **Reserved implementation branch:**
+- **Reserved implementation branch (deleted at closeout):**
   `work/2026-08-01-interview-studio-visual-facelift-001`
-- **Status:** Pete approved the exact 12-screen visual authority on 2026-08-01
-  and authorized bounded implementation. Merge, deployment, and live release
-  are not authorized by that approval.
+- **Status:** retired by Pete on 2026-08-01 before release. The twelve screens
+  and the specification below are retained only as withdrawn historical
+  evidence; they are not current visual authority or implementation scope.
 
 ## Outcome
 
