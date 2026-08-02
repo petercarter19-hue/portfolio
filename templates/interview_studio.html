@@ -119,24 +119,6 @@
                 <span class="is__setup-edit">Edit session</span>
             </summary>
             <div class="is__disclosure-body is__setup-body">
-                <label class="is__select">
-                    <span>Experience</span>
-                    <select data-is-level>
-                        <option value="entry">Entry level</option>
-                        <option value="experienced" selected>Experienced</option>
-                        <option value="management">Management</option>
-                        <option value="leadership">Leadership</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
-                </label>
-                <label class="is__select">
-                    <span>Question family</span>
-                    <select data-is-family>
-                        <option value="situational">Situational</option>
-                        <option value="behavioral" selected>Behavioral</option>
-                        <option value="mixed">Mixed</option>
-                    </select>
-                </label>
                 <label class="is__select" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
                     <span>Answer source</span>
                     <select data-is-ai-mode aria-describedby="is-ai-mode-note">
@@ -145,14 +127,6 @@
                         <option value="compare">Compare</option>
                     </select>
                     <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
-                </label>
-                <label class="is__select" data-is-format-control>
-                    <span>Session</span>
-                    <select data-is-format>
-                        <option value="single">Single question</option>
-                        <option value="5" selected>5-question mock</option>
-                        <option value="10">10-question mock</option>
-                    </select>
                 </label>
             </div>
         </details>
@@ -476,13 +450,36 @@
 
                         <aside class="is__side-column" aria-label="Interview Me context">
                             <div class="is__rail-state" data-is-ready-rail>
-                                <section class="is__card is__context-card">
+                                <section class="is__card is__context-card is__session-card" aria-label="Session settings">
                                     <p class="is__eyebrow">Session</p>
-                                    <dl class="is__context-list">
-                                        <div><dt>Experience</dt><dd data-is-session-level>Experienced</dd></div>
-                                        <div><dt>Question family</dt><dd data-is-session-family>Behavioral</dd></div>
-                                        <div><dt>Format</dt><dd data-is-session-format>5 questions</dd></div>
-                                    </dl>
+                                    <div class="is__session-fields">
+                                        <label class="is__select">
+                                            <span>Experience</span>
+                                            <select data-is-level>
+                                                <option value="entry">Entry level</option>
+                                                <option value="experienced" selected>Experienced</option>
+                                                <option value="management">Management</option>
+                                                <option value="leadership">Leadership</option>
+                                                <option value="mixed">Mixed</option>
+                                            </select>
+                                        </label>
+                                        <label class="is__select">
+                                            <span>Question family</span>
+                                            <select data-is-family>
+                                                <option value="situational">Situational</option>
+                                                <option value="behavioral" selected>Behavioral</option>
+                                                <option value="mixed">Mixed</option>
+                                            </select>
+                                        </label>
+                                        <label class="is__select" data-is-format-control>
+                                            <span>Session</span>
+                                            <select data-is-format>
+                                                <option value="single">Single question</option>
+                                                <option value="5" selected>5-question mock</option>
+                                                <option value="10">10-question mock</option>
+                                            </select>
+                                        </label>
+                                    </div>
                                 </section>
 
                                 <section class="is__card is__context-card is__context-actions" aria-label="Question navigation and optional example">

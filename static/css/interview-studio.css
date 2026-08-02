@@ -3449,3 +3449,72 @@ body[data-theme="dark"] .is__select select option {
         width: 100%;
     }
 }
+
+/* =====================================================================
+   18. Session editing moves into the Interview Me rail (owner decision,
+   2026-08-01). The rail card previously repeated the session summary that
+   the top bar already showed; it now carries the real controls, so the
+   redundant bar disappears wherever it no longer owns a control. The bar
+   remains in Interview AI, which still owns the answer-source select.
+   ===================================================================== */
+
+.is:not([data-is-active-mode="ai"]) [data-is-session-setup] { display: none; }
+
+.is__session-fields {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.is__session-card .is__select {
+    min-width: 0;
+    background: var(--is-canvas);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    padding: 0.3rem 1.9rem 0.3rem 0.6rem;
+}
+
+.is__session-card .is__select > span { font-size: 0.58rem; }
+.is__session-card .is__select select { font-size: 0.78rem; }
+.is__session-card .is__select::after { right: 0.6rem; }
+
+/* The rails used to be tucked up beside the session bar. With the bar gone
+   those offsets drove the rail under the History control, so each rail now
+   starts level with its task stage. */
+@media (min-width: 72.01rem) {
+    .is__content-grid--practice > .is__side-column,
+    .is__content-grid--video > .is__side-column { margin-top: 0; }
+}
+
+/* =====================================================================
+   19. Interview AI desktop overlap fix (owner-reported 2026-08-01; the
+   same defect is live in production).
+
+   A desktop rule took the AI rail out of the grid
+   (`position: absolute; top: -8rem`) while the question form still spanned
+   both columns, so the rail floated over the form and clipped "Different
+   question" and "Create question". This restores the rail to its grid
+   area and gives the form its own column. Layout and behavior are
+   otherwise the released Interview AI: no markup, control, handler,
+   request, or copy change.
+   ===================================================================== */
+
+@media (min-width: 72.01rem) {
+    .is__panel[data-is-panel="ai"] .is__content-grid {
+        grid-template-areas:
+            "form side"
+            "main side";
+    }
+
+    .is__panel[data-is-panel="ai"] .is__side-column {
+        position: static;
+        top: auto;
+        right: auto;
+        grid-area: side;
+        width: auto;
+        margin-top: 0;
+    }
+
+    .is__panel[data-is-panel="ai"] .is__ai-form {
+        padding-right: 0;
+    }
+}
