@@ -1025,5 +1025,8 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{# dictation.js must load first: interview-studio.js binds its mic controls to
+   window.PeerSlateDictation. Both are deferred, so they run in document order. #}
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/interview-studio.js') }}" defer></script>
 {% endblock %}

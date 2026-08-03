@@ -24,6 +24,32 @@ from app import (
 
 DIMENSIONS = ('relevance', 'structure', 'specificity', 'evidence', 'impact')
 
+_JS = Path(__file__).parents[1] / 'static' / 'js'
+
+
+def _studio_script():
+    """Interview Studio's own script: this room's markup and copy bindings."""
+    return (_JS / 'interview-studio.js').read_text(encoding='utf-8')
+
+
+def _dictation_module():
+    """The shared dictation module the Studio binds to.
+
+    PS-OPPORTUNITY-SLATE-001 slice OS-5 moved recognition, permission,
+    timers, restart handling, and caret insertion here so a second room can
+    reuse them. The behaviour contract did not change, so the contract
+    assertions below follow the code to its new file rather than relax.
+    """
+    return (_JS / 'dictation.js').read_text(encoding='utf-8')
+
+
+def _client_source():
+    """Both scripts the Studio page ships, in load order.
+
+    Assertions about the client the visitor actually runs must read both.
+    """
+    return _dictation_module() + '\n' + _studio_script()
+
 
 def valid_review():
     scores = (17, 16, 16, 16, 17)
@@ -158,19 +184,24 @@ class InterviewStudioRouteTests(unittest.TestCase):
         self.assertIn("event.ctrlKey && !event.metaKey", script)
 
     def test_dictation_failures_are_shown_visibly_not_only_announced(self):
-        script = (Path(__file__).parents[1] / 'static' / 'js' / 'interview-studio.js').read_text(encoding='utf-8')
-        self.assertIn('function friendlySpeechError', script)
+        module = _dictation_module()
+        script = _studio_script()
+        # The module classifies the failure; the Studio makes it visible.
+        self.assertIn('function friendlySpeechError', module)
         self.assertIn('function showMicError', script)
         self.assertIn("data-is-mic-error", script)
         # 'aborted' and 'no-speech' are emitted while a continuous session is
         # simply paused, so they stay unsurfaced and the silence deadline
         # decides when to stop. Every other code must reach the visitor.
-        self.assertIn("var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];", script)
-        self.assertIn('if (TRANSIENT_SPEECH_ERRORS.indexOf(code) !== -1) return;', script)
-        self.assertIn("code === 'not-allowed'", script)
-        self.assertIn("code === 'no-speech'", script)
-        self.assertIn("code === 'audio-capture'", script)
-        self.assertIn("code === 'network'", script)
+        self.assertIn("var TRANSIENT_SPEECH_ERRORS = ['aborted', 'no-speech'];", module)
+        self.assertIn('if (transientErrors.indexOf(code) !== -1) return;', module)
+        self.assertIn("code === 'not-allowed'", module)
+        self.assertIn("code === 'no-speech'", module)
+        self.assertIn("code === 'audio-capture'", module)
+        self.assertIn("code === 'network'", module)
+        # The Studio must actually route the module's error hook to the
+        # visible element, not swallow it.
+        self.assertIn('showError: function (message) { showMicError(kind, message); },', script)
 
     def test_question_bank_uses_family_and_competency_taxonomy(self):
         html = self.html()
@@ -1281,7 +1312,8 @@ class InterviewEndpointGuardTests(unittest.TestCase):
 
 class InterviewStudioAssetTests(unittest.TestCase):
     def test_client_uses_url_state_autosave_media_and_local_history(self):
-        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        # Both scripts the page ships: dictation moved to the shared module.
+        source = _client_source()
         for contract in (
             'window.history.pushState',
             'window.localStorage',
@@ -1993,11 +2025,109 @@ class InterviewStudioDictationTests(unittest.TestCase):
 
     @property
     def script(self):
-        return Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        """Interview Studio's own script (its markup and copy bindings)."""
+        return _studio_script()
+
+    @property
+    def dictation(self):
+        """The shared dictation module the Studio binds to."""
+        return _dictation_module()
+
+    @property
+    def client_source(self):
+        """Both scripts the page ships, for whole-client assertions."""
+        return _client_source()
 
     @property
     def css(self):
         return Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+
+    # -- the shared module and its binding ------------------------------
+
+    def test_the_page_ships_the_shared_module_before_the_studio_script(self):
+        """interview-studio.js reads window.PeerSlateDictation at parse time.
+
+        Both tags are deferred, so they execute in document order; the module
+        must therefore be listed first or the mic controls bind to nothing.
+        """
+        html = self.html()
+        module_tag = re.search(r'src="[^"]*js/dictation\.js[^"]*"', html)
+        studio_tag = re.search(r'src="[^"]*js/interview-studio\.js[^"]*"', html)
+        self.assertIsNotNone(module_tag, 'the page never loads js/dictation.js')
+        self.assertIsNotNone(studio_tag)
+        self.assertLess(module_tag.start(), studio_tag.start(),
+                        'dictation.js must be loaded before interview-studio.js')
+        for tag in (module_tag, studio_tag):
+            self.assertIn('defer', html[tag.end():tag.end() + 20])
+
+    def test_the_module_is_loadable_and_exports_one_namespaced_api(self):
+        module = self.dictation
+        self.assertIn('root.PeerSlateDictation = api;', module)
+        # Classic script, matching every other file in static/js/.
+        for es_module in ('export default', 'export {', 'export const',
+                          'export function', 'import {', "import '"):
+            with self.subTest(syntax=es_module):
+                self.assertNotIn(es_module, module)
+        # One global, and no other window assignment leaking out of it.
+        self.assertEqual(len(re.findall(r'^\s*root\.\w+ = ', module, re.M)), 1)
+        self.assertEqual(re.findall(r'^\s*window\.\w+ =', module, re.M), [])
+        self.assertIn('var dictationModule = window.PeerSlateDictation', self.script)
+
+    def test_the_module_carries_no_interview_studio_markup_contract(self):
+        """A second room must be able to bind its own elements.
+
+        Interview Studio's data-is-* names are its binding, not the module's.
+        The module never selects a host element; it is handed one.
+        """
+        module = self.dictation
+        for host_only in ('[data-is-', '[data-', 'is__', 'querySelector',
+                          'getElementById', 'getElementsByClassName'):
+            with self.subTest(fragment=host_only):
+                self.assertNotIn(host_only, module)
+        # The Studio, not the module, owns those selectors.
+        self.assertIn('[data-is-mic-label]', self.script)
+
+    def test_the_timing_contract_survives_as_options_with_the_same_defaults(self):
+        module = self.dictation
+        for constant, value in (
+            ('DICTATION_SILENCE_MS', '10000'),
+            ('DICTATION_COUNTDOWN_MS', '4000'),
+            ('DICTATION_RESTART_DELAY_MS', '150'),
+            ('DICTATION_MAX_RESTARTS', '120'),
+        ):
+            with self.subTest(constant=constant):
+                self.assertIn('var %s = %s;' % (constant, value), module)
+        for option, constant in (
+            ('silenceMs', 'DICTATION_SILENCE_MS'),
+            ('countdownMs', 'DICTATION_COUNTDOWN_MS'),
+            ('restartDelayMs', 'DICTATION_RESTART_DELAY_MS'),
+            ('maxRestarts', 'DICTATION_MAX_RESTARTS'),
+        ):
+            with self.subTest(option=option):
+                self.assertIn(
+                    'var %s = numberOption(settings.%s, %s);' % (option, option, constant),
+                    module)
+        # Interview Studio overrides none of them, so its behaviour is the
+        # same 10s/4s/150ms/120 contract it shipped with.
+        controller = self.script.split('createController({', 1)[1].split('})', 1)[0]
+        for option in ('silenceMs', 'countdownMs', 'restartDelayMs', 'maxRestarts'):
+            with self.subTest(override=option):
+                self.assertNotIn(option, controller)
+
+    def test_the_module_never_talks_to_a_server(self):
+        """Transcription is browser-local; the shared module has no network."""
+        module = self.dictation
+        for network in ('/api/', 'fetch(', 'XMLHttpRequest', 'navigator.sendBeacon'):
+            with self.subTest(call=network):
+                self.assertNotIn(network, module)
+
+    def test_dictation_never_submits_confirms_or_navigates(self):
+        """PS-OPPORTUNITY-SLATE-001 §6 rule 3: speech is transcription only."""
+        module = self.dictation
+        for forbidden in ('.submit(', '.click()', 'location.href', 'location.assign',
+                          'pushState', 'requestSubmit', 'localStorage'):
+            with self.subTest(call=forbidden):
+                self.assertNotIn(forbidden, module)
 
     # -- placement -----------------------------------------------------
 
@@ -2027,76 +2157,83 @@ class InterviewStudioDictationTests(unittest.TestCase):
         One shared browser helper serves every Studio text field; a parallel
         recogniser would be the forbidden second path.
         """
-        script = self.script
-        self.assertEqual(script.count('function startDictation'), 1)
-        self.assertEqual(script.count('new Recognition()'), 1)
+        client = self.client_source
+        self.assertEqual(client.count('function startDictation'), 1)
+        self.assertEqual(client.count('new Recognition()'), 1)
+        # The recogniser lives in the shared module only; the Studio script
+        # holds no second copy of it.
+        self.assertNotIn('new Recognition()', self.script)
+        self.assertNotIn('webkitSpeechRecognition', self.script)
         # No audio ever leaves the page for a PeerSlate server: the only
         # endpoints this route calls are the text coaching ones.
         self.assertEqual(
-            sorted(set(re.findall(r"'(/api/[a-z0-9/_-]+)'", script))),
+            sorted(set(re.findall(r"'(/api/[a-z0-9/_-]+)'", client))),
             ['/api/interview/improve', '/api/interview/model-answer', '/api/interview/nudge', '/api/interview/review'],
         )
-        self.assertNotIn('uploadUrl', script)
-        self.assertNotIn('owner-capture-voice', script)
+        self.assertNotIn('uploadUrl', client)
+        self.assertNotIn('owner-capture-voice', client)
 
     # -- Pete's behaviour contract -------------------------------------
 
     def test_recognition_runs_continuously_with_interim_results(self):
-        script = self.script
-        self.assertIn('recognition.continuous = true;', script)
-        self.assertIn('recognition.interimResults = true;', script)
-        self.assertNotIn('recognition.continuous = false;', script)
-        self.assertNotIn('recognition.interimResults = false;', script)
+        module = self.dictation
+        self.assertIn('recognition.continuous = true;', module)
+        self.assertIn('recognition.interimResults = true;', module)
+        self.assertNotIn('recognition.continuous = false;', module)
+        self.assertNotIn('recognition.interimResults = false;', module)
 
     def test_ten_second_silence_deadline_stops_dictation(self):
-        script = self.script
-        self.assertIn('var DICTATION_SILENCE_MS = 10000;', script)
-        self.assertIn("stopDictation('silence');", script)
-        self.assertIn('state.silenceDeadline = Date.now() + DICTATION_SILENCE_MS;', script)
+        module = self.dictation
+        self.assertIn('var DICTATION_SILENCE_MS = 10000;', module)
+        self.assertIn("stopDictation('silence');", module)
+        self.assertIn('state.silenceDeadline = Date.now() + silenceMs;', module)
 
     def test_any_speech_resets_the_silence_deadline(self):
         """Silence means silence, not elapsed time since the visitor began."""
-        result_handler = self.script.split('recognition.onresult = function', 1)[1]
+        result_handler = self.dictation.split('recognition.onresult = function', 1)[1]
         self.assertIn('armDictationSilence(state);', result_handler.split('};', 1)[0])
 
     def test_second_click_stops_dictation(self):
-        script = self.script
-        self.assertIn('function toggleDictation', script)
-        self.assertIn('if (pendingDictationPermission) {', script)
-        self.assertIn('cancelPendingDictationPermission();', script)
-        self.assertIn("var sameButton = activeDictation.button === button;", script)
-        self.assertIn("stopDictation('manual');", script)
-        self.assertIn("button.addEventListener('click', function () { toggleDictation(", script)
+        module = self.dictation
+        self.assertIn('function toggleDictation', module)
+        self.assertIn('if (pendingDictationPermission) {', module)
+        self.assertIn('cancelPendingDictationPermission();', module)
+        self.assertIn("var sameButton = activeDictation.button === binding.button;", module)
+        self.assertIn("stopDictation('manual');", module)
+        self.assertIn("button.addEventListener('click', function () { toggleDictation(", self.script)
 
     def test_a_spontaneous_browser_end_restarts_instead_of_ending_the_session(self):
         """Chrome ends continuous recognition on its own; the visitor's
         intent, not the browser's timeout, decides when listening stops."""
-        end_handler = self.script.split('recognition.onend = function', 1)[1]
+        end_handler = self.dictation.split('recognition.onend = function', 1)[1]
         self.assertIn('state.restarts += 1;', end_handler)
         self.assertIn('recognition.start();', end_handler)
-        self.assertIn('var DICTATION_MAX_RESTARTS = 120;', self.script)
+        self.assertIn('var DICTATION_MAX_RESTARTS = 120;', self.dictation)
 
     def test_transcript_lands_in_the_same_editable_field_as_typing(self):
-        script = self.script
-        self.assertIn('function appendTranscript', script)
-        self.assertIn("target.dispatchEvent(new Event('input', { bubbles: true }));", script)
+        module = self.dictation
+        self.assertIn('function appendTranscript', module)
+        self.assertIn("target.dispatchEvent(new Event('input', { bubbles: true }));", module)
         # Only finalised speech is committed, so live interim text can never
         # overwrite an edit the visitor is making by hand.
-        self.assertIn('if (result.isFinal) finalText', script)
-        self.assertIn('state.words += appendTranscript(state.target, finalText);', script)
+        self.assertIn('if (result.isFinal) finalText', module)
+        self.assertIn('state.words += appendTranscript(state.target, finalText);', module)
+        # The bound field is the host's own textarea, resolved at start.
+        self.assertIn('var target = binding.resolveTarget();', module)
+        self.assertIn('resolveTarget: function () { return dictationTarget(kind); },', self.script)
 
     def test_unfinalised_speech_is_kept_not_discarded_on_stop(self):
         """The visitor saw those words in the preview; stopping must not
         silently throw them away."""
-        script = self.script
-        self.assertIn('if (state.interim) {', script)
-        self.assertIn('state.words += appendTranscript(state.target, state.interim);', script)
-        stop_block = script.split('function stopDictation(reason)', 1)[1].split(
+        module = self.dictation
+        self.assertIn('if (state.interim) {', module)
+        self.assertIn('state.words += appendTranscript(state.target, state.interim);', module)
+        stop_block = module.split('function stopDictation(reason)', 1)[1].split(
             'function beginDictation', 1
         )[0]
         self.assertIn('finishDictation(state);', stop_block)
         self.assertNotIn('setTimeout', stop_block)
-        self.assertNotIn('DICTATION_STOP_WATCHDOG_MS', script)
+        self.assertNotIn('DICTATION_STOP_WATCHDOG_MS', self.client_source)
 
     def test_video_transcript_submission_flushes_visible_dictation_before_reading(self):
         script = self.script
@@ -2109,9 +2246,9 @@ class InterviewStudioDictationTests(unittest.TestCase):
         )
 
     def test_nothing_captured_message_distinguishes_heard_from_never_heard(self):
-        script = self.script
-        self.assertIn('state.heardSomething', script)
-        self.assertIn('Dictation stopped before any speech could be transcribed.', script)
+        module = self.dictation
+        self.assertIn('state.heardSomething', module)
+        self.assertIn('Dictation stopped before any speech could be transcribed.', module)
 
     def test_leaving_the_field_stops_the_microphone(self):
         script = self.script
@@ -2123,7 +2260,11 @@ class InterviewStudioDictationTests(unittest.TestCase):
             set_mode.index("prepareVideoContextChange('Discard the active recording"),
         )
         self.assertIn("stopDictation('interrupted');\n        var responseText", script)
-        self.assertIn("if (event.key !== 'Escape' || !activeDictation) return;", script)
+        self.assertIn("if (event.key !== 'Escape' || !dictation || !dictation.isActive()) return;", script)
+        # Every one of the Studio's own interruption points still reaches the
+        # module through the same local helper name it always used.
+        self.assertIn('function stopDictation(reason) {\n        if (dictation) dictation.stop(reason);\n    }', script)
+        self.assertGreater(script.count("stopDictation('interrupted');"), 15)
 
     # -- truthful states -----------------------------------------------
 
@@ -2135,7 +2276,7 @@ class InterviewStudioDictationTests(unittest.TestCase):
         self.assertIn('Speech input is not supported in this browser. Typing works normally.', script)
 
     def test_every_recognition_failure_has_an_exact_visible_message(self):
-        script = self.script
+        module = self.dictation
         for code, fragment in (
             ('not-allowed', 'Microphone permission was denied.'),
             ('audio-capture', 'No microphone was found'),
@@ -2143,28 +2284,27 @@ class InterviewStudioDictationTests(unittest.TestCase):
             ('no-speech', 'No speech was detected.'),
         ):
             with self.subTest(code=code):
-                self.assertIn(fragment, script)
-        self.assertIn("showMicError(state.kind, message);", script)
+                self.assertIn(fragment, module)
+        self.assertIn("state.binding.showError(message);", module)
 
     def test_a_dismissed_permission_prompt_is_reported_honestly_not_invented(self):
         """The Web Speech API cannot distinguish a dismissed prompt from
         silence, so the copy names it as a possible cause instead of
         fabricating a state we cannot detect."""
-        script = self.script
         self.assertIn(
             'Dictation stopped without capturing any speech. If your browser asked for '
             'microphone permission and the prompt was closed, nothing was heard. '
             'You can keep typing.',
-            script,
+            self.dictation,
         )
 
     def test_the_ten_second_rule_is_discoverable_before_it_fires(self):
         html = self.html()
         self.assertIn('keeps listening until you stop it or you go quiet for 10 seconds', html)
-        script = self.script
-        self.assertIn('Listening. Stops after 10 seconds of silence, or press Escape.', script)
-        self.assertIn("'Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.'", script)
-        self.assertIn('Dictation stopped after 10 seconds of silence.', script)
+        module = self.dictation
+        self.assertIn('Listening. Stops after 10 seconds of silence, or press Escape.', module)
+        self.assertIn("'Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.'", module)
+        self.assertIn('Dictation stopped after 10 seconds of silence.', module)
 
     def test_the_public_route_claims_no_server_capture_or_account_history(self):
         html = self.html()
@@ -2183,24 +2323,29 @@ class InterviewStudioDictationTests(unittest.TestCase):
     def test_toggle_state_is_exposed_to_assistive_technology(self):
         html = self.html()
         self.assertEqual(html.count('aria-pressed="false"'), 4)
-        script = self.script
-        self.assertIn("button.setAttribute('aria-pressed', 'true');", script)
-        self.assertIn("state.button.setAttribute('aria-pressed', 'false');", script)
+        module = self.dictation
+        self.assertIn("button.setAttribute('aria-pressed', 'true');", module)
+        self.assertIn("state.button.setAttribute('aria-pressed', 'false');", module)
+        self.assertIn("button.setAttribute('aria-pressed', 'false');", self.script)
 
     def test_state_changes_are_announced_but_interim_text_is_not_a_live_region(self):
         """Continuously changing interim text in a live region would flood a
         screen reader; discrete state changes go through the existing one."""
+        self.assertIn("announce('Listening. Speak your '", self.dictation)
         script = self.script
-        self.assertIn("announce('Listening. Speak your '", script)
         self.assertIn('function setDictationInterim', script)
+        # The module's announcements reach the Studio's existing live region.
+        self.assertIn('announce: announce,', script)
         interim_markup = self.html().split('data-is-dictation-interim="answer"', 1)[1].split('>', 1)[0]
         self.assertNotIn('aria-live', interim_markup)
         self.assertNotIn('role="status"', interim_markup)
 
     def test_stopping_reports_whether_the_answer_was_updated(self):
-        script = self.script
-        self.assertIn("'1 word was added to your ' + noun", script)
-        self.assertIn("state.words + ' words were added to your ' + noun", script)
+        module = self.dictation
+        self.assertIn("'1 word was added to your ' + noun", module)
+        self.assertIn("state.words + ' words were added to your ' + noun", module)
+        # The noun is the host's, so each field still names itself correctly.
+        self.assertIn('noun: dictationNoun(kind),', self.script)
 
     def test_dictation_controls_are_real_buttons_with_accessible_names(self):
         html = self.html()
@@ -2213,7 +2358,14 @@ class InterviewStudioDictationTests(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(label, html)
         self.assertIn('<span data-is-mic-label>Dictate</span>', html)
-        self.assertIn("text(labelNode, 'Stop dictation');", self.script)
+        # The module decides the label text; the Studio owns the node it
+        # writes to and the idle aria-label each field restores.
+        self.assertIn("binding.setButtonLabel('Stop dictation');", self.dictation)
+        self.assertIn("state.binding.setButtonLabel('Start dictation');", self.dictation)
+        script = self.script
+        self.assertIn('var labelNode = one(\'[data-is-mic-label]\', button);', script)
+        self.assertIn('if (labelNode) text(labelNode, value);', script)
+        self.assertIn('label: dictationLabel(kind),', script)
 
     def test_typing_remains_first_class_when_speech_is_unavailable(self):
         html = self.html()
@@ -2244,3 +2396,4 @@ class InterviewStudioDictationTests(unittest.TestCase):
         html = self.html()
         self.assertRegex(html, r'css/interview-studio\.css\?v=[0-9a-f]{12}')
         self.assertRegex(html, r'js/interview-studio\.js\?v=[0-9a-f]{12}')
+        self.assertRegex(html, r'js/dictation\.js\?v=[0-9a-f]{12}')
