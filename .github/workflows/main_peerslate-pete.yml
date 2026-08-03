@@ -8,9 +8,20 @@ name: Build and deploy Python app to Azure Web App - peerslate-pete
 # production deployment path (docs/AI_WORKFLOW.md, PEERSLATE_SITE_RULES.md
 # rule 79). This workflow is retained as history; the push trigger was
 # removed so a repository-settings change can never silently re-enable
-# GitHub deployment. Manual dispatch remains blocked by repo policy.
-on:
-  workflow_dispatch:
+# GitHub deployment.
+#
+# DISARMED (2026-08-03, overnight audit finding F-01): `workflow_dispatch`
+# was still present, so this file stayed a runnable deploy path gated only by
+# repository policy rather than by the file itself. The trigger is removed
+# entirely; a workflow with no `on:` trigger cannot execute, by manual
+# dispatch or otherwise. The Azure-side federated credential and the
+# Website Contributor role assignment behind the OIDC path were deleted the
+# same night. The stored publish-profile repository secret must be deleted in
+# GitHub by the owner; rotating the publish profile in Azure invalidates it
+# immediately.
+#
+# Retained as history only. Do not restore a trigger. Re-enabling GitHub
+# deployment is a governance decision in docs/AI_WORKFLOW.md first.
 
 jobs:
   build:
