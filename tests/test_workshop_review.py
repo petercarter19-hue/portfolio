@@ -15,8 +15,11 @@ import json
 import os
 import re
 import shutil
+import subprocess
+import sys
 import tempfile
 import threading
+import time
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -1411,6 +1414,212 @@ class SpendGuardUnitTests(unittest.TestCase):
         self.assertEqual(outcomes.count(workshop_spend_guard.RESERVE_OK), 4)
         self.assertEqual(outcomes.count(workshop_spend_guard.RESERVE_GLOBAL_CAPPED), 6)
         self.assertEqual(self._state()["global_count"], 4)
+
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Reserves against a shared instance path from a SEPARATE process. It builds a
+# bare Flask app rather than importing app.py, so a child starts in well under a
+# second and needs no API key. The ready/go files are a rendezvous: without them
+# the children would run one after another and never contend, and the test would
+# pass whether or not the lock works.
+_CHILD_RESERVER = """
+import os, sys, time
+from flask import Flask
+from services import workshop_spend_guard
+
+instance_path, ready_path, go_path, address, count = sys.argv[1:6]
+app = Flask(__name__, instance_path=instance_path)
+
+open(ready_path, "w").close()
+deadline = time.time() + 60
+while not os.path.exists(go_path):
+    if time.time() > deadline:
+        raise SystemExit("rendezvous timed out")
+    time.sleep(0.002)
+
+with app.app_context():
+    for _ in range(int(count)):
+        if workshop_spend_guard.reserve(address) != workshop_spend_guard.RESERVE_OK:
+            raise SystemExit("unexpectedly refused below the ceiling")
+"""
+
+
+class SpendGuardPortabilityTests(unittest.TestCase):
+    """The guard must import, and genuinely lock, on every platform PeerSlate
+    is developed or served on.
+
+    Regression this pins: services/workshop_spend_guard.py imported ``fcntl``
+    at module scope. That module does not exist on Windows, and app.py imports
+    the guard transitively, so the single line made 42 test modules
+    unimportable and blocked every local run and pre-merge check on the
+    owner's only development machine. Linux CI stayed green throughout and so
+    never reported it — which is exactly why the import itself is now asserted
+    rather than left to be noticed by whichever test happens to load app.py.
+    """
+
+    def setUp(self):
+        self._dir = tempfile.mkdtemp(prefix="ps-spend-guard-portability-")
+
+    def tearDown(self):
+        shutil.rmtree(self._dir, ignore_errors=True)
+
+    def _run_child(self, script, *args):
+        return subprocess.run(
+            [sys.executable, "-c", script, *[str(arg) for arg in args]],
+            cwd=_REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_the_guard_imports_in_a_fresh_interpreter_on_this_platform(self):
+        result = self._run_child("from services import workshop_spend_guard")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_a_real_locking_backend_is_selected_on_this_platform(self):
+        """One of the two stdlib backends must be present. If neither were,
+        the guard would refuse to run rather than count without a lock."""
+        self.assertTrue(
+            workshop_spend_guard.fcntl is not None or workshop_spend_guard.msvcrt is not None,
+            "no locking backend was selected on this platform",
+        )
+
+    def test_without_any_locking_backend_the_guard_refuses_loudly(self):
+        """The one outcome that must never happen quietly: counting spend
+        without mutual exclusion. An unlocked counter loses concurrent
+        increments, which turns the ceiling that bounds the provider bill into
+        a suggestion. Setting a name to None in sys.modules makes ``import``
+        of it raise ImportError, which is how both backends are hidden here.
+
+        RuntimeError, deliberately, and not OSError: ``reserve`` catches
+        OSError and converts it into a capped return, so an OSError here would
+        be swallowed into a normal-looking refusal instead of surfacing.
+        """
+        result = self._run_child(
+            "import sys\n"
+            # Import Flask first: on Windows its click dependency imports
+            # msvcrt itself, and hiding the name beforehand would fail that
+            # unrelated import instead of the guard's.
+            "import flask\n"
+            "sys.modules['fcntl'] = None\n"
+            "sys.modules['msvcrt'] = None\n"
+            "from services import workshop_spend_guard as g\n"
+            "assert g.fcntl is None and g.msvcrt is None\n"
+            "try:\n"
+            "    g._lock_exclusive(None)\n"
+            "except RuntimeError as exc:\n"
+            "    assert 'spend' in str(exc).lower(), str(exc)\n"
+            "    print('REFUSED')\n"
+            "else:\n"
+            "    raise SystemExit('the guard locked nothing and did not complain')\n"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("REFUSED", result.stdout)
+
+    def test_the_lock_blocks_a_second_holder_until_the_first_releases(self):
+        """Blocking is the property ``reserve`` depends on, so it is asserted
+        directly on the platform-selected helpers: a contended acquire must
+        WAIT, not raise and not return having acquired nothing. (msvcrt's
+        LK_LOCK mode would give up with OSError after ten one-second attempts,
+        which is why it is not what the Windows branch uses.)"""
+        path = os.path.join(self._dir, "lock-probe")
+        first = os.fdopen(os.open(path, os.O_RDWR | os.O_CREAT, 0o600), "r+", encoding="utf-8")
+        second = os.fdopen(os.open(path, os.O_RDWR | os.O_CREAT, 0o600), "r+", encoding="utf-8")
+        acquired = threading.Event()
+        failure = []
+
+        def contend():
+            try:
+                workshop_spend_guard._lock_exclusive(second)
+            except Exception as exc:  # noqa: BLE001 - reported to the assertion below
+                failure.append(exc)
+            else:
+                acquired.set()
+
+        try:
+            workshop_spend_guard._lock_exclusive(first)
+            waiter = threading.Thread(target=contend, daemon=True)
+            waiter.start()
+
+            self.assertFalse(
+                acquired.wait(0.25),
+                "a second holder acquired the lock while the first still held it",
+            )
+            workshop_spend_guard._unlock(first)
+
+            self.assertTrue(acquired.wait(10), f"the waiter never acquired the lock: {failure}")
+            self.assertFalse(failure, f"contended acquire raised instead of waiting: {failure}")
+            workshop_spend_guard._unlock(second)
+            waiter.join(10)
+        finally:
+            first.close()
+            second.close()
+
+    def test_separate_processes_cannot_lose_a_reservation(self):
+        """Cross-process exclusion is the case that actually matters in
+        production: the ceiling is shared by every worker process on the
+        instance, not just by threads inside one of them. Four processes
+        reserving 20 each must produce exactly 80 — a lock that only
+        serialized threads would lose increments here.
+
+        Each child uses its own address so the per-address ceiling (40) is
+        never the thing under test; the global count is.
+        """
+        children = 4
+        per_child = 20
+        go_path = os.path.join(self._dir, "go")
+        ready_paths = [os.path.join(self._dir, f"ready-{index}") for index in range(children)]
+
+        processes = [
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    _CHILD_RESERVER,
+                    self._dir,
+                    ready_paths[index],
+                    go_path,
+                    f"203.0.113.{210 + index}",
+                    str(per_child),
+                ],
+                cwd=_REPO_ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            for index in range(children)
+        ]
+
+        try:
+            deadline = time.monotonic() + 60
+            while not all(os.path.exists(path) for path in ready_paths):
+                if time.monotonic() > deadline:
+                    self.fail("child reservers never became ready")
+                if any(process.poll() is not None for process in processes):
+                    self.fail(
+                        "a child exited before the rendezvous: "
+                        + "; ".join(p.stderr.read() for p in processes if p.poll() is not None)
+                    )
+                time.sleep(0.01)
+
+            open(go_path, "w").close()
+
+            for process in processes:
+                _, stderr = process.communicate(timeout=120)
+                self.assertEqual(process.returncode, 0, stderr)
+        finally:
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+
+        with open(
+            os.path.join(self._dir, workshop_spend_guard.STATE_FILENAME), encoding="utf-8"
+        ) as handle:
+            state = json.load(handle)
+
+        self.assertEqual(state["global_count"], children * per_child)
+        for index in range(children):
+            self.assertEqual(state["per_ip"][f"203.0.113.{210 + index}"], per_child)
 
 
 class SpendGuardClientAddressTests(unittest.TestCase):

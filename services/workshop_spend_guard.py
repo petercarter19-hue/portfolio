@@ -32,17 +32,17 @@ reserve-before-call discipline ``workshop_work_session.increment_ai_calls``
 already documents for the per-session cap.
 
 **Deliberate scope limit — one instance.** State is a single JSON file under
-the Flask instance path, and mutual exclusion is ``fcntl.flock`` on that
-file. That is correct and genuinely atomic for any number of threads,
-workers, or processes sharing ONE filesystem — which is exactly today's
-single-App-Service-instance deployment. It is NOT correct across scaled-out
-instances, which do not share an instance path: each instance would enforce
-its own independent ceiling, so N instances would permit N x the intended
-global cap. Revisit this with shared storage (the Redis backend
-flask-limiter's own warning already points at, or a small database table)
-BEFORE Workshop AI is served from more than one instance. This limitation is
-disclosed rather than hidden precisely because scaling out is the moment it
-silently stops holding.
+the Flask instance path, and mutual exclusion is an exclusive OS lock on
+that file (``_lock_exclusive`` below). That is correct and genuinely atomic
+for any number of threads, workers, or processes sharing ONE filesystem —
+which is exactly today's single-App-Service-instance deployment. It is NOT
+correct across scaled-out instances, which do not share an instance path:
+each instance would enforce its own independent ceiling, so N instances
+would permit N x the intended global cap. Revisit this with shared storage
+(the Redis backend flask-limiter's own warning already points at, or a small
+database table) BEFORE Workshop AI is served from more than one instance.
+This limitation is disclosed rather than hidden precisely because scaling
+out is the moment it silently stops holding.
 
 **Failure posture: closed, and loud.** If the state file cannot be opened or
 written, this module returns a capped outcome and logs an error rather than
@@ -56,13 +56,30 @@ same "an operator error must be loud, not silently downgraded" reasoning the
 F6 signing-key correction on this branch already applies.
 """
 
-import fcntl
 import ipaddress
 import json
 import os
+import time
 from datetime import datetime, timezone
 
 from flask import current_app, request
+
+# Capability detection, done ONCE at import rather than as scattered
+# ``sys.platform`` checks at the call sites: exactly one of these provides the
+# exclusive file lock, and which one is decided here so the locking code below
+# reads as a single contract. ``fcntl`` is POSIX-only and ``msvcrt`` is
+# Windows-only; both are stdlib, so this adds no dependency. Before this,
+# importing ``fcntl`` unconditionally made the whole module — and therefore
+# ``app.py``, which imports it transitively — unimportable on Windows.
+try:  # POSIX (Linux, macOS): production and CI
+    import fcntl
+except ImportError:  # pragma: no cover - depends on the running platform
+    fcntl = None
+
+try:  # Windows: local development
+    import msvcrt
+except ImportError:  # pragma: no cover - depends on the running platform
+    msvcrt = None
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +164,76 @@ def client_ip():
 
 
 # ---------------------------------------------------------------------------
+# Exclusive lock — one implementation, selected at import
+# ---------------------------------------------------------------------------
+
+# The Windows lock covers this one byte at offset 0. ``msvcrt.locking`` locks a
+# byte RANGE beginning at the handle's CURRENT position, not the whole file, so
+# both helpers seek to 0 first and lock and unlock the identical region. Locking
+# a byte of a file that may still be empty is fine — Windows permits a lock past
+# end-of-file — and nothing ever reads through the lock, because every reader
+# acquires it first. It is a rendezvous between openers, exactly as flock is.
+_WINDOWS_LOCK_BYTES = 1
+
+# How long a blocked Windows opener waits before trying again. msvcrt has no
+# "block until acquired" mode: LK_LOCK retries on a fixed one-second cadence and
+# then gives up with OSError after ten attempts. Measured here, ten simultaneous
+# reservations under LK_LOCK take ~9s and come within a single attempt of that
+# ceiling, which would turn ordinary contention into a spurious failure — a
+# failure that fails CLOSED and would refuse legitimate AI calls. Retrying
+# LK_NBLCK on a short interval instead reproduces flock(LOCK_EX)'s actual
+# contract, wait as long as necessary, at a granularity matching the
+# microseconds this module spends holding the lock.
+_WINDOWS_LOCK_RETRY_SECONDS = 0.005
+
+
+if fcntl is not None:
+
+    def _lock_exclusive(handle):
+        """Block until this handle alone may read-modify-write the state file."""
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+    def _unlock(handle):
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+elif msvcrt is not None:
+
+    def _lock_exclusive(handle):
+        """Block until this handle alone may read-modify-write the state file.
+
+        Byte-range locks are held per open handle, so two handles conflict even
+        inside one process — threads are serialized here just as processes are.
+        """
+        while True:
+            handle.seek(0)
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, _WINDOWS_LOCK_BYTES)
+            except OSError:
+                time.sleep(_WINDOWS_LOCK_RETRY_SECONDS)
+            else:
+                return
+
+    def _unlock(handle):
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, _WINDOWS_LOCK_BYTES)
+
+else:  # pragma: no cover - reached only where BOTH backends are missing
+
+    _NO_LOCK_MESSAGE = (
+        "Workshop spend guard: neither fcntl nor msvcrt is available, so the "
+        "daily AI spend ceilings cannot be enforced atomically on this "
+        "platform. Refusing to run an unlocked counter, which would silently "
+        "turn a spend ceiling into a suggestion."
+    )
+
+    def _lock_exclusive(handle):
+        raise RuntimeError(_NO_LOCK_MESSAGE)
+
+    def _unlock(handle):
+        raise RuntimeError(_NO_LOCK_MESSAGE)
+
+
+# ---------------------------------------------------------------------------
 # State file
 # ---------------------------------------------------------------------------
 
@@ -228,10 +315,12 @@ def _write_state(handle, state):
     """Rewrite the state file in place through an already-locked handle.
 
     In place (seek/write/truncate) rather than write-temp-and-rename,
-    because the lock is ``flock`` on this file's own inode: replacing the
-    path would give the next opener a DIFFERENT inode whose lock does not
+    because the lock is held on this file's own open handle: replacing the
+    path would give the next opener a DIFFERENT file whose lock does not
     conflict with a lock already held on the old one, quietly destroying the
-    mutual exclusion this whole module depends on.
+    mutual exclusion this whole module depends on. That is true of both
+    backends — flock is bound to the inode, and a Windows byte-range lock is
+    bound to the handle — so the constraint is not POSIX-specific.
     """
     payload = json.dumps(state, separators=(",", ":"), sort_keys=True)
     handle.seek(0)
@@ -255,7 +344,7 @@ def reserve(ip):
     named as such in the outcome rather than being masked by the global
     ceiling it is in the middle of exhausting.
 
-    The whole check-and-increment happens inside one exclusive ``flock``, so
+    The whole check-and-increment happens inside one exclusive file lock, so
     ten simultaneous requests produce exactly ten increments and the
     (count == cap) boundary cannot be crossed twice — the precise defect the
     cookie-based session counter has.
@@ -283,7 +372,7 @@ def reserve(ip):
         # regardless of seek, which would grow the file forever instead of
         # replacing its contents.
         with os.fdopen(descriptor, "r+", encoding="utf-8") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            _lock_exclusive(handle)
             try:
                 state = _read_state(handle, today)
                 if state["per_ip"].get(key, 0) >= PER_IP_DAILY_AI_CALLS:
@@ -296,7 +385,7 @@ def reserve(ip):
                 _write_state(handle, state)
                 return RESERVE_OK
             finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                _unlock(handle)
     except OSError:
         current_app.logger.error(
             "Workshop spend guard: cannot record a reservation; refusing the AI "
