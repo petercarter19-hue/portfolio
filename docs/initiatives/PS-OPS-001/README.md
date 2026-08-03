@@ -88,6 +88,40 @@ security/privacy/authorization blockers, approval, a tested stop/rollback, live
 smoke, or honest status. Deferred non-blocking evidence gets an owner, expiry,
 compensating control, and focused retrospective.
 
+## Azure production release reliability
+
+These rules apply to every initiative that can trigger the shared production
+pipeline:
+
+- The automatic Azure run for a merged `main` SHA is authoritative. Before
+  queueing anything manually, list queued, running, and completed runs for that
+  exact SHA. Do not create a same-SHA fallback while the automatic run exists.
+- A manual production deployment must be an explicit false-by-default override,
+  not the default effect of clicking **Run pipeline**. Use it only after current
+  live identity and the automatic-run state have been inspected.
+- Production deployment and its exact source/build smoke must remain in one
+  locked operation. Do not split verification outside the lock or weaken the
+  build-specific release identity to make an overwritten run appear green.
+- Batch rapid `main` changes so a current run finishes and later cumulative
+  changes enter one subsequent run. A new initiative does not need a separate
+  production deployment for every intermediate merge.
+- Once ZipDeploy/Oryx has begun, do not cancel casually: the App Service recycle
+  can already be in progress. Let the single selected run finish, then inspect
+  its exact live identity before deciding on rollback or one explicit recovery.
+- Classify every red record by pipeline, branch, reason, failed stage/task, and
+  production impact. A PR test, scanner, Candidate, or disposable-proof failure
+  is not a failed production deployment. Do not rerun unchanged failures merely
+  to replace a red icon.
+- Required PR validation must describe the current target branch. Target-branch
+  movement expires the prior result and queues a fresh merge-ref validation.
+- `[skip ci]` for a documentation-only closeout must be in the final squash
+  commit message. A PR title alone is not release control.
+
+The pipeline protects orchestration; initiative writers still fetch current
+Azure `main`, use one active writer per file, avoid overlapping release lanes,
+and verify merge, automatic pipeline, live identity, and affected routes as
+separate facts.
+
 ## Current scoped finding
 
 The released pipeline's historical Candidate selector still needs auditable

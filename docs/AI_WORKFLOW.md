@@ -93,9 +93,12 @@ historical status document.
 
 When a change affects only governance/evidence/tests and does not need to alter
 the deployed artifact immediately, validate the exact branch, merge it through
-an Azure PR with `[skip ci]`, and let the files enter production with the next
-normal runtime release. Record that source authority is merged but the deployed
-copy is unchanged. Do not restart App Service merely to publish bookkeeping.
+an Azure PR whose final squash commit message contains `[skip ci]`, and let the
+files enter production with the next normal runtime release. A PR title alone
+does not guarantee that Azure will copy the marker into the squash commit.
+Record that source authority is merged but the deployed copy is unchanged.
+Do not restart App Service merely to publish bookkeeping. Do not manually
+queue a fallback while an automatic run for the same `main` SHA is active.
 
 Run the normal pipeline when documentation is itself runtime-consumed and must
 become live immediately, or when the change also affects application code,

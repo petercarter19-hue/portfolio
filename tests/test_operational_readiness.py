@@ -691,8 +691,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertEqual(
             [
                 'Build',
-                'Deploy',
-                'ProductionSmoke',
+                'ProductionRelease',
                 'CandidateDeploy',
                 'CandidateSmoke',
                 'CandidateStop',
@@ -732,16 +731,40 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             r'(?m)^            condition\s*:',
         )
 
-        self.assertRegex(stage_bodies['Deploy'], r'(?m)^    dependsOn: Build$')
-        self.assertIn(
-            "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
-            stage_bodies['Deploy'],
+        production_stage = stage_bodies['ProductionRelease']
+        self.assertIn('batch: true', pipeline)
+        self.assertIn('name: forceProductionDeploy', pipeline)
+        self.assertIn('type: boolean', pipeline)
+        self.assertIn('default: false', pipeline)
+        self.assertRegex(production_stage, r'(?m)^    dependsOn: Build$')
+        self.assertRegex(
+            production_stage,
+            r'(?m)^    lockBehavior: runLatest$',
         )
-        smoke_stage = stage_bodies['ProductionSmoke']
-        self.assertRegex(smoke_stage, r'(?m)^    dependsOn: Deploy$')
         self.assertIn(
             "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
-            smoke_stage,
+            production_stage,
+        )
+        self.assertIn(
+            "ne(variables['Build.Reason'], 'Manual')",
+            production_stage,
+        )
+        self.assertIn(
+            '${{ eq(parameters.forceProductionDeploy, true) }}',
+            production_stage,
+        )
+        self.assertEqual(1, production_stage.count('deployment: DeployWebApp'))
+        self.assertEqual(
+            1,
+            production_stage.count(
+                'displayName: Verify liveness and canonical public routes'
+            ),
+        )
+        self.assertLess(
+            production_stage.index('task: AzureWebApp@1'),
+            production_stage.index(
+                'python scripts/verify_deployment_smoke.py'
+            ),
         )
         self.assertRegex(
             stage_bodies['CandidateDeploy'],
@@ -783,7 +806,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 "variables['candidateSourceVersion'] )",
                 normalized,
             )
-        self.assertNotIn('az webapp start', stage_bodies['Deploy'])
+        self.assertNotIn('az webapp start', production_stage)
         self.assertIn('az webapp start', stage_bodies['CandidateDeploy'])
         self.assertLess(
             stage_bodies['CandidateDeploy'].index('az webapp start'),
@@ -887,6 +910,25 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             'Independent separation-of-duty check:',
         ):
             self.assertIn(expected, evidence)
+
+    def test_azure_release_reliability_rules_are_durable(self):
+        package = self.normalize_whitespace(
+            self.read('docs/initiatives/PS-OPS-001/README.md')
+        )
+
+        for expected in (
+            'Azure production release reliability',
+            'automatic Azure run for a merged `main` SHA is authoritative',
+            'same-SHA fallback while the automatic run exists',
+            'manual production deployment must be an explicit',
+            'Production deployment and its exact source/build smoke',
+            'Batch rapid `main` changes',
+            'Once ZipDeploy/Oryx has begun, do not cancel casually',
+            'Classify every red record by pipeline, branch, reason',
+            'Target-branch movement expires the prior result',
+            'final squash commit message',
+        ):
+            self.assertIn(expected, package)
 
     def test_existing_controls_link_ps_ops_without_duplicate_approval(self):
         paths_and_phrases = {

@@ -1,9 +1,16 @@
 # PeerSlate Azure DevOps deployment pipeline.
 # GitHub Actions are disabled; Azure DevOps deploys approved `main` changes.
 trigger:
+  batch: true
   branches:
     include:
       - main
+
+parameters:
+  - name: forceProductionDeploy
+    displayName: Force production deploy for a manually queued main run
+    type: boolean
+    default: false
 
 variables:
   # Created in Azure DevOps while configuring the Azure Web App connection.
@@ -178,13 +185,21 @@ stages:
             artifact: CandidateEvidence
             displayName: Upload redacted scanner evidence
 
-  - stage: Deploy
-    displayName: Deploy production
+  - stage: ProductionRelease
+    displayName: Deploy and verify production
     dependsOn: Build
+    # Main is cumulative, so only the latest waiting release should proceed.
+    # Keeping deploy and smoke in this one locked stage prevents a later run
+    # from replacing the artifact before the current run verifies its identity.
+    lockBehavior: runLatest
     condition: >-
       and(
         succeeded(),
-        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        or(
+          ne(variables['Build.Reason'], 'Manual'),
+          ${{ eq(parameters.forceProductionDeploy, true) }}
+        )
       )
     jobs:
       - deployment: DeployWebApp
@@ -195,6 +210,16 @@ stages:
           runOnce:
             deploy:
               steps:
+                - checkout: self
+                  fetchDepth: 1
+                  persistCredentials: false
+                  clean: true
+
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '$(pythonVersion)'
+                  displayName: Use Python $(pythonVersion)
+
                 - task: AzureWebApp@1
                   inputs:
                     azureSubscription: $(azureServiceConnectionId)
@@ -202,34 +227,15 @@ stages:
                     package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
                   displayName: Deploy to $(webAppName)
 
-  - stage: ProductionSmoke
-    displayName: Verify production deployment
-    dependsOn: Deploy
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['Build.SourceBranch'], 'refs/heads/main')
-      )
-    jobs:
-      - job: PublicBoundarySmoke
-        displayName: Public boundary smoke
-        pool:
-          vmImage: $(vmImageName)
-        steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '$(pythonVersion)'
-            displayName: Use Python $(pythonVersion)
-
-          - script: >-
-              python scripts/verify_deployment_smoke.py
-              --base-url "$(productionBaseUrl)"
-              --expected-source-version "$(Build.SourceVersion)"
-              --expected-build-id "$(Build.BuildId)"
-              --warmup-seconds 180
-              --retry-delay 10
-              --timeout 15
-            displayName: Verify liveness and canonical public routes
+                - script: >-
+                    python scripts/verify_deployment_smoke.py
+                    --base-url "$(productionBaseUrl)"
+                    --expected-source-version "$(Build.SourceVersion)"
+                    --expected-build-id "$(Build.BuildId)"
+                    --warmup-seconds 180
+                    --retry-delay 10
+                    --timeout 15
+                  displayName: Verify liveness and canonical public routes
 
   - stage: CandidateDeploy
     displayName: Deploy isolated candidate
