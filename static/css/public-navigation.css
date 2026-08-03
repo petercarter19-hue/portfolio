@@ -348,17 +348,17 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         font-size: 0.72rem;
     }
 
-    .global-header .platform-actions:has(.nav-sign-out) {
+    .global-header .platform-actions:has(.nav-sign-out:not([hidden])) {
         gap: 0.35rem;
     }
 
-    .global-header .platform-actions:has(.nav-sign-out) .platform-menu-toggle {
+    .global-header .platform-actions:has(.nav-sign-out:not([hidden])) .platform-menu-toggle {
         width: 2rem;
         justify-content: center;
         padding: 0;
     }
 
-    .global-header .platform-actions:has(.nav-sign-out) .platform-menu-toggle span {
+    .global-header .platform-actions:has(.nav-sign-out:not([hidden])) .platform-menu-toggle span {
         position: absolute;
         width: 1px;
         height: 1px;

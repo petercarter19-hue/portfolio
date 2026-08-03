@@ -92,23 +92,25 @@ class HeaderOverlapFixTests(unittest.TestCase):
             crowded = block(css, "@media (max-width: 34rem) {")
             self.assertIn(".nav-sign-out__btn", crowded)
         crowded_public = block(PUBLIC_NAV, "@media (max-width: 34rem) {")
-        self.assertIn(":has(.nav-sign-out)", crowded_public)
+        self.assertIn(":has(.nav-sign-out:not([hidden]))", crowded_public)
         crowded_shared = block(STYLE, "@media (max-width: 34rem) {")
         self.assertIn("grid-template-columns: auto minmax(0, 1fr)", crowded_shared)
         self.assertIn("flex-wrap: wrap", crowded_shared)
 
     def test_signed_out_header_is_untouched(self):
-        # The signed-out row already fitted. Every compaction rule is behind
-        # :has(.nav-sign-out), which only matches when signed in.
+        # The signed-out row already fitted. The sign-out form is now always
+        # in the DOM (hidden when signed out), so a bare :has(.nav-sign-out)
+        # would compact the anonymous header too; every compaction rule must
+        # scope to a visible sign-out control.
         crowded = block(PUBLIC_NAV, "@media (max-width: 34rem) {")
         for line in crowded.splitlines():
             stripped = line.strip()
             if not stripped.endswith("{") or stripped.startswith(("/*", "*")):
                 continue
             self.assertTrue(
-                ":has(.nav-sign-out)" in stripped
+                ":has(.nav-sign-out:not([hidden]))" in stripped
                 or ".nav-sign-out__btn" in stripped,
-                f"unscoped selector in the crowded-row block: {stripped}",
+                f"selector not scoped to a visible sign-out control: {stripped}",
             )
 
     def test_no_header_control_is_removed(self):

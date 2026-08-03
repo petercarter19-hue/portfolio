@@ -2660,6 +2660,14 @@ body[data-theme="modern-blue"] {
 /* Dots for the four original (pre-slate) site themes. */
 
 
+/* The auth-state nav controls render every state's pill with `hidden` set on
+   the inactive ones; these display rules would otherwise override the UA
+   [hidden] behavior and show all states at once. */
+.sign-in-btn[hidden],
+.nav-sign-out[hidden] {
+    display: none;
+}
+
 .sign-in-btn {
     display: inline-flex;
     align-items: center;
