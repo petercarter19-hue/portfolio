@@ -131,7 +131,7 @@
     {% endif %}
 </head>
 
-{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
+{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{% set is_legacy_owner_workspace_path = _p == '/app' %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
 {% if standalone_owner_shell %}{# Owner Home standalone shell (U1/U3, PS-HOME-FRONTEND-001): the flag-on
    Owner Home render owns its own dark cinematic body and omits every public
    chrome class (portfolio-shell/platform-shell, slate-light,
@@ -326,8 +326,24 @@
         </nav>
 
         {# Keep profile navigation inside the sticky global header so the two
-           navigation levels read as one connected piece of chrome. #}
-        {% if (is_portfolio_path or is_owner_app_path) and not is_private_journal_path and not is_workshop_path %}
+           navigation levels read as one connected piece of chrome.
+
+           This strip is Pete's PUBLIC profile navigation (My Story / Work /
+           Slate Board / Résumé + Ask Pete AI). PS-PUBLIC-NAV-001 set the
+           contract that it "renders only on Pete profile routes", but the
+           condition kept every `/app` path, so the private member surfaces
+           — Capture, Settings, Moment review — published Pete's public tabs
+           above a private owner page and gave Capture a second Ask Pete AI
+           control. Journal and Workshop had each opted out separately;
+           those exemptions are now implied by the rule itself.
+
+           `/app` alone keeps it: that is the deferred legacy owner
+           workspace PS-PUBLIC-NAV-001 deliberately froze and
+           PS-HOME-FRONTEND-001 replaces wholesale (flag on, `/app` renders
+           the standalone shell and no part of this header). Its flag-off
+           render is byte-locked by tests/test_owner_home.py and is not this
+           correction's to recapture. #}
+        {% if is_portfolio_path or is_legacy_owner_workspace_path %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
     </header>{% endif %}

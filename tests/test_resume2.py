@@ -157,6 +157,30 @@ class Resume2Tests(unittest.TestCase):
                 response = self.client.get(path, base_url='http://localhost')
                 self.assertEqual(response.status_code, 200)
 
+    def test_skills_page_clips_the_decorative_sky_haze_bleed(self):
+        """`/petec/skills` must not scroll horizontally at any width.
+
+        The shared `.sky-haze` veil paints a decorative `::before` at
+        `inset: -12% -18%` (static/css/sky-glass.css). On this page's
+        full-width opening and act headings that bleeds roughly 259px past
+        each edge at 1440 and had no clipping ancestor, so the decoration
+        contributed real scrollable overflow: document.scrollWidth measured
+        1699 in a 1440 viewport and 460 in a 390 viewport — a WCAG 2.2 AA
+        1.4.10 reflow failure at every width (site visual parity audit
+        2026-08-03, finding 5). `.skills-film` is exactly viewport-wide, so
+        clipping there removes only off-screen bleed. `clip` is required
+        rather than `hidden`/`auto`: those would make the container a scroll
+        container.
+        """
+        css = Path('static/css/skills-cinematic.css').read_text(encoding='utf-8')
+        film = css.split('.skills-film {', 1)[1].split('}', 1)[0]
+        self.assertIn('overflow-x: clip;', film)
+        self.assertNotIn('overflow-x: hidden', film)
+        self.assertNotIn('overflow-x: auto', film)
+        # The haze itself is unchanged; only its containment moved.
+        haze = Path('static/css/sky-glass.css').read_text(encoding='utf-8')
+        self.assertIn('inset: -12% -18%;', haze)
+
     def test_resume_header_tabs_include_one_canonical_resume_link(self):
         response = self.client.get('/petec/resume', base_url='http://localhost')
         response_text = response.get_data(as_text=True)

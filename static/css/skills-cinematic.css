@@ -12,6 +12,19 @@
     min-width: 0;
     padding-bottom: 6rem;
     color: var(--skf-ink);
+    /* The shared .sky-haze veil (sky-glass.css) paints a decorative
+       ::before at inset: -12% -18%, so on this page's full-width opening
+       and act headings it bleeds ~259px past each edge at 1440 and had no
+       clipping ancestor. That decoration was contributing real scrollable
+       overflow — document.scrollWidth measured 1699 in a 1440 viewport and
+       460 in a 390 viewport, a WCAG 2.2 AA 1.4.10 reflow failure at every
+       width. This container is exactly viewport-wide, so clipping here
+       removes only the off-screen bleed and changes nothing that was
+       visible. `clip` (not `hidden`/`auto`) is used deliberately: it does
+       not create a scroll container, so nothing inside the page gains a
+       scrollport. Same pattern as story-acts.css and cinematic.css. */
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 /* --- opening ---------------------------------------------------------- */

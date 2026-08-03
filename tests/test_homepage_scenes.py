@@ -217,9 +217,29 @@ class HomepageInterviewDemoTests(unittest.TestCase):
 
     # ---- copy corrections and banned language ----
 
-    def test_corrected_sequence_language(self):
-        self.assertIn('capture, to presentation, to practice', self.html)
+    def test_no_internal_design_rationale_published_to_visitors(self):
+        """The homepage must not publish our own design notes as visitor copy.
+
+        This scene used to carry a sequence note explaining, to us, where the
+        scene sits in the page order ("Placed after Living Résumé ... so the
+        homepage moves from capture, to presentation, to practice, to what
+        comes next"), and an eyebrow that named the internal artefact
+        ("Homepage scene · Interview Studio") rather than the product. Both
+        were removed on 2026-08-03 (site visual parity audit, finding 8).
+        The earlier banned wording of that same note is still checked, so the
+        original correction's intent survives its deletion.
+        """
         self.assertNotIn('capture, to proof, to practice', self.html)
+        self.assertNotIn('capture, to presentation, to practice', self.html)
+        self.assertNotIn('Placed after Living', self.html)
+        self.assertNotIn('hv-int-sequence-note', self.html)
+        self.assertNotIn('Homepage scene', self.html)
+        # The eyebrow still names the product, exactly as the sibling scenes
+        # ("Living Résumé", "My Story + Slate") do.
+        self.assertIn(
+            '<p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span>'
+            ' Interview Studio</p>',
+            self.scene)
 
     def test_retry_does_not_invent_outcomes(self):
         self.assertNotIn('repeatable review process', self.html)

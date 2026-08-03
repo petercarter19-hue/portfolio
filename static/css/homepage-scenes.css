@@ -1817,17 +1817,6 @@ body[data-theme="dark"] .home-v3 .hv-interview {
     stroke-linejoin: round;
 }
 
-.home-v3 .hv-int-sequence-note {
-    margin: 0;
-    padding: 0.2rem 0 0.2rem 1rem;
-    border-left: 3px solid var(--hv-amber);
-    font-size: 0.85rem;
-    line-height: 1.55;
-    color: var(--hv-muted);
-}
-
-.home-v3 .hv-int-sequence-note strong { color: var(--hv-ink); }
-
 /* ---- shared bits used by both the poster and the modal steps ---- */
 
 .home-v3 .hv-int-kicker {

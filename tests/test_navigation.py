@@ -193,6 +193,47 @@ class NavigationTests(unittest.TestCase):
                 self.assertIn(b'id="chat-toggle"', response.data)
                 self.assertIn(b'class="profile-tabs', response.data)
 
+    def test_private_owner_surfaces_do_not_inherit_petes_public_profile_tabs(self):
+        """Pete's public tab strip is fixture content; a member's private
+        owner pages must not publish it above their own workspace.
+
+        PS-PUBLIC-NAV-001 set the contract ("Pete's profile navigation
+        renders only on Pete profile routes") but the base.html condition
+        still admitted every `/app` path, so Capture, Settings and Moment
+        review each rendered My Story / Work / Slate Board / Resume plus a
+        second Ask Pete AI control. Corrected 2026-08-03 (site visual parity
+        audit, finding 10). `/app` itself is excluded from this test on
+        purpose: it is the deferred legacy owner workspace that
+        PS-HOME-FRONTEND-001 replaces, and its flag-off render is byte-locked
+        by tests/test_owner_home.py.
+        """
+        originals = {
+            key: app.config.get(key)
+            for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
+        }
+        app.config['PEERSLATE_ALLOW_DEV_IDENTITY'] = True
+        app.config['PEERSLATE_DEV_USER_KEY'] = 'navigation-test-owner'
+        try:
+            for path in ('/app/capture', '/app/settings'):
+                with self.subTest(path=path):
+                    response = self.client.get(path, base_url='http://localhost')
+                    # 200 with a database, 503 on the honest unavailable
+                    # render without one; both use this shared shell.
+                    self.assertIn(response.status_code, (200, 503))
+                    self.assertNotIn(b'class="profile-tabs', response.data)
+                    self.assertNotIn(b'profile-tabs__ask-btn', response.data)
+
+            # The legacy /app workspace is deliberately unchanged.
+            legacy = self.client.get('/app', base_url='http://localhost')
+            self.assertEqual(legacy.status_code, 200)
+            self.assertIn(b'class="profile-tabs', legacy.data)
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+
     def test_public_search_is_navigation_only_without_an_ai_fallback(self):
         source = Path('static/js/public-site-search.js').read_text(encoding='utf-8')
         self.assertIn('No matching public destination', source)
