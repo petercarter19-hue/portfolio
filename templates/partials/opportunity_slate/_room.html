@@ -1,0 +1,373 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  PS-OPPSLATE-001, slice OS-1 — the whole Opportunity Slate room.
+
+  This partial is the ONLY renderer for both modes. templates/
+  opportunity_slate.html includes it for a normal page load, and
+  opportunity_slate_routes.public_session returns it as an HTML fragment for
+  the anonymous fetch transport, so the public session can never drift into
+  a second, differently-worded surface (handoff section 18).
+
+  Visual authority: image 01 (Role intake) and image 02 (Review Source).
+  Deviations from those images are deliberate truth adaptations for a slice
+  that has no AI, no dictation, no upload, and no import yet; each one is
+  commented at the point it occurs and listed in the completion report
+  against handoff section 14's mismatch register.
+#}
+<div class="os"
+     data-os-room
+     data-os-mode="{{ room.mode }}"
+     data-os-step="{{ room.step }}"
+     {% if context_token %}data-os-context-token="{{ context_token }}"{% endif %}
+     data-os-public-url="{{ room.public_session_url }}">
+
+  {# Subheader: Back + title only. Handoff section 14-M7 / owner decision
+     section 17-Q1 — the generated set's "Ask Slate AI" control is image
+     artifact and does not ship. Back targets the site root until the
+     sign-in wall lands (section 17-Q3). #}
+  <div class="os-subheader">
+    <a class="os-subheader__back" href="{{ room.back_url }}">
+      {{ os_icon('arrow-left', 'os-icon os-icon--sm') }}<span>Back</span>
+    </a>
+    <span class="os-subheader__rule" aria-hidden="true"></span>
+    <span class="os-subheader__title">Opportunity Slate</span>
+  </div>
+
+  {% if room.is_public %}
+  {# Workshop's public-preview banner grammar, told for this surface. Every
+     sentence here has to stay literally true of the anonymous mode AND tell
+     the same story as the truth card a hundred pixels below: each step posts
+     the role text to PeerSlate so the server can render the next screen, the
+     server keeps none of it, the only retained copy is the visitor's own
+     browser, and nothing is analyzed in this slice. This banner is the
+     first thing an anonymous visitor reads, so it names the transit before
+     it claims the locality — a locality-only first sentence was the shape
+     independent review rejected.
+
+     Keep "Nothing is stored on PeerSlate" unbroken on one source line below:
+     test_room_serves_the_public_session_to_a_signed_out_visitor asserts it
+     against the raw, un-normalized response body. #}
+  <div class="os-banner" role="status">
+    <span class="os-banner__label">Public session</span>
+    <span>
+      This preview sends your role text to PeerSlate to draw each screen. The
+      only copy kept is in your own browser, for this visit only.
+      Nothing is stored on PeerSlate, nothing is analyzed, and nothing is
+      shared or sent to an employer. Saving your work arrives with membership.
+    </span>
+  </div>
+  <noscript>
+    <div class="os-banner os-banner--warning" role="alert">
+      <span class="os-banner__label">JavaScript is off</span>
+      <span>
+        The public session keeps your role text in your browser, which needs
+        JavaScript. Turn it on to use this preview. Nothing has been stored
+        either way.
+      </span>
+    </div>
+  </noscript>
+  {% endif %}
+
+  {# Third parity round: the locked set gives the two screens different
+     proportions — image 01's workbench holds 53.2% of the frame, image
+     02's holds 64.6% — because one is an intake form and the other is a
+     reading document. The modifier carries image 02's geometry and is
+     gated on the SAME condition that selects _review.html below, so the
+     rail widths can never drift away from the screen they belong to. #}
+  <div class="os-layout{% if room.step == 'review' and room.source %} os-layout--review{% endif %}">
+
+    {# ---------------------------------------------------------------
+       Left rail: state title, supporting copy, session-truth card
+       (handoff section 3).
+       --------------------------------------------------------------- #}
+    <div class="os-rail os-rail--left">
+      {# The locked set places the state title differently in each screen:
+         image 01 carries "Role · Bring a role" as the workbench's own serif
+         title, image 02 carries "Review · Source" in the left rail above
+         "Checkpoint 1 of 2". Both are implemented exactly as drawn, and
+         each screen has exactly one h1 (handoff section 13). #}
+      {# Deliberately the SAME condition the workbench uses below to choose
+         between _review.html and _intake.html. No route reaches the review
+         step without a source today, so gating on the step alone is not a
+         live defect - but it would silently become one, printing this h1
+         beside an intake screen that carries its own. Tying both to one
+         condition makes one-h1-per-state (handoff section 13) structural
+         rather than a property of the current call sites. #}
+      {% if room.step == 'review' and room.source %}
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">{{ room.state_title_rest }}</span>
+      </h1>
+      {% if room.checkpoint_label %}
+      <p class="os-checkpoint">{{ room.checkpoint_label }}</p>
+      {% endif %}
+      <p class="os-rail__intro">
+        Confirm that PeerSlate captured the complete and accurate employer
+        source. Nothing is interpreted or analyzed from it yet.
+      </p>
+      {# Owner visual review 2026-08-03, V3: the authority sets this block
+         directly on the canvas — sparkle, serif heading, copy — not inside
+         a card. The first pass boxed it. #}
+      <div class="os-rail-note">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}Why review the source?
+        </p>
+        <p>
+          The role wording sets the context for everything that follows.
+          Correct anything that came through wrong, and the rest of your slate
+          starts from accurate text.
+        </p>
+      </div>
+
+      {# Owner finding V14: the source card moves out of the top of the
+         right rail and down the left side, between "Why review the source"
+         and the session-truth card. Image 02 keeps it on the right; image
+         03 puts its own source card here, which is the grammar this
+         follows. Recorded as handoff section 14-M15.
+
+         V12: it carries a confirmed/captured status heading (image 03's
+         card) rather than a bare "Original source" label. The heading is
+         state-dependent on purpose — printing "Source confirmed" over an
+         unconfirmed source would be a truth violation. #}
+      <div class="os-rail-card os-rail-card--source{% if room.source.is_confirmed %} os-rail-card--confirmed{% endif %}">
+        <p class="os-rail-card__title">
+          {% if room.source.is_confirmed %}
+            {{ os_icon('check', 'os-icon os-icon--sm') }}Source confirmed
+          {% else %}
+            {{ os_icon('doc', 'os-icon os-icon--sm') }}Source captured
+          {% endif %}
+        </p>
+        <dl class="os-meta">
+          <dt>Capture method</dt>
+          <dd>{{ room.source.capture_method_label }}</dd>
+          <dt>Source version</dt>
+          <dd>{{ room.source.version_label }}</dd>
+        </dl>
+        <p class="os-rail-card__note">
+          {% if room.source.has_correction %}
+            Your correction is shown in the source below. The wording you
+            originally brought in is kept and can be compared at any time.
+          {% else %}
+            This is exactly the wording you brought in. Nothing has been added,
+            removed, or reworded.
+          {% endif %}
+        </p>
+        {# These two point at the <details> ELEMENT, not at its body. A
+           fragment link into the body of a closed <details> lands on a
+           display:none target, so with JavaScript off nothing visibly
+           happens; addressing the disclosure itself at least scrolls the
+           member to the control they asked for. data-os-reveal then lets
+           the room script open it and move focus to its summary, so the
+           action always visibly works. #}
+        <ul class="os-rail-actions">
+          {% if room.source.has_correction %}
+          <li>
+            <a class="os-rail-action" href="#os-compare" data-os-reveal="os-compare">
+              {{ os_icon('compare', 'os-icon os-icon--sm') }}Compare with original
+            </a>
+          </li>
+          {% endif %}
+          <li>
+            <a class="os-rail-action" href="{{ room.replace_step_url }}" data-os-step="replace">
+              {{ os_icon('link', 'os-icon os-icon--sm') }}Replace source
+            </a>
+          </li>
+          <li>
+            <a class="os-rail-action os-rail-action--danger" href="#os-delete" data-os-reveal="os-delete">
+              {{ os_icon('trash', 'os-icon os-icon--sm') }}Delete source
+            </a>
+          </li>
+        </ul>
+      </div>
+      {% else %}
+      <p class="os-rail__intro">
+        Bring in one role, review its wording, and explore how your authorized
+        evidence aligns.
+      </p>
+      {# Owner decision 2026-08-03 (V3), superseding handoff §14-M5: the
+         locked authority's decorative props are restored, cropped from the
+         locked PNGs. Decorative only — alt="" and aria-hidden, so nothing
+         here is ever announced or treated as content. #}
+      <img class="os-prop"
+           src="{{ url_for('static', filename='images/opportunity-slate/prop-source-review.png') }}"
+           alt=""
+           aria-hidden="true"
+           width="448"
+           height="455"
+           loading="lazy"
+           decoding="async">
+      <div class="os-rail-note">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}Why start here?
+        </p>
+        <p>
+          The role wording sets the context for everything that follows. Get it
+          right here, and your analysis will be sharper.
+        </p>
+      </div>
+      {% endif %}
+
+      {# Session-truth card. The signed-in wording is reproduced exactly from
+         image 01 (handoff section 14-M11 lists these as trust-critical
+         sentences). The public variant states its own, different truth
+         rather than borrowing a promise that does not apply. #}
+      {% if room.is_public %}
+      <div class="os-truth-card os-truth-card--public">
+        <span class="os-truth-card__badge">{{ os_icon('globe') }}</span>
+        <div>
+          <p class="os-truth-card__heading">Public session</p>
+          <p>Your text is sent to PeerSlate to draw this screen, and never stored.</p>
+          <p>The only copy kept is in this browser tab.</p>
+        </div>
+      </div>
+      {% elif room.source and room.source.is_confirmed %}
+      <div class="os-truth-card os-truth-card--confirmed">
+        <span class="os-truth-card__badge">{{ os_icon('check') }}</span>
+        <div>
+          <p class="os-truth-card__heading">Source confirmed</p>
+          <p>Nothing is saved yet.</p>
+          <p>You decide what happens next.</p>
+        </div>
+      </div>
+      {% else %}
+      <div class="os-truth-card">
+        <span class="os-truth-card__badge">{{ os_icon('lock') }}</span>
+        <div>
+          <p class="os-truth-card__heading">Session private</p>
+          <p>Nothing is saved yet.</p>
+          <p>You decide what happens next.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if room.source and room.source.has_correction %}
+      <div class="os-truth-card os-truth-card--warning">
+        <span class="os-truth-card__badge">{{ os_icon('pencil') }}</span>
+        <div>
+          <p class="os-truth-card__heading">1 wording correction</p>
+          <p>Your correction is shown. The original wording is kept.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if room.step == 'review' and room.source %}
+      {# Image 02 places the prop at the foot of the left rail on this
+         screen rather than above the "Why" block. Decorative only. #}
+      <img class="os-prop"
+           src="{{ url_for('static', filename='images/opportunity-slate/prop-source-review.png') }}"
+           alt=""
+           aria-hidden="true"
+           width="448"
+           height="455"
+           loading="lazy"
+           decoding="async">
+      {% endif %}
+    </div>
+
+    {# ---------------------------------------------------------------
+       Central workbench.
+       --------------------------------------------------------------- #}
+    <div class="os-workbench">
+      <div class="os-card os-card--workbench">
+
+        {% if room.error %}
+        {# Image 09's fallback-card grammar: icon, heading, sentence, and a
+           truth footer. Used inline here so the member's own text below it
+           is never replaced by an error page. #}
+        <div class="os-fallback" role="alert" tabindex="-1" data-os-error>
+          <span class="os-fallback__badge os-fallback__badge--{{ 'block' if room.error.kind == 'unavailable' else 'warning' }}">
+            {{ os_icon('warning' if room.error.kind != 'unavailable' else 'block') }}
+          </span>
+          <div class="os-fallback__body">
+            <p class="os-fallback__heading">{{ room.error.heading }}</p>
+            <p class="os-fallback__message">{{ room.error.message }}</p>
+          </div>
+          {% if room.error.truth %}
+          <p class="os-fallback__truth">{{ os_icon('lock', 'os-icon os-icon--sm') }}{{ room.error.truth }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if room.step == 'review' and room.source %}
+          {% include "partials/opportunity_slate/_review.html" %}
+        {% else %}
+          {% include "partials/opportunity_slate/_intake.html" %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# ---------------------------------------------------------------
+       Right rail: contextual help. Geometry is constant across states
+       (handoff section 3); only the content changes.
+       --------------------------------------------------------------- #}
+    <div class="os-rail os-rail--right">
+      {# The locked set carries this rail's standing help as plain sections
+         separated by hairline rules (image 01), and reserves a card here
+         for state-specific data (image 02's source card, image 03's
+         statement panel). The first OS-1 pass boxed all three standing
+         sections, which is what made this rail read as overloaded and the
+         workbench as cramped — the real complaint behind owner findings
+         V14 and V15.
+
+         Image 02 keeps its source card in THIS rail; owner finding V14
+         moved it to the left rail, where image 03 places its own source
+         card. That deviation from image 02 is deliberate and is recorded
+         as handoff section 14-M15. #}
+      <div class="os-rail-note os-rail-note--divided">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}What happens next
+        </p>
+        {# Truth adaptation. Image 01's rail promises requirement extraction
+           and an evidence alignment map; neither exists in this slice, so
+           this states what the build actually does today. #}
+        {% if room.step == 'review' %}
+        <p>Check the wording, correct anything that came through wrong, then confirm it.</p>
+        {% else %}
+        <p>You'll review the captured wording and confirm PeerSlate has the employer's text right.</p>
+        {% endif %}
+        <p>
+          Requirement review and the evidence alignment map are not built yet.
+          Nothing on this screen is analyzed.
+        </p>
+      </div>
+
+      <div class="os-rail-note os-rail-note--divided">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('globe', 'os-icon os-icon--sm') }}Supported sources
+        </p>
+        <p>Paste or type the role text.</p>
+        <p>
+          Document upload and public-link import are not available on this
+          screen yet{% if room.is_public %}, and will be for signed-in members only{% endif %}.
+        </p>
+      </div>
+
+      <div class="os-rail-note os-rail-note--divided">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('shield', 'os-icon os-icon--sm') }}Your role text
+        </p>
+        {% if room.is_public %}
+        <p>
+          Sent to PeerSlate to draw this screen, and never stored there. The
+          only copy kept is in this browser tab.
+        </p>
+        {% else %}
+        <p>Stays in this private working session. It is never listed, shared, or sent to an employer.</p>
+        {% endif %}
+        <p>Nothing here is published or made public.</p>
+      </div>
+
+      {# The authority's ambient stone, at the foot of the right rail.
+         Decorative only (owner decision 2026-08-03, V3). #}
+      <img class="os-prop os-prop--stone"
+           src="{{ url_for('static', filename='images/opportunity-slate/prop-ambient-stone.png') }}"
+           alt=""
+           aria-hidden="true"
+           width="512"
+           height="424"
+           loading="lazy"
+           decoding="async">
+    </div>
+  </div>
+</div>

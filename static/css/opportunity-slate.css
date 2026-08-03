@@ -1,0 +1,1545 @@
+/* =========================================================
+   OPPORTUNITY SLATE — PS-OPPSLATE-001, slice OS-1
+
+   Visual authority: docs/initiatives/PS-OPPORTUNITY-SLATE-001/
+   visual-authority/2026-08-02-chatgpt-lock/
+     01-PRIMARY-Role-Bring-a-role.png      (role intake)
+     02-PRIMARY-Review-Source.png          (review source)
+     04-PRIMARY-Alignment-Unsaved-...png   (exact geometry authority:
+                                            card system, depth, and the
+                                            uniform 12px card gap)
+     09-SUPPORT-Fallback-...png            (failure-card grammar)
+
+   Scoped entirely under body.opportunity-slate-page so nothing here can
+   leak into another room. Follows the established room convention
+   (--wk-* in workshop.css, --ss-* in owner-studio.css, --jbook-* in
+   journal.css): a page-scoped custom-property palette seeded from the
+   site's Foundation C tokens in static/css/style.css (--ps-ink-950,
+   --ps-product-indigo(-strong), --ps-evidence-amber, --ps-success,
+   --ps-danger, --ps-font-display, --ps-font-ui) rather than binding
+   directly to the global cascade. Nothing here invents a new brand
+   palette.
+
+   v1 is light-scoped (color-scheme: light), the locked Workshop
+   precedent — the generated set is light-theme only and a dark treatment
+   is a future ChatGPT-lane decision (handoff section 14-M8). Because the
+   room is light-scoped, every token below is stated once and does not
+   flip with the site theme.
+   ========================================================= */
+
+body.opportunity-slate-page {
+    color-scheme: light;
+
+    /* Cool porcelain canvas and near-white workbench surface, sampled from
+       images 01/02/04's background and card fills.
+
+       Owner visual review 2026-08-03, V2/V5/V16: the first pass filled the
+       workbench with --os-surface-warm (#f7f6f1), which reads as a yellow
+       cast beside the authority. Pete: "you've got a yellow flow center, it
+       should be a white but with texture." The second pass made it #ffffff.
+
+       Owner decision, 2026-08-03, second round: "Make it an off white that
+       has texture." Pure white was wrong in the other direction — against
+       this cool canvas it sampled BLUER than the authority's own paper
+       (R-B = -2, where locked image 01's surface measures R-B = +2 and
+       image 02's is neutral), so it read clinical rather than like paper.
+
+       --os-surface-paper is now #fcfbf8: a warm-neutral off-white, R-B =
+       +4 at 252 lightness. For scale, the rejected #f7f6f1 was R-B = +6 at
+       247 — five steps darker and half again as warm, which is the
+       difference between paper and yellow. Candidates from #fdfcfa to
+       #fbf9f5 were rendered and compared against the locked images in
+       context; #fdfcfa still read as white and #fbf9f5 started to read
+       cream. The grain and the top-lit sheen below are unchanged; only
+       the base tone moved. */
+    --os-canvas: #dbe3f0;
+    --os-canvas-deep: #ccd6e8;
+    --os-surface: #fbfcfe;
+    --os-surface-paper: #fcfbf8;
+    --os-surface-muted: #f2f5fb;
+    --os-line: #ccd6ec;
+    --os-line-soft: #e6ebf6;
+
+    /* Near-black navy for headings and primary text; muted slate for
+       supporting copy (locked color semantics, handoff section 5).
+       #0a1b36 on --os-surface reads ~16:1; #4a5578 reads ~7.4:1. */
+    --os-ink: #0a1b36;
+    --os-muted: #4a5578;
+
+    /* Cobalt, reserved primarily for actions, links, selected outlines and
+       important icons. #0d45c3 reads ~7.9:1 as text on white and white-on-
+       fill, so no text-safe derivation is needed. */
+    --os-action: #0d45c3;
+    --os-action-strong: #0a3499;
+    --os-action-tint: #e7edfc;
+    --os-on-action: #ffffff;
+
+    /* Green = saved / supported. */
+    --os-success: #24a36a;
+    --os-success-ink: #1f6244;
+    --os-success-tint: #e6f4ec;
+
+    /* Amber = partially supported / recoverable warning. --os-warning
+       (#b87900) reads ~3.2-3.6:1 on white and on the tint: enough for a
+       border or an icon (3:1, non-text) but short of the 4.5:1 small-text
+       minimum. --os-warning-ink is the text-safe amber. Every amber TEXT
+       use reads --os-warning-ink. This split is copied from workshop.css's
+       --wk-warning / --wk-warning-ink and exists for the same reason. */
+    --os-warning: #b87900;
+    --os-warning-ink: #7a4f00;
+    --os-warning-tint: #fbf0e0;
+
+    /* Slate gray = not enough information (declared now so the alignment
+       slices inherit one palette rather than inventing a second).
+
+       Same border/icon vs text split as --os-warning: #6b7590 clears 3:1
+       against every surface in the room but only reached 4.59:1 as text
+       on the old pure-white workbench, and the off-white base above took
+       that to 4.44:1 — under the small-text minimum. --os-neutral-ink is
+       the text-safe slate (4.90:1 on the workbench, 4.65:1 on the muted
+       tint). Every NEUTRAL TEXT use reads --os-neutral-ink; borders and
+       icons keep --os-neutral. */
+    --os-neutral: #6b7590;
+    --os-neutral-ink: #656e88;
+    --os-neutral-tint: #eef1f6;
+
+    --os-danger: #b23a2f;
+    --os-danger-ink: #93291f;
+    --os-danger-tint: #fbeae8;
+
+    --os-focus: #0d45c3;
+
+    /* The uniform 12px vertical card spacing image 04 locks. Applied as a
+       single `gap` on card stacks — never as ad-hoc margins. */
+    --os-card-gap: 12px;
+    --os-radius: 18px;
+    --os-radius-sm: 12px;
+
+    /* ---------------------------------------------------------------
+       Elevation scale (owner visual review 2026-08-03, V4/V7/V17:
+       "cards do not pop", "there's way more shadow", "shadows are way
+       off on every card"). Three levels, each built from the --wk-shadow
+       idiom but carried deeper: an inset top highlight so the surface
+       separates from its own fill, a tight contact shadow that anchors
+       the card to the canvas, a mid umbra, and a wide soft ambient pool.
+       Tuned by side-by-side comparison against images 01/02/04, not by
+       picking numbers once.
+       --------------------------------------------------------------- */
+
+    /* Level 1 — rail cards, wells, small surfaces. */
+    --os-shadow-card:
+        inset 0 1px 0 rgb(255 255 255 / 92%),
+        0 1px 2px rgb(24 36 76 / 16%),
+        0 5px 12px rgb(24 36 76 / 16%),
+        0 20px 42px rgb(24 36 76 / 18%);
+
+    /* Level 2 — the extraction-concern card and other surfaces that sit
+       above the workbench rather than on the canvas. */
+    --os-shadow-float:
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 2px 4px rgb(24 36 76 / 16%),
+        0 10px 22px rgb(24 36 76 / 18%),
+        0 32px 64px rgb(24 36 76 / 20%);
+
+    /* Level 3 — the centre workbench. The authority's biggest single
+       depth cue: the pool this casts is what darkens the canvas behind
+       both rails. */
+    --os-shadow-raised:
+        inset 0 1px 0 rgb(255 255 255 / 96%),
+        0 1px 2px rgb(24 36 76 / 22%),
+        0 4px 8px rgb(24 36 76 / 18%),
+        0 16px 30px rgb(24 36 76 / 22%),
+        0 48px 88px rgb(24 36 76 / 26%),
+        0 120px 200px rgb(24 36 76 / 28%);
+
+    /* Recessed, not raised: the paste box and read-only wells read as cut
+       into the workbench rather than floating on it. */
+    --os-shadow-well:
+        inset 0 2px 4px rgb(24 36 76 / 10%),
+        inset 0 1px 1px rgb(24 36 76 / 8%);
+
+    /* Paper grain (V5/V16: "it should be a white but with texture").
+       A procedural fractal-noise tile as an inline SVG data URI — no
+       external asset, no new dependency, no network request. Held at 5%
+       so it is felt rather than seen and cannot move any text contrast
+       ratio: the tile's mean luminance shift on white is under one
+       sRGB step. */
+    --os-grain:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.075'/%3E%3C/svg%3E");
+
+    /* The workbench surface: grain over a top-lit sheen. The sheen used
+       to fall from white to a cool #f3f7fd, which pulled the foot of the
+       surface toward the canvas and was half of why the whole card read
+       blue. It now falls through the off-white base to a slightly deeper
+       warm-neutral, so the light still comes from the top but the paper
+       stays paper all the way down. */
+    --os-paper:
+        var(--os-grain),
+        linear-gradient(180deg, #fdfdfb 0%, #fcfbf8 48%, #f4f3f0 100%);
+
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+}
+
+/* The porcelain canvas is painted on .main-content rather than <body> so it
+   covers the room's full scroll height on a long source document. A fixed
+   attachment on <body> would leave the canvas one viewport tall and drop
+   the rest of a long page onto bare white. */
+/* Owner visual review 2026-08-03, V7: "look at the left and the right sides
+   of the page — there's way more shadow." Most of that is the canvas
+   itself. Sampled from image 01, the authority's background runs from
+   about #eaeff5 at the top to #d3ddec low on the left and #d9dfe7 at the
+   foot, and it is a greyer blue than the first pass shipped. Together with
+   the deeper workbench pool below, that modelling is what makes both rails
+   read as sitting inside a lit room rather than on flat paper. */
+body.opportunity-slate-page .main-content {
+    background:
+        radial-gradient(125% 72% at 50% 6%,
+            #edf1f8 0%,
+            #e4eaf4 40%,
+            var(--os-canvas) 74%,
+            var(--os-canvas-deep) 100%);
+}
+
+/* Owner visual review 2026-08-03, V15 + the full-parity directive: both
+   rails come in and the reclaimed width goes to the centre.
+   260/300 left the workbench at ~51% of a 1440 viewport.
+
+   Third parity round: the authority does NOT use one proportion for both
+   screens, and splitting the difference across them (57% on both) matched
+   neither. Measured off the locked PNGs by scanning for the workbench's
+   warm surface against the cool canvas:
+
+     image 01  1448px render, workbench x332..1102   770px = 53.2%
+     image 02  1295px render, workbench x239..1075   836px = 64.6%
+
+   That difference is the design, not noise: screen 1 is an intake form
+   whose object is a paste box, and it wants air around it; screen 2 is a
+   reading document, and it wants the width. Image 02 shrinks its rails
+   AND widens its centre to get there. So each screen carries its own
+   proportion, and .os-layout--review is the review variant.
+
+   The arithmetic at a 1440 viewport, where .os-layout's own padding is
+   2.5rem a side and its column gap is 2vw = 28.8px:
+
+     intake  40 + 235 + 54.7 |  766 |  54.7 + 249 + 40   -> 53.2%
+     review  40 + 196 + 28.8 |  930 |  28.8 + 176 + 40   -> 64.6%
+
+   Image 01 also spends far more of its side zones on AIR than on rail:
+   its left rail ink is 227 CSS px with a 58px gap to the workbench, where
+   ours was 261px with a 29px gap. Same zone, different split — and the
+   authority's split is what makes its workbench read as a card floating
+   in a room rather than one panel of three. Hence the larger intake gap
+   below. Image 02's own gap measures ~33px, close enough to the existing
+   2vw that the review screen keeps it. */
+.os {
+    --os-rail-left: 235px;
+    --os-rail-right: 249px;
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    padding-bottom: 3rem;
+}
+
+.os *,
+.os *::before,
+.os *::after { box-sizing: border-box; }
+
+.os p { margin: 0 0 0.55rem; }
+.os p:last-child { margin-bottom: 0; }
+
+.os-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.os-icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.os-icon--sm { width: 16px; height: 16px; stroke-width: 1.8; }
+
+/* ---------------------------------------------------------
+   Subheader — Back + title only (handoff section 14-M7).
+   --------------------------------------------------------- */
+.os-subheader {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem clamp(1rem, 4vw, 2.5rem);
+    background: rgb(255 255 255 / 62%);
+    border-bottom: 1px solid var(--os-line);
+    backdrop-filter: blur(6px);
+}
+.os-subheader__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 24px;
+    padding: 0.3rem 0.45rem;
+    border-radius: 8px;
+    color: var(--os-action);
+    font-weight: 600;
+    text-decoration: none;
+}
+.os-subheader__back:hover { text-decoration: underline; }
+.os-subheader__rule {
+    width: 1px;
+    height: 20px;
+    background: var(--os-line);
+}
+.os-subheader__title {
+    font-family: var(--ps-font-display);
+    font-size: 1.06rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* ---------------------------------------------------------
+   Truth banners (public session, JavaScript-off note).
+   --------------------------------------------------------- */
+.os-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 1rem clamp(1rem, 4vw, 2.5rem) 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--os-action);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-action-tint);
+    color: var(--os-ink);
+    font-size: 0.9rem;
+}
+.os-banner__label {
+    font-weight: 700;
+    color: var(--os-action-strong);
+    white-space: nowrap;
+}
+.os-banner--warning {
+    border-color: var(--os-warning);
+    background: var(--os-warning-tint);
+}
+.os-banner--warning .os-banner__label { color: var(--os-warning-ink); }
+
+/* ---------------------------------------------------------
+   Three-zone layout (handoff section 12).
+   --------------------------------------------------------- */
+.os-layout {
+    display: grid;
+    grid-template-columns: var(--os-rail-left) minmax(0, 1fr) var(--os-rail-right);
+    align-items: start;
+    gap: clamp(0.9rem, 3.8vw, 3.45rem);
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1rem, 4vw, 2.5rem) 0;
+}
+
+/* Review · Source: image 02's proportions (see the note above the rail
+   variables). The modifier is set from the same condition that chooses
+   _review.html over _intake.html, so the geometry cannot drift from the
+   screen it belongs to. Below 1200px the rails leave the columns and
+   these widths stop applying, so the variant costs nothing on a phone. */
+.os-layout--review {
+    --os-rail-left: 196px;
+    --os-rail-right: 176px;
+    gap: clamp(0.9rem, 2vw, 1.85rem);
+}
+/* Image 02 sets its rails a notch smaller than image 01's — the narrower
+   rail and the smaller type are one gesture, not two. Sizes below are set
+   from scale-free ratios measured inside each image (line-spacing in the
+   rail against line-spacing in the workbench), because a mockup PNG's
+   export scale is unknown and absolute px cannot be recovered from it:
+
+     image 02  rail intro / document body   0.938   (ours now 0.939)
+     image 02  "why" note  / document body  0.846   (ours 0.846)
+     image 01  rail intro / editor help     1.152   (ours 1.155)
+
+   The state title is the exception, and it is the one place a literal
+   match would be wrong: image 02 draws "Review · Source" 147 CSS px wide
+   in a 197px rail, but its display face is about 25% narrower per
+   character than Newsreader, which the site actually loads. Matching that
+   WIDTH would need ~20px type. Matching its RATIO to the rail keeps the
+   heading legible and still visibly the authority's modest rail title
+   rather than the intake screen's large workbench title. */
+.os-layout--review .os-rail { font-size: 0.82rem; }
+.os-layout--review .os-rail__intro { font-size: 0.88rem; }
+.os-layout--review .os-rail-note__eyebrow,
+.os-layout--review .os-rail-card__title { font-size: 0.92rem; }
+.os-layout--review .os-state-title { font-size: clamp(1.2rem, 1.5vw, 1.35rem); }
+.os-layout--review .os-truth-card__heading { font-size: 0.92rem; }
+
+.os-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--os-card-gap);
+    min-width: 0;
+    /* V15: one notch down in type scale, and the rhythm tightened with
+       it. Nothing in a rail drops below 0.8rem / 12.8px. */
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+/* The authority gives the standing-help rail more air between sections
+   than the 12px card rhythm; card stacks keep the 12px rule. */
+.os-rail--right { gap: 0.65rem; }
+.os-rail--right > .os-rail-card + .os-rail-note--divided { margin-top: 0.25rem; }
+
+.os-workbench { min-width: 0; }
+
+/* ---------------------------------------------------------
+   Decorative props (owner decision 2026-08-03, V3; supersedes the
+   handoff's §14-M5 "not implemented" ruling). Cropped from the locked
+   authority PNGs into static/images/opportunity-slate/. Always
+   alt="" + aria-hidden: these are ambient material, never content, and
+   an assistive-technology user loses nothing by not hearing them.
+   --------------------------------------------------------- */
+.os-prop {
+    display: block;
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    margin: 0.35rem auto 0.15rem;
+    pointer-events: none;
+    user-select: none;
+}
+.os-prop--stone {
+    max-width: 250px;
+    margin-top: 1.1rem;
+}
+
+/* ---------------------------------------------------------
+   Left rail.
+   --------------------------------------------------------- */
+.os-state-title {
+    margin: 0;
+    font-family: var(--ps-font-display);
+    font-size: clamp(1.45rem, 1.95vw, 1.8rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--os-ink);
+}
+.os-state-title__dot { margin: 0 0.35rem; color: var(--os-muted); }
+.os-checkpoint {
+    margin: 0.25rem 0 0;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--os-line);
+    color: var(--os-muted);
+    font-size: 0.8rem;
+}
+.os-rail__intro {
+    margin: 0;
+    color: var(--os-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+/* V3: in the authority the "Why start here?" / "Why review the source?"
+   block is NOT a card — it is a blue sparkle, a serif heading, and copy
+   sitting directly on the canvas beside the illustration. The first pass
+   boxed it, which is what Pete flagged. */
+.os-rail-note {
+    margin: 0.15rem 0 0.1rem;
+    color: var(--os-muted);
+    font-size: inherit;
+    line-height: 1.55;
+}
+.os-rail-note p { margin-bottom: 0.5rem; }
+/* Top-aligned rather than centred, because at the review rail's 196px a
+   long eyebrow ("Why review the source?") legitimately takes two lines
+   and a vertically centred icon then floats between them. The authority
+   keeps that string on one line, but its display face is materially
+   narrower per character than Newsreader; shrinking our type far enough
+   to match the width would put the eyebrow below its own body copy and
+   destroy the hierarchy, so the wrap is accepted and composed instead. */
+.os-rail-note__eyebrow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0 0 0.4rem;
+    font-family: var(--ps-font-display);
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--os-ink);
+    text-wrap: balance;
+}
+.os-rail-note__eyebrow .os-icon { color: var(--os-action); margin-top: 0.12em; }
+
+/* The authority's right rail carries its standing help as plain sections
+   on the canvas, separated by hairline rules — a card only appears there
+   when the rail is showing state-specific data (image 02's source card,
+   image 03's statement panel, image 04's evidence panel). The first pass
+   boxed all three help sections, which is what made that rail read as
+   overloaded and the centre as cramped. Owner review V14/V15 intent. */
+.os-rail-note--divided + .os-rail-note--divided {
+    margin-top: 0.7rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--os-line);
+}
+
+.os-rail-card {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-card);
+    color: var(--os-muted);
+    font-size: 0.83rem;
+}
+.os-rail-card__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.45rem;
+    /* The authority sets every rail heading in the display serif, not in
+       bold UI sans (V10, type-family parity). */
+    font-family: var(--ps-font-display);
+    color: var(--os-ink);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.os-rail-card__title .os-icon { color: var(--os-action); }
+.os-rail-card__note { margin-top: 0.5rem; }
+.os-rail-card--confirmed .os-rail-card__title .os-icon { color: var(--os-success-ink); }
+
+.os-meta { margin: 0; display: grid; gap: 0.1rem; }
+.os-meta dt {
+    color: var(--os-muted);
+    font-size: 0.76rem;
+    text-transform: none;
+}
+.os-meta dd {
+    margin: 0 0 0.4rem;
+    color: var(--os-ink);
+    font-weight: 600;
+}
+
+.os-rail-actions { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.1rem; }
+.os-rail-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 24px;
+    padding: 0.35rem 0.4rem;
+    border-radius: 8px;
+    color: var(--os-action);
+    font-weight: 600;
+    text-decoration: none;
+}
+.os-rail-action:hover { text-decoration: underline; }
+.os-rail-action--danger { color: var(--os-danger-ink); }
+
+/* Session-truth card. */
+.os-truth-card {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-card);
+    color: var(--os-muted);
+    font-size: 0.82rem;
+}
+.os-truth-card p { margin-bottom: 0.3rem; }
+.os-truth-card__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    /* The authority draws this badge as a circle, not a rounded square. */
+    border-radius: 50%;
+    background: var(--os-action-tint);
+    color: var(--os-action);
+}
+.os-truth-card__heading {
+    margin: 0 0 0.2rem;
+    font-family: var(--ps-font-display);
+    color: var(--os-ink);
+    font-weight: 600;
+    font-size: 0.98rem;
+}
+.os-truth-card--confirmed .os-truth-card__badge { background: var(--os-success-tint); color: var(--os-success-ink); }
+.os-truth-card--warning .os-truth-card__badge { background: var(--os-warning-tint); color: var(--os-warning-ink); }
+.os-truth-card--warning { border-color: var(--os-warning); }
+.os-truth-card--public .os-truth-card__badge { background: var(--os-action-tint); color: var(--os-action-strong); }
+
+/* ---------------------------------------------------------
+   Workbench card.
+   --------------------------------------------------------- */
+.os-card {
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: var(--os-radius);
+    background-color: var(--os-surface-paper);
+    background-image: var(--os-paper);
+    box-shadow: var(--os-shadow-raised);
+}
+.os-card--workbench {
+    display: flex;
+    flex-direction: column;
+    gap: var(--os-card-gap);
+    padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1.25rem, 2.6vw, 2.35rem)
+        clamp(1.1rem, 2.2vw, 1.75rem);
+    /* Review Source composes against the workbench's own inner width, not
+       the viewport: the same 1200px viewport is a 1057px workbench with
+       the rails gone and a 534px workbench with them still there. A
+       viewport breakpoint cannot tell those apart, so it would have to be
+       wrong in one of them. (resume2.css and brand-comparison.css already
+       use container queries; this adds no dependency.) */
+    container-type: inline-size;
+    container-name: os-workbench;
+
+    /* Review Source's reading column, and the margin it leaves.
+       --os-measure     the reading measure
+       --os-concern-w   the card that occupies the margin
+       --os-concern-gap column -> card
+       --os-concern-bleed  how far the card runs into the workbench's
+                        own gutter, as image 02's card does
+
+       Third parity round. The previous pass fixed the measure at 32rem,
+       which was correct for a 826px workbench and wrong for image 02's
+       proportions once the workbench went to 929px: the column stayed put
+       and the margin grew, which makes the quiet space beside the card
+       worse rather than better. Image 02 sets the measure as a RATIO of
+       its own inner width. Measured on its 754px inner content:
+
+         reading column 512px (68%) | gap 37px (4.9%) | card 213px (28.3%)
+         with the card running 8px past the workbench's inner edge
+
+       so the ratio travels with the workbench instead of fighting it.
+       The rem values below are those ratios at a 1440 review workbench
+       (839px inner): 570 | 41 | 237, bleed 9.
+
+       The 36rem cap matters where the rails have left the layout: at a
+       1200px viewport the workbench is ~1120px inner, and 68% of that is
+       a 95-character line. 36rem holds it at about 72.
+
+       The card and its gap are ratios for the same reason. A fixed 14.8rem
+       card is 28% of the workbench at 1440 but 38% of it at 1280, which
+       dragged the measure down to ~55 characters exactly where the screen
+       is already tightest. Held as ratios, the whole arrangement scales
+       together and the measure stays in a 59-72 character band from the
+       700px container-query threshold all the way up. */
+    --os-measure: min(36rem, 68%);
+    --os-concern-w: clamp(12.5rem, 28.3%, 15.5rem);
+    --os-concern-gap: 4.9%;
+    --os-concern-bleed: 1%;
+    --os-measure-max: min(
+        var(--os-measure),
+        100% - (var(--os-concern-w) + var(--os-concern-gap) - var(--os-concern-bleed))
+    );
+}
+
+.os-workbench__title {
+    margin: 0;
+    font-family: var(--ps-font-display);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--os-ink);
+}
+.os-workbench__title--doc {
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    margin-bottom: -0.15rem;
+}
+.os-workbench__title-dot { margin: 0 0.4rem; color: var(--os-muted); }
+.os-workbench__lead {
+    margin: 0;
+    color: var(--os-muted);
+    font-size: 0.93rem;
+}
+/* The authority rules off the title block from the body below it. */
+.os-workbench__lead--ruled {
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--os-line-soft);
+}
+
+.os-form { display: flex; flex-direction: column; gap: var(--os-card-gap); }
+
+/* Editor + inert microphone (image 01/02). */
+.os-editor {
+    position: relative;
+    border: 1px solid var(--os-line);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    /* Recessed, not raised — the authority cuts the paste box into the
+       workbench rather than floating a second card on top of it (V9). */
+    box-shadow: var(--os-shadow-well);
+}
+.os-editor--invalid { border-color: var(--os-danger); }
+.os-editor__field {
+    display: block;
+    width: 100%;
+    padding: 1rem 5.75rem 1rem 1rem;
+    border: 0;
+    border-radius: var(--os-radius-sm);
+    background: transparent;
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    resize: vertical;
+}
+.os-editor__field:focus { outline: none; }
+.os-editor:focus-within {
+    border-color: var(--os-focus);
+    box-shadow: var(--os-shadow-well), 0 0 0 3px rgb(13 69 195 / 22%);
+}
+/* The <label> on this field is visually hidden, so the placeholder is the
+   only visible affordance and has to clear the 4.5:1 text bar, not the 3:1
+   non-text one. #5b678a on --os-surface reads ~5.4:1. */
+.os-editor__field::placeholder { color: #5b678a; }
+
+/* Microphone (owner visual review 2026-08-03, V1: "too small and not
+   blue"). The authority draws a large white disc carrying a solid cobalt
+   mic glyph, wrapped in a lighter periwinkle halo ring and a soft outer
+   glow, seated in the lower-right of the paste box.
+
+   It is still honestly inert — dictation is slice OS-5. aria-disabled
+   (not `disabled`) keeps it focusable and announced, the accessible name
+   ends "(not available yet)", the title says why, the cursor refuses, and
+   the always-visible note under the box repeats it in text. The disabled
+   presentation is deliberately one step quieter than the live control
+   will be: the outer glow is dropped and the halo is held at a flatter
+   opacity, so the two states are distinguishable side by side without
+   returning the button to the pale grey Pete rejected. */
+.os-mic {
+    position: absolute;
+    right: 1.4rem;
+    bottom: 1.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 66px;
+    height: 66px;
+    border: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 34%, #ffffff 0%, #ffffff 58%, #f4f7ff 100%);
+    color: var(--os-action);
+    cursor: not-allowed;
+    box-shadow:
+        0 0 0 7px rgb(214 227 251 / 62%),
+        0 0 0 8px rgb(160 190 240 / 55%),
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 2px 4px rgb(24 36 76 / 14%),
+        0 12px 26px rgb(24 36 76 / 20%);
+}
+.os-mic .os-icon {
+    width: 28px;
+    height: 28px;
+    stroke-width: 1.9;
+}
+/* The authority's glyph is a solid capsule over an outlined arc. */
+.os-mic .os-icon rect { fill: currentColor; stroke: currentColor; }
+.os-mic--sm {
+    width: 46px;
+    height: 46px;
+    right: 0.7rem;
+    bottom: 0.7rem;
+    box-shadow:
+        0 0 0 5px rgb(214 227 251 / 62%),
+        0 0 0 6px rgb(160 190 240 / 50%),
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 2px 4px rgb(24 36 76 / 12%),
+        0 8px 18px rgb(24 36 76 / 16%);
+}
+.os-mic--sm .os-icon { width: 22px; height: 22px; }
+.os-mic[aria-disabled="true"] { opacity: 1; }
+
+.os-help {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--os-muted);
+    font-size: 0.84rem;
+}
+.os-help--muted { color: var(--os-neutral-ink); }
+.os-help--muted .os-icon { color: var(--os-neutral-ink); }
+.os-footer-note { margin-top: calc(var(--os-card-gap) * -0.5); }
+
+.os-field-error {
+    margin: 0;
+    color: var(--os-danger-ink);
+    font-size: 0.87rem;
+    font-weight: 600;
+}
+
+/* Upload / import tiles — rendered per image 01, honestly unavailable.
+
+   Owner visual review 2026-08-03, V6: the first pass under-styled this
+   row. The authority pairs a large cobalt icon with a display-serif
+   title above the supporting lines, rules the whole region off from the
+   help text above and the note below, and splits the two options with a
+   vertical hairline that breaks around the word "or". */
+.os-tiles {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.15rem;
+    padding: 1.1rem 0 1.25rem;
+    border-top: 1px solid var(--os-line-soft);
+    border-bottom: 1px solid var(--os-line-soft);
+}
+.os-tiles__divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    align-self: stretch;
+    color: var(--os-muted);
+    font-size: 0.86rem;
+}
+.os-tiles__divider-line {
+    flex: 1 1 auto;
+    width: 1px;
+    min-height: 26px;
+    background: var(--os-line);
+}
+.os-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 0.5rem;
+    text-align: center;
+}
+.os-tile__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--os-action);
+}
+.os-tile__badge .os-icon { width: 32px; height: 32px; stroke-width: 1.6; }
+.os-tile__title {
+    margin: 0.1rem 0 0.05rem;
+    font-family: var(--ps-font-display);
+    font-size: 1.22rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--os-ink);
+}
+.os-tile__body { margin: 0; color: var(--os-muted); font-size: 0.85rem; line-height: 1.5; }
+.os-tile__state {
+    margin: 0.4rem 0 0;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--os-neutral);
+    border-radius: 999px;
+    color: var(--os-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.os-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface-muted);
+    box-shadow: var(--os-shadow-well);
+    color: var(--os-muted);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+.os-note .os-icon { flex: none; color: var(--os-action); }
+
+/* ---------------------------------------------------------
+   Context strip (image 02).
+   --------------------------------------------------------- */
+.os-context-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.35rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--os-line-soft);
+}
+
+/* Third parity round. Image 02 rules its context chips apart with vertical
+   hairlines and spreads them across the whole strip. This slice renders
+   three chips where the authority draws five — Role and Employer come from
+   AI interpretation in OS-2 and inventing them would be fabrication — so
+   left-grouping them left two thirds of the strip empty and made the bar
+   read as unfinished rather than sparse-by-truth. Equal cells plus the
+   authority's separators fill the width honestly: the same three facts,
+   composed as a metadata bar instead of a huddle. When OS-2 adds the two
+   real chips the cells simply divide five ways.
+
+   Scoped to the workbench container, not a viewport breakpoint, for the
+   same reason the concern card is: below 700px the strip wraps to the
+   two-per-row chip grid section 12 specifies, where a leading separator
+   on a wrapped row would read as a stray rule. */
+@container os-workbench (min-width: 700px) {
+    .os-context-strip { flex-wrap: nowrap; gap: 0; }
+    .os-context-strip > .os-chip { flex: 1 1 0; min-width: 0; padding-right: 1.1rem; }
+    .os-context-strip > .os-chip + .os-chip {
+        padding-left: 1.1rem;
+        border-left: 1px solid var(--os-line-soft);
+    }
+    .os-context-strip > .os-chip:last-child { padding-right: 0; }
+    .os-chip__value { overflow-wrap: anywhere; }
+}
+.os-chip { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* The authority seats each chip icon on a pale rounded tile rather than
+   floating a bare glyph on the paper. */
+.os-chip__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--os-action-tint);
+    color: var(--os-action);
+}
+.os-chip__label { display: block; color: var(--os-muted); font-size: 0.72rem; line-height: 1.35; }
+.os-chip__value { display: block; color: var(--os-ink); font-weight: 600; font-size: 0.85rem; line-height: 1.4; }
+
+/* ---------------------------------------------------------
+   Review body: the reading column and the concern card that sits in
+   its margin (owner visual review V13; authority image 02).
+
+   Measured off the locked image 02 (1295px render): the workbench is
+   835px wide, its inner content 755px, and that inner width is divided
+   68.5% reading column / 4.1% gap / 27.4% margin — with the card
+   running 17px further right still, into the workbench's own gutter.
+   The body copy holds that one measure from the first line to the last;
+   it is never re-flowed around the card.
+
+   The second pass put the card in a real grid column, which is what
+   pinched the reading column to ~460px and left a hard-edged void
+   beside "Required qualifications" once the card ran out. The third
+   pass tried a float and got a ~1200px measure, because a float only
+   helps if the text has a measure to keep. Both failures share one
+   cause: the column was being sized by what was left over instead of
+   being sized deliberately.
+
+   So: the reading column is given its own measure, and the card is
+   laid over the margin that measure leaves. Both children occupy grid
+   cell 1/1, so the row is as tall as the taller of them and a card
+   taller than the source can never overflow the workbench. Because
+   the card takes no track, the copy below it keeps the same measure as
+   the copy beside it — which is exactly what image 02 does.
+   --------------------------------------------------------- */
+.os-review {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--os-card-gap);
+}
+/* Stacked default (narrow workbench). The margin composition below is
+   opt-in, so nothing depends on the container query being supported. */
+.os-review__main { min-width: 0; max-width: 34rem; }
+.os-review__aside { min-width: 0; max-width: 34rem; }
+
+/* 700px is the narrowest workbench that still leaves the reading column
+   about 460px — roughly 58 characters of Inter — once the card has taken
+   its margin. Below that the card stacks under the document instead. */
+@container os-workbench (min-width: 700px) {
+    .os-review__main,
+    .os-review__aside { grid-area: 1 / 1; }
+    /* The measure, and a guarantee the copy can never reach the card. */
+    .os-review__main { max-width: var(--os-measure-max); }
+    .os-review__aside {
+        justify-self: end;
+        align-self: start;
+        width: var(--os-concern-w);
+        max-width: none;
+        margin-right: calc(-1 * var(--os-concern-bleed));
+    }
+    /* Only here is the card actually lifted off the margin. */
+    .os-concern-card { box-shadow: var(--os-shadow-float); }
+    /* Image 02 rules the title block off at the reading column's right
+       edge, not the workbench's — the heading, the lead and the rule
+       beneath them belong to the document, not to the whole surface.
+       Holding them to the same measure is what makes the margin read as
+       one reserved gutter running the full height of the document
+       instead of a hole punched in the middle of the page. */
+    .os-workbench__title--doc,
+    .os-workbench__lead--ruled { max-width: var(--os-measure-max); }
+}
+
+/* ---------------------------------------------------------
+   Source document.
+
+   V9: the first pass wrapped this in its own bordered, shadowed card
+   inside the workbench card — a card within a card, in a different
+   colour. In the authority the reviewed source is set directly on the
+   workbench surface.
+
+   V10, second pass: image 02 sets this body denser than we did and at
+   a larger size than the rails, so the document reads as the object on
+   the workbench rather than as more page furniture. Measured off the
+   image: one 1.5 line rhythm for paragraphs AND list items with no
+   extra space between bullets; a heading sitting barely more than a
+   line above what it introduces; and roughly two lines of air before
+   the next section starts.
+   --------------------------------------------------------- */
+.os-source-doc {
+    color: var(--os-ink);
+    font-size: 1rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.os-source-doc__heading {
+    /* Two lines of air above, barely one below — image 02's rhythm. */
+    margin: 1.45rem 0 0.2rem;
+    font-family: var(--ps-font-ui);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    color: var(--os-ink);
+}
+.os-source-doc__heading:first-child { margin-top: 0; }
+.os-source-doc__para { margin: 0 0 0.4rem; color: var(--os-muted); line-height: 1.5; }
+.os-source-doc__list { margin: 0 0 0.4rem; padding-left: 1.1rem; color: var(--os-muted); }
+.os-source-doc__list li { margin-bottom: 0; line-height: 1.5; }
+.os-source-doc__list li::marker { color: var(--os-neutral-ink); }
+.os-source-doc--compare {
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface-muted);
+    font-size: 0.86rem;
+}
+
+/* ---------------------------------------------------------
+   Extraction-concern card (V13).
+
+   The authority floats this card over the right of the workbench with
+   an amber concern heading, the flagged original wording, and the
+   member's corrected wording. That content is an AI proposal and
+   arrives with slice OS-2. Its placement, geometry, elevation and
+   styling are built now so the screen is not missing a structural
+   element — rendered in a truthful awaiting state that flags nothing,
+   proposes nothing, and does not claim any analysis has run. The amber
+   concern treatment is deliberately NOT used while there is no concern.
+
+   Image 02 draws a dashed leader from this card to the phrase it
+   flags. Handoff §14-M10 already ruled that out in favour of adjacency
+   + shared accent + programmatic association, and the empty state
+   settles it: with nothing flagged there is no phrase to point at, and
+   a leader landing on an arbitrary line of the member's own wording
+   would imply PeerSlate had picked it out. So the relationship is
+   carried by position — the card sits in the reading column's margin,
+   level with the top of the document it describes — by the accent rule
+   on its leading edge, and by the <aside> being named after the card's
+   own heading so it is announced and navigable as a note about this
+   source. When OS-2 has a real phrase, the accent takes the amber and
+   the association points at the phrase's id.
+   --------------------------------------------------------- */
+.os-concern-card {
+    padding: 1rem 1.05rem;
+    border: 1px solid var(--os-line-soft);
+    border-left: 3px solid var(--os-neutral);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    /* Flat by default: when the workbench is narrow this card is stacked
+       in the flow, and a raised full-width card inside the workbench card
+       is the "card within a card" reading finding V9 rejected. It takes
+       the float elevation only where it actually floats over the reading
+       column's margin — in the container query above. */
+    box-shadow: var(--os-shadow-card);
+    color: var(--os-muted);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+/* One line at the card's authority width. "Extraction concerns" is
+   trust-critical copy and cannot be shortened to fit, so the type is
+   sized to it rather than the other way round. */
+.os-concern-card__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.35rem;
+    font-family: var(--ps-font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    color: var(--os-ink);
+}
+.os-concern-card__title .os-icon { color: var(--os-neutral); }
+.os-concern-card__state {
+    display: inline-block;
+    margin: 0 0 0.5rem;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid var(--os-neutral);
+    border-radius: 999px;
+    color: var(--os-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+/* The empty state's "what to look for" block (third parity round). Set
+   quieter than the card's own prose so it reads as a checklist hanging
+   off the sentence above it rather than as a third paragraph. */
+.os-concern-card__lead {
+    margin: 0.7rem 0 0.3rem;
+    color: var(--os-ink);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+.os-concern-card__checks {
+    margin: 0;
+    padding-left: 1rem;
+    color: var(--os-muted);
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+.os-concern-card__checks li + li { margin-top: 0.3rem; }
+.os-concern-card__checks li::marker { color: var(--os-neutral-ink); }
+
+.os-concern-card__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 24px;
+    margin-top: 0.65rem;
+    padding: 0.3rem 0.4rem 0.3rem 0;
+    color: var(--os-action);
+    font-weight: 600;
+    text-decoration: none;
+}
+.os-concern-card__action:hover { text-decoration: underline; }
+
+.os-confirmed-banner {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--os-success);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-success-tint);
+    color: var(--os-ink);
+    font-size: 0.89rem;
+}
+.os-confirmed-banner .os-icon { color: var(--os-success-ink); }
+.os-confirmed-banner strong { display: block; }
+
+/* ---------------------------------------------------------
+   Disclosures: correction, compare, delete.
+   --------------------------------------------------------- */
+/* V11: the authority carries these as footer actions, not as two
+   full-width bars stacked in the middle of the workbench. The
+   disclosures stay real <details> elements — they are the keyboard and
+   no-JavaScript path — but at rest they are a quiet inline summary, and
+   they only take on card chrome once opened. */
+.os-disclosure { border-radius: var(--os-radius-sm); }
+.os-disclosure[open] {
+    border: 1px solid var(--os-line);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-card);
+}
+.os-disclosure__summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 44px;
+    padding: 0.55rem 0.6rem;
+    border-radius: var(--os-radius-sm);
+    color: var(--os-action);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.os-disclosure[open] .os-disclosure__summary { padding-left: 1rem; padding-right: 1rem; }
+.os-disclosure--danger .os-disclosure__summary { color: var(--os-danger-ink); }
+.os-disclosure__body { padding: 0 1rem 1rem; }
+
+/* One quiet utility row rather than a stack of full-width bars. An open
+   disclosure takes the whole row so its form is not squeezed. */
+.os-quiet-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 0.75rem;
+    margin-top: 0.15rem;
+}
+.os-quiet-actions > .os-disclosure[open] { flex: 1 1 100%; margin: 0.35rem 0; }
+.os-disclosure__warning {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--os-warning);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-warning-tint);
+    color: var(--os-warning-ink);
+    font-size: 0.87rem;
+    font-weight: 600;
+}
+.os-disclosure__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+/* Original / corrected pairing (image 02's card grammar). */
+.os-pair__label {
+    display: block;
+    margin: 0.5rem 0 0.35rem;
+    color: var(--os-ink);
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+.os-pair__original {
+    max-height: 14rem;
+    overflow: auto;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--os-line);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface-muted);
+    box-shadow: var(--os-shadow-well);
+    color: var(--os-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.os-compare { display: grid; grid-template-columns: 1fr 1fr; gap: var(--os-card-gap); }
+.os-compare__label {
+    margin: 0 0 0.35rem;
+    color: var(--os-ink);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------
+   Footer strip.
+   --------------------------------------------------------- */
+/* V11: truth on the left, every action on the right, on one row —
+   the authority's footer. The link cluster carries hairline separators
+   between its items and the primary button sits last. */
+.os-footer-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem 1.25rem;
+    margin-top: 0.35rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--os-line-soft);
+}
+.os-footer-strip__truth {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--os-muted);
+    font-size: 0.83rem;
+    line-height: 1.45;
+    max-width: 22rem;
+}
+.os-footer-strip__truth .os-icon {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+    border: 1px solid var(--os-line);
+    border-radius: 50%;
+    color: var(--os-action);
+}
+.os-footer-strip__truth strong { display: block; color: var(--os-ink); }
+.os-footer-strip__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem 1rem;
+    margin-left: auto;
+}
+.os-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.os-footer-links > .os-link { padding: 0 0.6rem; font-size: 0.87rem; }
+.os-footer-links > .os-link + .os-link { border-left: 1px solid var(--os-line); }
+
+.os-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    color: var(--os-action);
+    font-weight: 600;
+    text-decoration: none;
+}
+.os-link:hover { text-decoration: underline; }
+.os-link--danger { color: var(--os-danger-ink); }
+
+.os-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.65rem 1.35rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-family: var(--ps-font-ui);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.os-btn--sm { min-height: 38px; padding: 0.45rem 1rem; font-size: 0.9rem; }
+.os-btn--primary {
+    background: var(--os-action);
+    border-color: var(--os-action);
+    color: var(--os-on-action);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 22%),
+        0 1px 2px rgb(10 32 92 / 30%),
+        0 6px 14px rgb(10 32 92 / 26%),
+        0 16px 30px rgb(10 32 92 / 20%);
+}
+.os-btn--primary:hover { background: var(--os-action-strong); border-color: var(--os-action-strong); }
+.os-btn--danger {
+    background: var(--os-danger);
+    border-color: var(--os-danger);
+    color: #ffffff;
+}
+/* Disabled and honestly-inert primaries. #6b7590 on #dfe4ee reads ~3.6:1,
+   past the 3:1 UI-component minimum, and the label stays readable rather
+   than fading to decoration. */
+.os-btn[disabled],
+.os-btn[aria-disabled="true"] {
+    background: #dfe4ee;
+    border-color: #c6cfe0;
+    color: #4a5578;
+    cursor: not-allowed;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 70%),
+        0 1px 2px rgb(24 36 76 / 12%),
+        0 4px 10px rgb(24 36 76 / 12%);
+}
+.os-btn[disabled]:hover,
+.os-btn[aria-disabled="true"]:hover { background: #dfe4ee; border-color: #c6cfe0; }
+
+/* ---------------------------------------------------------
+   Fallback / failure card (image 09 grammar).
+   --------------------------------------------------------- */
+.os-fallback {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--os-warning);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-card);
+}
+.os-fallback__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--os-warning);
+    border-radius: 10px;
+    color: var(--os-warning-ink);
+}
+.os-fallback__badge--block { border-color: var(--os-danger); color: var(--os-danger-ink); }
+.os-fallback__body { min-width: 0; }
+.os-fallback__heading {
+    margin: 0 0 0.25rem;
+    font-family: var(--ps-font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--os-ink);
+}
+.os-fallback__message { margin: 0; color: var(--os-muted); font-size: 0.9rem; }
+.os-fallback__truth {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.65rem 0 0;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--os-line-soft);
+    color: var(--os-muted);
+    font-size: 0.83rem;
+}
+.os-fallback__truth .os-icon { color: var(--os-action); }
+
+/* ---------------------------------------------------------
+   Focus visibility (handoff section 13). A 3:1-plus ring on every
+   focusable control, never removed.
+   --------------------------------------------------------- */
+.os a:focus-visible,
+.os button:focus-visible,
+.os summary:focus-visible,
+.os [tabindex]:focus-visible,
+.os textarea:focus-visible {
+    outline: 3px solid var(--os-focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* ---------------------------------------------------------
+   Responsive (handoff section 12). Rails leave the columns in document
+   order; nothing hides and nothing needs horizontal scroll.
+   --------------------------------------------------------- */
+/* The concern card leaves the workbench margin on its own container
+   query above; it is not tied to a viewport breakpoint, because the
+   workbench width at a given viewport depends on whether the rails are
+   still in the layout. */
+@media (max-width: 1200px) {
+    .os-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .os-rail {
+        font-size: 0.86rem;
+    }
+    .os-rail--left {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        align-items: start;
+    }
+    .os-state-title,
+    .os-checkpoint,
+    .os-rail__intro { grid-column: 1 / -1; }
+    .os-rail--right {
+        grid-row: 3;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        align-items: start;
+    }
+    /* Ambient only: below the three-column layout the props would push
+       real content down the page for no gain. */
+    .os-prop { display: none; }
+}
+
+@media (max-width: 640px) {
+    .os-layout { padding-left: 1rem; padding-right: 1rem; }
+    .os-rail--left,
+    .os-rail--right { grid-template-columns: minmax(0, 1fr); }
+    .os-card--workbench { padding: 1.1rem; }
+    .os-tiles {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: stretch;
+        gap: 1rem;
+    }
+    .os-tiles__divider {
+        flex-direction: row;
+        justify-self: center;
+        align-self: auto;
+        width: 100%;
+        max-width: 16rem;
+    }
+    .os-tiles__divider-line { width: auto; height: 1px; min-height: 0; }
+    .os-compare { grid-template-columns: minmax(0, 1fr); }
+    .os-footer-strip { align-items: stretch; }
+    .os-footer-strip__truth { max-width: none; }
+    .os-footer-strip__actions { width: 100%; justify-content: flex-start; }
+    .os-footer-links { width: 100%; }
+    .os-footer-strip__actions form { width: 100%; }
+    .os-footer-strip__actions .os-btn { width: 100%; }
+
+    /* Third parity round, phone frames. rows="10" plus 5rem of reserved
+       mic space made the empty paste box about 370px tall at 390 — most
+       of a phone screen given to a box with nothing in it, on the screen
+       whose whole job is to invite text. The box keeps a comfortable
+       five visible lines and the mic comes down to a 48px target, which
+       is still twice the 2.5.8 minimum and no longer the loudest object
+       on the screen. rows="10" stays on the element, so the no-CSS
+       rendering is unchanged. */
+    .os-editor__field {
+        height: 13rem;
+        padding-right: 1rem;
+        padding-bottom: 3.5rem;
+    }
+    .os-mic { right: 0.7rem; bottom: 0.7rem; width: 48px; height: 48px; }
+    .os-mic .os-icon { width: 24px; height: 24px; }
+
+    /* The two import tiles are centred columns on the desktop authority.
+       Stacked on a phone that spent ~370px on two things that are
+       honestly unavailable, which is exactly backwards. Same badge,
+       title, body and availability chip, laid as a row: the chip stays
+       beside the title where it cannot be missed. Section 14-M9
+       adaptation; the dominant object and action are unchanged. */
+    .os-tiles { gap: 0.85rem; padding: 0.9rem 0 1rem; }
+    .os-tile {
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr);
+        column-gap: 0.7rem;
+        row-gap: 0.2rem;
+        align-items: center;
+        padding: 0;
+        text-align: left;
+    }
+    .os-tile__badge { grid-column: 1; grid-row: 1; width: 32px; height: 32px; }
+    .os-tile__badge .os-icon { width: 24px; height: 24px; }
+    .os-tile__title { grid-column: 2; grid-row: 1; margin: 0; font-size: 1.05rem; }
+    .os-tile__body { grid-column: 2; margin: 0; }
+    .os-tile__state { grid-column: 2; margin: 0; justify-self: start; }
+
+    /* The footer's "Correct wording" and "Delete source" are reveal links
+       for the two disclosures — which, once the layout is one column,
+       sit visibly a few pixels above them. Three copies of "Delete
+       source" within one screen (rail card, disclosure, footer) reads as
+       clutter, not as choice. The duplicates are hidden here; the real
+       controls they point at stay visible, focusable and operable, so no
+       capability is removed and nothing becomes keyboard-unreachable. */
+    .os-footer-links { gap: 0.15rem 1.1rem; }
+    .os-footer-links > .os-link { padding: 0; min-height: 32px; }
+    .os-footer-links > .os-link + .os-link { border-left: 0; }
+    .os-footer-links > .os-link[data-os-reveal] { display: none; }
+}
+
+@media (max-width: 380px) {
+    .os { font-size: 0.92rem; }
+    .os-subheader { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .os-banner { margin-left: 0.75rem; margin-right: 0.75rem; }
+    .os-layout { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .os-context-strip { gap: 0.5rem 1rem; }
+    .os-tile__title { font-size: 1rem; }
+    /* At 320 the workbench's own padding is worth more as measure than
+       as margin: 1.1rem a side costs 35px of a 320px screen, which is
+       four or five characters on every line of the member's document. */
+    .os-card--workbench { padding: 0.9rem; }
+    .os-source-doc { font-size: 0.95rem; }
+    /* The separators would wrap mid-cluster at this width and read as
+       stray rules; the links stack instead. */
+    .os-footer-links { flex-direction: column; align-items: flex-start; }
+    .os-footer-links > .os-link { padding-left: 0; }
+    .os-footer-links > .os-link + .os-link { border-left: 0; }
+}
+
+/* ---------------------------------------------------------
+   Reduced motion.
+   --------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .os *,
+    .os *::before,
+    .os *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}

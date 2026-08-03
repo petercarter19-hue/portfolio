@@ -32,6 +32,7 @@ from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from workshop_routes import workshop
+from opportunity_slate_routes import opportunity_slate
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -147,6 +148,22 @@ PEERSLATE_SESSION_SECRET_KEY = os.environ.get('PEERSLATE_SESSION_SECRET_KEY') or
     ('peerslate-session-v1:' + ANTHROPIC_API_KEY).encode('utf-8')
 ).hexdigest()
 
+# PS-OPPSLATE-001 (Opportunity Slate, slice OS-1): the anonymous public
+# session holds its working state in a signed context token in the
+# visitor's own browser, never on the server (handoff section 18). Same
+# fallback idiom as INTERVIEW_CONTEXT_SIGNING_KEY above — a dedicated env
+# var if set, else a value deterministically derived from the
+# already-required ANTHROPIC_API_KEY, so every worker signs and reads the
+# same token without requiring a new mandatory production secret. The
+# serializer itself is built in opportunity_slate_routes.py (with its own
+# dedicated salt) so a token minted for one surface can never be replayed
+# against another.
+PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY = os.environ.get(
+    'PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY'
+) or hashlib.sha256(
+    ('peerslate-opportunity-slate-context-v1:' + ANTHROPIC_API_KEY).encode('utf-8')
+).hexdigest()
+
 # Create the Flask app
 app = Flask(__name__)
 app.secret_key = PEERSLATE_SESSION_SECRET_KEY
@@ -229,6 +246,30 @@ app.config.update(
     # separate, later owner decision from the parent flag's.
     PEERSLATE_WORKSHOP_SESSION_ENABLED=(
         os.environ.get('PEERSLATE_WORKSHOP_SESSION_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-OPPSLATE-001: default-off Opportunity Slate room
+    # (GET /opportunity-slate). Slice OS-1 delivers role intake, Review
+    # Source, the member's manual wording correction, and checkpoint 1 of 2,
+    # for signed-in members against an owner-scoped ephemeral working
+    # session and for anonymous visitors against a signed, browser-held
+    # public session. No AI call exists on this surface yet. When the flag
+    # is off, every /opportunity-slate route 404s neutrally BEFORE any
+    # identity resolution. Keep off through merge and deployment; the route
+    # is public when enabled, so enablement runs through PS-OPS-001's
+    # Launch gate (handoff section 18), not a casual config change.
+    PEERSLATE_OPPORTUNITY_SLATE_ENABLED=(
+        os.environ.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED', 'false').lower() == 'true'
+    ),
+    PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
+    # Spend guard for handoff section 18 safeguard 3. CONFIG ONLY IN SLICE
+    # OS-1 — it is plumbed here so the ceiling is a deployment decision that
+    # already exists before the first AI call does, but slice OS-1 makes NO
+    # AI call on this surface, so nothing reads or enforces it yet. The
+    # enforcement (fail closed into the analysis-failure contract, honest
+    # copy, no partial results) belongs to slices OS-2/OS-3 with the
+    # endpoints it guards. Do not mistake this line for a live control.
+    PEERSLATE_OPPSLATE_DAILY_AI_CEILING=int(
+        os.environ.get('PEERSLATE_OPPSLATE_DAILY_AI_CEILING', '0') or 0
     ),
     PEERSLATE_TRUST_EASYAUTH_HEADERS=(
         os.environ.get('PEERSLATE_TRUST_EASYAUTH_HEADERS', 'false').lower() == 'true'
@@ -570,6 +611,7 @@ app.register_blueprint(control_room)
 app.register_blueprint(peerslate_api)
 app.register_blueprint(people_interests_api)
 app.register_blueprint(workshop)
+app.register_blueprint(opportunity_slate)
 
 # MAJOR 5 correction (independent review): rate limit Workshop's five
 # state-changing routes the same way the AI-cost routes above are limited.
@@ -620,6 +662,23 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
         _workshop_rate_limit
     )(app.view_functions[_workshop_rate_limited_endpoint])
 
+# PS-OPPSLATE-001: the same post-registration wrapper idiom for Opportunity
+# Slate's state-changing routes and its anonymous public-session transport.
+# Slice OS-1 has no AI endpoint, so the budget is a modest anti-abuse floor
+# rather than the interview AI budget; the tighter per-endpoint AI limits
+# (handoff section 18 safeguard 2, <= 6/minute) land with the slices that
+# introduce the calls they protect.
+for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
+    ('opportunity_slate.set_source', '30 per minute'),
+    ('opportunity_slate.correct_source', '30 per minute'),
+    ('opportunity_slate.confirm_source', '30 per minute'),
+    ('opportunity_slate.delete_source', '30 per minute'),
+    ('opportunity_slate.public_session', '30 per minute'),
+):
+    app.view_functions[_oppslate_rate_limited_endpoint] = limiter.limit(
+        _oppslate_rate_limit
+    )(app.view_functions[_oppslate_rate_limited_endpoint])
+
 
 @app.get('/healthz')
 def healthz():
@@ -655,6 +714,13 @@ def prevent_stale_html(response):
         'people_interests_api',
         'control_room',
         'workshop',
+        # PS-OPPSLATE-001: private in BOTH modes. An anonymous Opportunity
+        # Slate response carries the visitor's own pasted role text and a
+        # signed state token, so no-store applies signed out too. The
+        # blueprint also sets this header itself (and X-Robots-Tag) in its
+        # own after_request, so the guarantee does not depend on this set
+        # staying correct.
+        'opportunity_slate',
         }
     ):
         # These blueprints and identity-resolved app routes return private or

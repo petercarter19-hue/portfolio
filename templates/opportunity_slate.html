@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Opportunity Slate | PeerSlate{% endblock %}
+
+{% block meta_description %}Bring in one role, review its wording, and keep it private to your working session.{% endblock %}
+
+{% block body_class %} opportunity-slate-page{% endblock %}
+
+{% block extra_head %}
+{#
+  PS-OPPSLATE-001, slice OS-1. Unlisted posture (handoff section 18
+  safeguard 4): noindex as BOTH a meta tag here and an X-Robots-Tag header
+  set by opportunity_slate_routes._apply_room_headers. /opportunity-slate is
+  a top-level path, so robots.txt's "Disallow: /app" umbrella does not cover
+  it and this is not optional. There is no sitemap entry and no navigation
+  entry anywhere.
+#}
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/opportunity-slate.css') }}">
+{% endblock %}
+
+{% block content %}
+{#
+  Visual authority: docs/initiatives/PS-OPPORTUNITY-SLATE-001/
+  visual-authority/2026-08-02-chatgpt-lock/ — image 01 (Role intake) and
+  image 02 (Review Source) are the two screens this slice implements;
+  image 09 supplies the failure-card grammar. Per handoff section 14-M7 the
+  subheader ships with Back + title only: the generated set's "Ask Slate AI"
+  chrome is image artifact (owner decision, section 17-Q1).
+#}
+{% include "partials/opportunity_slate/_room.html" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/opportunity-slate.js') }}" defer></script>
+{% endblock %}

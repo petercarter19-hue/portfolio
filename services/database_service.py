@@ -15,6 +15,15 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_ArchiveCapture",
         "usp_CompleteChallenge",
         "usp_ConfirmMoment",
+        # PS-OPPSLATE-001 (Opportunity Slate, slice OS-1): the ephemeral
+        # working-session store. Every one of these is owner-scoped and
+        # resolves @UserKey itself.
+        "usp_ConfirmOpportunitySourceForOwner",
+        "usp_CorrectOpportunitySourceForOwner",
+        "usp_DeleteOpportunityWorkingSessionForOwner",
+        "usp_GetOpportunityWorkingSessionForOwner",
+        "usp_PurgeExpiredOpportunityWorkingData",
+        "usp_SaveOpportunitySourceForOwner",
         "usp_CorrectCapture",
         "usp_CreateCapture",
         "usp_CreateVoiceDraft",

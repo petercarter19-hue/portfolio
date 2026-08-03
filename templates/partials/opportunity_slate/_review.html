@@ -1,0 +1,311 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  Review Source — image 02.
+
+  Truth adaptations in this slice:
+    * image 02's context strip carries Role and Employer chips. Those values
+      come from AI statement interpretation (slice OS-2); this slice cannot
+      know them, and inventing them would be fabrication. The strip renders
+      the three chips that ARE true here — Source, Version, Session;
+    * image 02's extraction-concern card is an AI proposal (slice OS-2). The
+      same card grammar is used for the member's own manual correction:
+      original wording read-only above, corrected wording editable below,
+      with Apply correction / Cancel. Nothing is flagged, proposed, or
+      highlighted by PeerSlate;
+    * "Open original" served a retained uploaded file. Pasted text has no
+      separate original artifact, so that control is omitted rather than
+      rendered dead; "Compare with original" appears only once a correction
+      exists to compare against;
+    * the source below is the member's own text laid out for reading. No
+      wording is added, removed, or reordered — the screen says so.
+#}
+<div class="os-context-strip">
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('doc') }}</span>
+    <span>
+      <span class="os-chip__label">Source</span>
+      <span class="os-chip__value">{{ room.source.capture_method_label }}</span>
+    </span>
+  </span>
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('compare') }}</span>
+    <span>
+      <span class="os-chip__label">Version</span>
+      <span class="os-chip__value">{{ room.source.version_label }}</span>
+    </span>
+  </span>
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('globe' if room.is_public else 'lock') }}</span>
+    <span>
+      <span class="os-chip__label">Session</span>
+      <span class="os-chip__value">{% if room.is_public %}Public session{% else %}Session private{% endif %}</span>
+    </span>
+  </span>
+</div>
+
+<h2 class="os-workbench__title os-workbench__title--doc" data-os-focus tabindex="-1">Reviewed source</h2>
+<p class="os-workbench__lead os-workbench__lead--ruled">
+  Review the captured employer source. This is your text, laid out for
+  reading — nothing was added, removed, or reworded.
+</p>
+
+{% if room.source.is_confirmed %}
+<div class="os-confirmed-banner" role="status">
+  {{ os_icon('check') }}
+  <span>
+    <strong>You confirmed {{ room.source.version_label }}.</strong>
+    Nothing was saved, published, shared, or sent to an employer. The next
+    step — reviewing the employer's requirements — is not built yet.
+  </span>
+</div>
+{% endif %}
+
+{# Owner visual review 2026-08-03.
+
+   V9: the reviewed source is set directly on the workbench surface. The
+   first pass wrapped it in its own bordered, shadowed, differently
+   coloured card — a card inside the workbench card.
+
+   V13: the authority's extraction-concern card sits to the right of the
+   source column. Its content is an AI proposal and arrives with slice
+   OS-2; the card's placement, geometry and styling are built now, in a
+   truthful awaiting state that flags nothing and claims no analysis.
+
+   Owner visual review, second pass: image 02 holds the reviewed source
+   at one reading measure from the first line to the last, and puts this
+   card in the margin that measure leaves — not in a column of its own.
+   The card therefore takes no grid track (see .os-review in the
+   stylesheet), so nothing below it is pinched.
+
+   The card is named after its own heading, per handoff §14-M10: with
+   nothing flagged there is no phrase for a connector to point at, so
+   the relationship to the document is carried by position, by the
+   accent rule, and by this <aside> being announced as "Extraction
+   concerns". #}
+{# Third parity round: the aside is placed BEFORE the document in the
+   source order. On the desktop composition nothing moves — both children
+   share grid cell 1/1, so the card still sits in the margin beside the
+   first screenful. But below a 700px workbench the card stacks, and in
+   document order it belongs in front of the thing it is a note about: a
+   member on a phone, or on a screen reader, should be told what has and
+   has not been checked BEFORE reading two thousand words, not after. #}
+<div class="os-review">
+  <aside class="os-review__aside" aria-labelledby="os-concern-title">
+    <div class="os-concern-card">
+      <h3 class="os-concern-card__title" id="os-concern-title">
+        {{ os_icon('warning', 'os-icon os-icon--sm') }}Extraction concerns
+      </h3>
+      <p class="os-concern-card__state">None flagged</p>
+      <p>
+        PeerSlate has not read or analyzed this source. Nothing on this
+        screen was flagged, proposed, or highlighted by PeerSlate.
+      </p>
+      <p>
+        Checking the wording here is your own review. Correct anything that
+        came through wrong before you confirm it.
+      </p>
+      {# Third parity round. Image 02's card carries a flagged phrase and a
+         correction pair and runs most of the height of the document; ours
+         held four lines and left the margin beside it visibly empty. The
+         fix is substance, not filler, and it has to stay true of a slice
+         that runs no AI — so this is what the MEMBER is being asked to
+         check, in the present tense, not a promise about what PeerSlate
+         will check later. It invents no future capability, flags nothing,
+         and is replaced by the real concern when OS-2 has one. #}
+      <p class="os-concern-card__lead">What to look for as you read:</p>
+      <ul class="os-concern-card__checks">
+        <li>every section of the posting is here</li>
+        <li>lists did not run together</li>
+        <li>no sentence is cut off part-way</li>
+      </ul>
+      <a class="os-concern-card__action" href="#os-correct" data-os-reveal="os-correct">
+        {{ os_icon('pencil', 'os-icon os-icon--sm') }}Correct the wording
+      </a>
+    </div>
+  </aside>
+
+  <div class="os-review__main">
+    <div class="os-source-doc">
+      {% for block in room.source.blocks %}
+        {% if block.kind == 'heading' %}
+          <h3 class="os-source-doc__heading">{{ block.text }}</h3>
+        {% elif block.kind == 'list' %}
+          <ul class="os-source-doc__list">
+            {% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="os-source-doc__para">{{ block.text }}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# V11: the authority carries no full-width action bars in the middle of
+   the workbench, so these three disclosures sit in one quiet utility row
+   just above the footer. They stay real <details> elements — they are the
+   keyboard and JavaScript-off path to the same actions the footer links
+   reveal — and only take on card chrome once opened. #}
+<div class="os-quiet-actions">
+
+{# Manual correction. Native <details> so it is keyboard-operable and works
+   with JavaScript off in the signed-in mode. #}
+<details class="os-disclosure os-disclosure--correct" id="os-correct"{% if room.source.editing %} open{% endif %}>
+  <summary class="os-disclosure__summary">
+    {{ os_icon('pencil', 'os-icon os-icon--sm') }}Correct the wording
+  </summary>
+  <div class="os-disclosure__body">
+    <form class="os-form" method="post" action="{{ room.correct_url }}" data-os-form="correct" novalidate>
+      <input type="hidden" name="source_key" value="{{ room.source.source_key or '' }}">
+      <input type="hidden" name="version_token" value="{{ room.source.version_token or '' }}">
+
+      <p class="os-pair__label" id="os-original-label">Original wording</p>
+      {# A scrollable read-only block of the employer's own wording. It is a
+         labelled landmark of content, not a set of related controls, so the
+         role is region; tabindex keeps it reachable for keyboard scrolling
+         (WCAG 2.1.1). #}
+      <div class="os-pair__original" role="region" aria-labelledby="os-original-label" tabindex="0">
+        {{ room.source.original_text }}
+      </div>
+
+      <label class="os-pair__label" for="os-corrected-text">Your corrected wording</label>
+      <div class="os-editor os-editor--compact">
+        <textarea id="os-corrected-text"
+                  class="os-editor__field"
+                  name="corrected_text"
+                  rows="8"
+                  maxlength="{{ room.max_source_units }}"
+                  data-os-correction-input
+                  {% if room.error and room.error.field_hint %}aria-invalid="true" aria-describedby="os-corrected-help os-corrected-error"{% else %}aria-describedby="os-corrected-help"{% endif %}>{{ room.source.editor_text }}</textarea>
+        <button type="button"
+                class="os-mic os-mic--sm"
+                aria-disabled="true"
+                aria-describedby="os-corrected-help"
+                data-os-inert-mic
+                title="Dictation is not available yet">
+          {{ os_icon('mic') }}
+          <span class="os-visually-hidden">Dictate the correction (not available yet)</span>
+        </button>
+      </div>
+      <p class="os-help" id="os-corrected-help">
+        Type your correction. Your text stays editable, and the original
+        wording above is always kept. Dictation arrives in a later update.
+      </p>
+      {% if room.error and room.error.field_hint %}
+      <p class="os-field-error" id="os-corrected-error">{{ room.error.field_hint }}</p>
+      {% endif %}
+
+      <div class="os-disclosure__actions">
+        <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Apply correction</button>
+        <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Cancel</a>
+      </div>
+    </form>
+  </div>
+</details>
+
+{% if room.source.has_correction %}
+<details class="os-disclosure" id="os-compare">
+  <summary class="os-disclosure__summary">
+    {{ os_icon('compare', 'os-icon os-icon--sm') }}Compare with original
+  </summary>
+  <div class="os-disclosure__body" id="os-compare-body">
+    <div class="os-compare">
+      <div class="os-compare__side">
+        <p class="os-compare__label">Original wording</p>
+        <div class="os-source-doc os-source-doc--compare">
+          {% for block in room.source.original_blocks %}
+            {% if block.kind == 'heading' %}<h4 class="os-source-doc__heading">{{ block.text }}</h4>
+            {% elif block.kind == 'list' %}<ul class="os-source-doc__list">{% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+            {% else %}<p class="os-source-doc__para">{{ block.text }}</p>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      <div class="os-compare__side">
+        <p class="os-compare__label">Your corrected wording</p>
+        <div class="os-source-doc os-source-doc--compare">
+          {% for block in room.source.blocks %}
+            {% if block.kind == 'heading' %}<h4 class="os-source-doc__heading">{{ block.text }}</h4>
+            {% elif block.kind == 'list' %}<ul class="os-source-doc__list">{% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+            {% else %}<p class="os-source-doc__para">{{ block.text }}</p>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+{% endif %}
+
+<details class="os-disclosure os-disclosure--danger" id="os-delete">
+  <summary class="os-disclosure__summary">
+    {{ os_icon('trash', 'os-icon os-icon--sm') }}Delete source
+  </summary>
+  <div class="os-disclosure__body" id="os-delete-body">
+    <p class="os-disclosure__warning">
+      This removes the role wording and this whole working session. It cannot
+      be undone, and nothing was saved anywhere else.
+    </p>
+    <form class="os-form" method="post" action="{{ room.delete_url }}" data-os-form="delete">
+      <input type="hidden" name="session_key" value="{{ room.source.session_key or '' }}">
+      <input type="hidden" name="session_version_token" value="{{ room.source.session_version_token or '' }}">
+      <div class="os-disclosure__actions">
+        <button type="submit" class="os-btn os-btn--danger os-btn--sm"
+                {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Delete source</button>
+        <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Keep it</a>
+      </div>
+    </form>
+  </div>
+</details>
+
+</div>
+
+<div class="os-footer-strip">
+  <p class="os-footer-strip__truth">
+    {{ os_icon('lock') }}
+    <span>
+      <strong>{% if room.is_public %}Public session · Nothing is stored{% else %}Session private · Nothing is saved yet{% endif %}</strong>
+      Confirming the source does not save the slate or produce qualification
+      results.
+    </span>
+  </p>
+  {# V11: every action sits at the bottom right, as the authority places
+     them — the correction action included, so the disclosure above is
+     reached from the same row rather than from a full-width bar in the
+     middle of the workbench. #}
+  <div class="os-footer-strip__actions">
+    <span class="os-footer-links">
+      <a class="os-link" href="#os-correct" data-os-reveal="os-correct">Correct wording</a>
+      <a class="os-link" href="{{ room.role_step_url }}" data-os-step="role">Return to role input</a>
+      <a class="os-link" href="{{ room.replace_step_url }}" data-os-step="replace">Replace source</a>
+      {# Addresses the <details> element, not its display:none body — see the
+         matching note in _room.html's rail actions. #}
+      <a class="os-link os-link--danger" href="#os-delete" data-os-reveal="os-delete">Delete source</a>
+    </span>
+    {% if room.source.is_confirmed %}
+    {# Honest inert primary: checkpoint 1 is done and checkpoint 2 does not
+       exist yet. A live-looking button that did nothing would be worse than
+       saying so. #}
+    <button type="button"
+            class="os-btn os-btn--primary"
+            aria-disabled="true"
+            data-os-inert-next>
+      <span>Review requirements</span>{{ os_icon('arrow-right') }}
+    </button>
+    {% else %}
+    <form method="post" action="{{ room.confirm_url }}" data-os-form="confirm">
+      <input type="hidden" name="source_key" value="{{ room.source.source_key or '' }}">
+      <input type="hidden" name="version_token" value="{{ room.source.version_token or '' }}">
+      <button type="submit" class="os-btn os-btn--primary"
+              {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+        <span>Confirm source</span>{{ os_icon('arrow-right') }}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if room.source.is_confirmed %}
+<p class="os-help os-help--muted os-footer-note">
+  Reviewing the employer's requirements arrives in a later update. Nothing is
+  waiting behind this button.
+</p>
+{% endif %}

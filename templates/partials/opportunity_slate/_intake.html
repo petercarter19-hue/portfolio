@@ -1,0 +1,140 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  Role intake — image 01.
+
+  Truth adaptations in this slice, each visible on the screen rather than
+  hidden in a comment:
+    * the microphone is rendered per image 01 but is honestly inert
+      (aria-disabled + a stated reason); dictation is slice OS-5;
+    * the Upload document and Import public link tiles render per image 01
+      but as honest unavailable states, never dead buttons; both are slice
+      OS-6, and section 18 safeguard 1 keeps them off the anonymous route
+      entirely even after they exist;
+    * there is no processing stage rail, because this transition runs no
+      AI and displaying invented stages would be theatre (handoff section 7).
+#}
+<h1 class="os-workbench__title" data-os-focus tabindex="-1">
+  <span class="os-workbench__title-lead">Role</span>
+  <span class="os-workbench__title-dot" aria-hidden="true">·</span>
+  <span class="os-workbench__title-rest">Bring a role</span>
+</h1>
+<p class="os-workbench__lead">
+  {% if room.is_replace and room.is_public %}
+    Paste or type a different role description. This replaces the role you
+    brought in — in this public session the wording you have now is not kept.
+  {% elif room.is_replace %}
+    Paste or type a different role description. This replaces the role you
+    brought in — the wording you have now is kept as its own source version.
+  {% else %}
+    Paste or type the full role description.
+  {% endif %}
+</p>
+
+<form class="os-form"
+      method="post"
+      action="{{ room.source_url }}"
+      data-os-form="source"
+      novalidate>
+  <input type="hidden" name="idempotency_key" value="{{ room.idempotency_key }}">
+  <input type="hidden" name="replace" value="{{ '1' if room.is_replace else '0' }}">
+
+  <div class="os-editor{% if room.error and room.error.kind == 'field' %} os-editor--invalid{% endif %}">
+    <label class="os-visually-hidden" for="os-source-text">Role description</label>
+    <textarea id="os-source-text"
+              class="os-editor__field"
+              name="source_text"
+              rows="10"
+              maxlength="{{ room.max_source_units }}"
+              placeholder="Paste a role description…"
+              data-os-source-input
+              {% if room.error and room.error.kind == 'field' %}aria-invalid="true" aria-describedby="os-source-help os-source-error"{% else %}aria-describedby="os-source-help"{% endif %}>{{ room.source_text }}</textarea>
+
+    {# Image 01's microphone, rendered honestly inert. It is a real button
+       element so its state is announced, and it says why it cannot be used
+       rather than failing silently on click. #}
+    <button type="button"
+            class="os-mic"
+            aria-disabled="true"
+            aria-describedby="os-mic-note"
+            data-os-inert-mic
+            title="Dictation is not available yet">
+      {{ os_icon('mic') }}
+      <span class="os-visually-hidden">Dictate the role (not available yet)</span>
+    </button>
+  </div>
+
+  <p class="os-help" id="os-source-help">
+    Your text stays editable. Nothing is analyzed until you ask for it.
+  </p>
+  <p class="os-help os-help--muted" id="os-mic-note">
+    {{ os_icon('mic', 'os-icon os-icon--sm') }}Dictation arrives in a later update. Typing and pasting work now.
+  </p>
+  {% if room.error and room.error.kind == 'field' %}
+  <p class="os-field-error" id="os-source-error">{{ room.error.field_hint or room.error.message }}</p>
+  {% endif %}
+
+  {# Owner visual review 2026-08-03, V6: the authority pairs a large cobalt
+     icon with a display-serif title above each option, rules the region
+     off above and below, and splits the two options with a vertical
+     hairline that breaks around the word "or". The divider is a single
+     aria-hidden decoration; the honest availability chips are unchanged. #}
+  <div class="os-tiles">
+    <div class="os-tile os-tile--unavailable">
+      <span class="os-tile__badge">{{ os_icon('upload') }}</span>
+      <p class="os-tile__title">Upload document</p>
+      <p class="os-tile__body">PDF, DOCX, and TXT.</p>
+      <p class="os-tile__state">
+        {% if room.is_public %}Available with membership{% else %}Arrives in a later update{% endif %}
+      </p>
+    </div>
+    <span class="os-tiles__divider" aria-hidden="true">
+      <span class="os-tiles__divider-line"></span>
+      <span class="os-tiles__divider-word">or</span>
+      <span class="os-tiles__divider-line"></span>
+    </span>
+    <div class="os-tile os-tile--unavailable">
+      <span class="os-tile__badge">{{ os_icon('link') }}</span>
+      <p class="os-tile__title">Import public link</p>
+      <p class="os-tile__body">A public employer or ATS page.</p>
+      <p class="os-tile__state">
+        {% if room.is_public %}Available with membership{% else %}Arrives in a later update{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <p class="os-note">
+    {{ os_icon('info') }}
+    <span>
+      Pasting or typing the role text is the way to bring in a role today.
+      {# The same transit-versus-storage correction as the truth card in
+         _room.html: the pasted text IS sent to PeerSlate to render the
+         screen, so this sentence may not imply it stays in the tab. What
+         is true is that no document or fetched page is handled here. #}
+      {% if room.is_public %}Uploads and link imports stay off this public
+      preview, so no file or fetched page is ever handled here.{% endif %}
+    </span>
+  </p>
+
+  <div class="os-footer-strip">
+    <p class="os-footer-strip__truth">
+      {{ os_icon('lock') }}
+      <span>
+        <strong>{% if room.is_public %}Public session · Nothing analyzed yet{% else %}Nothing analyzed yet{% endif %}</strong>
+        Review the source before we analyze anything.
+      </span>
+    </p>
+    <div class="os-footer-strip__actions">
+      {% if room.has_source %}
+      <span class="os-footer-links">
+        <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Back to the source</a>
+      </span>
+      {% endif %}
+      <button type="submit"
+              class="os-btn os-btn--primary"
+              data-os-primary
+              {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+        <span>Review source</span>{{ os_icon('arrow-right') }}
+      </button>
+    </div>
+  </div>
+</form>
