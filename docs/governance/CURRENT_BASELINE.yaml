@@ -4,18 +4,18 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-02"
+updated_at: "2026-08-03"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "6f9cf0aff36c89c013b882a3bd5b6aa4568fde5b"
-  deployed_pipeline: 331
-  application_behavior_commit: "54f9b6a87ea05a5b9d70fe98c3e7c2953893665f"
-  application_behavior_pipeline: 331
-  note: "Pipeline 331 passed Build and Deploy for main 6f9cf0a. It shipped the PS-SIGNIN-EXPERIENCE-001 behavior merge 54f9b6a (PR 229: transient database-wake state on /app distinguished from contract failure, bounded auto-recheck on both waking surfaces, rate-limited sign-in pre-warm, signed-in mobile header overlap fix) plus two test-only corrections: PR 230 re-synced this file's release pointers with tests/test_operational_readiness.py after PR 228's [skip ci] record left them mismatched, and PR 231 removed a pre-warm test thread race. Pipelines 329 and 330 failed in Build on those two defects, so nothing intermediate deployed and 328's release stayed live until 331. Live smoke 2026-08-02: /healthz release 3429389bb2353566b441f4a4; / returned 200; /app kept its signed-out 302 to /auth/sign-in; /auth/sign-in kept its 302 to Easy Auth; static/js/workspace-waking.js served 200. The same day, sign-in page branding (background, wordmark, square logos, favicon, sign-in text) was applied directly to the PeerSlate Members Entra External ID tenant by Pete via artifacts/2026-08-02-entra-branding/apply-branding.ps1 — tenant configuration, not repository code. Update this record and the pointer expectations in tests/test_operational_readiness.py in the same commit, and run that test locally before any [skip ci] record merge. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "05f0c228404655d63d5c1ddbbc0a3c2d1d54491e"
+  deployed_pipeline: 388
+  application_behavior_commit: "05f0c228404655d63d5c1ddbbc0a3c2d1d54491e"
+  application_behavior_pipeline: 388
+  note: "Manual pipeline 388 passed Build, Deploy, and ProductionSmoke for exact main 05f0c228404655d63d5c1ddbbc0a3c2d1d54491e and is the active App Service deployment; /healthz release 9348c418fb50fcee788fda77 matched that exact source/build identity. Automatic pipeline 386 had already deployed the same SHA successfully. Both same-SHA ZipDeploy runs performed a remote Oryx build and triggered a production recycle; the second deployment changed no code and was unnecessary. PS-AUTH-PRODUCTION-RECOVERY-001 then verified current DNS/TLS, canonical aliases, one apex callback, the distinct Easy Auth discovery and principal issuers, exact Entra branding assets, the complete owner SSO journey, zero App Service HTTP 5xx over the inspected six-hour window, and the current production artifact. No application, identity, DNS, SQL, or Azure runtime setting changed during that recovery. Update this record and tests/test_operational_readiness.py together. This record is not a substitute for fetching origin and verifying current Azure and live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -95,6 +95,7 @@ scoped_findings:
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
 
 completed_packages:
+  - PS-AUTH-PRODUCTION-RECOVERY-001
   - PS-SIGNIN-EXPERIENCE-001
   - PS-COMMUNITY-FEED-VISUAL-001
   - PS-COMMUNITY-FEED-AUTHORITY-001
