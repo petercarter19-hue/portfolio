@@ -90,6 +90,11 @@ client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 # truncated reply is rejected honestly rather than rendered part-formed.
 MAX_REVIEW_TOKENS = 1000
 MAX_IMPROVE_TOKENS = 600
+# PS-WORKSHOP-001 W2c: the brief's explicit "spark <= 300" ceiling. A maximal
+# validated Spark — a 220-character suggestion, a 160-character focus seed,
+# and up to MAX_SPARK_CITATIONS ids — is roughly 550 characters including
+# JSON scaffolding, comfortably inside 300 tokens.
+MAX_SPARK_TOKENS = 300
 
 MAX_CONTEXT_ITEMS = 10
 
@@ -102,6 +107,14 @@ MAX_STRENGTHEN_CHARS = 300
 MAX_QUESTION_CHARS = 240
 MAX_PROPOSED_WORDING_CHARS = 1200
 
+# PS-WORKSHOP-001 W2c (Spark) field caps.
+MAX_SPARK_SUGGESTION_CHARS = 220
+MAX_SPARK_FOCUS_SEED_CHARS = 160
+# A Spark is a single small idea drawn from a couple of confirmed items, not
+# a survey of the whole library: citing five things would make the "Prompted
+# by confirmed information" line unreadable and the grounding claim vague.
+MAX_SPARK_CITATIONS = 3
+
 
 def _strip_md(text):
     """Remove markdown emphasis the model sometimes sneaks into plain text.
@@ -110,6 +123,20 @@ def _strip_md(text):
     for why it is duplicated rather than imported.
     """
     return re.sub(r"\*{1,2}([^*]+)\*{1,2}", r"\1", str(text)).strip()
+
+
+def _optional_text(value, max_chars):
+    """One optional model-supplied string, stripped, capped, and — crucially
+    — with a JSON ``null`` treated as ABSENT rather than as text.
+
+    ``_strip_md`` runs ``str(value)``, so a reply of ``{"suggestion": null}``
+    would otherwise validate as the four-character string ``"None"`` and be
+    rendered to the member as though the model had suggested something. This
+    helper is what makes "missing or empty -> reject" actually mean it.
+    """
+    if value is None:
+        return ""
+    return _strip_md(value)[:max_chars]
 
 
 def _string_list(value, max_items, max_chars):
@@ -160,7 +187,21 @@ def _extract_json_object(text):
 # ``validate_workshop_review``, which hold no matter what the model returns.
 # ---------------------------------------------------------------------------
 
-BLOCK_TAGS = ("focused_question", "context_items", "member_answer", "prior_review")
+BLOCK_TAGS = (
+    "focused_question",
+    "context_items",
+    "member_answer",
+    "prior_review",
+    # PS-WORKSHOP-001 W2c (Spark). ``already_suggested`` carries the ids of
+    # context items that have already prompted a Spark this visit, so a
+    # "Show another idea" lands somewhere new. Those ids are server-derived
+    # (they come from the id-addressed allow-list this process built, never
+    # from the browser), but the tag is listed here anyway so every block
+    # delimiter this module emits is defanged by the same rule — a tag that
+    # is "safe today" is exactly the kind of thing that quietly stops being
+    # safe when a later slice changes where its contents come from.
+    "already_suggested",
+)
 
 
 def _neutralize_block_tags(text):
@@ -264,6 +305,45 @@ REVIEW_SYSTEM_PROMPT = (
     "under 300 characters, and question under 240 characters. Never "
     "list a contextIds value that is not one of the exact ids given "
     "in <context_items>. Output complete, valid JSON."
+)
+
+SPARK_SYSTEM_PROMPT = (
+    "You are PeerSlate's private Workshop. A member keeps a private library "
+    "of information about themselves that THEY have reviewed and confirmed. "
+    "Your job is to offer ONE small, concrete, low-pressure idea for "
+    "something they could usefully work on next, drawn strictly from that "
+    "confirmed information. You respond with JSON ONLY — no prose before or "
+    "after, no markdown fences.\n\n"
+    + _UNTRUSTED_INPUT_RULE
+    + "The user turn contains <context_items> (the member's own confirmed "
+    "information, each line carrying its exact id in square brackets) and "
+    "<already_suggested> (ids that have already prompted a suggestion this "
+    "visit — prefer grounding this one somewhere else).\n\n"
+    "<context_items> is the ONLY information you may draw on. Never invent, "
+    "assume, or extrapolate a fact, employer, metric, date, outcome, skill, "
+    "or interest that is not stated there. Your suggestion must be traceable "
+    "to specific listed items, and you must name those exact items in "
+    "contextIds. A suggestion you cannot ground in a listed item is not a "
+    "suggestion you may make.\n\n"
+    "A good suggestion names something specific the member already has and "
+    "points at what is missing or worth deepening — for example strengthening "
+    "an example with the result it produced, or connecting two related pieces "
+    "of experience. It is an invitation, never an instruction, never praise, "
+    "never a score, and never a claim that anything is incomplete about the "
+    "person. Write it as one plain sentence addressed to the member.\n\n"
+    "Respond with exactly this JSON shape:\n"
+    '{"suggestion": "<one plain sentence proposing what to work on, max '
+    '220 characters>", '
+    '"focusSeed": "<the opening of the member\'s own answer, which appears '
+    "in their answer field if they take this up. Write it in the FIRST "
+    "PERSON as the start of a sentence they will finish in their own words "
+    "— for example 'The thing that changed was'. Never a question, never "
+    'an instruction to them, max 160 characters>", '
+    '"contextIds": ["<the exact ids, from <context_items> above, of the 1 '
+    "to 3 items that actually prompted this suggestion — REQUIRED, never "
+    'empty>"]}.\n\n'
+    "Never list a contextIds value that is not one of the exact ids given in "
+    "<context_items>. Output complete, valid JSON."
 )
 
 IMPROVE_SYSTEM_PROMPT = (
@@ -449,6 +529,129 @@ def validate_workshop_improvement(raw):
 
 
 # ---------------------------------------------------------------------------
+# Spark — PS-WORKSHOP-001 W2c
+#
+# The one AI surface on this product that the member did not ask a question
+# to get, which is exactly why its grounding rule is the strictest here: a
+# Spark that cannot name the confirmed items that prompted it is not shown at
+# all. There is no "ungrounded Spark" state anywhere in this slice — the
+# caller renders the ordinary no-Spark opening instead.
+# ---------------------------------------------------------------------------
+
+
+def generate_spark(context_items, exclude_ids=None):
+    """Call the model once for one grounded Spark suggestion.
+
+    ``context_items`` is the same ``{"id", "title", "wording"}`` shape
+    ``generate_review`` takes, assembled by the caller from CONFIRMED,
+    non-archived items only and already capped. An EMPTY list is a caller
+    error rather than a prompt to improvise: this function raises
+    ``ValueError`` instead of asking the model for a suggestion it could only
+    fabricate. That check is deliberately here, at the last point before the
+    provider call, as well as in the route — "no confirmed information means
+    no Spark and no AI call" is the slice's central truth rule, and it should
+    not depend on one caller remembering it.
+
+    ``exclude_ids`` is the set of context ids that have already prompted a
+    Spark this visit. It is a STEER, not a guarantee: it nudges "Show another
+    idea" toward different material. The actual guarantee that a previously
+    shown or dismissed Spark never returns is enforced by the caller, against
+    the validated result, and does not depend on the model cooperating.
+
+    Returns ``(parsed_json_or_None, raw_reply_text, stop_reason)`` — the same
+    contract as ``generate_review``/``generate_improvement``.
+    """
+    items = list(context_items or [])[:MAX_CONTEXT_ITEMS]
+    if not items:
+        raise ValueError("spark has no confirmed grounding")
+
+    allowed = {item["id"] for item in items}
+    # Only ids that are actually in this call's allow-list are worth naming;
+    # an excluded id for an item no longer offered would just be noise in the
+    # prompt.
+    excluded = [item_id for item_id in (exclude_ids or []) if item_id in allowed]
+
+    user_turn = "\n\n".join(
+        (
+            _block("context_items", _grounding_preamble(items)),
+            _block(
+                "already_suggested",
+                "\n".join("- [%s]" % _neutralize_block_tags(item_id) for item_id in excluded)
+                or "(nothing suggested yet this visit)",
+            ),
+        )
+    )
+
+    response = client.messages.create(
+        model=WORKSHOP_MODEL,
+        max_tokens=MAX_SPARK_TOKENS,
+        timeout=WORKSHOP_CALL_TIMEOUT_SECONDS,
+        system=SPARK_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_turn}],
+    )
+    stop_reason = getattr(response, "stop_reason", "") or ""
+    raw_reply = response.content[0].text
+    return _extract_json_object(raw_reply), raw_reply, stop_reason
+
+
+def validate_workshop_spark(raw, allowed_context_ids=None):
+    """Validate and normalize one Spark.
+
+    Heal-vs-reject, the same split the review validator documents:
+
+    - ``suggestion`` missing or empty -> REJECT. It is the whole deliverable.
+    - ``contextIds`` empty, or citing anything outside ``allowed_context_ids``
+      -> REJECT the WHOLE Spark. Unlike the review — where citing context is
+      optional because the member's own answer is already grounding enough —
+      a Spark has no member text behind it. Its only claim to being about the
+      member at all is the confirmed items it names, so an uncited Spark is
+      indistinguishable from an invented one and is never shown.
+    - ``focusSeed`` missing or empty -> HEALED, not rejected, by falling back
+      to the suggestion itself trimmed to its own cap. The seed is a
+      convenience (what appears in the answer field if the member takes the
+      idea up), and the suggestion is a truthful thing to put there; failing
+      the whole Spark over a derived field the caller can recompute would be
+      the "reject a healable field" mistake the review validator's own
+      heal-vs-reject note warns against.
+
+    Returns ``{"suggestion", "cited_context_ids", "focus_seed"}``.
+    """
+    if not isinstance(raw, dict):
+        raise ValueError("spark is not an object")
+
+    suggestion = _optional_text(raw.get("suggestion", ""), MAX_SPARK_SUGGESTION_CHARS)
+    if not suggestion:
+        raise ValueError("spark is incomplete")
+
+    allowed_ids = set(allowed_context_ids or [])
+    raw_context_ids = raw.get("contextIds", []) or []
+    if not isinstance(raw_context_ids, list) or any(
+        not isinstance(item, str) for item in raw_context_ids
+    ):
+        raise ValueError("expected a list")
+    cited_context_ids = []
+    for item in raw_context_ids:
+        cleaned = str(item).strip()[:80]
+        if cleaned and cleaned not in cited_context_ids:
+            cited_context_ids.append(cleaned)
+    if any(item not in allowed_ids for item in cited_context_ids):
+        raise ValueError("spark referenced unauthorized context")
+    if not cited_context_ids:
+        raise ValueError("spark is ungrounded")
+    cited_context_ids = cited_context_ids[:MAX_SPARK_CITATIONS]
+
+    focus_seed = _optional_text(raw.get("focusSeed", ""), MAX_SPARK_FOCUS_SEED_CHARS)
+    if not focus_seed:
+        focus_seed = suggestion[:MAX_SPARK_FOCUS_SEED_CHARS]
+
+    return {
+        "suggestion": suggestion,
+        "cited_context_ids": cited_context_ids,
+        "focus_seed": focus_seed,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Privacy-safe failure diagnostics — mirrors app.py's INTERVIEW_FAILURE_REASONS
 # / _log_interview_failure exactly (see this module's docstring). These
 # labels are low-cardinality and stable so logs can be grouped by cause.
@@ -463,6 +666,18 @@ WORKSHOP_FAILURE_REASONS = {
     "review is incomplete": "empty_required_field",
     "improvement is incomplete": "empty_required_field",
     "review referenced unauthorized context": "unauthorized_context",
+    # PS-WORKSHOP-001 W2c (Spark). "spark is ungrounded" and "spark has no
+    # confirmed grounding" are kept as DISTINCT labels rather than folded
+    # into the two above: the first means the model returned a Spark citing
+    # nothing, the second means this process was asked for a Spark with an
+    # empty allow-list. One is a model-quality signal and the other is a
+    # caller bug, and grouping them in the logs would hide the bug behind
+    # the noise.
+    "spark is not an object": "not_an_object",
+    "spark is incomplete": "empty_required_field",
+    "spark referenced unauthorized context": "unauthorized_context",
+    "spark is ungrounded": "spark_ungrounded",
+    "spark has no confirmed grounding": "spark_no_grounding_available",
 }
 
 WORKSHOP_UNCLASSIFIED_REASON = "unclassified"

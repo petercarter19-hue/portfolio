@@ -2223,6 +2223,185 @@ button.wk-door:focus-visible {
     line-height: 1.4;
 }
 
+/* ---- Spark card (R01 desktop / R02 mobile) — PS-WORKSHOP-001 W2c ----
+
+   No new palette: the amber field is the existing --wk-warning-tint the
+   suggestion card already uses for "AI-proposed, not yet confirmed", and
+   every piece of amber TEXT uses --wk-warning-ink (the text-safe variant),
+   never --wk-warning, which is a border/icon colour at ~3.2-3.6:1. */
+
+.wk-spark {
+    background: var(--wk-warning-tint);
+    border: 1px solid var(--wk-warning);
+    border-radius: var(--wk-radius-sm);
+    padding: 1.25rem 1.4rem 0.9rem;
+    margin-top: 1.25rem;
+    box-shadow: var(--wk-shadow-sm);
+}
+
+.wk-spark__main {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.wk-spark__badge {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-warning);
+}
+
+.wk-spark__badge .wk-icon { width: 20px; height: 20px; color: var(--wk-warning-ink); }
+
+.wk-spark__body { flex: 1 1 auto; min-width: 0; }
+
+.wk-spark__eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--wk-warning-ink);
+}
+
+.wk-spark__suggestion {
+    margin: 0 0 0.5rem;
+    font-family: var(--ps-font-display);
+    font-size: 1.15rem;
+    line-height: 1.35;
+    font-weight: 700;
+    color: var(--wk-ink);
+}
+
+.wk-spark__prompted {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    color: var(--wk-muted);
+}
+
+.wk-spark__prompted-label { color: var(--wk-muted); }
+
+/* The cited titles are evidence, not links: nothing on this card navigates
+   into the member's library, so styling them as links would promise a
+   destination that does not exist. They read as quiet chips on the surface
+   colour instead. */
+.wk-spark__chip {
+    display: inline-block;
+    background: var(--wk-surface);
+    border: 1px solid var(--wk-line);
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    margin: 0 0.15rem;
+    font-size: 0.82rem;
+    color: var(--wk-ink);
+}
+
+.wk-spark__actions {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.wk-spark__actions .wk-btn { white-space: nowrap; }
+
+.wk-spark__secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+/* Real <button>s inside real forms (no-JS posts), styled as the text
+   actions R01/R02 draw. */
+.wk-spark__link {
+    background: none;
+    border: 0;
+    padding: 0.25rem 0.2rem;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--wk-action);
+    cursor: pointer;
+    /* 24px minimum touch target (architecture doc 17 section 11). */
+    min-height: 24px;
+}
+
+.wk-spark__link:hover { text-decoration: underline; }
+
+.wk-spark__link--quiet {
+    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--wk-muted);
+}
+
+.wk-spark__lock {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.9rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--wk-warning);
+    font-size: 0.82rem;
+    color: var(--wk-muted);
+}
+
+.wk-spark__lock .wk-icon { flex: none; width: 15px; height: 15px; color: var(--wk-muted); }
+
+/* Quiet honest note in the no-Spark composition (dismissed, exhausted,
+   daily limit, provider failure). Deliberately understated: it explains an
+   absence, and must not read as an error on a screen that is working. */
+.wk-spark-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding: 0.75rem 0.9rem;
+    background: var(--wk-surface-muted);
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--wk-muted);
+}
+
+.wk-spark-note .wk-icon { flex: none; width: 16px; height: 16px; margin-top: 0.15rem; }
+
+@media (max-width: 760px) {
+    /* R02: the card stacks, the suggestion leads, and "Work on this"
+       becomes a full-width primary with the text actions beneath it. */
+    .wk-spark__main {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .wk-spark__body {
+        flex: 1 1 100%;
+        order: 2;
+    }
+
+    .wk-spark__badge { order: 1; }
+
+    .wk-spark__actions {
+        order: 3;
+        flex: 1 1 100%;
+    }
+
+    .wk-spark__actions .wk-btn { width: 100%; }
+
+    .wk-spark__secondary { align-items: flex-start; }
+
+    .wk-spark__chip { margin: 0.15rem 0.15rem 0 0; }
+}
+
 /* ---- AI-unavailable composition (R07/R08) ---- */
 
 .wk-ai-banner {

@@ -79,6 +79,16 @@ class WorkshopReviewRouteTestCase(unittest.TestCase):
 
     def setUp(self):
         self.client = app.test_client()
+        # PS-WORKSHOP-001 W2c: the opening auto-generates a Spark, which
+        # would make a real Anthropic call from a W2b test about the review
+        # loop. See tests/test_workshop_work_session.py's
+        # suppress_opening_spark for the full reasoning; Spark's own
+        # behaviour lives in tests/test_workshop_spark.py.
+        _spark_patcher = patch(
+            "workshop_work_routes._resolve_opening_spark", return_value=(None, None)
+        )
+        _spark_patcher.start()
+        self.addCleanup(_spark_patcher.stop)
         self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
         self.original_session_flag = app.config.get("PEERSLATE_WORKSHOP_SESSION_ENABLED")
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True

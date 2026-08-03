@@ -163,6 +163,10 @@ WORKSHOP_SUCCESS_MESSAGES = {
     # session outcomes, redirected here to the opening screen.
     "session-stopped": "You stopped this session. Nothing new was saved — Save unfinished keeps your answer next time.",
     "reset-preview": "This preview session was reset. Everything is back to the way it started.",
+    # PS-WORKSHOP-001 W2c: confirms the dismissal actually stuck, and
+    # promises only what the code delivers — "this visit", for an anonymous
+    # preview and a session-scoped member alike, never "forever".
+    "spark-dismissed": "That suggestion is dismissed and will not come back this visit.",
 }
 WORKSHOP_VALIDATION_MESSAGES = {
     "changed": "That item changed or is no longer available. Refresh and try again.",

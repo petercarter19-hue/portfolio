@@ -492,7 +492,219 @@ def _grounding_items(identity, selected_ids):
     return items
 
 
-def _door_view_model(*, unfinished_rows, ai_unavailable):
+# ---------------------------------------------------------------------------
+# Spark — PS-WORKSHOP-001 W2c
+#
+# **The rule the whole slice turns on: a Spark that cannot be grounded is
+# not shown.** There is no ungrounded, no partially-grounded, and no
+# "PeerSlate thought you might like" Spark anywhere below. A visitor with no
+# confirmed information gets the ordinary first-run opening and NO provider
+# call is made — not a call whose result is discarded, no call at all.
+#
+# **How often a Spark costs money.** Once per visit, automatically, and
+# after that only when the visitor explicitly asks. The opening caches the
+# Spark it generated (services/workshop_work_session.py's Spark bucket), so
+# reloading, navigating back, or being redirected here after Stop for now
+# re-renders the SAME Spark for free. Without that cache every landing on
+# this page would bill a call and a visitor could exhaust their own daily
+# allowance — and therefore their AI review allowance too — by refreshing.
+# Once a Spark has been offered this visit, the opening never auto-generates
+# another; "Show another idea" and the "Give me a spark" door are how a
+# visitor asks, and both are rate-limited and spend-guarded.
+#
+# **What Spark is NOT bounded by.** The per-session AI call cap
+# (wws.MAX_AI_CALLS_PER_SESSION) lives in the Work on Something session
+# bucket, which usually does not exist on the opening — there is no session
+# yet. Spark is therefore bounded by the rate limit (4/min, app.py) and by
+# the durable daily ceilings in services/workshop_spend_guard.py, which are
+# the controls that actually bound a bill. Every Spark provider call
+# reserves through the guard immediately before it is made.
+# ---------------------------------------------------------------------------
+
+SPARK_NO_IDEA_NOTE = (
+    "No Spark right now. Choose “Give me a spark” whenever you want a "
+    "new idea grounded in the information you have confirmed."
+)
+SPARK_UNAVAILABLE_NOTE = (
+    "PeerSlate could not offer a grounded suggestion just now. Everything "
+    "else on this screen works as usual, and you can try again in a moment."
+)
+SPARK_DAILY_CAP_NOTE = (
+    "PeerSlate has reached today's limit for AI suggestions across the whole "
+    "preview. This is a daily limit, not something you did wrong — everything "
+    "else on this screen works as usual."
+)
+SPARK_EXHAUSTED_NOTE = (
+    "PeerSlate has offered every grounded idea it can draw from your "
+    "confirmed information this visit. Adding or confirming something new "
+    "gives it more to work from."
+)
+
+
+def _spark_view(spark_state_current, confirmed_rows):
+    """The template's view-model for the Spark currently on screen, or None.
+
+    The cited items are re-resolved from the rows this viewer can see RIGHT
+    NOW rather than from anything stored with the Spark. An item confirmed
+    when the Spark was generated but archived or deleted since simply stops
+    appearing in "Prompted by confirmed information" — the same discipline
+    the review screen's cited-context disclosure follows. A Spark whose
+    citations ALL stop resolving is dropped entirely: its grounding claim is
+    the only thing that makes it honest, and a Spark that cannot show what
+    prompted it is exactly what this slice refuses to render.
+    """
+    if not spark_state_current:
+        return None
+    cited = set(spark_state_current["cited_fingerprints"])
+    cited_titles = [
+        row["title"] for row in confirmed_rows if wws.item_fingerprint(row["item_key"]) in cited
+    ]
+    if not cited_titles:
+        return None
+    return {
+        "suggestion": spark_state_current["suggestion"],
+        "focus_seed": spark_state_current["focus_seed"],
+        "fingerprint": spark_state_current["fingerprint"],
+        "cited_titles": cited_titles,
+    }
+
+
+def _generate_spark(identity, confirmed_rows):
+    """Generate, validate, and remember ONE Spark. Returns
+    ``(spark_view_or_None, note_or_None)`` and never raises: every failure
+    path here degrades to "no Spark plus an honest note", because a Spark
+    failure must never take the opening down with it.
+    """
+    if not confirmed_rows:
+        return None, None
+
+    spark_state = wws.read_spark_state(session)
+    visible_ids = [row["item_key"] for row in confirmed_rows]
+
+    try:
+        context_items = _grounding_items(identity, visible_ids)
+    except (KnowledgeServiceError, DatabaseServiceError):
+        current_app.logger.error("PeerSlate Workshop Spark grounding is unavailable.")
+        return None, SPARK_UNAVAILABLE_NOTE
+    if not context_items:
+        # Every confirmed row disappeared between the list read and the
+        # per-item read. Honest no-Spark, and crucially no provider call.
+        return None, None
+
+    allowed_ids = [item["id"] for item in context_items]
+    exclude_ids = wws.excluded_item_keys(spark_state, allowed_ids)
+    if len(exclude_ids) >= len(allowed_ids):
+        # Every item this viewer has confirmed already prompted a Spark this
+        # visit. Saying so honestly is both truthful and free; asking the
+        # model for a "different" idea from exhausted material would just
+        # bill a call to produce a near-repeat that the offered-fingerprint
+        # check would then reject anyway.
+        return None, SPARK_EXHAUSTED_NOTE
+
+    refusal_note = _reserve_daily_spark_spend()
+    if refusal_note is not None:
+        return None, refusal_note
+
+    raw_reply, stop_reason = "", ""
+    try:
+        raw_json, raw_reply, stop_reason = workshop_review_service.generate_spark(
+            context_items, exclude_ids
+        )
+        spark = workshop_review_service.validate_workshop_spark(
+            raw_json, allowed_context_ids=allowed_ids
+        )
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        workshop_review_service._log_workshop_failure(
+            current_app.logger, "Workshop spark validation error", error, stop_reason, len(raw_reply)
+        )
+        return None, SPARK_UNAVAILABLE_NOTE
+    except Exception as error:  # noqa: BLE001 - provider/network failure
+        workshop_review_service._log_workshop_failure(
+            current_app.logger, "Workshop spark API error", error, stop_reason, len(raw_reply)
+        )
+        return None, SPARK_UNAVAILABLE_NOTE
+
+    fingerprint = wws.spark_fingerprint(spark["suggestion"])
+    if wws.already_offered(spark_state, fingerprint):
+        # The model repeated something this visitor has already seen or
+        # dismissed. This is the hard guarantee behind "a dismissed Spark
+        # never returns": it does not depend on the model cooperating with
+        # the exclusion hint, and it never retries — a retry loop would turn
+        # one click into an unbounded number of billed calls.
+        current_app.logger.info(
+            "Workshop spark suppressed: reason=already_offered"
+        )
+        return None, SPARK_EXHAUSTED_NOTE
+
+    wws.record_spark(
+        session,
+        suggestion=spark["suggestion"],
+        focus_seed=spark["focus_seed"],
+        cited_item_keys=spark["cited_context_ids"],
+    )
+    return (
+        _spark_view(
+            {
+                "fingerprint": fingerprint,
+                "suggestion": spark["suggestion"],
+                "focus_seed": spark["focus_seed"],
+                "cited_fingerprints": [
+                    wws.item_fingerprint(key) for key in spark["cited_context_ids"]
+                ],
+            },
+            confirmed_rows,
+        ),
+        None,
+    )
+
+
+def _reserve_daily_spark_spend():
+    """Reserve one Spark call against the durable daily ceilings. Returns
+    ``None`` when the call may proceed, or an honest note when it may not.
+
+    Deliberately returns a NOTE rather than a rendered response (unlike
+    ``_reserve_daily_ai_spend``, its review-loop sibling): a refused review
+    is the whole point of the screen the member asked for, while a refused
+    Spark is one quiet absence on an opening screen whose doors, composer,
+    and library links must all keep working regardless.
+    """
+    outcome = workshop_spend_guard.reserve(workshop_spend_guard.client_ip())
+    if outcome == workshop_spend_guard.RESERVE_OK:
+        return None
+    current_app.logger.warning(
+        "Workshop Spark daily spend ceiling refused a call: outcome=%s", outcome
+    )
+    return SPARK_DAILY_CAP_NOTE
+
+
+def _resolve_opening_spark(identity, confirmed_rows):
+    """What the opening should show in the Spark position, and whether that
+    costs a provider call. Returns ``(spark_view_or_None, note_or_None)``.
+    """
+    if _ai_unavailable_test_seam_requested():
+        return None, None
+
+    spark_state = wws.read_spark_state(session)
+
+    cached = _spark_view(spark_state["current"], confirmed_rows)
+    if cached is not None:
+        return cached, None
+
+    if not confirmed_rows:
+        # The R05/R06 first-run composition says this honestly on its own —
+        # no note needed, and no AI call is made.
+        return None, None
+
+    if spark_state["offered"]:
+        # A Spark has already been offered this visit and is no longer on
+        # screen (dismissed, replaced, or its cited items are gone). The
+        # opening never silently generates another; the visitor asks.
+        return None, SPARK_NO_IDEA_NOTE
+
+    return _generate_spark(identity, confirmed_rows)
+
+
+def _door_view_model(*, unfinished_rows, ai_unavailable, spark_available):
     """The four persistent doors (doc 13's ruling), each honestly reflecting
     what actually works in this slice. "I brought something" and "Give me a
     spark" are never startable in W2a (see wws.STARTABLE_DOORS) — both
@@ -509,8 +721,12 @@ def _door_view_model(*, unfinished_rows, ai_unavailable):
         },
         "brought": {"available": False},
         "something": {"available": True},
+        # PS-WORKSHOP-001 W2c: the Spark door is real now, but only for a
+        # viewer who actually has confirmed information for it to draw on.
+        # With nothing confirmed it stays inert and says why, rather than
+        # offering a button whose only possible outcome is a refusal.
         "spark": {
-            "available": False,
+            "available": spark_available,
             "unavailable_now": ai_unavailable,
         },
     }
@@ -523,10 +739,29 @@ def _render_opening(
     error_message=None,
     success_message=None,
     status_code=200,
+    generate_spark=False,
+    spark=None,
+    spark_note=None,
 ):
+    """Render the Work on Something opening.
+
+    ``generate_spark`` is opt-in, and only ``work_opening`` (the GET) passes
+    it. Every other caller here is re-rendering the opening to show an error
+    or a confirmation, and none of them should bill a provider call to do
+    it — a failed session start must not also spend money. Those callers
+    still show a Spark if one is already cached, because
+    ``_resolve_opening_spark`` returns the cache before it considers
+    generating anything.
+    """
     unfinished_rows = _unfinished_rows(identity)
     related_rows = _confirmed_rows(identity)
     ai_unavailable = _ai_unavailable_test_seam_requested()
+
+    if spark is None and spark_note is None:
+        if generate_spark:
+            spark, spark_note = _resolve_opening_spark(identity, related_rows)
+        else:
+            spark = _spark_view(wws.read_spark_state(session)["current"], related_rows)
 
     return (
         render_template(
@@ -535,7 +770,16 @@ def _render_opening(
             active_workshop_mode="work",
             anonymous_preview=(identity is None),
             ai_unavailable=ai_unavailable,
-            doors=_door_view_model(unfinished_rows=unfinished_rows, ai_unavailable=ai_unavailable),
+            doors=_door_view_model(
+                unfinished_rows=unfinished_rows,
+                ai_unavailable=ai_unavailable,
+                spark_available=bool(related_rows) and not ai_unavailable,
+            ),
+            spark=spark,
+            spark_note=spark_note,
+            spark_another_url=url_for("workshop.work_spark_another"),
+            spark_dismiss_url=url_for("workshop.work_spark_dismiss"),
+            door_spark=wws.DOOR_SPARK,
             related_items=related_rows[:3],
             composer_value=composer_value,
             max_thought_units=wws.MAX_ANSWER_UNITS,
@@ -574,6 +818,7 @@ def work_opening():
         return _render_opening(
             identity=identity,
             success_message=WORKSHOP_SUCCESS_MESSAGES.get(request.args.get("changed")),
+            generate_spark=True,
         )
     except (KnowledgeServiceError, DatabaseServiceError):
         current_app.logger.error("PeerSlate Work on Something opening is unavailable.")
@@ -614,6 +859,19 @@ def start_work_session():
         seed = row["approved_wording"]
     elif door == wws.DOOR_SOMETHING:
         seed = thought
+    elif door == wws.DOOR_SPARK:
+        # "Work on this". The seed comes from the Spark THIS PROCESS
+        # generated and validated, read back from the session — never from
+        # the form. A hand-rolled POST therefore cannot seed a session with
+        # arbitrary text and have it carry a Spark's provenance, and the
+        # seeded text can never be anything the Spark validator did not
+        # already cap and strip.
+        spark_state = wws.read_spark_state(session)
+        if not spark_state["current"]:
+            # Neutral fallback, matching the resume path above: never
+            # confirms or denies why a Spark is not there.
+            return redirect(url_for("workshop.work_opening"))
+        seed = spark_state["current"]["focus_seed"]
     else:
         try:
             return _render_opening(
@@ -639,7 +897,97 @@ def start_work_session():
             current_app.logger.error("PeerSlate Work on Something opening is unavailable.")
             return _render_workshop_unavailable()
 
+    if door == wws.DOOR_SPARK:
+        # The Spark has been taken up, so it leaves the opening — while
+        # staying in the offered list, so it is never suggested again.
+        wws.clear_current_spark(session)
+        # The working answer starts as PeerSlate's words, not the member's.
+        # Marking the session AI-assisted now means that if they save it
+        # barely changed, it is labelled honestly ("Your words, refined with
+        # AI assistance") rather than as something they typed unaided. A
+        # Spark seed is a starting thought and never confirmed information:
+        # nothing has been written to any library by this point.
+        wws.mark_ai_assisted(session)
+
     return redirect(url_for("workshop.work_session_screen"))
+
+
+# ---------------------------------------------------------------------------
+# Spark endpoints. Both are same-origin-only and rate-limited (app.py, 4/min
+# — the brief's explicit "spark 4/min"). Only "another" costs a provider
+# call; dismissal is pure local memory and deliberately never generates a
+# replacement, because immediately answering "do not suggest this again"
+# with another suggestion is the nagging the brief rules out.
+# ---------------------------------------------------------------------------
+
+
+@workshop.post("/app/workshop/work/spark/another")
+def work_spark_another():
+    """"Show another idea", and the "Give me a spark" door — one endpoint,
+    because they are the same request: retire whatever Spark is on screen
+    and ask for one grounded somewhere the visitor has not been offered yet.
+    """
+    if not _work_flag_gate():
+        abort(404)
+    if not _is_same_origin_write():
+        return "Cross-site Workshop requests are not allowed.", 403
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        identity = None
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Workshop identity lookup failed.")
+        return _render_workshop_unavailable()
+
+    # Retire the current Spark BEFORE generating: it stays in the offered
+    # list, so the replacement can never be the same one.
+    wws.clear_current_spark(session)
+
+    try:
+        confirmed_rows = _confirmed_rows(identity)
+        spark, spark_note = _generate_spark(identity, confirmed_rows)
+        return _render_opening(identity=identity, spark=spark, spark_note=spark_note)
+    except (KnowledgeServiceError, DatabaseServiceError):
+        current_app.logger.error("PeerSlate Work on Something opening is unavailable.")
+        return _render_workshop_unavailable()
+
+
+@workshop.post("/app/workshop/work/spark/dismiss")
+def work_spark_dismiss():
+    """"Do not suggest this again." Records the dismissal and shows the
+    opening without a Spark. No provider call, and no replacement.
+
+    The fingerprint is read from the form and cross-checked against the
+    Spark actually on screen. A forged value can only ever suppress a
+    suggestion in the forger's own session, so it is accepted rather than
+    rejected — but the on-screen Spark is dismissed regardless, so the
+    button always does what it says even if the field is missing or stale.
+    """
+    if not _work_flag_gate():
+        abort(404)
+    if not _is_same_origin_write():
+        return "Cross-site Workshop requests are not allowed.", 403
+
+    try:
+        get_current_identity()
+    except AuthenticationRequired:
+        pass
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate Workshop identity lookup failed.")
+        return _render_workshop_unavailable()
+
+    spark_state = wws.read_spark_state(session)
+    current = spark_state["current"]
+    submitted = (request.form.get("spark_fingerprint") or "").strip()[:32]
+    fingerprint = current["fingerprint"] if current else submitted
+
+    wws.dismiss_spark(session, fingerprint)
+    if submitted and current and submitted != current["fingerprint"]:
+        # A stale form (the Spark changed in another tab). Both are barred.
+        wws.dismiss_spark(session, submitted)
+
+    return redirect(url_for("workshop.work_opening", changed="spark-dismissed"))
 
 
 def _render_session_screen(

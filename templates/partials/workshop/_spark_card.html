@@ -1,0 +1,63 @@
+{#
+  PS-WORKSHOP-001 W2c — the Spark card on the Work on Something opening.
+
+  Visual authority: docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
+  workshop-facelift-2026-08-02/R01-opening-returning-desktop-facelift.png and
+  R02 (mobile). Amber-tinted panel, "SPARK" eyebrow, the suggestion sentence,
+  "Prompted by confirmed information:" with the real cited item titles,
+  primary "Work on this", secondary "Show another idea", and the lock line.
+
+  Two documented reconciliations, neither material (no change to composition,
+  hierarchy, dominant action, colour language, or type):
+
+  1. R01 draws the lock line on the amber field at the bottom of the card;
+     R02 moves it into a separate grey note below the card with a bold "You
+     stay in control." lead. The authority is internally inconsistent here,
+     so one treatment is used at both widths: a hairline-separated footer row
+     inside the card, carrying R01's exact sentence.
+  2. Neither mockup draws a dismissal control, but doc 13's door-purpose
+     ruling requires the Spark to be "Private, dismissible", and W2c's
+     contract requires the dismissal to be durable. It is added as a quiet
+     tertiary control beside "Show another idea" — never competing with the
+     primary "Work on this".
+
+  Every title in the "Prompted by" line is re-resolved server-side from the
+  items this viewer can see right now, so it always names real confirmed
+  information (workshop_work_routes._spark_view). This partial never renders
+  when that list is empty.
+#}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+<section class="wk-spark" aria-labelledby="wk-spark-title">
+    <div class="wk-spark__main">
+        <span class="wk-spark__badge" aria-hidden="true">{{ workshop_icon("sparkle") }}</span>
+        <div class="wk-spark__body">
+            <p class="wk-spark__eyebrow" id="wk-spark-title">Spark</p>
+            <p class="wk-spark__suggestion">{{ spark.suggestion }}</p>
+            <p class="wk-spark__prompted">
+                <span class="wk-spark__prompted-label">Prompted by confirmed information:</span>
+                {% for title in spark.cited_titles %}
+                <span class="wk-spark__chip">{{ title }}</span>
+                {% endfor %}
+            </p>
+        </div>
+        <div class="wk-spark__actions">
+            <form method="post" action="{{ start_url }}">
+                <input type="hidden" name="door" value="{{ door_spark }}">
+                <button type="submit" class="wk-btn wk-btn--primary">Work on this</button>
+            </form>
+            <div class="wk-spark__secondary">
+                <form method="post" action="{{ spark_another_url }}">
+                    <button type="submit" class="wk-spark__link">Show another idea</button>
+                </form>
+                <form method="post" action="{{ spark_dismiss_url }}">
+                    <input type="hidden" name="spark_fingerprint" value="{{ spark.fingerprint }}">
+                    <button type="submit" class="wk-spark__link wk-spark__link--quiet">Do not suggest this again</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <p class="wk-spark__lock">
+        {{ workshop_icon("lock") }}
+        <span>A Spark starts private work; it does not save, publish, or change your information.</span>
+    </p>
+</section>

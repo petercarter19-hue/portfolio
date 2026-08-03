@@ -52,11 +52,35 @@ def _find_all(pattern, body):
     return re.findall(pattern, body)
 
 
+def suppress_opening_spark(test_case):
+    """Keep the W2c Spark out of tests that predate it.
+
+    ``GET /app/workshop/work`` auto-generates a Spark once per visit when the
+    viewer has confirmed information — and the anonymous demo library always
+    does. Without this, every opening request in this file would make a REAL
+    Anthropic call: slow, flaky, billable, and completely beside the point of
+    a W2a test about doors and the session round trip.
+
+    Patching the route's own resolver (rather than the service function) also
+    keeps these tests clear of the daily spend guard, which reserves a slot
+    BEFORE the provider call and would otherwise be consumed here too.
+
+    Spark's own behaviour is covered in tests/test_workshop_spark.py, which
+    does not use this base class and mocks the provider explicitly.
+    """
+    patcher = patch(
+        "workshop_work_routes._resolve_opening_spark", return_value=(None, None)
+    )
+    patcher.start()
+    test_case.addCleanup(patcher.stop)
+
+
 class WorkOnSomethingTestCase(unittest.TestCase):
     """Shared setUp: both flags on, limiter disabled, fresh client."""
 
     def setUp(self):
         self.client = app.test_client()
+        suppress_opening_spark(self)
         self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
         self.original_session_flag = app.config.get("PEERSLATE_WORKSHOP_SESSION_ENABLED")
         self.original_dev_identity_flag = app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY")
@@ -253,8 +277,19 @@ class SessionRoundTripTests(WorkOnSomethingTestCase):
         body = response.data.decode("utf-8")
         self.assertIn("not available yet", body)
 
-        response = self._start(door=wws.DOOR_SPARK)
-        self.assertEqual(response.status_code, 400)
+    def test_spark_door_without_a_spark_is_a_neutral_redirect_not_a_session(self):
+        """PS-WORKSHOP-001 W2c changed DOOR_SPARK from "never startable" to
+        "startable only alongside a Spark this process generated". With no
+        Spark in the session it redirects neutrally — the same "never
+        confirm or deny" treatment a foreign resume key gets — and starts
+        nothing, so a hand-rolled POST cannot seed a session through this
+        door."""
+        response = self._start(door=wws.DOOR_SPARK, thought="attacker supplied text")
+        self.assertEqual(response.status_code, 302)
+
+        with self.client.session_transaction() as sess:
+            raw = sess.get(wdl.SESSION_KEY)
+        self.assertIsNone((raw or {}).get("w"))
 
     def test_resuming_an_unfinished_item_seeds_its_current_wording(self):
         unfinished = next(

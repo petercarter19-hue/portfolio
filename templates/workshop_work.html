@@ -13,21 +13,25 @@
 {% block content %}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
 {#
-  PS-WORKSHOP-001 W2a — Work on Something opening. Visual authority:
+  PS-WORKSHOP-001 W2a + W2c — Work on Something opening. Visual authority:
   docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/
-  workshop-facelift-2026-08-02/R05-first-run-desktop-facelift.png (and R06
-  mobile) is the default composition per the brief: no Spark card exists in
-  this slice (that is W2c), so the "no confirmed information yet" / first-
-  run layout is used regardless of whether confirmed items actually exist,
-  with the two static "No Spark yet" / "Build your private information"
-  tiles always present. R07/R08 (AI-unavailable) is a test-seam-only
-  alternate composition — see workshop_work_routes.py's
-  _ai_unavailable_test_seam_requested — never reachable by a real request.
+  workshop-facelift-2026-08-02/. Three compositions render from here:
 
-  Only "Continue where I left off" and "Work on something" can actually
-  begin a session in this slice (services/workshop_work_session.py's
-  STARTABLE_DOORS). "I brought something" and "Give me a spark" render
-  honestly inert — no intake path and no Spark feature exist yet.
+  - R01 (desktop) / R02 (mobile) when a grounded Spark exists — the amber
+    Spark card, see partials/workshop/_spark_card.html.
+  - R05 (desktop) / R06 (mobile) when there is none, which is the honest
+    default: no confirmed information to ground one, every idea already
+    offered this visit, a dismissal, a daily limit, or a provider failure.
+    The two static "No Spark yet" / "Build your private information" tiles
+    carry that composition, with an added quiet note when there is more to
+    say than the tiles already say.
+  - R07/R08 (AI-unavailable) is a test-seam-only alternate composition —
+    see workshop_work_routes.py's _ai_unavailable_test_seam_requested —
+    never reachable by a real request.
+
+  "Continue where I left off", "Work on something", and (W2c) "Give me a
+  spark" can begin a session; "I brought something" stays honestly inert
+  because no intake path exists yet.
 #}
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
@@ -159,7 +163,30 @@
                         </button>
                     </form>
 
-                    {# Give me a spark — not built until slice W2c #}
+                    {#
+                      Give me a spark. Real from W2c, but only for a viewer
+                      who has confirmed information for it to draw on — with
+                      nothing confirmed it stays inert and says why, rather
+                      than offering a button whose only possible outcome is
+                      a refusal. It posts to the same endpoint as "Show
+                      another idea": both mean "offer me one grounded idea I
+                      have not been offered yet".
+                    #}
+                    {% if doors.spark.available %}
+                    <form method="post" action="{{ spark_another_url }}">
+                        <button type="submit" class="wk-door">
+                            <span class="wk-door__head">
+                                <span class="wk-door__head-left">
+                                    <span class="wk-door__icon">{{ workshop_icon("sparkle") }}</span>
+                                    <span class="wk-door__title">Give me a spark</span>
+                                </span>
+                                <span class="wk-door__chevron">{{ workshop_icon("chevron-right") }}</span>
+                            </span>
+                            <p class="wk-door__copy">Get one grounded idea from information you confirmed.</p>
+                            <p class="wk-door__meta">Grounded in your information</p>
+                        </button>
+                    </form>
+                    {% else %}
                     <div class="wk-door wk-door--inert">
                         <div class="wk-door__head">
                             <span class="wk-door__head-left">
@@ -167,14 +194,15 @@
                                 <span class="wk-door__title">Give me a spark</span>
                             </span>
                         </div>
-                        {% if ai_unavailable %}
+                        {% if doors.spark.unavailable_now %}
                         <p class="wk-door__copy">Suggestions are temporarily unavailable.</p>
                         <p class="wk-door__meta">Try again later</p>
                         {% else %}
                         <p class="wk-door__copy">Get one grounded idea from information you confirmed.</p>
-                        <p class="wk-door__meta">Not available yet</p>
+                        <p class="wk-door__meta">Needs confirmed information first</p>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
 
                 {% if ai_unavailable %}
@@ -184,7 +212,23 @@
                     <p>Try again later. Direct entry and your private information remain available.</p>
                     <a class="wk-btn wk-btn--outline" href="{{ url_for('workshop.work_opening') }}">Try Spark again</a>
                 </div>
+                {% elif spark %}
+                {% include "partials/workshop/_spark_card.html" %}
                 {% else %}
+                {#
+                  No Spark. R05/R06's first-run composition is the default
+                  and says the honest thing on its own ("a Spark only appears
+                  when it can be grounded"). spark_note is added above it
+                  only when there is something MORE to say than that — a
+                  dismissal, an exhausted set of ideas, a daily limit, or a
+                  provider failure. Everything else on this screen keeps
+                  working in every one of those cases.
+                #}
+                {% if spark_note %}
+                <p class="wk-spark-note" role="status">
+                    {{ workshop_icon("info-circle") }}<span>{{ spark_note }}</span>
+                </p>
+                {% endif %}
                 <div class="wk-tiles">
                     <div class="wk-tile">
                         <span class="wk-tile__icon">{{ workshop_icon("sparkle") }}</span>

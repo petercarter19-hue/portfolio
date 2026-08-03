@@ -603,6 +603,18 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     ('workshop.work_session_finalize', '10 per minute'),
     ('workshop.work_session_keep_working', '10 per minute'),
     ('workshop.work_session_save', '6 per minute'),
+    # PS-WORKSHOP-001 W2c: the brief's explicit "spark 4/min". Only
+    # work_spark_another costs a provider call; work_spark_dismiss is local
+    # memory only, and is limited at the same rate purely because it writes
+    # to the session and there is no reason to leave a write unbounded.
+    #
+    # Note what is deliberately NOT limited here: GET /app/workshop/work.
+    # The opening auto-generates at most one Spark per visit and caches it,
+    # so refreshing costs nothing — and rate-limiting the opening itself
+    # would 429 the doors, composer, and library links over a suggestion
+    # that is meant to be optional.
+    ('workshop.work_spark_another', '4 per minute'),
+    ('workshop.work_spark_dismiss', '4 per minute'),
 ):
     app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
         _workshop_rate_limit
