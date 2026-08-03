@@ -76,7 +76,15 @@ Members Entra External ID tenant, not the production subscription tenant. Its
 Microsoft Graph access token is held only in process memory and is neither
 written, emitted, nor attached to evidence. Before Graph token acquisition,
 the template queries the production Easy Auth configuration and requires the
-exact registered client ID and External ID issuer.
+exact registered client ID and External ID discovery authority. It separately
+requires the principal issuer returned by that authority's live OpenID
+metadata and the production `PEERSLATE_AUTH_ISSUER` setting to match. Do not
+substitute one hostname for the other: the 2026-08-03 live acceptance failure
+proved that doing so rejects an otherwise successful Microsoft sign-in.
+The corrected application principal issuer is a verified precondition for
+this canonical-cutover template, not a canonical setting or rollback target.
+Canonical-host rollback restores only the two canonical settings and must not
+restore the earlier discovery-authority value into `PEERSLATE_AUTH_ISSUER`.
 
 ~~~powershell
 $ErrorActionPreference = 'Stop'
@@ -84,10 +92,13 @@ $ErrorActionPreference = 'Stop'
 $subscriptionId = '<AZURE_SUBSCRIPTION_ID>'
 $resourceGroup = '<WEBAPP_RESOURCE_GROUP>'
 $webAppName = '<WEBAPP_NAME>'
-# Pinned from the verified production PEERSLATE_AUTH_ISSUER / External ID
-# registration. The Azure subscription tenant is not an authority for this app.
+# Easy Auth uses the tenant's custom domain as its OpenID discovery authority.
+# The token principal uses the distinct issuer returned by that live metadata.
+# The Azure subscription tenant is not an authority for either value.
 $entraTenantId = 'b6cac548-9b4b-43da-b366-e95be960ec2f'
-$expectedExternalIdIssuer = 'https://peerslatemembers.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'
+$expectedExternalIdDiscoveryIssuer = 'https://peerslatemembers.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'
+$expectedPrincipalIssuer = 'https://b6cac548-9b4b-43da-b366-e95be960ec2f.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'
+$externalIdMetadataUri = "$expectedExternalIdDiscoveryIssuer/.well-known/openid-configuration"
 $appRegistrationAppId = 'a3f7a4d3-67c1-4c86-8653-dca3de75c99a'
 $approvedApexCallback = 'https://peerslate.com/.auth/login/aad/callback'
 $evidenceDirectory = Join-Path $env:TEMP ('peerslate-auth-journey-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -117,6 +128,18 @@ function Invoke-CurlHeaders {
     param([string]$Label, [string[]]$Arguments, [string]$HeaderPath)
     & curl.exe @Arguments --output NUL --dump-header $HeaderPath
     if ($LASTEXITCODE -ne 0) { throw "$Label failed with exit code $LASTEXITCODE." }
+}
+
+function Invoke-HttpsJson {
+    param([string]$Label, [string]$Uri)
+    if (-not $Uri.StartsWith('https://', [System.StringComparison]::Ordinal)) { throw "$Label URI is not HTTPS." }
+    try {
+        $response = Invoke-RestMethod -Method Get -Uri $Uri -TimeoutSec 30 -ErrorAction Stop
+    } catch {
+        throw "$Label failed: $($_.Exception.Message)"
+    }
+    if ($null -eq $response) { throw "$Label returned no JSON." }
+    return $response
 }
 
 function Save-SanitizedJson {
@@ -250,8 +273,13 @@ function Assert-HeaderContract {
 Invoke-AzQuiet 'Subscription selection' @('account','set','--subscription',$subscriptionId)
 $productionAuthPreflight = Invoke-AzJson 'Production Easy Auth External ID preflight' @('webapp','auth','show','--resource-group',$resourceGroup,'--name',$webAppName,'--query','{clientId:clientId,issuer:issuer}','--output','json')
 if ([string]$productionAuthPreflight.clientId -cne $appRegistrationAppId) { throw 'Production Easy Auth clientId does not exactly match the pinned External ID app registration.' }
-if ([string]$productionAuthPreflight.issuer -cne $expectedExternalIdIssuer) { throw 'Production Easy Auth issuer does not exactly match the pinned External ID issuer/tenant.' }
-$productionAuthPreflightPath = Save-SanitizedJson ([pscustomobject]@{ clientId = [string]$productionAuthPreflight.clientId; issuer = [string]$productionAuthPreflight.issuer; tenantId = $entraTenantId }) 'external-id-auth-preflight.json'
+if ([string]$productionAuthPreflight.issuer -cne $expectedExternalIdDiscoveryIssuer) { throw 'Production Easy Auth discovery issuer does not exactly match the pinned External ID authority/tenant.' }
+$externalIdMetadata = Invoke-HttpsJson 'External ID OpenID metadata' $externalIdMetadataUri
+if ([string]$externalIdMetadata.issuer -cne $expectedPrincipalIssuer) { throw 'External ID metadata did not return the pinned principal issuer.' }
+$principalIssuerRows = Invoke-AzJson 'Application principal issuer query' @('webapp','config','appsettings','list','--resource-group',$resourceGroup,'--name',$webAppName,'--query',"[?name=='PEERSLATE_AUTH_ISSUER'].{name:name,value:value}",'--output','json')
+$principalIssuerSettings = if ($null -eq $principalIssuerRows) { @() } else { @($principalIssuerRows) }
+if ($principalIssuerSettings.Count -ne 1 -or [string]$principalIssuerSettings[0].name -cne 'PEERSLATE_AUTH_ISSUER' -or [string]$principalIssuerSettings[0].value -cne $expectedPrincipalIssuer) { throw 'Production PEERSLATE_AUTH_ISSUER does not exactly match the live External ID metadata issuer.' }
+$productionAuthPreflightPath = Save-SanitizedJson ([pscustomobject]@{ clientId = [string]$productionAuthPreflight.clientId; discoveryIssuer = [string]$productionAuthPreflight.issuer; metadataIssuer = [string]$externalIdMetadata.issuer; applicationPrincipalIssuer = [string]$principalIssuerSettings[0].value; tenantId = $entraTenantId }) 'external-id-auth-preflight.json'
 $graphAccessToken = Get-ExternalIdGraphAccessToken
 $graphHeaders = @{ Authorization = "Bearer $graphAccessToken" }
 Remove-Variable graphAccessToken

@@ -11,13 +11,18 @@
   refresh is `codex/2026-08-02-auth-alias-scope`, in
   `C:\Users\peter\Documents\portfolio-auth-journey-repair-001`. Both are the
   same single-writer lane; this refresh changes package evidence and release
-  templates only.
-- **Authoritative base:** Azure DevOps `origin/main`,
-  `3485675387b22307b5e43768782fb416c9212a22` (the verified current main
-  after the original package merge and PR 243's accepted public-header CSS
-  repair). This narrow authority refresh corrects release-template and shared
-  `/app` golden-test evidence only; it does not alter merged application
-  behavior.
+  templates only. The post-live issuer evidence correction continues that
+  lane on `codex/2026-08-02-auth-issuer-followup` from exact merged main
+  `d5fe87bb94118e9aa959524210e2ebe912d2d9d9`; it changes documentation and
+  offline release-template tests only.
+- **Authoritative base for this post-live evidence slice:** Azure DevOps
+  `origin/main`, `d5fe87bb94118e9aa959524210e2ebe912d2d9d9` (PR 252's
+  Workshop merge on top of PR 245's verified auth application source
+  `aee72312b69d8e5ed915c9c2913389da9ab76dc8`). PR 252 does not overlap this
+  package or its release-template test. The earlier authority refresh was
+  based on `3485675387b22307b5e43768782fb416c9212a22`; that base is now
+  historical. This slice corrects release-template evidence only; it does not
+  alter merged application behavior.
 
 ## Accepted outcome
 
@@ -51,13 +56,57 @@ state for unavailable, malformed, non-JSON, or unknown responses. It is not
 loaded on `/app` or `/auth`, so it cannot duplicate the callback's private
 bfcache reload.
 
-## Azure release staging record
+## Live release and acceptance result
 
-This is a release plan and evidence record, not a claim that the cutover has
-occurred. The current observed sign-in evidence is 17 exchanges in 18 seconds,
-ending in `AADSTS50196`. The current app registration has three host-scoped
-callbacks, the Easy Auth cookie lifetime is 8 hours with a 72-hour grace
-period, and no Conditional Access policy is present. Session duration and the
+- Azure DevOps PR 245 squash-merged the final application/release-safety
+  package to main at
+  `aee72312b69d8e5ed915c9c2913389da9ab76dc8`. Production pipeline 373
+  (`20260803.23`) passed Build, Deploy, and ProductionSmoke; live `/healthz`
+  returned exact release `89f4fc476d70ca5cc3b340ce`.
+- The later non-overlapping Workshop PR 252 advanced main to
+  `d5fe87bb94118e9aa959524210e2ebe912d2d9d9`. Production pipeline 377
+  (`20260803.27`) passed Build, Deploy, and ProductionSmoke; live `/healthz`
+  returned its exact release `c606060eb591d8e41dd46424`. The canonical-host
+  settings and corrected `PEERSLATE_AUTH_ISSUER` remained exact after that
+  deployment.
+- The canonical settings are live with `peerslate.com` as the single fixed
+  destination. Both the App Service default hostname and
+  `pete.peerslate.com` return exact `308` redirects for safe requests and
+  `400` without `Location` for unsafe alias requests. The app registration
+  now has exactly one callback:
+  `https://peerslate.com/.auth/login/aad/callback`.
+- The first strict alias check safely rolled back because Azure had persisted
+  the settings before recycling the worker. A bounded retry then waited for
+  the restarted process and passed on activation attempt 8; no callback
+  reduction occurred before alias proof.
+- Live browser acceptance exposed a separate pre-existing issuer mismatch.
+  Easy Auth correctly uses the custom-domain discovery authority
+  `https://peerslatemembers.ciamlogin.com/.../v2.0`, while its live OpenID
+  metadata returns the principal issuer
+  `https://b6cac548-9b4b-43da-b366-e95be960ec2f.ciamlogin.com/.../v2.0`.
+  Production `PEERSLATE_AUTH_ISSUER` incorrectly contained the discovery URL,
+  so PeerSlate rejected a Microsoft sign-in that Entra recorded as successful.
+  The application setting was corrected to the metadata issuer and the App
+  Service was explicitly restarted; Easy Auth's discovery authority was not
+  changed.
+- The corrected owner session reached `/app` and rendered "Welcome, Pete
+  Carter." The complete signed-out `Sign In` click through Microsoft to
+  `/app` took 2,921 ms. Refresh, public-site navigation and browser return,
+  browser history, and a second tab all retained the authenticated private
+  workspace. No agent requested or entered a password, or inspected, copied,
+  logged, or stored a token, cookie, or raw principal. Microsoft reused an
+  existing SSO session, so password-entry and password-reveal appearance still
+  require Pete's own signed-out/private-browser inspection rather than an
+  agent-entered credential claim.
+
+## Historical Azure pre-cutover staging record
+
+The following is the pre-cutover release plan and evidence record; the live
+result above supersedes it. The observed failing sign-in evidence was 17
+exchanges in 18 seconds, ending in `AADSTS50196`. At that time, the app
+registration had three host-scoped callbacks, the Easy Auth cookie lifetime
+was 8 hours with a 72-hour grace period, and no Conditional Access policy was
+present. Session duration and the
 `offline_access` permission remain unchanged during this initial cutover.
 
 The verified current alternate sign-in aliases are exactly the App Service
@@ -123,11 +172,14 @@ package, repository history, screenshots, or release evidence.
   flag selection, `owner-home.v1`, U1/U3 standalone shell, its templates,
   CSS, and service are outside this package. The narrow collision reassignment
   permits only shared auth handling around those routes.
-- This authority/golden commit makes no production mutation. The separately
-  approved canonical cutover changes only
+- This authority/golden commit made no production mutation. The separately
+  approved live cutover changed
   `PEERSLATE_CANONICAL_HOST=peerslate.com`,
-  `PEERSLATE_ENFORCE_CANONICAL_HOST=true`, and the Entra app-registration
-  callbacks. DNS, custom domains/bindings, identity-provider configuration,
+  `PEERSLATE_ENFORCE_CANONICAL_HOST=true`, the Entra app-registration
+  callbacks, and corrected `PEERSLATE_AUTH_ISSUER` from the discovery
+  authority to the distinct issuer returned by that authority's live OpenID
+  metadata. Easy Auth's provider/discovery configuration did not change. DNS,
+  custom domains/bindings, identity-provider configuration,
   session/cookie duration, `offline_access`, pipelines, Workshop, Interview,
   Capture, Journal, Community, résumé, and AI behavior remain excluded.
 

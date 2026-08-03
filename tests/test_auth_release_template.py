@@ -23,7 +23,15 @@ class AuthReleaseTemplateTests(unittest.TestCase):
     def test_external_id_graph_access_is_pinned_and_tenant_checked(self):
         self.assertIn("$entraTenantId = 'b6cac548-9b4b-43da-b366-e95be960ec2f'", self.source)
         self.assertIn(
-            "$expectedExternalIdIssuer = 'https://peerslatemembers.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'",
+            "$expectedExternalIdDiscoveryIssuer = 'https://peerslatemembers.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'",
+            self.source,
+        )
+        self.assertIn(
+            "$expectedPrincipalIssuer = 'https://b6cac548-9b4b-43da-b366-e95be960ec2f.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0'",
+            self.source,
+        )
+        self.assertIn(
+            '$externalIdMetadataUri = "$expectedExternalIdDiscoveryIssuer/.well-known/openid-configuration"',
             self.source,
         )
         self.assertIn("$appRegistrationAppId = 'a3f7a4d3-67c1-4c86-8653-dca3de75c99a'", self.source)
@@ -34,7 +42,24 @@ class AuthReleaseTemplateTests(unittest.TestCase):
             self.source,
         )
         self.assertIn(
-            "if ([string]$productionAuthPreflight.issuer -cne $expectedExternalIdIssuer)",
+            "if ([string]$productionAuthPreflight.issuer -cne $expectedExternalIdDiscoveryIssuer)",
+            self.source,
+        )
+        self.assertIn("function Invoke-HttpsJson", self.source)
+        self.assertIn(
+            "$externalIdMetadata = Invoke-HttpsJson 'External ID OpenID metadata' $externalIdMetadataUri",
+            self.source,
+        )
+        self.assertIn(
+            "if ([string]$externalIdMetadata.issuer -cne $expectedPrincipalIssuer)",
+            self.source,
+        )
+        self.assertIn(
+            '"[?name==\'PEERSLATE_AUTH_ISSUER\'].{name:name,value:value}"',
+            self.source,
+        )
+        self.assertIn(
+            "[string]$principalIssuerSettings[0].value -cne $expectedPrincipalIssuer",
             self.source,
         )
         self.assertIn(
@@ -43,6 +68,14 @@ class AuthReleaseTemplateTests(unittest.TestCase):
         )
         self.assertLess(
             self.source.index("$productionAuthPreflight ="),
+            self.source.index("$graphAccessToken = Get-ExternalIdGraphAccessToken"),
+        )
+        self.assertLess(
+            self.source.index("$externalIdMetadata ="),
+            self.source.index("$graphAccessToken = Get-ExternalIdGraphAccessToken"),
+        )
+        self.assertLess(
+            self.source.index("$principalIssuerRows ="),
             self.source.index("$graphAccessToken = Get-ExternalIdGraphAccessToken"),
         )
         self.assertIn(

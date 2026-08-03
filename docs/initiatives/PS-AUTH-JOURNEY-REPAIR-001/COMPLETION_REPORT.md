@@ -1,5 +1,65 @@
 # PS-AUTH-JOURNEY-REPAIR-001 - Technical completion report
 
+## Final live release and cutover addendum
+
+- **Auth application release:** Azure PR 245 squash-merged to authoritative
+  main at `aee72312b69d8e5ed915c9c2913389da9ab76dc8`. Pipeline 373
+  (`20260803.23`) passed Build, Deploy production, and Verify production
+  deployment. Live `/healthz` matched release
+  `89f4fc476d70ca5cc3b340ce` with `status=ok`.
+- **Current production reconciliation:** the later, non-overlapping Workshop PR
+  252 advanced main to `d5fe87bb94118e9aa959524210e2ebe912d2d9d9`.
+  Pipeline 377 (`20260803.27`) passed Build, Deploy production, and Verify
+  production deployment. Its exact release
+  `c606060eb591d8e41dd46424` is live and healthy. The canonical-host settings
+  and corrected `PEERSLATE_AUTH_ISSUER` remained exact after that deployment.
+- **Canonical cutover:** production now has
+  `PEERSLATE_CANONICAL_HOST=peerslate.com` and
+  `PEERSLATE_ENFORCE_CANONICAL_HOST=true`. The direct App Service hostname and
+  `pete.peerslate.com` independently passed exact `308` HEAD/GET redirects to
+  the apex; unsafe POST returned `400` with no `Location`. The External ID app
+  registration has exactly one redirect URI,
+  `https://peerslate.com/.auth/login/aad/callback`, with non-redirect `web`
+  fields preserved.
+- **Fail-safe activation evidence:** the first alias check saw the old worker
+  before Azure completed its asynchronous restart and automatically restored
+  the prior callback/settings state. The second run waited for the canonical
+  behavior and passed on activation attempt 8 before reducing callbacks.
+  Sanitized local evidence is under
+  `C:\Users\peter\AppData\Local\Temp\peerslate-auth-journey-20260802-212410`.
+- **Live issuer correction:** Microsoft sign-in audit recorded success, but the
+  application rejected the principal. The configured Easy Auth discovery
+  authority (`peerslatemembers.ciamlogin.com/...`) and the authoritative
+  principal issuer returned by its OpenID metadata
+  (`b6cac548-...ciamlogin.com/...`) are distinct. Production
+  `PEERSLATE_AUTH_ISSUER` incorrectly contained the discovery authority. It was
+  corrected to
+  `https://b6cac548-9b4b-43da-b366-e95be960ec2f.ciamlogin.com/b6cac548-9b4b-43da-b366-e95be960ec2f/v2.0`,
+  then the App Service was explicitly restarted while Easy Auth's discovery
+  setting remained unchanged. Sanitized evidence is under
+  `C:\Users\peter\AppData\Local\Temp\peerslate-auth-issuer-correction-20260802-214458`.
+- **Owner-session browser acceptance:** signed-out home rendered `Sign In`; the
+  complete click through Microsoft to `/app` took 2,921 ms and rendered
+  "Welcome, Pete Carter." Refresh, public-page leave/return, browser history,
+  and a second tab retained the private workspace. Platform sign-out returned
+  to the signed-out public header. No agent requested or entered a password, or
+  inspected, copied, logged, or stored a token, cookie, or raw principal.
+  Microsoft reused an existing SSO session, so this proves the live owner
+  session and application journey, not a newly typed password or
+  password-reveal visual.
+- **Post-live source reconciliation:**
+  `codex/2026-08-02-auth-issuer-followup` changes only this package's release
+  record/runbook and offline template tests. It makes the discovery-authority
+  and metadata-principal-issuer checks separate so a future operator cannot
+  reintroduce the rejected setting.
+- **Post-live local verification:** all 7 release-template tests, all 4 embedded
+  PowerShell parser checks, and `git diff --check` pass. The 49 focused auth,
+  identity, and release-template tests passed on the exact PR 245 source. After
+  rebasing this evidence-only slice onto PR 252, that combined Windows test
+  command cannot import PR 252's Linux-only `fcntl` dependency; this slice does
+  not overlap that Workshop code, and the Azure Linux PR policy remains the
+  required combined verification.
+
 ## Core record
 
 - **Task/package and delivery path:** PS-AUTH-JOURNEY-REPAIR-001 / Protected.
@@ -229,9 +289,13 @@
 
 ## Known limits and next action
 
-No canonical-cutover configuration change is authorized or claimed by this
-authority update. Next: the manager may stage the two canonical settings only
-through the updated fail-fast template, test exactly the two verified aliases,
-and retain the exact callback rollback gate. `www.peerslate.com` remains out of
-scope unless a separately authorized future slice first binds and canonicalizes
-it. This writer does not queue a deployment or alter Azure/Entra/DNS.
+The canonical cutover, callback reduction, principal-issuer correction, and
+live owner-session acceptance are complete as recorded in the final addendum.
+Microsoft reused an existing SSO session, so Pete's password-entry-specific
+inspection (including the hosted password-reveal control and final branding)
+remains a separate visual/credential acceptance step; no agent should request
+or enter that password. `www.peerslate.com` remains out of scope unless a
+separately authorized future slice first binds and canonicalizes it. After the
+post-live evidence PR passes and production still matches its exact source,
+delete only the authorized temporary Candidate app/plan and the merged auth
+branches/worktrees; preserve every unrelated user-owned worktree and artifact.
