@@ -31,11 +31,16 @@ services/knowledge_service.py regardless of this.
 key the anonymous demo library (services/workshop_demo_library.py) uses for
 its own "a"/"e"/"s"/"d" delta, so "Start fresh"
 (``POST /app/workshop/preview/reset``) can clear both with one action. The
-value is a compact 4-element LIST (not a dict — matching
-workshop_demo_library's own "compact session encoding" convention of
-positional entries to keep the signed, base64-encoded cookie small):
+value is a compact LIST (not a dict — matching workshop_demo_library's own
+"compact session encoding" convention of positional entries to keep the
+signed, base64-encoded cookie small). PS-WORKSHOP-001 W2b grew this from 4
+to 6 elements to track the per-session AI-call cap and whether an AI
+improvement proposal was ever accepted (``read_state`` degrades a stale
+4-element bucket gracefully rather than discarding the session — see its
+own docstring):
 
-    [door_code, question_index, answer_text, context_mask]
+    [door_code, question_index, answer_text, context_mask, ai_call_count,
+     ai_assisted]
 
 - ``door_code``: one of DOOR_CONTINUE / DOOR_BROUGHT / DOOR_SOMETHING /
   DOOR_SPARK (single-character strings; a distinct namespace from
@@ -66,6 +71,15 @@ positional entries to keep the signed, base64-encoded cookie small):
   session-scoped selection — never another visitor's data, never a
   permission or privacy boundary — so it is accepted here as a disclosed
   simplification rather than built out further in this slice.
+- ``ai_call_count``: how many AI calls (review + improve combined) this
+  session has attempted, capped at MAX_AI_CALLS_PER_SESSION (20, the
+  brief's per-session cost control). Incremented via ``increment_ai_calls``
+  BEFORE each provider call is attempted, never after, so a call that
+  fails mid-flight still counts.
+- ``ai_assisted``: 0/1, set true by ``mark_ai_assisted`` once an AI
+  improvement proposal has been accepted into the working answer. Read
+  back at final save (workshop_work_routes.py) to choose
+  ``authored_via='ai_assisted_approved'`` instead of ``'typed'``.
 
 **Byte budget.** MAX_SESSION_BYTES is imported from workshop_demo_library
 (not redefined) because it is now the SHARED ceiling for the whole
@@ -201,12 +215,26 @@ def read_state(session):
     shape from a future schema change degrades to "no session" rather than
     crashing), exactly mirroring workshop_demo_library.read_session_delta's
     own defensive-reshape discipline.
+
+    PS-WORKSHOP-001 W2b: the bucket grew from 4 to 6 elements
+    (``ai_call_count``, ``ai_assisted``) to track the per-session AI-call
+    cap and whether an AI improvement proposal was ever accepted into the
+    working answer (drives ``authored_via`` at final save). A stale
+    4-element bucket from a cookie written before this slice shipped
+    degrades gracefully to ``ai_call_count=0``/``ai_assisted=False`` rather
+    than being treated as "no session" — the member's in-progress door,
+    question, answer, and context selection are not thrown away merely
+    because this slice added two counters.
     """
     raw = session.get(SESSION_KEY)
     bucket = raw.get("w") if isinstance(raw, dict) else None
-    if not isinstance(bucket, list) or len(bucket) != 4:
+    if not isinstance(bucket, list) or len(bucket) not in (4, 6):
         return None
-    door, question_index, answer, context_mask = bucket
+    if len(bucket) == 4:
+        door, question_index, answer, context_mask = bucket
+        ai_call_count, ai_assisted = 0, 0
+    else:
+        door, question_index, answer, context_mask, ai_call_count, ai_assisted = bucket
     if door not in ALL_DOORS:
         return None
     if not isinstance(question_index, int) or question_index < 0:
@@ -220,12 +248,16 @@ def read_state(session):
         answer = answer[: MAX_ANSWER_UNITS * 2]
     if not isinstance(context_mask, int) or context_mask < 0:
         context_mask = 0
+    if not isinstance(ai_call_count, int) or ai_call_count < 0:
+        ai_call_count = 0
     return {
         "door": door,
         "question_index": question_index,
         "question_text": question_text_for(door, question_index),
         "answer": answer,
         "context_mask": context_mask & _context_full_mask(),
+        "ai_call_count": min(ai_call_count, MAX_AI_CALLS_PER_SESSION),
+        "ai_assisted": bool(ai_assisted),
     }
 
 
@@ -277,7 +309,7 @@ def start_session(session, *, door, answer):
     if question_index is None:
         return False, DOOR_UNAVAILABLE_MESSAGE, None
 
-    bucket = [door, question_index, answer, 0]
+    bucket = [door, question_index, answer, 0, 0, 0]
     if not _would_fit(session, bucket):
         return False, SESSION_FULL_MESSAGE, None
 
@@ -292,6 +324,12 @@ def update_session(session, *, answer, context_mask):
     ``error_message`` ``None`` when there is no active session at all —
     never confirms or denies why, matching the repo's existing convention
     for a foreign/expired session reference.
+
+    PS-WORKSHOP-001 W2b: preserves the current ``ai_call_count`` and
+    ``ai_assisted`` counters unchanged — this function only ever touches
+    the answer text and context selection, exactly as it did in W2a; the
+    two AI-tracking fields are mutated only by ``increment_ai_calls`` /
+    ``mark_ai_assisted`` below.
     """
     state = read_state(session)
     if state is None:
@@ -304,6 +342,84 @@ def update_session(session, *, answer, context_mask):
         state["question_index"],
         answer,
         int(context_mask) & _context_full_mask(),
+        state["ai_call_count"],
+        1 if state["ai_assisted"] else 0,
+    ]
+    if not _would_fit(session, bucket):
+        return False, SESSION_FULL_MESSAGE
+
+    _write_bucket(session, bucket)
+    return True, None
+
+
+# ---------------------------------------------------------------------------
+# AI-call accounting — PS-WORKSHOP-001 W2b (brief's "Cost controls" section).
+# ---------------------------------------------------------------------------
+
+MAX_AI_CALLS_PER_SESSION = 20
+AI_CALL_CAP_MESSAGE = (
+    "This preview session has reached its limit for AI review this visit — "
+    "start fresh or come back later. Your answer is still here, and Save "
+    "unfinished still works."
+)
+
+
+def at_ai_call_cap(state):
+    """True when this session has reached MAX_AI_CALLS_PER_SESSION AI
+    calls (review + improve combined). Checked BEFORE attempting a call —
+    never after — so the cap is a hard ceiling on calls actually attempted,
+    not merely on calls that succeeded."""
+    return state["ai_call_count"] >= MAX_AI_CALLS_PER_SESSION
+
+
+def increment_ai_calls(session):
+    """Record one more AI call attempt against the active session's cap.
+
+    Returns ``(ok, error_message)``; ``ok`` is ``False`` with
+    ``error_message`` ``None`` when there is no active session (same
+    "never confirm or deny" convention as ``update_session``). Callers
+    must check ``at_ai_call_cap`` first and reserve the slot with this
+    function BEFORE calling the model, so a request that dies mid-call
+    still counts against the cap (the point of the cap is bounding actual
+    provider requests attempted, not only successful ones).
+    """
+    state = read_state(session)
+    if state is None:
+        return False, None
+
+    bucket = [
+        state["door"],
+        state["question_index"],
+        state["answer"],
+        state["context_mask"],
+        state["ai_call_count"] + 1,
+        1 if state["ai_assisted"] else 0,
+    ]
+    if not _would_fit(session, bucket):
+        return False, SESSION_FULL_MESSAGE
+
+    _write_bucket(session, bucket)
+    return True, None
+
+
+def mark_ai_assisted(session):
+    """Flip the session's ``ai_assisted`` flag once an AI improvement
+    proposal has been accepted into the working answer — read back at
+    final save to set ``authored_via='ai_assisted_approved'`` instead of
+    ``'typed'`` (architecture section 4.1's D1 provenance). Idempotent;
+    never cleared by anything except ``clear_session``/a fresh
+    ``start_session``."""
+    state = read_state(session)
+    if state is None:
+        return False, None
+
+    bucket = [
+        state["door"],
+        state["question_index"],
+        state["answer"],
+        state["context_mask"],
+        state["ai_call_count"],
+        1,
     ]
     if not _would_fit(session, bucket):
         return False, SESSION_FULL_MESSAGE

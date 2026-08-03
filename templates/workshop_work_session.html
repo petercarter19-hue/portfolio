@@ -13,17 +13,18 @@
 {% block content %}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
 {#
-  PS-WORKSHOP-001 W2a — Work on Something focused-question session. Visual
-  authority: R03 (desktop) / R04 (mobile),
-  workshop-facelift-2026-08-02/. No AI call exists in this slice — "Review
-  what I shared" leads to workshop_work_holding.html's honest holding
-  state, not a real review. "Use as context" is a per-item checkbox INSIDE
-  the SAME <form> as the answer textarea (the form wraps both the main
-  card and the aside rail, exactly like workshop_review.html's existing
-  pattern) so the member's current answer is never lost regardless of
-  which submit button is pressed — every action (Save unfinished / Stop
-  for now / Review what I shared) carries the full form (answer +
-  selection) forward together.
+  PS-WORKSHOP-001 W2a/W2b — Work on Something focused-question session.
+  Visual authority: R03 (desktop) / R04 (mobile),
+  workshop-facelift-2026-08-02/. "Use as context" is a per-item checkbox
+  INSIDE the SAME <form> as the answer textarea (the form wraps both the
+  main card and the aside rail, exactly like workshop_review.html's
+  existing pattern) so the member's current answer is never lost
+  regardless of which submit button is pressed — every action (Save
+  unfinished / Stop for now / Review what I shared) carries the full form
+  (answer + selection) forward together. W2b: "Review what I shared"
+  submits this SAME form directly to the real AI review endpoint
+  (review_url, via formaction) instead of routing through this screen's
+  own POST handler — workshop_work_review.html renders the real review.
 #}
 <div class="wk">
     {% include "partials/workshop/_hero_and_modes.html" %}
@@ -70,6 +71,19 @@
                         >{{ workshop_icon("mic") }}</button>
                     </div>
                     <p class="wk-field__hint">Text entry is available. Voice input is not available yet.</p>
+                    {#
+                      F9 correction (independent Opus review): this field
+                      accepts 1000 characters, but an anonymous preview save
+                      keeps only MAX_PREVIEW_WORDING_UNITS of them. Without
+                      this note a visitor could write to the full 1000 and
+                      only discover the real limit at the moment they tried
+                      to save — after the work, not before it. Quiet, stated
+                      once, and only where it is actually true: a signed-in
+                      member has no such limit and must not be told they do.
+                    #}
+                    {% if anonymous_preview %}
+                    <p class="wk-field__hint">Preview saves keep up to {{ preview_wording_units }} characters — sign in for full length.</p>
+                    {% endif %}
 
                     <div class="wk-actions-row" style="margin-top:1.25rem;">
                         <button type="submit" name="wk_action" value="save_unfinished" class="wk-btn wk-btn--outline">
@@ -77,7 +91,7 @@
                             <span>Save unfinished</span>
                         </button>
                         <button type="submit" name="wk_action" value="stop" class="wk-btn-link">Stop for now</button>
-                        <button type="submit" name="wk_action" value="review" class="wk-btn wk-btn--primary">
+                        <button type="submit" formaction="{{ review_url }}" formnovalidate class="wk-btn wk-btn--primary">
                             <span>Review what I shared</span>
                             {{ workshop_icon("arrow-right") }}
                         </button>

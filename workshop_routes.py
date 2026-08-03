@@ -713,7 +713,19 @@ def _review_response(
     keep_working_url,
     status_code=200,
     anonymous_preview=False,
+    source_label=None,
 ):
+    """Render "Review what will be saved" (workshop_review.html).
+
+    ``source_label`` defaults to direct entry's own fixed copy — unchanged
+    for every W1 call site (Add/Edit). PS-WORKSHOP-001 W2b's Work on
+    Something final-wording step (workshop_work_routes.py) is the only
+    caller that passes a different value, reflecting whether the working
+    answer carries an accepted AI improvement (SOURCE_LABELS.get(
+    "ai_assisted_approved" / "typed", ...)) — reusing this exact render
+    function and template rather than forking a second one, per the
+    architecture's "flows into the EXISTING save paths" instruction.
+    """
     return (
         render_template(
             "workshop_review.html",
@@ -726,7 +738,7 @@ def _review_response(
             error_message=error_message,
             save_url=save_url,
             keep_working_url=keep_working_url,
-            source_label="Your words, added directly",
+            source_label=source_label or "Your words, added directly",
             max_title_units=MAX_TITLE_UNITS,
             max_wording_units=(
                 workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
@@ -740,7 +752,9 @@ def _review_response(
     )
 
 
-def _render_anonymous_preview_saved(*, item_key, title, wording, classification):
+def _render_anonymous_preview_saved(
+    *, item_key, title, wording, classification, authored_via="typed"
+):
     """The honest confirming-save render for a signed-out visitor (owner
     instruction 2026-08-02, doc 20 section 6e): no ``*_for_owner`` service
     call, no database row, and no "Saved privately" heading or copy — that
@@ -753,6 +767,10 @@ def _render_anonymous_preview_saved(*, item_key, title, wording, classification)
     above (different template context flag, different banner class,
     different copy) — this path is reachable in production any time a
     visitor is signed out.
+
+    ``authored_via`` defaults to "typed" (every direct-entry Add call site,
+    unchanged). PS-WORKSHOP-001 W2b's Work on Something save path is the
+    only caller that can pass "ai_assisted_approved".
     """
     return render_template(
         "workshop_saved.html",
@@ -765,7 +783,7 @@ def _render_anonymous_preview_saved(*, item_key, title, wording, classification)
             "classification_label": CLASSIFICATION_LABELS.get(
                 classification, classification.title()
             ),
-            "source_label": SOURCE_LABELS.get("typed", "Your words"),
+            "source_label": SOURCE_LABELS.get(authored_via, "Your words"),
         },
         dev_preview=False,
         anonymous_preview=True,

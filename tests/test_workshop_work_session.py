@@ -10,7 +10,9 @@ test uses a generic fixture member key, never a Pete-specific identifier.
 
 import random
 import re
+import shutil
 import string
+import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -62,8 +64,19 @@ class WorkOnSomethingTestCase(unittest.TestCase):
         app.config["PEERSLATE_WORKSHOP_SESSION_ENABLED"] = True
         self._limiter_enabled = limiter.enabled
         limiter.enabled = False
+        # F2 correction: services/workshop_spend_guard.py keeps its daily
+        # counters in a file under app.instance_path. Point that at a fresh
+        # temporary directory per test so the tests here neither consume the
+        # real day's budget (which would make them start failing partway
+        # through a day, in a way that also depends on how often the suite
+        # was run) nor leave state behind in a developer's checkout.
+        self._instance_dir = tempfile.mkdtemp(prefix="ps-workshop-spend-")
+        self._original_instance_path = app.instance_path
+        app.instance_path = self._instance_dir
 
     def tearDown(self):
+        app.instance_path = self._original_instance_path
+        shutil.rmtree(self._instance_dir, ignore_errors=True)
         limiter.enabled = self._limiter_enabled
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
         app.config["PEERSLATE_WORKSHOP_SESSION_ENABLED"] = self.original_session_flag
@@ -292,6 +305,28 @@ class SessionRoundTripTests(WorkOnSomethingTestCase):
 # ---------------------------------------------------------------------------
 
 
+_STUB_REVIEW_JSON = {
+    "interpretation": "A stubbed interpretation.",
+    "strong": ["Clear ownership"],
+    "standout": "A stubbed standout detail.",
+    "strengthen": "A stubbed thing to strengthen.",
+    "question": "A stubbed follow-up question?",
+}
+
+
+def _mock_generate_review():
+    """A patch context manager stubbing the real AI call with a valid,
+    already-shaped reply — every test in this file that reaches the real
+    review endpoint (PS-WORKSHOP-001 W2b) mocks the model boundary rather
+    than making a live call; see tests/test_workshop_review.py for the AI
+    behavior itself (validator contract, token round-trip, loop, cap,
+    provider-failure states)."""
+    return patch(
+        "workshop_work_routes.workshop_review_service.generate_review",
+        return_value=(dict(_STUB_REVIEW_JSON), "{}", "end_turn"),
+    )
+
+
 class UseAsContextTests(WorkOnSomethingTestCase):
     def test_context_ids_are_validated_against_the_visible_set(self):
         self._start(door=wws.DOOR_SOMETHING, thought="seed")
@@ -302,12 +337,13 @@ class UseAsContextTests(WorkOnSomethingTestCase):
         foreign_id = "12345678-1234-1234-1234-123456789012"
         self.assertNotIn(foreign_id, visible_ids)
 
-        response = self._update(
-            answer="answer text",
-            context=[visible_ids[0], foreign_id],
-            wk_action="review",
-        )
-        self.assertEqual(response.status_code, 302)
+        with _mock_generate_review():
+            response = self.client.post(
+                "/app/workshop/work/session/review",
+                data={"answer": "answer text", "context": [visible_ids[0], foreign_id]},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(response.status_code, 200)
 
         state = None
         with self.client.session_transaction() as sess:
@@ -321,12 +357,17 @@ class UseAsContextTests(WorkOnSomethingTestCase):
         self.assertEqual(context_mask & 1, 1)
         self.assertEqual(context_mask & ~((1 << len(visible_ids)) - 1), 0)
 
-    def test_selection_survives_a_round_trip_through_the_holding_state(self):
+    def test_selection_survives_a_round_trip_through_the_review_screen(self):
         self._start(door=wws.DOOR_SOMETHING, thought="seed")
         body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         visible_ids = _find_all(r'name="context"\s+value="([^"]+)"', body)
 
-        self._update(answer="answer text", context=[visible_ids[0]], wk_action="review")
+        with _mock_generate_review():
+            self.client.post(
+                "/app/workshop/work/session/review",
+                data={"answer": "answer text", "context": [visible_ids[0]]},
+                headers=SAME_ORIGIN_HEADERS,
+            )
         self.client.get("/app/workshop/work/session/review")
 
         return_body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
@@ -337,23 +378,21 @@ class UseAsContextTests(WorkOnSomethingTestCase):
 
 
 # ---------------------------------------------------------------------------
-# Holding state
+# GET on the review path — superseded by the real POST AI review below
+# (PS-WORKSHOP-001 W2b). tests/test_workshop_review.py covers the real
+# review/improve/finalize/save flow; this file keeps only the GET-redirect
+# shape, which every other W2a route already exercises the same way.
 # ---------------------------------------------------------------------------
 
 
-class HoldingStateTests(WorkOnSomethingTestCase):
-    def test_holding_state_never_claims_ai_ran(self):
+class ReviewPathRedirectTests(WorkOnSomethingTestCase):
+    def test_get_on_the_review_path_redirects_to_the_session_screen(self):
         self._start(door=wws.DOOR_SOMETHING, thought="seed")
-        self._update(answer="my shared answer", wk_action="review")
+        response = self.client.get("/app/workshop/work/session/review")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/app/workshop/work/session", response.headers["Location"])
 
-        body = self.client.get("/app/workshop/work/session/review").data.decode("utf-8")
-        self.assertIn("AI review step is coming next", body)
-        self.assertIn("my shared answer", body)
-        self.assertNotIn("AI reviewed", body)
-        self.assertNotIn("interpretation", body)
-        self.assertNotIn("strong[", body)
-
-    def test_holding_state_without_an_active_session_redirects_to_opening(self):
+    def test_get_on_the_review_path_without_an_active_session_redirects_to_opening(self):
         response = self.client.get("/app/workshop/work/session/review")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/app/workshop/work", response.headers["Location"])
@@ -665,13 +704,20 @@ class SessionByteBudgetTests(WorkOnSomethingTestCase):
         session_body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         context_ids = _find_all(r'name="context"\s+value="([^"]+)"', session_body)
 
-        # "review" persists the full answer + full context selection without
-        # clearing the session (unlike save_unfinished/stop), so the
-        # measurement below reflects the session at its fullest.
-        review_response = self._update(
-            answer=answer, context=context_ids, wk_action="review"
-        )
-        self.assertEqual(review_response.status_code, 302)
+        # The real review endpoint persists the full answer + full context
+        # selection without clearing the session (unlike save_unfinished/
+        # stop), so the measurement below reflects the session at its
+        # fullest — now also carrying the W2b ai_call_count/ai_assisted
+        # counters (two small ints; negligible byte impact, measured here
+        # rather than assumed). The model call itself is mocked — this
+        # test measures cookie bytes, not AI behavior.
+        with _mock_generate_review():
+            review_response = self.client.post(
+                "/app/workshop/work/session/review",
+                data={"answer": answer, "context": context_ids},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(review_response.status_code, 200)
 
         size = self._measure_cookie_bytes()
         self.assertLess(
@@ -698,10 +744,13 @@ class SessionByteBudgetTests(WorkOnSomethingTestCase):
 
         session_body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         context_ids = _find_all(r'name="context"\s+value="([^"]+)"', session_body)
-        review_response = self._update(
-            answer=answer, context=context_ids, wk_action="review"
-        )
-        self.assertEqual(review_response.status_code, 302)
+        with _mock_generate_review():
+            review_response = self.client.post(
+                "/app/workshop/work/session/review",
+                data={"answer": answer, "context": context_ids},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+        self.assertEqual(review_response.status_code, 200)
 
         size = self._measure_cookie_bytes()
         self.assertLess(

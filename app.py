@@ -594,6 +594,15 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     ('workshop.start_work_session', '10 per minute'),
     ('workshop.update_work_session', '10 per minute'),
     ('workshop.reset_preview', '6 per minute'),
+    # PS-WORKSHOP-001 W2b: the AI-cost routes match the brief's explicit
+    # "review/improve 6/min" cap. The non-AI finalize/save/keep-working
+    # routes get the same 10/min range as the rest of this session's
+    # state-changing form posts.
+    ('workshop.work_session_review', '6 per minute'),
+    ('workshop.work_session_improve', '6 per minute'),
+    ('workshop.work_session_finalize', '10 per minute'),
+    ('workshop.work_session_keep_working', '10 per minute'),
+    ('workshop.work_session_save', '6 per minute'),
 ):
     app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
         _workshop_rate_limit

@@ -2459,6 +2459,8 @@ button.wk-door:focus-visible {
     .wk-door {
         transition: none;
     }
+}
+
 /* ---------------------------------------------------------
    Facelift depth correction (owner, 2026-08-02, architect-applied):
    the mockups lean their section labels and rail icons toward the
@@ -2535,4 +2537,181 @@ body.workshop-page[data-theme="dark"]::before {
     pointer-events: none;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.06'/%3E%3C/svg%3E") repeat;
     opacity: 0.85;
+}
+
+/* =========================================================
+   PS-WORKSHOP-001 W2b — the real AI review screen (workshop_work_review.html).
+   Visual authority: R09 (desktop) / R10 (mobile),
+   workshop-facelift-2026-08-02/. Reuses every existing token/shadow/card
+   idiom above; adds only the handful of shapes R09/R10 introduce that
+   nothing on this blueprint has yet: the stacked "Your original wording" /
+   "PeerSlate's interpretation" boxes, the What's-strong / standout /
+   strengthen / question two-column grid, the inline follow-up-question
+   field, and the Improve-with-AI proposal box.
+   ========================================================= */
+
+.wk-review-section {
+    border: 1px solid var(--wk-line);
+    border-radius: 14px;
+    background: var(--wk-surface);
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.1rem;
+}
+.wk-review-section--muted {
+    background: var(--wk-action-tint);
+    border-color: transparent;
+}
+.wk-review-section__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.wk-review-section__eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-muted);
+    margin: 0 0 0.5rem;
+}
+.wk-review-section__edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wk-action);
+    text-decoration: none;
+    flex: none;
+}
+.wk-review-section__edit:hover { text-decoration: underline; }
+.wk-review-section__edit .wk-icon { width: 15px; height: 15px; }
+.wk-review-section__body {
+    color: var(--wk-ink);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.wk-review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.wk-strong-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.wk-strong-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--wk-ink);
+    line-height: 1.4;
+}
+.wk-strong-list .wk-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--wk-success);
+    margin-top: 0.15rem;
+}
+.wk-review-empty {
+    color: var(--wk-muted);
+    font-style: italic;
+    margin: 0;
+}
+
+.wk-standout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--wk-ink);
+    line-height: 1.4;
+    margin: 0;
+}
+.wk-standout .wk-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--wk-warning-ink);
+    margin-top: 0.15rem;
+}
+
+.wk-followup-form { margin-top: 0.75rem; }
+.wk-followup-form__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.wk-followup-form__input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--wk-line);
+    border-radius: 999px;
+    background: var(--wk-surface);
+    color: var(--wk-ink);
+    font: inherit;
+    padding: 0.55rem 0.9rem;
+}
+.wk-followup-form__input:focus-visible {
+    outline: 2px solid var(--wk-focus);
+    outline-offset: 1px;
+}
+.wk-followup-form__submit {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--wk-action);
+    color: var(--wk-on-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.wk-followup-form__submit:hover { background: var(--wk-action-strong); }
+.wk-followup-form__submit:focus-visible {
+    outline: 2px solid var(--wk-focus);
+    outline-offset: 2px;
+}
+.wk-followup-form__submit .wk-icon { width: 16px; height: 16px; }
+
+.wk-proposal {
+    border: 1px solid var(--wk-action);
+    border-radius: 14px;
+    background: var(--wk-action-tint);
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.1rem;
+}
+.wk-proposal .wk-review-section__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--wk-action-strong);
+}
+.wk-proposal .wk-review-section__eyebrow .wk-icon { width: 15px; height: 15px; }
+
+@media (max-width: 900px) {
+    .wk-review-grid { grid-template-columns: 1fr; gap: 1.1rem; }
+}
+
+body.workshop-page[data-theme="dark"] .wk-review-section {
+    background: var(--wk-surface);
+    border-color: var(--wk-line);
+}
+body.workshop-page[data-theme="dark"] .wk-review-section--muted {
+    background: var(--wk-action-tint);
+}
+body.workshop-page[data-theme="dark"] .wk-followup-form__input {
+    background: var(--wk-surface);
+    color: var(--wk-ink);
 }

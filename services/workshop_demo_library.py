@@ -106,6 +106,14 @@ _CLASS_CODE = {"work": "w", "personal": "p", "both": "b", "unclassified": "u"}
 _CLASS_CODE_REV = {v: k for k, v in _CLASS_CODE.items()}
 _STATUS_CODE = {"confirmed": "c", "suggested": "s", "unfinished": "f", "archived": "a"}
 _STATUS_CODE_REV = {v: k for k, v in _STATUS_CODE.items()}
+# PS-WORKSHOP-001 W2b: single-character codes for a visitor-added item's
+# authored_via provenance, matching the class/status code convention above
+# (byte-budget parity). Every BASE_ITEMS row and every visitor EDIT stays
+# "typed" — only add_item's own optional ``authored_via`` keyword can
+# produce "a" (ai_assisted_approved) or "s" (spoken, reserved for a later
+# slice), and only for a brand-new Work on Something save.
+_AUTHORED_CODE = {"typed": "t", "spoken": "s", "ai_assisted_approved": "a"}
+_AUTHORED_CODE_REV = {v: k for k, v in _AUTHORED_CODE.items()}
 
 _LIST_ROW_KEYS = (
     "item_key",
@@ -439,7 +447,7 @@ BASE_ITEMS_BY_KEY = {item["item_key"]: item for item in BASE_ITEMS}
 # ---------------------------------------------------------------------------
 
 
-def _list_row(*, item_key, title, classification, status, base):
+def _list_row(*, item_key, title, classification, status, base, authored_via="typed"):
     return {
         "item_key": item_key,
         "status": status,
@@ -453,17 +461,22 @@ def _list_row(*, item_key, title, classification, status, base):
         "version_token": base["version_token"],
         "title": title,
         "body_format": "plain",
-        "authored_via": "typed",
+        # PS-WORKSHOP-001 W2b: every BASE library item and every visitor
+        # edit stays "typed" (unchanged from W1/W2a); only a Work on
+        # Something save can pass a different value, via add_item's own
+        # ``authored_via`` keyword below.
+        "authored_via": authored_via,
     }
 
 
-def _get_row(*, item_key, title, wording, classification, status, base):
+def _get_row(*, item_key, title, wording, classification, status, base, authored_via="typed"):
     row = _list_row(
         item_key=item_key,
         title=title,
         classification=classification,
         status=status,
         base=base,
+        authored_via=authored_via,
     )
     row.update(
         {
@@ -480,7 +493,9 @@ def _get_row(*, item_key, title, wording, classification, status, base):
 def _added_base(item_key, status_code):
     """A synthetic ``base``-shaped dict for a visitor-added item, so
     ``_list_row``/``_get_row`` above can build its view without a second,
-    forked set of field-building functions."""
+    forked set of field-building functions. (``authored_via`` is passed to
+    ``_list_row``/``_get_row`` separately, not carried on this dict — see
+    ``list_rows``/``get_row`` below.)"""
     status = _STATUS_CODE_REV.get(status_code, "confirmed")
     confirmed_version = 1 if status in ("confirmed", "archived") else None
     confirmed_at = _ADDED_ITEM_TIMESTAMP if status in ("confirmed", "archived") else None
@@ -531,9 +546,14 @@ def read_session_delta(session):
     deleted = raw.get("d")
     return {
         "a": [
-            list(entry)
+            # PS-WORKSHOP-001 W2b: entries grew from 5 to 6 elements (a
+            # trailing authored_via code). A pre-W2b 5-element entry is
+            # defensively upgraded to "t" (typed) in place rather than
+            # dropped, so a cookie written before this slice shipped does
+            # not lose the visitor's own added items.
+            list(entry) + ["t"] if len(entry) == 5 else list(entry)
             for entry in (added if isinstance(added, list) else [])
-            if isinstance(entry, (list, tuple)) and len(entry) == 5
+            if isinstance(entry, (list, tuple)) and len(entry) in (5, 6)
         ][:MAX_ADDED_ITEMS],
         "e": {
             key: dict(value)
@@ -623,7 +643,7 @@ def list_rows(delta):
         rows.append(_list_row(item_key=key, title=title, classification=classification, status=status, base=base))
 
     for entry in delta.get("a", []):
-        key, a_title, _a_wording, a_class_code, a_status_code = entry
+        key, a_title, _a_wording, a_class_code, a_status_code, a_authored_code = entry
         title = a_title
         classification = _CLASS_CODE_REV.get(a_class_code, "unclassified")
         patch = edits.get(key)
@@ -634,7 +654,8 @@ def list_rows(delta):
         status_code = overrides.get(key, a_status_code)
         status = _STATUS_CODE_REV.get(status_code, "confirmed")
         added_base = _added_base(key, status_code=a_status_code)
-        rows.append(_list_row(item_key=key, title=title, classification=classification, status=status, base=added_base))
+        authored_via = _AUTHORED_CODE_REV.get(a_authored_code, "typed")
+        rows.append(_list_row(item_key=key, title=title, classification=classification, status=status, base=added_base, authored_via=authored_via))
 
     return rows
 
@@ -661,7 +682,7 @@ def get_row(item_key, delta):
         return _get_row(item_key=item_key, title=title, wording=wording, classification=classification, status=status, base=base)
 
     for entry in delta.get("a", []):
-        key, a_title, a_wording, a_class_code, a_status_code = entry
+        key, a_title, a_wording, a_class_code, a_status_code, a_authored_code = entry
         if key != item_key:
             continue
         title, wording = a_title, a_wording
@@ -675,7 +696,8 @@ def get_row(item_key, delta):
         status_code = overrides.get(item_key, a_status_code)
         status = _STATUS_CODE_REV.get(status_code, "confirmed")
         added_base = _added_base(item_key, status_code=a_status_code)
-        return _get_row(item_key=item_key, title=title, wording=wording, classification=classification, status=status, base=added_base)
+        authored_via = _AUTHORED_CODE_REV.get(a_authored_code, "typed")
+        return _get_row(item_key=item_key, title=title, wording=wording, classification=classification, status=status, base=added_base, authored_via=authored_via)
 
     return None
 
@@ -685,8 +707,16 @@ def get_row(item_key, delta):
 # ---------------------------------------------------------------------------
 
 
-def add_item(session, *, title, wording, classification, status):
+def add_item(session, *, title, wording, classification, status, authored_via="typed"):
     """Add one visitor-authored item to this session's preview library.
+
+    ``authored_via`` defaults to "typed" — the only value direct entry
+    (workshop_routes.py's Add flow) ever passes, unchanged from W1/W2a.
+    PS-WORKSHOP-001 W2b's Work on Something save path
+    (workshop_work_routes.py) is the only caller that can pass
+    "ai_assisted_approved", and only when an AI improvement proposal was
+    actually accepted into the working answer (architecture section 4.1's
+    D1 provenance) — never client-supplied or trusted from a form field.
 
     Returns ``(item_key, error_message)``: on success ``error_message`` is
     ``None``; on a cap violation ``item_key`` is ``None`` and
@@ -701,9 +731,10 @@ def add_item(session, *, title, wording, classification, status):
     item_key = str(uuid4())
     class_code = _CLASS_CODE.get(classification, "u")
     status_code = _STATUS_CODE.get(status, "c")
+    authored_code = _AUTHORED_CODE.get(authored_via, "t")
 
     candidate = {
-        "a": delta["a"] + [[item_key, title, wording, class_code, status_code]],
+        "a": delta["a"] + [[item_key, title, wording, class_code, status_code, authored_code]],
         "e": delta["e"],
         "s": delta["s"],
         "d": delta["d"],

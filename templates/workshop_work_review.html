@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block meta_description %}PeerSlate's private review of what you shared — nothing is saved until you choose Save privately.{% endblock %}
+
+{% block body_class %} workshop-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workshop.css') }}">
+{% endblock %}
+
+{% block content %}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+{#
+  PS-WORKSHOP-001 W2b — the real AI review loop. Visual authority: R09
+  (desktop) / R10 (mobile), workshop-facelift-2026-08-02/. Replaces W2a's
+  honest "AI review arrives next" holding card (workshop_work_holding.html,
+  now unused) with a real, validated model result.
+
+  Branches on ``screen_state`` (an explicit state field, in the style of
+  partials/owner_studio/_state_panel.html):
+    - "review": the full R09/R10 composition.
+    - "cap_reached": this session's AI-call cap has been reached (an
+      honest state, never an error) — Save unfinished / Stop for now /
+      Edit myself / Review final wording still work.
+    - "unavailable": a real provider/validation failure — same actions
+      still available (architecture doc 17 section 9.3).
+    - "expired": the signed review token was missing, tampered, or past
+      its 30-minute age — an honest prompt for a fresh review.
+
+  Deliberate, disclosed simplification: the "Related information" rail on
+  THIS screen is read-only (shows which items are currently used as
+  context; does not offer new "Use as context" toggles here). The session
+  screen (workshop_work_session.html) remains the one place that selection
+  changes — this screen's own forms carry the CURRENT selection forward as
+  hidden fields (see "wk-context-carry" below) so it is never silently
+  reset to empty by an action taken from this screen.
+#}
+<div class="wk">
+    {% include "partials/workshop/_hero_and_modes.html" %}
+
+    {% if anonymous_preview %}
+    <div class="wk-status-banner wk-status-banner--preview" role="status">
+        Preview — this session is example information, not yours.
+        {% include "partials/workshop/_start_fresh_link.html" %}
+    </div>
+    {% endif %}
+
+    {% if error_message %}
+    <div class="wk-status-banner wk-status-banner--error" role="status">{{ error_message }}</div>
+    {% endif %}
+
+    <div class="wk-flow-layout">
+        <div class="wk-flow-main">
+            <a class="wk-breadcrumb" href="{{ back_url }}">
+                {{ workshop_icon("arrow-left") }}
+                <span>Choose another starting point</span>
+            </a>
+
+            <div class="wk-card wk-ai-review">
+                <h1 class="wk-flow-title">Here&#39;s what PeerSlate heard</h1>
+
+                <section class="wk-review-section" aria-labelledby="wk-original-wording-title">
+                    <div class="wk-review-section__head">
+                        {% if is_stale_review %}
+                        <p class="wk-review-section__eyebrow" id="wk-original-wording-title">Your current wording</p>
+                        {% else %}
+                        <p class="wk-review-section__eyebrow" id="wk-original-wording-title">Your original wording</p>
+                        {% endif %}
+                        <a class="wk-review-section__edit" href="{{ back_url }}">
+                            {{ workshop_icon("pencil") }}<span>Edit</span>
+                        </a>
+                    </div>
+                    <div class="wk-review-section__body">{{ answer_value }}</div>
+                    {% if is_stale_review %}
+                    <p class="wk-field__hint">The review below describes your earlier wording — re-run the review to update it.</p>
+                    {% endif %}
+                </section>
+
+                {% if screen_state == "review" and review %}
+                <section class="wk-review-section wk-review-section--muted" aria-labelledby="wk-interpretation-title">
+                    <p class="wk-review-section__eyebrow" id="wk-interpretation-title">PeerSlate&#39;s interpretation</p>
+                    <div class="wk-review-section__body">{{ review.interpretation }}</div>
+                    {#
+                      F5 correction: name the private items this review
+                      actually drew on. Absent entirely when it drew on none,
+                      rather than printed as an empty "Used as context:" —
+                      a heading with nothing after it reads as a failure, and
+                      "it used nothing of yours" is the ordinary case here.
+                    #}
+                    {% if cited_context_titles %}
+                    <p class="wk-field__hint" style="margin-top:0.75rem;">Used as context: {{ cited_context_titles | join(", ") }}</p>
+                    {% endif %}
+                </section>
+
+                <div class="wk-review-grid">
+                    <section aria-labelledby="wk-strong-title">
+                        <p class="wk-review-section__eyebrow" id="wk-strong-title">What&#39;s strong</p>
+                        {% if review.strong %}
+                        <ul class="wk-strong-list">
+                            {% for item in review.strong %}
+                            <li>{{ workshop_icon("check") }}<span>{{ item }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="wk-review-empty">Nothing stood out as strong yet — that&#39;s an honest read, not a penalty.</p>
+                        {% endif %}
+                    </section>
+                    <section aria-labelledby="wk-standout-title">
+                        <p class="wk-review-section__eyebrow" id="wk-standout-title">One standout piece of evidence</p>
+                        {% if review.standout %}
+                        <p class="wk-standout">{{ workshop_icon("star") }}<span>{{ review.standout }}</span></p>
+                        {% else %}
+                        <p class="wk-review-empty">Nothing stood out as a single standout detail yet — that&#39;s an honest read, not a penalty.</p>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <div class="wk-review-grid">
+                    <section aria-labelledby="wk-strengthen-title">
+                        <p class="wk-review-section__eyebrow" id="wk-strengthen-title">One thing worth strengthening</p>
+                        <p class="wk-review-section__body">{{ review.strengthen }}</p>
+                    </section>
+                    <section aria-labelledby="wk-question-title">
+                        <p class="wk-review-section__eyebrow" id="wk-question-title">One useful question</p>
+                        <p class="wk-review-section__body">{{ review.question }}</p>
+
+                        <form method="post" action="{{ review_url }}" class="wk-followup-form">
+                            <input type="hidden" name="answer" value="{{ answer_value }}">
+                            <input type="hidden" name="review_token" value="{{ review_token }}">
+                            {% for item in related_items if item.selected %}
+                            <input type="hidden" name="context" value="{{ item.item_key }}">
+                            {% endfor %}
+                            <label class="wk-sr-only" for="wk-followup-answer">Add your answer</label>
+                            <div class="wk-followup-form__row">
+                                <input
+                                    id="wk-followup-answer"
+                                    class="wk-followup-form__input"
+                                    type="text"
+                                    name="followup_answer"
+                                    maxlength="{{ 1000 }}"
+                                    value="{{ followup_answer_value }}"
+                                    placeholder="Add your answer here…"
+                                >
+                                <button type="submit" class="wk-followup-form__submit" aria-label="Add this answer and get an updated review">
+                                    {{ workshop_icon("arrow-right") }}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
+                {% if proposal %}
+                <section class="wk-proposal" aria-labelledby="wk-proposal-title">
+                    <p class="wk-review-section__eyebrow" id="wk-proposal-title">{{ workshop_icon("sparkle") }}<span>PeerSlate&#39;s proposed wording</span></p>
+                    <p class="wk-field__hint">A proposal only — nothing changes until you accept it. Edit it below before accepting if you&#39;d like.</p>
+                    <form method="post" action="{{ review_url }}">
+                        <input type="hidden" name="review_token" value="{{ review_token }}">
+                        <div class="wk-field__textarea-wrap">
+                            <textarea class="wk-field__textarea" name="proposed_wording" rows="5">{{ proposal.proposed_wording }}</textarea>
+                        </div>
+                        <div class="wk-actions-row" style="margin-top:0.75rem;">
+                            <button type="submit" name="discard_proposal" value="1" formnovalidate class="wk-btn wk-btn--outline">Discard</button>
+                            <button type="submit" name="accept_proposal" value="1" class="wk-btn wk-btn--primary">Accept proposal</button>
+                        </div>
+                    </form>
+                </section>
+                {% endif %}
+                {% endif %}
+
+                {% if screen_state == "cap_reached" %}
+                <div class="wk-ai-banner" role="status">
+                    {{ workshop_icon("alert") }}
+                    <div>
+                        <p class="wk-ai-banner__title">{{ cap_title }}</p>
+                        <p class="wk-ai-banner__copy">{{ cap_message }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if screen_state == "unavailable" %}
+                <div class="wk-ai-banner" role="status">
+                    {{ workshop_icon("alert") }}
+                    <div>
+                        <p class="wk-ai-banner__title">PeerSlate&#39;s review is unavailable right now.</p>
+                        <p class="wk-ai-banner__copy">{{ ai_unavailable_message }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if screen_state == "expired" %}
+                <div class="wk-ai-banner" role="status">
+                    {{ workshop_icon("alert") }}
+                    <div>
+                        <p class="wk-ai-banner__title">This review has expired.</p>
+                        <p class="wk-ai-banner__copy">{{ expired_message }}</p>
+                    </div>
+                </div>
+                <form method="post" action="{{ review_url }}">
+                    <input type="hidden" name="answer" value="{{ answer_value }}">
+                    {% for item in related_items if item.selected %}
+                    <input type="hidden" name="context" value="{{ item.item_key }}">
+                    {% endfor %}
+                    <button type="submit" class="wk-btn wk-btn--outline">Review what I shared again</button>
+                </form>
+                {% endif %}
+
+                <div class="wk-actions-row" style="margin-top:1.5rem;">
+                    <a class="wk-btn-link" href="{{ back_url }}">
+                        {{ workshop_icon("pencil") }}<span>Edit myself</span>
+                    </a>
+                    {% if screen_state == "review" and review %}
+                    <form method="post" action="{{ improve_url }}" style="display:contents;">
+                        <input type="hidden" name="answer" value="{{ answer_value }}">
+                        <input type="hidden" name="review_token" value="{{ review_token }}">
+                        <button type="submit" class="wk-btn-link">
+                            {{ workshop_icon("sparkle") }}<span>Improve with AI</span>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{{ update_url }}" style="display:contents;">
+                        <input type="hidden" name="answer" value="{{ answer_value }}">
+                        {% for item in related_items if item.selected %}
+                        <input type="hidden" name="context" value="{{ item.item_key }}">
+                        {% endfor %}
+                        <button type="submit" name="wk_action" value="save_unfinished" class="wk-btn-link">
+                            {{ workshop_icon("archive") }}<span>Save unfinished</span>
+                        </button>
+                        <button type="submit" name="wk_action" value="stop" class="wk-btn-link">
+                            {{ workshop_icon("clock") }}<span>Stop for now</span>
+                        </button>
+                    </form>
+                    <form method="post" action="{{ finalize_url }}" style="display:contents;">
+                        <input type="hidden" name="answer" value="{{ answer_value }}">
+                        {#
+                          F5 correction (independent Opus review): carrying the
+                          review token here is what lets work_session_finalize
+                          recover onto THIS screen, with the review intact, when
+                          the answer it submits is refused (over the length cap
+                          or a full session). Without it that route's recovery
+                          branch was unreachable and a refusal dropped the
+                          member back to the bare session screen, silently
+                          losing the review they were working from.
+                        #}
+                        <input type="hidden" name="review_token" value="{{ review_token }}">
+                        <button type="submit" class="wk-btn wk-btn--primary">Review final wording</button>
+                    </form>
+                </div>
+
+                <p class="wk-field__hint" style="margin-top:1rem;">
+                    Nothing is saved as confirmed information until you choose Save privately. Changing this here will not silently change another draft.
+                </p>
+            </div>
+        </div>
+
+        <div class="wk-aside">
+            <section class="wk-card wk-side-card" aria-labelledby="wk-related-info-title">
+                <div class="wk-side-card__head">
+                    {{ workshop_icon("document") }}
+                    <span id="wk-related-info-title">Related information</span>
+                </div>
+                <p class="wk-field__hint" style="margin-bottom:0.75rem;">PeerSlate found these private items because they may help strengthen this example.</p>
+                {% if related_items %}
+                <ul class="wk-side-card__list">
+                    {% for item in related_items %}
+                    <li>
+                        {{ workshop_icon("check") if item.selected else workshop_icon("document") }}
+                        <span>{{ item.title }}{% if item.selected %} — using as context{% endif %}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="wk-context-empty">No confirmed information is available yet.</p>
+                {% endif %}
+                <p class="wk-side-card__note">Adds context to this private session. It does not change or confirm the underlying information. Change your selection from the previous screen.</p>
+            </section>
+
+            <section class="wk-card wk-side-card" aria-labelledby="wk-review-guidance-title">
+                <div class="wk-side-card__head">
+                    {{ workshop_icon("lightbulb") }}
+                    <span id="wk-review-guidance-title">Review guidance</span>
+                </div>
+                <ul class="wk-side-card__list">
+                    <li>{{ workshop_icon("check") }}<span>Confirm the meaning is accurate.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>Look for missing outcomes or impact.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>Consider what would strengthen it.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>Use the question to add a clear result.</span></li>
+                </ul>
+                <p class="wk-side-card__note">You&#39;re in control. Use, edit, or ignore suggestions.</p>
+            </section>
+        </div>
+    </div>
+
+    <p class="wk-footnote">
+        <svg class="wk-footnote__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
+            <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
+        </svg>
+        Nothing is saved as confirmed information until you choose Save privately.
+    </p>
+</div>
+{% endblock %}
