@@ -6,11 +6,18 @@
 - **Delivery path:** Protected — trusted identity, session interpretation, and
   shared canonical-host configuration change together.
 - **Manager/architect:** current root Codex session.
-- **Sole implementation writer:** `codex/2026-08-02-auth-journey-repair-001`
-  in `C:\Users\peter\Documents\portfolio-auth-journey-repair-001`.
+- **Sole implementation writer:** The original application delivery is
+  `codex/2026-08-02-auth-journey-repair-001`; the narrow alias-scope authority
+  refresh is `codex/2026-08-02-auth-alias-scope`, in
+  `C:\Users\peter\Documents\portfolio-auth-journey-repair-001`. Both are the
+  same single-writer lane; this refresh changes package evidence and release
+  templates only.
 - **Authoritative base:** Azure DevOps `origin/main`,
-  `97d008919d285b17e510212701db76543215f5d0` (rebased 2026-08-02 after
-  the scanner-corrected main squash; no auth behavior was changed there).
+  `3485675387b22307b5e43768782fb416c9212a22` (the verified current main
+  after the original package merge and PR 243's accepted public-header CSS
+  repair). This narrow authority refresh corrects release-template and shared
+  `/app` golden-test evidence only; it does not alter merged application
+  behavior.
 
 ## Accepted outcome
 
@@ -53,24 +60,42 @@ callbacks, the Easy Auth cookie lifetime is 8 hours with a 72-hour grace
 period, and no Conditional Access policy is present. Session duration and the
 `offline_access` permission remain unchanged during this initial cutover.
 
+The verified current alternate sign-in aliases are exactly the App Service
+default hostname
+`peerslate-pete-d9hhdeerd7frg2gc.centralus-01.azurewebsites.net` and
+`pete.peerslate.com`; `peerslate.com` is the fixed canonical destination.
+`www.peerslate.com` has no DNS record, App Service binding, or Entra callback
+and is outside this cutover. The existing code and regression coverage retain
+safe behavior if `www` is introduced later, but a future owner-authorized slice
+must first provide DNS, an App Service binding/TLS, and verified canonical GET,
+HEAD, and unsafe-method behavior before it can be used or added to callbacks.
+
 The required forward order is:
 
 1. Merge and deploy this code while `PEERSLATE_ENFORCE_CANONICAL_HOST` remains
-   false.
-2. Capture sanitized current app-setting and app-registration web evidence in
-   a temporary, operator-local evidence directory.
+    false.
+2. Capture sanitized current app-setting, Easy Auth client/issuer, hostname,
+   and app-registration web evidence in a temporary, operator-local evidence
+   directory. Before any Graph token or app lookup, require production Easy
+   Auth to match the pinned External ID client ID and issuer/tenant; require
+   the App Service binding and callback inventories to be the exact approved
+   three-member sets, with no additional host or callback.
 3. Set `PEERSLATE_CANONICAL_HOST=peerslate.com` and
    `PEERSLATE_ENFORCE_CANONICAL_HOST=true`.
-4. Verify alias GET/HEAD requests redirect to the fixed apex target and unsafe
-   alias methods are rejected without a `Location` header.
+4. Dynamically enumerate and verify both currently bound aliases (the App
+   Service default hostname and `pete.peerslate.com`): GET/HEAD requests must
+   redirect to the fixed apex target and unsafe alias methods must be rejected
+   without a `Location` header. Stop if either alias is missing or if `www` has
+   entered the binding or callback inventory without new authority.
 5. Reduce the app-registration callbacks to the owner-approved apex callback
    only, using the captured callback-web object for an exact rollback.
 6. Obtain owner credential acceptance before treating the journey as released.
 
 The release templates are fail-fast: every native Azure CLI and curl command
 checks its exit status, JSON is parsed and validated before evidence is written,
-and callback reduction must leave exactly the approved apex URI. Rollback first
-restores and re-verifies the callback web object, then restores the prior
+and callback reduction must leave exactly the approved apex URI while retaining
+the other writable Graph `web` fields. Rollback first restores and re-verifies
+the full callback web object, then restores the prior
 presence and value of both canonical settings (deleting settings that had been
 absent), before any prior artifact is restored.
 
@@ -85,8 +110,10 @@ package, repository history, screenshots, or release evidence.
 - Keeps Easy Auth as the only provider boundary; no password, OTP, passkey,
   native credential form, token parsing, app cookie, schema, SQL, stored
   procedure, account-keying, or email-linking change is authorized.
-- Adds opt-in canonical-host enforcement for `www`, the deployment-provided
-  `WEBSITE_HOSTNAME`, and private/authentication paths on `pete.peerslate.com`.
+- Adds opt-in canonical-host enforcement for the currently bound App Service
+  default hostname and private/authentication paths on `pete.peerslate.com`.
+  `www.peerslate.com` is not created, bound, or added to Entra in this package;
+  its existing code/test protection is retained only as a future-safe guard.
   It uses `request.host`; `X-Forwarded-Host` is not trusted and ProxyFix does
   not enable `x_host`.
 - Reuses the released `owner-app.css` panel/control language for the recovery
@@ -96,8 +123,13 @@ package, repository history, screenshots, or release evidence.
   flag selection, `owner-home.v1`, U1/U3 standalone shell, its templates,
   CSS, and service are outside this package. The narrow collision reassignment
   permits only shared auth handling around those routes.
-- Does not alter pipeline, production/DNS/custom-domain settings, Workshop,
-  Interview, Capture, Journal, Community, résumé, or AI behavior.
+- This authority/golden commit makes no production mutation. The separately
+  approved canonical cutover changes only
+  `PEERSLATE_CANONICAL_HOST=peerslate.com`,
+  `PEERSLATE_ENFORCE_CANONICAL_HOST=true`, and the Entra app-registration
+  callbacks. DNS, custom domains/bindings, identity-provider configuration,
+  session/cookie duration, `offline_access`, pipelines, Workshop, Interview,
+  Capture, Journal, Community, résumé, and AI behavior remain excluded.
 
 ## Required evidence
 
@@ -112,5 +144,6 @@ package, repository history, screenshots, or release evidence.
   cases are covered by focused regression tests.
 - The final package handoff must include independent review before Protected
   release consideration, a compact completion report, PR/pipeline status, and
-  truthful deployment status. This writer is not authorized to commit, push,
-  merge, or deploy this work yet.
+  truthful deployment status. The manager explicitly authorized the current
+  commit, push, and PR sequence; the writer never merges, deploys, or changes
+  production configuration without a further manager instruction.

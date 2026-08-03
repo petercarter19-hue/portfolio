@@ -243,6 +243,86 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             manifest['candidate_admission'],
         )
 
+    def test_candidate_manifest_accepts_pr_merge_validation_without_admission(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / '352.zip'
+            archive.write_bytes(b'pr validation candidate bytes')
+
+            manifest = build_manifest(
+                archive,
+                source_version='a' * 40,
+                source_branch='refs/pull/245/merge',
+                build_id='352',
+                python_version='3.12',
+            )
+
+        self.assertEqual('refs/pull/245/merge', manifest['source_branch'])
+        self.assertEqual({'mode': 'disabled'}, manifest['candidate_admission'])
+
+    def test_candidate_manifest_rejects_candidate_inputs_on_pr_merge_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / '352.zip'
+            archive.write_bytes(b'pr validation candidate bytes')
+            valid = {
+                'source_version': 'a' * 40,
+                'source_branch': 'refs/pull/245/merge',
+                'build_id': '352',
+                'python_version': '3.12',
+            }
+            cases = (
+                {'candidate_package': 'PS-PERFORMANCE-FOUNDATION-001'},
+                {
+                    'candidate_source_branch': (
+                        'refs/heads/work/performance-foundation'
+                    )
+                },
+                {'candidate_source_version': 'a' * 40},
+                {
+                    'candidate_package': 'PS-PERFORMANCE-FOUNDATION-001',
+                    'candidate_source_branch': (
+                        'refs/heads/work/performance-foundation'
+                    ),
+                    'candidate_source_version': 'a' * 40,
+                },
+            )
+
+            for candidate_inputs in cases:
+                with self.subTest(candidate_inputs=candidate_inputs):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        'not permitted for Azure PR merge validation builds',
+                    ):
+                        build_manifest(archive, **valid, **candidate_inputs)
+
+    def test_candidate_manifest_rejects_malformed_pr_merge_refs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / '352.zip'
+            archive.write_bytes(b'pr validation candidate bytes')
+            malformed_refs = (
+                'refs/pull/0/merge',
+                'refs/pull/01/merge',
+                'refs/pull/245/head',
+                'refs/pull/245',
+                'refs/pull/245/merge/extra',
+                'refs/pull/not-a-number/merge',
+                'refs/tags/v1.0.0',
+            )
+
+            for source_branch in malformed_refs:
+                with self.subTest(source_branch=source_branch):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        'source branch must be a refs/heads branch or exact '
+                        'Azure PR merge validation ref',
+                    ):
+                        build_manifest(
+                            archive,
+                            source_version='a' * 40,
+                            source_branch=source_branch,
+                            build_id='352',
+                            python_version='3.12',
+                        )
+
     def test_candidate_manifest_rejects_incomplete_or_mismatched_admission(self):
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / '283.zip'
@@ -278,6 +358,10 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 (
                     {'candidate_source_branch': 'refs/heads/work/other'},
                     'branch does not match',
+                ),
+                (
+                    {'candidate_source_branch': 'refs/pull/245/merge'},
+                    'candidate source branch must be a refs/heads branch',
                 ),
                 (
                     {'candidate_source_version': 'b' * 40},
@@ -623,6 +707,30 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 else len(pipeline)
             )
             stage_bodies[match.group(1)] = pipeline[match.start():end]
+
+        candidate_artifact_display_name = (
+            'displayName: Record immutable candidate artifact hash'
+        )
+        self.assertEqual(1, pipeline.count(candidate_artifact_display_name))
+        candidate_artifact_step = re.search(
+            r'(?ms)^          - script: >-\n'
+            r'              python scripts/candidate_artifact\.py\n'
+            r'.*?^            '
+            + re.escape(candidate_artifact_display_name)
+            + r'\n.*?(?=^          - |\Z)',
+            stage_bodies['Build'],
+        )
+        self.assertIsNotNone(candidate_artifact_step)
+        candidate_artifact_body = candidate_artifact_step.group()
+        # The script admits the exact disabled PR-validation form and rejects
+        # Candidate inputs there. It must therefore run for every build source:
+        # a task condition keyed to branch or reason could otherwise skip the
+        # fail-closed validator while later Candidate-stage conditions see
+        # matching queue inputs.
+        self.assertNotRegex(
+            candidate_artifact_body,
+            r'(?m)^            condition\s*:',
+        )
 
         self.assertRegex(stage_bodies['Deploy'], r'(?m)^    dependsOn: Build$')
         self.assertIn(

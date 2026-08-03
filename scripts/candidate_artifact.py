@@ -25,6 +25,9 @@ except ModuleNotFoundError:  # Direct ``python scripts/...`` execution.
 
 SHA256_PATTERN = re.compile(r'^[0-9a-f]{64}$')
 SOURCE_BRANCH_PATTERN = re.compile(r'^refs/heads/[A-Za-z0-9._/-]{1,240}$')
+AZURE_PR_MERGE_SOURCE_BRANCH_PATTERN = re.compile(
+    r'^refs/pull/[1-9][0-9]*/merge$'
+)
 PACKAGE_ID_PATTERN = re.compile(r'^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$')
 PYTHON_VERSION_PATTERN = re.compile(r'^[0-9]+(?:\.[0-9]+){1,2}$')
 
@@ -55,24 +58,42 @@ def build_manifest(
     normalized_candidate_package = candidate_package.strip()
     normalized_candidate_branch = candidate_source_branch.strip()
     normalized_candidate_source = candidate_source_version.strip().lower()
-
-    if not archive.is_file():
-        raise ValueError(f'artifact does not exist: {archive}')
-    if not SOURCE_VERSION_PATTERN.fullmatch(normalized_source):
-        raise ValueError('source version must be a full 40-character Git SHA')
-    if not SOURCE_BRANCH_PATTERN.fullmatch(normalized_branch):
-        raise ValueError('source branch must be a refs/heads branch')
-    if not BUILD_ID_PATTERN.fullmatch(normalized_build):
-        raise ValueError('build ID contains unsupported characters')
-    if not PYTHON_VERSION_PATTERN.fullmatch(normalized_python):
-        raise ValueError('Python version must contain only numeric components')
-
     candidate_values = (
         normalized_candidate_package,
         normalized_candidate_branch,
         normalized_candidate_source,
     )
-    if any(candidate_values) and not all(candidate_values):
+    is_azure_pr_merge_build = bool(
+        AZURE_PR_MERGE_SOURCE_BRANCH_PATTERN.fullmatch(normalized_branch)
+    )
+
+    if not archive.is_file():
+        raise ValueError(f'artifact does not exist: {archive}')
+    if not SOURCE_VERSION_PATTERN.fullmatch(normalized_source):
+        raise ValueError('source version must be a full 40-character Git SHA')
+    if not (
+        SOURCE_BRANCH_PATTERN.fullmatch(normalized_branch)
+        or is_azure_pr_merge_build
+    ):
+        raise ValueError(
+            'source branch must be a refs/heads branch or exact Azure PR '
+            'merge validation ref'
+        )
+    if not BUILD_ID_PATTERN.fullmatch(normalized_build):
+        raise ValueError('build ID contains unsupported characters')
+    if not PYTHON_VERSION_PATTERN.fullmatch(normalized_python):
+        raise ValueError('Python version must contain only numeric components')
+
+    if is_azure_pr_merge_build and any(candidate_values):
+        raise ValueError(
+            'candidate admission inputs are not permitted for Azure PR merge '
+            'validation builds'
+        )
+    if (
+        not is_azure_pr_merge_build
+        and any(candidate_values)
+        and not all(candidate_values)
+    ):
         raise ValueError(
             'candidate admission requires package, branch, and source version'
         )

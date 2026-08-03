@@ -162,17 +162,6 @@ stages:
               --candidate-source-branch "$CANDIDATE_SOURCE_BRANCH"
               --candidate-source-version "$CANDIDATE_SOURCE_VERSION"
             displayName: Record immutable candidate artifact hash
-            # A pull-request validation build runs against refs/pull/<id>/merge,
-            # an ephemeral ref that is deliberately rejected by the strict
-            # refs/heads source-branch contract in candidate_artifact.py. Such a
-            # build never produces a Candidate, so skip the manifest rather than
-            # weaken that contract. The condition mirrors the script's own rule
-            # and keys off the ref, so it also covers a validation build queued
-            # manually against a pull-request ref, which still reports
-            # Build.Reason = Manual. Branch builds are unaffected.
-            condition: >-
-              and(succeeded(),
-                  startsWith(variables['Build.SourceBranch'], 'refs/heads/'))
             env:
               # Queue values enter the process as data, never as Bash source.
               # candidate_artifact.py performs the format and exact-match
