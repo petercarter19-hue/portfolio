@@ -50,11 +50,7 @@
        openable signed-out. What you add here now really persists to your
        own browser session (never a database) once you finish Review — see
        the confirming save's own honest preview-complete state. #}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — you&#39;re signed out. What you add or edit here is kept
-        only for this browser session — sign in to save it permanently.
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% endif %}
 
     <div class="wk-flow-layout">
@@ -115,7 +111,6 @@
                         </div>
                         {{ workshop_voice_status("wk-wording") }}
                         {{ workshop_field_counter("wk-wording", values.wording, max_wording_units) }}
-                        <p class="wk-field__hint">{% if workshop_voice_enabled %}Text entry is available. You can type or speak.{% else %}Text entry is available. Voice input is not available yet.{% endif %}</p>
                     </div>
 
                     <div class="wk-field">

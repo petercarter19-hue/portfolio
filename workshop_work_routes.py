@@ -442,7 +442,14 @@ def _default_title_from_wording(wording, question_text=None):
 
 def _confirmed_rows(identity):
     """Up to wws.MAX_CONTEXT_ITEMS confirmed items, stable order, for the
-    "Related confirmed information" rail and door-availability checks.
+    "Your confirmed information" rail and door-availability checks.
+
+    Plain library order, NOT a relevance ranking — the rail's copy says so
+    (2026-08-04 truthfulness correction). The order is also load-bearing:
+    the member's "use as context" selection is persisted as a positional
+    bitmask over exactly this sequence, so it must stay stable across
+    requests for a stored mask to keep meaning the same items. Do not sort
+    this by relevance to an answer without first making that mask id-based.
     Anonymous: the session-layered demo library. Member: the real
     owner-scoped store. May raise KnowledgeServiceError/DatabaseServiceError
     for a member — callers treat that as a real failure, never an empty

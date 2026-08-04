@@ -41,13 +41,7 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — this session is example information, not yours. Your own
-        changes last for this visit only, in your browser session. Sign in
-        to keep anything permanently in your own private library.
-        <a href="{{ sign_in_url }}">Sign in</a>
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% include "partials/workshop/_preview_banner.html" %}
     {% endif %}
 
     {% if success_message or error_message %}
@@ -56,7 +50,7 @@
     </div>
     {% endif %}
 
-    <div class="wk-flow-layout">
+    <div class="wk-flow-layout wk-flow-layout--opening">
         <div class="wk-flow-main">
             <div class="wk-card">
                 {% if ai_unavailable %}
@@ -96,7 +90,6 @@
                             </button>
                         </div>
                         {{ workshop_voice_status("wk-work-thought", submit_selector=".wk-work-composer__submit") }}
-                        <p class="wk-field__hint">{% if workshop_voice_enabled %}Text entry is available. You can type or speak.{% else %}Text entry is available. Voice input is not available yet.{% endif %}</p>
                     </form>
                 </div>
 

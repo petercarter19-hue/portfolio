@@ -39,11 +39,7 @@
        visitor's own session-only preview library — never the database,
        never a real, permanent save — see save_item/update_item's own
        docstrings. #}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — you&#39;re signed out. Saving here keeps this only for
-        your own browser session — sign in to save it permanently.
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% endif %}
 
     <div class="wk-flow-layout">

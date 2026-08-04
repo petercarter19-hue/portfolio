@@ -36,7 +36,7 @@
        in the visitor's own session library — "nothing has been saved" is
        no longer true. Matches the honest wording used everywhere else on
        this page (saved_title/saved_subtitle, _preview_note_card.html). #}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">Preview — this is in your own session only. Sign in to save it permanently.{% include "partials/workshop/_start_fresh_link.html" %}</div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% elif dev_preview %}
     <div class="wk-status-banner wk-status-banner--dev-preview" role="status">Dev preview — nothing was stored</div>
     {% endif %}

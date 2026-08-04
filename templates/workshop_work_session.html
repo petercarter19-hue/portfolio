@@ -35,11 +35,7 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — this session is example information, not yours. Your own
-        changes last for this visit only, in your browser session.
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% endif %}
 
     {% if error_message %}
@@ -110,7 +106,6 @@
                     </div>
                     {{ workshop_voice_status("wk-session-answer") }}
                     {{ workshop_field_counter("wk-session-answer", answer_value, max_answer_units) }}
-                    <p class="wk-field__hint">{% if workshop_voice_enabled %}Text entry is available. You can type or speak.{% else %}Text entry is available. Voice input is not available yet.{% endif %}</p>
                     {#
                       The old F9 correction's "preview saves keep only 400 of
                       these 1000 characters" note is gone with audit fix F1
@@ -146,9 +141,15 @@
                 <section class="wk-card wk-side-card" aria-labelledby="wk-context-title">
                     <div class="wk-side-card__head">
                         {{ workshop_icon("document") }}
-                        <span id="wk-context-title">Related confirmed information</span>
+                        {# "Related" claimed a relevance nothing computes —
+                           this is the first MAX_CONTEXT_ITEMS confirmed rows
+                           in plain library order. The hint below already puts
+                           the relevance judgement where it actually lives:
+                           with the member. See the review screen's fuller
+                           note on why ranking was not shipped in this pass. #}
+                        <span id="wk-context-title">Your confirmed information</span>
                     </div>
-                    <p class="wk-field__hint" style="margin-bottom:0.75rem;">Choose only what is relevant to this session.</p>
+                    <p class="wk-field__hint" style="margin-bottom:0.75rem;">From your library, in the order you see it there. Choose only what is relevant to this session.</p>
 
                     {% if related_items %}
                     <ul class="wk-context-list">

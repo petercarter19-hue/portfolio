@@ -23,10 +23,7 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — this session is example information, not yours.
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% endif %}
 
     <div class="wk-flow-layout">

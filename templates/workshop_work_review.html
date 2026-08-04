@@ -45,10 +45,7 @@
     {% include "partials/workshop/_hero_and_modes.html" %}
 
     {% if anonymous_preview %}
-    <div class="wk-status-banner wk-status-banner--preview" role="status">
-        Preview — this session is example information, not yours.
-        {% include "partials/workshop/_start_fresh_link.html" %}
-    </div>
+    {% with variant = "working" %}{% include "partials/workshop/_preview_banner.html" %}{% endwith %}
     {% endif %}
 
     {% if error_message %}
@@ -266,9 +263,29 @@
             <section class="wk-card wk-side-card" aria-labelledby="wk-related-info-title">
                 <div class="wk-side-card__head">
                     {{ workshop_icon("document") }}
-                    <span id="wk-related-info-title">Related information</span>
+                    <span id="wk-related-info-title">Your confirmed information</span>
                 </div>
-                <p class="wk-field__hint" style="margin-bottom:0.75rem;">PeerSlate found these private items because they may help strengthen this example.</p>
+                {#
+                  Truthfulness correction (2026-08-04). This rail used to be
+                  headed "Related information" and said "PeerSlate found
+                  these private items because they may help strengthen this
+                  example." Nothing here is found, related, or ranked: it is
+                  the first MAX_CONTEXT_ITEMS confirmed rows in plain library
+                  order — the same items in the same order every session,
+                  whatever the member wrote. The copy now says exactly that.
+
+                  A real relevance ranking was considered and deliberately
+                  NOT shipped in this pass: the "use as context" selection is
+                  persisted as a POSITIONAL bitmask over this list's order
+                  (wws.context_mask_from_ids / context_ids_from_mask), so
+                  re-ordering the rail by relevance to an answer the member
+                  is still editing would make a stored mask resolve to
+                  DIFFERENT items on the next render — silently changing
+                  which confirmed information feeds the AI. Ranking needs the
+                  mask to become id-based first, which is a change to live
+                  persisted session state and belongs in its own slice.
+                #}
+                <p class="wk-field__hint" style="margin-bottom:0.75rem;">From your library, in the order you see it there. You choose which of these this session may use.</p>
                 {% if related_items %}
                 <ul class="wk-side-card__list">
                     {% for item in related_items %}

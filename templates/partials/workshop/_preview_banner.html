@@ -1,0 +1,47 @@
+{# The one public-preview banner — PS-WORKSHOP-001, consolidated 2026-08-04.
+
+   A first-visitor audit walked list -> work -> add -> review -> saved and
+   was told the same thing five different ways:
+
+     "this is example information, not yours"
+     "you're signed out"
+     "Saving here keeps this only for your own browser session"
+     "this is in your own session only"
+     "this only removes the item from your own preview session"
+
+   Same product, same boundary, five voices — which reads as five different
+   rules rather than one. Every screen now includes this partial, so the
+   wording cannot drift again.
+
+   Two variants, because there are genuinely two situations:
+
+     browsing (default)  the visitor is looking at the sample library
+     working             the visitor has written or changed something, so
+                         "what you write here" is the live question
+
+   Both keep all three honest claims intact, and neither weakens a privacy
+   statement:
+
+     1. the content is example information, not the visitor's own
+     2. anything they add or change lives only in their browser session,
+        for this visit — never a database, never shared
+     3. signing in is what makes anything permanent, in their own private
+        library
+
+   Callers may pass sign_in_url; screens that do not have one simply render
+   the banner without the link (the claim does not depend on the link).
+#}
+<div class="wk-status-banner wk-status-banner--preview" role="status">
+    Preview — this is example information, not yours.
+    {%- if variant == "working" %}
+    What you write here lasts for this visit only, in your browser session.
+    {%- else %}
+    Anything you add or change lasts for this visit only, in your browser
+    session.
+    {%- endif %}
+    Sign in to keep it permanently in your own private library.
+    {%- if sign_in_url %}
+    <a href="{{ sign_in_url }}">Sign in</a>
+    {%- endif %}
+    {% include "partials/workshop/_start_fresh_link.html" %}
+</div>

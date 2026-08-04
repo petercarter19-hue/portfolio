@@ -47,12 +47,23 @@
     {# One button, two jobs — R17 state 2 puts the stop control in the same
        slot the mic occupies rather than adding a second target to hunt for.
        aria-pressed carries the recording state to a screen reader; the
-       label changes with it so the control is never ambiguous. #}
+       label changes with it so the control is never ambiguous.
+
+       Rendered INERT, and progressively enabled by workshop-voice.js's
+       first render() (2026-08-04 accessibility correction). It used to
+       ship live — disabled=false, focusable, labelled "Speak your thought"
+       — which was only true if the script actually loaded and ran. With
+       JavaScript off or a failed script, a keyboard visitor reached a
+       control that promised speech and did nothing at all. The honest
+       default is a control that says it does not work yet; the script is
+       what makes the promise, because the script is what keeps it. #}
     <button type="button"
             class="wk-mic-btn wk-mic-btn--live"
             data-wk-voice-mic
             aria-pressed="false"
-            aria-label="Speak your {{ noun }}">
+            aria-label="Voice input is not available yet"
+            aria-disabled="true"
+            disabled>
         <span class="wk-mic-btn__mic">{{ workshop_icon("mic") }}</span>
         <span class="wk-mic-btn__stop">{{ workshop_icon("stop") }}</span>
     </button>

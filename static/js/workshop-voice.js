@@ -282,8 +282,19 @@
             );
             /* Nothing to press while the recording is in flight, but the
                button keeps its place in the tab order rather than vanishing
-               under the member's focus. */
+               under the member's focus.
+
+               This assignment is also what ENABLES the mic for the first
+               time: the server renders it disabled and honestly labelled,
+               because a live-looking mic is a promise only the script can
+               keep. bind() calls render() once at the end, so the control
+               becomes real exactly when something exists to make it work. */
             micButton.disabled = state === TRANSCRIBING;
+            if (state === TRANSCRIBING) {
+                micButton.setAttribute('aria-disabled', 'true');
+            } else {
+                micButton.removeAttribute('aria-disabled');
+            }
             if (cancelButton) cancelButton.hidden = state !== LISTENING;
             if (recovery) recovery.hidden = !copy.recovery;
             if (retryButton && copy.retryLabel) retryButton.textContent = copy.retryLabel;

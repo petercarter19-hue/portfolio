@@ -721,15 +721,40 @@ class RenderedMicTests(unittest.TestCase):
         self.assertIn("not available yet", body)
         self.assertNotIn("data-wk-voice", body)
 
-    def test_flag_on_renders_a_real_keyboard_operable_mic_button(self):
+    def test_flag_on_renders_the_real_mic_but_inert_until_the_script_runs(self):
+        """Supersedes ``test_flag_on_renders_a_real_keyboard_operable_mic_
+        button``, whose "a real control, never a disabled one" expectation
+        was itself the accessibility defect (audit P7a, 2026-08-04).
+
+        The flag-on page still ships the REAL six-state control — the wiring,
+        the endpoint, the state machine. What it no longer ships is the
+        PROMISE: with JavaScript off or a script that fails to load, that
+        button used to sit there focusable and labelled "Speak your thought"
+        while doing nothing. The server now renders it disabled and honestly
+        labelled, and workshop-voice.js enables it on first render, so the
+        affordance appears exactly when something can honour it."""
         with voice_flags_on():
             body = self.opening()
 
+        # The real control, with its real wiring, is present.
         self.assertIn("data-wk-voice", body)
+        self.assertIn("data-wk-voice-mic", body)
+        self.assertIn("wk-mic-btn--live", body)
         self.assertIn('type="button"', body)
-        self.assertNotIn('aria-label="Voice input is not available yet"', body)
-        # A real control, never a disabled one.
-        self.assertNotIn('data-wk-voice-mic\n                    disabled', body)
+
+        # ...but inert and honest until the script upgrades it.
+        self.assertIn('aria-label="Voice input is not available yet"', body)
+        self.assertIn('aria-disabled="true"', body)
+        self.assertNotIn('aria-label="Speak your thought"', body)
+
+    def test_the_script_is_what_enables_the_mic(self):
+        """The other half of the contract above: if this ever stops being
+        true, the flag-on mic is permanently dead rather than merely
+        honest."""
+        script = read_template("static/js/workshop-voice.js")
+        self.assertIn("micButton.disabled = state === TRANSCRIBING;", script)
+        self.assertIn("micButton.removeAttribute('aria-disabled');", script)
+        self.assertIn("'Speak your ' + noun", script)
 
     def test_no_cancel_control_is_visible_before_a_recording_starts(self):
         """R17 state 1 has no Cancel. It must be hidden in the markup itself,

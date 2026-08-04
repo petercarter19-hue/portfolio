@@ -1188,7 +1188,17 @@ body.workshop-page .site-sky {
        clipped by the new scroll container. Drawing the ring inward instead
        keeps it fully inside the link's own box regardless of overflow —
        still clearly visible, never clipped. Natural Tab order already
-       scrolls a focused row into view; no script needed. */
+       scrolls a focused row into view; no script needed.
+
+       Verified rather than assumed (audit P7b, 2026-08-04). Focusing each
+       of the 15 focusable rows in turn, in a container genuinely scrolling
+       (scrollHeight 1613 vs clientHeight 698), left ZERO of them outside
+       the visible box — the browser's own focus handling scrolls them in.
+       No scrollIntoView script was added, because it would be dead code
+       that also risks fighting the browser: double-scrolling, or overriding
+       a reduced-motion preference. If a future change ever focuses these
+       rows with {preventScroll: true}, this stops being true — that flag is
+       the thing to watch. */
     .wk-list__items .wk-list__item-link:focus-visible {
         outline-offset: -3px;
     }
@@ -1214,12 +1224,36 @@ body.workshop-page .site-sky {
         padding: 1.75rem 1rem 2.5rem;
     }
 
-    /* Approved mobile authority (file 09) drops the descriptive paragraph
-       and the private-library note from the rail to keep the page dense
-       on a phone; both stay in the desktop rail unchanged. */
+    /* These two were previously `display: none` here, following the
+       approved mobile authority (file 09, and R11/R12 in the current
+       facelift set) which draws the "Your information" card as a title and
+       a button with no copy at all.
+
+       Restored deliberately, as a documented truth/comprehension
+       adaptation rather than a composition change. A live first-visitor
+       audit found that the phone visitor — the LIKELIER first-timer — was
+       shown a bare blue button and given strictly LESS explanation than
+       the desktop visitor: no "what can I even put here", and none of the
+       private-library assurance. On the populated library (R11) there is
+       no empty-state card to carry that explanation either, so it was
+       simply absent.
+
+       Nothing else about the card changes: same order, same dominant
+       action, same type ramp, same colors. Only the type scale is
+       condensed so the copy costs little vertical space on a phone. */
     .wk-rail__copy,
     .wk-rail__note {
-        display: none;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    .wk-rail__copy {
+        margin-top: 0.85rem;
+    }
+
+    .wk-rail__note {
+        margin-top: 0.85rem;
+        padding: 0.7rem;
     }
 
     .wk-filter-group {
@@ -1454,6 +1488,15 @@ body.workshop-page .site-sky {
     margin: 0 auto;
 }
 
+/* The Work-on-Something opening carries the four doors, which the other
+   flow screens do not. At 1100px the doors' column came out ~710px wide
+   inside a 1448px page — a cramped row floating in large empty margins.
+   Only the opening screen opts into the wider shell; Add/Edit/Review/Saved
+   keep the 1100px reading measure they were designed at. */
+.wk-flow-layout--opening {
+    max-width: 1320px;
+}
+
 .wk-flow-main { min-width: 0; }
 
 .wk-breadcrumb,
@@ -1541,7 +1584,11 @@ body.workshop-page .site-sky {
 
 .wk-field__textarea {
     width: 100%;
-    padding: 0.9rem 3rem 0.9rem 0.9rem;
+    /* The bottom band is reserved for the voice control, which is absolutely
+       positioned at bottom: 0.7rem and is 34px tall. The old padding gave it
+       0.9rem, so on the final-wording field the mic sat directly on top of
+       the member's last line of text. Text now stops above it. */
+    padding: 0.9rem 0.9rem 3.2rem;
     border: 1px solid var(--wk-line);
     border-radius: var(--wk-radius-sm);
     background: var(--wk-surface);
@@ -1550,6 +1597,34 @@ body.workshop-page .site-sky {
     font-family: inherit;
     line-height: 1.6;
     resize: vertical;
+    /* `rows` sizes the CONTENT box, but everything in .wk is border-box, so
+       the padding above was eating into the visible rows and cutting the
+       last one horizontally through the glyphs — half a line of the member's
+       own words, sliced. State the height explicitly instead: whole lines
+       plus the padding and border, so a line is never half-shown. */
+    min-height: calc(6 * 1.6rem + 0.9rem + 3.2rem + 2px);
+    height: auto;
+}
+
+/* Genuine auto-grow where the browser has it, floored by the min-height
+   above and capped so a long entry never pushes the actions off-screen.
+   Everywhere else the field keeps its stated height and scrolls, still in
+   whole lines. */
+@supports (field-sizing: content) {
+    .wk-field__textarea {
+        field-sizing: content;
+        max-height: 60vh;
+    }
+}
+
+/* The composer is a two-row quick-entry field, not a long-form editor, and
+   its mic is the one variant positioned mid-right rather than bottom-right
+   (see .wk-voice[data-wk-voice-variant="composer"]). So it keeps the RIGHT
+   band — which clears a vertically-centred control at any height — and a
+   floor of two whole lines rather than the editor's six. */
+.wk-work-composer__row .wk-field__textarea {
+    padding: 0.9rem 3rem 0.9rem 0.9rem;
+    min-height: calc(2 * 1.6rem + 1.8rem + 2px);
 }
 
 .wk-field__textarea:focus { outline: none; }
@@ -2032,14 +2107,52 @@ body.workshop-page[data-theme="dark"] {
 
 .wk-doors {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Container-driven, not viewport-driven. A viewport breakpoint said
+       "four across" while the real column this row lives in was ~710px
+       wide, so each door collapsed to ~166px: "Continue where I left off"
+       wrapped over three lines and resumable titles were clipped. auto-fit
+       against a genuine minimum column width lets the row choose 4, 2, or 1
+       from the space it actually has. R01's four-across composition returns
+       on its own once the container is wide enough to give each door its
+       approved width, instead of faking it by squeezing four columns into
+       a space that only fits two. min(100%, ...) keeps the single-column
+       case from overflowing a narrow phone.
+
+       20rem specifically, so the reflow is monotonic: 1 column on a phone,
+       then 2x2 for every desktop width this screen actually reaches, and
+       four across only in a container genuinely wide enough to give each
+       door its approved R01 width. At 19rem the row perversely showed FOUR
+       columns at a 1100px viewport (where the rail stacks and frees the
+       width) and only TWO at 1448px (where the 300px rail takes it back) —
+       a wider window producing a narrower card.
+
+       Consequence worth naming: with the right rail present, four across
+       is now unreachable at desktop width. R01 draws this screen with NO
+       right rail, which is what lets its four doors have 318px each. Making
+       the live screen match R01's arrangement means deciding what happens
+       to that rail and the privacy copy it carries — a composition
+       decision for the owner/ChatGPT visual lane, not an implementation
+       detail to settle in a polish pass. */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: 1rem;
+    align-items: stretch;
     margin-bottom: 1.25rem;
 }
 
+/* A door is wrapped three different ways on this screen — a bare div, a
+   bare button, and a single-button form — and only the bare div was a grid
+   item that stretched. That is what made the row's bottom edge a staircase
+   (330/330/201/222px). Make the form a stretching grid item too, and let
+   every door fill its own cell whatever wraps it. */
+.wk-doors > form {
+    display: grid;
+}
+
 .wk-door {
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
     text-align: left;
     background: var(--wk-surface-muted);
     border: 1px solid var(--wk-line);
@@ -2119,7 +2232,12 @@ button.wk-door:focus-visible {
     line-height: 1.4;
 }
 
+/* The meta line is each door's baseline. Pushing it to the bottom of the
+   equal-height card makes the four read as one row with one bottom edge,
+   rather than four blocks that merely happen to be the same height. */
 .wk-door__meta {
+    margin-top: auto;
+    padding-top: 0.35rem;
     font-size: 0.82rem;
     color: var(--wk-action);
     font-weight: 600;
@@ -2134,6 +2252,9 @@ button.wk-door:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    /* Same baseline rule as .wk-door__meta — this list is what the Continue
+       door ends on. */
+    margin-top: auto;
 }
 
 .wk-door__list-item {
@@ -2149,13 +2270,13 @@ button.wk-door:focus-visible {
     font-size: 0.85rem;
     color: var(--wk-ink);
     line-height: 1.35;
-    /* Wrap up to two lines rather than a single truncated line — this
-       card's column is narrow (one of four), so a one-line ellipsis cut
-       real resumable titles down to a handful of characters. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    /* No clamp. The two-line clamp this replaces was a workaround for the
+       ~166px column above, and it silently cut a member's own resumable
+       title mid-word (scrollHeight > clientHeight on the real live page).
+       A person's own words are not ours to truncate; with a door column
+       that now has real width the title simply wraps, and equal-height
+       cards absorb the extra line without breaking the row. */
+    overflow-wrap: anywhere;
 }
 
 .wk-door__resume-btn {
@@ -2617,14 +2738,11 @@ button.wk-door:focus-visible {
 
 /* ---- Responsive ---- */
 
-@media (max-width: 900px) {
-    .wk-doors {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
+/* .wk-doors is no longer listed here: it sizes itself from its own
+   container via auto-fit, which is what these viewport breakpoints were
+   getting wrong. .wk-tiles is a full-width two-up row, so a viewport
+   breakpoint is still the right tool for it. */
 @media (max-width: 640px) {
-    .wk-doors,
     .wk-tiles {
         grid-template-columns: 1fr;
     }
