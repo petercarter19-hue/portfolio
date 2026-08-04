@@ -84,6 +84,7 @@ from flask import (
 
 from identity import AuthenticationRequired, get_current_identity
 from services import workshop_demo_library
+from services import workshop_voice_service
 from services.database_service import DatabaseServiceError
 from services.knowledge_service import (
     AREA_FILTERS,
@@ -206,6 +207,17 @@ def _workshop_session_enabled():
     this same config key directly rather than importing this predicate, to
     avoid a circular import between the two route modules."""
     return current_app.config.get("PEERSLATE_WORKSHOP_SESSION_ENABLED", False) is True
+
+
+def _workshop_voice_enabled():
+    """PS-WORKSHOP-001 W2d sub-flag, read the same way as the W2a one above.
+
+    Deliberately independent of the session sub-flag: W2a-W2c are already
+    live for real visitors, so voice has to be able to ship merged-but-dark
+    until Azure Speech is confirmed configured for the deployed identity.
+    See workshop_work_routes._voice_flag_gate for the full reasoning.
+    """
+    return current_app.config.get("PEERSLATE_WORKSHOP_VOICE_ENABLED", False) is True
 
 
 def _workshop_dev_fixture_enabled():
@@ -1660,4 +1672,17 @@ def workshop_navigation_state():
         # value, which is checked at request time, not registration time.
         "workshop_session_nav_enabled": _workshop_session_enabled(),
         "workshop_work_url": url_for("workshop.work_opening"),
+        # PS-WORKSHOP-001 W2d: the one value the voice mic macro gates on.
+        # Off (the default) renders the same honest inert mic production
+        # shows today; on renders the real R17 control. The transcription
+        # URL is emitted with it so the macro never hard-codes a path.
+        "workshop_voice_enabled": _workshop_voice_enabled()
+        and _workshop_session_enabled(),
+        "workshop_voice_transcribe_url": url_for("workshop.transcribe_voice"),
+        # The browser stops recording at the SAME ceiling the server
+        # enforces, so a long recording ends by itself instead of being
+        # refused after the member has already spoken it.
+        "workshop_voice_max_seconds": (
+            workshop_voice_service.MAX_WORKSHOP_VOICE_SECONDS
+        ),
     }

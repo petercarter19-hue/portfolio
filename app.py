@@ -263,6 +263,18 @@ app.config.update(
     PEERSLATE_WORKSHOP_SESSION_ENABLED=(
         os.environ.get('PEERSLATE_WORKSHOP_SESSION_ENABLED', 'false').lower() == 'true'
     ),
+    # PS-WORKSHOP-001 W2d voice input, gated separately from the session
+    # sub-flag above BECAUSE that one is already on in production. Voice
+    # needs Azure Speech (VOICE_SPEECH_ENDPOINT plus a working Entra
+    # credential for the deployed identity) to be anything but a false
+    # promise, and a deploy cannot assert that for itself — so this ships
+    # merged and dark, and enablement is its own owner decision made once
+    # the provider is confirmed. Off: POST /app/workshop/voice/transcribe
+    # 404s before anything else, and every composer renders the same honest
+    # inert "not available yet" mic production shows today.
+    PEERSLATE_WORKSHOP_VOICE_ENABLED=(
+        os.environ.get('PEERSLATE_WORKSHOP_VOICE_ENABLED', 'false').lower() == 'true'
+    ),
     # PS-OPPSLATE-001: default-off Opportunity Slate room
     # (GET /opportunity-slate). Slice OS-1 delivers role intake, Review
     # Source, the member's manual wording correction, and checkpoint 1 of 2,
@@ -673,6 +685,13 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     # that is meant to be optional.
     ('workshop.work_spark_another', '4 per minute'),
     ('workshop.work_spark_dismiss', '4 per minute'),
+    # PS-WORKSHOP-001 W2d: voice transcription bills Azure Speech per
+    # audio-second and accepts the largest body on this blueprint, so it
+    # gets the tightest burst limit here. 8/minute is well above what one
+    # person speaking can produce (each recording takes real time to make)
+    # and far below what a script would want. The durable daily ceilings
+    # are workshop_spend_guard.reserve_voice's; this only shapes bursts.
+    ('workshop.transcribe_voice', '8 per minute'),
 ):
     app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
         _workshop_rate_limit

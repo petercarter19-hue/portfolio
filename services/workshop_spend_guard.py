@@ -89,11 +89,57 @@ except ImportError:  # pragma: no cover - depends on the running platform
 GLOBAL_DAILY_AI_CALLS = 400
 PER_IP_DAILY_AI_CALLS = 40
 
+# PS-WORKSHOP-001 W2d — voice transcription's OWN ceilings, deliberately
+# separate counters rather than a share of the numbers above.
+#
+# They bill different providers. The review/improve/spark calls bounded by
+# GLOBAL_DAILY_AI_CALLS go to Anthropic on ANTHROPIC_API_KEY. Workshop voice
+# goes to Azure Speech fast transcription
+# (services/speech_transcription_service.py, VOICE_SPEECH_ENDPOINT, Entra
+# credential), which is a different vendor, a different meter, and a
+# different bill. Conflating them would mean a visitor who dictated a lot
+# could exhaust the budget for AI review — two unrelated costs silently
+# competing — and would make either number impossible to reason about
+# against its own invoice. So voice reserves against its own pair of
+# counters in the same state file, under the same lock and the same UTC-day
+# rollover.
+#
+# Sizing: Azure fast transcription is priced per audio-hour, so the ceiling
+# that matters is total audio, not call count. At MAX seconds per recording
+# (services/workshop_voice_service.MAX_WORKSHOP_VOICE_SECONDS, 90) the
+# global cap here bounds the day at roughly 7.5 audio-hours no matter how
+# many addresses, cookies, or workers are involved. The per-address number
+# is generous for one honest person dictating all day and still small
+# against the global one.
+GLOBAL_DAILY_VOICE_TRANSCRIPTIONS = 300
+PER_IP_DAILY_VOICE_TRANSCRIPTIONS = 30
+
 STATE_FILENAME = "workshop_spend.json"
 
 RESERVE_OK = "ok"
 RESERVE_IP_CAPPED = "ip_capped"
 RESERVE_GLOBAL_CAPPED = "global_capped"
+
+# Which pair of counters a reservation touches. Adding a kind here is the
+# only thing needed to bound a new provider separately; the lock, the day
+# rollover, the fail-closed posture, and the atomicity are shared.
+KIND_AI = "ai"
+KIND_VOICE = "voice"
+
+_KINDS = {
+    KIND_AI: {
+        "global_key": "global_count",
+        "per_ip_key": "per_ip",
+        "global_cap": lambda: GLOBAL_DAILY_AI_CALLS,
+        "per_ip_cap": lambda: PER_IP_DAILY_AI_CALLS,
+    },
+    KIND_VOICE: {
+        "global_key": "voice_global_count",
+        "per_ip_key": "voice_per_ip",
+        "global_cap": lambda: GLOBAL_DAILY_VOICE_TRANSCRIPTIONS,
+        "per_ip_cap": lambda: PER_IP_DAILY_VOICE_TRANSCRIPTIONS,
+    },
+}
 
 # One honest daily-limit message, deliberately distinct from
 # workshop_work_session.AI_CALL_CAP_MESSAGE (the per-visit session cap).
@@ -260,7 +306,11 @@ def state_path():
 
 
 def _fresh_state(day):
-    return {"day": day, "global_count": 0, "per_ip": {}}
+    state = {"day": day}
+    for kind in _KINDS.values():
+        state[kind["global_key"]] = 0
+        state[kind["per_ip_key"]] = {}
+    return state
 
 
 def _count(value):
@@ -297,18 +347,21 @@ def _read_state(handle, today):
     if not isinstance(state, dict) or state.get("day") != today:
         return _fresh_state(today)
 
-    raw_per_ip = state.get("per_ip")
-    per_ip = {}
-    if isinstance(raw_per_ip, dict):
-        for key, value in raw_per_ip.items():
-            counted = _count(value)
-            if counted:
-                per_ip[str(key)[:MAX_IP_KEY_CHARS]] = counted
-    return {
-        "day": today,
-        "global_count": _count(state.get("global_count")),
-        "per_ip": per_ip,
-    }
+    # Every kind's counters are read back, not only the one being reserved:
+    # _write_state rewrites the whole file, so dropping a kind here would
+    # silently zero another provider's ceiling on the next reservation.
+    parsed = {"day": today}
+    for kind in _KINDS.values():
+        raw_per_ip = state.get(kind["per_ip_key"])
+        per_ip = {}
+        if isinstance(raw_per_ip, dict):
+            for key, value in raw_per_ip.items():
+                counted = _count(value)
+                if counted:
+                    per_ip[str(key)[:MAX_IP_KEY_CHARS]] = counted
+        parsed[kind["global_key"]] = _count(state.get(kind["global_key"]))
+        parsed[kind["per_ip_key"]] = per_ip
+    return parsed
 
 
 def _write_state(handle, state):
@@ -328,6 +381,19 @@ def _write_state(handle, state):
     handle.truncate()
     handle.flush()
     os.fsync(handle.fileno())
+
+
+def reserve_voice(ip):
+    """Reserve one Azure Speech transcription for ``ip`` against today's
+    voice ceilings.
+
+    Same contract, same lock, and the same reserve-BEFORE-the-call
+    discipline as ``reserve`` — an attempted transcription is what costs
+    money, so a call that then fails still counts. It touches the voice
+    counters only: exhausting voice never blocks AI review, and exhausting
+    AI review never blocks voice, because the two are different bills.
+    """
+    return _reserve(ip, KIND_VOICE)
 
 
 def reserve(ip):
@@ -354,6 +420,17 @@ def reserve(ip):
     capped at ``GLOBAL_DAILY_AI_CALLS`` per day, so the map holds at most
     that many keys before the day rolls over and it is discarded.
     """
+    return _reserve(ip, KIND_AI)
+
+
+def _reserve(ip, kind_name):
+    """The shared reservation, parameterised only by which counters it moves."""
+    kind = _KINDS[kind_name]
+    global_key = kind["global_key"]
+    per_ip_key = kind["per_ip_key"]
+    global_cap = kind["global_cap"]()
+    per_ip_cap = kind["per_ip_cap"]()
+
     key = str(ip or "unknown")[:MAX_IP_KEY_CHARS]
     today = _utc_day()
 
@@ -375,13 +452,13 @@ def reserve(ip):
             _lock_exclusive(handle)
             try:
                 state = _read_state(handle, today)
-                if state["per_ip"].get(key, 0) >= PER_IP_DAILY_AI_CALLS:
+                if state[per_ip_key].get(key, 0) >= per_ip_cap:
                     return RESERVE_IP_CAPPED
-                if state["global_count"] >= GLOBAL_DAILY_AI_CALLS:
+                if state[global_key] >= global_cap:
                     return RESERVE_GLOBAL_CAPPED
 
-                state["global_count"] += 1
-                state["per_ip"][key] = state["per_ip"].get(key, 0) + 1
+                state[global_key] += 1
+                state[per_ip_key][key] = state[per_ip_key].get(key, 0) + 1
                 _write_state(handle, state)
                 return RESERVE_OK
             finally:

@@ -1,0 +1,94 @@
+{# Workshop voice input — PS-WORKSHOP-001 W2d.
+
+   Visual authority: R17-voice-input-state-board-facelift.png. Every mic in
+   Workshop comes from here, so the six states, the copy, and the honest
+   flag-off fallback cannot drift between screens.
+
+   Two macros because the pieces sit in different places in the layout:
+
+     workshop_mic(...)         the control itself, absolutely positioned
+                               inside the field's own relative wrapper.
+     workshop_voice_status(..) the aria-live status line and the recovery
+                               links (R17 states 5 and 6), which flow in
+                               normal document order BELOW the field.
+
+   They find each other through data-wk-voice-for="<field id>", so a template
+   may place them wherever its layout needs without the JS caring.
+
+   Flag off (the default, and production today): workshop_mic renders the
+   same honest inert control that is live right now, workshop_voice_status
+   renders nothing, and no voice JavaScript is loaded. Flag on: a real
+   button, and the keyboard path is untouched either way.
+
+   Not for filters, navigation, search, or read-only information (doc 20
+   §6a). The library search control is deliberately NOT this macro.
+#}
+{% from "partials/workshop/_icons.html" import workshop_icon %}
+
+{% macro workshop_mic(field_id, noun, variant="editor") -%}
+{% if workshop_voice_enabled %}
+<div class="wk-voice"
+     data-wk-voice
+     data-wk-voice-for="{{ field_id }}"
+     data-wk-voice-state="ready"
+     data-wk-voice-variant="{{ variant }}"
+     data-wk-voice-endpoint="{{ workshop_voice_transcribe_url }}"
+     data-wk-voice-max-seconds="{{ workshop_voice_max_seconds }}"
+     data-wk-voice-noun="{{ noun }}">
+    {# Decorative: the same facts reach assistive technology through the
+       aria-live status line below, so announcing them twice would be noise. #}
+    <span class="wk-voice__inline" data-wk-voice-inline aria-hidden="true">
+        <span class="wk-voice__label" data-wk-voice-inline-label></span>
+        <span class="wk-voice__wave">
+            {% for _bar in range(9) %}<i></i>{% endfor %}
+        </span>
+        <span class="wk-voice__spinner"></span>
+    </span>
+    {# One button, two jobs — R17 state 2 puts the stop control in the same
+       slot the mic occupies rather than adding a second target to hunt for.
+       aria-pressed carries the recording state to a screen reader; the
+       label changes with it so the control is never ambiguous. #}
+    <button type="button"
+            class="wk-mic-btn wk-mic-btn--live"
+            data-wk-voice-mic
+            aria-pressed="false"
+            aria-label="Speak your {{ noun }}">
+        <span class="wk-mic-btn__mic">{{ workshop_icon("mic") }}</span>
+        <span class="wk-mic-btn__stop">{{ workshop_icon("stop") }}</span>
+    </button>
+    {# hidden in the markup, not only from script: R17 state 1 has no Cancel,
+       and a control must not be visible for the instant before JavaScript
+       first paints — nor at all if it never runs. #}
+    <button type="button" class="wk-voice__cancel" data-wk-voice-cancel formnovalidate hidden>Cancel</button>
+</div>
+{% else %}
+{# Honest inert control — unchanged from what production renders today.
+   Not a promise that voice is coming on any date; just a truthful label on
+   a control that does nothing yet. #}
+<button type="button"
+        class="wk-mic-btn"
+        aria-label="Voice input is not available yet"
+        aria-disabled="true"
+        disabled
+>{{ workshop_icon("mic") }}</button>
+{% endif %}
+{%- endmacro %}
+
+
+{% macro workshop_voice_status(field_id, submit_selector="") -%}
+{% if workshop_voice_enabled %}
+<div class="wk-voice-status"
+     data-wk-voice-status-for="{{ field_id }}"
+     data-wk-voice-state="ready"
+     {% if submit_selector %}data-wk-voice-submit="{{ submit_selector }}"{% endif %}>
+    {# role="status" + aria-live="polite": every state change is announced
+       without stealing focus, which must stay wherever the member put it. #}
+    <p class="wk-voice-status__line" data-wk-voice-message role="status" aria-live="polite"></p>
+    <div class="wk-voice-status__recovery" data-wk-voice-recovery hidden>
+        <button type="button" class="wk-voice-link" data-wk-voice-retry formnovalidate></button>
+        <span class="wk-voice-status__divider" aria-hidden="true">|</span>
+        <button type="button" class="wk-voice-link" data-wk-voice-dismiss formnovalidate>Keep typing</button>
+    </div>
+</div>
+{% endif %}
+{%- endmacro %}

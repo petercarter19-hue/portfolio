@@ -65,6 +65,7 @@ from uuid import uuid4
 from flask import (
     abort,
     current_app,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -77,6 +78,7 @@ from identity import AuthenticationRequired, get_current_identity
 from services import workshop_demo_library
 from services import workshop_review_service
 from services import workshop_spend_guard
+from services import workshop_voice_service
 from services import workshop_work_session as wws
 from services.database_service import DatabaseServiceError
 from services.knowledge_service import (
@@ -97,6 +99,7 @@ from workshop_routes import (
     _render_workshop_unavailable,
     _review_response,
     _safe_return_path,
+    _workshop_voice_enabled,
     workshop,
 )
 
@@ -1891,3 +1894,122 @@ def reset_preview():
     session.modified = True
 
     return redirect(url_for("workshop.my_information", changed="reset-preview"))
+
+
+# ---------------------------------------------------------------------------
+# PS-WORKSHOP-001 W2d — voice input.
+#
+# One endpoint, one job: turn a short recording into a transcript string and
+# hand it straight back to the browser that made it. It reads nothing, writes
+# nothing, and stores nothing — not a row, not a blob, not a session key — so
+# there is deliberately no identity resolution here at all. An anonymous
+# visitor and a signed-in member get the identical code path, and no
+# ``*_for_owner`` service method is reachable from it, because none is
+# imported into the call.
+#
+# The transcript is a PROPOSAL. It travels to the browser, is inserted into a
+# field the member can read and correct, and becomes their words only when
+# they submit that field themselves (R17 state 4). This route never submits,
+# saves, or makes anything canonical.
+# ---------------------------------------------------------------------------
+
+
+def _voice_flag_gate():
+    """True only when Workshop, the session sub-flag, AND voice are all on.
+
+    Voice gets its OWN sub-flag rather than riding the session flag that is
+    already live in production. W2a-W2c are on for real visitors right now;
+    merging this slice must not silently put a microphone in front of them
+    the moment it deploys. Azure Speech has to be configured and reachable
+    for the App Service identity before a mic is anything but a false
+    promise, and that is an operational fact a deploy cannot assert for
+    itself. So this ships dark, exactly as the session flag did, and the
+    owner turns it on once the provider is confirmed. With the flag off the
+    endpoint 404s and the templates render the same honest inert mic they
+    render in production today.
+    """
+    return _work_flag_gate() and _workshop_voice_enabled()
+
+
+@workshop.before_request
+def _allow_bounded_workshop_voice_upload():
+    """Raise the global 2 MB body limit for the one route that takes audio.
+
+    Mirrors owner_routes._allow_bounded_voice_upload: the app-wide
+    MAX_CONTENT_LENGTH is a small-form limit, and a 90-second recording is
+    legitimately larger than a form post. The raised ceiling applies to this
+    endpoint alone and stays close to the service's own byte cap, so the
+    audio bound is enforced twice — once by Werkzeug before the body is
+    read, and once by validate_audio on the bytes themselves.
+    """
+    if request.endpoint == "workshop.transcribe_voice":
+        request.max_content_length = (
+            workshop_voice_service.MAX_WORKSHOP_VOICE_BYTES + (64 * 1024)
+        )
+
+
+# Outcomes that are the provider's condition rather than the caller's
+# request, and so answer 503 rather than 400.
+_PROVIDER_FAILURE_CODES = {"speech-unavailable", "transcription-failed"}
+
+
+def _voice_error(code, status):
+    return (
+        jsonify({"error": code, "message": workshop_voice_service.message_for(code)}),
+        status,
+    )
+
+
+@workshop.post("/app/workshop/voice/transcribe")
+def transcribe_voice():
+    """Transcribe one short recording and return the text, nothing else."""
+    if not _voice_flag_gate():
+        abort(404)
+    if not _is_same_origin_write():
+        return "Cross-site Workshop requests are not allowed.", 403
+
+    # Reserve BEFORE the provider call, never after: an attempted
+    # transcription is what Azure bills, so one that then fails still counts.
+    # Voice has its own daily ceilings (workshop_spend_guard.reserve_voice) —
+    # a different vendor and a different bill from the Anthropic review
+    # calls, so dictating a lot must never exhaust AI review, or vice versa.
+    reservation = workshop_spend_guard.reserve_voice(workshop_spend_guard.client_ip())
+    if reservation != workshop_spend_guard.RESERVE_OK:
+        return (
+            jsonify(
+                {
+                    "error": "voice-daily-limit",
+                    "message": (
+                        "Voice input has reached today's limit. This is a daily "
+                        "limit, not something you did wrong — your words are "
+                        "still here, and you can keep typing."
+                    ),
+                }
+            ),
+            429,
+        )
+
+    try:
+        transcript = workshop_voice_service.transcribe_recording(
+            request.files.get("audio"),
+            request.form.get("duration_seconds"),
+        )
+    except workshop_voice_service.WorkshopVoiceError as error:
+        # 503 when the provider is the problem, 400 only when the upload
+        # itself is. A recording Azure refused or could not process is NOT a
+        # malformed request from the browser, so calling it a 400 would put
+        # the blame in the wrong place in the logs and in anything that
+        # monitors them. "speech-empty" stays a 400 because it is a true
+        # fact about the recording that was sent. Neither shape ever returns
+        # a provider payload, and neither touches the member's own text.
+        status = 503 if error.code in _PROVIDER_FAILURE_CODES else 400
+        if status == 503:
+            current_app.logger.error(
+                "PeerSlate Workshop voice transcription is unavailable."
+            )
+        return _voice_error(error.code, status)
+
+    response = jsonify({"transcript": transcript})
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response, 200

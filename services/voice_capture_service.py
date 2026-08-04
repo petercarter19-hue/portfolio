@@ -98,25 +98,42 @@ def _source_key(value):
         raise VoiceCaptureError("changed") from error
 
 
-def validate_audio(upload, duration_seconds):
-    """Validate duration, size, MIME, and media-container signature."""
+def validate_audio(upload, duration_seconds, max_bytes=None, max_duration_seconds=None):
+    """Validate duration, size, MIME, and media-container signature.
+
+    ``max_bytes`` and ``max_duration_seconds`` default to this module's
+    owner-Capture bounds, so every existing caller behaves exactly as
+    before. They exist so a second surface can reuse this validation under
+    its OWN, tighter bounds instead of copying the container-signature
+    table: PS-WORKSHOP-001 W2d's short Workshop dictation passes much
+    smaller numbers (services/workshop_voice_service.py). Only the bounds
+    are per-caller — which containers are accepted, and the requirement
+    that the bytes actually match the declared MIME type, stay one shared
+    contract.
+    """
     if upload is None or not getattr(upload, "stream", None):
         raise VoiceCaptureError("required")
+    byte_ceiling = MAX_VOICE_BYTES if max_bytes is None else int(max_bytes)
+    duration_ceiling = (
+        MAX_VOICE_DURATION_SECONDS
+        if max_duration_seconds is None
+        else float(max_duration_seconds)
+    )
     try:
         duration = float(duration_seconds)
     except (TypeError, ValueError) as error:
         raise VoiceCaptureError("invalid-duration") from error
     if not math.isfinite(duration) or duration <= 0:
         raise VoiceCaptureError("invalid-duration")
-    if duration > MAX_VOICE_DURATION_SECONDS:
+    if duration > duration_ceiling:
         raise VoiceCaptureError("too-long")
 
     content_type = str(getattr(upload, "mimetype", "") or "").lower().split(";", 1)[0]
     media_contract = SUPPORTED_AUDIO.get(content_type)
     if not media_contract:
         raise VoiceCaptureError("unsupported")
-    data = upload.stream.read(MAX_VOICE_BYTES + 1)
-    if len(data) > MAX_VOICE_BYTES:
+    data = upload.stream.read(byte_ceiling + 1)
+    if len(data) > byte_ceiling:
         raise VoiceCaptureError("too-large")
     if not data or not media_contract[1](data):
         raise VoiceCaptureError("unsupported")

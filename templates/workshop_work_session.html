@@ -12,6 +12,10 @@
 
 {% block content %}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
+{# "with context" is required: an imported Jinja macro cannot see
+   workshop_voice_enabled or the transcription URL without it, and would
+   silently render the flag-off inert mic on every screen. #}
+{% from "partials/workshop/_voice.html" import workshop_mic, workshop_voice_status with context %}
 {#
   PS-WORKSHOP-001 W2a/W2b — Work on Something focused-question session.
   Visual authority: R03 (desktop) / R04 (mobile),
@@ -62,15 +66,10 @@
                             maxlength="{{ max_answer_units }}"
                             rows="7"
                         >{{ answer_value }}</textarea>
-                        <button
-                            type="button"
-                            class="wk-mic-btn"
-                            aria-label="Voice input is not available yet"
-                            aria-disabled="true"
-                            disabled
-                        >{{ workshop_icon("mic") }}</button>
+                        {{ workshop_mic("wk-session-answer", "answer") }}
                     </div>
-                    <p class="wk-field__hint">Text entry is available. Voice input is not available yet.</p>
+                    {{ workshop_voice_status("wk-session-answer") }}
+                    <p class="wk-field__hint">{% if workshop_voice_enabled %}Text entry is available. You can type or speak.{% else %}Text entry is available. Voice input is not available yet.{% endif %}</p>
                     {#
                       F9 correction (independent Opus review): this field
                       accepts 1000 characters, but an anonymous preview save
@@ -150,4 +149,15 @@
         Private unless you deliberately choose to use it elsewhere.
     </p>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if workshop_voice_enabled %}
+{# PS-WORKSHOP-001 W2d. Loaded only when the voice flag is on, so a page
+   with no mic on it also carries no voice JavaScript. dictation.js comes
+   first because workshop-voice.js reuses its caret-aware appendTranscript
+   rather than keeping a second insertion behaviour of its own. #}
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/workshop-voice.js') }}" defer></script>
+{% endif %}
 {% endblock %}
