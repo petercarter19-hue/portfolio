@@ -726,12 +726,21 @@ class CommunityMediaService:
         media_key=None,
         post_key=None,
         contribution_key=None,
+        uploader_user_key=None,
     ):
-        """Delete blobs claimed by SQL, completing only fully successful claims."""
+        """Delete blobs claimed by SQL, completing only fully successful claims.
+
+        `uploader_user_key` scopes a targeted claim to one member's uploads in
+        SQL rather than relying only on the route having checked ownership
+        first (independent review, 2026-08-04, F14). Server-initiated lifecycle
+        sweeps pass none and stay unscoped, which is correct for a janitor.
+        """
         selectors = [media_key, post_key, contribution_key]
         if sum(value is not None for value in selectors) > 1:
             raise CommunityValidationError("The cleanup target is invalid.")
         parameters = [("@Take", limit)]
+        if uploader_user_key is not None:
+            parameters.append(("@UploaderUserKey", uploader_user_key))
         if media_key is not None:
             parameters.append(
                 ("@MediaKey", opaque_key(media_key, field="attachment key"))
@@ -786,6 +795,7 @@ class CommunityMediaService:
         media_key=None,
         post_key=None,
         contribution_key=None,
+        uploader_user_key=None,
     ):
         try:
             return self.sweep(
@@ -793,6 +803,7 @@ class CommunityMediaService:
                 media_key=media_key,
                 post_key=post_key,
                 contribution_key=contribution_key,
+                uploader_user_key=uploader_user_key,
             )
         except (DatabaseServiceError, CommunityMediaStorageError) as error:
             LOGGER.error(

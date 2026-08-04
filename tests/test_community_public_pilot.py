@@ -1401,7 +1401,12 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             headers={"X-PeerSlate-Request": "same-origin"},
         )
         self.assertEqual(response.status_code, 200)
-        sweep.assert_called_once_with(limit=20, post_key=POST_KEY)
+        # The uploader key scopes the claim in SQL as well as by the route's
+        # ownership check (independent review, 2026-08-04, F14). Asserting it
+        # here means the scoping cannot be dropped without a test failing.
+        sweep.assert_called_once_with(
+            limit=20, post_key=POST_KEY, uploader_user_key=OWNER_KEY
+        )
 
     @patch("community_api.community_media_service.reserve_and_upload")
     def test_attachment_limit_override_does_not_raise_global_request_limit(self, upload):

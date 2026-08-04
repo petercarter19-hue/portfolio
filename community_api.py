@@ -377,7 +377,9 @@ def delete_post(post_key):
     result = community_command_service.delete_post(
         identity.user_key, post_key, _json_body().get("expected_revision")
     )
-    community_media_service.sweep_best_effort(limit=20, post_key=post_key)
+    community_media_service.sweep_best_effort(
+        limit=20, post_key=post_key, uploader_user_key=identity.user_key
+    )
     return jsonify(success=True, result=result)
 
 
@@ -416,7 +418,9 @@ def delete_contribution(contribution_key):
         identity.user_key, contribution_key, _json_body().get("expected_revision")
     )
     community_media_service.sweep_best_effort(
-        limit=4, contribution_key=contribution_key
+        limit=4,
+        contribution_key=contribution_key,
+        uploader_user_key=identity.user_key,
     )
     return jsonify(success=True, result=result)
 

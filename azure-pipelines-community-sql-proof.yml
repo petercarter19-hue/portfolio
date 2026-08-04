@@ -36,10 +36,21 @@ jobs:
             echo "The queued source does not match expectedSourceSha." >&2
             exit 1
           fi
-          if [[ "${BUILD_SOURCE_BRANCH_VALUE}" != "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra" ]]; then
-            echo "The proof may run only from the exact reviewed Community feature branch." >&2
-            exit 1
-          fi
+          # Pinned to one feature branch by name until 2026-08-04, when that
+          # branch was squash-merged and deleted, which made this proof
+          # unrunnable for every later change to the same SQL. The safety
+          # property was never the branch name: it is that the run is manually
+          # queued and bound to an exact reviewed SHA, both already checked
+          # above, plus the HEAD match checked below. This keeps the run off
+          # arbitrary refs while allowing the branches a reviewed change can
+          # actually live on.
+          case "${BUILD_SOURCE_BRANCH_VALUE}" in
+            refs/heads/main|refs/heads/work/*|refs/heads/codex/*) ;;
+            *)
+              echo "The proof may run only from main or a reviewed work branch." >&2
+              exit 1
+              ;;
+          esac
           if [[ "$(git rev-parse HEAD)" != "${EXPECTED_SOURCE_SHA,,}" ]]; then
             echo "The checked-out HEAD does not match expectedSourceSha." >&2
             exit 1
@@ -153,7 +164,13 @@ jobs:
           output_dir.mkdir(parents=True, exist_ok=True)
 
           classification = "disposable_x64_nonproduction_sql_runtime"
-          expected_branch = "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra"
+          # Second copy of the branch pin, and the reason unpinning the bash
+          # guard alone was not enough. Kept as a shape rather than a literal
+          # so a merged-and-deleted branch cannot make the proof unrunnable
+          # again; the exact-SHA binding remains the real guarantee.
+          expected_branch_pattern = re.compile(
+              r"^refs/heads/(main|work/[A-Za-z0-9._/-]+|codex/[A-Za-z0-9._/-]+)$"
+          )
           expected_sql_image = "mcr.microsoft.com/mssql/server:2022-CU26-ubuntu-22.04@sha256:ba4c8329f48fb8f02e1416be6a930ebfd71268caee78aa985f3af4315e457c89"
           expected_client_base = "python:3.12-slim@sha256:cab2dbf575e971934a81e4622f5aba17aa7929719bd7e31033a3a83b97fd0464"
           sql_files = {
@@ -315,7 +332,11 @@ jobs:
           image_version_value = os.environ.get("ImageVersion", "")
 
           source_sha = expected_sha if re.fullmatch(r"[0-9a-f]{40}", expected_sha) else None
-          source_branch = source_branch_value if source_branch_value == expected_branch else None
+          source_branch = (
+              source_branch_value
+              if expected_branch_pattern.fullmatch(source_branch_value)
+              else None
+          )
           build_id = build_id_value if re.fullmatch(r"[0-9]{1,20}", build_id_value) else None
           build_number = build_number_value if re.fullmatch(r"[A-Za-z0-9._-]{1,80}", build_number_value) else None
           definition_id = definition_id_value if re.fullmatch(r"[0-9]{1,20}", definition_id_value) else None

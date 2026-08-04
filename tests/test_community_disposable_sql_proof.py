@@ -110,8 +110,16 @@ class CommunityDisposableSqlProofTests(unittest.TestCase):
         self.assertIn('${ImageVersion:-}', source)
         self.assertIn('os.environ.get("ImageOS", "")', source)
         self.assertIn('os.environ.get("ImageVersion", "")', source)
+        # The branch restriction is a shape, not a literal. It was pinned to
+        # one feature branch until 2026-08-04, when that branch was
+        # squash-merged and deleted and the proof became unrunnable for every
+        # later change to the same SQL. Both copies of the pin are now
+        # patterns; the exact-SHA binding asserted below is the real guarantee.
+        self.assertNotIn("codex/2026-08-01-community-primary-feed-sol-ultra", source)
+        self.assertIn("refs/heads/main|refs/heads/work/*|refs/heads/codex/*", source)
+        self.assertIn("expected_branch_pattern", source)
         self.assertIn(
-            "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra",
+            r"^refs/heads/(main|work/[A-Za-z0-9._/-]+|codex/[A-Za-z0-9._/-]+)$",
             source,
         )
         self.assertIn(f'expected_sql_image = "{proof.SQL_IMAGE}"', source)
