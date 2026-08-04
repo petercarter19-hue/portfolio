@@ -56,15 +56,20 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # The auth-pill header repair changes only style.css, so its content token is
 # the sole new delta; normalizing it back reproduces the previous locked hash,
 # which in turn normalizes back to the verified base through the callback token.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 18214
+# The 2026-08-03 owner-directed PS-THEME-002 follow-up intentionally removes
+# the shared dark-theme bootstrap, controls, and script from every default
+# render, including this legacy /app fallback. The owner workspace content,
+# destinations, and semantics remain unchanged. These values recapture that
+# bounded light-only shell; the asset-token normalization proof still applies.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 16840
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "f581cee9de570e46a308c5b85021fa4ca7c577df0e887ce0c9010c00757fed5f"
+    "729335580bf560b0a76dee15e0809e599e132b06ed5de68ed1ee61f2d81d15f1"
 )
 FLAG_OFF_APP_RENDER_STYLE_BASE_SHA256 = (
-    "92adb278327ad2e2d92aa2d19d33ffb967fcaa2a18cf90b9aa1b7a0a9d105729"
+    "7f97a1847fd78db54ba8097bea2d0de577b171da732c80edae09af81b4413152"
 )
 FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 = (
-    "37fc92609af60488923653e29435580c806482ea7513bee6b0ead44f0fe4298f"
+    "073aeba498b180fa69d48a3baae0090b6de89f146574aa717c1c29d827e20815"
 )
 FLAG_OFF_CALLBACK_VERSION = b"fd13bc50ca97"
 FLAG_OFF_CALLBACK_PREVIOUS_VERSION = b"9a8e38ddf7ba"
@@ -405,10 +410,9 @@ class OwnerHomeRouteTests(unittest.TestCase):
         # stay identical to the released baseline, only the cache policy is
         # hardened so a shared cache cannot retain one member's workspace.
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
-        # Real byte-for-byte identity (not just substrings): the
-        # standalone_owner_shell conditionals in base.html must contribute
-        # zero bytes to the flag-off render, matching the captured
-        # origin/main baseline exactly.
+        # Real byte-for-byte identity (not just substrings): the intentional
+        # light-only shared shell and the unchanged owner workspace must match
+        # the newly captured bounded baseline exactly.
         self.assertEqual(len(response.data), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
         self.assertEqual(
             hashlib.sha256(response.data).hexdigest(),

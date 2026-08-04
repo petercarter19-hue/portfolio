@@ -657,9 +657,24 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         for forbidden in ('ps-theme', 'data-theme', 'theme-toggle', 'prefers-color-scheme'):
             self.assertNotIn(forbidden, source)
 
-    def test_modal_dialogs_expose_synced_theme_controls(self):
-        html = self.html('/interview-studio?mode=me')
-        self.assertEqual(html.count('data-theme-toggle-proxy'), 3)
+    def test_modal_dialog_theme_controls_are_default_off_but_reversible(self):
+        config_key = 'PEERSLATE_DARK_THEME_ENABLED'
+        missing = object()
+        original = app.config.get(config_key, missing)
+        try:
+            app.config.pop(config_key, None)
+            html = self.html('/interview-studio?mode=me')
+            self.assertNotIn('data-theme-toggle-proxy', html)
+
+            app.config[config_key] = True
+            enabled_html = self.html('/interview-studio?mode=me')
+            self.assertEqual(enabled_html.count('data-theme-toggle-proxy'), 3)
+        finally:
+            if original is missing:
+                app.config.pop(config_key, None)
+            else:
+                app.config[config_key] = original
+
         source = Path('static/js/theme-toggle.js').read_text(encoding='utf-8')
         self.assertIn("querySelectorAll('[data-theme-toggle-proxy]')", source)
         self.assertIn("toggle.setAttribute('aria-checked'", source)

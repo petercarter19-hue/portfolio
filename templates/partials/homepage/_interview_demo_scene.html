@@ -94,10 +94,10 @@
                     <h2 class="hv-int-modal__title" id="hv-int-modal-title">Interview Me practice</h2>
                 </div>
                 <span class="hv-int-count" data-int-count>Step 1 of 4</span>
-                <button class="theme-toggle hv-int-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy>
+                {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}<button class="theme-toggle hv-int-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy>
                     <span class="hv-int-theme-label">Theme</span>
                     <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span>
-                </button>
+                </button>{% endif %}
                 <button type="button" class="hv-int-close" data-int-close aria-label="Close walkthrough">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
                 </button>

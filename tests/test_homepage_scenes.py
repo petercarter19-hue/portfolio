@@ -8,6 +8,7 @@ old homepage remains reachable at /experience for rollback.
 
 import os
 import unittest
+from pathlib import Path
 
 from app import app
 
@@ -333,12 +334,17 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         self.assertIn('Practice signal &mdash; not an employer prediction',
                       self.scene)
 
-    def test_modal_theme_proxy_uses_released_contract(self):
-        self.assertEqual(self.scene.count('data-theme-toggle-proxy'), 1)
-        self.assertIn('role="switch"', self.scene)
-        self.assertIn('hv-int-theme-label">Theme</span>', self.scene)
-        self.assertIn('theme-toggle__track', self.scene)
-        self.assertIn('theme-toggle__thumb', self.scene)
+    def test_modal_theme_proxy_is_dormant_while_dark_theme_is_unavailable(self):
+        self.assertNotIn('data-theme-toggle-proxy', self.scene)
+
+        source = Path(
+            'templates/partials/homepage/_interview_demo_scene.html'
+        ).read_text(encoding='utf-8')
+        self.assertEqual(source.count('data-theme-toggle-proxy'), 1)
+        self.assertIn('role="switch"', source)
+        self.assertIn('hv-int-theme-label">Theme</span>', source)
+        self.assertIn('theme-toggle__track', source)
+        self.assertIn('theme-toggle__thumb', source)
 
     def test_modal_truth_is_accessible(self):
         start = self.scene.index('class="hv-int-modal__truth"')

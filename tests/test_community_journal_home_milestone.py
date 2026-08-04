@@ -112,8 +112,8 @@ class MilestoneSharedShellTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
-        # Private workspace renders are no-store; the released bytes asserted
-        # below are unchanged.
+        # Private workspace renders are no-store; the bytes asserted below
+        # pin the intentional shared-shell light-only baseline.
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         self.assertEqual(len(response.data), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
         self.assertEqual(

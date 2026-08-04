@@ -535,7 +535,7 @@
                                 <div class="is__dialog-head">
                                     <div><p class="is__section-label">Current session</p><h2 id="is-queue-title">Up next</h2></div>
                                     <div class="is__dialog-actions">
-                                        <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                                        {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}<button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>{% endif %}
                                         <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
                                     </div>
                                 </div>
@@ -969,7 +969,7 @@
         <div class="is__dialog-head">
             <h2 id="is-settings-title">Interview Studio settings</h2>
             <div class="is__dialog-actions">
-                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}<button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>{% endif %}
                 <button type="button" class="is__icon-button" aria-label="Close settings" data-is-settings-close>&times;</button>
             </div>
         </div>
@@ -985,7 +985,7 @@
         <div class="is__dialog-head">
             <div><p class="is__section-label" data-is-history-detail-mode>Completed attempt</p><h2 id="is-history-detail-title">Session detail</h2></div>
             <div class="is__dialog-actions">
-                <button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>
+                {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}<button class="theme-toggle is__dialog-theme" type="button" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme" data-theme-toggle-proxy><span class="is__dialog-theme-label">Theme</span><span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span></button>{% endif %}
                 <button type="button" class="is__icon-button" aria-label="Close session detail" data-is-history-detail-close>&times;</button>
             </div>
         </div>
