@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "7161d5d495e362b236594a9ddf69138bd8ca8ca2"
-  deployed_pipeline: 419
-  application_behavior_commit: "f0a802b6bdd9b388facb07b786d76b1809759ae9"
-  application_behavior_pipeline: 411
-  note: "Automatic batched-CI pipeline 419 passed Build and the single locked ProductionRelease stage for exact Azure main 7161d5d495e362b236594a9ddf69138bd8ca8ca2; /healthz release 896d8ac3ce01a2052b29eb6d matched that exact source/build identity. No duplicate manual run was queued. Production, signed-out auth, hosted sign-in, canonical-host redirect, HTTP/2, Always On, gzip, immutable caching, and current route latency were independently verified after release. Azure build policy 1 revision 2 remains blocking and now requires fresh current-target PR validation with no 12-hour result reuse. This release changes pipeline orchestration and governance, not application behavior; f0a802b6bdd9b388facb07b786d76b1809759ae9 / pipeline 411 remains the last behavior-changing release. Update this record and tests/test_operational_readiness.py together. This record is not a substitute for fetching origin and verifying current Azure and live state before a new claim."
+  deployed_main_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"
+  deployed_pipeline: 431
+  application_behavior_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"
+  application_behavior_pipeline: 431
+  note: "Azure PR 260 passed blocking policy build 430 and was squash-merged without bypass as exact main 5b24a3893dcc1bbbdcfec9aec260728c80d5fb26. Automatic batched-CI pipeline 431 passed Build and the single locked ProductionRelease stage for that exact source; /healthz release 45ebdb560abb2c66bd194fe6 matched the exact source/build identity. Redundant manual runs 432 and 433 were canceled after the delayed automatic-run listing became visible; neither deployed. Independent HTTP and in-app-browser checks verified the homepage, Interview Studio, and public resume render the light modern-blue theme without the header switch, page-local proxies, stored-dark bootstrap, or theme-toggle.js; the browser reported no console errors. Azure build policy 1 revision 2 remains blocking and requires fresh current-target PR validation with no 12-hour result reuse. This release changes application behavior, so 5b24a3893dcc1bbbdcfec9aec260728c80d5fb26 / pipeline 431 is both the deployed and application-behavior baseline. Update this record and tests/test_operational_readiness.py together. This record is not a substitute for fetching origin and verifying current Azure and live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
