@@ -213,6 +213,23 @@
                 </div>
                 {% elif spark %}
                 {% include "partials/workshop/_spark_card.html" %}
+                {%- if focus_spark %}
+                {# The visitor pressed a Spark control at the top of the page;
+                   the new suggestion renders here, below the doors. Without
+                   this it arrives off-screen and reads as "nothing happened".
+                   Scroll is progressive enhancement; the anchor below works
+                   with JavaScript disabled. #}
+                <script>
+                    (function () {
+                        var card = document.getElementById('spark');
+                        if (!card) { return; }
+                        var motion = window.matchMedia &&
+                            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                        card.scrollIntoView({ block: 'center', behavior: motion ? 'auto' : 'smooth' });
+                        card.focus({ preventScroll: true });
+                    }());
+                </script>
+                {%- endif %}
                 {% else %}
                 {#
                   No Spark. R05/R06's first-run composition is the default

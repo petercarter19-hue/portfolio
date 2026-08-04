@@ -745,6 +745,7 @@ def _render_opening(
     generate_spark=False,
     spark=None,
     spark_note=None,
+    focus_spark=False,
 ):
     """Render the Work on Something opening.
 
@@ -772,6 +773,7 @@ def _render_opening(
             page_title="Work on Something — Workshop",
             active_workshop_mode="work",
             anonymous_preview=(identity is None),
+            focus_spark=focus_spark,
             ai_unavailable=ai_unavailable,
             doors=_door_view_model(
                 unfinished_rows=unfinished_rows,
@@ -950,7 +952,13 @@ def work_spark_another():
     try:
         confirmed_rows = _confirmed_rows(identity)
         spark, spark_note = _generate_spark(identity, confirmed_rows)
-        return _render_opening(identity=identity, spark=spark, spark_note=spark_note)
+        # The Spark card renders below the doors, so a visitor who clicked
+        # "Give me a spark" or "Show another idea" at the top of the page
+        # would otherwise see the new suggestion arrive off-screen and
+        # conclude nothing happened. Land them on it.
+        return _render_opening(
+            identity=identity, spark=spark, spark_note=spark_note, focus_spark=True
+        )
     except (KnowledgeServiceError, DatabaseServiceError):
         current_app.logger.error("PeerSlate Work on Something opening is unavailable.")
         return _render_workshop_unavailable()

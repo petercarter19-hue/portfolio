@@ -1393,3 +1393,37 @@ class SparkFailureReasonTests(unittest.TestCase):
                     workshop_review_service._workshop_failure_reason(ValueError(message)),
                     workshop_review_service.WORKSHOP_UNCLASSIFIED_REASON,
                 )
+
+
+class SparkResultIsWhereTheVisitorIsLookingTests(unittest.TestCase):
+    """Owner-reported 2026-08-04: pressing "Give me a spark" appeared to do
+    nothing, because the card renders below the doors and the replacement
+    arrived off-screen. The response must land the visitor on the result.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.flags = {
+            "PEERSLATE_WORKSHOP_ENABLED": app.config.get("PEERSLATE_WORKSHOP_ENABLED"),
+            "PEERSLATE_WORKSHOP_SESSION_ENABLED": app.config.get(
+                "PEERSLATE_WORKSHOP_SESSION_ENABLED"
+            ),
+        }
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_SESSION_ENABLED"] = True
+
+    def tearDown(self):
+        for key, value in self.flags.items():
+            app.config[key] = value
+
+    def test_the_spark_card_carries_a_focusable_anchor(self):
+        response = self.client.get("/app/workshop/work")
+        body = response.data.decode("utf-8")
+        self.assertEqual(response.status_code, 200)
+        # "wk-spark" also matches the wk-spark-note element, so key off the
+        # card's own class to avoid asserting against a Spark-less render.
+        if 'class="wk-spark"' in body:
+            self.assertIn('id="spark"', body)
+            self.assertIn('tabindex="-1"', body)
+        else:
+            self.skipTest("No Spark rendered in this environment (cap or no grounding)")
