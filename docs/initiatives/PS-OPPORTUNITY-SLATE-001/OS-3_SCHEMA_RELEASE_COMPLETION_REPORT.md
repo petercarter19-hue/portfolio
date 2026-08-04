@@ -1,85 +1,81 @@
-# PS-OPPORTUNITY-SLATE-001 OS-3 schema-first completion record
+# PS-OPPORTUNITY-SLATE-001 OS-3 additive schema release record
 
-Status: **Conditional** until this schema-only branch passes PR validation,
-merges, and the governed manual-main apply is approved and verified against
-production. It contains no OS-3 route, AI orchestration, or member-facing UI.
+Status: **Conditional** until this branch passes pull-request validation, is
+merged, and `PS-OPPSLATE-002` is applied and verified through the protected
+production schema environment. This branch contains no OS-3 route, AI
+orchestration, or member-facing UI.
 
 ## Core record
 
 - **Task/package and delivery path:** PS-OPPORTUNITY-SLATE-001 slice OS-3,
   schema-first **Protected** release through PS-OPS-001.
-- **Outcome and member/site effect:** Adds the four OS-3 analysis/response
-  tables and four owner-scoped procedures before application code can call
-  them. Existing OS-1/OS-2 route behavior is unchanged. The procedure names
-  are added to the database allowlist, but the current service remains pinned
-  to its thirteen OS-1/OS-2 calls until the OS-3 application PR lands.
+- **Outcome and member/site effect:** Restores `PS-OPPSLATE-001` to its exact
+  immutable OS-1/OS-2 bytes and moves the OS-3 analysis and response schema
+  into the new additive migration `PS-OPPSLATE-002`. Production and the
+  current member experience are unchanged until the protected apply and the
+  separate OS-3 application release complete.
 - **Branch, base SHA, final SHA, and changed paths:**
-  `work/2026-08-04-oppslate-os3-schema-release`, based on governed-path merge
-  `98d1565641b6476a85c7a58ff06ec54951c075a9`; final pushed SHA is recorded in
-  the PR handoff. Changed paths are the Opportunity Slate forward migration,
-  rollback, owner-isolation verifier, migration registry gate proof,
-  `services/database_service.py`, the schema-first migration tests, this
-  record, and `evidence/os-3/sql-gate-governed.json`.
+  `work/2026-08-04-oppslate-os3-additive`, based on authoritative
+  `origin/main` at `af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3`. The exact
+  implementation SHA and pushed handoff tip are recorded in the Clark handoff.
+  Changed paths are the restored 001 forward, rollback, and verifier; the new
+  002 forward, rollback, and verifier; the migration registry; the combined
+  migration tests; this completion record; and the corrected governed-gate
+  evidence.
 - **Verification performed and result:** Disposable Basic-tier database
-  `ps-oppslate-os3-gate-20260804` on server `peerslate`, production-matching
-  collation. Governed gate passed six steps: all ten prerequisites; exact
-  forward apply creating 186 objects; idempotent re-apply; verifier returning
-  `verified = 1`; rollback of all 186 objects; clean forward re-apply. Exact
-  executable SHA-256:
-  `752812bd7d290a0d092b9910f44643577f4a2947fc8887627ca2c7639e463a0f`.
-  Focused OS-3/path/integration tests: **124 passed, 3 skipped; 299 subtests
-  passed**. Repository-wide test run excluding the Windows-inapplicable POSIX
-  mode assertion: **2,322 passed, 9 skipped, 1 deselected; 3,106 subtests
-  passed**. The unfiltered run produced the same passing body plus the single
-  known Windows `0o600` assertion failure; it also exposed an older OS-3
-  allowlist snapshot, which was corrected additively and covered by the final
-  focused and broad passes.
-  Registry check: **23 registered, 11 gated and hash-matched; pass**.
-  `git diff --check`: pass.
-- **Release state:** Local schema-only branch; production unchanged. The
-  disposable gate database was deleted after proof and its absence verified.
-- **Protected-path correction after merge:** PR 274 merged the schema at
-  `d3af4793734a11502375434b47f5e3b37cd7ee01`. Run 497 exposed invalid CLI
-  option ordering before any connection and PR 276 corrected it at
-  `304a5ecdd49afc52f7496440b1afdfa64593639e`. Corrected run 501 then reached
-  connection establishment and failed closed because a plain hosted-agent
-  shell had no usable Entra credential; its log showed
-  `DefaultAzureCredential` exhausting every provider. No migration SQL was
-  claimed or evidenced as applied. The follow-up change runs only the three
-  connected actions inside the existing approved Azure service connection;
-  it does not add a password, broaden the SQL firewall, or change migration
-  bytes. The service principal client id
-  `8948ceff-6f5c-4f88-91cd-aefc6e99fc32` is now mapped to the contained user
-  `peerslate-ado-schema`, which was verified as `db_ddladmin` with database
-  definition visibility, object-scoped ledger DML, and object-scoped audit
-  procedure execution only. It is not a member of a member-data reader/writer
-  role or `db_owner`. Final PR, run, and production ledger evidence remain
-  pending.
-- **Known limits, deferred work, or owner decision needed:** One of the three
-  focused skips is deliberate and temporary: the OS-3 service-payload
-  assertion cannot run before the service ships. The OS-3 application branch
-  removes that skip and restores exact equality between all seventeen
-  procedure calls and the allowlist. The other skips are separately
-  credentialed engine/path tests.
-- **Next action:** Open and merge the schema-only PR, queue a governed
-  `schemaAction=apply` run expecting `PS-OPPSLATE-001`, approve the protected
-  environment after reviewing the exact plan, then verify the production
-  ledger and objects before opening the OS-3 application PR.
+  `ps-oppslate-additive-gate-20260804` on Azure SQL server `peerslate`.
+  The governed gate first proved the restored 001 baseline, then proved the
+  additive 002 delta over it. Each passed prerequisite application, forward
+  apply, no-op reapply, owner-isolation verification, rollback rehearsal, and
+  clean forward reapply. The 001 verifier returned `verified = 1` with exact
+  executable SHA-256
+  `2406ff6eedd44939ee5148982462a66935f13dfea45fe46076cf5895883c7273`.
+  The 002 verifier returned `verified = 1` with exact executable SHA-256
+  `2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0`.
+  Focused migration/path tests: **116 passed, 3 skipped**. Wider affected
+  Opportunity Slate, database, and operational tests: **309 passed, 3
+  skipped**. Registry validation and `git diff --check`: pass. The disposable
+  database was permanently deleted and a follow-up Azure resource lookup
+  returned `ResourceNotFound`.
+- **Release state:** Local schema correction, ready for review and push;
+  production unchanged. The existing production ledger still records the
+  OS-1/OS-2 form of `PS-OPPSLATE-001`; `PS-OPPSLATE-002` has not been applied.
+- **Known limits, deferred work, or owner decision needed:** The OS-3
+  application branch remains separate and must not merge or deploy before the
+  production 002 result is verified. The earlier reuse of the 001 ledger ID is
+  superseded by this additive correction and must not be revived. The semantic
+  false-positive limitation was accepted by Pete for the current small demo
+  audience; that does not change the anonymous-route truth boundary.
+- **Next action:** Review and merge this correction through an Azure DevOps
+  pull request. After the automatic main run finishes, queue the governed
+  manual pipeline with `schemaAction=apply`,
+  `schemaMigrationId=PS-OPPSLATE-002`, and
+  `forceProductionDeploy=false`; approve the protected plan only when the
+  exact hash above is shown. Verify the production ledger and objects before
+  advancing the OS-3 application branch.
 
 ## Protected additions
 
-- **Data/privacy/authorization:** Every new procedure derives the owner from
-  `@UserKey`, reasserts `owner_profile_id` in its predicates, and accepts no
-  caller-supplied owner id. The verifier exercised two-owner negative paths and
-  left no residue. No model call or member content was read from production.
-- **Migration/rollback proof:** The governed gate used the exact committed
-  migration, verifier, and rollback bytes; the updated registry proof matches
-  them. Rollback was rehearsed before re-apply. The throwaway database was
-  created solely for this gate and permanently deleted afterwards.
-- **AI:** OS-3's semantic false-positive limitation was reviewed by Pete on
-  2026-08-04 and accepted for the current small, unpromoted demo audience.
-  That decision changes no schema guarantee and does not claim the anonymous
-  route is access-restricted.
-- **Actual handoff:** Pete is release approver. The OS-3 application remains
-  on `work/2026-08-04-opportunity-slate-os3`; it must not merge until the
-  production schema result is verified.
+- **Data, identity, privacy, authorization, deletion, publication, or AI:**
+  Every new procedure derives the owner from `@UserKey`, reasserts
+  `owner_profile_id` in its predicates, and accepts no caller-supplied owner
+  id. The verifier exercises two-owner negative paths and leaves no residue.
+  The 002 migration refuses an incomplete or drifted 001 baseline, labels the
+  eight procedures it owns with its definition hash, and writes only its new
+  immutable ledger row.
+- **Migration and rollback proof:** The 002 rollback refuses member rows,
+  later migrations, or drifted procedure definitions. It drops the four new
+  procedures, restores the four modified 001 procedures to their exact OS-2
+  definitions, removes the four new tables, and deletes only the 002 ledger
+  row. Both migrations were independently rehearsed through rollback and
+  reapply in the disposable Azure SQL database.
+- **Shared infrastructure or broad release:** The contained deployment
+  principal remains `peerslate-ado-schema` through the existing Azure service
+  connection. Its known permissions are `db_ddladmin`, database-definition
+  visibility, object-scoped ledger DML, and object-scoped audit-procedure
+  execution; it is not a member-data reader/writer or `db_owner` principal.
+  No firewall or secret change is part of this correction.
+- **Actual handoff:** Clark receives the pushed branch tip, this record, and
+  the dedicated handoff document. Codex relinquishes this additive schema
+  branch after the exact pushed SHA is reported. Production release authority
+  and subsequent application release remain with Pete/the designated manager.

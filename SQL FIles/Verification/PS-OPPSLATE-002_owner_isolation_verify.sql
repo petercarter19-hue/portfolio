@@ -1,10 +1,10 @@
-/* PS-OPPSLATE-001 (Slices OS-1 and OS-2) production-safe verification.
+/* PS-OPPSLATE-002 (Slices OS-1, OS-2 and OS-3) production-safe verification.
 
    Uses two synthetic owners inside one outer always-rolled-back
    transaction to prove that the Opportunity Slate working store cannot
    leak or be written across members:
 
-     - every one of the thirteen procedures declares @UserKey nvarchar(300),
+     - every one of the seventeen procedures declares @UserKey nvarchar(300),
        resolves it to @ProfileId itself, filters owner_profile_id =
        @ProfileId, and never accepts a caller-supplied @OwnerProfileId;
      - no procedure contains an aggregate score / percentage /
@@ -40,7 +40,7 @@
      - (slice OS-2) correcting a statement clears the requirement-set
        confirmation, exactly as correcting the source clears the source's.
 
-   Calling convention note: no procedure in PS-OPPSLATE-001 appends an
+   Calling convention note: no procedure in PS-OPPSLATE-002 appends an
    audit event (a working session is ephemeral infrastructure - see the
    forward migration's header), so no INSERT ... EXEC nesting restriction
    applies here and every call below can be captured directly.
@@ -57,12 +57,12 @@ BEGIN TRY
     IF NOT EXISTS
     (
         SELECT 1 FROM dbo.schema_migrations
-        WHERE migration_id = N'PS-OPPSLATE-001'
+        WHERE migration_id = N'PS-OPPSLATE-002'
     )
-        THROW 53600, 'PS-OPPSLATE-001 is not registered.', 1;
+        THROW 53600, 'PS-OPPSLATE-002 is not registered.', 1;
 
     /* ------------------------------------------------------------
-       0. OBJECT_DEFINITION greps across all thirteen procedures.
+       0. OBJECT_DEFINITION greps across all seventeen procedures.
        ------------------------------------------------------------ */
     DECLARE @ProcedureNames TABLE (procedure_name sysname NOT NULL PRIMARY KEY);
     INSERT @ProcedureNames (procedure_name)
@@ -79,7 +79,11 @@ BEGIN TRY
         (N'usp_GetOpportunityRequirementsForOwner'),
         (N'usp_SaveOpportunityRequirementProposalForOwner'),
         (N'usp_CorrectOpportunityRequirementStatementForOwner'),
-        (N'usp_ConfirmOpportunityRequirementsForOwner');
+        (N'usp_ConfirmOpportunityRequirementsForOwner'),
+        (N'usp_ListOpportunityEvidenceForOwner'),
+        (N'usp_GetOpportunityAnalysisForOwner'),
+        (N'usp_SaveOpportunityAnalysisForOwner'),
+        (N'usp_SaveOpportunityResponseForOwner');
 
     DECLARE @CheckName sysname;
     DECLARE @CheckDefinition nvarchar(max);
@@ -103,11 +107,34 @@ BEGIN TRY
         IF @CheckDefinition NOT LIKE N'%owner_profile_id = @ProfileId%'
             THROW 53605, 'An Opportunity Slate procedure does not filter owner_profile_id = @ProfileId.', 1;
         /* No overall score, percentage, recommendation, or employer
-           prediction at any layer, including the database. */
-        IF @CheckDefinition LIKE N'%overall_score%'
-           OR @CheckDefinition LIKE N'%match_score%'
+           prediction at any layer, including the database.
+
+           2026-08-04 independent review, finding F13. This used to match four
+           FIXED names, so `alignment_rating`, `fit_index` or `confidence`
+           would have walked straight through the guard whose whole subject is
+           "no aggregate verdict about a person". The rule is about the
+           CONCEPT, so the check is about the concept: any identifier carrying
+           a scoring, rating, ranking, percentage, verdict, recommendation or
+           prediction word, whatever it is prefixed with.
+
+           OBJECT_DEFINITION returns the procedure's COMMENTS as well as its
+           code, and this guard deliberately does not try to tell them apart -
+           a substring test that thinks it can parse SQL comments is a worse
+           bet than a blunt one. All seventeen bodies are clean of every word
+           below. Explain the no-aggregate rule in the migration file's own
+           prose, which sits outside the procedure text and is therefore not
+           part of any definition this reads. */
+        IF @CheckDefinition LIKE N'%score%'
+           OR @CheckDefinition LIKE N'%rating%'
+           OR @CheckDefinition LIKE N'%ranking%'
+           OR @CheckDefinition LIKE N'%percentile%'
            OR @CheckDefinition LIKE N'%match_percentage%'
+           OR @CheckDefinition LIKE N'%fit_index%'
+           OR @CheckDefinition LIKE N'%confidence%'
+           OR @CheckDefinition LIKE N'%likelihood%'
+           OR @CheckDefinition LIKE N'%probability%'
            OR @CheckDefinition LIKE N'%recommendation%'
+           OR @CheckDefinition LIKE N'%verdict%'
             THROW 53606, 'An Opportunity Slate procedure references a forbidden aggregate verdict concept.', 1;
 
         DELETE @ProcedureNames WHERE procedure_name = @CheckName;
@@ -155,10 +182,15 @@ BEGIN TRY
     DECLARE @UserKeyB nvarchar(300);
     DECLARE @ProfileIdA bigint;
     DECLARE @ProfileIdB bigint;
+    /* Slice OS-3 writes synthetic Workshop knowledge items directly, so it
+       needs the app_users ids the confirmation columns reference. */
+    DECLARE @UserIdA int;
+    DECLARE @UserIdB int;
 
     SELECT
         @UserKeyA = app_user.user_key,
-        @ProfileIdA = profile.profile_id
+        @ProfileIdA = profile.profile_id,
+        @UserIdA = app_user.id
     FROM dbo.app_users AS app_user
     JOIN dbo.user_identities AS identity_record ON identity_record.user_id = app_user.id
     JOIN dbo.member_profiles AS profile ON profile.user_id = app_user.id
@@ -168,7 +200,8 @@ BEGIN TRY
 
     SELECT
         @UserKeyB = app_user.user_key,
-        @ProfileIdB = profile.profile_id
+        @ProfileIdB = profile.profile_id,
+        @UserIdB = app_user.id
     FROM dbo.app_users AS app_user
     JOIN dbo.user_identities AS identity_record ON identity_record.user_id = app_user.id
     JOIN dbo.member_profiles AS profile ON profile.user_id = app_user.id
@@ -764,6 +797,497 @@ BEGIN TRY
     IF EXISTS (SELECT 1 FROM @RequirementReadResult WHERE requirement_set_key = @RequirementSetKeyA)
         THROW 53666, 'Owner B read owner A''s requirement set.', 1;
 
+    /* ============================================================
+       5b. SLICE OS-3 — the grounded alignment analysis, the member's
+           responses, and the READ-ONLY evidence allowlist.
+
+       This is the first part of the room that holds a result ABOUT A
+       PERSON, so the isolation proof matters more here than anywhere else
+       in the file. Four things are proved:
+
+         * the evidence read returns only the reader''s own CONFIRMED items;
+         * an analysis cannot be attached to another owner''s requirement set,
+           and a forged owner gets nothing;
+         * the derived status and the citation count cannot disagree, and a
+           rejected payload leaves the previous analysis and every member
+           response ALONE (the 2026-08-04 gate's defect-1 lesson); and
+         * a response cannot connect evidence the member does not own.
+       ============================================================ */
+
+    /* Re-confirm the set the correction above un-confirmed, so the analysis
+       has something to attach to. */
+    SELECT TOP (1)
+        @RequirementSetKeyA = requirement_set.requirement_set_key,
+        @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.owner_profile_id = @ProfileIdA;
+
+    DELETE @RequirementConfirmResult;
+    INSERT @RequirementConfirmResult
+    EXEC dbo.usp_ConfirmOpportunityRequirementsForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA;
+    IF NOT EXISTS (SELECT 1 FROM @RequirementConfirmResult WHERE outcome = N'success')
+        THROW 53670, 'Owner A could not re-confirm their requirement set before analysis.', 1;
+
+    SELECT TOP (1)
+        @RequirementSetKeyA = requirement_set.requirement_set_key,
+        @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.owner_profile_id = @ProfileIdA;
+
+    SELECT TOP (1) @StatementKeyA = statement_record.statement_key
+    FROM dbo.opportunity_requirement_statements AS statement_record
+    WHERE statement_record.owner_profile_id = @ProfileIdA;
+
+    /* The evidence allowlist. Owner A has one confirmed knowledge item;
+       owner B must never see it, and a forged key must see nothing. */
+    DECLARE @EvidenceKeyA uniqueidentifier = NEWID();
+    DECLARE @KnowledgeItemIdA bigint;
+    INSERT dbo.knowledge_items
+        (knowledge_item_key, owner_profile_id, item_status, classification,
+         current_version_number, confirmed_version_number, confirmed_by_user_id,
+         confirmed_at_utc)
+    VALUES
+        (@EvidenceKeyA, @ProfileIdA, N'confirmed', N'work', 1, 1, @UserIdA,
+         SYSUTCDATETIME());
+    SET @KnowledgeItemIdA = SCOPE_IDENTITY();
+    INSERT dbo.knowledge_item_versions
+        (knowledge_item_id, owner_profile_id, version_number, title,
+         approved_wording, original_member_wording, saved_by_user_id)
+    VALUES
+        (@KnowledgeItemIdA, @ProfileIdA, 1, N'Synthetic evidence item',
+         N'Led verification-readiness work across engineering and test.',
+         N'Led verification-readiness work across engineering and test.',
+         @UserIdA);
+
+    /* Owner B gets one too (2026-08-04 review, finding F7): proving that a
+       cited key must be the READER's own confirmed item needs a real item
+       belonging to somebody else to cite. */
+    DECLARE @EvidenceKeyB uniqueidentifier = NEWID();
+    DECLARE @KnowledgeItemIdB bigint;
+    INSERT dbo.knowledge_items
+        (knowledge_item_key, owner_profile_id, item_status, classification,
+         current_version_number, confirmed_version_number, confirmed_by_user_id,
+         confirmed_at_utc)
+    VALUES
+        (@EvidenceKeyB, @ProfileIdB, N'confirmed', N'work', 1, 1, @UserIdB,
+         SYSUTCDATETIME());
+    SET @KnowledgeItemIdB = SCOPE_IDENTITY();
+    INSERT dbo.knowledge_item_versions
+        (knowledge_item_id, owner_profile_id, version_number, title,
+         approved_wording, original_member_wording, saved_by_user_id)
+    VALUES
+        (@KnowledgeItemIdB, @ProfileIdB, 1, N'Owner B synthetic evidence item',
+         N'Ran the supplier quality review programme.',
+         N'Ran the supplier quality review programme.',
+         @UserIdB);
+
+    DECLARE @EvidenceResult TABLE
+    (
+        evidence_key uniqueidentifier,
+        evidence_version int,
+        evidence_title nvarchar(200),
+        evidence_body nvarchar(max),
+        evidence_updated_at_utc datetime2(7)
+    );
+    INSERT @EvidenceResult
+    EXEC dbo.usp_ListOpportunityEvidenceForOwner @UserKey = @UserKeyB;
+    IF EXISTS (SELECT 1 FROM @EvidenceResult WHERE evidence_key = @EvidenceKeyA)
+        THROW 53671, 'Owner B read owner A''s authorized evidence.', 1;
+
+    DELETE @EvidenceResult;
+    INSERT @EvidenceResult
+    EXEC dbo.usp_ListOpportunityEvidenceForOwner @UserKey = @ForgedUserKey;
+    IF EXISTS (SELECT 1 FROM @EvidenceResult)
+        THROW 53672, 'A forged UserKey read authorized evidence.', 1;
+
+    DELETE @EvidenceResult;
+    INSERT @EvidenceResult
+    EXEC dbo.usp_ListOpportunityEvidenceForOwner @UserKey = @UserKeyA;
+    IF NOT EXISTS (SELECT 1 FROM @EvidenceResult WHERE evidence_key = @EvidenceKeyA)
+        THROW 53673, 'Owner A could not read their own confirmed evidence.', 1;
+    IF EXISTS (SELECT 1 FROM @EvidenceResult WHERE evidence_key = @EvidenceKeyB)
+        THROW 53698, 'Owner A read owner B''s authorized evidence.', 1;
+
+    /* An UNCONFIRMED item is not authorized evidence and must not appear. */
+    DECLARE @DraftKeyA uniqueidentifier = NEWID();
+    DECLARE @DraftItemIdA bigint;
+    INSERT dbo.knowledge_items
+        (knowledge_item_key, owner_profile_id, item_status, classification,
+         current_version_number)
+    VALUES (@DraftKeyA, @ProfileIdA, N'unfinished', N'work', 1);
+    SET @DraftItemIdA = SCOPE_IDENTITY();
+    INSERT dbo.knowledge_item_versions
+        (knowledge_item_id, owner_profile_id, version_number, title,
+         approved_wording, original_member_wording, saved_by_user_id)
+    VALUES (@DraftItemIdA, @ProfileIdA, 1, N'A draft', N'Draft wording.',
+            N'Draft wording.', @UserIdA);
+
+    DELETE @EvidenceResult;
+    INSERT @EvidenceResult
+    EXEC dbo.usp_ListOpportunityEvidenceForOwner @UserKey = @UserKeyA;
+    IF EXISTS (SELECT 1 FROM @EvidenceResult WHERE evidence_key = @DraftKeyA)
+        THROW 53674, 'An unconfirmed knowledge item reached the evidence allowlist.', 1;
+
+    /* The analysis itself. */
+    DECLARE @AnalysisResult TABLE
+    (
+        outcome nvarchar(20),
+        analysis_key uniqueidentifier,
+        qualification_count int
+    );
+    /* 2026-08-04 independent review, finding F7. The payload deliberately
+       carries a WRONG title and a WRONG version beside a real key: the
+       procedure must ignore both and read the member's own confirmed item
+       instead. Sending values that happen to be correct would have proved
+       nothing, which is why the earlier payload did not. */
+    DECLARE @ResultsJsonA nvarchar(max) =
+        N'[{"statement_key":"' + CONVERT(nvarchar(36), @StatementKeyA) +
+        N'","derived_status":"supported","citation_count":1,"citations":[{"ordinal":1,' +
+        N'"clause_ordinal":1,"covered_text":"a synthetic clause",' +
+        N'"evidence_kind":"moment","evidence_key":"' +
+        CONVERT(nvarchar(36), @EvidenceKeyA) +
+        N'","evidence_version":99,"evidence_title":"A title the caller invented",' +
+        N'"excerpt":"Led verification-readiness work"}]}]';
+
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @ForgedUserKey, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @ResultsJsonA;
+    IF EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome <> N'changed' OR analysis_key IS NOT NULL)
+        THROW 53675, 'A forged UserKey produced a truthful-looking analysis outcome.', 1;
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyB, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @ResultsJsonA;
+    IF EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome <> N'changed')
+        THROW 53676, 'Owner B attached an analysis to owner A''s requirement set.', 1;
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @ResultsJsonA;
+    IF NOT EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome = N'success' AND qualification_count = 1)
+        THROW 53677, 'Owner A could not record an analysis of their own confirmed set.', 1;
+
+    /* Finding F7, proved rather than assumed. The payload above named version
+       99, the title "A title the caller invented" and the kind "moment". The
+       stored row must carry the member's OWN confirmed version, their OWN
+       title, and the kind this procedure writes - none of which came from the
+       caller. */
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.opportunity_analysis_citations AS citation_record
+        WHERE citation_record.owner_profile_id = @ProfileIdA
+          AND citation_record.evidence_key = @EvidenceKeyA
+          AND citation_record.evidence_version = 1
+          AND citation_record.evidence_title = N'Synthetic evidence item'
+          AND citation_record.evidence_kind = N'knowledge_item'
+    )
+        THROW 53691, 'The store accepted a caller-supplied evidence identity.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analysis_citations
+        WHERE owner_profile_id = @ProfileIdA
+          AND (evidence_version = 99
+               OR evidence_title = N'A title the caller invented'
+               OR evidence_kind = N'moment')
+    )
+        THROW 53692, 'A caller-invented evidence identity reached the store.', 1;
+
+    /* And a citation naming evidence the member does NOT own is refused
+       outright - owner B's confirmed item, cited by owner A. Refused before
+       any mutation, so owner A's analysis above is still there afterwards. */
+    DECLARE @ForeignEvidenceJson nvarchar(max) =
+        N'[{"statement_key":"' + CONVERT(nvarchar(36), @StatementKeyA) +
+        N'","derived_status":"supported","citation_count":1,"citations":[{"ordinal":1,' +
+        N'"clause_ordinal":1,"covered_text":"a synthetic clause",' +
+        N'"evidence_key":"' + CONVERT(nvarchar(36), @EvidenceKeyB) +
+        N'","excerpt":"Led verification-readiness work"}]}]';
+
+    SELECT TOP (1) @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.requirement_set_key = @RequirementSetKeyA;
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @ForeignEvidenceJson;
+    IF NOT EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome = N'invalid')
+        THROW 53693, 'An analysis cited evidence the member does not own.', 1;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analysis_citations
+        WHERE owner_profile_id = @ProfileIdA
+          AND evidence_key = @EvidenceKeyA
+    )
+        THROW 53694, 'A refused foreign-evidence payload destroyed the previous analysis.', 1;
+
+    /* Finding F8. An over-length excerpt must reach the GUARD and return
+       ''invalid'', not be truncated by a narrow OPENJSON declaration and then
+       trip a CHECK constraint as an engine error after the DELETEs. */
+    DECLARE @OverLongExcerptJson nvarchar(max) =
+        N'[{"statement_key":"' + CONVERT(nvarchar(36), @StatementKeyA) +
+        N'","derived_status":"supported","citation_count":1,"citations":[{"ordinal":1,' +
+        N'"clause_ordinal":1,"covered_text":"a synthetic clause",' +
+        N'"evidence_key":"' + CONVERT(nvarchar(36), @EvidenceKeyA) +
+        N'","excerpt":"' + REPLICATE(N'x', 900) + N'"}]}]';
+
+    SELECT TOP (1) @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.requirement_set_key = @RequirementSetKeyA;
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @OverLongExcerptJson;
+    IF NOT EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome = N'invalid')
+        THROW 53695, 'An over-length excerpt did not reach the guard as invalid.', 1;
+
+    /* Finding F8, last part: citation_count must match the rows supplied. */
+    DECLARE @CountDriftJson nvarchar(max) =
+        N'[{"statement_key":"' + CONVERT(nvarchar(36), @StatementKeyA) +
+        N'","derived_status":"supported","citation_count":4,"citations":[{"ordinal":1,' +
+        N'"clause_ordinal":1,"covered_text":"a synthetic clause",' +
+        N'"evidence_key":"' + CONVERT(nvarchar(36), @EvidenceKeyA) +
+        N'","excerpt":"Led verification-readiness work"}]}]';
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1, @ResultsJson = @CountDriftJson;
+    IF NOT EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome = N'invalid')
+        THROW 53696, 'A stored citation count drifted from the rows behind it.', 1;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analysis_citations
+        WHERE owner_profile_id = @ProfileIdA
+          AND evidence_key = @EvidenceKeyA
+    )
+        THROW 53697, 'A refused citation payload destroyed the previous analysis.', 1;
+
+    /* The member's response, and its evidence-ownership check. */
+    SELECT TOP (1) @StatementRowVersionA = CONVERT(binary(8), statement_record.row_version)
+    FROM dbo.opportunity_requirement_statements AS statement_record
+    WHERE statement_record.statement_key = @StatementKeyA;
+
+    DECLARE @ResponseResult TABLE
+    (
+        outcome nvarchar(20),
+        response_key uniqueidentifier,
+        response_kind nvarchar(30)
+    );
+    INSERT @ResponseResult
+    EXEC dbo.usp_SaveOpportunityResponseForOwner
+        @UserKey = @UserKeyB, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @ResponseKind = N'skip';
+    IF EXISTS (SELECT 1 FROM @ResponseResult WHERE outcome <> N'changed')
+        THROW 53678, 'Owner B answered owner A''s qualification.', 1;
+
+    DELETE @ResponseResult;
+    INSERT @ResponseResult
+    EXEC dbo.usp_SaveOpportunityResponseForOwner
+        @UserKey = @UserKeyA, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @ResponseKind = N'tell_more',
+        @ResponseText = N'I led the integration campaign for two programmes.';
+    IF NOT EXISTS (SELECT 1 FROM @ResponseResult WHERE outcome = N'success' AND response_kind = N'tell_more')
+        THROW 53679, 'Owner A could not answer their own qualification.', 1;
+
+    /* Connecting evidence the member does not own is refused BEFORE any
+       write, and told apart from a concurrency conflict. */
+    DECLARE @ForeignEvidenceKey uniqueidentifier = NEWID();
+    DECLARE @ForeignItemId bigint;
+    INSERT dbo.knowledge_items
+        (knowledge_item_key, owner_profile_id, item_status, classification,
+         current_version_number, confirmed_version_number, confirmed_by_user_id,
+         confirmed_at_utc)
+    VALUES (@ForeignEvidenceKey, @ProfileIdB, N'confirmed', N'work', 1, 1,
+            @UserIdB, SYSUTCDATETIME());
+    SET @ForeignItemId = SCOPE_IDENTITY();
+    INSERT dbo.knowledge_item_versions
+        (knowledge_item_id, owner_profile_id, version_number, title,
+         approved_wording, original_member_wording, saved_by_user_id)
+    VALUES (@ForeignItemId, @ProfileIdB, 1, N'Owner B evidence',
+            N'Owner B wording.', N'Owner B wording.', @UserIdB);
+
+    DELETE @ResponseResult;
+    INSERT @ResponseResult
+    EXEC dbo.usp_SaveOpportunityResponseForOwner
+        @UserKey = @UserKeyA, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @ResponseKind = N'connect_evidence',
+        @ConnectedEvidenceKey = @ForeignEvidenceKey;
+    IF NOT EXISTS (SELECT 1 FROM @ResponseResult WHERE outcome = N'invalid')
+        THROW 53680, 'Owner A connected owner B''s evidence to their own response.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_responses
+        WHERE opportunity_requirement_statement_id =
+              (SELECT opportunity_requirement_statement_id
+               FROM dbo.opportunity_requirement_statements
+               WHERE statement_key = @StatementKeyA)
+          AND response_kind <> N'tell_more'
+    )
+        THROW 53681, 'A refused connect-evidence response overwrote the member''s answer.', 1;
+
+    /* THE DEFECT-1 LESSON, PROVED. A rejected analysis payload must leave the
+       previous analysis and every member response exactly where they were. */
+    SELECT TOP (1) @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.requirement_set_key = @RequirementSetKeyA;
+
+    DECLARE @ImpossibleResultsJson nvarchar(max) =
+        N'[{"statement_key":"' + CONVERT(nvarchar(36), @StatementKeyA) +
+        N'","derived_status":"supported","citation_count":0,"citations":[]}]';
+
+    DELETE @AnalysisResult;
+    INSERT @AnalysisResult
+    EXEC dbo.usp_SaveOpportunityAnalysisForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @EvidenceConsideredCount = 1,
+        @ResultsJson = @ImpossibleResultsJson;
+    IF NOT EXISTS (SELECT 1 FROM @AnalysisResult WHERE outcome = N'invalid')
+        THROW 53682, 'A supported result with no citation behind it was accepted.', 1;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analyses AS analysis_record
+        JOIN dbo.opportunity_requirement_set_versions AS set_version
+          ON set_version.opportunity_requirement_set_version_id = analysis_record.opportunity_requirement_set_version_id
+        WHERE set_version.opportunity_requirement_set_id =
+              (SELECT opportunity_requirement_set_id FROM dbo.opportunity_requirement_sets
+               WHERE requirement_set_key = @RequirementSetKeyA)
+    )
+        THROW 53683, 'A rejected analysis payload destroyed the previous analysis.', 1;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_responses
+        WHERE response_kind = N'tell_more' AND owner_profile_id = @ProfileIdA
+    )
+        THROW 53684, 'A rejected analysis payload destroyed a member response.', 1;
+
+    /* Owner B reads nothing of owner A's analysis or responses.
+
+       2026-08-04 independent review, finding F13. This check used to be an
+       INSERT ... EXEC of usp_GetOpportunityAnalysisForOwner into a single
+       nine-column table variable. That procedure returns FOUR result sets of
+       four different shapes, so the statement can only succeed when the
+       procedure returns none at all - which is exactly what happens for owner
+       B, who has no requirement set. It therefore proved nothing about
+       isolation, and it would have become error 213 ("column name or number
+       of supplied values does not match") the first time the fixture gave
+       owner B a set of their own.
+
+       The isolation property is asserted on the tables instead, which is
+       fixture-independent: owner B owns no analysis, no per-qualification
+       result, no citation and no response, and none of owner A's rows carry
+       owner B's profile. The read procedure's own owner scoping is covered by
+       the OBJECT_DEFINITION greps in section 0 and by the positive path
+       below. */
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analyses WHERE owner_profile_id = @ProfileIdB
+        UNION ALL
+        SELECT 1 FROM dbo.opportunity_analysis_statements WHERE owner_profile_id = @ProfileIdB
+        UNION ALL
+        SELECT 1 FROM dbo.opportunity_analysis_citations WHERE owner_profile_id = @ProfileIdB
+        UNION ALL
+        SELECT 1 FROM dbo.opportunity_responses WHERE owner_profile_id = @ProfileIdB
+    )
+        THROW 53685, 'Owner B owns alignment rows they never created.', 1;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.opportunity_analysis_citations AS citation_record
+        JOIN dbo.opportunity_analysis_statements AS analysis_statement
+          ON analysis_statement.opportunity_analysis_statement_id = citation_record.opportunity_analysis_statement_id
+        JOIN dbo.opportunity_analyses AS analysis_record
+          ON analysis_record.opportunity_analysis_id = analysis_statement.opportunity_analysis_id
+        WHERE analysis_record.owner_profile_id = @ProfileIdA
+          AND (citation_record.owner_profile_id <> @ProfileIdA
+               OR analysis_statement.owner_profile_id <> @ProfileIdA)
+    )
+        THROW 53689, 'An alignment row escaped its owner across the analysis joins.', 1;
+
+    /* The positive path for usp_GetOpportunityAnalysisForOwner, which
+       previously had none (finding F13). A four-result-set procedure cannot
+       be captured by INSERT ... EXEC in T-SQL, so this executes it for the
+       OWNER and lets any runtime failure surface as a real error, then
+       asserts on the rows it is contracted to return. Owner A has a saved
+       analysis at this point, so a procedure that returned nothing, threw, or
+       resolved the wrong profile would be caught here rather than by a shape
+       mismatch that only ever passed because the fixture was empty. */
+    EXEC dbo.usp_GetOpportunityAnalysisForOwner @UserKey = @UserKeyA;
+
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_analyses AS analysis_record
+        JOIN dbo.opportunity_requirement_set_versions AS set_version
+          ON set_version.opportunity_requirement_set_version_id = analysis_record.opportunity_requirement_set_version_id
+         AND set_version.owner_profile_id = analysis_record.owner_profile_id
+        JOIN dbo.opportunity_requirement_sets AS requirement_set
+          ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+         AND requirement_set.owner_profile_id = set_version.owner_profile_id
+        WHERE analysis_record.owner_profile_id = @ProfileIdA
+          AND set_version.version_number = requirement_set.current_version_number
+    )
+        THROW 53690, 'Owner A has no readable alignment analysis at its current version.', 1;
+
+    /* And a correction to a statement takes the analysis with it, because an
+       analysis of an un-confirmed reading describes requirements the member
+       has since changed. The member's RESPONSE survives. */
+    SELECT TOP (1) @StatementRowVersionA = CONVERT(binary(8), statement_record.row_version)
+    FROM dbo.opportunity_requirement_statements AS statement_record
+    WHERE statement_record.statement_key = @StatementKeyA;
+
+    DELETE @StatementCorrectResult;
+    INSERT @StatementCorrectResult
+    EXEC dbo.usp_CorrectOpportunityRequirementStatementForOwner
+        @UserKey = @UserKeyA, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @MemberClass = N'preferred_qualification';
+    IF NOT EXISTS (SELECT 1 FROM @StatementCorrectResult WHERE outcome = N'success')
+        THROW 53686, 'Owner A could not correct their own statement after analysis.', 1;
+
+    IF EXISTS (SELECT 1 FROM dbo.opportunity_analyses WHERE owner_profile_id = @ProfileIdA)
+        THROW 53687, 'A statement correction left a stale alignment analysis behind.', 1;
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_responses
+        WHERE response_kind = N'tell_more' AND owner_profile_id = @ProfileIdA
+    )
+        THROW 53688, 'A statement correction destroyed the member''s own response.', 1;
+
     /* ------------------------------------------------------------
        6. Purge: expired working data only, owner-scoped, and an expired
           session is already invisible to the read before it runs.
@@ -905,7 +1429,7 @@ BEGIN TRY
 
     SELECT
         CAST(1 AS bit) AS verified,
-        N'PS-OPPSLATE-001 two-owner isolation across all thirteen procedures, per-owner idempotent Save without overwrite, unchanged-resubmission suppression, verbatim original_text preservation under correction and replacement, confirmation cleared on wording change, version-fenced Correct/Confirm/Delete, forged-owner canaries on every procedure, expiry enforced at read before purge, owner-scoped purge that spares other owners and unexpired sessions, no aggregate verdict column or identifier, no wording in audit metadata, AI proposals kept as a third data class that overwrites neither the employer wording nor the member correction, member reclassification stored beside the AI proposal rather than over it, statement correction clearing the requirement-set confirmation, owner-scoped proposal reads and resolutions with forged-key canaries, purge and delete clearing every proposal row they own, and full synthetic rollback verified.' AS detail;
+        N'PS-OPPSLATE-002 two-owner isolation across all seventeen procedures, per-owner idempotent Save without overwrite, unchanged-resubmission suppression, verbatim original_text preservation under correction and replacement, confirmation cleared on wording change, version-fenced Correct/Confirm/Delete, forged-owner canaries on every procedure, expiry enforced at read before purge, owner-scoped purge that spares other owners and unexpired sessions, no aggregate verdict column or identifier, no wording in audit metadata, AI proposals kept as a third data class that overwrites neither the employer wording nor the member correction, member reclassification stored beside the AI proposal rather than over it, statement correction clearing the requirement-set confirmation, owner-scoped proposal reads and resolutions with forged-key canaries, purge and delete clearing every proposal row they own, an owner-scoped READ-ONLY evidence allowlist that returns only the reader''s own CONFIRMED items, an alignment analysis that cannot be attached to another owner''s requirement set, a derived status that cannot disagree with its own citation count, a rejected analysis payload that leaves the previous analysis and every member response untouched, a response that cannot connect evidence the member does not own, a statement correction that takes the stale analysis but spares the member''s own answer, an evidence identity RE-DERIVED from the member''s own confirmed item rather than accepted from the payload, a citation naming another owner''s evidence refused before any mutation, an over-length excerpt reaching the guard as invalid instead of a truncated value tripping a constraint, a stored citation count reconciled with the rows behind it, and full synthetic rollback verified.' AS detail;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
