@@ -42,7 +42,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
 
         # Any additional suppression is a new security decision that must
         # update this regression explicitly.
-        self.assertEqual(4, len(allowlists))
+        self.assertEqual(3, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -78,42 +78,41 @@ class GitleaksConfigurationTests(unittest.TestCase):
             )
         )
 
+        # These were pinned to three branch commit SHAs until 2026-08-04. The
+        # Community pull request was squash-merged, which rewrites every branch
+        # commit into one new SHA, so all three pins stopped matching at once,
+        # the two false positives they covered reappeared as leaks, and the
+        # deploy for the merge commit failed. Squash merge is this repository's
+        # required strategy, so pinning guaranteed that outcome. They are now
+        # scoped by path and exact line instead, which survives the merge and
+        # is still narrow enough that any other line in the file fails the scan.
         expected = {
-            '791ab51b938a4c7f4ecb903f561289d88a3eaedd': {
-                'path': r'^services/community_cursor\.py$',
-                'line': (
-                    r'^\s*token,\s+max_age='
-                    r'CURSOR_MAX_AGE_SECONDS\s*$'
-                ),
-            },
-            '3210e4030fae30bd45fb05f4ce8351b26c4ee3f1': {
-                'path': r'^services/community_cursor\.py$',
-                'line': (
-                    r'^\s*token,\s+max_age='
-                    r'CURSOR_MAX_AGE_SECONDS\s*$'
-                ),
-            },
-            '1d27142e8e2f74c94e2176801d412510e96c8d6f': {
-                'path': community_doc_path,
-                'line': community_doc_line,
-            },
+            r'^services/community_cursor\.py$': (
+                r'^\s*token,\s+max_age='
+                r'CURSOR_MAX_AGE_SECONDS\s*$'
+            ),
+            community_doc_path: community_doc_line,
         }
 
-        entries_by_commit = {}
-        for allowlist in allowlists:
-            for commit in set(allowlist.get('commits', ())) & set(expected):
-                entries_by_commit.setdefault(commit, []).append(allowlist)
-
-        self.assertEqual(set(expected), set(entries_by_commit))
-        for commit, required in expected.items():
-            self.assertEqual(1, len(entries_by_commit[commit]))
-            allowlist = entries_by_commit[commit][0]
+        scoped = [
+            allowlist for allowlist in allowlists if 'paths' in allowlist
+        ]
+        self.assertEqual(
+            {allowlist['paths'][0] for allowlist in scoped},
+            set(expected),
+        )
+        for allowlist in scoped:
+            path = allowlist['paths'][0]
             self.assertEqual(['generic-api-key'], allowlist['targetRules'])
             self.assertEqual('AND', allowlist['condition'])
-            self.assertEqual([commit], allowlist['commits'])
-            self.assertEqual([required['path']], allowlist['paths'])
+            self.assertEqual(1, len(allowlist['paths']))
             self.assertEqual('line', allowlist['regexTarget'])
-            self.assertEqual([required['line']], allowlist['regexes'])
+            self.assertEqual([expected[path]], allowlist['regexes'])
+            self.assertNotIn(
+                'commits',
+                allowlist,
+                'a commit-pinned allowlist cannot survive a squash merge',
+            )
 
 
 class OperationalHealthRouteTests(unittest.TestCase):
