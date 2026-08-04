@@ -46,7 +46,11 @@ deleted.
 - **Prior pushed handoff tip:**
   `8de31f686ccedbf0275b1cbaf0d61451a2370559`.
 - **Comprehensive handoff content commit:**
-  `TO_BE_REPLACED_AFTER_FIRST_COMMIT`.
+  `876793da663272571df8abab4e3d961fa6188916`.
+- **SHA attestation:** the next and final branch commit changes only this SHA
+  line. Start from the pushed remote branch tip reported by Codex; the exact
+  comprehensive handoff content and all implementation bytes are already
+  present at the SHA above.
 - **Release state:** branch pushed; no active Azure PR; OS3 schema correction
   not merged or applied; OS3/OS4 application behavior not deployed.
 - **Ownership:** Codex explicitly relinquishes the Opportunity Slate
