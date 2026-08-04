@@ -1,5 +1,5 @@
-"""Static contract tests for the Opportunity Slate migration —
-PS-OPPSLATE-001, slices OS-1 through OS-3.
+"""Static contract tests for the Opportunity Slate migrations —
+PS-OPPSLATE-001 (OS-1/OS-2) plus additive PS-OPPSLATE-002 (OS-3).
 
 Mirrors tests/test_workshop_migration.py: these assert the shape of the
 proposed SQL without needing a database, so the migration's guards, owner
@@ -20,9 +20,12 @@ from mssql_python import connect
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "SQL FIles" / "Migrations" / "proposed"
 VERIFICATION = ROOT / "SQL FIles" / "Verification"
-FORWARD = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate.sql"
-ROLLBACK = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate_rollback.sql"
-VERIFY = VERIFICATION / "PS-OPPSLATE-001_owner_isolation_verify.sql"
+BASE_FORWARD = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate.sql"
+BASE_ROLLBACK = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate_rollback.sql"
+BASE_VERIFY = VERIFICATION / "PS-OPPSLATE-001_owner_isolation_verify.sql"
+FORWARD = MIGRATIONS / "PS-OPPSLATE-002_opportunity_slate_os3.sql"
+ROLLBACK = MIGRATIONS / "PS-OPPSLATE-002_opportunity_slate_os3_rollback.sql"
+VERIFY = VERIFICATION / "PS-OPPSLATE-002_owner_isolation_verify.sql"
 
 OS1_PROCEDURE_NAMES = (
     "usp_PurgeExpiredOpportunityWorkingData",
@@ -135,38 +138,46 @@ def migration_wrapper(sql):
 class OpportunitySlateMigrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.forward = FORWARD.read_text(encoding="utf-8")
-        cls.rollback = ROLLBACK.read_text(encoding="utf-8")
+        cls.base_forward = BASE_FORWARD.read_text(encoding="utf-8")
+        cls.os3_forward = FORWARD.read_text(encoding="utf-8")
+        cls.forward = cls.base_forward + "\n" + cls.os3_forward
+        cls.base_rollback = BASE_ROLLBACK.read_text(encoding="utf-8")
+        cls.os3_rollback = ROLLBACK.read_text(encoding="utf-8")
+        cls.rollback = cls.base_rollback + "\n" + cls.os3_rollback
         cls.verification = VERIFY.read_text(encoding="utf-8")
         cls.procedures = procedure_batches(cls.forward)
 
     def test_forward_rollback_and_verification_exist(self):
-        self.assertTrue(FORWARD.exists())
-        self.assertTrue(ROLLBACK.exists())
-        self.assertTrue(VERIFY.exists())
+        for path in (
+            BASE_FORWARD, BASE_ROLLBACK, BASE_VERIFY, FORWARD, ROLLBACK, VERIFY
+        ):
+            self.assertTrue(path.exists())
 
     def test_every_procedure_is_present_exactly_once(self):
         self.assertEqual(set(self.procedures), set(PROCEDURE_NAMES))
         self.assertEqual(
-            self.forward.count("CREATE OR ALTER PROCEDURE"), len(PROCEDURE_NAMES)
+            self.base_forward.count("CREATE OR ALTER PROCEDURE"),
+            len(OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES),
         )
+        self.assertEqual(self.os3_forward.count("CREATE OR ALTER PROCEDURE"), 8)
 
     def test_migration_is_one_guarded_transactional_batch(self):
         """The wrapper itself — asserted against the migration batch with the
         procedure bodies stripped out, so this can no longer be satisfied by
         a transaction that lives inside some procedure."""
-        wrapper = migration_wrapper(self.forward)
-        for value in (
-            "SET NOCOUNT ON",
-            "SET XACT_ABORT ON",
-            "BEGIN TRY",
-            "BEGIN TRANSACTION",
-            "COMMIT TRANSACTION",
-            "BEGIN CATCH",
-            "ROLLBACK TRANSACTION",
-            "THROW;",
-        ):
-            self.assertIn(value, wrapper)
+        for sql in (self.base_forward, self.os3_forward):
+            wrapper = migration_wrapper(sql)
+            for value in (
+                "SET NOCOUNT ON",
+                "SET XACT_ABORT ON",
+                "BEGIN TRY",
+                "BEGIN TRANSACTION",
+                "COMMIT TRANSACTION",
+                "BEGIN CATCH",
+                "ROLLBACK TRANSACTION",
+                "THROW;",
+            ):
+                self.assertIn(value, wrapper)
         self.assertNotIn("\nGO", self.forward)
         self.assertNotIn("\nGO", self.rollback)
 
@@ -289,13 +300,13 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         that it exists, that it is guarded so a fresh apply is unaffected,
         and that it reinstates the constraint rather than merely dropping it.
         """
-        alter_index = self.forward.find(
+        alter_index = self.base_forward.find(
             "ALTER TABLE dbo.opportunity_working_sessions\n"
             "                DROP CONSTRAINT CK_opportunity_working_sessions_state;"
         )
         self.assertNotEqual(alter_index, -1, "no ALTER path for the widened CHECK")
 
-        add_index = self.forward.find(
+        add_index = self.base_forward.find(
             "ALTER TABLE dbo.opportunity_working_sessions\n"
             "            ADD CONSTRAINT CK_opportunity_working_sessions_state CHECK"
         )
@@ -310,14 +321,14 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         # Guarded: the drop/add only runs when the live constraint does not
         # already carry both new values, so applying this file to an empty
         # database changes nothing.
-        guard = self.forward[:alter_index]
+        guard = self.base_forward[:alter_index]
         self.assertIn("FROM sys.check_constraints", guard)
         self.assertIn(r"definition LIKE N'%review\_requirements%' ESCAPE N'\'", guard)
         self.assertIn(r"definition LIKE N'%requirements\_confirmed%' ESCAPE N'\'", guard)
 
         # The restored constraint carries the full five-value vocabulary, not
         # a subset that would break some other state.
-        restored = self.forward[add_index : add_index + 400]
+        restored = self.base_forward[add_index : add_index + 400]
         for state in (
             "role_intake",
             "review_source",
@@ -335,19 +346,20 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         # the first of them well before this ALTER path, so a bare
         # index("COMMIT TRANSACTION") would bind to a procedure's commit and
         # assert nothing about the envelope at all.
+        wrapper = self.base_forward
         envelope_begin = "\n    BEGIN TRANSACTION;"
         envelope_commit = "\n    COMMIT TRANSACTION;\nEND TRY"
         self.assertEqual(
-            self.forward.count(envelope_commit), 1, "envelope COMMIT is not unique"
+            wrapper.count(envelope_commit), 1, "envelope COMMIT is not unique"
         )
-        self.assertLess(self.forward.index(envelope_begin), alter_index)
-        self.assertGreater(self.forward.index(envelope_commit), add_index)
+        self.assertLess(wrapper.index(envelope_begin), alter_index)
+        self.assertGreater(wrapper.index(envelope_commit), add_index)
 
     def test_the_migration_header_states_it_is_safe_over_the_os1_revision(self):
         """Finding F4's other half: an operator deciding whether to re-run
         this file against an existing database must not have to read 2,500
         lines of T-SQL to find out."""
-        header = self.forward[: self.forward.index("SET NOCOUNT ON;")]
+        header = self.base_forward[: self.base_forward.index("SET NOCOUNT ON;")]
         self.assertIn("RE-APPLYING OVER THE SLICE OS-1 REVISION IS SUPPORTED", header)
         self.assertIn("SLICE OS-2 CONSTRAINT UPGRADE", self.forward)
 
@@ -826,12 +838,16 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         present" guard compares against it, and re-running the file has to
         stay a no-op.
         """
-        wrapper = migration_wrapper(self.forward)
-        self.assertIn("UPDATE dbo.schema_migrations", wrapper)
-        self.assertIn("SET description = @OppSlateDescription", wrapper)
-        self.assertIn("description <> @OppSlateDescription", wrapper)
-        self.assertNotIn("SET applied_at_utc", wrapper)
-        self.assertIn("Slices OS-1/OS-2/OS-3:", wrapper)
+        base_wrapper = migration_wrapper(self.base_forward)
+        self.assertIn("UPDATE dbo.schema_migrations", base_wrapper)
+        self.assertIn("SET description = @OppSlateDescription", base_wrapper)
+        self.assertIn("description <> @OppSlateDescription", base_wrapper)
+        self.assertNotIn("SET applied_at_utc", base_wrapper)
+        self.assertIn("Slices OS-1 and OS-2:", base_wrapper)
+
+        os3_wrapper = migration_wrapper(self.os3_forward)
+        self.assertIn("N'PS-OPPSLATE-002'", os3_wrapper)
+        self.assertNotIn("UPDATE dbo.schema_migrations", os3_wrapper)
 
     def test_json_parameters_are_validated_before_use(self):
         """A malformed JSON payload is refused by name rather than thrown as
@@ -1063,16 +1079,14 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         """Independent review finding F12. The lists were right throughout;
         the summary still said thirteen procedures and eight tables after four
         of each had been added."""
-        header = self.rollback.split("SET NOCOUNT ON;")[0]
-        # The summary sentence itself, not the paragraph that explains why it
-        # was wrong — that one quotes the retired counts on purpose.
-        summary = " ".join(
-            header.split("Removes")[1].split("added.")[0].split()
-        )
-        self.assertIn("seventeen Opportunity Slate procedures", summary)
-        self.assertIn("twelve tables", summary)
-        self.assertNotIn("thirteen", summary)
-        self.assertNotIn("eight tables", summary)
+        base_header = self.base_rollback.split("SET NOCOUNT ON;")[0]
+        os3_header = self.os3_rollback.split("SET NOCOUNT ON;")[0]
+        self.assertIn("thirteen Opportunity", base_header)
+        self.assertIn("Slate procedures", base_header)
+        self.assertIn("eight tables", base_header)
+        normalized_os3_header = " ".join(os3_header.split())
+        self.assertIn("four OS-3 procedures", normalized_os3_header)
+        self.assertIn("four OS-3 tables", normalized_os3_header)
         procedures = set(re.findall(r"N'(usp_\w+)'", self.rollback))
         tables = set(re.findall(r"N'(dbo\.opportunity_\w+)'", self.rollback))
         self.assertEqual(len(procedures), 17)
@@ -1181,23 +1195,21 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         self.assertNotIn("DELETE response_record", correction)
 
     def test_the_migration_header_states_what_it_assumes_and_upgrades_from(self):
-        header = self.forward.split("SET NOCOUNT ON;")[0]
-        self.assertIn("WHAT THIS REVISION ASSUMES, AND WHAT IT UPGRADES FROM", header)
-        self.assertIn("WHICH IS WHAT PRODUCTION CARRIES TODAY", header)
-        self.assertIn("THIS REVISION HAS NOT BEEN APPLIED TO PRODUCTION", header)
-        # And it names the one delete that destroys member-authored text.
-        self.assertIn("DESTROYS MEMBER-AUTHORED TEXT", header)
+        header = self.os3_forward.split("SET NOCOUNT ON;")[0]
+        self.assertIn("Immutable follow-on", header)
+        self.assertIn("PS-OPPSLATE-001 OS-1/OS-2", header)
+        self.assertIn("fails before the first mutation", header)
+        self.assertIn("never updates", header)
 
     def test_the_ledger_description_fits_the_column_it_is_written_into(self):
         """dbo.schema_migrations.description is nvarchar(500), and an
         over-long value aborts the whole migration on its final statement."""
         match = re.search(
-            r"DECLARE @OppSlateDescription nvarchar\((\d+)\) =\s*\n\s*N'((?:''|[^'])*)'",
-            self.forward,
+            r"VALUES \(N'PS-OPPSLATE-002', N'((?:''|[^'])*)'",
+            self.os3_forward,
         )
         self.assertIsNotNone(match)
-        self.assertLessEqual(int(match.group(1)), 500)
-        self.assertLessEqual(len(match.group(2).replace("''", "'")), 500)
+        self.assertLessEqual(len(match.group(1).replace("''", "'")), 500)
 
     def test_the_migration_is_proposed_and_not_wired_into_the_apply_script(self):
         """Slice OS-1 ships the migration as proposed/ and applies it
@@ -1212,7 +1224,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
 
 @unittest.skipUnless(
     os.getenv("PS_OPPSLATE_SQL_GATE") == "1",
-    "requires the isolated PS-OPPSLATE-001 SQL gate database",
+    "requires the isolated PS-OPPSLATE-002 SQL gate database",
 )
 class OpportunitySlateIsolatedSqlGateTests(unittest.TestCase):
     """Apply / verify / rollback / re-apply against a throwaway database.
@@ -1249,12 +1261,13 @@ class OpportunitySlateIsolatedSqlGateTests(unittest.TestCase):
             return cursor.fetchone()[0]
 
     def test_apply_verify_rollback_reapply(self):
+        self.execute_script(BASE_FORWARD)
         self.execute_script(FORWARD)
         self.execute_script(VERIFY)
         self.assertEqual(
             self.scalar(
                 "SELECT COUNT(*) FROM dbo.schema_migrations "
-                "WHERE migration_id = N'PS-OPPSLATE-001'"
+                "WHERE migration_id = N'PS-OPPSLATE-002'"
             ),
             1,
         )
@@ -1263,11 +1276,11 @@ class OpportunitySlateIsolatedSqlGateTests(unittest.TestCase):
         self.assertEqual(
             self.scalar(
                 "SELECT COUNT(*) FROM dbo.schema_migrations "
-                "WHERE migration_id = N'PS-OPPSLATE-001'"
+                "WHERE migration_id = N'PS-OPPSLATE-002'"
             ),
             0,
         )
-        self.assertIsNone(
+        self.assertIsNotNone(
             self.scalar(
                 "SELECT OBJECT_ID(N'dbo.usp_GetOpportunityWorkingSessionForOwner', N'P')"
             )
@@ -1278,7 +1291,7 @@ class OpportunitySlateIsolatedSqlGateTests(unittest.TestCase):
         self.assertEqual(
             self.scalar(
                 "SELECT COUNT(*) FROM dbo.schema_migrations "
-                "WHERE migration_id = N'PS-OPPSLATE-001'"
+                "WHERE migration_id = N'PS-OPPSLATE-002'"
             ),
             1,
         )
