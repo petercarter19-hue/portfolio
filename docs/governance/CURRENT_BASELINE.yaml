@@ -15,7 +15,7 @@ authority:
   deployed_pipeline: 505
   application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"
   application_behavior_pipeline: 499
-  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main f706d6cd678c3e3b2b39228d98fee85afd9aea03 is the validated delivery-reset squash from PR 279/build 512 and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main b86053df749287d9dc4cdece0dbf4ad9a682283a is the validated controlled-idle closeout from PR 280/build 513 and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Controlled idle: no implementation or production lane is active. PS-DELIVERY-RESET-001 is merge/cleanup-only for its closeout. Pete must select one exact outcome and merge the bounded CURRENT_LANES activation record before implementation starts."
+  current_assignments: "Controlled idle: no implementation or production lane is active. PS-DELIVERY-CONTROL-001 is merge/cleanup-only for its one-time preflight control repair. Pete must select one exact outcome and merge the bounded CURRENT_LANES activation record before later implementation starts."
 
 governing_documents:
   bible:
@@ -70,6 +70,7 @@ scoped_findings:
     blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
 completed_packages:
+  - PS-DELIVERY-PREFLIGHT-001
   - PS-DELIVERY-RESET-001
   - PS-AZURE-RELEASE-RELIABILITY-001
   - PS-AUTH-PRODUCTION-RECOVERY-001
@@ -124,7 +125,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Pete selects one exact post-reset outcome. Create and merge only the bounded PS-DELIVERY-CONTROL-001 activation record from current Azure main; it names the package, future implementation branch, writer, surfaces, exclusions, delivery path, and evidence. No implementation worktree, product write, release, schema action, or production mutation is authorized before that record is on main."
+next_gate: "After the PS-DELIVERY-CONTROL-001 closeout is squash-merged and cleaned up, Pete selects one exact post-reset outcome. Create and merge only the bounded activation record from current Azure main; it names the package, future implementation branch, writer, surfaces, exclusions, delivery path, and evidence. No implementation worktree, product write, release, schema action, or production mutation is authorized before that record is on main."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

@@ -37,7 +37,10 @@ def load_ledger(path: Path = LEDGER_PATH) -> dict:
         return json.load(handle)
 
 
-def collect_facts(fetch: bool = False) -> dict:
+def collect_facts(
+    fetch: bool = False,
+    include_changed_paths: bool = False,
+) -> dict:
     if fetch:
         _git("fetch", "origin", "--prune")
 
@@ -45,21 +48,7 @@ def collect_facts(fetch: bool = False) -> dict:
     tracked = [line for line in status_lines if not line.startswith("??")]
     untracked = [line for line in status_lines if line.startswith("??")]
     origin_url = _git("remote", "get-url", "origin")
-    changed_paths = sorted(
-        {
-            path
-            for command in (
-                ("diff", "--name-only", "origin/main...HEAD"),
-                ("diff", "--name-only"),
-                ("diff", "--cached", "--name-only"),
-                ("ls-files", "--others", "--exclude-standard"),
-            )
-            for path in _git(*command).splitlines()
-            if path
-        }
-    )
-
-    return {
+    facts = {
         "repository": str(ROOT),
         "branch": _git("branch", "--show-current"),
         "head": _git("rev-parse", "HEAD"),
@@ -68,10 +57,24 @@ def collect_facts(fetch: bool = False) -> dict:
         "behind": int(_git("rev-list", "--count", "HEAD..origin/main")),
         "tracked_changes": len(tracked),
         "untracked_changes": len(untracked),
-        "changed_paths": changed_paths,
         "origin_url": origin_url,
         "origin_is_azure": "dev.azure.com" in origin_url.lower(),
     }
+    if include_changed_paths:
+        facts["changed_paths"] = sorted(
+            {
+                path
+                for command in (
+                    ("diff", "--name-only", "origin/main...HEAD"),
+                    ("diff", "--name-only"),
+                    ("diff", "--cached", "--name-only"),
+                    ("ls-files", "--others", "--exclude-standard"),
+                )
+                for path in _git(*command).splitlines()
+                if path
+            }
+        )
+    return facts
 
 
 def evaluate_policy(
@@ -125,6 +128,20 @@ def evaluate_policy(
         elif len(ledger.get("active_lanes") or []) >= lane_limit:
             errors.append("activation refused because the lane limit is full")
         allowed_surfaces = set(policy.get("allowed_surfaces") or [])
+        bootstrap = ledger.get("bootstrap_control_repair") or {}
+        bootstrap_matches = all(
+            (
+                bootstrap.get("status") == "one_time_closeout",
+                bootstrap.get("package") == package_id,
+                bootstrap.get("branch") == facts.get("branch"),
+                bootstrap.get("origin_main") == facts.get("origin_main"),
+            )
+        )
+        if bootstrap_matches:
+            allowed_surfaces = set(bootstrap.get("allowed_surfaces") or [])
+            warnings.append(
+                "using the exact one-time bootstrap control-repair boundary"
+            )
         unexpected_paths = sorted(
             set(facts.get("changed_paths") or []) - allowed_surfaces
         )
@@ -212,7 +229,10 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         ledger = load_ledger()
-        facts = collect_facts(fetch=args.fetch)
+        facts = collect_facts(
+            fetch=args.fetch,
+            include_changed_paths=args.intent == "activate",
+        )
         errors, warnings = evaluate_policy(
             ledger,
             facts,

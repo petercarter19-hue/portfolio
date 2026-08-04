@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-04T22:48:31Z",
+  "updated_at": "2026-08-04T22:58:16Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -13,16 +13,16 @@
     "read_only_work_allowed": true,
     "writes_allowed_for": [],
     "merge_allowed_for": [
-      "PS-DELIVERY-RESET-001"
+      "PS-DELIVERY-CONTROL-001"
     ],
     "cleanup_allowed_for": [
-      "PS-DELIVERY-RESET-001"
+      "PS-DELIVERY-CONTROL-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree before an accepted activation record",
       "new feature or product write before an accepted activation record",
-      "pull-request merge except PS-DELIVERY-RESET-001 closeout or the bounded activation policy",
+      "pull-request merge except PS-DELIVERY-CONTROL-001 closeout or the bounded activation policy",
       "manual pipeline",
       "production deployment",
       "schema report, apply, or rollback",
@@ -44,39 +44,48 @@
     ],
     "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, record exactly one selected outcome and its new implementation branch, merge the activation record, then create that implementation worktree from the new main. Do not implement product work on the activation branch."
   },
+  "bootstrap_control_repair": {
+    "status": "one_time_closeout",
+    "owner_authority": "Pete directed the 2026-08-04 reset to fix all discovered process blockers and prevent recurrence.",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-04-delivery-activation-preflight-output",
+    "origin_main": "b86053df749287d9dc4cdece0dbf4ad9a682283a",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "docs/governance/CURRENT_BASELINE.yaml",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "The first real activation exposed that the reset-era test hard-coded controlled_idle and that ordinary preflight output enumerated all preserved untracked paths. This exact branch may repair those two control-plane defects only; product, schema, pipeline, release, and production changes remain prohibited.",
+    "inert_after_merge": "The exception requires the exact branch and origin/main SHA. The branch is deleted after merge, and any later checkout is behind current origin/main."
+  },
   "active_lanes": [],
   "closing_lanes": [
     {
-      "package": "PS-DELIVERY-RESET-001",
+      "package": "PS-DELIVERY-CONTROL-001",
+      "selected_outcome": "Make ordinary delivery preflight output compact by avoiding the full changed-path inventory except when activation policy must inspect it.",
       "manager": "current Codex reset task",
       "writer": "current Codex reset task",
-      "worktree": "C:/Users/peter/Documents/portfolio-delivery-reset-001",
-      "branch": "work/2026-08-04-delivery-reset-001",
-      "base_sha": "f706d6cd678c3e3b2b39228d98fee85afd9aea03",
+      "worktree": "C:/Users/peter/Documents/portfolio-delivery-activation-preflight-output",
+      "branch": "work/2026-08-04-delivery-activation-preflight-output",
+      "activation_base_sha": "b86053df749287d9dc4cdece0dbf4ad9a682283a",
       "reserved_surfaces": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "START_HERE.md",
-        "docs/governance/CURRENT_BASELINE.yaml",
-        "docs/governance/CURRENT_LANES.json",
-        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
-        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
-        "docs/initiatives/PS-DELIVERY-RESET-001/",
-        "azure-pipelines.yml",
         "scripts/delivery_preflight.py",
-        "scripts/production_operation_preflight.py",
-        "scripts/govern_sql_migrations.py",
         "tests/test_delivery_preflight.py",
-        "tests/test_production_operation_preflight.py",
-        "tests/test_schema_migration_path.py",
-        "tests/test_governance_pointers.py",
-        "tests/test_operational_readiness.py",
-        "docs/initiatives/PS-OPS-001/README.md",
-        "docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md"
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
       ],
+      "excluded_surfaces": [
+        "application code",
+        "product behavior",
+        "database and migrations",
+        "pipeline and production configuration"
+      ],
+      "delivery_path": "focused local tests, Azure pull-request validation, squash merge with skip-ci closeout, exact-main verification, then worktree and branch cleanup",
       "production_reservation": "none",
       "schema_reservation": "none",
-      "disposition": "merge_and_cleanup_only; no further product or production write"
+      "risk_class": "routine_internal_tooling",
+      "disposition": "merge_and_cleanup_only; no product or production write"
     }
   ],
   "paused_lanes": [
@@ -131,26 +140,29 @@
     "remaining_inventory": "docs/initiatives/PS-DELIVERY-RESET-001/REMAINING_WORKSPACE.md",
     "removed_worktrees": 24,
     "removed_local_branches": 43,
-    "recovery_refs_created": 48,
-    "remaining_worktrees": 45,
-    "remaining_local_branches": 50,
+    "recovery_refs_created": 49,
+    "remaining_worktrees": 44,
+    "remaining_local_branches": 49,
     "remaining_gone_upstream_branches": 14,
     "preexisting_dirty_or_untracked_worktrees_preserved": 17,
     "forced_removals": 0,
     "primary_worktree": {
       "path": "C:/Users/peter/Documents/portfolio",
       "branch": "main",
-      "head": "f706d6cd678c3e3b2b39228d98fee85afd9aea03",
+      "head": "b86053df749287d9dc4cdece0dbf4ad9a682283a",
       "tracked_state": "clean",
       "preserved_untracked_roots": 10,
       "disposition": "current_read_only_session_entry"
     }
   },
   "release_truth": {
-    "repository_main": "f706d6cd678c3e3b2b39228d98fee85afd9aea03",
+    "repository_main": "b86053df749287d9dc4cdece0dbf4ad9a682283a",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
+    "controlled_idle_pull_request": 280,
+    "controlled_idle_validation_pipeline": 513,
+    "controlled_idle_validation_result": "succeeded",
     "deployed_main_commit": "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d",
     "deployed_pipeline": 505,
     "live_release": "21a77fc14df89aa4f4397f2d",
