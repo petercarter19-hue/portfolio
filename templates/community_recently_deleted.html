@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Recently deleted | PeerSlate Community{% endblock %}
+{% block meta_description %}Recover something you removed from Community within the recovery window.{% endblock %}
+{% block body_class %} community-public-pilot community-policy-page{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/community-v1.css') }}">{% endblock %}
+{% block content %}
+<article class="cv1-policy cv1-recover">
+    <a href="{{ url_for('the_slate') }}">← Back to Community</a>
+    <p class="cv1-eyebrow">Your recovery window</p>
+    <h1>Recently deleted</h1>
+    <p>Anything you remove from Community stays here for {{ retention_days }} days, so you can put it back if you change your mind. After that its text is permanently erased and cannot be recovered.</p>
+    <p class="cv1-policy-line">Only you can see this page. Putting something back restores its words. <strong>Attached files are not restored</strong> — they are permanently deleted as part of removing a post, so they are already gone by the time you get here. Reactions and saves other people left are not restored either: they were removed when you deleted, and they are not yours to bring back.</p>
+
+    {% if restore_notice %}
+    <p class="cv1-recover-notice" role="status">
+        {% if restore_notice == 'restored' %}That’s back in Community. Any files that were attached to it were already permanently deleted and could not be restored.
+        {% elif restore_notice == 'existing' %}That was already live in Community.
+        {% elif restore_notice == 'expired' %}That one passed its {{ retention_days }}-day window and its text has been erased.
+        {% elif restore_notice == 'purged' %}That one’s text has already been permanently erased.
+        {% elif restore_notice == 'held' %}That one can’t be restored right now.
+        {% elif restore_notice == 'parent_unavailable' %}Restore the post it belongs to first, then this reply.
+        {% elif restore_notice == 'moderated' %}That one is under moderation review, so it can’t go back yet.
+        {% elif restore_notice == 'not_found' %}That item is no longer available.
+        {% else %}Restore is unavailable right now. Please try again shortly.
+        {% endif %}
+    </p>
+    {% endif %}
+
+    {% if restore_unavailable %}
+    <div class="cv1-quiet-state">
+        <span class="cv1-quiet-icon" aria-hidden="true">!</span>
+        <strong>Recently deleted is unavailable</strong>
+        <span>Nothing has been lost. Please try again shortly.</span>
+    </div>
+    {% elif not restorable_items %}
+    <div class="cv1-quiet-state">
+        <span class="cv1-quiet-icon" aria-hidden="true">✓</span>
+        <strong>Nothing to recover</strong>
+        <span>You haven’t removed anything in the last {{ retention_days }} days.</span>
+    </div>
+    {% else %}
+    <ul class="cv1-recover-list">
+        {% for item in restorable_items %}
+        <li class="cv1-recover-item">
+            <p class="cv1-recover-kind">{{ 'Post' if item.record_kind == 'post' else 'Reply' }}</p>
+            <p class="cv1-recover-excerpt">{{ item.excerpt }}{% if item.truncated %}…{% endif %}</p>
+            <p class="cv1-recover-meta">Removed {{ item.deleted_on }} · recoverable until {{ item.recoverable_until }}</p>
+            <form method="post" action="{{ url_for('community_routes.community_restore') }}">
+                <input type="hidden" name="record_kind" value="{{ item.record_kind }}">
+                <input type="hidden" name="record_key" value="{{ item.record_key }}">
+                <button type="submit" class="cv1-recover-action">Put this back</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</article>
+{% endblock %}

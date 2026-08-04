@@ -39,6 +39,12 @@ from opportunity_slate_routes import opportunity_slate
 # workshop_work_routes.py's own module docstring for why this is a
 # separate file rather than appended to workshop_routes.py directly.
 import workshop_work_routes  # noqa: F401
+from community_api import community_api
+from community_routes import community_routes
+from services.community_media_service import community_media_maintenance
+from services.community_retention_service import (
+    community_retention_maintenance,
+)
 from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
@@ -263,6 +269,12 @@ app.config.update(
     PEERSLATE_WORKSHOP_SESSION_ENABLED=(
         os.environ.get('PEERSLATE_WORKSHOP_SESSION_ENABLED', 'false').lower() == 'true'
     ),
+    PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=(
+        os.environ.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', 'false').lower() == 'true'
+    ),
+    PEERSLATE_COMMUNITY_SIGNING_KEY=os.environ.get(
+        'PEERSLATE_COMMUNITY_SIGNING_KEY', ''
+    ),
     # PS-WORKSHOP-001 W2d voice input, gated separately from the session
     # sub-flag above BECAUSE that one is already on in production. Voice
     # needs Azure Speech (VOICE_SPEECH_ENDPOINT plus a working Entra
@@ -352,6 +364,15 @@ app.config.update(
     PEERSLATE_ADO_REPO=os.environ.get('PEERSLATE_ADO_REPO', ''),
     PEERSLATE_ADO_READ_PAT=os.environ.get('PEERSLATE_ADO_READ_PAT', ''),
 )
+
+if (
+    app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']
+    and not app.config['PEERSLATE_COMMUNITY_SIGNING_KEY']
+):
+    raise RuntimeError(
+        'PEERSLATE_COMMUNITY_SIGNING_KEY is required when the Community '
+        'public pilot is enabled.'
+    )
 
 
 def _address_without_port(value):
@@ -653,9 +674,28 @@ app.register_blueprint(auth)
 app.register_blueprint(owner)
 app.register_blueprint(control_room)
 app.register_blueprint(peerslate_api)
-app.register_blueprint(people_interests_api)
 app.register_blueprint(workshop)
+app.register_blueprint(community_api)
+app.register_blueprint(community_routes)
 app.register_blueprint(opportunity_slate)
+if not app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
+    app.register_blueprint(people_interests_api)
+
+
+@app.before_request
+def run_community_media_maintenance():
+    if (
+        app.config.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False)
+        and not app.config.get('TESTING', False)
+        and request.endpoint not in {'healthz', 'static'}
+    ):
+        community_media_maintenance.maybe_run()
+        # The approved retention schedule. Purges only content the author
+        # already removed, body-free audit rows, and processed outbox rows;
+        # live content is never touched. Best-effort by design: a failed
+        # batch is logged and retried on the next cadence rather than
+        # failing a member's request.
+        community_retention_maintenance.maybe_run()
 
 # MAJOR 5 correction (independent review): rate limit Workshop's five
 # state-changing routes the same way the AI-cost routes above are limited.
@@ -712,6 +752,40 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     app.view_functions[_workshop_rate_limited_endpoint] = limiter.limit(
         _workshop_rate_limit
     )(app.view_functions[_workshop_rate_limited_endpoint])
+
+# The public pilot is intentionally finite, but its reads still reach Azure SQL.
+# Apply route-specific limits after blueprint registration without coupling the
+# reusable blueprint back to this module's Limiter instance.
+for _community_endpoint, _community_limit in {
+    'community_api.feed': '120 per minute',
+    'community_api.post_detail': '120 per minute',
+    'community_api.contribution_shelf': '120 per minute',
+    'community_api.selected_contribution': '120 per minute',
+    'community_api.search': '30 per minute',
+    'community_api.publish_post': '30 per hour',
+    'community_api.edit_post': '30 per hour',
+    'community_api.delete_post': '30 per hour',
+    'community_api.add_contribution': '60 per hour',
+    'community_api.edit_contribution': '60 per hour',
+    'community_api.delete_contribution': '60 per hour',
+    'community_api.set_response': '120 per hour',
+    'community_api.remove_response': '120 per hour',
+    'community_api.save_post': '120 per hour',
+    'community_api.unsave_post': '120 per hour',
+    'community_api.save_contribution': '120 per hour',
+    'community_api.unsave_contribution': '120 per hour',
+    'community_api.upload_attachment': '20 per hour',
+    'community_api.transcribe_voice': '20 per hour',
+    'community_api.attachment_status': '120 per minute',
+    'community_api.delete_attachment': '60 per hour',
+    # One exact-full 12-card Feed can legitimately request 96 lazy image
+    # previews. Allow 25% headroom while retaining a bounded per-client limit.
+    'community_api.preview_attachment': '120 per minute',
+    'community_api.download_attachment': '30 per minute',
+}.items():
+    app.view_functions[_community_endpoint] = limiter.limit(_community_limit)(
+        app.view_functions[_community_endpoint]
+    )
 
 # PS-OPPSLATE-001: the same post-registration wrapper idiom for Opportunity
 # Slate's state-changing routes and its anonymous transports.
@@ -771,12 +845,19 @@ def prevent_stale_html(response):
     content hash (see _stamp_static_asset_version above) and current
     versions are cached for a year — only text/html is marked no-cache."""
     if (
+        app.config.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False)
+        and request.path.startswith('/the-slate')
+    ):
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    if (
         getattr(g, 'peerslate_identity', None) is not None
         or getattr(g, 'peerslate_principal', None) is not None
         or request.blueprint in {
         'owner',
         'peerslate_api',
         'people_interests_api',
+        'community_api',
+        'community_routes',
         'control_room',
         'workshop',
         # PS-OPPSLATE-001: private in BOTH modes. An anonymous Opportunity
@@ -888,6 +969,14 @@ def shared_navigation_urls():
         # search index from rebuilding a profile-scoped /interview-me link.
         'interview_studio_url': url_for('interview_studio'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
+        # The shared search index must not advertise the pre-pilot Community
+        # views once the new Community feed has replaced them (Pete,
+        # 2026-08-03). Their routes redirect, but offering a retired page in
+        # search and then bouncing the visitor is a worse answer than not
+        # offering it.
+        'community_public_pilot_enabled': app.config.get(
+            'PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False
+        ),
     }
 
 
@@ -1780,13 +1869,39 @@ def the_slate():
     # overlapped Feed almost completely. Its own template
     # (the_slate_people_interests.html) stays on disk for rollback, matching
     # the site's existing convention for a retired landing view.
+    if app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
+        from community_routes import viewer_context
+        return render_template(
+            'community_feed.html',
+            community_post_key=None,
+            community_contribution_key=None,
+            **viewer_context(),
+        )
     return _render_community_tabs('feed')
+
+
+def _retired_by_community_pilot():
+    """True once the new Community feed is the live Community.
+
+    Owner decision, 2026-08-03 (Pete): "this is the new community feed. It
+    replaces the old one. Anyplace there is a community link, it goes to the
+    new page. The old one should be archived."
+
+    The archiving is deliberately flag-aware. While the pilot flag is off the
+    pre-pilot Community is still the live experience, so retiring these routes
+    unconditionally would break the current site. Templates stay on disk for
+    rollback, matching the convention already used for the retired People &
+    Interests landing view.
+    """
+    return app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']
 
 
 @app.route('/the-slate/my-slate')
 def the_slate_my():
     # Tab 2 — My Slate: the user's personal goal map. Static preview
     # content in the template (same convention as the Slate Board MVP).
+    if _retired_by_community_pilot():
+        return redirect(url_for('the_slate'), code=302)
     return render_template('the_slate_my.html')
 
 
@@ -1795,6 +1910,8 @@ def the_slate_daily():
     # Tab 3 — Daily Slate: the daily return hook ("What did you move
     # forward today?"). The composer posts a real card (the-slate.js,
     # stored per-browser) so the page demonstrates the loop end-to-end.
+    if _retired_by_community_pilot():
+        return redirect(url_for('the_slate'), code=302)
     return render_template(
         'the_slate_daily.html',
         database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
@@ -1883,6 +2000,8 @@ def slate_feed():
 def slate_feed_api():
     # The same feed as JSON — this is the seam where the page's data layer
     # already works like a real multi-profile feed service.
+    if app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
+        abort(404)
     return jsonify(load_slate_feed())
 
 
@@ -1891,6 +2010,8 @@ def slate_feed_pulse():
     # The Pulse view — the community's momentum at a glance: this-week
     # stats, trending skills, rising goals, and what's moving right now.
     # Static preview content for the MVP (no live cross-member data yet).
+    if _retired_by_community_pilot():
+        return redirect(url_for('the_slate'), code=302)
     return render_template('slate_pulse.html')
 
 
@@ -1898,6 +2019,12 @@ def slate_feed_pulse():
 def slate_feed_break():
     # The Break is the second first-class view in the same seamless,
     # two-view Community shell as Feed.
+    # Retired with the rest of the pre-pilot Community (Pete, 2026-08-03).
+    # It rendered inside the old two-view shell, which the new Community feed
+    # replaces, so leaving it reachable would strand a released feature in a
+    # shell that no longer exists elsewhere on the site.
+    if _retired_by_community_pilot():
+        return redirect(url_for('the_slate'), code=302)
     return _render_community_tabs('break')
 
 

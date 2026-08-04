@@ -1,0 +1,25 @@
+{
+  "agent_image": {
+    "os": "ubuntu22",
+    "version": "20260720.234.2"
+  },
+  "build": {
+    "id": "339",
+    "number": "20260802.1"
+  },
+  "classification": "disposable_x64_nonproduction_sql_runtime",
+  "contains_member_data": false,
+  "definition": {
+    "id": "2",
+    "name": "community-sql-proof-20260802-14f8ebe"
+  },
+  "failure_code": "proof_reported_failure",
+  "production_action": false,
+  "proof_sha256": "57f2d128c00760e3d11bb068c612680d706a44a4079c679037d2b9234276e3bc",
+  "schema_version": 1,
+  "source": {
+    "branch": "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra",
+    "sha": "14f8ebe85ff8a4c6f8ab56fe221fced7fc01da1c"
+  },
+  "status": "fail"
+}

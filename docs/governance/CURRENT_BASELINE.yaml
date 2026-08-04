@@ -51,6 +51,11 @@ governing_documents:
 theme: deep_navy_gold
 
 active_packages:
+  - id: PS-COMMUNITY-PUBLIC-PILOT-001
+    owner: "Pete; current Codex task is designated manager and sole writer"
+    lane: community_owner_authored_public_read_runtime
+    package_path: "docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/README.md"
+    status: "active_protected_implementation"
   - id: PS-CAPTURE-MEDIA-001
     owner: "Enablement writer unassigned"
     lane: capture_media_photo_enablement

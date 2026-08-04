@@ -106,6 +106,44 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_UpdateKnowledgeItemForOwner",
         "usp_UpdateSlateItem",
         "usp_UpsertAppUserFromAuth",
+        # PS-COMMUNITY-RETENTION-001 and PS-COMMUNITY-RESTORE-001. Omitting a
+        # procedure here does not merely disable it: execute_procedure raises
+        # ValueError, which is not a DatabaseServiceError, so it escapes the
+        # best-effort retention handlers and — because the sweep runs from an
+        # app-wide before_request — would return 500 on every route once the
+        # Community flag was enabled.
+        "usp_PurgeCommunityContent",
+        "usp_PurgeCommunityAuditEvents",
+        "usp_PurgeCommunityOutbox",
+        "usp_SetCommunityLegalHold",
+        "usp_ListRestorableCommunityForOwner",
+        "usp_RestorePublicCommunityPost",
+        "usp_RestorePublicCommunityContribution",
+        "usp_ListPublicCommunityFeed",
+        "usp_ListPublicCommunityShelf",
+        "usp_GetPublicCommunityPost",
+        "usp_GetPublicCommunityContribution",
+        "usp_SearchPublicCommunity",
+        "usp_PublishPublicCommunityPost",
+        "usp_EditPublicCommunityPost",
+        "usp_DeletePublicCommunityPost",
+        "usp_AddPublicCommunityContribution",
+        "usp_EditPublicCommunityContribution",
+        "usp_DeletePublicCommunityContribution",
+        "usp_SetPublicCommunityResponse",
+        "usp_RemovePublicCommunityResponse",
+        "usp_SetPublicCommunitySave",
+        "usp_SetPublicCommunityContributionSave",
+        "usp_ReservePublicCommunityMedia",
+        "usp_MarkPublicCommunityMediaUploaded",
+        "usp_GetPublicCommunityMediaForOwner",
+        "usp_CompletePublicCommunityMedia",
+        "usp_CompensatePublicCommunityMediaCompletion",
+        "usp_RejectPublicCommunityMedia",
+        "usp_ClaimPublicCommunityMediaCleanup",
+        "usp_CompletePublicCommunityMediaCleanup",
+        "usp_GetPublicCommunityMedia",
+        "usp_DeletePublicCommunityMedia",
     }
 )
 

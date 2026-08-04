@@ -1,0 +1,18 @@
+{
+  "classification": "disposable_x64_nonproduction_sql_runtime",
+  "cleanup_confirmed": true,
+  "contains_member_data": false,
+  "duration_seconds": 39.085,
+  "failure_code": "inside_preflight_unexpected",
+  "production_action": false,
+  "schema_version": 1,
+  "source_sha": "2234597b2024ee1f1eb5e706cf8b94aff345003f",
+  "status": "fail",
+  "steps": [
+    {
+      "duration_seconds": 0.272,
+      "name": "cleanup",
+      "status": "pass"
+    }
+  ]
+}

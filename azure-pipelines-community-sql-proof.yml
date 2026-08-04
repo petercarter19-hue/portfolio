@@ -1,0 +1,474 @@
+trigger: none
+pr: none
+schedules: []
+
+parameters:
+  - name: expectedSourceSha
+    displayName: Exact reviewed source SHA
+    type: string
+    default: ""
+
+jobs:
+  - job: CommunitySqlProof
+    displayName: Community disposable SQL proof
+    timeoutInMinutes: 45
+    cancelTimeoutInMinutes: 5
+    pool:
+      vmImage: ubuntu-22.04
+
+    steps:
+      - checkout: self
+        clean: true
+        fetchDepth: 1
+        persistCredentials: false
+
+      - bash: |
+          set -euo pipefail
+          if [[ ! "${EXPECTED_SOURCE_SHA}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "expectedSourceSha must be a full 40-character Git SHA." >&2
+            exit 1
+          fi
+          if [[ "${BUILD_REASON_VALUE}" != "Manual" ]]; then
+            echo "This proof may run only from a manual queue." >&2
+            exit 1
+          fi
+          if [[ "${BUILD_SOURCE_VERSION_VALUE,,}" != "${EXPECTED_SOURCE_SHA,,}" ]]; then
+            echo "The queued source does not match expectedSourceSha." >&2
+            exit 1
+          fi
+          if [[ "${BUILD_SOURCE_BRANCH_VALUE}" != "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra" ]]; then
+            echo "The proof may run only from the exact reviewed Community feature branch." >&2
+            exit 1
+          fi
+          if [[ "$(git rev-parse HEAD)" != "${EXPECTED_SOURCE_SHA,,}" ]]; then
+            echo "The checked-out HEAD does not match expectedSourceSha." >&2
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+            echo "The proof checkout is not clean." >&2
+            exit 1
+          fi
+          if [[ "${TF_BUILD_VALUE,,}" != "true" || "${AGENT_OS_VALUE}" != "Linux" || "${AGENT_ARCH_VALUE}" != "X64" ]]; then
+            echo "The proof requires an Azure Pipelines Linux X64 agent." >&2
+            exit 1
+          fi
+          if [[ ! "${ImageOS:-}" =~ ^ubuntu22$ || ! "${ImageVersion:-}" =~ ^[0-9]{8}\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Microsoft-hosted image identity is missing or unsafe." >&2
+            exit 1
+          fi
+          if [[ ! "${BUILD_ID_VALUE}" =~ ^[0-9]{1,20}$ || ! "${BUILD_NUMBER_VALUE}" =~ ^[A-Za-z0-9._-]{1,80}$ ]]; then
+            echo "Build identity is missing or unsafe." >&2
+            exit 1
+          fi
+          if [[ ! "${DEFINITION_ID_VALUE}" =~ ^[0-9]{1,20}$ || ! "${DEFINITION_NAME_VALUE}" =~ ^[A-Za-z0-9._\ -]{1,100}$ ]]; then
+            echo "Pipeline definition identity is missing or unsafe." >&2
+            exit 1
+          fi
+          . /etc/os-release
+          if [[ "${ID}" != "ubuntu" || "${VERSION_ID}" != "22.04" ]]; then
+            echo "The proof requires the ubuntu-22.04 hosted image." >&2
+            exit 1
+          fi
+          if [[ "${COMMUNITY_FLAG_VALUE,,}" == "true" ]]; then
+            echo "The Community feature flag must remain disabled." >&2
+            exit 1
+          fi
+        displayName: Guard manual source-bound execution
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+          BUILD_REASON_VALUE: $(Build.Reason)
+          BUILD_SOURCE_VERSION_VALUE: $(Build.SourceVersion)
+          BUILD_SOURCE_BRANCH_VALUE: $(Build.SourceBranch)
+          BUILD_ID_VALUE: $(Build.BuildId)
+          BUILD_NUMBER_VALUE: $(Build.BuildNumber)
+          DEFINITION_ID_VALUE: $(System.DefinitionId)
+          DEFINITION_NAME_VALUE: $(Build.DefinitionName)
+          TF_BUILD_VALUE: $(TF_BUILD)
+          AGENT_OS_VALUE: $(Agent.OS)
+          AGENT_ARCH_VALUE: $(Agent.OSArchitecture)
+          COMMUNITY_FLAG_VALUE: "false"
+
+      - bash: |
+          set -euo pipefail
+          raw_evidence="${AGENT_TEMP_DIRECTORY}/community-sql-proof.raw.json"
+          if [[ -e "${raw_evidence}" ]]; then
+            echo "The raw evidence target must not already exist." >&2
+            exit 1
+          fi
+          python3 scripts/run_community_disposable_sql_proof.py \
+            --execute \
+            --source-sha "${EXPECTED_SOURCE_SHA}" \
+            --evidence "${raw_evidence}"
+        displayName: Run disposable SQL proof once
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+          AGENT_TEMP_DIRECTORY: $(Agent.TempDirectory)
+          PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED: "false"
+
+      - bash: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["AGENT_TEMP_DIRECTORY"]) / "community-sql-proof.raw.json"
+          if not path.is_file():
+              raise SystemExit("Raw evidence is missing; exact cleanup is not proven.")
+          try:
+              record = json.loads(path.read_text(encoding="utf-8"))
+          except (OSError, UnicodeError, json.JSONDecodeError):
+              raise SystemExit("Raw evidence is unreadable; exact cleanup is not proven.")
+          cleanup_steps = [
+              step
+              for step in record.get("steps", [])
+              if isinstance(step, dict) and step.get("name") == "cleanup"
+          ]
+          if record.get("cleanup_confirmed") is not True:
+              raise SystemExit("The harness did not confirm exact resource cleanup.")
+          if len(cleanup_steps) != 1 or cleanup_steps[0].get("status") != "pass":
+              raise SystemExit("The exact cleanup step did not pass once.")
+          print("Exact job-owned resource cleanup is confirmed.")
+          PY
+        displayName: Verify exact cleanup
+        condition: always()
+        env:
+          AGENT_TEMP_DIRECTORY: $(Agent.TempDirectory)
+
+      - bash: |
+          set -euo pipefail
+          set +e
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          raw_path = Path(os.environ["AGENT_TEMP_DIRECTORY"]) / "community-sql-proof.raw.json"
+          source_root = Path(os.environ["BUILD_SOURCES_DIRECTORY"]).resolve()
+          output_dir = Path(os.environ["ARTIFACT_STAGING_DIRECTORY"]) / "CommunitySqlProofEvidence"
+          output_path = output_dir / "community-sql-proof-evidence.json"
+          envelope_path = output_dir / "run-envelope.json"
+          output_dir.mkdir(parents=True, exist_ok=True)
+
+          classification = "disposable_x64_nonproduction_sql_runtime"
+          expected_branch = "refs/heads/codex/2026-08-01-community-primary-feed-sol-ultra"
+          expected_sql_image = "mcr.microsoft.com/mssql/server:2022-CU26-ubuntu-22.04@sha256:ba4c8329f48fb8f02e1416be6a930ebfd71268caee78aa985f3af4315e457c89"
+          expected_client_base = "python:3.12-slim@sha256:cab2dbf575e971934a81e4622f5aba17aa7929719bd7e31033a3a83b97fd0464"
+          sql_files = {
+              "forward": source_root / "SQL FIles" / "Migrations" / "proposed" / "PS-COMMUNITY-PUBLIC-PILOT-001_community.sql",
+              "verifier": source_root / "SQL FIles" / "Verification" / "PS-COMMUNITY-PUBLIC-PILOT-001_owner_public_verify.sql",
+              "rollback": source_root / "SQL FIles" / "Migrations" / "proposed" / "PS-COMMUNITY-PUBLIC-PILOT-001_community_rollback.sql",
+          }
+          expected_steps = (
+              "preflight",
+              "empty_forward",
+              "forward_idempotency",
+              "two_owner_verifier",
+              "empty_rollback",
+              "populated_rollback_refusal",
+              "cleanup",
+          )
+          top_keys = {
+              "schema_version",
+              "status",
+              "classification",
+              "source_sha",
+              "steps",
+              "contains_member_data",
+              "production_action",
+              "sql",
+              "database_cleanup_confirmed",
+              "file_sha256",
+              "duration_seconds",
+              "agent",
+              "images",
+              "cleanup_confirmed",
+              "failure_code",
+          }
+
+          def safe_failure(code):
+              return {
+                  "schema_version": 1,
+                  "status": "fail",
+                  "classification": classification,
+                  "steps": [],
+                  "contains_member_data": False,
+                  "production_action": False,
+                  "cleanup_confirmed": False,
+                  "failure_code": code,
+              }
+
+          def exact_keys(value, allowed):
+              return isinstance(value, dict) and set(value).issubset(allowed)
+
+          def duration(value):
+              return isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= 3600
+
+          def sha256_file(path):
+              digest = hashlib.sha256()
+              with path.open("rb") as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          def validate(record, expected_sha, checked_out_hashes):
+              if not exact_keys(record, top_keys):
+                  return False
+              required = {
+                  "schema_version",
+                  "status",
+                  "classification",
+                  "source_sha",
+                  "steps",
+                  "contains_member_data",
+                  "production_action",
+                  "cleanup_confirmed",
+              }
+              if not required.issubset(record):
+                  return False
+              if type(record["schema_version"]) is not int or record["schema_version"] != 1 or record["status"] not in {"pass", "fail"}:
+                  return False
+              if record["classification"] != classification:
+                  return False
+              if record["source_sha"] != expected_sha:
+                  return False
+              if record["contains_member_data"] is not False or record["production_action"] is not False:
+                  return False
+              if not isinstance(record["cleanup_confirmed"], bool):
+                  return False
+              if not isinstance(record["steps"], list):
+                  return False
+              step_names = []
+              for step in record["steps"]:
+                  if not exact_keys(step, {"name", "status", "duration_seconds"}):
+                      return False
+                  if set(step) != {"name", "status", "duration_seconds"}:
+                      return False
+                  if step["name"] not in expected_steps or step["status"] not in {"pass", "fail"}:
+                      return False
+                  if not duration(step["duration_seconds"]):
+                      return False
+                  step_names.append(step["name"])
+              if len(step_names) != len(set(step_names)):
+                  return False
+              if "duration_seconds" in record and not duration(record["duration_seconds"]):
+                  return False
+              if "failure_code" in record and not re.fullmatch(r"[a-z0-9_]{1,80}", record["failure_code"]):
+                  return False
+              if "file_sha256" in record:
+                  hashes = record["file_sha256"]
+                  if not exact_keys(hashes, {"forward", "verifier", "rollback"}) or set(hashes) != {"forward", "verifier", "rollback"}:
+                      return False
+                  if not all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in hashes.values()):
+                      return False
+              if "sql" in record:
+                  sql = record["sql"]
+                  if not exact_keys(sql, {"version", "edition", "machine_bound"}) or set(sql) != {"version", "edition", "machine_bound"}:
+                      return False
+                  if sql.get("version") != "16.0.4265.3" or sql.get("edition") != "Developer" or sql.get("machine_bound") is not True:
+                      return False
+              if "agent" in record:
+                  agent = record["agent"]
+                  if not exact_keys(agent, {"os", "architecture", "docker_version"}) or set(agent) != {"os", "architecture", "docker_version"}:
+                      return False
+                  if agent["os"] != "ubuntu-22.04" or agent["architecture"] != "x86_64":
+                      return False
+                  if not isinstance(agent["docker_version"], str) or not re.fullmatch(r"[0-9A-Za-z.+_-]{1,40}", agent["docker_version"]):
+                      return False
+              if "images" in record:
+                  images = record["images"]
+                  if not exact_keys(images, {"sql", "client_base", "client_artifact_id"}) or set(images) != {"sql", "client_base", "client_artifact_id"}:
+                      return False
+                  if images["sql"] != expected_sql_image:
+                      return False
+                  if images["client_base"] != expected_client_base:
+                      return False
+                  if not isinstance(images["client_artifact_id"], str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", images["client_artifact_id"]):
+                      return False
+              if "database_cleanup_confirmed" in record and not isinstance(record["database_cleanup_confirmed"], bool):
+                  return False
+              if record["status"] == "pass":
+                  if tuple(step_names) != expected_steps or any(step["status"] != "pass" for step in record["steps"]):
+                      return False
+                  if record["cleanup_confirmed"] is not True or record.get("database_cleanup_confirmed") is not True:
+                      return False
+                  if not {"sql", "agent", "images", "file_sha256", "duration_seconds"}.issubset(record):
+                      return False
+                  if record["file_sha256"] != checked_out_hashes:
+                      return False
+                  if "failure_code" in record:
+                      return False
+              else:
+                  if "failure_code" not in record:
+                      return False
+              return True
+
+          expected_sha = os.environ.get("EXPECTED_SOURCE_SHA", "").lower()
+          source_branch_value = os.environ.get("BUILD_SOURCE_BRANCH_VALUE", "")
+          build_id_value = os.environ.get("BUILD_ID_VALUE", "")
+          build_number_value = os.environ.get("BUILD_NUMBER_VALUE", "")
+          definition_id_value = os.environ.get("DEFINITION_ID_VALUE", "")
+          definition_name_value = os.environ.get("DEFINITION_NAME_VALUE", "")
+          image_os_value = os.environ.get("ImageOS", "")
+          image_version_value = os.environ.get("ImageVersion", "")
+
+          source_sha = expected_sha if re.fullmatch(r"[0-9a-f]{40}", expected_sha) else None
+          source_branch = source_branch_value if source_branch_value == expected_branch else None
+          build_id = build_id_value if re.fullmatch(r"[0-9]{1,20}", build_id_value) else None
+          build_number = build_number_value if re.fullmatch(r"[A-Za-z0-9._-]{1,80}", build_number_value) else None
+          definition_id = definition_id_value if re.fullmatch(r"[0-9]{1,20}", definition_id_value) else None
+          definition_name = definition_name_value if re.fullmatch(r"[A-Za-z0-9._ -]{1,100}", definition_name_value) else None
+          image_os = image_os_value if image_os_value == "ubuntu22" else None
+          image_version = image_version_value if re.fullmatch(r"[0-9]{8}\.[0-9]+\.[0-9]+", image_version_value) else None
+          metadata_ok = all(
+              value is not None
+              for value in (
+                  source_sha,
+                  source_branch,
+                  build_id,
+                  build_number,
+                  definition_id,
+                  definition_name,
+                  image_os,
+                  image_version,
+              )
+          )
+
+          failure_code = None
+          checked_out_hashes = None
+          try:
+              checked_out_hashes = {
+                  label: sha256_file(path) for label, path in sql_files.items()
+              }
+          except OSError:
+              failure_code = "checked_out_sql_unavailable"
+
+          if failure_code:
+              sealed = safe_failure(failure_code)
+          else:
+              try:
+                  if source_sha is None:
+                      raise ValueError
+                  record = json.loads(raw_path.read_text(encoding="utf-8"))
+                  if not validate(record, source_sha, checked_out_hashes):
+                      raise ValueError
+                  sealed = record
+              except FileNotFoundError:
+                  sealed = safe_failure("raw_evidence_missing")
+                  failure_code = "raw_evidence_missing"
+              except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError, KeyError):
+                  sealed = safe_failure("raw_evidence_rejected")
+                  failure_code = "raw_evidence_rejected"
+
+          if not metadata_ok:
+              failure_code = "run_envelope_metadata_rejected"
+              sealed = safe_failure(failure_code)
+
+          output_path.write_text(
+              json.dumps(sealed, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          proof_sha256 = sha256_file(output_path)
+          envelope_failure_code = None
+          if not metadata_ok:
+              envelope_failure_code = "run_envelope_metadata_rejected"
+          elif failure_code:
+              envelope_failure_code = failure_code
+          elif sealed.get("status") != "pass":
+              envelope_failure_code = "proof_reported_failure"
+          envelope = {
+              "schema_version": 1,
+              "status": "fail" if envelope_failure_code else "pass",
+              "classification": classification,
+              "source": {"sha": source_sha, "branch": source_branch},
+              "build": {"id": build_id, "number": build_number},
+              "definition": {"id": definition_id, "name": definition_name},
+              "agent_image": {"os": image_os, "version": image_version},
+              "proof_sha256": proof_sha256,
+              "contains_member_data": False,
+              "production_action": False,
+          }
+          if envelope_failure_code:
+              envelope["failure_code"] = envelope_failure_code
+          envelope_path.write_text(
+              json.dumps(envelope, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          if envelope_failure_code:
+              raise SystemExit(envelope_failure_code)
+          PY
+          seal_status=$?
+          set -e
+          evidence_dir="${ARTIFACT_STAGING_DIRECTORY}/CommunitySqlProofEvidence"
+          evidence_file="${evidence_dir}/community-sql-proof-evidence.json"
+          envelope_file="${evidence_dir}/run-envelope.json"
+          if [[ ! -f "${evidence_file}" ]]; then
+            mkdir -p "${evidence_dir}"
+            printf '%s\n' '{"classification":"disposable_x64_nonproduction_sql_runtime","cleanup_confirmed":false,"contains_member_data":false,"failure_code":"evidence_sealer_failed","production_action":false,"schema_version":1,"status":"fail","steps":[]}' > "${evidence_file}"
+            seal_status=1
+          fi
+          if [[ ! -f "${envelope_file}" ]]; then
+            proof_sha256="$(sha256sum "${evidence_file}" | awk '{print $1}')"
+            printf '%s\n' "{\"agent_image\":{\"os\":null,\"version\":null},\"build\":{\"id\":null,\"number\":null},\"classification\":\"disposable_x64_nonproduction_sql_runtime\",\"contains_member_data\":false,\"definition\":{\"id\":null,\"name\":null},\"failure_code\":\"run_envelope_sealer_failed\",\"production_action\":false,\"proof_sha256\":\"${proof_sha256}\",\"schema_version\":1,\"source\":{\"branch\":null,\"sha\":null},\"status\":\"fail\"}" > "${envelope_file}"
+            seal_status=1
+          fi
+          (
+            cd "${evidence_dir}"
+            sha256sum community-sql-proof-evidence.json run-envelope.json > SHA256SUMS
+          )
+          # Echo only the sealed allowlisted failure code to the build log.
+          # The code is a finite, content-free token from the diagnostic
+          # allowlist and is already published inside the sealed evidence, so
+          # this discloses nothing new. It exists because downloading a
+          # PipelineArtifact requires a PAT, which left the code unreadable to
+          # the operator diagnosing the run. Only the exact allowlisted token
+          # is printed; no argv, stdout, stderr, environment, credential,
+          # connection string, SQL result, or synthetic content.
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          evidence = (
+              Path(os.environ["ARTIFACT_STAGING_DIRECTORY"])
+              / "CommunitySqlProofEvidence"
+              / "community-sql-proof-evidence.json"
+          )
+          try:
+              record = json.loads(evidence.read_text(encoding="utf-8"))
+          except (OSError, UnicodeError, json.JSONDecodeError):
+              print("PROOF_FAILURE_CODE=unreadable_sealed_evidence")
+          else:
+              code = record.get("failure_code")
+              status = record.get("status")
+              if status == "pass":
+                  print("PROOF_FAILURE_CODE=none_proof_passed")
+              elif isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,80}", code):
+                  print(f"PROOF_FAILURE_CODE={code}")
+              else:
+                  print("PROOF_FAILURE_CODE=absent_or_malformed")
+          PY
+          exit "${seal_status}"
+        displayName: Validate and seal allowlisted evidence
+        condition: always()
+        env:
+          EXPECTED_SOURCE_SHA: ${{ parameters.expectedSourceSha }}
+          AGENT_TEMP_DIRECTORY: $(Agent.TempDirectory)
+          BUILD_SOURCES_DIRECTORY: $(Build.SourcesDirectory)
+          ARTIFACT_STAGING_DIRECTORY: $(Build.ArtifactStagingDirectory)
+          BUILD_SOURCE_BRANCH_VALUE: $(Build.SourceBranch)
+          BUILD_ID_VALUE: $(Build.BuildId)
+          BUILD_NUMBER_VALUE: $(Build.BuildNumber)
+          DEFINITION_ID_VALUE: $(System.DefinitionId)
+          DEFINITION_NAME_VALUE: $(Build.DefinitionName)
+
+      - task: PublishPipelineArtifact@1
+        displayName: Upload Community SQL proof evidence
+        condition: always()
+        inputs:
+          targetPath: $(Build.ArtifactStagingDirectory)/CommunitySqlProofEvidence
+          artifact: CommunitySqlProofEvidence
+          publishLocation: pipeline

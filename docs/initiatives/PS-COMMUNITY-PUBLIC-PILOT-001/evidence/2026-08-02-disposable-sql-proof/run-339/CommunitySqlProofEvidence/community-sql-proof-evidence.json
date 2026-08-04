@@ -1,0 +1,18 @@
+{
+  "classification": "disposable_x64_nonproduction_sql_runtime",
+  "cleanup_confirmed": true,
+  "contains_member_data": false,
+  "duration_seconds": 38.697,
+  "failure_code": "external_command_failed",
+  "production_action": false,
+  "schema_version": 1,
+  "source_sha": "14f8ebe85ff8a4c6f8ab56fe221fced7fc01da1c",
+  "status": "fail",
+  "steps": [
+    {
+      "duration_seconds": 0.262,
+      "name": "cleanup",
+      "status": "pass"
+    }
+  ]
+}

@@ -28,6 +28,21 @@ class SqlFoundationTests(unittest.TestCase):
         ]
         self.rollbacks = sorted(MIGRATIONS.glob("PS-*-*_rollback.sql"))
 
+    def test_no_sql_file_carries_a_byte_order_mark(self):
+        # A UTF-8 BOM is invisible in an editor but is sent verbatim to the
+        # server, which rejects the batch with "Incorrect syntax near". Windows
+        # PowerShell's `Set-Content -Encoding utf8` writes one by default, so
+        # any edit made that way silently breaks the migration.
+        sql_root = ROOT / "SQL FIles"
+        for path in sorted(sql_root.rglob("*.sql")):
+            with self.subTest(path=path.name):
+                head = path.read_bytes()[:3]
+                self.assertNotEqual(
+                    head,
+                    b"\xef\xbb\xbf",
+                    f"{path.name} starts with a UTF-8 BOM; rewrite it without one",
+                )
+
     def test_nine_ordered_forward_and_rollback_migrations_exist(self):
         self.assertEqual(
             [path.name.split("_")[0] for path in self.forward],
