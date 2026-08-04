@@ -15,15 +15,16 @@
   `work/2026-08-04-delivery-reset-001`; base
   `af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3`; implementation completion SHA
   `eadebb62d5d3c7ad3e5fe4788995965f0976fe9a`; final report commit and Azure
-  squash SHA are supplied by the handoff/PR because a commit cannot contain
-  its own SHA. Paths:
+  reset squash SHA `f706d6cd678c3e3b2b39228d98fee85afd9aea03` from
+  Azure PR 279; the final controlled-idle record SHA is supplied by its PR
+  handoff because a commit cannot contain its own SHA. Paths:
   root startup routers; `azure-pipelines.yml`; `CURRENT_BASELINE.yaml`;
   `CURRENT_LANES.json`; startup checklist and owner guide; this reset package;
   the PS-OPS schema-operation records; delivery, production-operation, and
   schema scripts; and their focused governance/operational tests.
 - Verification performed and result:
-  - Pass: reset-focused `unittest` run, 109 passed and 1 skipped across 110
-    tests.
+  - Pass: current reset/closeout-focused `unittest` run, 110 passed and 1
+    skipped across 111 tests.
   - Pass: Python 3.12 `compileall` for the CI runtime/operational surface.
   - Pass: migration registry check, 23 registered and all 11 gate proofs
     matching repository bytes.
@@ -31,14 +32,20 @@
     --check`.
   - Pass: executable delivery preflight for reset/write on the exact branch and
     Azure base.
-  - Conditional: full local Windows suite ran 2,358 tests with 2 failures and
+  - Pass: required Azure PR validation build 512, including the full Linux
+    suite, dependency and history-secret scans, compile, migration registry,
+    and deployment-artifact construction.
+  - Baseline note: full local Windows suite ran 2,358 tests with 2 failures and
     29 skips. Both failures predate and are outside this diff: POSIX `0600`
     permission assertion on Windows and Windows MIME lookup returning
-    `application/octet-stream` for `.webp`. The protected Linux Azure PR
-    validation remains the authoritative full-suite and pipeline-schema check.
-- Release state: implementation committed locally at `eadebb62`; not yet
-  pushed, reviewed by Azure policy, merged, deployed, or live. The reset PR
-  must not deploy the application or change schema.
+    `application/octet-stream` for `.webp`. The authoritative Linux Azure PR
+    validation passed the full suite and pipeline-schema check.
+- Release state: reset controls squash-merged through Azure PR 279 at
+  `f706d6cd678c3e3b2b39228d98fee85afd9aea03`; validation build 512 succeeded;
+  no main pipeline, application deployment, production configuration change,
+  or schema action was queued. Live remained healthy on prior release
+  `21a77fc14df89aa4f4397f2d`. The controlled-idle closeout record is pending its
+  final documentation-only PR.
 - Known limits, deferred work, or owner decision needed: 45 worktrees, 50 local
   branches, and 32 remote non-main branches remain by design. Seventeen
   worktrees contain tracked or untracked material and 27 clean non-reset
@@ -46,10 +53,10 @@
   Opportunity Slate OS-3 remains unapplied. A hosted read-only schema report
   is required before the next apply. Pete must select the first post-reset
   production outcome before any former lane is reactivated.
-- Next action: commit and push this exact diff; require Azure PR policy and
-  YAML compilation; squash-merge with the documentation/control-plane skip
-  contract only if policy passes; fast-forward the primary checkout; then
-  leave PeerSlate in controlled-idle state until Pete selects one outcome.
+- Next action: validate and merge the controlled-idle closeout record, remove
+  its clean branch/worktree behind the existing recovery ref, and remain idle
+  until Pete selects one outcome. That selection uses the bounded ledger-only
+  activation policy before any implementation worktree is created.
 
 ## Protected additions
 
@@ -74,6 +81,6 @@
   production observation window is created because this package must not
   release runtime or schema.
 
-Overall status: **Conditional** until Azure PR validation passes, the reset is
-squash-merged, the primary checkout is fast-forwarded to that exact main SHA,
-and the final controlled-idle ledger is published.
+Overall status: **Conditional** only until the final controlled-idle ledger is
+validated and squash-merged. The reset controls, primary fast-forward, safe
+cleanup, and no-deploy verification are complete.

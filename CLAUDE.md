@@ -9,7 +9,8 @@
 > `DOCUMENT_CONTROL.md` for a genuine conflict, not as a routine reading gate.
 > Before a write, read `CURRENT_LANES.json` and pass
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
-> --fetch --require-clean`.
+> --fetch --require-clean`. In `controlled_idle`, use the bounded
+> `START_HERE.md` activation flow only after Pete selects the exact outcome.
 
 # Claude / Claude Code instructions
 

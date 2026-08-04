@@ -21,6 +21,12 @@ The immediate outcome is one owner-directed temporary freeze with one write
 lane. Existing work is preserved at its current branch/SHA and becomes
 read-only until it is explicitly retained, reassigned, archived, or released.
 
+Reset controls were squash-merged by Azure PR 279 at
+`f706d6cd678c3e3b2b39228d98fee85afd9aea03` after required validation build
+512 succeeded. The package now closes into `controlled_idle`: no implementation
+or release lane is active, and the reset branch is merge/cleanup-only for this
+final record.
+
 ## Safe-stop rule
 
 Every other lane must stop before its next write, merge, deployment, schema
@@ -123,8 +129,10 @@ remains explicit; automatic path-only suppression would be incorrect.
 
 ### R3 - Controlled restart
 
-Pete explicitly ends the freeze only after the exit criteria pass. Restart
-with no more than:
+The reset ends in `controlled_idle`, not by silently reopening old work. Pete
+later selects one exact outcome. A small, ledger-only activation PR makes that
+selection visible to every session before its implementation worktree is
+created. Restart with no more than:
 
 - one production-capable lane;
 - two non-overlapping implementation lanes total;
@@ -160,8 +168,9 @@ The temporary freeze may end only when all of the following are true:
 - application/schema serialization and migration-identity stops are
   mechanically enforceable;
 - no queued/running production-capable operation is unexplained; and
-- Pete selects the first post-reset production outcome and explicitly releases
-  only the needed lane or lanes.
+- no active implementation or release lane remains at reset closeout; and
+- the bounded activation policy requires Pete's exact selected outcome before
+  the first post-reset implementation worktree can be created.
 
 ## Explicit exclusions
 

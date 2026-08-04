@@ -60,7 +60,7 @@ authority, and its Azure pull-request evidence before assigning or deleting it.
 | `C:/Users/peter/Documents/portfolio-community-continuation-001` | `work/2026-08-04-community-maintenance-off-request-path` | `e51c9c6122e4c2cd1d462b77230523f733f2fded` | preserve: clean plus ignored local data |
 | `C:/Users/peter/Documents/portfolio-community-feed-direction-20260729` | `codex/2026-07-29-community-feed-direction` | `a540ebc8eccaa8ba2e739c6868cf6b2553acd675` | preserve: untracked material |
 | `C:/Users/peter/Documents/portfolio-data-foundation-gate-001` | `work/2026-08-04-data-foundation-gate-001` | `9952d6427f57dc5a38679f616158497cb945eec4` | preserve: clean, proof pending |
-| `C:/Users/peter/Documents/portfolio-delivery-reset-001` | `work/2026-08-04-delivery-reset-001` | `af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3` | active reset only |
+| `C:/Users/peter/Documents/portfolio-delivery-reset-001` | `work/2026-08-04-delivery-reset-001` | `f706d6cd678c3e3b2b39228d98fee85afd9aea03` | reset closeout, merge/cleanup only |
 | `C:/Users/peter/Documents/portfolio-mockup-authority-rule-001` | `work/2026-07-26-mockup-authority-rule-001` | `4dc8b5a8985d6ae75615042dcc9b84507ab8dc01` | preserve: clean, PR-source mismatch |
 | `C:/Users/peter/Documents/portfolio-model-routing` | `claude/2026-07-24-claude-model-routing` | `1f8205d5f4f0db1ce66dc0e9925a24a288ce887a` | preserve: clean, proof pending |
 | `C:/Users/peter/Documents/portfolio-plat-000` | `work/2026-08-04-plat-000-app-users-base` | `c6585ecb31105350fd09220240fc96e8980b7cb4` | preserve: clean plus ignored local data |

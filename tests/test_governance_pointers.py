@@ -94,9 +94,11 @@ class ControlPlaneTests(unittest.TestCase):
         active = self.data.get("active_packages") or []
         ids = [item["id"] for item in active]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(["PS-DELIVERY-RESET-001"], ids)
-        reset = active[0]
-        self.assertIn("owner_directed_reset", reset["status"])
+        self.assertEqual([], ids)
+        self.assertIn(
+            "PS-DELIVERY-RESET-001",
+            self.data.get("completed_packages") or [],
+        )
         self.assertIn("PS-GOV-LEAN-001", self.data.get("completed_packages") or [])
 
     def test_current_lane_ledger_is_named_and_machine_readable(self):
@@ -111,7 +113,9 @@ class ControlPlaneTests(unittest.TestCase):
             governing["owner_delivery_guide"]["path"],
         )
         ledger = _read("docs", "governance", "CURRENT_LANES.json")
-        self.assertIn('"owner_directed_delivery_reset"', ledger)
+        self.assertIn('"controlled_idle"', ledger)
+        self.assertIn('"activation_policy"', ledger)
+        self.assertIn('"PS-DELIVERY-CONTROL-001"', ledger)
         self.assertIn('"cleanup_authorized": true', ledger)
         self.assertIn('"cleanup_allowed_for"', ledger)
 

@@ -1,3 +1,4 @@
+import copy
 import json
 import unittest
 from pathlib import Path
@@ -15,6 +16,7 @@ def facts(**overrides):
         "behind": 0,
         "tracked_changes": 0,
         "untracked_changes": 0,
+        "changed_paths": [],
         "origin_is_azure": True,
     }
     value.update(overrides)
@@ -27,17 +29,14 @@ class DeliveryPreflightTests(unittest.TestCase):
         cls.path = ROOT / "docs" / "governance" / "CURRENT_LANES.json"
         cls.ledger = load_ledger(cls.path)
 
-    def test_lane_ledger_is_valid_and_reset_is_single_writer(self):
+    def test_lane_ledger_is_valid_and_controlled_idle(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         self.assertEqual(1, parsed["schema_version"])
         self.assertEqual(
-            "owner_directed_delivery_reset",
+            "controlled_idle",
             parsed["operating_mode"]["state"],
         )
-        self.assertEqual(
-            ["PS-DELIVERY-RESET-001"],
-            parsed["operating_mode"]["writes_allowed_for"],
-        )
+        self.assertEqual([], parsed["operating_mode"]["writes_allowed_for"])
         self.assertEqual(
             ["PS-DELIVERY-RESET-001"],
             parsed["operating_mode"]["merge_allowed_for"],
@@ -47,17 +46,101 @@ class DeliveryPreflightTests(unittest.TestCase):
             parsed["operating_mode"]["cleanup_allowed_for"],
         )
         self.assertEqual([], parsed["operating_mode"]["release_allowed_for"])
+        self.assertEqual([], parsed["active_lanes"])
+        self.assertTrue(parsed["activation_policy"]["enabled"])
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
 
-    def test_reset_lane_write_passes_on_exact_branch(self):
-        errors, _ = evaluate_policy(
+    def test_reset_lane_is_merge_and_cleanup_only(self):
+        write_errors, _ = evaluate_policy(
             self.ledger,
             facts(),
             "PS-DELIVERY-RESET-001",
             "write",
+        )
+        self.assertTrue(
+            any("write is blocked" in error for error in write_errors)
+        )
+
+        merge_errors, _ = evaluate_policy(
+            self.ledger,
+            facts(),
+            "PS-DELIVERY-RESET-001",
+            "merge",
+            require_clean=True,
+        )
+        self.assertEqual([], merge_errors)
+
+        cleanup_errors, _ = evaluate_policy(
+            self.ledger,
+            facts(),
+            "PS-DELIVERY-RESET-001",
+            "cleanup",
+        )
+        self.assertEqual([], cleanup_errors)
+
+    def test_controlled_activation_requires_exact_package_and_branch(self):
+        activation_facts = facts(
+            branch="work/2026-08-05-delivery-activation-opportunity-slate"
+        )
+        errors, _ = evaluate_policy(
+            self.ledger,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
             require_clean=True,
         )
         self.assertEqual([], errors)
+
+        wrong_package, _ = evaluate_policy(
+            self.ledger,
+            activation_facts,
+            "PS-OPPORTUNITY-SLATE-001",
+            "activate",
+        )
+        self.assertTrue(
+            any("standing control package" in error for error in wrong_package)
+        )
+
+        wrong_branch, _ = evaluate_policy(
+            self.ledger,
+            facts(branch="work/feature-direct"),
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertTrue(
+            any("branch does not match" in error for error in wrong_branch)
+        )
+
+        busy = copy.deepcopy(self.ledger)
+        busy["active_lanes"] = [
+            {"package": "PS-EXISTING-001"},
+            {"package": "PS-EXISTING-002"},
+        ]
+        busy_errors, _ = evaluate_policy(
+            busy,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertIn(
+            "activation refused because the lane limit is full",
+            busy_errors,
+        )
+
+        product_change, _ = evaluate_policy(
+            self.ledger,
+            facts(
+                branch=(
+                    "work/2026-08-05-delivery-activation-opportunity-slate"
+                ),
+                changed_paths=["app.py"],
+            ),
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertTrue(
+            any("non-control paths" in error for error in product_change)
+        )
 
     def test_other_lane_write_is_blocked_but_read_is_allowed(self):
         errors, _ = evaluate_policy(
@@ -85,22 +168,6 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertEqual([], current_read_errors)
 
     def test_release_and_direct_main_writes_are_blocked(self):
-        merge_errors, _ = evaluate_policy(
-            self.ledger,
-            facts(),
-            "PS-DELIVERY-RESET-001",
-            "merge",
-        )
-        self.assertEqual([], merge_errors)
-
-        cleanup_errors, _ = evaluate_policy(
-            self.ledger,
-            facts(),
-            "PS-DELIVERY-RESET-001",
-            "cleanup",
-        )
-        self.assertEqual([], cleanup_errors)
-
         release_errors, _ = evaluate_policy(
             self.ledger,
             facts(),

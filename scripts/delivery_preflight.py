@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -44,6 +45,19 @@ def collect_facts(fetch: bool = False) -> dict:
     tracked = [line for line in status_lines if not line.startswith("??")]
     untracked = [line for line in status_lines if line.startswith("??")]
     origin_url = _git("remote", "get-url", "origin")
+    changed_paths = sorted(
+        {
+            path
+            for command in (
+                ("diff", "--name-only", "origin/main...HEAD"),
+                ("diff", "--name-only"),
+                ("diff", "--cached", "--name-only"),
+                ("ls-files", "--others", "--exclude-standard"),
+            )
+            for path in _git(*command).splitlines()
+            if path
+        }
+    )
 
     return {
         "repository": str(ROOT),
@@ -54,6 +68,7 @@ def collect_facts(fetch: bool = False) -> dict:
         "behind": int(_git("rev-list", "--count", "HEAD..origin/main")),
         "tracked_changes": len(tracked),
         "untracked_changes": len(untracked),
+        "changed_paths": changed_paths,
         "origin_url": origin_url,
         "origin_is_azure": "dev.azure.com" in origin_url.lower(),
     }
@@ -88,6 +103,38 @@ def evaluate_policy(
             errors.append("the current operating mode disallows read-only work")
         return errors, warnings
 
+    if intent == "activate":
+        policy = ledger.get("activation_policy") or {}
+        if mode.get("state") != "controlled_idle":
+            errors.append("activation is allowed only from controlled_idle")
+        if not policy.get("enabled", False):
+            errors.append("the lane activation policy is disabled")
+        if package_id != policy.get("package"):
+            errors.append(
+                "activation must use the standing control package "
+                f"{policy.get('package', '(unset)')}"
+            )
+        branch_pattern = policy.get("branch_pattern") or r"(?!)"
+        if not re.fullmatch(branch_pattern, facts.get("branch") or ""):
+            errors.append(
+                f"activation branch does not match {branch_pattern!r}"
+            )
+        lane_limit = policy.get("max_active_lanes")
+        if lane_limit != 2:
+            errors.append("activation policy must retain the two-lane limit")
+        elif len(ledger.get("active_lanes") or []) >= lane_limit:
+            errors.append("activation refused because the lane limit is full")
+        allowed_surfaces = set(policy.get("allowed_surfaces") or [])
+        unexpected_paths = sorted(
+            set(facts.get("changed_paths") or []) - allowed_surfaces
+        )
+        if unexpected_paths:
+            errors.append(
+                "activation branch contains non-control paths: "
+                + ", ".join(unexpected_paths)
+            )
+        return errors, warnings
+
     allowed_key = {
         "write": "writes_allowed_for",
         "merge": "merge_allowed_for",
@@ -104,7 +151,14 @@ def evaluate_policy(
     active_lane = next(
         (
             lane
-            for lane in ledger.get("active_lanes") or []
+            for lane in (
+                list(ledger.get("active_lanes") or [])
+                + (
+                    list(ledger.get("closing_lanes") or [])
+                    if intent in {"merge", "cleanup"}
+                    else []
+                )
+            )
             if lane.get("package") == package_id
         ),
         None,
@@ -130,7 +184,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--package", required=True, help="authoritative package ID")
     parser.add_argument(
         "--intent",
-        choices=("read", "write", "merge", "cleanup", "release"),
+        choices=(
+            "read",
+            "activate",
+            "write",
+            "merge",
+            "cleanup",
+            "release",
+        ),
         default="read",
         help="operation being preflighted",
     )

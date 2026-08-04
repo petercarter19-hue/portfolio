@@ -15,7 +15,7 @@ authority:
   deployed_pipeline: 505
   application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"
   application_behavior_pipeline: 499
-  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3 adds documentation-only incident evidence and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main f706d6cd678c3e3b2b39228d98fee85afd9aea03 is the validated delivery-reset squash from PR 279/build 512 and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-DELIVERY-RESET-001 is the sole writable lane. See docs/governance/CURRENT_LANES.json for the owner-directed reset and paused-lane ledger."
+  current_assignments: "Controlled idle: no implementation or production lane is active. PS-DELIVERY-RESET-001 is merge/cleanup-only for its closeout. Pete must select one exact outcome and merge the bounded CURRENT_LANES activation record before implementation starts."
 
 governing_documents:
   bible:
@@ -57,11 +57,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-DELIVERY-RESET-001
-    owner: "Pete; current Codex reset task is designated manager and sole writer"
-    lane: delivery_control_plane_reset
-    package_path: "docs/initiatives/PS-DELIVERY-RESET-001/README.md"
-    status: "active_owner_directed_reset_all_other_lanes_paused_read_only"
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
@@ -75,6 +70,7 @@ scoped_findings:
     blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
 completed_packages:
+  - PS-DELIVERY-RESET-001
   - PS-AZURE-RELEASE-RELIABILITY-001
   - PS-AUTH-PRODUCTION-RECOVERY-001
   - PS-SIGNIN-EXPERIENCE-001
@@ -128,7 +124,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Complete PS-DELIVERY-RESET-001 R0-R3 exit criteria. No other lane writes, merges, deploys, applies schema, mutates production configuration, or creates an implementation worktree until Pete explicitly releases it from the reset ledger."
+next_gate: "Pete selects one exact post-reset outcome. Create and merge only the bounded PS-DELIVERY-CONTROL-001 activation record from current Azure main; it names the package, future implementation branch, writer, surfaces, exclusions, delivery path, and evidence. No implementation worktree, product write, release, schema action, or production mutation is authorized before that record is on main."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

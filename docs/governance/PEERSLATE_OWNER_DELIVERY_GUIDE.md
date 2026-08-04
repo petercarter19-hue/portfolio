@@ -88,9 +88,11 @@ repository has historical Protected packages.
 ### Activate one implementation
 
 > Make this the next implementation outcome: [one sentence]. Everything else
-> discussed is parked. Verify current Azure main and CURRENT_LANES first. Name
-> the package, writer, branch, writable files, exclusions, delivery path, and
-> exact completion evidence before writing.
+> discussed is parked. Verify current Azure main and CURRENT_LANES first. Use
+> the small delivery-activation record to name the package, writer, future
+> implementation branch, writable files, exclusions, delivery path, and exact
+> completion evidence. Merge that record before creating the implementation
+> worktree. Put no product code in the activation branch.
 
 ### Pause a lane safely
 
@@ -157,6 +159,11 @@ behind/ahead count, conflicting surfaces, and allowed next action. Before
 release, the agent must identify the exact source SHA and active production
 reservation. After release, the agent must close the branch/worktree and update
 the live ledger so finished work does not remain operationally active.
+
+In `controlled_idle`, the activation record is the one deliberate setup step.
+Its purpose is to make the selected lane visible to every other session before
+implementation begins. It is not an architecture round, feature review, or
+second implementation package.
 
 The process is successful when Pete can keep having fun with the product while
 the delivery system permits only a small, visible amount of work to become

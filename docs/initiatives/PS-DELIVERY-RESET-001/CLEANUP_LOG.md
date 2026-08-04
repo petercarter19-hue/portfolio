@@ -127,3 +127,20 @@ Result: new sessions starting in the normal primary path now read the current
 lean startup instructions instead of the 107-commit-old governance files. The
 primary worktree remains read-only because it contains preserved untracked
 material and direct writes to `main` are prohibited.
+
+## Pass 4 - merge and controlled-idle closeout
+
+Azure PR 279 validated the reset branch with successful required build 512 and
+squash-merged it at exact main SHA
+`f706d6cd678c3e3b2b39228d98fee85afd9aea03`. The final squash message carried
+`[skip ci]`; no main deployment or schema operation was queued, and live
+`/healthz` remained healthy on release `21a77fc14df89aa4f4397f2d`.
+
+The primary worktree was fast-forwarded to that exact main SHA without touching
+its ten preserved untracked roots. Before recycling the clean reset worktree
+onto the squash result, source tip
+`340e2d1f512429a66f6bc00d1f897f525ee18638` was preserved at
+`refs/archive/delivery-reset-2026-08-04/pr279-source`. The remote source branch
+was deleted by the PR; the local reset branch/worktree was recreated from the
+new main under the same ledger identity for this closeout. Recovery refs now
+total 48. No force-removal or user-material deletion occurred.
