@@ -130,8 +130,31 @@ Protected release that elects to use Candidate. It does not block Routine or
 Bounded delivery. The one-time Interview Focus alias evidence remains
 historical and is not a reusable procedure.
 
+## Database schema migrations
+
+Schema, migration, and canonical-data changes are Protected by the Candidate
+applicability list above, but until 2026-08-04 the package supplied no mechanism
+for them: schema was applied by hand, directly against `peerslate-database`,
+outside the Azure pipeline that `AI_WORKFLOW.md` names as the only production
+deployment path.
+
+`GOVERNED_SCHEMA_MIGRATION_PATH.md` is that mechanism. It is the only supported
+way to move PeerSlate schema. Read it before proposing, gating, applying, or
+rolling back a migration. In short:
+
+- the pipeline's `SchemaMigration` stage runs only when a person queues it with
+  an explicit `schemaAction` and an approver releases the
+  `peerslate-database-schema` environment; merging a migration file applies
+  nothing;
+- a migration cannot be applied unless `SQL FIles/Migrations/registry.json`
+  carries a gate proof whose digest still matches its T-SQL;
+- what is pending is read from `dbo.schema_migrations`, and what production
+  carries is recorded in the generated
+  `docs/governance/PRODUCTION_SCHEMA_STATE.md`, not in migration header prose.
+
 ## Evidence locations
 
+- `GOVERNED_SCHEMA_MIGRATION_PATH.md` - the governed schema migration control.
 - `CANDIDATE_EVIDENCE_2026-07-27.md` - accepted build 256 record.
 - `OWNER_TECHNICAL_COMPLETION_REPORT.md` - released operational floor.
 - `docs/templates/PROFESSIONAL_READINESS_EVIDENCE.md` - optional full record

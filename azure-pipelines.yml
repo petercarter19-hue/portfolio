@@ -12,6 +12,28 @@ parameters:
     type: boolean
     default: false
 
+  # Schema never moves because a pull request merged. It moves because a person
+  # queued this pipeline, chose an action other than `none`, and an approver
+  # released the `peerslate-database-schema` environment. Merging a migration
+  # file changes nothing in any database.
+  - name: schemaAction
+    displayName: Database schema action (governed migration path)
+    type: string
+    default: none
+    values:
+      - none
+      - report
+      - apply
+      - rollback
+  - name: schemaMigrationId
+    displayName: Schema migration id (apply expectation, or the id to roll back)
+    type: string
+    default: ''
+  - name: schemaRollbackConfirm
+    displayName: Rollback confirmation (retype the migration id exactly)
+    type: string
+    default: ''
+
 variables:
   # Created in Azure DevOps while configuring the Azure Web App connection.
   azureServiceConnectionId: '3ee022e1-c929-4693-95bd-211db6076ff0'
@@ -27,6 +49,11 @@ variables:
   # The build manifest verifies that all three exactly match the source Azure
   # actually checked out.
   pythonVersion: '3.12'
+  # The only database the SchemaMigration stage may touch. The script confirms
+  # it against DB_NAME() on the open connection before it reads or writes
+  # anything, so a stale or mistyped secret fails closed instead of applying
+  # somewhere unintended.
+  schemaDatabaseName: 'peerslate-database'
   productionBaseUrl: 'https://peerslate.com'
   candidateBaseUrl: 'https://peerslate-candidate.azurewebsites.net'
   pipAuditVersion: '2.10.1'
@@ -283,6 +310,152 @@ stages:
               # Same discipline as the Build stage: the SHA enters the process
               # as data, never as Bash source.
               BUILT_SOURCE_VERSION: $(Build.SourceVersion)
+
+  # The governed database migration path. Application code and database schema
+  # are released by separate, deliberate operations: this stage never deploys
+  # the web app, and ProductionRelease never touches a database. A schema-only
+  # run is therefore a manual main run that does not deploy, so
+  # ProductionReleaseSkipped correctly warns that production code is unchanged.
+  # That warning is true and useful here -- read the stage results, not the run
+  # icon, to see what actually happened.
+  #
+  # Requires two things configured in Azure DevOps, not in this file:
+  #   * the `peerslate-database-schema` environment, with an approval check.
+  #     Until that approval exists, the queue-time parameter is the only gate.
+  #   * a secret pipeline variable `schemaConnectionString` holding the target
+  #     connection string. Like the Candidate queue values it is defined in
+  #     Azure pipeline metadata, never in this YAML, and it reaches the script
+  #     as process environment data rather than as Bash source.
+  - stage: SchemaMigration
+    displayName: Apply governed database schema migrations
+    dependsOn: Build
+    # Schema is not cumulative the way a deployment artifact is: a queued run
+    # must never be dropped in favour of a later one, so this serializes rather
+    # than running latest.
+    lockBehavior: sequential
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        ${{ ne(parameters.schemaAction, 'none') }}
+      )
+    jobs:
+      - deployment: GovernedSchemaMigration
+        environment: peerslate-database-schema
+        pool:
+          vmImage: $(vmImageName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 1
+                  persistCredentials: false
+                  clean: true
+
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '$(pythonVersion)'
+                  displayName: Use Python $(pythonVersion)
+
+                - script: |
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+                  displayName: Install requirements
+
+                # Offline and fail-closed. Validates registry order, that every
+                # registered file exists, and that every gate proof still
+                # matches the T-SQL on this commit. Nothing connects until this
+                # passes.
+                - script: python scripts/govern_sql_migrations.py check
+                  displayName: Validate the migration registry and gate proofs
+
+                - ${{ if eq(parameters.schemaAction, 'report') }}:
+                    - script: >-
+                        python scripts/govern_sql_migrations.py
+                        --azure-pipelines
+                        --emit-evidence "$(Build.ArtifactStagingDirectory)/schema/report.json"
+                        report
+                        --expect-database "$(schemaDatabaseName)"
+                        --write-state
+                        --print-state
+                      displayName: Read the ledger and render the repository record
+                      env:
+                        AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
+                        BUILD_SOURCEVERSION: $(Build.SourceVersion)
+                        BUILD_BUILDID: $(Build.BuildId)
+
+                - ${{ if eq(parameters.schemaAction, 'apply') }}:
+                    - script: |
+                        set -euo pipefail
+                        arguments=(
+                          scripts/govern_sql_migrations.py
+                          --azure-pipelines
+                          --emit-evidence
+                          "$(Build.ArtifactStagingDirectory)/schema/apply.json"
+                          apply
+                          --expect-database "$(schemaDatabaseName)"
+                          --write-state
+                          --print-state
+                        )
+                        # Naming the migration is optional but strongly
+                        # preferred: it makes the applier compare the operator's
+                        # expectation with the plan the ledger produces, and
+                        # refuse when they differ.
+                        if [ -n "$SCHEMA_MIGRATION_ID" ]; then
+                          arguments+=(--expect "$SCHEMA_MIGRATION_ID")
+                        fi
+                        python "${arguments[@]}"
+                      displayName: Apply every pending gated migration
+                      env:
+                        # Queue values enter the process as data, never as Bash
+                        # source -- the same discipline the Build stage uses for
+                        # the Candidate admission values.
+                        AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
+                        SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
+                        BUILD_SOURCEVERSION: $(Build.SourceVersion)
+                        BUILD_BUILDID: $(Build.BuildId)
+
+                - ${{ if eq(parameters.schemaAction, 'rollback') }}:
+                    - script: |
+                        set -euo pipefail
+                        # Two independently typed queue values must agree. The
+                        # script checks it too; failing here first keeps a
+                        # destructive run from opening a connection at all.
+                        python scripts/govern_sql_migrations.py \
+                          --azure-pipelines \
+                          --emit-evidence \
+                          "$(Build.ArtifactStagingDirectory)/schema/rollback.json" \
+                          rollback "$SCHEMA_MIGRATION_ID" \
+                          --confirm "$SCHEMA_ROLLBACK_CONFIRM" \
+                          --expect-database "$(schemaDatabaseName)" \
+                          --write-state \
+                          --print-state
+                      displayName: Roll back the most recently applied migration
+                      env:
+                        AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
+                        SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
+                        SCHEMA_ROLLBACK_CONFIRM: ${{ parameters.schemaRollbackConfirm }}
+                        BUILD_SOURCEVERSION: $(Build.SourceVersion)
+                        BUILD_BUILDID: $(Build.BuildId)
+
+                # The rendered record is the thing an operator commits, so it
+                # must survive the agent. The evidence JSON is scrubbed of
+                # credential-shaped text by the script before it is written.
+                - script: |
+                    set -euo pipefail
+                    mkdir -p "$(Build.ArtifactStagingDirectory)/schema"
+                    if [ -f docs/governance/PRODUCTION_SCHEMA_STATE.md ]; then
+                      cp docs/governance/PRODUCTION_SCHEMA_STATE.md \
+                        "$(Build.ArtifactStagingDirectory)/schema/"
+                    fi
+                  condition: always()
+                  displayName: Stage the regenerated repository record
+
+                - publish: '$(Build.ArtifactStagingDirectory)/schema'
+                  artifact: SchemaMigrationEvidence
+                  condition: always()
+                  displayName: Publish schema migration evidence
 
   - stage: CandidateDeploy
     displayName: Deploy isolated candidate

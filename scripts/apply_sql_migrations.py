@@ -1,4 +1,20 @@
-"""Plan or apply PeerSlate SQL migrations using the configured secure connection."""
+"""Plan or apply PeerSlate SQL migrations using the configured secure connection.
+
+This is the original house applier. It remains the home of the platform
+foundation verification (`verify_foundation` and friends) and of the connection
+pattern every migration tool uses.
+
+It is no longer the way schema reaches production. Use the governed path in
+`scripts/govern_sql_migrations.py`, documented in
+`docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md`: it computes what
+is pending by reading `dbo.schema_migrations` instead of trusting
+`MIGRATION_FILENAMES` to match reality, refuses any migration that has not been
+proven against a throwaway database, and runs from the pipeline's
+`SchemaMigration` stage rather than from an agent holding a credential.
+
+`MIGRATION_FILENAMES` below is pinned to `SQL FIles/Migrations/registry.json` by
+`tests/test_schema_migration_path.py`, so the two cannot drift apart.
+"""
 
 from __future__ import annotations
 
