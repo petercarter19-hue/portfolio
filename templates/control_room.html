@@ -1,5 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>{# data-ps-dark-theme is emitted ONLY while the dark theme is available.
+   control-room.css gates its prefers-color-scheme dark variant on it, so the
+   owner-directed 2026-08-03 pause reaches this operating-system-driven
+   surface too. #}
+<html lang="en"{% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %} data-ps-dark-theme="on"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

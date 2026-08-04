@@ -36,8 +36,19 @@
     --cr-maxw: 1180px;
 }
 
+/* Dark theme pause (owner direction, Pete, 2026-08-03). This is the product's
+   only prefers-color-scheme dark variant, and it applied with no user action
+   at all — purely from the visitor's operating-system setting, so no amount of
+   hiding theme switches reached it. The rules below are left intact and are
+   re-enabled by the same single flag (PEERSLATE_DARK_THEME_ENABLED), which
+   makes control_room.html emit data-ps-dark-theme on <html> again. */
+:root:not([data-ps-dark-theme]) {
+    color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root[data-ps-dark-theme] {
+        color-scheme: dark;
         --cr-canvas: #0b1120;
         --cr-surface: #111a2e;
         --cr-surface-soft: #16233c;

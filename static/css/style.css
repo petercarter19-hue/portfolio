@@ -25,6 +25,24 @@
      - MY STORY PAGE             /my-story page, largest single section
    ========================================================= */
 
+/* ---------------------------------------------------------
+   DARK THEME PAUSE (owner direction, Pete, 2026-08-03)
+   The site's dark rule sets are all keyed off body[data-theme="dark"]
+   and stay exactly where they are; nothing sets that attribute while
+   PEERSLATE_DARK_THEME_ENABLED is false.
+
+   This one declaration closes the remaining leak. With no color-scheme
+   declared anywhere, a visitor whose operating system is set to dark
+   gets dark native form controls, scrollbars, and canvas on every page
+   with no user action at all. The :not() gate releases itself the
+   moment the flag is flipped back and base.html re-emits
+   data-ps-dark-theme on <html>, so restoring the theme needs no edit
+   here either.
+   --------------------------------------------------------- */
+:root:not([data-ps-dark-theme]) {
+    color-scheme: light;
+}
+
 :root {
     /* Core dark product palette */
     --color-page: #030b16;

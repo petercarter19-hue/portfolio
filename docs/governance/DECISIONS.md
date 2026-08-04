@@ -744,3 +744,43 @@ and Roadmap named in `CURRENT_BASELINE.yaml` remain the product authority.
   retroactive redesign backlog. Existing Pete-locked authorities remain valid
   until materially revised; the new default applies when ChatGPT creates the
   replacement authority for Pete to review and lock.
+
+## 2026-08-03 - Pause the dark theme site-wide
+
+- Owner direction (Pete): "no dark theme for now. We are turning it off for the
+  time being on the site... if it's already implemented, no problem." This is a
+  temporary pause, not a removal, and it sits alongside the standing 2026-08-03
+  direction to build light-only and author no new dark rules without ripping
+  out the existing ones.
+- The single switch is `PEERSLATE_DARK_THEME_ENABLED`, now declared in `app.py`
+  and defaulting to false. Set it true (config or environment) to restore the
+  whole feature; no other edit is required.
+- The first pass closed the public shell: the header switch, the four
+  `data-theme-toggle-proxy` switches in Interview Studio and the homepage
+  walkthrough, the `base.html` stored-preference replay, and loading
+  `static/js/theme-toggle.js`.
+- This pass closes the routes that pass missed, each of which could still put a
+  visitor in dark: the Slate Studio shell kept its own copy of the stored
+  `ps-theme` replay and its own theme switch (unhidden by JavaScript, so fully
+  operable); `static/js/theme-toggle.js` had no gate of its own; the Control
+  Room's `@media (prefers-color-scheme: dark)` block applied straight from the
+  visitor's operating system with no user action; and nothing declared
+  `color-scheme`, so native form controls, scrollbars, and the canvas followed
+  a dark operating system on every page.
+- `:root` now declares `color-scheme: light` behind a `:not([data-ps-dark-theme])`
+  gate. `<html>` carries `data-ps-dark-theme` only while the flag is on, which
+  is also the gate the toggle script and the Control Room variant check, so the
+  gate releases itself when the flag is flipped back.
+- Deliberately left in place: every `body[data-theme="dark"]` rule set across
+  the seventeen stylesheets that carry one, the `.theme-toggle` control styles,
+  the toggle markup in the templates, and `static/js/theme-toggle.js` itself.
+  Nothing sets the attribute those rules key off, so they are dormant rather
+  than removed.
+- A visitor's stored `ps-theme` value is ignored, not cleared. Ignoring is the
+  reversible choice: their original preference returns intact when the pause is
+  lifted, and the pause avoids writing to anyone's browser storage.
+- Owner Home (`/app`, `body.owner-home-shell`) is dark BY DESIGN under its own
+  locked mockup rather than by theme. It never used the theme switch and is
+  intentionally unchanged. It remains behind `PEERSLATE_OWNER_HOME_ENABLED`.
+- `tests/test_dark_theme_availability.py` pins both halves: the entry points
+  stay closed, and the dark work stays in the repository.

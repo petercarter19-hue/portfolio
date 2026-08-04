@@ -151,8 +151,36 @@ class StudioSliceOneAccessibilityTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
 
     def test_no_javascript_response_hides_the_inert_theme_control(self):
-        _, html, parser = self.render()
+        """The theme control must never be a dead or misleading affordance.
 
+        Owner direction 2026-08-03 paused the dark theme site-wide, so the
+        control is now absent entirely rather than present-but-hidden. Both
+        states are covered: the released hidden-until-JavaScript contract is
+        asserted with the flag on, and the paused state with it off. The
+        no-JavaScript promise holds either way. See
+        tests/test_dark_theme_availability.py for the full pause contract.
+        """
+        original = app.config.get("PEERSLATE_DARK_THEME_ENABLED")
+        self.addCleanup(
+            app.config.__setitem__, "PEERSLATE_DARK_THEME_ENABLED", original
+        )
+
+        app.config["PEERSLATE_DARK_THEME_ENABLED"] = False
+        _, html, parser = self.render()
+        paused_controls = [
+            button
+            for button in parser.by_tag("button")
+            if button["attrs"].get("id") == "theme-toggle"
+        ]
+        self.assertEqual(len(paused_controls), 0)
+        self.assertIn(
+            "Build Your Future works without JavaScript. "
+            "The page remains in its default light theme.",
+            html,
+        )
+
+        app.config["PEERSLATE_DARK_THEME_ENABLED"] = True
+        _, html, parser = self.render()
         theme_controls = [
             button
             for button in parser.by_tag("button")

@@ -1,5 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>{# data-ps-dark-theme is emitted ONLY while the dark theme is available. It is
+   the CSS-side gate for color-scheme and the JS-side gate inside
+   static/js/theme-toggle.js, so the owner-directed 2026-08-03 pause closes the
+   operating-system and stray-control routes into dark as well as the visible
+   switches. One flag, PEERSLATE_DARK_THEME_ENABLED, drives all of it. #}
+<html lang="en"{% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %} data-ps-dark-theme="on"{% endif %}>
 
 <head>
     <meta charset="UTF-8">

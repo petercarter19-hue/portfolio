@@ -61,8 +61,21 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # render, including this legacy /app fallback. The owner workspace content,
 # destinations, and semantics remain unchanged. These values recapture that
 # bounded light-only shell; the asset-token normalization proof still applies.
+# The 2026-08-03 dark-theme pause follow-up closes the routes into dark that
+# the first pass did not reach: the Slate Studio shell's own stored-preference
+# replay and switch, the toggle script's own gate, the Control Room's
+# operating-system-driven variant, and the missing color-scheme declaration.
+# For THIS render the only change is one added declaration in static/css/style.css,
+# so the byte length is unchanged at 16840 and the sole delta is that file's
+# automatic ?v= content token. The normalization chain below proves it: swapping
+# the new style token back reproduces the previous locked hash exactly, and the
+# older recaptures still chain from there. No owner workspace markup, layout,
+# destination, or control semantics changed.
 FLAG_OFF_APP_RENDER_BYTE_LENGTH = 16840
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "177d342fd52affde5ede1b3a21d9079229ac02b87d21c571c5923aa58e4c480c"
+)
+FLAG_OFF_APP_RENDER_THEME_PAUSE_BASE_SHA256 = (
     "729335580bf560b0a76dee15e0809e599e132b06ed5de68ed1ee61f2d81d15f1"
 )
 FLAG_OFF_APP_RENDER_STYLE_BASE_SHA256 = (
@@ -73,7 +86,8 @@ FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 = (
 )
 FLAG_OFF_CALLBACK_VERSION = b"fd13bc50ca97"
 FLAG_OFF_CALLBACK_PREVIOUS_VERSION = b"9a8e38ddf7ba"
-FLAG_OFF_STYLE_VERSION = b"0b1b477c07af"
+FLAG_OFF_STYLE_VERSION = b"ee65b37f38c5"
+FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION = b"0b1b477c07af"
 FLAG_OFF_STYLE_PREVIOUS_VERSION = b"62c0e8511b80"
 
 
@@ -425,8 +439,17 @@ class OwnerHomeRouteTests(unittest.TestCase):
         # working-tree content hashes, so Windows CRLF checkout bytes are
         # intentional.)
         self.assertEqual(response.data.count(FLAG_OFF_STYLE_VERSION), 1)
-        style_base = response.data.replace(
+        theme_pause_base = response.data.replace(
             FLAG_OFF_STYLE_VERSION,
+            FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION,
+        )
+        self.assertEqual(len(theme_pause_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(theme_pause_base).hexdigest(),
+            FLAG_OFF_APP_RENDER_THEME_PAUSE_BASE_SHA256,
+        )
+        style_base = theme_pause_base.replace(
+            FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION,
             FLAG_OFF_STYLE_PREVIOUS_VERSION,
         )
         self.assertEqual(len(style_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)

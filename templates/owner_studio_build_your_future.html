@@ -1,5 +1,6 @@
-<!doctype html>
-<html lang="en">
+<!doctype html>{# data-ps-dark-theme is emitted ONLY while the dark theme is available; see
+   templates/base.html and the owner-directed 2026-08-03 pause. #}
+<html lang="en"{% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %} data-ps-dark-theme="on"{% endif %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,6 +13,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-studio.css') }}">
 </head>
 <body class="owner-studio-shell" data-theme="modern-blue">
+    {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{# The Studio shell keeps its own copy of the stored-preference replay
+       because it does not extend base.html. It needs the same 2026-08-03
+       pause gate: without it, a member who chose dark before the pause would
+       still land dark here even though every switch is gone. #}
     <script>
         (function () {
             try {
@@ -20,7 +25,7 @@
                 }
             } catch (error) { /* The existing theme preference is optional. */ }
         })();
-    </script>
+    </script>{% endif %}
 
     <a class="ss-skip-link" href="#main-content">Skip to Build Your Future</a>
     {% include "partials/owner_studio/_global_header.html" %}
@@ -42,9 +47,9 @@
     <noscript>
         <p class="ss-noscript">Build Your Future works without JavaScript. The page remains in its default light theme.</p>
     </noscript>
-    <script
+    {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}<script
         src="{{ url_for('static', filename='js/theme-toggle.js') }}"
         onload="document.getElementById('theme-toggle').hidden = false"
-    ></script>
+    ></script>{% endif %}
 </body>
 </html>

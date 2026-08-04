@@ -204,6 +204,22 @@ app.config.update(
     PEERSLATE_OWNER_HOME_ENABLED=(
         os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
     ),
+    # DARK THEME PAUSE — THE SINGLE SWITCH.
+    # Owner direction, 2026-08-03 (Pete): "no dark theme for now. We are
+    # turning it off for the time being on the site... if it's already
+    # implemented, no problem." A pause, not a removal: every dark rule set
+    # stays exactly where it is and simply becomes unreachable.
+    # Declared here (rather than relying on a missing key) so the switch has
+    # one obvious home. Set it True — or the environment variable — to restore
+    # the header switch, the Interview Studio and Studio switches, the stored
+    # ps-theme replay, and the Control Room's prefers-color-scheme variant in
+    # one move. See docs/governance/DECISIONS.md, "2026-08-03 - Pause the dark
+    # theme site-wide".
+    # NOTE: /app Owner Home (body.owner-home-shell) is dark BY DESIGN under its
+    # own locked mockup, not by theme. It never used this switch.
+    PEERSLATE_DARK_THEME_ENABLED=(
+        os.environ.get('PEERSLATE_DARK_THEME_ENABLED', 'false').lower() == 'true'
+    ),
     # PS-SLATE-STUDIO-SLICE-1-001: keep the protected Studio shell dark until
     # its separate owner enablement decision.  This flag is intentionally
     # independent of Owner Home; it must not change /app or any public route.

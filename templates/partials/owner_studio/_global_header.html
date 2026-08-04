@@ -25,10 +25,14 @@
             {% else %}
             <span>Signed-in workspace</span>
             {% endif %}
+            {% if config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{# Owner-directed 2026-08-03 pause: the Studio theme switch is not
+               rendered. It is hidden until theme-toggle.js unhides it, so
+               leaving it in place would still have produced a working dark
+               control for anyone with JavaScript. #}
             <button class="ss-theme-toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark theme" data-theme-toggle-requires-js hidden>
                 <span aria-hidden="true">◐</span>
                 <span>Theme</span>
-            </button>
+            </button>{% endif %}
         </div>
     </div>
 
